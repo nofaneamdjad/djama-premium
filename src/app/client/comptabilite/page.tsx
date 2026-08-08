@@ -6,6 +6,7 @@ import {
   TrendingUp, TrendingDown, Euro,
   Download, ChevronRight, ChevronUp, ArrowUpRight, ArrowDownRight,
   Percent, Calendar, FileText, RefreshCw, BookMarked, Info,
+  Sparkles, Loader2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
@@ -44,7 +45,9 @@ export default function ComptabilitePage() {
   const [tvaDeductible, setTvaDeductible] = useState(0);
   const [journal, setJournal]     = useState<JournalLine[]>([]);
   const [tvaRows, setTvaRows]     = useState<TVARow[]>([]);
-  const [showAll, setShowAll]     = useState(false);
+  const [showAll,        setShowAll]        = useState(false);
+  const [analyse,        setAnalyse]        = useState("");
+  const [analyseLoading, setAnalyseLoading] = useState(false);
 
   function getPeriodRange(p: "month" | "quarter" | "year") {
     const now = new Date();
@@ -157,6 +160,21 @@ export default function ComptabilitePage() {
     const a    = document.createElement("a");
     a.href = url; a.download = `journal-comptable-${periodLabel.replace(/ /g, "-")}.csv`;
     a.click(); URL.revokeObjectURL(url);
+  }
+
+  async function analyseFinances() {
+    setAnalyseLoading(true);
+    setAnalyse("");
+    try {
+      const res = await fetch("/api/comptabilite/analyse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caHT, charges, resultat, tvaCollectee, tvaDeductible, period: periodLabel }),
+      });
+      const data = await res.json() as { analyse?: string };
+      if (data.analyse) setAnalyse(data.analyse);
+    } catch {}
+    setAnalyseLoading(false);
   }
 
   const kpis = [
@@ -306,10 +324,19 @@ export default function ComptabilitePage() {
                   <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: tvaSolde >= 0 ? "#dc2626" : "#16a34a" }}>
                     {tvaSolde >= 0 ? "TVA à payer" : "Crédit de TVA"}
                   </p>
-                  <p className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Collectée {fmtEurInt(tvaCollectee)} − Déductible {fmtEurInt(tvaDeductible)}</p>
-                  {tvaDeductible === 0 && tvaCollectee > 0 && (
-                    <p className={`text-[8.5px] flex items-center gap-0.5 mt-0.5 ${isDark ? "text-white/18" : "text-gray-300"}`}><Info size={8} />TVA déductible non encore renseignée</p>
-                  )}
+                  <p className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Collectée {fmtEurInt(tvaCollectee)}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Déductible</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={tvaDeductible === 0 ? "" : tvaDeductible}
+                      onChange={e => setTvaDeductible(Number(e.target.value) || 0)}
+                      placeholder="0"
+                      className={`w-20 bg-transparent text-[11px] outline-none border-b tabular-nums text-right ${isDark ? "text-white/70 border-white/15 placeholder:text-white/20" : "text-gray-600 border-gray-300 placeholder:text-gray-300"}`}
+                    />
+                    <span className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>€</span>
+                  </div>
                 </div>
                 <p className="text-[16px] font-black tabular-nums" style={{ color: tvaSolde >= 0 ? "#dc2626" : "#16a34a" }}>
                   {fmtEurInt(Math.abs(tvaSolde))}
@@ -349,7 +376,7 @@ export default function ComptabilitePage() {
             </div>
           ))}
 
-          <div className="mx-4 mb-4 mt-2 flex items-center justify-between rounded-xl px-4 py-3"
+          <div className="mx-4 mt-2 flex items-center justify-between rounded-xl px-4 py-3"
             style={{
               background: resultat >= 0 ? "rgba(34,197,94,0.08)" : "rgba(248,113,113,0.08)",
               border: `1px solid ${resultat >= 0 ? "rgba(34,197,94,0.20)" : "rgba(248,113,113,0.20)"}`,
@@ -358,6 +385,26 @@ export default function ComptabilitePage() {
             <p className="text-[17px] font-black tabular-nums" style={{ color: resultat >= 0 ? "#16a34a" : "#dc2626" }}>
               {loading ? "—" : fmtEurInt(resultat)}
             </p>
+          </div>
+
+          <div className="mx-4 mb-4 mt-3">
+            <button
+              onClick={analyseFinances}
+              disabled={analyseLoading || loading || caHT === 0}
+              className="w-full flex items-center justify-center gap-2 rounded-xl py-2 text-[11px] font-bold text-violet-400 transition hover:bg-violet-500/10 disabled:opacity-40"
+              style={{ border: "1px dashed rgba(139,92,246,0.35)" }}>
+              {analyseLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+              {analyseLoading ? "Analyse en cours…" : "Analyser avec l'IA"}
+            </button>
+            {analyse && (
+              <div className="mt-2 rounded-xl p-3 text-[11.5px] leading-relaxed"
+                style={{ background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.18)", color: isDark ? "rgba(255,255,255,0.72)" : "rgba(30,30,60,0.75)" }}>
+                <div className="flex items-center gap-1 mb-1.5 text-[9.5px] font-bold text-violet-400 uppercase tracking-wide">
+                  <Sparkles size={9} /> Analyse IA
+                </div>
+                {analyse}
+              </div>
+            )}
           </div>
         </motion.div>
 

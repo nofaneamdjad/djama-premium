@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Network, Plus, Trash2, Save, ArrowLeft,
-  Edit2, Check, X, ChevronRight,
+  Edit2, Check, X, ChevronRight, Sparkles, Loader2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
@@ -39,6 +39,7 @@ export default function MindMapPage() {
   const [mapDraft,       setMapDraft]       = useState("");
   const [renamingTitle,  setRenamingTitle]  = useState(false);
   const [titleDraft,     setTitleDraft]     = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapInputRef = useRef<HTMLInputElement>(null);
 
@@ -94,6 +95,31 @@ export default function MindMapPage() {
     setEditingNode(node.id);
     setNodeDraft(node.text);
     saveMap(updated);
+  }
+
+  async function suggestAiNodes() {
+    if (!active) return;
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/mindmap/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ center: active.center, nodes: active.nodes }),
+      });
+      const data = await res.json() as { suggestions?: string[]; error?: string };
+      if (data.suggestions?.length) {
+        const newNodes: MapNode[] = data.suggestions.map((text, i) => ({
+          id: uid(),
+          text,
+          color: NODE_COLORS[(active.nodes.length + i) % NODE_COLORS.length],
+        }));
+        const updated = { ...active, nodes: [...active.nodes, ...newNodes] };
+        setActive(updated);
+        setMaps(prev => prev.map(m => m.id === updated.id ? updated : m));
+        saveMap(updated);
+      }
+    } catch {}
+    setAiLoading(false);
   }
 
   function deleteNode(nodeId: string) {
@@ -401,13 +427,25 @@ export default function MindMapPage() {
             <div className="border-t border-white/5 px-4 py-3 space-y-2 max-h-[220px] overflow-y-auto">
               <div className="flex items-center justify-between mb-1">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-white/30">Branches ({active.nodes.length})</p>
-                <button
-                  onClick={addNode}
-                  className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold text-violet-400 transition hover:bg-violet-500/10"
-                  style={{ border: "1px solid rgba(139,92,246,0.25)" }}
-                >
-                  <Plus size={10} /> Ajouter
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={suggestAiNodes}
+                    disabled={aiLoading}
+                    title="Suggestions IA"
+                    className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold text-violet-400 transition hover:bg-violet-500/10 disabled:opacity-50"
+                    style={{ border: "1px solid rgba(139,92,246,0.20)" }}
+                  >
+                    {aiLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                    {!aiLoading && "IA"}
+                  </button>
+                  <button
+                    onClick={addNode}
+                    className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold text-violet-400 transition hover:bg-violet-500/10"
+                    style={{ border: "1px solid rgba(139,92,246,0.25)" }}
+                  >
+                    <Plus size={10} /> Ajouter
+                  </button>
+                </div>
               </div>
 
               {active.nodes.map(node => (

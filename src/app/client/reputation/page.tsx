@@ -6,6 +6,7 @@ import {
   Star, Plus, X, Check, Trash2, MessageCircle,
   ChevronDown, ChevronUp, TrendingUp, Award, Download,
   Link2, Copy, AlertTriangle, MessageSquare, Eye, EyeOff, Bookmark,
+  Sparkles, Loader2,
 } from "lucide-react";
 import { Line } from "react-chartjs-2";
 import {
@@ -653,7 +654,25 @@ function ReviewCard({ review, index, onDelete, onReply, onToggleVisible, onToggl
   review: Review; index: number; onDelete: () => void; onReply: (rating: number) => void;
   onToggleVisible: () => void; onToggleFeatured: () => void; toggling: boolean; isDark: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded,  setExpanded]  = useState(false);
+  const [aiReply,   setAiReply]   = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
+  async function genAiReply() {
+    setAiLoading(true);
+    setAiReply("");
+    try {
+      const res = await fetch("/api/reputation/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientName: review.client_name, rating: review.rating, message: review.message, source: review.source }),
+      });
+      const data = await res.json() as { reply?: string };
+      if (data.reply) setAiReply(data.reply);
+    } catch {}
+    setAiLoading(false);
+  }
+
   const src           = SOURCE_STYLES[review.source];
   const initial       = review.client_name.charAt(0).toUpperCase();
   const needsTruncate = review.message && review.message.length > 180;
@@ -742,6 +761,11 @@ function ReviewCard({ review, index, onDelete, onReply, onToggleVisible, onToggl
                   className={`rounded-lg p-1.5 transition-all ${isDark ? "text-white/25 hover:text-violet-400 hover:bg-violet-500/10" : "text-[#0e1420]/25 hover:text-violet-500 hover:bg-violet-500/10"}`}>
                   <MessageSquare size={11} />
                 </button>
+                <button onClick={genAiReply} disabled={aiLoading}
+                  title="Répondre avec l'IA"
+                  className={`rounded-lg p-1.5 transition-all ${isDark ? "text-white/25 hover:text-violet-400 hover:bg-violet-500/10" : "text-[#0e1420]/25 hover:text-violet-500 hover:bg-violet-500/10"}`}>
+                  {aiLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                </button>
                 <button onClick={onDelete}
                   className={`rounded-lg p-1.5 transition-all ${isDark ? "text-white/25 hover:text-red-400 hover:bg-red-500/10" : "text-[#0e1420]/25 hover:text-red-400 hover:bg-red-500/10"}`}>
                   <Trash2 size={11} />
@@ -765,6 +789,22 @@ function ReviewCard({ review, index, onDelete, onReply, onToggleVisible, onToggl
           )}
         </div>
       </div>
+
+      {aiReply && (
+        <div className="mt-3 rounded-xl p-3 text-[11.5px] leading-relaxed"
+          style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.20)", color: isDark ? "rgba(255,255,255,0.75)" : "rgba(14,20,32,0.75)" }}>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="flex items-center gap-1 text-[9.5px] font-bold text-violet-400 uppercase tracking-wide">
+              <Sparkles size={9} /> Réponse IA suggérée
+            </span>
+            <button onClick={() => { void navigator.clipboard.writeText(aiReply); }}
+              className="text-[9.5px] text-violet-400/60 hover:text-violet-400 transition">
+              Copier
+            </button>
+          </div>
+          {aiReply}
+        </div>
+      )}
     </motion.div>
   );
 }

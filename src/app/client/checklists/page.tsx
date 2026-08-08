@@ -6,7 +6,7 @@ import {
   CheckSquare, Plus, Trash2, X,
   CheckCircle2, Circle, ArrowLeft,
   Star, Share2, Filter, MoreHorizontal,
-  ClipboardList, Sparkles,
+  ClipboardList, Sparkles, Loader2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
@@ -45,6 +45,9 @@ export default function ChecklistsPage() {
   const [userId,  setUserId]  = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [aiTopic,     setAiTopic]     = useState("");
+  const [aiLoading,   setAiLoading]   = useState(false);
+  const [showAiInput, setShowAiInput] = useState(false);
   const inputRef  = useRef<HTMLInputElement>(null);
   const itemRef   = useRef<HTMLInputElement>(null);
 
@@ -89,6 +92,25 @@ export default function ChecklistsPage() {
     setDraft("");
     setColor(PALETTE[0]);
     await saveList(newList);
+  }
+
+  async function generateAiItems() {
+    if (!aiTopic.trim() || !userId) return;
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/checklists/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: aiTopic }),
+      });
+      const data = await res.json() as { items?: string[]; error?: string };
+      if (data.items?.length) {
+        await createList(data.items);
+        setAiTopic("");
+        setShowAiInput(false);
+      }
+    } catch {}
+    setAiLoading(false);
   }
 
   async function applyTemplate(tpl: typeof TEMPLATES[0]) {
@@ -268,7 +290,7 @@ export default function ChecklistsPage() {
                       disabled={!draft.trim()}
                       className={`flex-1 rounded-xl py-1.5 text-[11px] font-bold transition ${isDark ? "text-white" : "text-white"}`}
                       style={{ background: draft.trim() ? "linear-gradient(135deg,#10b981,#059669)" : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }}>
-                      Créer
+                      Créer vide
                     </button>
                     <button onClick={() => setCreating(false)}
                       className="rounded-xl px-3 py-1.5 text-[11px] text-white/40 transition hover:text-white/60"
@@ -276,6 +298,31 @@ export default function ChecklistsPage() {
                       Annuler
                     </button>
                   </div>
+                  <button
+                    onClick={() => setShowAiInput(v => !v)}
+                    className="w-full flex items-center gap-1.5 justify-center rounded-xl py-1.5 text-[10.5px] font-semibold text-emerald-400 transition hover:bg-emerald-500/10"
+                    style={{ border: "1px dashed rgba(16,185,129,0.30)" }}>
+                    <Sparkles size={10} />
+                    {showAiInput ? "Masquer l'IA" : "Générer les tâches avec l'IA"}
+                  </button>
+                  {showAiInput && (
+                    <div className="flex gap-2 items-center">
+                      <input
+                        value={aiTopic}
+                        onChange={e => setAiTopic(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") generateAiItems(); }}
+                        placeholder="Ex: préparer un lancement produit"
+                        className="flex-1 bg-transparent text-[11.5px] text-white placeholder:text-white/25 outline-none border-b border-emerald-500/30 pb-0.5"
+                      />
+                      <button onClick={generateAiItems}
+                        disabled={aiLoading || !aiTopic.trim() || !draft.trim()}
+                        className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10.5px] font-bold text-white disabled:opacity-40 transition"
+                        style={{ background: "linear-gradient(135deg,#10b981,#059669)" }}>
+                        {aiLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                        {aiLoading ? "" : "Générer"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}

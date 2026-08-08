@@ -10,6 +10,8 @@ import {
   StickyNote, CheckSquare, ScanLine, Network,
   Search, Zap, Star, Share2, Brain, FolderOpen,
   Building2, Banknote, BookOpen, MessageSquare, Target, Globe,
+  CalendarPlus, QrCode, PenLine, ShoppingBag, ShoppingCart,
+  Landmark, FileCheck2, Mail, Bot, BarChart2, Store, Contact2, Briefcase,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -35,10 +37,12 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     icon:  Wallet,
     color: "#059669",
     modules: [
-      { href: "/client/factures",   label: "Factures & Devis", sub: "Créer, envoyer, suivre vos documents",  icon: ReceiptText,  color: "#2563eb", bg: "#dbeafe" },
-      { href: "/client/depenses",   label: "Dépenses",          sub: "Notes de frais et charges",             icon: CreditCard,   color: "#ea580c", bg: "#ffedd5" },
-      { href: "/client/tresorerie", label: "Trésorerie",        sub: "Cash-flow et flux consolidés",          icon: Wallet,       color: "#059669", bg: "#d1fae5" },
-      { href: "/client/comptabilite", label: "Comptabilité",     sub: "Bilan, TVA et journal comptable",       icon: BookMarked,   color: "#0891b2", bg: "#e0f2fe" },
+      { href: "/client/factures",      label: "Factures & Devis",   sub: "Créer, envoyer, suivre vos documents",   icon: ReceiptText,  color: "#2563eb", bg: "#dbeafe" },
+      { href: "/client/depenses",      label: "Dépenses",            sub: "Notes de frais et charges",               icon: CreditCard,   color: "#ea580c", bg: "#ffedd5" },
+      { href: "/client/tresorerie",    label: "Trésorerie",          sub: "Cash-flow et flux consolidés",            icon: Wallet,       color: "#059669", bg: "#d1fae5" },
+      { href: "/client/comptabilite",  label: "Comptabilité",        sub: "Bilan, TVA et journal comptable",         icon: BookMarked,   color: "#0891b2", bg: "#e0f2fe" },
+      { href: "/client/banque",        label: "Connexion bancaire",  sub: "Import automatique des mouvements",       icon: Landmark,     color: "#0369a1", bg: "#dbeafe" },
+      { href: "/client/declarations",  label: "Déclarations",        sub: "TVA, URSSAF et obligations fiscales",     icon: FileCheck2,   color: "#7c3aed", bg: "#ede9fe" },
     ],
   },
   {
@@ -87,18 +91,43 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     ],
   },
   {
+    label: "Ventes",
+    icon:  ShoppingBag,
+    color: "#ec4899",
+    modules: [
+      { href: "/client/rendez-vous",  label: "Rendez-vous",           sub: "Agenda et réservations clients",         icon: CalendarPlus,  color: "#0891b2", bg: "#e0f2fe" },
+      { href: "/client/paiements",    label: "Liens de paiement",     sub: "Créer et partager des liens de paiement", icon: QrCode,        color: "#7c3aed", bg: "#ede9fe" },
+      { href: "/client/signature",    label: "Signature électronique", sub: "Faire signer vos documents en ligne",    icon: PenLine,       color: "#059669", bg: "#d1fae5" },
+      { href: "/client/boutique",     label: "Boutique en ligne",     sub: "Catalogue produits et commandes",         icon: ShoppingBag,   color: "#ec4899", bg: "#fce7f3" },
+      { href: "/client/caisse",       label: "Caisse / POS",          sub: "Terminal de vente et encaissements",      icon: ShoppingCart,  color: "#0d9488", bg: "#ccfbf1" },
+    ],
+  },
+  {
+    label: "Digital",
+    icon:  BarChart2,
+    color: "#0891b2",
+    modules: [
+      { href: "/client/email-marketing", label: "Email Marketing",    sub: "Campagnes email et newsletters",          icon: Mail,      color: "#e1306c", bg: "#fce7f3" },
+      { href: "/client/chatbot",         label: "Chatbot IA",         sub: "Assistant virtuel pour votre site",       icon: Bot,       color: "#8b5cf6", bg: "#ede9fe" },
+      { href: "/client/analytics",       label: "Analytics",          sub: "Trafic, conversions et statistiques",     icon: BarChart2, color: "#8b5cf6", bg: "#ede9fe" },
+      { href: "/client/marketplace",     label: "Marketplace",        sub: "Trouvez des prestataires qualifiés",      icon: Store,     color: "#0891b2", bg: "#e0f2fe" },
+      { href: "/client/carte-visite",    label: "Carte de visite",    sub: "Carte digitale partageable en 1 lien",    icon: Contact2,  color: "#0891b2", bg: "#e0f2fe" },
+    ],
+  },
+  {
     label: "Gestion",
     icon:  Building2,
     color: "#3b82f6",
     modules: [
-      { href: "/client/portail",       label: "Portail Client",  sub: "Espace dédié à vos clients",      icon: Building2,    color: "#3b82f6", bg: "#dbeafe" },
-      { href: "/client/paie",          label: "Paie & RH",       sub: "Salaires, contrats, effectif",    icon: Banknote,     color: "#10b981", bg: "#d1fae5" },
-      { href: "/client/reputation",    label: "Réputation",      sub: "Avis, e-réputation, veille",      icon: Star,         color: "#b91c1c", bg: "#fef2f2" },
-      { href: "/client/blog",          label: "Blog",            sub: "Rédigez et gérez vos articles",   icon: BookOpen,     color: "#0369a1", bg: "#f0f9ff" },
-      { href: "/client/temoignages",   label: "Témoignages",     sub: "Avis clients et réputation",      icon: MessageSquare,color: "#9a3412", bg: "#ffedd5" },
-      { href: "/client/planification", label: "Planification",   sub: "OKRs et stratégie long terme",    icon: Target,       color: "#075985", bg: "#cffafe" },
-      { href: "/client/site-web",      label: "Créateur de site", sub: "Site vitrine généré par l'IA",    icon: Globe,        color: "#7c3aed", bg: "#ede9fe" },
-      { href: "/client/mes-sites",    label: "Mes sites",        sub: "Gérer et publier vos sites",       icon: Globe,        color: "#059669", bg: "#d1fae5" },
+      { href: "/client/portail",       label: "Portail Client",   sub: "Espace dédié à vos clients",       icon: Building2,    color: "#3b82f6", bg: "#dbeafe" },
+      { href: "/client/paie",          label: "Paie & RH",        sub: "Salaires, contrats, effectif",     icon: Banknote,     color: "#10b981", bg: "#d1fae5" },
+      { href: "/client/reputation",    label: "Réputation",       sub: "Avis, e-réputation, veille",       icon: Star,         color: "#b91c1c", bg: "#fef2f2" },
+      { href: "/client/blog",          label: "Blog",             sub: "Rédigez et gérez vos articles",    icon: BookOpen,     color: "#0369a1", bg: "#f0f9ff" },
+      { href: "/client/temoignages",   label: "Témoignages",      sub: "Avis clients et réputation",       icon: MessageSquare,color: "#9a3412", bg: "#ffedd5" },
+      { href: "/client/planification", label: "Planification",    sub: "OKRs et stratégie long terme",     icon: Target,       color: "#075985", bg: "#cffafe" },
+      { href: "/client/site-web",      label: "Créateur de site", sub: "Site vitrine généré par l'IA",     icon: Globe,        color: "#7c3aed", bg: "#ede9fe" },
+      { href: "/client/mes-sites",     label: "Mes sites",        sub: "Gérer et publier vos sites",       icon: Globe,        color: "#059669", bg: "#d1fae5" },
+      { href: "/client/agences",       label: "Agences partenaires", sub: "Réseau de prestataires agréés", icon: Briefcase,    color: "#7c3aed", bg: "#ede9fe" },
     ],
   },
 ] as const;
