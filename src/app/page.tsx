@@ -712,7 +712,7 @@ function HomeContent() {
               </Link>
             </motion.div>
 
-            {/* Mockup droite — dashboard simulé */}
+            {/* Mockup droite — Pipeline CRM Kanban */}
             <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }}
               viewport={viewport} transition={{ duration: 0.55, ease, delay: 0.1 }}
               className="overflow-hidden rounded-2xl border border-gray-100 bg-[#f8f9fb] shadow-lg">
@@ -721,54 +721,50 @@ function HomeContent() {
                 <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
                 <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
                 <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-                <span className="ml-2 text-[0.7rem] font-medium text-gray-400">djama.pro · Tableau de bord</span>
+                <span className="ml-2 text-[0.7rem] font-medium text-gray-400">djama.pro · CRM Pipeline</span>
               </div>
-              {/* Contenu mockup */}
-              <div className="p-4 space-y-3">
-                {/* KPIs row */}
+              {/* Pipeline Kanban */}
+              <div className="p-4">
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: "CA du mois", val: "12 450 €", color: "#059669", up: "+18%" },
-                    { label: "Factures", val: "24", color: "#3b82f6", up: "en cours" },
-                    { label: "Clients", val: "87", color: "#7c3aed", up: "+3 ce mois" },
-                  ].map(k => (
-                    <div key={k.label} className="rounded-xl bg-white p-3 shadow-sm">
-                      <p className="text-[0.6rem] text-gray-400">{k.label}</p>
-                      <p className="text-[1rem] font-black" style={{ color: k.color }}>{k.val}</p>
-                      <p className="text-[0.58rem] font-semibold" style={{ color: k.color }}>{k.up}</p>
+                    { label: "Prospects", color: "#3b82f6", bg: "#eff6ff", count: 3, cards: [
+                      { name: "Karima B.", val: "1 200 €", tag: "Devis envoyé" },
+                      { name: "Riad SARL", val: "4 800 €", tag: "1er contact" },
+                      { name: "Imane T.", val: "900 €", tag: "À relancer" },
+                    ]},
+                    { label: "En cours", color: "#f59e0b", bg: "#fffbeb", count: 2, cards: [
+                      { name: "BTP Malik", val: "8 500 €", tag: "Contrat signé" },
+                      { name: "Studio Nova", val: "2 300 €", tag: "Négociation" },
+                    ]},
+                    { label: "Gagnés", color: "#059669", bg: "#ecfdf5", count: 4, cards: [
+                      { name: "Tech & Co", val: "12 000 €", tag: "✓ Payé" },
+                      { name: "Sarl Dupont", val: "3 400 €", tag: "✓ Payé" },
+                    ]},
+                  ].map(col => (
+                    <div key={col.label}>
+                      {/* En-tête colonne */}
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-[0.65rem] font-black uppercase tracking-wide" style={{ color: col.color }}>{col.label}</span>
+                        <span className="rounded-full px-1.5 py-0.5 text-[0.58rem] font-bold" style={{ background: col.bg, color: col.color }}>{col.count}</span>
+                      </div>
+                      {/* Cards */}
+                      <div className="space-y-1.5">
+                        {col.cards.map(c => (
+                          <div key={c.name} className="rounded-xl bg-white p-2.5 shadow-sm border border-gray-100">
+                            <p className="text-[0.68rem] font-bold text-gray-800">{c.name}</p>
+                            <p className="text-[0.72rem] font-black mt-0.5" style={{ color: col.color }}>{c.val}</p>
+                            <span className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[0.55rem] font-semibold" style={{ background: col.bg, color: col.color }}>{c.tag}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
-                {/* Barre graph simulée */}
-                <div className="rounded-xl bg-white p-3 shadow-sm">
-                  <p className="mb-2 text-[0.65rem] font-bold text-gray-600">Chiffre d&apos;affaires — 6 mois</p>
-                  <div className="flex items-end gap-1 h-16">
-                    {[40, 65, 45, 80, 70, 100].map((h, i) => (
-                      <div key={i} className="flex-1 rounded-t-md" style={{ height: `${h}%`, background: `linear-gradient(180deg,#7c3aed,#a78bfa)`, opacity: i === 5 ? 1 : 0.5 + i * 0.1 }} />
-                    ))}
-                  </div>
-                  <div className="mt-1 flex justify-between">
-                    {["Mar","Avr","Mai","Juin","Juil","Août"].map(m => (
-                      <span key={m} className="text-[0.55rem] text-gray-400">{m}</span>
-                    ))}
-                  </div>
-                </div>
-                {/* Liste factures */}
-                <div className="rounded-xl bg-white p-3 shadow-sm">
-                  <p className="mb-2 text-[0.65rem] font-bold text-gray-600">Dernières factures</p>
-                  <div className="space-y-1.5">
-                    {[
-                      { client: "Sarl Dupont", amt: "2 400 €", status: "Payée", color: "#059669" },
-                      { client: "Auto-École Martin", amt: "890 €", status: "En attente", color: "#f59e0b" },
-                      { client: "Créa Design", amt: "1 200 €", status: "En retard", color: "#ef4444" },
-                    ].map(f => (
-                      <div key={f.client} className="flex items-center justify-between">
-                        <span className="text-[0.68rem] font-medium text-gray-700">{f.client}</span>
-                        <span className="text-[0.68rem] font-black text-gray-900">{f.amt}</span>
-                        <span className="rounded-full px-2 py-0.5 text-[0.58rem] font-bold" style={{ background: f.color + "15", color: f.color }}>{f.status}</span>
-                      </div>
-                    ))}
-                  </div>
+                {/* Barre totaux */}
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm">
+                  <span className="text-[0.62rem] text-gray-500">Total pipeline</span>
+                  <span className="text-[0.88rem] font-black text-gray-900">33 100 €</span>
+                  <span className="text-[0.62rem] font-bold text-green-600">↑ +24% ce mois</span>
                 </div>
               </div>
             </motion.div>
