@@ -159,6 +159,14 @@ const TOOL_GROUPS_LANDING = [
   },
 ] as const;
 
+const ESPACE_TOOLS_20 = [
+  "Factures & Devis", "Agenda", "Notes IA", "Coaching IA",
+  "CRM Clients", "Chrono", "Dépenses", "Trésorerie",
+  "Contrats IA", "Stocks", "Assistant IA", "Sourcing IA",
+  "Réseaux Sociaux", "Mind Map", "Scanner", "Site Web IA",
+  "Blog IA", "Réputation", "Portail Client", "Paie & RH",
+] as const;
+
 const PUBLIC_APP_ICONS = [
   /* 0 – Factures & devis */
   <svg key="p0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
@@ -606,195 +614,238 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           48 OUTILS — groupes par catégorie
+           APP GRID — style Odoo pur : fond gris, cartes blanches
       ══════════════════════════════════════════════════════ */}
-      <section id="outils" className="bg-[#f7f8fa] pb-20 pt-16">
-        <div className="mx-auto max-w-6xl px-6">
+      <section id="outils" className="bg-[#f4f5f7] pb-16 pt-14">
+        <div className="mx-auto max-w-5xl px-6">
 
-          {/* Headline */}
-          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.55, ease }}
-            className="mb-4 text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.20em] mb-5"
-              style={{ borderColor: `rgba(${GOLDR},0.28)`, background: `rgba(${GOLDR},0.08)`, color: GOLD }}>
-              <Sparkles size={10} /> 48 outils professionnels
-            </span>
-            <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[3.8rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
-              Tout ce dont vous avez besoin,{" "}
-              <span style={{ background: "linear-gradient(180deg,transparent 58%,rgba(201,165,90,0.38) 58%)", padding: "0 4px" }}>
-                enfin réuni.
-              </span>
-            </h2>
-            <p className="mt-4 text-[0.95rem] text-gray-500">
-              8 catégories · 48 outils · Un seul abonnement à 11,90€/mois.
-            </p>
-          </motion.div>
-
-          {/* Grille style Odoo — icônes individuelles par catégorie */}
-          <div className="space-y-8">
-            {TOOL_GROUPS_LANDING.map((group, gi) => {
-              const GroupIcon = group.icon;
-              return (
-                <motion.div key={group.label}
-                  initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={viewport} transition={{ duration: 0.4, ease, delay: gi * 0.05 }}>
-                  {/* Label catégorie */}
-                  <div className="mb-4 flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-lg"
-                      style={{ background: group.bg }}>
-                      <GroupIcon size={12} style={{ color: group.color }} strokeWidth={2} />
+          {/* Grille 5 cols — cartes BLANCHES avec shadow (Odoo exact) */}
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.03 } } }}
+            className="grid grid-cols-4 gap-3 sm:grid-cols-5">
+            {ESPACE_TOOLS_20.map((title, i) => (
+              <motion.div key={title}
+                variants={{ hidden: { opacity: 0, scale: 0.88, y: 8 }, visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.3, ease } } }}>
+                <Link href="/espace-client" className="group block">
+                  <motion.div
+                    whileHover={{ scale: 1.06, y: -4, boxShadow: "0 12px 32px rgba(0,0,0,0.12)" }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.18 }}
+                    className="flex flex-col items-center gap-2.5 rounded-2xl bg-white px-2 py-4 shadow-sm">
+                    <div className="h-[68px] w-[68px] overflow-hidden rounded-[18px]">
+                      {PUBLIC_APP_ICONS[i]}
                     </div>
-                    <span className="text-[0.72rem] font-black uppercase tracking-[0.14em]"
-                      style={{ color: group.color }}>
-                      {group.label}
-                    </span>
-                    <div className="flex-1 border-t" style={{ borderColor: `${group.color}22` }} />
-                  </div>
-                  {/* Icônes des outils */}
-                  <div className="grid grid-cols-5 gap-3 sm:grid-cols-7 lg:grid-cols-9">
-                    {group.tools.map((tool, ti) => {
-                      const ToolIcon = tool.icon;
-                      return (
-                        <motion.div key={tool.label}
-                          initial={{ opacity: 0, scale: 0.85 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
-                          viewport={viewport}
-                          transition={{ duration: 0.3, ease, delay: gi * 0.04 + ti * 0.03 }}>
-                          <Link href="/espace-client" className="group flex flex-col items-center gap-1.5">
-                            <motion.div
-                              whileHover={{ scale: 1.10, y: -4, boxShadow: `0 10px 24px ${group.color}30` }}
-                              whileTap={{ scale: 0.93 }}
-                              transition={{ duration: 0.18 }}
-                              className="flex h-[62px] w-[62px] items-center justify-center rounded-[18px] sm:h-[68px] sm:w-[68px]"
-                              style={{
-                                background: `linear-gradient(140deg, ${group.color}ee 0%, ${group.color}bb 100%)`,
-                                boxShadow: `0 4px 12px ${group.color}30`,
-                              }}>
-                              <ToolIcon size={24} color="white" strokeWidth={1.6} />
-                            </motion.div>
-                            <p className="max-w-[72px] text-center text-[0.58rem] font-semibold leading-tight text-gray-500 group-hover:text-gray-800 transition-colors">
-                              {tool.label}
-                            </p>
-                          </Link>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Voir tous + CTA prix */}
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.5, ease, delay: 0.1 }}
-            className="mt-10 flex flex-col items-center gap-5 rounded-3xl border border-gray-200 bg-white px-8 py-8 text-center shadow-sm sm:flex-row sm:justify-between sm:text-left">
-            <div>
-              <p className="text-[0.72rem] font-bold uppercase tracking-[0.15em] text-gray-400">DJAMA Pro</p>
-              <p className="mt-1 text-[1.9rem] font-black leading-none text-gray-900">
-                11,90€ <span className="text-[1rem] font-medium text-gray-400">/mois</span>
-              </p>
-              <p className="mt-1.5 text-[0.8rem] text-gray-500">
-                48 outils · Formation IA offerte · Support prioritaire · Sans engagement
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 sm:items-end">
-              <motion.div className="relative" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
-                <Link href="/espace-client"
-                  className="inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-[0.95rem] font-black text-[#100800] transition-all"
-                  style={{ background: `linear-gradient(135deg,${GOLD} 0%,#e2ba70 50%,#b08d45 100%)`, boxShadow: `0 6px 20px rgba(${GOLDR},0.40)` }}>
-                  <Gem size={14} /> Commencer maintenant <ArrowRight size={13} />
+                    <p className="text-center text-[0.68rem] font-semibold leading-tight text-gray-500 group-hover:text-gray-800 transition-colors">
+                      {title}
+                    </p>
+                  </motion.div>
                 </Link>
               </motion.div>
-              <p className="text-[0.62rem] text-gray-400">✓ Sans engagement &nbsp;·&nbsp; ✓ Paiement sécurisé &nbsp;·&nbsp; ✓ Accès immédiat</p>
-            </div>
+            ))}
+          </motion.div>
+
+          {/* "Voir tous les 48 outils →" — Odoo style */}
+          <div className="mt-8 text-right">
+            <Link href="/espace-client"
+              className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-colors hover:opacity-75"
+              style={{ color: GOLD }}>
+              Voir tous les 48 outils <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          {/* Grand texte Odoo — "Imaginez une vaste collection..." */}
+          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.5, ease }}
+            className="mt-14 max-w-3xl">
+            <p className="text-[1.05rem] leading-relaxed text-gray-700">
+              <strong className="font-black text-gray-900">Imaginez une vaste collection d&apos;outils professionnels à votre disposition.</strong>{" "}
+              Vous avez quelque chose à améliorer dans votre business ? Il existe un outil pour ça.
+              Aucune complexité, aucun logiciel à installer — un simple abonnement à 11,90€/mois.
+            </p>
+            <p className="mt-4 text-[1.05rem] leading-relaxed text-gray-700">
+              Chaque outil simplifie un processus et permet à davantage d&apos;entrepreneurs d&apos;agir vite et efficacement.
+            </p>
+            <Link href="/espace-client"
+              className="mt-7 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[0.92rem] font-black text-white transition-all hover:opacity-90"
+              style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, boxShadow: `0 4px 16px rgba(${GOLDR},0.35)` }}>
+              <Gem size={14} /> Démarrer maintenant
+            </Link>
           </motion.div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           WHY DJAMA — style Odoo : stats + 3 feature columns
+           FEATURE 1 — "Améliorez la qualité de votre travail"
+           style Odoo : titre cursive gauche + mockup droite
       ══════════════════════════════════════════════════════ */}
       <section className="bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-5xl px-6">
+          <div className="grid gap-14 sm:grid-cols-2 sm:items-center">
 
-          {/* Headline style Odoo — sans-serif bold, pas cursive */}
-          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.5, ease }}
-            className="mb-16 text-center">
-            <h2 className="text-[2rem] font-black leading-tight text-gray-900 sm:text-[2.8rem]">
-              Pourquoi choisir DJAMA ?
-            </h2>
-            <p className="mt-4 text-[1rem] text-gray-500 max-w-xl mx-auto">
-              Une seule plateforme. 48 outils connectés. Zéro friction.
-            </p>
-          </motion.div>
+            {/* Texte gauche */}
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
+              viewport={viewport} transition={{ duration: 0.55, ease }}>
+              <h2 className="text-[2.4rem] leading-[1.12] text-gray-900 sm:text-[3rem]"
+                style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
+                <span style={{ color: "#7c3aed", textDecoration: "underline wavy", textUnderlineOffset: "5px", textDecorationColor: "rgba(124,58,237,0.35)" }}>
+                  Améliorez
+                </span>{" "}
+                la qualité de votre travail
+              </h2>
+              <p className="mt-5 text-[0.95rem] leading-relaxed text-gray-500">
+                Interface ultra-rapide, IA intégrée, données en temps réel. Toutes vos opérations prennent moins de 5 secondes.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {["Factures envoyées en 1 clic", "Rappels automatiques par IA", "Tableau de bord live", "Zéro double saisie"].map(item => (
+                  <li key={item} className="flex items-center gap-2.5 text-[0.88rem] font-medium text-gray-700">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100">
+                      <Check size={11} className="text-purple-600" strokeWidth={2.5} />
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/espace-client"
+                className="mt-8 inline-flex items-center gap-1.5 text-[0.9rem] font-bold text-purple-600 transition-opacity hover:opacity-70">
+                Découvrir la plateforme <ArrowRight size={14} />
+              </Link>
+            </motion.div>
 
-          {/* Stats row — style Odoo chiffres clés */}
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={viewport}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
-            className="mb-16 grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {([
-              { value: "48",      label: "Outils intégrés",       color: GOLD },
-              { value: "1 200+",  label: "Entrepreneurs actifs",   color: "#7c3aed" },
-              { value: "11,90€",  label: "Par mois tout compris",  color: "#059669" },
-              { value: "< 5 min", label: "Pour démarrer",          color: "#0891b2" },
-            ] as const).map(({ value, label, color }, i) => (
-              <motion.div key={label}
-                variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease } } }}
-                className="text-center">
-                <p className="text-[2.4rem] font-black leading-none sm:text-[3rem]" style={{ color }}>{value}</p>
-                <p className="mt-2 text-[0.78rem] font-medium text-gray-500">{label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* 3 pilliers — style Odoo feature columns */}
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={viewport}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.10 } } }}
-            className="grid gap-8 sm:grid-cols-3">
-            {([
-              {
-                color: "#7c3aed", bg: "#ede9fe",
-                icon: Zap,
-                title: "Tout est connecté",
-                desc: "Factures, CRM, trésorerie, IA — chaque outil communique avec les autres. Pas de double saisie, pas de perte de données.",
-              },
-              {
-                color: "#059669", bg: "#d1fae5",
-                icon: Brain,
-                title: "L'IA travaille pour vous",
-                desc: "Générez des devis, répondez aux avis, créez vos checklists, analysez vos finances — tout en quelques secondes grâce à Claude IA.",
-              },
-              {
-                color: GOLD, bg: `rgba(${GOLDR},0.12)`,
-                icon: Gem,
-                title: "Un prix juste et fixe",
-                desc: "11,90€/mois pour 48 outils, sans limite d'usage. Résiliable à tout moment. Aucune surprise sur votre facture.",
-              },
-            ] as const).map(({ color, bg, icon: Icon, title, desc }) => (
-              <motion.div key={title}
-                variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
-                className="group flex flex-col gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:-translate-y-1"
-                  style={{ background: bg }}>
-                  <Icon size={26} style={{ color }} strokeWidth={1.6} />
+            {/* Mockup droite — dashboard simulé */}
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }}
+              viewport={viewport} transition={{ duration: 0.55, ease, delay: 0.1 }}
+              className="overflow-hidden rounded-2xl border border-gray-100 bg-[#f8f9fb] shadow-lg">
+              {/* Barre titre */}
+              <div className="flex items-center gap-2 border-b border-gray-100 bg-white px-4 py-3">
+                <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+                <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                <span className="ml-2 text-[0.7rem] font-medium text-gray-400">djama.pro · Tableau de bord</span>
+              </div>
+              {/* Contenu mockup */}
+              <div className="p-4 space-y-3">
+                {/* KPIs row */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "CA du mois", val: "12 450 €", color: "#059669", up: "+18%" },
+                    { label: "Factures", val: "24", color: "#3b82f6", up: "en cours" },
+                    { label: "Clients", val: "87", color: "#7c3aed", up: "+3 ce mois" },
+                  ].map(k => (
+                    <div key={k.label} className="rounded-xl bg-white p-3 shadow-sm">
+                      <p className="text-[0.6rem] text-gray-400">{k.label}</p>
+                      <p className="text-[1rem] font-black" style={{ color: k.color }}>{k.val}</p>
+                      <p className="text-[0.58rem] font-semibold" style={{ color: k.color }}>{k.up}</p>
+                    </div>
+                  ))}
                 </div>
-                <h3 className="text-[1.05rem] font-black text-gray-900">{title}</h3>
-                <p className="text-[0.88rem] leading-relaxed text-gray-500">{desc}</p>
-                <Link href="/espace-client"
-                  className="mt-auto inline-flex items-center gap-1 text-[0.82rem] font-bold transition-colors"
-                  style={{ color }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.75"}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
-                  En savoir plus <ArrowRight size={12} />
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
+                {/* Barre graph simulée */}
+                <div className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="mb-2 text-[0.65rem] font-bold text-gray-600">Chiffre d&apos;affaires — 6 mois</p>
+                  <div className="flex items-end gap-1 h-16">
+                    {[40, 65, 45, 80, 70, 100].map((h, i) => (
+                      <div key={i} className="flex-1 rounded-t-md" style={{ height: `${h}%`, background: `linear-gradient(180deg,#7c3aed,#a78bfa)`, opacity: i === 5 ? 1 : 0.5 + i * 0.1 }} />
+                    ))}
+                  </div>
+                  <div className="mt-1 flex justify-between">
+                    {["Mar","Avr","Mai","Juin","Juil","Août"].map(m => (
+                      <span key={m} className="text-[0.55rem] text-gray-400">{m}</span>
+                    ))}
+                  </div>
+                </div>
+                {/* Liste factures */}
+                <div className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="mb-2 text-[0.65rem] font-bold text-gray-600">Dernières factures</p>
+                  <div className="space-y-1.5">
+                    {[
+                      { client: "Sarl Dupont", amt: "2 400 €", status: "Payée", color: "#059669" },
+                      { client: "Auto-École Martin", amt: "890 €", status: "En attente", color: "#f59e0b" },
+                      { client: "Créa Design", amt: "1 200 €", status: "En retard", color: "#ef4444" },
+                    ].map(f => (
+                      <div key={f.client} className="flex items-center justify-between">
+                        <span className="text-[0.68rem] font-medium text-gray-700">{f.client}</span>
+                        <span className="text-[0.68rem] font-black text-gray-900">{f.amt}</span>
+                        <span className="rounded-full px-2 py-0.5 text-[0.58rem] font-bold" style={{ background: f.color + "15", color: f.color }}>{f.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+           FEATURE 2 — "L'IA travaille pour vous"
+           style Odoo : mockup gauche + texte droite, fond gris
+      ══════════════════════════════════════════════════════ */}
+      <section className="bg-[#f4f5f7] py-20 sm:py-28">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="grid gap-14 sm:grid-cols-2 sm:items-center">
+
+            {/* Mockup IA gauche */}
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
+              viewport={viewport} transition={{ duration: 0.55, ease }}
+              className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg order-2 sm:order-1">
+              <div className="flex items-center gap-2 border-b border-gray-100 bg-[#0e1420] px-4 py-3">
+                <div className="h-2 w-2 rounded-full bg-white/20" />
+                <span className="text-[0.7rem] font-medium text-white/60">Assistant IA DJAMA</span>
+                <span className="ml-auto text-[0.6rem] rounded-full bg-green-500/20 text-green-400 px-2 py-0.5 font-bold">En ligne</span>
+              </div>
+              <div className="p-4 space-y-3">
+                {[
+                  { role: "user",      text: "Génère une réponse à cet avis négatif Google" },
+                  { role: "assistant", text: "Bonjour, merci pour votre retour. Nous sommes navrés de cette expérience et souhaitons y remédier rapidement. Pouvez-vous nous contacter en privé ?" },
+                  { role: "user",      text: "Crée une checklist d'ouverture de boutique" },
+                  { role: "assistant", text: "✅ Prête ! 8 étapes générées : Permis, Stock, Caisse, Personnel, Vitrine, Réseaux sociaux, Newsletter, Inauguration." },
+                ].map((m, i) => (
+                  <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[82%] rounded-2xl px-3 py-2 text-[0.72rem] leading-relaxed ${
+                      m.role === "user"
+                        ? "bg-[#7c3aed] text-white"
+                        : "bg-gray-100 text-gray-700"
+                    }`}>{m.text}</div>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                  <span className="flex-1 text-[0.7rem] text-gray-400">Demandez quelque chose…</span>
+                  <Zap size={12} className="text-purple-500" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Texte droite */}
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }}
+              viewport={viewport} transition={{ duration: 0.55, ease, delay: 0.1 }}
+              className="order-1 sm:order-2">
+              <h2 className="text-[2.4rem] leading-[1.12] text-gray-900 sm:text-[3rem]"
+                style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
+                Découvrez la vraie{" "}
+                <span style={{ color: GOLD, background: "linear-gradient(180deg,transparent 58%,rgba(201,165,90,0.38) 58%)", padding: "0 4px" }}>
+                  productivité
+                </span>
+              </h2>
+              <p className="mt-5 text-[0.95rem] leading-relaxed text-gray-500">
+                L&apos;IA intégrée génère vos documents, répond à vos clients, crée vos listes et analyse vos données — en quelques secondes.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {["Réponses avis Google en 1 clic", "Checklists générées par IA", "Analyse comptable automatique", "Assistant disponible 24h/24"].map(item => (
+                  <li key={item} className="flex items-center gap-2.5 text-[0.88rem] font-medium text-gray-700">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: `rgba(${GOLDR},0.15)` }}>
+                      <Check size={11} style={{ color: GOLD }} strokeWidth={2.5} />
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/espace-client"
+                className="mt-8 inline-flex items-center gap-1.5 text-[0.9rem] font-bold transition-opacity hover:opacity-70"
+                style={{ color: GOLD }}>
+                Essayer l&apos;IA DJAMA <ArrowRight size={14} />
+              </Link>
+            </motion.div>
+          </div>
         </div>
       </section>
 
