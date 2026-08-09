@@ -10,7 +10,7 @@ import {
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
   TrendingUp, Clock, AlertCircle, DollarSign, Settings2,
   PanelLeftClose, PanelLeftOpen,
-  Repeat2, PenLine, Upload, BellRing, Share2,
+  Repeat2, PenLine, Upload, BellRing, Share2, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -723,6 +723,9 @@ export default function FacturesPage() {
   const [confirmDel,   setConfirmDel]   = useState(false);
   const [showPreview,  setShowPreview]  = useState(false);
   const [sendingRelance, setSendingRelance] = useState(false);
+  const [showAiBox,    setShowAiBox]    = useState(false);
+  const [aiPrompt,     setAiPrompt]     = useState("");
+  const [aiLoading,    setAiLoading]    = useState(false);
 
   const [logoSize,     setLogoSize]     = useState<"sm"|"md"|"lg">(() =>
     typeof window !== "undefined" ? ((localStorage.getItem("pdf.logo_size") as "sm"|"md"|"lg") ?? "md") : "md");
@@ -961,6 +964,45 @@ export default function FacturesPage() {
   function removeItem(idx: number) {
     setItems(p => p.filter((_,i) => i !== idx).map((it,i) => ({ ...it, position:i })));
     setDirty(true);
+  }
+
+  async function handleAiGenerate() {
+    if (!aiPrompt.trim() || aiLoading) return;
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/assistant/generate-doc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      if (!res.ok) {
+        const err = await res.json() as { error?: string };
+        showToast("error", err.error ?? "Erreur IA");
+        return;
+      }
+      const { docData } = await res.json() as { docData: Record<string, unknown> };
+      const aiItems = (docData.items as Array<{ description: string; quantity: number; unit_price: number }> | undefined) ?? [];
+      if (aiItems.length === 0) { showToast("error", "Aucune ligne générée."); return; }
+      const newItems: DocItem[] = aiItems.map((it, i) => ({
+        ...EMPTY_ITEM(),
+        position:    i,
+        description: it.description ?? "",
+        quantity:    Number(it.quantity)   || 1,
+        unit_price:  Number(it.unit_price) || 0,
+      }));
+      setItems(newItems);
+      if (draft && !draft.sujet.trim() && typeof docData.subject === "string") {
+        updDraft("sujet", docData.subject);
+      }
+      setDirty(true);
+      setShowAiBox(false);
+      setAiPrompt("");
+      showToast("success", `${newItems.length} ligne${newItems.length > 1 ? "s" : ""} générée${newItems.length > 1 ? "s" : ""} par l'IA`);
+    } catch {
+      showToast("error", "Erreur lors de la génération IA.");
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   async function handleSave() {
@@ -2013,7 +2055,17 @@ export default function FacturesPage() {
                       <DInput label={draft.type === "facture" ? "Date d'échéance" : "Valable jusqu'au"} type="date" value={draft.date_echeance} onChange={v => updDraft("date_echeance", v)}/>
                       <DSelect label="Devise" value={draft.devise || "EUR"} onChange={v => updDraft("devise", v)} options={CURRENCIES.map(c => ({ val:c.val, label:c.val }))}/>
                     </div>
-                    <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
+                      </div>
+                      <button
+                        title="Générer l'intitulé avec l'IA"
+                        onClick={() => { setShowAiBox(true); setTimeout(() => document.getElementById("ai-prompt-input")?.focus(), 50); }}
+                        className="mt-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.07)] text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)]">
+                        <Sparkles size={13}/>
+                      </button>
+                    </div>
                   </div>
 
                   {/* ── Client ── */}
@@ -2057,7 +2109,48 @@ export default function FacturesPage() {
                         style={{ color:activeColor, borderColor:`${activeColor}44`, background:`${activeColor}11` }}>
                         <Plus size={10}/> Ajouter une ligne
                       </button>
+                      <button onClick={() => { setShowAiBox(v => !v); setTimeout(() => document.getElementById("ai-prompt-input")?.focus(), 50); }}
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.07)] px-2.5 py-1 text-[0.65rem] font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)]">
+                        <Sparkles size={10}/> IA
+                      </button>
                     </div>
+
+                    {/* ── IA : génération de lignes ── */}
+                    <AnimatePresence>
+                      {showAiBox && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.18 }}
+                          className="overflow-hidden"
+                        >
+                          <div className={`flex items-center gap-2 rounded-xl border ${isDark ? "border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.06)]" : "border-amber-200 bg-amber-50"} px-3 py-2.5`}>
+                            <Sparkles size={12} className="shrink-0 text-[#c9a55a]"/>
+                            <input
+                              id="ai-prompt-input"
+                              type="text"
+                              value={aiPrompt}
+                              onChange={e => setAiPrompt(e.target.value)}
+                              onKeyDown={e => { if (e.key === "Enter") void handleAiGenerate(); if (e.key === "Escape") setShowAiBox(false); }}
+                              placeholder="Ex : Développement site e-commerce, 3 500€ HT, TVA 20%…"
+                              className={`flex-1 bg-transparent text-[0.72rem] outline-none ${isDark ? "text-white placeholder:text-white/25" : "text-gray-700 placeholder:text-gray-400"}`}
+                            />
+                            <button
+                              onClick={() => void handleAiGenerate()}
+                              disabled={!aiPrompt.trim() || aiLoading}
+                              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#c9a55a] px-3 py-1.5 text-[0.65rem] font-bold text-white transition hover:bg-[#d4af6a] disabled:opacity-40">
+                              {aiLoading ? <Loader2 size={10} className="animate-spin"/> : <Sparkles size={10}/>}
+                              {aiLoading ? "Génération…" : "Générer"}
+                            </button>
+                            <button onClick={() => setShowAiBox(false)} className={`shrink-0 ${isDark ? "text-white/25 hover:text-white/50" : "text-gray-400 hover:text-gray-600"}`}>
+                              <X size={12}/>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                     {/* Column headers */}
                     <div className="mb-1 hidden grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] gap-1.5 px-3 sm:grid">
                       {["Description","Unité","Qté","Prix HT","Remise %","TVA %","Total HT",""].map(h => (
