@@ -2132,14 +2132,14 @@ export default function FacturesPage() {
                       {/* TVA breakdown by rate */}
                       {Array.from(totals.tvaByRate.entries())
                         .sort(([a],[b]) => a - b)
-                        .map(([rate, { ht, tva }]) => rate > 0 && (
+                        .map(([rate, { ht, tva }]) => rate > 0 && tva > 0 && (
                           <div key={rate} className="flex items-center justify-between">
                             <span className={`text-sm ${tw3}`}>TVA {rate}% <span className={`text-xs ${tw6}`}>(HT {fmt(ht)})</span></span>
                             <span className={`text-sm font-semibold ${tw2}`}>{fmt(tva)}</span>
                           </div>
                         ))
                       }
-                      {(totals.tvaByRate.size === 0 || !Array.from(totals.tvaByRate.keys()).some(r => r > 0)) && (
+                      {(totals.tvaByRate.size === 0 || !Array.from(totals.tvaByRate.entries()).some(([r, {tva}]) => r > 0 && tva > 0)) && (
                         <div className="flex items-center justify-between">
                           <span className={`text-sm ${tw3}`}>TVA</span>
                           <span className={`text-sm font-semibold ${tw2}`}>{fmt(totals.tva)}</span>
