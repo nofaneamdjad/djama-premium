@@ -10,7 +10,7 @@ import {
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
   TrendingUp, Clock, AlertCircle, DollarSign, Settings2,
   PanelLeftClose, PanelLeftOpen,
-  Repeat2, PenLine, Upload, BellRing, Share2, Sparkles,
+  Repeat2, PenLine, Upload, BellRing, Share2, Sparkles, Lock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -409,23 +409,31 @@ function StatutBadge({ statut }: { statut: DocStatut }) {
   );
 }
 
-function DInput({ label, value, onChange, placeholder, type="text", small }:
-  { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; small?:boolean }) {
-  const { iB, iBH, txt, lbl } = useInputTheme();
+function DInput({ label, value, onChange, placeholder, type="text", small, disabled, lockTitle }:
+  { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; small?:boolean; disabled?:boolean; lockTitle?:string }) {
+  const { iB, iBH, txt, lbl, isDark } = useInputTheme();
   const [focused, setFocused] = useState(false);
+  const disabledCls = disabled
+    ? (isDark ? "opacity-50 cursor-not-allowed bg-white/[0.02]" : "opacity-50 cursor-not-allowed bg-gray-100")
+    : "";
   const cls = small
-    ? `w-full rounded-lg ${iB} ${iBH} px-2.5 py-1.5 text-xs ${txt} outline-none transition`
-    : `w-full rounded-xl ${iB} ${iBH} focus:border-[rgba(201,165,90,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition`;
+    ? `w-full rounded-lg ${iB} ${disabled ? "" : iBH} px-2.5 py-1.5 text-xs ${txt} outline-none transition ${disabledCls}`
+    : `w-full rounded-xl ${iB} ${disabled ? "" : iBH} focus:border-[rgba(201,165,90,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition ${disabledCls}`;
   return (
-    <div>
+    <div title={disabled && lockTitle ? lockTitle : undefined}>
       {label && <label className={`mb-1 block text-[0.65rem] font-medium ${lbl}`}>{label}</label>}
       <div className="relative">
-        <motion.div animate={{ opacity: focused ? 1 : 0 }} transition={{ duration:0.15 }}
-          className="pointer-events-none absolute inset-0 rounded-xl"
-          style={{ boxShadow:"0 0 0 2px rgba(201,165,90,0.35)" }}/>
-        <input type={type} value={value} onChange={e => onChange(e.target.value)}
-          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-          placeholder={placeholder} className={cls}/>
+        {!disabled && (
+          <motion.div animate={{ opacity: focused ? 1 : 0 }} transition={{ duration:0.15 }}
+            className="pointer-events-none absolute inset-0 rounded-xl"
+            style={{ boxShadow:"0 0 0 2px rgba(201,165,90,0.35)" }}/>
+        )}
+        <input type={type} value={value} onChange={e => !disabled && onChange(e.target.value)}
+          onFocus={() => !disabled && setFocused(true)} onBlur={() => setFocused(false)}
+          placeholder={placeholder} readOnly={disabled} className={cls}/>
+        {disabled && (
+          <Lock size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-30"/>
+        )}
       </div>
     </div>
   );
@@ -973,6 +981,8 @@ export default function FacturesPage() {
   }
 
   function updDraft(k: keyof DraftDoc, v: string|number) {
+    // Numéro immuable après émission (conformité légale)
+    if (k === "numero" && draft?.statut !== "brouillon") return;
     setDraft(d => d ? { ...d, [k]: v } : d);
     setDirty(true);
   }
@@ -2161,7 +2171,9 @@ export default function FacturesPage() {
                   <div className="space-y-3">
                     <SectionLabel icon={<FileText size={10}/>} label="Informations du document"/>
                     <div className="grid grid-cols-2 gap-3">
-                      <DInput label="Numéro" value={draft.numero} onChange={v => updDraft("numero", v)} placeholder="FAC-2026-001"/>
+                      <DInput label="Numéro" value={draft.numero} onChange={v => updDraft("numero", v)} placeholder="FAC-2026-001"
+                        disabled={draft.statut !== "brouillon"}
+                        lockTitle="Numéro verrouillé — une facture émise ne peut plus être modifiée (conformité légale)"/>
                       <DInput label="Date d'émission" type="date" value={draft.date_document} onChange={v => updDraft("date_document", v)}/>
                       <DInput label={draft.type === "facture" ? "Date d'échéance" : "Valable jusqu'au"} type="date" value={draft.date_echeance} onChange={v => updDraft("date_echeance", v)}/>
                       <DSelect label="Devise" value={draft.devise || "EUR"} onChange={v => updDraft("devise", v)} options={CURRENCIES.map(c => ({ val:c.val, label:c.val }))}/>
