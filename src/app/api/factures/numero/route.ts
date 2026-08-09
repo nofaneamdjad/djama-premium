@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { type } = await req.json() as { type: "facture" | "devis" };
-  if (type !== "facture" && type !== "devis") {
+  const { type } = await req.json() as { type: "facture" | "devis" | "avoir" };
+  if (type !== "facture" && type !== "devis" && type !== "avoir") {
     return NextResponse.json({ error: "type invalide" }, { status: 400 });
   }
 
-  const prefix = type === "facture" ? "FAC" : "DEV";
+  const prefix = type === "facture" ? "FAC" : type === "avoir" ? "AVO" : "DEV";
   const year   = new Date().getFullYear();
 
   const { data: docs } = await supabaseAdmin

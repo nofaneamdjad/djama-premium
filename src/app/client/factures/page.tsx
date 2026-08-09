@@ -26,7 +26,7 @@ import type { CompanySettings } from "@/lib/pdf/companySettings";
 import { usePagination } from "@/hooks/usePagination";
 import { useTheme } from "@/lib/theme-context";
 
-type DocType   = "facture" | "devis";
+type DocType   = "facture" | "devis" | "avoir";
 type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard";
 
 interface DocItem {
@@ -86,6 +86,7 @@ interface Document {
   created_at:       string;
   updated_at:       string;
   share_token?:     string;
+  source_id?:       string | null;
   signed_at?:       string;
   signed_by?:       string;
   signature_data?:  string | null;
@@ -128,6 +129,13 @@ const STATUTS: Record<DocStatut,{label:string;color:string;bg:string;border:stri
   payé:      { label:"Payé",      color:"#4ade80", bg:"rgba(34,197,94,0.1)",   border:"rgba(34,197,94,0.25)",   Icon:BadgeCheck    },
   en_retard: { label:"En retard", color:"#f87171", bg:"rgba(239,68,68,0.1)",   border:"rgba(239,68,68,0.25)",   Icon:AlertTriangle },
 };
+
+const DOC_TYPE_LABELS: Record<DocType, string> = {
+  facture: "Facture",
+  devis:   "Devis",
+  avoir:   "Avoir",
+};
+const AVOIR_BADGE = { color:"#f472b6", bg:"rgba(244,114,182,0.1)", border:"rgba(244,114,182,0.3)" };
 
 const COLOR_PRESETS = [
   { hex:"#c9a55a", label:"Or DJAMA" },
@@ -211,7 +219,7 @@ function calcTotals(items: DocItem[], globalRemise = 0, acompte = 0) {
 }
 
 function newNumero(type: DocType, docs: Document[]): string {
-  const prefix = type === "facture" ? "FAC" : "DEV";
+  const prefix = type === "facture" ? "FAC" : type === "avoir" ? "AVO" : "DEV";
   const year   = new Date().getFullYear();
   const yearDocs = docs.filter(d => d.type === type && d.numero?.includes(String(year)));
   const nums = yearDocs
@@ -361,8 +369,8 @@ async function exportPDFWithTemplate(
 
 function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnType<typeof calcTotals>, lSize: "sm"|"md"|"lg" = "md"): PreviewData {
   return {
-    type:           draft.type === "facture" ? "invoice" : "quote",
-    reference:      draft.numero || (draft.type === "facture" ? "FAC-2026-001" : "DEV-2026-001"),
+    type:           draft.type === "devis" ? "quote" : "invoice",
+    reference:      draft.numero || (draft.type === "facture" ? "FAC-2026-001" : draft.type === "avoir" ? "AVO-2026-001" : "DEV-2026-001"),
     issue_date:     draft.date_document,
     due_date:       draft.date_echeance || null,
     client_name:    draft.client_nom   || "Client",
@@ -995,6 +1003,81 @@ export default function FacturesPage() {
   function removeItem(idx: number) {
     setItems(p => p.filter((_,i) => i !== idx).map((it,i) => ({ ...it, position:i })));
     setDirty(true);
+  }
+
+  async function newAvoir(sourceDoc: Document) {
+    if (!uid) return;
+    setConverting(true);
+    try {
+      // Charger les lignes de la facture source
+      const { data: srcItems } = await supabase
+        .from("document_items")
+        .select("*")
+        .eq("document_id", sourceDoc.id)
+        .order("position");
+      const avoirNum = newNumero("avoir", documents);
+      const { data: avoirDoc, error } = await supabase.from("documents").insert({
+        user_id:           uid,
+        type:              "avoir",
+        numero:            avoirNum,
+        statut:            "brouillon",
+        source_id:         sourceDoc.id,
+        sujet:             `Avoir sur facture ${sourceDoc.numero}`,
+        emetteur_nom:      sourceDoc.emetteur_nom,
+        emetteur_email:    sourceDoc.emetteur_email,
+        emetteur_adresse:  sourceDoc.emetteur_adresse,
+        emetteur_ville:    sourceDoc.emetteur_ville,
+        emetteur_code_postal: sourceDoc.emetteur_code_postal,
+        emetteur_pays:     sourceDoc.emetteur_pays,
+        emetteur_siret:    sourceDoc.emetteur_siret,
+        emetteur_tva:      sourceDoc.emetteur_tva,
+        emetteur_logo:     sourceDoc.emetteur_logo,
+        client_nom:        sourceDoc.client_nom,
+        client_societe:    sourceDoc.client_societe,
+        client_email:      sourceDoc.client_email,
+        client_telephone:  sourceDoc.client_telephone,
+        client_adresse:    sourceDoc.client_adresse,
+        client_ville:      sourceDoc.client_ville,
+        client_code_postal: sourceDoc.client_code_postal,
+        client_pays:       sourceDoc.client_pays,
+        client_tva:        sourceDoc.client_tva,
+        date_document:     new Date().toISOString().slice(0, 10),
+        devise:            sourceDoc.devise || "EUR",
+        couleur:           sourceDoc.couleur || "#c9a55a",
+        template:          sourceDoc.template || "modern",
+        notes:             `Avoir relatif à la facture ${sourceDoc.numero} du ${fmtDate(sourceDoc.date_document)}.`,
+        conditions:        "",
+        mentions_legales:  "",
+        remise_pct:        0,
+        acompte:           0,
+        total_ht:          sourceDoc.total_ht,
+        total_tva:         sourceDoc.total_tva,
+        total_ttc:         sourceDoc.total_ttc,
+      }).select().single();
+      if (error || !avoirDoc) { showToast("error", "Erreur création avoir."); return; }
+      if ((srcItems ?? []).length > 0) {
+        await supabase.from("document_items").insert(
+          (srcItems as DocItem[]).map((it, i) => ({
+            document_id:     (avoirDoc as Document).id,
+            position:        i,
+            description:     it.description,
+            sub_description: it.sub_description || "",
+            unit:            it.unit || "",
+            quantity:        it.quantity,
+            unit_price:      it.unit_price,
+            vat_rate:        it.vat_rate ?? 20,
+            remise_pct:      it.remise_pct ?? 0,
+          }))
+        );
+      }
+      await fetchDocs();
+      openDoc(avoirDoc as Document);
+      showToast("success", `Avoir ${avoirNum} créé`);
+    } catch {
+      showToast("error", "Erreur lors de la création de l'avoir.");
+    } finally {
+      setConverting(false);
+    }
   }
 
   async function handleAiGenerate() {
@@ -1842,10 +1925,10 @@ export default function FacturesPage() {
             </div>
             {/* Type filter */}
             <div className="flex gap-1.5">
-              {(["tous","facture","devis"] as const).map(t => (
+              {(["tous","facture","devis","avoir"] as const).map(t => (
                 <button key={t} onClick={() => setFilterType(t)}
                   className={`rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${filterType === t ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600")}`}>
-                  {t === "tous" ? "Tous" : t === "facture" ? "Factures" : "Devis"}
+                  {t === "tous" ? "Tous" : t === "facture" ? "Factures" : t === "devis" ? "Devis" : "Avoirs"}
                 </button>
               ))}
               <div className="ml-auto flex items-center gap-1">
@@ -1919,9 +2002,13 @@ export default function FacturesPage() {
                         {doc.sujet && <p className={`mt-0.5 text-[0.72rem] truncate ${tw2}`}>{doc.sujet}</p>}
                         {/* Ligne 3 : badges + date */}
                         <div className="mt-2 flex items-center gap-2">
-                          <span className={`rounded-full px-2 py-0.5 text-[0.55rem] font-extrabold uppercase tracking-widest ${
-                            doc.type === "facture" ? "bg-[rgba(201,165,90,0.12)] text-[#c9a55a]" : "bg-[rgba(59,130,246,0.12)] text-blue-400"}`}>
-                            {doc.type}
+                          <span className="rounded-full px-2 py-0.5 text-[0.55rem] font-extrabold uppercase tracking-widest"
+                            style={doc.type === "facture"
+                              ? { background:"rgba(201,165,90,0.12)", color:"#c9a55a" }
+                              : doc.type === "avoir"
+                              ? { background: AVOIR_BADGE.bg, color: AVOIR_BADGE.color, border:`1px solid ${AVOIR_BADGE.border}` }
+                              : { background:"rgba(59,130,246,0.12)", color:"#60a5fa" }}>
+                            {DOC_TYPE_LABELS[doc.type]}
                           </span>
                           <StatutBadge statut={doc.statut}/>
                           <span className={`ml-auto text-[0.6rem] ${tw6}`}>{fmtDate(doc.date_document)}</span>
@@ -2068,6 +2155,14 @@ export default function FacturesPage() {
                     <button onClick={handleConvert} disabled={converting}
                       className={`hidden items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400 disabled:opacity-40 sm:flex`}>
                       {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
+                    </button>
+                  )}
+                  {selected?.type === "facture" && (selected.statut === "envoyé" || selected.statut === "payé") && (
+                    <button onClick={() => newAvoir(selected)} disabled={converting}
+                      title="Créer un avoir (note de crédit) pour cette facture"
+                      className="hidden items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition disabled:opacity-40 sm:flex"
+                      style={{ borderColor: AVOIR_BADGE.border, color: AVOIR_BADGE.color, background: AVOIR_BADGE.bg }}>
+                      {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Avoir
                     </button>
                   )}
                   {selected && (
@@ -2507,6 +2602,13 @@ export default function FacturesPage() {
                       <button onClick={handleConvert} disabled={converting}
                         className="flex items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-400/10 disabled:opacity-40">
                         {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
+                      </button>
+                    )}
+                    {selected?.type === "facture" && (selected.statut === "envoyé" || selected.statut === "payé") && (
+                      <button onClick={() => newAvoir(selected)} disabled={converting}
+                        className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition disabled:opacity-40"
+                        style={{ borderColor: AVOIR_BADGE.border, color: AVOIR_BADGE.color, background: AVOIR_BADGE.bg }}>
+                        {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Avoir
                       </button>
                     )}
                     {selected && (
