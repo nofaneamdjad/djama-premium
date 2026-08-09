@@ -10,7 +10,7 @@ import {
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
   TrendingUp, Clock, AlertCircle, DollarSign, Settings2,
   PanelLeftClose, PanelLeftOpen,
-  Repeat2, PenLine, Upload, BellRing, Share2, Sparkles, Lock,
+  Repeat2, PenLine, Upload, BellRing, Share2, Sparkles, Lock, BookmarkPlus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -39,6 +39,14 @@ interface DocItem {
   unit_price:      number;
   vat_rate:        number;
   remise_pct:      number;
+}
+
+interface CatalogItem {
+  id:          string;
+  description: string;
+  unit:        string;
+  unit_price:  number;
+  vat_rate:    number;
 }
 
 interface Document {
@@ -557,8 +565,9 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
 }
 
 /** Textarea qui grandit automatiquement avec son contenu */
-function DAutoGrow({ value, onChange, placeholder }: {
+function DAutoGrow({ value, onChange, placeholder, onFocus, onBlur }: {
   value: string; onChange: (v: string) => void; placeholder?: string;
+  onFocus?: () => void; onBlur?: () => void;
 }) {
   const { iB, iBH, txt } = useInputTheme();
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -573,6 +582,8 @@ function DAutoGrow({ value, onChange, placeholder }: {
       rows={1}
       value={value}
       onChange={e => onChange(e.target.value)}
+      onFocus={onFocus}
+      onBlur={onBlur}
       placeholder={placeholder}
       style={{ resize: "none", overflow: "auto", minHeight: "28px", maxHeight: "72px" }}
       className={`w-full rounded-lg ${iB} ${iBH} px-2.5 py-1.5 text-xs ${txt} outline-none transition`}
@@ -581,13 +592,21 @@ function DAutoGrow({ value, onChange, placeholder }: {
 }
 
 /** Ligne de prestation — composant séparé pour pouvoir utiliser useState (subs) */
-function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise }: {
+function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise, catalogItems, onSaveToCatalog }: {
   it: DocItem; idx: number; totalItems: number;
   updItem: (i: number, k: keyof DocItem, v: string|number) => void;
   removeItem: (i: number) => void;
   activeColor: string; devise: string;
+  catalogItems: CatalogItem[];
+  onSaveToCatalog: (item: DocItem) => void;
 }) {
   const { isDark } = useTheme();
+  const [showSugg, setShowSugg] = useState(false);
+  const suggestions = useMemo(() => {
+    if (it.description.length < 2) return [];
+    const q = it.description.toLowerCase();
+    return catalogItems.filter(c => c.description.toLowerCase().includes(q)).slice(0, 6);
+  }, [it.description, catalogItems]);
   // État local pour les sous-descriptions (évite le bug join [""] = "")
   const [subs, setSubs] = useState<string[]>(() =>
     it.sub_description ? it.sub_description.split("\n") : []
@@ -615,10 +634,39 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
       transition={{ duration:0.2, ease }}
       className={`group rounded-xl border px-3 py-2.5 space-y-2 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
 
-      {/* Ligne 1 : description + bouton supprimer */}
+      {/* Ligne 1 : description + boutons */}
       <div className="flex items-start gap-2">
         <div className="flex-1 space-y-1">
-          <DAutoGrow value={it.description} onChange={v => updItem(idx,"description", v.replace(/\n/g, " "))} placeholder="Description de la prestation"/>
+          <div className="relative">
+            <DAutoGrow
+              value={it.description}
+              onChange={v => { updItem(idx,"description", v.replace(/\n/g, " ")); setShowSugg(true); }}
+              onFocus={() => setShowSugg(true)}
+              onBlur={() => setTimeout(() => setShowSugg(false), 200)}
+              placeholder="Description de la prestation"
+            />
+            {showSugg && suggestions.length > 0 && (
+              <div className={`absolute left-0 top-full z-50 mt-0.5 w-full overflow-hidden rounded-xl border shadow-xl ${isDark ? "border-white/10 bg-[#14142a]" : "border-gray-200 bg-white"}`}>
+                {suggestions.map(s => (
+                  <button key={s.id}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => {
+                      updItem(idx, "description", s.description);
+                      updItem(idx, "unit", s.unit);
+                      updItem(idx, "unit_price", s.unit_price);
+                      updItem(idx, "vat_rate", s.vat_rate);
+                      setShowSugg(false);
+                    }}
+                    className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs transition ${isDark ? "hover:bg-white/[0.06] text-white/70" : "hover:bg-gray-50 text-gray-700"}`}>
+                    <span className="truncate font-medium">{s.description}</span>
+                    <span className={`shrink-0 text-[0.6rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                      {s.unit_price > 0 ? `${s.unit_price} €` : ""}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {subs.map((line, li) => (
             <div key={li} className="flex items-center gap-1 opacity-60">
               <DInput small value={line}
@@ -635,10 +683,18 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
             <Plus size={8}/> sous-description
           </button>
         </div>
-        <button onClick={() => removeItem(idx)} disabled={totalItems === 1}
-          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-red-500/15 text-red-400/40 transition hover:border-red-500/35 hover:text-red-400 disabled:opacity-20 opacity-0 group-hover:opacity-100">
-          <Trash2 size={10}/>
-        </button>
+        <div className="flex gap-1">
+          <button
+            onClick={() => onSaveToCatalog(it)}
+            title="Enregistrer dans le catalogue"
+            className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-amber-500/15 text-amber-400/40 transition hover:border-amber-500/35 hover:text-amber-400 opacity-0 group-hover:opacity-100 ${!it.description.trim() ? "invisible" : ""}`}>
+            <BookmarkPlus size={10}/>
+          </button>
+          <button onClick={() => removeItem(idx)} disabled={totalItems === 1}
+            className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-red-500/15 text-red-400/40 transition hover:border-red-500/35 hover:text-red-400 disabled:opacity-20 opacity-0 group-hover:opacity-100">
+            <Trash2 size={10}/>
+          </button>
+        </div>
       </div>
 
       {/* Ligne 2 : champs numériques — 2 lignes sur mobile, 1 ligne sur desktop */}
@@ -808,6 +864,9 @@ export default function FacturesPage() {
   // ── Paramètres entreprise (pré-remplissage) ───────────────────────────────
   const [companyDefaults, setCompanyDefaults] = useState<CompanySettings | null>(null);
 
+  // ── Catalogue articles ────────────────────────────────────────────────────
+  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
+
   const totals = useMemo(
     () => calcTotals(items, draft?.remise_pct ?? 0, draft?.acompte ?? 0),
     [items, draft?.remise_pct, draft?.acompte]
@@ -872,6 +931,13 @@ export default function FacturesPage() {
   // Charger les paramètres entreprise pour pré-remplissage
   useEffect(() => { fetchCompanySettings().then(setCompanyDefaults); }, []);
 
+  // Charger le catalogue d'articles
+  useEffect(() => {
+    fetch("/api/catalog").then(r => r.json()).then(({ items }) => {
+      if (Array.isArray(items)) setCatalogItems(items);
+    }).catch(() => {});
+  }, []);
+
   // Avertir si l'utilisateur quitte la page avec des modifications non sauvegardées
   useEffect(() => {
     if (!dirty) return;
@@ -906,6 +972,28 @@ export default function FacturesPage() {
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
+
+  const saveToCatalog = useCallback(async (item: DocItem) => {
+    if (!item.description.trim()) return;
+    try {
+      const res = await fetch("/api/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: item.description.trim(),
+          unit: item.unit || "",
+          unit_price: item.unit_price || 0,
+          vat_rate: item.vat_rate || 20,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const { item: newItem } = await res.json();
+      setCatalogItems(prev => [newItem, ...prev]);
+      showToast("success", "Article enregistré dans le catalogue");
+    } catch {
+      showToast("error", "Impossible d'enregistrer dans le catalogue");
+    }
+  }, []);
 
   async function openDoc(doc: Document) {
     setSelected(doc);
@@ -2386,6 +2474,8 @@ export default function FacturesPage() {
                             removeItem={removeItem}
                             activeColor={activeColor}
                             devise={draft.devise || "EUR"}
+                            catalogItems={catalogItems}
+                            onSaveToCatalog={saveToCatalog}
                           />
                         ))}
                       </AnimatePresence>
