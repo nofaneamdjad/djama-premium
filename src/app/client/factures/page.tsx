@@ -722,7 +722,9 @@ export default function FacturesPage() {
   const [sidebarOpen,  setSidebarOpen]  = useState(true);
   const [confirmDel,   setConfirmDel]   = useState(false);
   const [showPreview,  setShowPreview]  = useState(false);
-  const [sendingRelance, setSendingRelance] = useState(false);
+  const [sendingRelance,   setSendingRelance]   = useState(false);
+  const [isRelanceModal,   setIsRelanceModal]   = useState(false);
+  const [relanceAiLoading, setRelanceAiLoading] = useState(false);
   const [showAiBox,    setShowAiBox]    = useState(false);
   const [aiPrompt,     setAiPrompt]     = useState("");
   const [aiLoading,    setAiLoading]    = useState(false);
@@ -1277,6 +1279,7 @@ export default function FacturesPage() {
 
   function openEmailModal() {
     if (!draft || !selected) return;
+    setIsRelanceModal(false);
     setEmailTo(draft.client_email || "");
     setEmailSubject(`${draft.type === "facture" ? "Facture" : "Devis"} ${draft.numero} — ${draft.emetteur_nom || "DJAMA"}`);
     setEmailMsg(`Bonjour ${draft.client_nom || ""},\n\nVeuillez trouver ci-joint votre ${draft.type === "facture" ? "facture" : "devis"}.\n\nCordialement,\n${draft.emetteur_nom || "DJAMA"}`);
@@ -1288,6 +1291,7 @@ export default function FacturesPage() {
     const daysLate = draft.date_echeance
       ? Math.floor((Date.now() - new Date(draft.date_echeance).getTime()) / 86_400_000)
       : 0;
+    setIsRelanceModal(true);
     setEmailTo(draft.client_email || "");
     setEmailSubject(`Relance paiement — Facture ${draft.numero} — ${draft.emetteur_nom || "DJAMA"}`);
     setEmailMsg(
@@ -1298,6 +1302,36 @@ export default function FacturesPage() {
       `.\n\nPourriez-vous nous confirmer la date de règlement ou nous indiquer si vous avez besoin d'informations complémentaires ?\n\nCordialement,\n${draft.emetteur_nom || "DJAMA"}`
     );
     setEmailModal(true);
+  }
+
+  async function handleAiRelance() {
+    if (!draft || !selected || relanceAiLoading) return;
+    const daysLate = draft.date_echeance
+      ? Math.floor((Date.now() - new Date(draft.date_echeance).getTime()) / 86_400_000)
+      : 0;
+    setRelanceAiLoading(true);
+    try {
+      const res = await fetch("/api/assistant/relance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: draft.type,
+          id: selected.id,
+          client_name: draft.client_nom || "Client",
+          reference: draft.numero,
+          amount: totals.ttc,
+          days: Math.max(0, daysLate),
+        }),
+      });
+      if (!res.ok) throw new Error("Erreur IA");
+      const data = await res.json() as { subject?: string; message?: string };
+      if (data.subject) setEmailSubject(data.subject);
+      if (data.message) setEmailMsg(data.message);
+    } catch {
+      showToast("error", "Impossible de générer le message de relance.");
+    } finally {
+      setRelanceAiLoading(false);
+    }
   }
 
   async function handleSendEmail() {
@@ -1582,13 +1616,35 @@ export default function FacturesPage() {
         const daysLate = doc.date_echeance
           ? Math.floor((Date.now() - new Date(doc.date_echeance).getTime()) / 86_400_000)
           : 0;
+        // Générer le message IA — fallback statique si l'appel échoue
+        let subject = `Relance paiement — Facture ${doc.numero}`;
+        let message = `Bonjour ${doc.client_nom || ""},\n\nSauf erreur, nous n'avons pas reçu le règlement de la facture ${doc.numero} d'un montant de ${fmtEur(doc.total_ttc)}${daysLate > 0 ? `, en retard de ${daysLate} jour${daysLate > 1 ? "s" : ""}` : ""}.\n\nMerci de procéder au règlement dans les meilleurs délais.\n\nCordialement`;
+        try {
+          const aiRes = await fetch("/api/assistant/relance", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "facture",
+              id: doc.id,
+              client_name: doc.client_nom || "Client",
+              reference: doc.numero,
+              amount: doc.total_ttc,
+              days: Math.max(0, daysLate),
+            }),
+          });
+          if (aiRes.ok) {
+            const aiData = await aiRes.json() as { subject?: string; message?: string };
+            if (aiData.subject) subject = aiData.subject;
+            if (aiData.message) message = aiData.message;
+          }
+        } catch { /* fallback statique */ }
+
         const res = await fetch("/api/factures/email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             document_id: doc.id, to_email: doc.client_email, to_name: doc.client_nom,
-            subject: `Relance paiement — Facture ${doc.numero}`,
-            message: `Bonjour ${doc.client_nom || ""},\n\nSauf erreur, nous n'avons pas reçu le règlement de la facture ${doc.numero} d'un montant de ${fmtEur(doc.total_ttc)}${daysLate > 0 ? `, en retard de ${daysLate} jour${daysLate > 1 ? "s" : ""}` : ""}.\n\nMerci de procéder au règlement dans les meilleurs délais.\n\nCordialement`,
+            subject, message,
           }),
         });
         if (res.ok) sent++;
@@ -2584,7 +2640,19 @@ export default function FacturesPage() {
                     <p className="text-[0.65rem] text-white/30">{draft?.numero}</p>
                   </div>
                 </div>
-                <button onClick={() => setEmailModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+                <div className="flex items-center gap-2">
+                  {isRelanceModal && (
+                    <button
+                      onClick={() => void handleAiRelance()}
+                      disabled={relanceAiLoading}
+                      title="Générer un message de relance avec l'IA"
+                      className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.07)] px-2.5 py-1.5 text-[0.65rem] font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)] disabled:opacity-50">
+                      {relanceAiLoading ? <Loader2 size={10} className="animate-spin"/> : <Sparkles size={10}/>}
+                      {relanceAiLoading ? "IA…" : "IA"}
+                    </button>
+                  )}
+                  <button onClick={() => setEmailModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+                </div>
               </div>
               <div className="space-y-3">
                 <div>
