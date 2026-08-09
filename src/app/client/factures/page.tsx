@@ -810,6 +810,25 @@ export default function FacturesPage() {
     [documents]
   );
 
+  const caByMonth = useMemo(() => {
+    const now = new Date();
+    const months: { key: string; label: string; ca: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
+      months.push({ key, label, ca: 0 });
+    }
+    documents
+      .filter(d => d.type === "facture" && d.statut === "payé" && d.date_document)
+      .forEach(d => {
+        const key = d.date_document.slice(0, 7);
+        const m = months.find(mo => mo.key === key);
+        if (m) m.ca += d.total_ttc || 0;
+      });
+    return months;
+  }, [documents]);
+
   const fetchDocs = useCallback(async () => {
     setLoadingAll(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -1766,6 +1785,42 @@ export default function FacturesPage() {
               ))}
             </div>
           )}
+
+          {/* CA mensuel chart */}
+          {documents.length > 0 && caByMonth.some(m => m.ca > 0) && (() => {
+            const maxCA  = Math.max(...caByMonth.map(m => m.ca), 1);
+            const W = 300; const H = 68; const BAR_W = 32; const GAP = (W - 6 * BAR_W) / 7;
+            const currentKey = new Date().toISOString().slice(0, 7);
+            return (
+              <div className={`border-b ${tbd2} px-3 pb-2 pt-2.5`}>
+                <p className={`mb-1.5 text-[0.55rem] font-bold uppercase tracking-[0.09em] ${tw5}`}>CA encaissé — 6 mois</p>
+                <svg viewBox={`0 0 ${W} ${H + 14}`} width="100%" style={{ display:"block" }}>
+                  {caByMonth.map((m, i) => {
+                    const barH  = m.ca > 0 ? Math.max(4, Math.round((m.ca / maxCA) * H)) : 2;
+                    const x     = GAP + i * (BAR_W + GAP);
+                    const y     = H - barH;
+                    const isCur = m.key === currentKey;
+                    const color = isCur ? "#4ade80" : (isDark ? "rgba(74,222,128,0.45)" : "rgba(34,197,94,0.45)");
+                    const textCol = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)";
+                    return (
+                      <g key={m.key}>
+                        <title>{m.label} {m.key.slice(0,4)} — {fmtEur(m.ca)}</title>
+                        <rect x={x} y={y} width={BAR_W} height={barH} rx={4} fill={color}/>
+                        {isCur && m.ca > 0 && (
+                          <text x={x + BAR_W / 2} y={y - 3} textAnchor="middle" fontSize={8} fill="#4ade80" fontWeight="700">
+                            {fmtEur(m.ca)}
+                          </text>
+                        )}
+                        <text x={x + BAR_W / 2} y={H + 11} textAnchor="middle" fontSize={8.5} fill={textCol} fontWeight={isCur ? "700" : "500"}>
+                          {m.label}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            );
+          })()}
 
           {/* Search + filter */}
           <div className={`space-y-2.5 border-b ${tbd2} p-4`}>
