@@ -1707,7 +1707,7 @@ export default function FacturesPage() {
       <div className={`shrink-0 border-b px-5 py-4 backdrop-blur-xl sm:px-8 ${headerCls}`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={ReceiptText} color="#2563eb" />
+            <ModuleHeaderIcon icon={ReceiptText} color="#c9a55a" />
             <div>
               <h1 className={`text-base font-extrabold ${tw1}`}>Factures & Devis</h1>
               <p className={`text-[0.65rem] ${tw4}`}>{documents.length} document{documents.length !== 1 ? "s" : ""}</p>
