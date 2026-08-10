@@ -1,7 +1,12 @@
 /**
  * GET /api/relances/cron
- * Appelé tous les jours à 9h par Vercel Cron.
- * Scan les factures en retard → génère un message de relance via Claude Haiku → envoie via Resend.
+ * Appelé tous les jours ouvrés à 9h par Vercel Cron (vercel.json).
+ *
+ * Logique anti-spam :
+ *   - Seuls les utilisateurs avec relance_config.enabled = true sont traités.
+ *   - Pour chaque facture en retard, on calcule les jours de retard.
+ *   - On envoie uniquement pour les seuils (delays) pas encore dans relance_log.
+ *   - Chaque envoi est enregistré dans relance_log → jamais deux fois le même seuil.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }              from "@supabase/supabase-js";
@@ -75,6 +80,14 @@ function relanceHtml(d: {
 </table></body></html>`;
 }
 
+/** Renvoie le plus petit seuil de delays[] qui est ≤ daysOverdue et pas encore dans sentDelays */
+function nextThreshold(delays: number[], daysOverdue: number, sentDelays: Set<number>): number | null {
+  for (const d of delays) {
+    if (d <= daysOverdue && !sentDelays.has(d)) return d;
+  }
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   /* ── Sécurité cron ── */
   const secret = req.headers.get("x-cron-secret");
@@ -82,20 +95,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today   = new Date().toISOString().slice(0, 10);
+  const todayMs = new Date(today).getTime();
 
-  /* ── Récupère les factures en retard ou envoyées avec date dépassée ── */
-  const { data: docs, error: dbErr } = await supabase
-    .from("documents")
-    .select("id, numero, client_nom, client_email, total_ttc, date_echeance, statut, emetteur_nom")
-    .eq("type", "facture")
-    .in("statut", ["en_retard", "envoyé"])
-    .not("client_email", "is", null)
-    .neq("client_email", "");
+  /* ── Charge les configs utilisateur activées ── */
+  const { data: configs, error: cfgErr } = await supabase
+    .from("relance_config")
+    .select("user_id, delays, email_cc")
+    .eq("enabled", true);
 
-  if (dbErr) {
-    log.error("DB fetch error", dbErr);
-    return NextResponse.json({ error: dbErr.message }, { status: 500 });
+  if (cfgErr) {
+    log.error("Config fetch error", cfgErr);
+    return NextResponse.json({ error: cfgErr.message }, { status: 500 });
+  }
+  if (!configs?.length) {
+    return NextResponse.json({ sent: 0, skipped: 0, users: 0, date: today });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -103,83 +117,129 @@ export async function GET(req: NextRequest) {
   let   sent    = 0;
   let   skipped = 0;
 
-  for (const doc of (docs ?? [])) {
-    /* ── Calcul des jours de retard ── */
-    if (!doc.date_echeance) { skipped++; continue; }
+  for (const cfg of configs) {
+    const delays: number[] = Array.isArray(cfg.delays) ? cfg.delays : [7, 14, 30];
 
-    const dueMs  = new Date(doc.date_echeance).getTime();
-    const todayMs = new Date(today).getTime();
-    const days   = Math.floor((todayMs - dueMs) / 86_400_000);
+    /* ── Factures en retard ou envoyées pour cet utilisateur ── */
+    const { data: docs } = await supabase
+      .from("documents")
+      .select("id, numero, client_nom, client_email, total_ttc, date_echeance, statut, emetteur_nom")
+      .eq("type", "facture")
+      .eq("user_id", cfg.user_id)
+      .in("statut", ["en_retard", "envoyé"])
+      .not("client_email", "is", null)
+      .neq("client_email", "");
 
-    if (days < 0) { skipped++; continue; }             // Pas encore échu
-    if (doc.statut === "envoyé" && days < 3) { skipped++; continue; } // Grâce 3j
+    if (!docs?.length) continue;
 
-    if (!apiKey || !resend) { skipped++; continue; }
+    /* ── Log existant pour ces documents ── */
+    const docIds = docs.map(d => d.id as string);
+    const { data: logEntries } = await supabase
+      .from("relance_log")
+      .select("document_id, delay_days")
+      .eq("user_id", cfg.user_id)
+      .in("document_id", docIds);
 
-    try {
-      /* ── Génère le message via Claude ── */
-      const tone = days >= 30 ? "formel — mise en demeure amiable"
-                 : days >= 15 ? "ferme et clair"
-                              : "amical et compréhensif";
+    /* Construit une map docId → Set<delay_days> */
+    const sentMap = new Map<string, Set<number>>();
+    for (const entry of (logEntries ?? [])) {
+      const id = entry.document_id as string;
+      if (!sentMap.has(id)) sentMap.set(id, new Set());
+      sentMap.get(id)!.add(entry.delay_days as number);
+    }
 
-      const prompt = [
-        `Type de relance : facture impayée`,
-        `Client          : ${doc.client_nom}`,
-        `Référence       : ${doc.numero}`,
-        `Montant         : ${(doc.total_ttc as number).toFixed(2)} €`,
-        `Jours de retard : J+${days}`,
-        `Ton requis      : ${tone}`,
-        ``,
-        `Génère l'objet et le corps du message. JSON uniquement.`,
-      ].join("\n");
+    for (const doc of docs) {
+      if (!doc.date_echeance) { skipped++; continue; }
 
-      const ai = new Anthropic({ apiKey, maxRetries: 0, timeout: 15_000 });
-      const res = await ai.messages.create({
-        model:      "claude-haiku-4-5-20251001",
-        max_tokens: 512,
-        system:     SYSTEM,
-        messages:   [{ role: "user", content: prompt }],
-      });
+      const dueMs      = new Date(doc.date_echeance as string).getTime();
+      const daysOverdue = Math.floor((todayMs - dueMs) / 86_400_000);
 
-      const raw   = res.content[0].type === "text" ? res.content[0].text.trim() : "{}";
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) { skipped++; continue; }
+      if (daysOverdue < 0) { skipped++; continue; }
 
-      const { subject, message } = JSON.parse(match[0]) as { subject: string; message: string };
+      const sentDelays = sentMap.get(doc.id as string) ?? new Set<number>();
+      const threshold  = nextThreshold(delays, daysOverdue, sentDelays);
 
-      /* ── Envoie l'email ── */
-      const { error: mailErr } = await resend.emails.send({
-        from:    FROM_EMAIL(),
-        to:      doc.client_email as string,
-        subject,
-        html: relanceHtml({
-          subject, message,
-          reference: doc.numero as string,
-          amount:    doc.total_ttc as number,
-          fromName:  (doc.emetteur_nom as string) || "DJAMA",
-        }),
-      });
+      if (threshold === null) { skipped++; continue; }
+      if (!apiKey || !resend) { skipped++; continue; }
 
-      if (mailErr) {
-        log.error(`Email error — ${doc.numero}`, mailErr);
-        skipped++;
-      } else {
-        sent++;
-        /* Passe en "en_retard" si encore "envoyé" */
+      try {
+        /* ── Génère le message via Claude ── */
+        const tone = daysOverdue >= 30 ? "formel — mise en demeure amiable"
+                   : daysOverdue >= 15 ? "ferme et clair"
+                                       : "amical et compréhensif";
+
+        const prompt = [
+          `Type de relance : facture impayée`,
+          `Client          : ${doc.client_nom}`,
+          `Référence       : ${doc.numero}`,
+          `Montant         : ${(doc.total_ttc as number).toFixed(2)} €`,
+          `Jours de retard : J+${daysOverdue}`,
+          `Ton requis      : ${tone}`,
+          ``,
+          `Génère l'objet et le corps du message. JSON uniquement.`,
+        ].join("\n");
+
+        const ai  = new Anthropic({ apiKey, maxRetries: 0, timeout: 15_000 });
+        const res = await ai.messages.create({
+          model:      "claude-haiku-4-5-20251001",
+          max_tokens: 512,
+          system:     SYSTEM,
+          messages:   [{ role: "user", content: prompt }],
+        });
+
+        const raw   = res.content[0].type === "text" ? res.content[0].text.trim() : "{}";
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (!match) { skipped++; continue; }
+
+        const { subject, message } = JSON.parse(match[0]) as { subject: string; message: string };
+
+        /* ── Envoie l'email ── */
+        const toList: string[] = [doc.client_email as string];
+        if (cfg.email_cc?.trim()) toList.push(cfg.email_cc.trim());
+
+        const { error: mailErr } = await resend.emails.send({
+          from:    FROM_EMAIL(),
+          to:      toList[0],
+          cc:      toList.length > 1 ? toList.slice(1) : undefined,
+          subject,
+          html: relanceHtml({
+            subject, message,
+            reference: doc.numero as string,
+            amount:    doc.total_ttc as number,
+            fromName:  (doc.emetteur_nom as string) || "DJAMA",
+          }),
+        });
+
+        if (mailErr) {
+          log.error(`Email error — ${doc.numero}`, mailErr);
+          skipped++;
+          continue;
+        }
+
+        /* ── Journalise dans relance_log ── */
+        await supabase.from("relance_log").insert({
+          document_id: doc.id,
+          user_id:     cfg.user_id,
+          delay_days:  threshold,
+        });
+
+        /* ── Passe en "en_retard" si encore "envoyé" ── */
         if (doc.statut !== "en_retard") {
           await supabase.from("documents").update({ statut: "en_retard" }).eq("id", doc.id);
         }
+
+        sent++;
+      } catch (err) {
+        log.error(`Erreur sur ${doc.numero}`, err);
+        skipped++;
       }
-    } catch (err) {
-      log.error(`Erreur sur ${doc.numero}`, err);
-      skipped++;
     }
   }
 
   return NextResponse.json({
     sent,
     skipped,
-    total: (docs ?? []).length,
+    users: configs.length,
     date:  today,
   });
 }
