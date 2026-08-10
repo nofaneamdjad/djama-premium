@@ -10,7 +10,7 @@ import {
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
   TrendingUp, Clock, AlertCircle, DollarSign, Settings2,
   PanelLeftClose, PanelLeftOpen,
-  Repeat2, PenLine, Upload, BellRing, Share2, Sparkles, Lock, BookmarkPlus,
+  Repeat2, PenLine, Upload, BellRing, Share2, Sparkles, Lock, BookmarkPlus, FileCode2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -1059,6 +1059,64 @@ export default function FacturesPage() {
       showToast("error", "Impossible d'enregistrer dans le catalogue");
     }
   }, []);
+
+  const downloadXml = useCallback(async () => {
+    if (!draft) return;
+    const { generateFacturX } = await import("@/lib/pdf/facturx");
+    const fxItems = items.map(it => {
+      const gross   = r2(it.quantity * it.unit_price);
+      const lineRem = r2(gross * (it.remise_pct || 0) / 100);
+      return {
+        description: [it.description, it.sub_description].filter(Boolean).join(" — ") || "(description)",
+        quantity:    it.quantity,
+        unit:        it.unit || "",
+        unit_price:  it.unit_price,
+        total_ht:    r2(gross - lineRem),
+        vat_rate:    it.vat_rate,
+      };
+    });
+    const xml = generateFacturX({
+      type:     draft.type === "avoir" ? "credit_note" : "invoice",
+      reference: draft.numero || (draft.type === "avoir" ? "AVOIR" : "FACTURE"),
+      issue_date: draft.date_document,
+      due_date:   draft.date_echeance || null,
+      seller: {
+        name:        draft.emetteur_nom,
+        address:     draft.emetteur_adresse,
+        postal_code: draft.emetteur_code_postal,
+        city:        draft.emetteur_ville,
+        country:     draft.emetteur_pays || "France",
+        siret:       draft.emetteur_siret || undefined,
+        vat_number:  draft.emetteur_tva  || undefined,
+        email:       draft.emetteur_email || undefined,
+      },
+      buyer: {
+        name:        draft.client_nom,
+        company:     draft.client_societe || undefined,
+        address:     draft.client_adresse || undefined,
+        postal_code: draft.client_code_postal || undefined,
+        city:        draft.client_ville || undefined,
+        country:     draft.client_pays || undefined,
+        vat_number:  draft.client_tva  || undefined,
+        email:       draft.client_email || undefined,
+      },
+      items:    fxItems,
+      totals,
+      currency: draft.devise || "EUR",
+      payment_conditions: draft.conditions || null,
+      notes:    draft.notes  || null,
+      rib_iban: draft.rib_iban || null,
+      regime:   regimeFiscal,
+    });
+    const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement("a"), {
+      href: url,
+      download: `${draft.numero || "facture"}-facturx.xml`,
+    });
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [draft, items, totals, regimeFiscal]);
 
   async function openDoc(doc: Document) {
     setSelected(doc);
@@ -2354,6 +2412,13 @@ export default function FacturesPage() {
                     className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} sm:flex`}>
                     <FileDown size={13}/> PDF
                   </button>
+                  {draft.type !== "devis" && (
+                    <button onClick={downloadXml}
+                      className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} sm:flex`}
+                      title="Télécharger XML Factur-X (EN 16931)">
+                      <FileCode2 size={13}/> XML
+                    </button>
+                  )}
                   {selected && (
                     <button onClick={openEmailModal}
                       className="hidden items-center gap-1.5 rounded-xl border border-sky-400/20 px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-sky-400/40 hover:text-sky-400 sm:flex">
@@ -2830,6 +2895,13 @@ export default function FacturesPage() {
                       className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition`}>
                       <FileDown size={13}/> PDF
                     </button>
+                    {draft.type !== "devis" && (
+                      <button onClick={downloadXml}
+                        className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition`}
+                        title="Télécharger XML Factur-X (EN 16931)">
+                        <FileCode2 size={13}/> XML
+                      </button>
+                    )}
                     {selected && (
                       <button onClick={openEmailModal}
                         className="flex items-center gap-1.5 rounded-xl border border-sky-400/20 px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-sky-400/40 hover:text-sky-400">
@@ -2868,11 +2940,21 @@ export default function FacturesPage() {
                     <Eye size={11} style={{ color:activeColor }}/>
                     <span className="text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Aperçu PDF</span>
                   </div>
-                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
-                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.65rem] font-bold transition hover:opacity-90"
-                    style={{ background:`${activeColor}22`, color:activeColor, border:`1px solid ${activeColor}33` }}>
-                    <FileDown size={10}/> PDF
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.65rem] font-bold transition hover:opacity-90"
+                      style={{ background:`${activeColor}22`, color:activeColor, border:`1px solid ${activeColor}33` }}>
+                      <FileDown size={10}/> PDF
+                    </button>
+                    {draft.type !== "devis" && (
+                      <button onClick={downloadXml}
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.65rem] font-bold transition hover:opacity-90"
+                        style={{ background:"rgba(100,200,120,0.12)", color:"#6abf7b", border:"1px solid rgba(100,200,120,0.25)" }}
+                        title="Télécharger XML Factur-X">
+                        <FileCode2 size={10}/> XML
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="p-5 pb-8">
                   <div className="relative overflow-hidden rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
@@ -2904,6 +2986,14 @@ export default function FacturesPage() {
                   style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(201,165,90,0.3)" }}>
                   <FileDown size={13}/> Télécharger PDF
                 </button>
+                {draft.type !== "devis" && (
+                  <button onClick={downloadXml}
+                    className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold transition hover:opacity-90"
+                    style={{ background:"rgba(100,200,120,0.15)", color:"#6abf7b", border:"1px solid rgba(100,200,120,0.3)" }}
+                    title="Factur-X EN 16931 — format légal France 2026">
+                    <FileCode2 size={13}/> XML Factur-X
+                  </button>
+                )}
                 <button onClick={() => setShowPreview(false)}
                   className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.08] text-white/40 transition hover:border-white/20 hover:text-white/70">
                   <X size={15}/>
