@@ -190,7 +190,7 @@ const CONDITIONS_PRESETS = [
 
 const MENTIONS_PRESETS = [
   { label: "Auto-entrepreneur", val: "TVA non applicable, art. 293 B du CGI." },
-  { label: "Franchise TVA",     val: "Membre d'un centre de gestion agréé — le règlement des honoraires par chèque est accepté." },
+  { label: "Franchise TVA",     val: "TVA non applicable, art. 293 B du CGI." },
   { label: "Pénalités retard",  val: "En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal seront appliquées, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement." },
 ];
 
@@ -1027,6 +1027,17 @@ export default function FacturesPage() {
     }
   }
 
+  async function clearRegime() {
+    setRegimeFiscal(null);
+    updDraft("mentions_legales", "");
+    if (uid) {
+      await supabase.from("user_settings")
+        .delete()
+        .eq("user_id", uid)
+        .eq("key", "brand.regime_fiscal");
+    }
+  }
+
   const saveToCatalog = useCallback(async (item: DocItem) => {
     if (!item.description.trim()) return;
     try {
@@ -1102,13 +1113,23 @@ export default function FacturesPage() {
     setMobileView("editor");
   }
 
-  function newDoc(type: DocType = "facture") {
+  async function newDoc(type: DocType = "facture") {
     const co = companyDefaults;
     setSelected(null);
+    // Numéro local provisoire affiché immédiatement
+    let numero = newNumero(type, documents);
+    try {
+      const res = await fetch("/api/factures/numero", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      });
+      if (res.ok) { const d = await res.json() as { numero?: string }; if (d.numero) numero = d.numero; }
+    } catch { /* garder numéro local */ }
     setDraft({
       ...EMPTY_DRAFT(),
       type,
-      numero: newNumero(type, documents),
+      numero,
       template: (co?.template as TemplateType) ?? "modern",
       couleur:  co?.color ?? "#c9a55a",
       // Pré-remplissage depuis les paramètres entreprise
@@ -1160,7 +1181,15 @@ export default function FacturesPage() {
         .select("*")
         .eq("document_id", sourceDoc.id)
         .order("position");
-      const avoirNum = newNumero("avoir", documents);
+      let avoirNum = newNumero("avoir", documents);
+      try {
+        const numRes = await fetch("/api/factures/numero", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "avoir" }),
+        });
+        if (numRes.ok) { const nd = await numRes.json() as { numero?: string }; if (nd.numero) avoirNum = nd.numero; }
+      } catch { /* garder numéro local */ }
       const { data: avoirDoc, error } = await supabase.from("documents").insert({
         user_id:           uid,
         type:              "avoir",
@@ -2666,7 +2695,7 @@ export default function FacturesPage() {
                           {REGIMES_FISCAUX.find(r => r.id === regimeFiscal)?.hint}
                           {" · "}
                           <button
-                            onClick={() => { setRegimeFiscal(null); updDraft("mentions_legales", ""); }}
+                            onClick={clearRegime}
                             className="underline hover:opacity-70">
                             Effacer
                           </button>
