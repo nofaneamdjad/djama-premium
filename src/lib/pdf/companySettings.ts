@@ -6,47 +6,59 @@
 import { supabase } from "@/lib/supabase";
 
 export interface CompanySettings {
-  logoUrl:      string | null;
-  name:         string;
-  email:        string;
-  website:      string;
-  phone:        string;
-  address:      string;
-  postal_code:  string;
-  city:         string;
-  country:      string;
-  siret:        string;
-  ape:          string;
-  vat_number:   string;
-  iban:         string;
-  bic:          string;
-  logoSize:     "sm" | "md" | "lg";
-  logoHideName: boolean;
+  logoUrl:          string | null;
+  name:             string;
+  email:            string;
+  website:          string;
+  phone:            string;
+  address:          string;
+  postal_code:      string;
+  city:             string;
+  country:          string;
+  siret:            string;
+  ape:              string;
+  vat_number:       string;
+  iban:             string;
+  bic:              string;
+  /** Forme juridique légale : SARL, SAS, SASU, EI, Auto-entrepreneur… */
+  forme_juridique:  string;
+  /** Capital social (ex: "10 000 €") */
+  capital_social:   string;
+  /** Texte de garantie/assurance affiché en pied de document */
+  garantie:         string;
+  /** Mentions légales par défaut pré-remplies sur les nouveaux documents */
+  mentions_legales: string;
+  logoSize:         "sm" | "md" | "lg";
+  logoHideName:     boolean;
   /** Template par défaut choisi dans Paramètres */
-  template:     string;
+  template:         string;
   /** Couleur d'accent par défaut */
-  color:        string;
+  color:            string;
 }
 
 const DEFAULTS: CompanySettings = {
-  logoUrl:      null,
-  name:         "",
-  email:        "",
-  website:      "",
-  phone:        "",
-  address:      "",
-  postal_code:  "",
-  city:         "",
-  country:      "",
-  siret:        "",
-  ape:          "",
-  vat_number:   "",
-  iban:         "",
-  bic:          "",
-  logoSize:     "md",
-  logoHideName: false,
-  template:     "modern",
-  color:        "#c9a55a",
+  logoUrl:          null,
+  name:             "",
+  email:            "",
+  website:          "",
+  phone:            "",
+  address:          "",
+  postal_code:      "",
+  city:             "",
+  country:          "",
+  siret:            "",
+  ape:              "",
+  vat_number:       "",
+  iban:             "",
+  bic:              "",
+  forme_juridique:  "",
+  capital_social:   "",
+  garantie:         "",
+  mentions_legales: "",
+  logoSize:         "md",
+  logoHideName:     false,
+  template:         "modern",
+  color:            "#c9a55a",
 };
 
 export async function fetchCompanySettings(): Promise<CompanySettings> {
@@ -74,14 +86,18 @@ export async function fetchCompanySettings(): Promise<CompanySettings> {
     postal_code:  map["brand.postal_code"] || DEFAULTS.postal_code,
     city:         map["brand.city"]        || DEFAULTS.city,
     country:      map["brand.country"]     || DEFAULTS.country,
-    siret:      map["brand.siret"]         || DEFAULTS.siret,
-    ape:        map["brand.ape"]           || DEFAULTS.ape,
-    vat_number:   map["brand.vat_number"]    || DEFAULTS.vat_number,
-    iban:         map["brand.iban"]          || DEFAULTS.iban,
-    bic:          map["brand.bic"]           || DEFAULTS.bic,
-    logoSize:     (map["brand.logo_size"] as "sm"|"md"|"lg") || DEFAULTS.logoSize,
-    logoHideName: map["brand.logo_hide_name"] === "true",
-    template:     map["brand.template"] || DEFAULTS.template,
-    color:        map["brand.color"]    || DEFAULTS.color,
+    siret:            map["brand.siret"]            || DEFAULTS.siret,
+    ape:              map["brand.ape"]              || DEFAULTS.ape,
+    vat_number:       map["brand.vat_number"]       || DEFAULTS.vat_number,
+    iban:             map["brand.iban"]             || DEFAULTS.iban,
+    bic:              map["brand.bic"]              || DEFAULTS.bic,
+    forme_juridique:  map["brand.forme_juridique"]  || DEFAULTS.forme_juridique,
+    capital_social:   map["brand.capital_social"]   || DEFAULTS.capital_social,
+    garantie:         map["brand.garantie"]         || DEFAULTS.garantie,
+    mentions_legales: map["brand.mentions_legales"] || DEFAULTS.mentions_legales,
+    logoSize:         (map["brand.logo_size"] as "sm"|"md"|"lg") || DEFAULTS.logoSize,
+    logoHideName:     map["brand.logo_hide_name"] === "true",
+    template:         map["brand.template"] || DEFAULTS.template,
+    color:            map["brand.color"]    || DEFAULTS.color,
   };
 }

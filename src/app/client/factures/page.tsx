@@ -348,10 +348,11 @@ async function exportPDFWithTemplate(
   logoSize?:      "sm"|"md"|"lg",
   logoHideName?:  boolean,
   logoTransform?: LogoTransform | null,
+  coDefaults?:    CompanySettings | null,
 ) {
   const { generatePdf } = await import("@/lib/pdf/generatePdf");
   const mainTaxRate = items[0]?.vat_rate ?? 20;
-  const footerParts = [draft.conditions, draft.mentions_legales].filter(Boolean);
+  const footerParts = [draft.conditions, draft.mentions_legales, coDefaults?.garantie].filter(Boolean);
   await generatePdf({
     type:        draft.type === "facture" ? "invoice" : "quote",
     template:    draft.template ?? "modern",
@@ -395,19 +396,28 @@ async function exportPDFWithTemplate(
     currency:      (draft.devise || "EUR") as string,
     logoTransform: logoTransform ?? null,
     company: {
-      logoUrl:      draft.emetteur_logo    || null,
-      name:         draft.emetteur_nom     || "",
-      email:        draft.emetteur_email   || "",
-      address:      [
+      logoUrl:          draft.emetteur_logo    || null,
+      name:             draft.emetteur_nom     || "",
+      email:            draft.emetteur_email   || "",
+      phone:            coDefaults?.phone      || "",
+      website:          coDefaults?.website    || "",
+      address:          [
         draft.emetteur_adresse,
         [draft.emetteur_code_postal, draft.emetteur_ville].filter(Boolean).join(" "),
         draft.emetteur_pays,
       ].filter(Boolean).join("\n") || "",
-      siret:        draft.emetteur_siret   || "",
-      iban:         draft.rib_iban         || "",
-      bic:          draft.rib_bic          || "",
-      logoSize:     logoSize     ?? "md",
-      logoHideName: logoHideName ?? false,
+      city:             draft.emetteur_ville   || "",
+      postal_code:      draft.emetteur_code_postal || "",
+      country:          draft.emetteur_pays    || "",
+      siret:            draft.emetteur_siret   || "",
+      ape:              coDefaults?.ape        || "",
+      vat_number:       draft.emetteur_tva     || "",
+      iban:             draft.rib_iban         || "",
+      bic:              draft.rib_bic          || "",
+      forme_juridique:  coDefaults?.forme_juridique  || "",
+      capital_social:   coDefaults?.capital_social   || "",
+      logoSize:         logoSize     ?? "md",
+      logoHideName:     logoHideName ?? false,
     },
   });
 }
@@ -1245,7 +1255,7 @@ export default function FacturesPage() {
       rib_titulaire:    co?.name        || "",
       mentions_legales: regimeFiscal
         ? (REGIMES_FISCAUX.find(r => r.id === regimeFiscal)?.mentions ?? "")
-        : "",
+        : (co?.mentions_legales || ""),
     });
     setItems([EMPTY_ITEM()]);
     setDirty(true);
@@ -2457,7 +2467,7 @@ export default function FacturesPage() {
                     className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} sm:flex`}>
                     <Eye size={13}/> Aperçu
                   </button>
-                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
+                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
                     className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} sm:flex`}>
                     <FileDown size={13}/> PDF
                   </button>
@@ -2986,7 +2996,7 @@ export default function FacturesPage() {
                       className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition`}>
                       <Eye size={13}/> Aperçu
                     </button>
-                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
+                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
                       className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition`}>
                       <FileDown size={13}/> PDF
                     </button>
@@ -3036,7 +3046,7 @@ export default function FacturesPage() {
                     <span className="text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Aperçu PDF</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
+                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
                       className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.65rem] font-bold transition hover:opacity-90"
                       style={{ background:`${activeColor}22`, color:activeColor, border:`1px solid ${activeColor}33` }}>
                       <FileDown size={10}/> PDF
@@ -3076,7 +3086,7 @@ export default function FacturesPage() {
                 {draft.sujet && <span className="text-xs text-white/40">{draft.sujet}</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform)}
+                <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
                   className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold transition hover:opacity-90"
                   style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(201,165,90,0.3)" }}>
                   <FileDown size={13}/> Télécharger PDF

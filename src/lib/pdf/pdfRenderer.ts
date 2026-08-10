@@ -1113,47 +1113,80 @@ function drawFooter(
   doc.setFontSize(6.5);
   setTxt(doc, theme.footerText);
 
+  // Ligne "Forme juridique au capital de X — RCS Ville SIREN"
+  function buildLegalLine(): string {
+    const parts: string[] = [];
+    if (co.forme_juridique && co.capital_social) {
+      parts.push(`${co.forme_juridique} au capital de ${co.capital_social}`);
+    } else if (co.forme_juridique) {
+      parts.push(co.forme_juridique);
+    }
+    const siren = co.siret?.replace(/\s/g, "").slice(0, 9);
+    if (siren && siren.length === 9 && co.city) parts.push(`RCS ${co.city} ${siren}`);
+    return parts.join("   ·   ");
+  }
+
   if (theme.variant === "accent-bar") {
-    // Accent-bar : footer centré sur 3-4 lignes
-    let fy = FY + 6;
+    // Accent-bar : footer centré — jusqu'à 4 lignes compactes
+    const STEP = 4.5;
+    let fy = FY + 5;
 
     const l0 = [co.name, co.email, co.phone, co.website].filter(Boolean).join("   |   ");
-    if (l0) { doc.text(l0, PW / 2, fy, { align: "center" }); fy += 5; }
+    if (l0) { doc.text(l0, PW / 2, fy, { align: "center" }); fy += STEP; }
 
     const lLegal: string[] = [];
     if (co.siret)      lLegal.push(`SIRET : ${co.siret}`);
     if (co.ape)        lLegal.push(`APE : ${co.ape}`);
     if (co.vat_number) lLegal.push(`TVA : ${co.vat_number}`);
-    if (lLegal.length) { doc.text(lLegal.join("   |   "), PW / 2, fy, { align: "center" }); fy += 5; }
+    if (lLegal.length) { doc.text(lLegal.join("   |   "), PW / 2, fy, { align: "center" }); fy += STEP; }
+
+    const lForm = buildLegalLine();
+    if (lForm) {
+      doc.setFontSize(6);
+      doc.text(lForm, PW / 2, fy, { align: "center" });
+      doc.setFontSize(6.5);
+      fy += STEP;
+    }
 
     const lRib: string[] = [];
     if (co.iban) lRib.push(`IBAN : ${co.iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim()}`);
     if (co.bic)  lRib.push(`BIC : ${co.bic}`);
-    if (lRib.length) { doc.text(lRib.join("   |   "), PW / 2, fy, { align: "center" }); fy += 5; }
+    if (lRib.length) { doc.text(lRib.join("   |   "), PW / 2, fy, { align: "center" }); }
 
     doc.setFontSize(6);
     doc.text("Page 1/1", PW - MR, PH - 4, { align: "right" });
     return;
   }
 
+  // ── Variants standard (minimal, classic, premium, colorful) ─────────────────
+  let sy = FY + 6;
+  const STEP2 = 5.5;
+
   const l1 = [co.name, co.email, co.website, co.phone].filter(Boolean).join("   |   ");
-  if (l1) doc.text(l1, PW / 2, FY + 6, { align: "center" });
+  if (l1) { doc.text(l1, PW / 2, sy, { align: "center" }); sy += STEP2; }
 
   const l2parts: string[] = [];
   if (co.siret)      l2parts.push(`SIRET : ${co.siret}`);
   if (co.ape)        l2parts.push(`APE : ${co.ape}`);
   if (co.vat_number) l2parts.push(`TVA : ${co.vat_number}`);
-  if (l2parts.length) doc.text(l2parts.join("   |   "), PW / 2, FY + 12, { align: "center" });
+  if (l2parts.length) { doc.text(l2parts.join("   |   "), PW / 2, sy, { align: "center" }); sy += STEP2; }
 
-  if (data.footer_text) {
+  const lForm2 = buildLegalLine();
+  if (lForm2 && sy < FY + 20) {
     doc.setFontSize(6);
-    doc.text(data.footer_text, PW / 2, FY + 18, { align: "center", maxWidth: CW });
+    doc.text(lForm2, PW / 2, sy, { align: "center" });
+    doc.setFontSize(6.5);
+    sy += STEP2;
+  }
+
+  if (data.footer_text && sy < FY + 20) {
+    doc.setFontSize(6);
+    doc.text(data.footer_text, PW / 2, sy, { align: "center", maxWidth: CW });
   }
 
   doc.setFontSize(6);
   doc.text("Page 1/1", PW - MR, PH - 4, { align: "right" });
 }
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXPORT PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════════════
