@@ -957,6 +957,18 @@ export default function FacturesPage() {
     return months;
   }, [documents]);
 
+  // ── Liens Avoir ↔ Facture source ─────────────────────────────────────────
+  const docById = useMemo(() => new Map(documents.map(d => [d.id, d])), [documents]);
+  const avoirsBySourceId = useMemo(() => {
+    const map = new Map<string, Document[]>();
+    documents.filter(d => d.type === "avoir" && d.source_id).forEach(d => {
+      const arr = map.get(d.source_id!) ?? [];
+      arr.push(d);
+      map.set(d.source_id!, arr);
+    });
+    return map;
+  }, [documents]);
+
   const fetchDocs = useCallback(async () => {
     setLoadingAll(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -2326,6 +2338,25 @@ export default function FacturesPage() {
                             );
                           })()}
                         </div>
+                        {/* Ligne 5 : lien Avoir ↔ Facture source */}
+                        {doc.type === "avoir" && doc.source_id && docById.has(doc.source_id) && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <span className="text-[0.52rem] font-bold" style={{ color: "#f472b6", opacity: 0.6 }}>↗</span>
+                            <span className="text-[0.6rem] font-semibold" style={{ color: "#f472b6" }}>
+                              {docById.get(doc.source_id)!.numero}
+                            </span>
+                          </div>
+                        )}
+                        {doc.type === "facture" && (avoirsBySourceId.get(doc.id)?.length ?? 0) > 0 && (
+                          <div className="mt-1 flex flex-wrap items-center gap-1">
+                            {avoirsBySourceId.get(doc.id)!.map(av => (
+                              <span key={av.id} className="rounded-full px-1.5 py-0.5 text-[0.52rem] font-bold"
+                                style={{ background: "rgba(244,114,182,0.1)", color: "#f472b6", border: "1px solid rgba(244,114,182,0.25)" }}>
+                                {av.numero}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className={`mx-4 h-px ${tsep}`}/>
                     </motion.button>
@@ -2565,6 +2596,67 @@ export default function FacturesPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* ── Lien Avoir ↔ Facture source ── */}
+                  {selected?.type === "avoir" && selected.source_id && (
+                    <div className="rounded-2xl border p-4" style={{ borderColor: "rgba(244,114,182,0.2)", background: "rgba(244,114,182,0.04)" }}>
+                      <p className="mb-2.5 text-[0.58rem] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(244,114,182,0.5)" }}>
+                        Facture source
+                      </p>
+                      {docById.has(selected.source_id) ? (() => {
+                        const src = docById.get(selected.source_id!)!;
+                        return (
+                          <button onClick={() => openDoc(src)}
+                            className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition"
+                            style={{ background: "rgba(244,114,182,0.07)", border: "1px solid rgba(244,114,182,0.15)" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "rgba(244,114,182,0.13)")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "rgba(244,114,182,0.07)")}>
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(244,114,182,0.12)" }}>
+                              <FileText size={14} style={{ color: "#f472b6" }}/>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-extrabold leading-tight" style={{ color: "#f9a8d4" }}>{src.numero}</p>
+                              <p className="text-[0.62rem]" style={{ color: "rgba(244,114,182,0.5)" }}>
+                                {fmtDate(src.date_document)}{src.client_nom ? ` · ${src.client_nom}` : ""}
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-sm font-black" style={{ color: "#f472b6" }}>{fmtEur(src.total_ttc)}</span>
+                            <ArrowLeft size={13} className="shrink-0 rotate-180 opacity-50" style={{ color: "#f472b6" }}/>
+                          </button>
+                        );
+                      })() : (
+                        <p className="text-xs" style={{ color: "rgba(244,114,182,0.35)" }}>Facture source introuvable</p>
+                      )}
+                    </div>
+                  )}
+                  {selected?.type === "facture" && (avoirsBySourceId.get(selected.id)?.length ?? 0) > 0 && (
+                    <div className="rounded-2xl border p-4" style={{ borderColor: "rgba(244,114,182,0.2)", background: "rgba(244,114,182,0.04)" }}>
+                      <p className="mb-2.5 text-[0.58rem] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(244,114,182,0.5)" }}>
+                        {avoirsBySourceId.get(selected.id)!.length > 1 ? "Avoirs liés" : "Avoir lié"}
+                      </p>
+                      <div className="space-y-2">
+                        {avoirsBySourceId.get(selected.id)!.map(av => (
+                          <button key={av.id} onClick={() => openDoc(av)}
+                            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition"
+                            style={{ background: "rgba(244,114,182,0.07)", border: "1px solid rgba(244,114,182,0.15)" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "rgba(244,114,182,0.13)")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "rgba(244,114,182,0.07)")}>
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(244,114,182,0.12)" }}>
+                              <RefreshCw size={14} style={{ color: "#f472b6" }}/>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-extrabold leading-tight" style={{ color: "#f9a8d4" }}>{av.numero}</p>
+                              <p className="text-[0.62rem]" style={{ color: "rgba(244,114,182,0.5)" }}>
+                                {fmtDate(av.date_document)} · <StatutBadge statut={av.statut}/>
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-sm font-black" style={{ color: "#f472b6" }}>{fmtEur(av.total_ttc)}</span>
+                            <ArrowLeft size={13} className="shrink-0 rotate-180 opacity-50" style={{ color: "#f472b6" }}/>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* ── Informations du document ── */}
                   <div className="space-y-3">
