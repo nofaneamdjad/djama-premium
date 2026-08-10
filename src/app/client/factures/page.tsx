@@ -114,6 +114,13 @@ interface CrmClient {
   adresse?:  string;
 }
 
+interface AuditEntry {
+  id:         string;
+  action:     string;
+  details:    Record<string, string>;
+  created_at: string;
+}
+
 const ease = [0.16, 1, 0.3, 1] as const;
 
 const B  = "bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.09)]";
@@ -900,6 +907,9 @@ export default function FacturesPage() {
   // ── Régime fiscal ─────────────────────────────────────────────────────────
   const [regimeFiscal, setRegimeFiscal] = useState<RegimeFiscal>(null);
 
+  // ── Journal d'audit ───────────────────────────────────────────────────────
+  const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
+
   const totals = useMemo(
     () => calcTotals(items, draft?.remise_pct ?? 0, draft?.acompte ?? 0),
     [items, draft?.remise_pct, draft?.acompte]
@@ -999,6 +1009,15 @@ export default function FacturesPage() {
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [dirty, selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Charger le journal d'audit quand un document est ouvert
+  useEffect(() => {
+    if (!selected) { setAuditLog([]); return; }
+    fetch(`/api/factures/audit?document_id=${selected.id}`)
+      .then(r => r.json())
+      .then(({ entries }: { entries?: AuditEntry[] }) => setAuditLog(entries ?? []))
+      .catch(() => {});
+  }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Charger signature + récurrence depuis le document DB
   useEffect(() => {
     if (!selected) { setDocSignature(null); setDocRecurCfg(null); return; }
@@ -1060,6 +1079,26 @@ export default function FacturesPage() {
     }
   }, []);
 
+  const logAudit = useCallback(async (
+    action: string,
+    docId?: string,
+    details?: Record<string, string>,
+  ) => {
+    const id = docId ?? selected?.id;
+    if (!id) return;
+    try {
+      const res = await fetch("/api/factures/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ document_id: id, action, details: details ?? {} }),
+      });
+      if (res.ok) {
+        const { entry } = await res.json() as { entry: AuditEntry };
+        setAuditLog(prev => [entry, ...prev]);
+      }
+    } catch { /* audit failure is non-blocking */ }
+  }, [selected?.id]);
+
   const downloadXml = useCallback(async () => {
     if (!draft) return;
     const { generateFacturX } = await import("@/lib/pdf/facturx");
@@ -1116,7 +1155,8 @@ export default function FacturesPage() {
     });
     a.click();
     URL.revokeObjectURL(url);
-  }, [draft, items, totals, regimeFiscal]);
+    void logAudit("xml_exporté", undefined, { reference: draft.numero });
+  }, [draft, items, totals, regimeFiscal, logAudit]);
 
   async function openDoc(doc: Document) {
     setSelected(doc);
@@ -1305,6 +1345,8 @@ export default function FacturesPage() {
       await fetchDocs();
       openDoc(avoirDoc as Document);
       showToast("success", `Avoir ${avoirNum} créé`);
+      void logAudit("avoir_généré", sourceDoc.id, { avoir_numero: avoirNum });
+      void logAudit("créé", (avoirDoc as Document).id, { numero: avoirNum });
     } catch {
       showToast("error", "Erreur lors de la création de l'avoir.");
     } finally {
@@ -1479,12 +1521,14 @@ export default function FacturesPage() {
       }
     }
 
+    const wasNew = !selected;
     showToast("success", "Document enregistré");
     setDirty(false); setSaving(false);
     await fetchDocs();
     if (docId) {
       const { data } = await supabase.from("documents").select("*").eq("id", docId).single();
       if (data) setSelected(data as Document);
+      void logAudit(wasNew ? "créé" : "modifié", docId, { numero: workingDraft.numero });
     }
   }
 
@@ -1501,12 +1545,14 @@ export default function FacturesPage() {
 
   async function handleStatut(statut: DocStatut) {
     if (!selected) return;
+    const previous = selected.statut;
     const { error } = await supabase.from("documents").update({ statut }).eq("id", selected.id);
     if (error) { showToast("error", error.message); return; }
     setSelected(s => s ? { ...s, statut } : s);
     setDraft(d => d ? { ...d, statut } : d);
     setDocuments(p => p.map(d => d.id === selected.id ? { ...d, statut } : d));
     showToast("success", `Statut : ${STATUTS[statut].label}`);
+    void logAudit("statut_changé", undefined, { de: previous, vers: statut });
   }
 
   async function handleConvert() {
@@ -1617,6 +1663,8 @@ export default function FacturesPage() {
     }
     setDuplicating(false);
     showToast("success", `Dupliqué → ${newNum}`);
+    void logAudit("dupliqué", undefined, { nouveau_numero: newNum });
+    void logAudit("créé", (newDoc as Document).id, { numero: newNum });
     await fetchDocs();
     openDoc(newDoc as Document);
   }
@@ -1691,6 +1739,7 @@ export default function FacturesPage() {
       });
       if (!res.ok) throw new Error("Erreur envoi");
       showToast("success", "Email envoyé"); setEmailModal(false);
+      void logAudit("email_envoyé", undefined, { destinataire: emailTo });
     } catch { showToast("error", "Erreur lors de l'envoi de l'email"); }
     finally { setSendingEmail(false); }
   }
@@ -2863,6 +2912,52 @@ export default function FacturesPage() {
                           </>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {/* ── Historique / Journal d'audit ── */}
+                  {selected && (
+                    <div className="space-y-3">
+                      <SectionLabel icon={<Clock size={10}/>} label="Historique"/>
+                      {auditLog.length === 0 ? (
+                        <p className={`text-[0.7rem] ${tw5}`}>Aucun événement enregistré.</p>
+                      ) : (
+                        <div className="relative space-y-0">
+                          {auditLog.map((entry, i) => {
+                            const AUDIT_META: Record<string, { label: (d: Record<string,string>) => string; color: string }> = {
+                              "créé":          { label: () => "Document créé",              color: "#c9a55a" },
+                              "modifié":       { label: () => "Document modifié",           color: "#94a3b8" },
+                              "statut_changé": { label: d => `Statut → ${STATUTS[d.vers as DocStatut]?.label ?? d.vers}`, color: STATUTS[entry.details?.vers as DocStatut]?.color ?? "#60a5fa" },
+                              "email_envoyé":  { label: d => `Email envoyé à ${d.destinataire ?? ""}`, color: "#60a5fa" },
+                              "pdf_exporté":   { label: () => "PDF téléchargé",             color: "#94a3b8" },
+                              "xml_exporté":   { label: () => "XML Factur-X téléchargé",   color: "#6abf7b" },
+                              "avoir_généré":  { label: d => `Avoir ${d.avoir_numero ?? ""} généré`, color: "#f472b6" },
+                              "dupliqué":      { label: d => `Dupliqué → ${d.nouveau_numero ?? ""}`, color: "#94a3b8" },
+                            };
+                            const meta = AUDIT_META[entry.action] ?? { label: () => entry.action, color: "#94a3b8" };
+                            const dt = new Date(entry.created_at);
+                            const now = Date.now();
+                            const diff = Math.floor((now - dt.getTime()) / 1000);
+                            const relTime = diff < 60 ? "À l'instant"
+                              : diff < 3600  ? `il y a ${Math.floor(diff / 60)}min`
+                              : diff < 86400 ? `il y a ${Math.floor(diff / 3600)}h`
+                              : fmtDate(entry.created_at);
+                            const isLast = i === auditLog.length - 1;
+                            return (
+                              <div key={entry.id} className="flex gap-3">
+                                <div className="flex flex-col items-center">
+                                  <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full" style={{ background: meta.color }}/>
+                                  {!isLast && <div className={`mt-1 w-px flex-1 ${isDark ? "bg-white/[0.06]" : "bg-gray-200"}`}/>}
+                                </div>
+                                <div className="pb-3 min-w-0">
+                                  <p className={`text-[0.72rem] font-medium ${tw2} leading-snug`}>{meta.label(entry.details)}</p>
+                                  <p className={`text-[0.62rem] ${tw5} mt-0.5`}>{relTime}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
 
