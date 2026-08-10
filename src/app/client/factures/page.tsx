@@ -194,6 +194,36 @@ const MENTIONS_PRESETS = [
   { label: "Pénalités retard",  val: "En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal seront appliquées, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement." },
 ];
 
+const PENALITES = "En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal seront appliquées, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement (art. D441-5 du Code de commerce).";
+
+const REGIMES_FISCAUX = [
+  {
+    id: "micro",
+    label: "Micro / AE",
+    hint: "TVA non applicable · art. 293 B CGI",
+    mentions: `TVA non applicable, art. 293 B du CGI.\n${PENALITES}`,
+  },
+  {
+    id: "reel",
+    label: "Régime réel",
+    hint: "TVA collectée · pénalités de retard obligatoires",
+    mentions: PENALITES,
+  },
+  {
+    id: "autoliquidation",
+    label: "Auto-liquidation",
+    hint: "Sous-traitance ou intracommunautaire",
+    mentions: `TVA auto-liquidée par le preneur — art. 283-1 du CGI / Directive 2006/112/CE art. 196.\n${PENALITES}`,
+  },
+  {
+    id: "cga",
+    label: "CGA",
+    hint: "Centre de gestion agréé",
+    mentions: `Membre d'un centre de gestion agréé — le règlement des honoraires par chèque est accepté.\n${PENALITES}`,
+  },
+] as const;
+type RegimeFiscal = typeof REGIMES_FISCAUX[number]["id"] | null;
+
 function r2(n: number) { return Math.round(n * 100) / 100; }
 
 function fmtAmount(n: number, devise = "EUR") {
@@ -867,6 +897,9 @@ export default function FacturesPage() {
   // ── Catalogue articles ────────────────────────────────────────────────────
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
 
+  // ── Régime fiscal ─────────────────────────────────────────────────────────
+  const [regimeFiscal, setRegimeFiscal] = useState<RegimeFiscal>(null);
+
   const totals = useMemo(
     () => calcTotals(items, draft?.remise_pct ?? 0, draft?.acompte ?? 0),
     [items, draft?.remise_pct, draft?.acompte]
@@ -938,6 +971,12 @@ export default function FacturesPage() {
     }).catch(() => {});
   }, []);
 
+  // Charger le régime fiscal sauvegardé
+  useEffect(() => {
+    supabase.from("user_settings").select("value").eq("key", "brand.regime_fiscal").maybeSingle()
+      .then(({ data }) => { if (data?.value) setRegimeFiscal(data.value as RegimeFiscal); });
+  }, []);
+
   // Avertir si l'utilisateur quitte la page avec des modifications non sauvegardées
   useEffect(() => {
     if (!dirty) return;
@@ -972,6 +1011,21 @@ export default function FacturesPage() {
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
+
+  async function applyRegime(regimeId: RegimeFiscal) {
+    if (!regimeId) return;
+    const regime = REGIMES_FISCAUX.find(r => r.id === regimeId);
+    if (!regime) return;
+    setRegimeFiscal(regimeId);
+    updDraft("mentions_legales", regime.mentions);
+    if (uid) {
+      await supabase.from("user_settings").upsert(
+        { user_id: uid, key: "brand.regime_fiscal", value: regimeId, updated_at: new Date().toISOString() },
+        { onConflict: "user_id,key" }
+      );
+      showToast("success", `Régime "${regime.label}" mémorisé`);
+    }
+  }
 
   const saveToCatalog = useCallback(async (item: DocItem) => {
     if (!item.description.trim()) return;
@@ -1070,6 +1124,9 @@ export default function FacturesPage() {
       rib_iban:         co?.iban        || "",
       rib_bic:          co?.bic         || "",
       rib_titulaire:    co?.name        || "",
+      mentions_legales: regimeFiscal
+        ? (REGIMES_FISCAUX.find(r => r.id === regimeFiscal)?.mentions ?? "")
+        : "",
     });
     setItems([EMPTY_ITEM()]);
     setDirty(true);
@@ -2588,6 +2645,35 @@ export default function FacturesPage() {
                   {/* ── Mentions légales ── */}
                   <div className="space-y-3">
                     <SectionLabel icon={<FileText size={10}/>} label="Mentions légales" hint="apparaît en pied de PDF"/>
+
+                    {/* Sélecteur de régime fiscal */}
+                    <div className={`rounded-xl border ${tbd1} ${tbg2} p-3 space-y-2`}>
+                      <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Régime fiscal</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {REGIMES_FISCAUX.map(r => (
+                          <button key={r.id} onClick={() => applyRegime(r.id)}
+                            className={`rounded-full border px-2.5 py-1 text-[0.62rem] font-semibold transition ${
+                              regimeFiscal === r.id
+                                ? "border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.1)] text-[#c9a55a]"
+                                : `${tbd1} ${tw4} ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`
+                            }`}>
+                            {r.label}
+                          </button>
+                        ))}
+                      </div>
+                      {regimeFiscal && (
+                        <p className={`text-[0.58rem] leading-relaxed ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                          {REGIMES_FISCAUX.find(r => r.id === regimeFiscal)?.hint}
+                          {" · "}
+                          <button
+                            onClick={() => { setRegimeFiscal(null); updDraft("mentions_legales", ""); }}
+                            className="underline hover:opacity-70">
+                            Effacer
+                          </button>
+                        </p>
+                      )}
+                    </div>
+
                     <DTextarea value={draft.mentions_legales} onChange={v => updDraft("mentions_legales", v)}
                       placeholder="TVA non applicable art. 293B CGI — Pénalités de retard…" rows={3}/>
                     <div className="flex flex-wrap gap-1.5">
