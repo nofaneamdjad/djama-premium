@@ -8,7 +8,7 @@ import {
   RefreshCw, Building2, User, FileText, Send, BadgeCheck,
   AlertTriangle, ImagePlus, Palette, Landmark, Eye, Percent,
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
-  TrendingUp, Clock, AlertCircle, DollarSign, Settings2,
+  TrendingUp, Clock, AlertCircle, DollarSign, Settings2, BarChart3,
   PanelLeftClose, PanelLeftOpen,
   Repeat2, PenLine, Upload, BellRing, Share2, Sparkles, Lock, BookmarkPlus, FileCode2,
 } from "lucide-react";
@@ -2098,6 +2098,12 @@ export default function FacturesPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Statistiques */}
+            <a href="/client/factures/stats" title="Statistiques avancées"
+              className={`flex items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-2.5 py-2 text-xs font-semibold ${tw3} transition hover:${tw1} sm:px-3`}>
+              <BarChart3 size={12}/>
+              <span className="hidden sm:inline">Stats</span>
+            </a>
             {/* Paramètres */}
             <a href="/client/factures/parametres" title="Paramètres"
               className={`flex items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-2.5 py-2 text-xs font-semibold ${tw3} transition hover:${tw1} sm:px-3`}>

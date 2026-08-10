@@ -94,32 +94,39 @@ export async function loadLogoImage(url: string): Promise<{
   }
 }
 
-// ─── QR Code informations facture ────────────────────────────────────────────
+// ─── QR Code SEPA (EPC / Girocode) ──────────────────────────────────────────
+//
+// Format standard EPC069-12 (European Payments Council).
+// Les applications bancaires (BNP, SG, CIC, Revolut, Wise, PayLib…) scannent ce
+// code pour pré-remplir un virement SEPA — pas de saisie manuelle pour le client.
 
-async function generateInvoiceQrUrl(params: {
-  type:          string;
-  reference:     string;
-  issue_date:    string;
-  due_date?:     string | null;
-  valid_until?:  string | null;
-  client_name:   string;
-  client_company?: string | null;
-  total:         number;
-  currency?:     string;
+async function generateSepaQrUrl(params: {
+  iban:       string;
+  bic?:       string | null;
+  name:       string;
+  amount:     number;
+  reference:  string;
 }): Promise<string | null> {
+  const { iban, bic, name, amount, reference } = params;
+  const cleanIban = iban.replace(/\s/g, "");
+  if (!cleanIban || amount <= 0) return null;
+
+  // 11 lignes séparées par \n — ordre imposé par la norme EPC069-12
+  const lines = [
+    "BCD",                                // Service Tag
+    "002",                                // Version EPC
+    "1",                                  // Charset UTF-8
+    "SCT",                                // SEPA Credit Transfer
+    (bic ?? "").slice(0, 11),             // BIC bénéficiaire (facultatif en v002)
+    (name || "").slice(0, 70),            // Nom bénéficiaire (max 70 chars)
+    cleanIban,                            // IBAN (sans espaces, max 34 chars)
+    `EUR${amount.toFixed(2)}`,            // Montant (EUR — seule devise autorisée)
+    "",                                   // Code finalité (vide)
+    "",                                   // Référence créancier RF (vide)
+    `FACTURE ${reference}`.slice(0, 140), // Libellé virement non structuré
+  ];
+
   try {
-    const { type, reference, issue_date, due_date, valid_until, client_name, client_company, total, currency } = params;
-    const label  = type === "invoice" ? "FACTURE" : "DEVIS";
-    const lines: string[] = [];
-    lines.push(`${label} : ${reference}`);
-    lines.push(`Date : ${fmtDate(issue_date)}`);
-    if (type === "invoice" && due_date)
-      lines.push(`Echeance : ${fmtDate(due_date)}`);
-    if (type === "quote" && valid_until)
-      lines.push(`Valable jusqu'au : ${fmtDate(valid_until)}`);
-    if (client_name)    lines.push(`Client : ${client_name}`);
-    if (client_company) lines.push(`Societe : ${client_company}`);
-    lines.push(`Montant TTC : ${fmtAmt(total, currency || "EUR")}`);
     const QRCode = (await import("qrcode")).default;
     return await QRCode.toDataURL(lines.join("\n"), {
       errorCorrectionLevel: "M",
@@ -128,7 +135,7 @@ async function generateInvoiceQrUrl(params: {
       color: { dark: "#000000", light: "#ffffff" },
     });
   } catch (e) {
-    console.warn("[pdfRenderer] QR generation failed:", e);
+    console.warn("[pdfRenderer] SEPA QR generation failed:", e);
     return null;
   }
 }
@@ -1076,7 +1083,7 @@ function drawPaymentInfoModern(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(4.5);
     setTxt(doc, [140, 140, 155]);
-    doc.text("Scanner pour les infos", qrBoxX + (QR_SIZE + 6) / 2 - 1, qrImgY + QR_SIZE + 3.5, { align: "center" });
+    doc.text("Virement SEPA", qrBoxX + (QR_SIZE + 6) / 2 - 1, qrImgY + QR_SIZE + 3.5, { align: "center" });
   }
 
   y += BOX_H + 5;
@@ -1204,20 +1211,20 @@ export async function renderPdfWithTheme(
     doc.rect(0, 0, PW, PH, "F");
   }
 
-  // ── QR code (généré une seule fois pour le template modern) ──────────────
+  // ── QR SEPA (template Modern, factures EUR avec IBAN uniquement) ──────────
   let qrDataUrl: string | null = null;
-  if (theme.variant === "accent-bar") {
-    qrDataUrl = await generateInvoiceQrUrl({
-      type:           data.type,
-      reference:      data.reference,
-      issue_date:     data.issue_date,
-      due_date:       data.due_date,
-      valid_until:    data.valid_until,
-      client_name:    data.client_name,
-      client_company: data.client_company,
-      total:          data.total,
-      currency:       data.currency,
-    });
+  if (theme.variant === "accent-bar" && data.type === "invoice") {
+    const iban  = data.rib_iban || co.iban;
+    const isEur = !data.currency || data.currency === "EUR";
+    if (iban && isEur && data.total > 0) {
+      qrDataUrl = await generateSepaQrUrl({
+        iban,
+        bic:       data.rib_bic || co.bic || null,
+        name:      data.rib_titulaire || co.name,
+        amount:    data.total,
+        reference: data.reference,
+      });
+    }
   }
 
   // ── Route vers le rendu selon le variant ─────────────────────────────────
