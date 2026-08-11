@@ -10,7 +10,7 @@ import {
   Phone, BookOpen, Megaphone, ShoppingBag, HelpCircle, CreditCard,
   Banknote, Wallet, DollarSign, CheckCircle2, XCircle,
   Droplets, Calendar, FileCheck, Landmark, ArrowLeftRight, Table2,
-  AlertTriangle, Zap, ChevronDown,
+  AlertTriangle, Zap, ChevronDown, Repeat2,
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/lib/supabase";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -25,6 +25,8 @@ type PayMethod = "carte_pro" | "carte_perso" | "virement" | "cash" | "autre";
 type ExpStatus = "draft" | "submitted" | "approved" | "rejected" | "reimbursed";
 type Currency  = "EUR" | "USD" | "GBP" | "CHF" | "CAD" | "MAD";
 
+type RecurFreq = "hebdo" | "mensuel" | "trimestriel" | "annuel";
+
 interface Expense {
   id: string; user_id: string; expense_report_id: string | null;
   date: string; amount: number; currency: Currency;
@@ -33,6 +35,8 @@ interface Expense {
   vat_amount: number; vat_recoverable: boolean;
   receipt_url: string; invoice_number: string;
   project: string; cost_center: string; notes: string;
+  recur_freq?:      RecurFreq | null;
+  recur_next_date?: string | null;
   created_at: string; updated_at: string;
 }
 
@@ -90,7 +94,26 @@ const BLANK: Partial<Expense> = {
   payment_method: "carte_pro", status: "draft",
   vat_amount: 0, vat_recoverable: false,
   receipt_url: "", invoice_number: "", project: "", cost_center: "", notes: "",
+  recur_freq: null, recur_next_date: null,
 };
+
+const RECUR_FREQS: { v: RecurFreq; l: string }[] = [
+  { v: "hebdo",       l: "Hebdomadaire" },
+  { v: "mensuel",     l: "Mensuel"      },
+  { v: "trimestriel", l: "Trimestriel"  },
+  { v: "annuel",      l: "Annuel"       },
+];
+
+function nextRecurDate(freq: RecurFreq, from: string): string {
+  const d = new Date(from + "T12:00:00");
+  switch (freq) {
+    case "hebdo":        d.setDate(d.getDate() + 7);         break;
+    case "mensuel":      d.setMonth(d.getMonth() + 1);       break;
+    case "trimestriel":  d.setMonth(d.getMonth() + 3);       break;
+    case "annuel":       d.setFullYear(d.getFullYear() + 1); break;
+  }
+  return d.toISOString().slice(0, 10);
+}
 
 // ── Theme context (partagé entre tous les sous-composants sans prop drilling) ──
 const DarkCtx = createContext(true);
@@ -360,7 +383,50 @@ function ExpenseModal({
             className={`${inp} resize-none`} />
         </Field>
 
-                <div className={`rounded-xl border p-3 space-y-2.5 ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
+        {/* ── Récurrence ─────────────────────────────────────────────────── */}
+        <div className={`rounded-xl border p-3 space-y-3 ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Repeat2 size={13} className={isDark ? "text-white/35" : "text-gray-400"} />
+              <span className={`text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>Dépense récurrente</span>
+            </div>
+            <button type="button"
+              onClick={() => {
+                const enabling = !form.recur_freq;
+                set("recur_freq",      enabling ? "mensuel" : null);
+                set("recur_next_date", enabling ? nextRecurDate("mensuel", form.date ?? new Date().toISOString().slice(0, 10)) : null);
+              }}
+              className={`relative h-5 w-9 rounded-full transition-colors ${form.recur_freq ? "bg-[#c9a55a]" : isDark ? "bg-white/10" : "bg-gray-200"}`}>
+              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${form.recur_freq ? "translate-x-4" : "translate-x-0.5"}`} />
+            </button>
+          </div>
+
+          {form.recur_freq && (
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <Field label="Fréquence">
+                <div className="relative">
+                  <select value={form.recur_freq}
+                    onChange={e => {
+                      const f = e.target.value as RecurFreq;
+                      set("recur_freq", f);
+                      set("recur_next_date", nextRecurDate(f, form.date ?? new Date().toISOString().slice(0, 10)));
+                    }}
+                    className={sel}>
+                    {RECUR_FREQS.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
+                  </select>
+                  <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+                </div>
+              </Field>
+              <Field label="Prochaine occurrence">
+                <input type="date" value={form.recur_next_date ?? ""}
+                  onChange={e => set("recur_next_date", e.target.value)}
+                  className={`${inp} [color-scheme:dark]`} />
+              </Field>
+            </div>
+          )}
+        </div>
+
+        <div className={`rounded-xl border p-3 space-y-2.5 ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>Justificatif</span>
             <button type="button" onClick={() => fileRef.current?.click()} disabled={ocring || uploading}
@@ -1462,6 +1528,13 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <p className={`truncate text-[0.78rem] font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{e.description}</p>
+                                {e.recur_freq && (
+                                  <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.52rem] font-bold"
+                                    style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.25)" }}
+                                    title={`Récurrente — ${RECUR_FREQS.find(r => r.v === e.recur_freq)?.l ?? e.recur_freq}`}>
+                                    <Repeat2 size={8} /> {RECUR_FREQS.find(r => r.v === e.recur_freq)?.l}
+                                  </span>
+                                )}
                                 {e.receipt_url && (
                                   <a href={e.receipt_url} target="_blank" rel="noreferrer"
                                     className="shrink-0 text-[0.6rem] text-blue-400/60 hover:text-blue-400 transition-colors" title="Justificatif">📎</a>
