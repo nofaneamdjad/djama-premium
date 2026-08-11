@@ -10,7 +10,7 @@ import {
   Phone, BookOpen, Megaphone, ShoppingBag, HelpCircle, CreditCard,
   Banknote, Wallet, DollarSign, CheckCircle2, XCircle,
   Droplets, Calendar, FileCheck, Landmark, ArrowLeftRight, Table2,
-  AlertTriangle, Zap, ChevronDown, Repeat2,
+  AlertTriangle, Zap, ChevronDown, Repeat2, FileUp,
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/lib/supabase";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -113,6 +113,289 @@ function nextRecurDate(freq: RecurFreq, from: string): string {
     case "annuel":       d.setFullYear(d.getFullYear() + 1); break;
   }
   return d.toISOString().slice(0, 10);
+}
+
+// ── CSV Import helpers ─────────────────────────────────────────────────────
+
+function csvDetectSep(text: string): string {
+  const first = (text.split("\n")[0] ?? "");
+  return [";", ",", "\t"].map(s => ({ s, n: first.split(s).length })).sort((a, b) => b.n - a.n)[0].s;
+}
+
+function csvParseDate(s: string): string | null {
+  s = s.trim().replace(/["']/g, "");
+  const m1 = s.match(/^(\d{2})[/.](\d{2})[/.](\d{4})$/);
+  if (m1) return `${m1[3]}-${m1[2]}-${m1[1]}`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return null;
+}
+
+function csvParseAmount(s: string): number | null {
+  if (!s || s.trim() === "" || s.trim() === "-") return null;
+  s = s.replace(/["'\s]/g, "");
+  // EU format: 1.234,56
+  if (/^-?\d{1,3}(\.\d{3})*(,\d{1,2})?$/.test(s)) s = s.replace(/\./g, "").replace(",", ".");
+  else s = s.replace(",", ".");
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function csvDetectCols(headers: string[], sample: string[][]): { date: number; label: number; amount: number; debit: number; credit: number } {
+  const h = headers.map(x => x.toLowerCase().replace(/["']/g, "").trim());
+  const find = (keys: string[]) => { for (const k of keys) { const i = h.findIndex(x => x.includes(k)); if (i !== -1) return i; } return -1; };
+  let date   = find(["date"]);
+  let label  = find(["libellé","libelle","description","label","désignation","wording","détail"]);
+  let amount = find(["montant","amount","solde"]);
+  let debit  = find(["débit","debit","retrait"]);
+  let credit = find(["crédit","credit","versement","dépôt"]);
+
+  if (date === -1 || label === -1) {
+    const types = headers.map((_, ci) => {
+      const vals = sample.map(r => r[ci] ?? "").filter(Boolean);
+      return {
+        dates: vals.filter(v => csvParseDate(v) !== null).length,
+        nums:  vals.filter(v => csvParseAmount(v) !== null && !csvParseDate(v)).length,
+        tlen:  vals.reduce((a, v) => a + v.length, 0) / Math.max(vals.length, 1),
+        total: vals.length,
+      };
+    });
+    if (date  === -1) date  = types.findIndex(c => c.dates / Math.max(c.total, 1) > 0.6);
+    if (label === -1) label = types.reduce((b, c, i) => c.dates === 0 && c.nums === 0 && c.tlen > (types[b]?.tlen ?? 0) ? i : b, 0);
+    if (amount === -1 && debit === -1) {
+      const numCols = types.map((c, i) => ({ i, n: c.nums })).filter(c => c.i !== date).sort((a, b) => b.n - a.n);
+      if (numCols.length) amount = numCols[0].i;
+    }
+  }
+  return { date, label, amount, debit, credit };
+}
+
+const CSV_CAT_RULES: { kw: string[]; cat: ExpCat }[] = [
+  { kw: ["sncf","ratp","taxi","uber","bolt","trainline","ouigo","thalys","eurostar","flixbus","autocar","bibus","velo","aeroport","airport","navette"], cat: "transport" },
+  { kw: ["restaurant","brasserie","cafe","snack","mcdonald","mcdo","kfc","pizza","sushi","burger","kebab","boulangerie","patisserie","traiteur","ubereats","deliveroo","just eat","frichti"], cat: "repas" },
+  { kw: ["total","bp","shell","esso","elf","carburant","fuel","essence","diesel"], cat: "carburant" },
+  { kw: ["hotel","ibis","novotel","mercure","accorhotels","booking","airbnb","kyriad","best western","marriott","hilton","hyatt","logement"], cat: "hotel" },
+  { kw: ["google","apple","microsoft","adobe","slack","notion","github","figma","openai","anthropic","dropbox","mailchimp","stripe","zoom","canva","shopify","ovh","hostinger","cloudflare","vercel","heroku","aws","azure"], cat: "logiciel" },
+  { kw: ["orange","sfr","bouygues","free mobile","iliad","telecom","numericable"], cat: "communication" },
+  { kw: ["udemy","coursera","openclassrooms","linkedin learning","formation","certification","academie"], cat: "formation" },
+  { kw: ["facebook","instagram","google ads","pub ","publicite","advertising"], cat: "publicite" },
+  { kw: ["amazon","fnac","darty","cdiscount","ldlc","boulanger","cultura","leroy merlin","ikea","conforama","bureau vallee","materiel.net"], cat: "equipement" },
+  { kw: ["carrefour","leclerc","intermarche","auchan","lidl","aldi","monoprix","franprix","casino","super u"], cat: "fournitures" },
+];
+
+function csvAutoCat(label: string): ExpCat {
+  const l = label.toLowerCase();
+  for (const { kw, cat } of CSV_CAT_RULES) { if (kw.some(k => l.includes(k))) return cat; }
+  return "autre";
+}
+
+interface CsvRow { id: string; date: string; label: string; amount: number; cat: ExpCat; selected: boolean; }
+
+function CsvImportModal({ userId, onClose, onImported }: {
+  userId: string;
+  onClose: () => void;
+  onImported: (count: number) => void;
+}) {
+  const isDark  = useDark();
+  const supabase = supabaseClient;
+  const [step,    setStep]    = useState<"upload"|"preview">("upload");
+  const [rows,    setRows]    = useState<CsvRow[]>([]);
+  const [drag,    setDrag]    = useState(false);
+  const [err,     setErr]     = useState<string | null>(null);
+  const [saving,  setSaving]  = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function parseText(text: string) {
+    setErr(null);
+    try {
+      // Try UTF-8, then try to decode latin1 via re-interpretation
+      const sep    = csvDetectSep(text);
+      const lines  = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) throw new Error("Fichier vide ou invalide.");
+      const parse  = (l: string) => l.split(sep).map(v => v.trim().replace(/^["']|["']$/g, ""));
+      const headers = parse(lines[0]);
+      const sample  = lines.slice(1, 6).map(parse);
+      const cols    = csvDetectCols(headers, sample);
+      if (cols.date === -1 && cols.label === -1 && cols.amount === -1 && cols.debit === -1)
+        throw new Error("Impossible de détecter les colonnes. Vérifiez le format du fichier.");
+
+      const parsed: CsvRow[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const v = parse(lines[i]);
+        if (v.every(x => !x)) continue;
+        const rawDate = cols.date  !== -1 ? v[cols.date]  : "";
+        const rawLabel = cols.label !== -1 ? v[cols.label] : v.find(x => x.length > 5) ?? "";
+        let amount = 0;
+        if (cols.debit !== -1 || cols.credit !== -1) {
+          const dv = cols.debit  !== -1 ? csvParseAmount(v[cols.debit])  : null;
+          const cv = cols.credit !== -1 ? csvParseAmount(v[cols.credit]) : null;
+          if (!dv && cv && cv > 0) continue; // credit (income) — skip
+          amount = Math.abs(dv ?? 0);
+        } else if (cols.amount !== -1) {
+          const raw = csvParseAmount(v[cols.amount]);
+          if (raw === null) continue;
+          amount = Math.abs(raw);
+        }
+        if (amount <= 0) continue;
+        parsed.push({
+          id: Math.random().toString(36).slice(2),
+          date:   csvParseDate(rawDate) ?? new Date().toISOString().slice(0, 10),
+          label:  rawLabel || "Dépense importée",
+          amount: Math.round(amount * 100) / 100,
+          cat:    csvAutoCat(rawLabel),
+          selected: true,
+        });
+      }
+      if (parsed.length === 0) throw new Error("Aucune dépense détectée. Vérifiez que les montants sont négatifs (débits).");
+      setRows(parsed); setStep("preview");
+    } catch (e) { setErr((e as Error).message); }
+  }
+
+  function handleFile(file: File) {
+    if (!file.name.match(/\.(csv|txt)$/i)) { setErr("Format non supporté — importez un fichier .csv"); return; }
+    const reader = new FileReader();
+    reader.onload = e => parseText(e.target?.result as string ?? "");
+    reader.onerror = () => {
+      // Retry with latin-1
+      const r2 = new FileReader();
+      r2.onload = e2 => parseText(e2.target?.result as string ?? "");
+      r2.readAsText(file, "ISO-8859-1");
+    };
+    reader.readAsText(file, "UTF-8");
+  }
+
+  async function doImport() {
+    const sel = rows.filter(r => r.selected);
+    if (!sel.length) return;
+    setSaving(true);
+    const { error } = await supabase.from("expenses").insert(sel.map(r => ({
+      user_id: userId, date: r.date, amount: r.amount, currency: "EUR",
+      category: r.cat, description: r.label,
+      payment_method: "carte_pro", status: "draft",
+      vat_amount: 0, vat_recoverable: false,
+      receipt_url: "", invoice_number: "", project: "", cost_center: "",
+      notes: "Importé depuis relevé bancaire", expense_report_id: null,
+    })));
+    setSaving(false);
+    if (error) { setErr(error.message); return; }
+    onImported(sel.length);
+  }
+
+  const selCount = rows.filter(r => r.selected).length;
+  const selTotal = rows.filter(r => r.selected).reduce((a, r) => a + r.amount, 0);
+
+  const borderStyle = isDark ? "border-white/[0.07]" : "border-gray-200";
+
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <motion.div
+        className={`relative z-10 w-full sm:max-w-2xl flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden ${isDark ? "bg-[#0d1117]" : "bg-white"}`}
+        style={{ maxHeight: "88vh", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}
+        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}>
+
+        {/* Header */}
+        <div className={`flex shrink-0 items-center justify-between px-5 py-3.5 border-b ${borderStyle}`}>
+          <div className="flex items-center gap-2.5">
+            <FileUp size={15} className="text-[#c9a55a]" />
+            <span className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Importer un relevé bancaire</span>
+          </div>
+          <button onClick={onClose} className={`rounded-lg p-1.5 transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700"}`}>
+            <X size={14} />
+          </button>
+        </div>
+
+        {step === "upload" ? (
+          <div className="flex flex-col gap-5 p-6">
+            {/* Drop zone */}
+            <div
+              onDragOver={e => { e.preventDefault(); setDrag(true); }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+              onClick={() => fileRef.current?.click()}
+              className={`cursor-pointer rounded-2xl border-2 border-dashed py-12 text-center transition-all ${drag ? "border-[#c9a55a] bg-[rgba(201,165,90,0.06)]" : isDark ? "border-white/10 hover:border-white/20" : "border-gray-200 hover:border-gray-300"}`}>
+              <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+              <Upload size={30} className={`mx-auto mb-3 ${isDark ? "text-white/20" : "text-gray-300"}`} />
+              <p className={`text-sm font-semibold ${isDark ? "text-white/50" : "text-gray-600"}`}>Déposez votre relevé CSV ici</p>
+              <p className={`mt-1.5 text-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                ou cliquez pour sélectionner · BNP, Société Générale, Crédit Agricole, Boursorama, LCL…
+              </p>
+            </div>
+            {err && <p className="text-center text-xs text-red-400">{err}</p>}
+            <p className={`text-center text-[0.65rem] leading-relaxed ${isDark ? "text-white/20" : "text-gray-400"}`}>
+              Formats supportés : CSV séparateur « ; » ou « , » ou tabulation<br />
+              Encodage UTF-8 ou Latin-1 · débits et crédits auto-détectés
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Toolbar */}
+            <div className={`flex shrink-0 items-center justify-between gap-3 px-4 py-2.5 border-b ${borderStyle}`}>
+              <p className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                <span className="font-semibold text-[#c9a55a]">{selCount}</span> / {rows.length} sélectionnée{selCount !== 1 ? "s" : ""} · {fmtCur(selTotal)}
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => setRows(r => r.map(x => ({ ...x, selected: true  })))}
+                  className={`rounded-lg px-2 py-1 text-[0.62rem] transition-colors ${isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-700"}`}>Tout sél.</button>
+                <button onClick={() => setRows(r => r.map(x => ({ ...x, selected: false })))}
+                  className={`rounded-lg px-2 py-1 text-[0.62rem] transition-colors ${isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-700"}`}>Tout désél.</button>
+                <button onClick={() => { setStep("upload"); setRows([]); setErr(null); }}
+                  className={`rounded-lg px-2 py-1 text-[0.62rem] transition-colors ${isDark ? "text-white/25 hover:text-white/50" : "text-gray-300 hover:text-gray-600"}`}>← Autre fichier</button>
+              </div>
+            </div>
+
+            {/* Preview list */}
+            <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
+              {rows.map((row, ri) => (
+                <div key={row.id}
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${row.selected ? isDark ? "bg-white/[0.04]" : "bg-gray-50" : "opacity-35"}`}>
+                  <input type="checkbox" checked={row.selected}
+                    onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, selected: e.target.checked } : x))}
+                    className="accent-[#c9a55a] shrink-0 cursor-pointer" />
+                  <input type="date" value={row.date}
+                    onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, date: e.target.value } : x))}
+                    className={`w-[108px] shrink-0 rounded-lg border px-2 py-1 text-[0.68rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-transparent text-white/80" : "border-gray-200 bg-white text-gray-700"}`} />
+                  <input value={row.label}
+                    onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, label: e.target.value, cat: csvAutoCat(e.target.value) } : x))}
+                    className={`flex-1 min-w-0 rounded-lg border px-2 py-1 text-[0.68rem] outline-none truncate ${isDark ? "border-white/[0.08] bg-transparent text-white/80" : "border-gray-200 bg-white text-gray-700"}`} />
+                  <select value={row.cat} onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, cat: e.target.value as ExpCat } : x))}
+                    className={`w-[90px] shrink-0 rounded-lg border px-1.5 py-1 text-[0.62rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-transparent text-white/55" : "border-gray-200 bg-white text-gray-500"}`}>
+                    {CATS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+                  </select>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <input type="number" step="0.01" min="0" value={row.amount}
+                      onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, amount: parseFloat(e.target.value) || 0 } : x))}
+                      className={`w-[76px] rounded-lg border px-2 py-1 text-right text-[0.68rem] outline-none ${isDark ? "border-white/[0.08] bg-transparent text-white/80" : "border-gray-200 bg-white text-gray-700"}`} />
+                    <span className={`text-[0.58rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>€</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className={`flex shrink-0 items-center justify-between gap-3 border-t px-5 py-3.5 ${borderStyle}`}>
+              {err && <p className="flex-1 text-xs text-red-400">{err}</p>}
+              <div className="ml-auto flex items-center gap-2">
+                <button onClick={onClose}
+                  className={`rounded-xl px-4 py-2 text-xs font-medium transition-colors ${isDark ? "text-white/40 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}>
+                  Annuler
+                </button>
+                <button onClick={doImport} disabled={selCount === 0 || saving}
+                  className="flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold transition-all hover:brightness-110 disabled:opacity-40"
+                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                  {saving
+                    ? <div className="h-3 w-3 animate-spin rounded-full border border-t-transparent border-black/60" />
+                    : <FileUp size={12} />}
+                  Importer {selCount} dépense{selCount !== 1 ? "s" : ""}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </motion.div>
+    </motion.div>
+  );
 }
 
 // ── Theme context (partagé entre tous les sous-composants sans prop drilling) ──
@@ -1143,6 +1426,7 @@ export default function DepensesPage() {
 
   const [confirmDeleteExpenseId, setConfirmDeleteExpenseId] = useState<string | null>(null);
   const [confirmDeleteReportId,  setConfirmDeleteReportId]  = useState<string | null>(null);
+  const [showCsvImport,          setShowCsvImport]          = useState(false);
 
   const toast$ = (msg: string, type: "success"|"error" = "success") => setToast({ msg, type });
 
@@ -1385,7 +1669,13 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
               <Table2 size={14} />
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.25 }}
+              transition={{ delay: 0.24 }} onClick={() => setShowCsvImport(true)} title="Importer relevé CSV"
+              className={`flex h-8 items-center gap-1.5 rounded-xl px-3 text-[0.72rem] font-semibold transition-all ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+              style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
+              <FileUp size={13} /> Import CSV
+            </motion.button>
+            <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.26 }}
               onClick={() => { setEditExpense(null); setShowModal(true); }}
               className="flex h-8 items-center gap-2 rounded-xl px-4 text-[0.72rem] font-bold transition-all hover:brightness-110"
               style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -1788,6 +2078,20 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
             report={editReport}
             onSave={saveReport}
             onClose={() => { setShowReportModal(false); setEditReport(null); }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showCsvImport && userId && (
+          <CsvImportModal
+            userId={userId}
+            onClose={() => setShowCsvImport(false)}
+            onImported={count => {
+              setShowCsvImport(false);
+              toast$(`${count} dépense${count > 1 ? "s" : ""} importée${count > 1 ? "s" : ""} avec succès`);
+              void loadAll();
+            }}
           />
         )}
       </AnimatePresence>
