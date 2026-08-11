@@ -190,8 +190,9 @@ function csvAutoCat(label: string): ExpCat {
 
 interface CsvRow { id: string; date: string; label: string; amount: number; cat: ExpCat; selected: boolean; }
 
-function CsvImportModal({ userId, onClose, onImported }: {
+function CsvImportModal({ userId, rules, onClose, onImported }: {
   userId: string;
+  rules?: ExpenseRule[];
   onClose: () => void;
   onImported: (count: number) => void;
 }) {
@@ -241,7 +242,7 @@ function CsvImportModal({ userId, onClose, onImported }: {
           date:   csvParseDate(rawDate) ?? new Date().toISOString().slice(0, 10),
           label:  rawLabel || "Dépense importée",
           amount: Math.round(amount * 100) / 100,
-          cat:    csvAutoCat(rawLabel),
+          cat:    (rules?.length ? applyRules(rawLabel, rules) : null) ?? csvAutoCat(rawLabel),
           selected: true,
         });
       }
@@ -357,7 +358,7 @@ function CsvImportModal({ userId, onClose, onImported }: {
                     onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, date: e.target.value } : x))}
                     className={`w-[108px] shrink-0 rounded-lg border px-2 py-1 text-[0.68rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-transparent text-white/80" : "border-gray-200 bg-white text-gray-700"}`} />
                   <input value={row.label}
-                    onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, label: e.target.value, cat: csvAutoCat(e.target.value) } : x))}
+                    onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, label: e.target.value, cat: (rules?.length ? applyRules(e.target.value, rules) : null) ?? csvAutoCat(e.target.value) } : x))}
                     className={`flex-1 min-w-0 rounded-lg border px-2 py-1 text-[0.68rem] outline-none truncate ${isDark ? "border-white/[0.08] bg-transparent text-white/80" : "border-gray-200 bg-white text-gray-700"}`} />
                   <select value={row.cat} onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, cat: e.target.value as ExpCat } : x))}
                     className={`w-[90px] shrink-0 rounded-lg border px-1.5 py-1 text-[0.62rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-transparent text-white/55" : "border-gray-200 bg-white text-gray-500"}`}>
@@ -395,6 +396,227 @@ function CsvImportModal({ userId, onClose, onImported }: {
         )}
       </motion.div>
     </motion.div>
+  );
+}
+
+// ── Règles de catégorisation ───────────────────────────────────────────────
+
+type MatchOp = "contains" | "starts_with" | "ends_with" | "equals";
+
+interface ExpenseRule {
+  id: string; user_id: string; name: string;
+  match_field: string; match_op: MatchOp; match_value: string;
+  category: string; priority: number; active: boolean; created_at: string;
+}
+
+const OP_LABELS: Record<MatchOp, string> = {
+  contains:    "contient",
+  starts_with: "commence par",
+  ends_with:   "finit par",
+  equals:      "est exactement",
+};
+
+function applyRules(description: string, rules: ExpenseRule[]): ExpCat | null {
+  const desc = description.toLowerCase().trim();
+  const active = [...rules].filter(r => r.active).sort((a, b) => b.priority - a.priority);
+  for (const rule of active) {
+    const val = rule.match_value.toLowerCase();
+    if (!val) continue;
+    const ok =
+      rule.match_op === "contains"    ? desc.includes(val)    :
+      rule.match_op === "starts_with" ? desc.startsWith(val)  :
+      rule.match_op === "ends_with"   ? desc.endsWith(val)    :
+      desc === val;
+    if (ok) return rule.category as ExpCat;
+  }
+  return null;
+}
+
+const BLANK_RULE: Omit<ExpenseRule, "id"|"user_id"|"created_at"> = {
+  name: "", match_field: "description", match_op: "contains",
+  match_value: "", category: "autre", priority: 0, active: true,
+};
+
+function RulesView({ rules, setRules, userId }: {
+  rules: ExpenseRule[];
+  setRules: React.Dispatch<React.SetStateAction<ExpenseRule[]>>;
+  userId: string;
+}) {
+  const isDark   = useDark();
+  const supabase = supabaseClient;
+  const [editing, setEditing] = useState<string | null>(null); // id or "new"
+  const [draft,   setDraft]   = useState<Omit<ExpenseRule, "id"|"user_id"|"created_at">>(BLANK_RULE);
+  const [saving,  setSaving]  = useState(false);
+
+  const borderC = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)";
+  const inp = isDark
+    ? "w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[0.78rem] text-white outline-none focus:border-white/20"
+    : "w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.78rem] text-gray-900 outline-none focus:border-gray-300";
+
+  function startNew() {
+    setDraft({ ...BLANK_RULE });
+    setEditing("new");
+  }
+  function startEdit(r: ExpenseRule) {
+    setDraft({ name: r.name, match_field: r.match_field, match_op: r.match_op,
+               match_value: r.match_value, category: r.category, priority: r.priority, active: r.active });
+    setEditing(r.id);
+  }
+  function cancelEdit() { setEditing(null); }
+
+  async function saveRule() {
+    if (!draft.match_value.trim()) return;
+    setSaving(true);
+    if (editing === "new") {
+      const { data, error } = await supabase.from("expense_rules")
+        .insert({ ...draft, user_id: userId }).select().single();
+      if (!error && data) setRules(rs => [data as ExpenseRule, ...rs]);
+    } else {
+      const { error } = await supabase.from("expense_rules")
+        .update(draft).eq("id", editing!).eq("user_id", userId);
+      if (!error) setRules(rs => rs.map(r => r.id === editing ? { ...r, ...draft } : r));
+    }
+    setSaving(false);
+    setEditing(null);
+  }
+
+  async function deleteRule(id: string) {
+    await supabase.from("expense_rules").delete().eq("id", id).eq("user_id", userId);
+    setRules(rs => rs.filter(r => r.id !== id));
+  }
+
+  async function toggleActive(rule: ExpenseRule) {
+    const next = !rule.active;
+    await supabase.from("expense_rules").update({ active: next }).eq("id", rule.id).eq("user_id", userId);
+    setRules(rs => rs.map(r => r.id === rule.id ? { ...r, active: next } : r));
+  }
+
+  const sortedRules = [...rules].sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name));
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Règles de catégorisation</p>
+          <p className={`text-[0.68rem] mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>
+            Appliquées automatiquement sur le libellé lors de la saisie et à l&apos;import CSV
+          </p>
+        </div>
+        <button onClick={startNew} disabled={editing !== null}
+          className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110 disabled:opacity-40"
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+          <Plus size={13} /> Nouvelle règle
+        </button>
+      </div>
+
+      {/* New / Edit form */}
+      {editing !== null && (
+        <div className={`rounded-2xl p-4 space-y-3 ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}
+          style={{ border: `1px solid ${borderC}` }}>
+          <p className={`text-xs font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>
+            {editing === "new" ? "Nouvelle règle" : "Modifier la règle"}
+          </p>
+          <input value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
+            placeholder="Nom de la règle (optionnel)" className={inp} />
+          <div className="flex flex-wrap items-center gap-2 text-[0.78rem]">
+            <span className={isDark ? "text-white/40" : "text-gray-500"}>Si le libellé</span>
+            <div className="relative">
+              <select value={draft.match_op}
+                onChange={e => setDraft(d => ({ ...d, match_op: e.target.value as MatchOp }))}
+                className={`${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/80" : "border-gray-200 bg-white text-gray-800"} appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none`}>
+                {(Object.entries(OP_LABELS) as [MatchOp, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+              <ChevronDown size={10} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+            </div>
+            <input value={draft.match_value} onChange={e => setDraft(d => ({ ...d, match_value: e.target.value }))}
+              placeholder="mot-clé…" className={`${inp} max-w-[200px]`} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`text-[0.78rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>→ Catégorie</span>
+            <div className="relative">
+              <select value={draft.category} onChange={e => setDraft(d => ({ ...d, category: e.target.value }))}
+                className={`${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/80" : "border-gray-200 bg-white text-gray-800"} appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none`}>
+                {CATS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+              </select>
+              <ChevronDown size={10} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+            </div>
+            <span className={`text-[0.78rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>Priorité</span>
+            <input type="number" min="0" max="100" value={draft.priority}
+              onChange={e => setDraft(d => ({ ...d, priority: parseInt(e.target.value) || 0 }))}
+              className={`${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/80" : "border-gray-200 bg-white text-gray-800"} w-16 rounded-xl border px-2 py-2 text-[0.75rem] text-center outline-none`} />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button onClick={cancelEdit} className={`rounded-xl px-4 py-2 text-xs transition-colors ${isDark ? "text-white/40 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}>
+              Annuler
+            </button>
+            <button onClick={saveRule} disabled={!draft.match_value.trim() || saving}
+              className="flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold transition-all hover:brightness-110 disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+              {saving ? <div className="h-3 w-3 animate-spin rounded-full border border-t-transparent border-black/60" /> : <CheckCircle2 size={12} />}
+              Enregistrer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Rules list */}
+      {sortedRules.length === 0 && editing === null ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
+            style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
+            <Zap size={24} style={{ color: "#c9a55a66" }} />
+          </div>
+          <p className={`text-[0.78rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+            Aucune règle définie
+          </p>
+          <button onClick={startNew}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] transition-all ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+            style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
+            <Plus size={13} /> Créer votre première règle
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {sortedRules.map(rule => (
+            <div key={rule.id} className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${!rule.active ? "opacity-45" : ""}`}
+              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#fff", border: `1px solid ${borderC}` }}>
+              {/* Active toggle */}
+              <button type="button" onClick={() => toggleActive(rule)}
+                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${rule.active ? "bg-[#c9a55a]" : isDark ? "bg-white/10" : "bg-gray-200"}`}>
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${rule.active ? "translate-x-4" : "translate-x-0.5"}`} />
+              </button>
+              {/* Rule description */}
+              <div className="flex-1 min-w-0">
+                {rule.name && (
+                  <p className={`text-[0.65rem] font-semibold mb-0.5 truncate ${isDark ? "text-white/50" : "text-gray-500"}`}>{rule.name}</p>
+                )}
+                <p className={`text-[0.72rem] truncate ${isDark ? "text-white/70" : "text-gray-700"}`}>
+                  <span className={isDark ? "text-white/35" : "text-gray-400"}>Si le libellé </span>
+                  <span className="font-medium">{OP_LABELS[rule.match_op]}</span>
+                  <span className={isDark ? "text-white/35" : "text-gray-400"}> «&nbsp;</span>
+                  <span className="font-semibold text-[#c9a55a]">{rule.match_value}</span>
+                  <span className={isDark ? "text-white/35" : "text-gray-400"}>&nbsp;» → </span>
+                  <span className="font-semibold">{getCat(rule.category).l}</span>
+                  {rule.priority > 0 && (
+                    <span className={`ml-2 text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>priorité {rule.priority}</span>
+                  )}
+                </p>
+              </div>
+              {/* Actions */}
+              <button onClick={() => startEdit(rule)}
+                className={`shrink-0 rounded-lg p-1.5 transition-colors ${isDark ? "text-white/25 hover:text-white/60" : "text-gray-400 hover:text-gray-700"}`}>
+                <Edit2 size={13} />
+              </button>
+              <button onClick={() => deleteRule(rule.id)}
+                className={`shrink-0 rounded-lg p-1.5 transition-colors hover:text-red-400 ${isDark ? "text-white/20" : "text-gray-400"}`}>
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -453,11 +675,12 @@ const SEL_DARK = "w-full rounded-xl border border-white/[0.08] bg-[#0e1420] px-3
 const SEL_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-[0.8rem] text-gray-900 outline-none appearance-none focus:border-gray-300 transition-all";
 
 function ExpenseModal({
-  expense, reports, userId, onSave, onClose,
+  expense, reports, userId, rules, onSave, onClose,
 }: {
   expense: Partial<Expense> | null;
   reports: ExpenseReport[];
   userId: string;
+  rules?: ExpenseRule[];
   onSave: (e: Expense) => void;
   onClose: () => void;
 }) {
@@ -472,8 +695,12 @@ function ExpenseModal({
   const [ocring,    setOcring]    = useState(false);
   const [ocrFields, setOcrFields] = useState<string[]>([]);
   const [saveError, setSaveError] = useState("");
+  const catManualRef = useRef(!!expense?.category && expense.category !== "autre");
 
-  const set = (k: keyof Expense, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k: keyof Expense, v: unknown) => {
+    if (k === "category") catManualRef.current = true;
+    setForm(f => ({ ...f, [k]: v }));
+  };
 
   async function uploadReceipt(file: File) {
     setUploading(true);
@@ -576,7 +803,16 @@ function ExpenseModal({
 
                 <Field label="Description / Motif">
           <input type="text" placeholder="Ex: Déjeuner client Paris"
-            value={form.description ?? ""} onChange={e => set("description", e.target.value)} className={inp} />
+            value={form.description ?? ""} onChange={e => {
+              const v = e.target.value;
+              setForm(f => {
+                if (!catManualRef.current && rules?.length) {
+                  const matched = applyRules(v, rules);
+                  if (matched) return { ...f, description: v, category: matched };
+                }
+                return { ...f, description: v };
+              });
+            }} className={inp} />
         </Field>
 
                 <Field label="Catégorie">
@@ -1411,8 +1647,9 @@ export default function DepensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [reports,  setReports]  = useState<ExpenseReport[]>([]);
   const [budgets,  setBudgets]  = useState<ExpenseBudget[]>([]);
+  const [rules,    setRules]    = useState<ExpenseRule[]>([]);
 
-  const [tab,             setTab]             = useState<"depenses"|"notes"|"budgets"|"rapprochement"|"rapport">("depenses");
+  const [tab,             setTab]             = useState<"depenses"|"notes"|"budgets"|"rapprochement"|"rapport"|"regles">("depenses");
   const [showModal,       setShowModal]       = useState(false);
   const [editExpense,     setEditExpense]     = useState<Expense | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -1441,14 +1678,16 @@ export default function DepensesPage() {
   const loadAll = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const [eRes, rRes, bRes] = await Promise.all([
+    const [eRes, rRes, bRes, rlRes] = await Promise.all([
       supabase.from("expenses").select("*").eq("user_id", userId).order("date", { ascending: false }),
       supabase.from("expense_reports").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("expense_budgets").select("*").eq("user_id", userId),
+      supabase.from("expense_rules").select("*").eq("user_id", userId).order("priority", { ascending: false }),
     ]);
-    if (eRes.data) setExpenses(eRes.data as Expense[]);
-    if (rRes.data) setReports(rRes.data as ExpenseReport[]);
-    if (bRes.data) setBudgets(bRes.data as ExpenseBudget[]);
+    if (eRes.data)  setExpenses(eRes.data as Expense[]);
+    if (rRes.data)  setReports(rRes.data as ExpenseReport[]);
+    if (bRes.data)  setBudgets(bRes.data as ExpenseBudget[]);
+    if (rlRes.data) setRules(rlRes.data as ExpenseRule[]);
     setLoading(false);
 
   }, [userId]);
@@ -1603,6 +1842,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
     { id: "budgets",       l: "Budgets",         I: PiggyBank,       badge: budgetAlertCount },
     { id: "rapprochement", l: "Rapprochement",   I: ArrowLeftRight,  badge: 0 },
     { id: "rapport",       l: "Rapport",         I: BarChart2,       badge: 0 },
+    { id: "regles",        l: "Règles",           I: Zap,             badge: rules.filter(r => r.active).length },
   ] as const;
 
   const grandTotal = expenses.filter(e => e.status !== "rejected").reduce((a, e) => a + e.amount, 0);
@@ -2023,6 +2263,12 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
               </motion.div>
             )}
 
+            {tab === "regles" && userId && (
+              <motion.div key="regles" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <RulesView rules={rules} setRules={setRules} userId={userId} />
+              </motion.div>
+            )}
+
           </AnimatePresence>
         </div>
       </div>
@@ -2030,7 +2276,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
       <AnimatePresence>
         {showModal && userId && (
           <ExpenseModal
-            expense={editExpense} reports={reports} userId={userId}
+            expense={editExpense} reports={reports} userId={userId} rules={rules}
             onSave={saved => {
               const isNew = !editExpense;
               if (isNew) {
@@ -2085,7 +2331,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
       <AnimatePresence>
         {showCsvImport && userId && (
           <CsvImportModal
-            userId={userId}
+            userId={userId} rules={rules}
             onClose={() => setShowCsvImport(false)}
             onImported={count => {
               setShowCsvImport(false);
