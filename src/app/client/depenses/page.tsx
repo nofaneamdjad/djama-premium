@@ -39,6 +39,8 @@ interface Expense {
   recur_next_date?:  string | null;
   approval_comment?: string;
   approved_at?:      string | null;
+  exchange_rate?:    number;
+  amount_eur?:       number | null;
   created_at: string; updated_at: string;
 }
 
@@ -100,6 +102,7 @@ const BLANK: Partial<Expense> = {
   vat_amount: 0, vat_recoverable: false,
   receipt_url: "", invoice_number: "", project: "", cost_center: "", notes: "",
   recur_freq: null, recur_next_date: null,
+  exchange_rate: 1, amount_eur: null,
 };
 
 const RECUR_FREQS: { v: RecurFreq; l: string }[] = [
@@ -632,6 +635,14 @@ const useDark = () => useContext(DarkCtx);
 const fmtCur = (n: number, c = "EUR") =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: c, minimumFractionDigits: 2 }).format(n);
 
+// Convert any amount to EUR using live rates (rate = EUR per 1 unit of currency)
+function amtEur(e: Pick<Expense, "amount" | "currency" | "amount_eur">, rates: Record<string, number>): number {
+  if (e.amount_eur != null) return e.amount_eur;
+  if (e.currency === "EUR") return e.amount;
+  const rate = rates[e.currency] ?? 1;
+  return e.amount / rate;
+}
+
 const fmtDate = (d: string) =>
   new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 
@@ -680,12 +691,13 @@ const SEL_DARK = "w-full rounded-xl border border-white/[0.08] bg-[#0e1420] px-3
 const SEL_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-[0.8rem] text-gray-900 outline-none appearance-none focus:border-gray-300 transition-all";
 
 function ExpenseModal({
-  expense, reports, userId, rules, onSave, onClose,
+  expense, reports, userId, rules, rates, onSave, onClose,
 }: {
   expense: Partial<Expense> | null;
   reports: ExpenseReport[];
   userId: string;
   rules?: ExpenseRule[];
+  rates?: Record<string, number>;
   onSave: (e: Expense) => void;
   onClose: () => void;
 }) {
@@ -704,7 +716,17 @@ function ExpenseModal({
 
   const set = (k: keyof Expense, v: unknown) => {
     if (k === "category") catManualRef.current = true;
-    setForm(f => ({ ...f, [k]: v }));
+    setForm(f => {
+      const next = { ...f, [k]: v };
+      if ((k === "amount" || k === "currency") && rates) {
+        const cur  = (k === "currency" ? v : f.currency) as string ?? "EUR";
+        const amt  = (k === "amount"   ? v : f.amount)   as number ?? 0;
+        const rate = rates[cur] ?? 1;
+        next.exchange_rate = rate;
+        next.amount_eur    = cur === "EUR" ? amt : Math.round((amt / rate) * 100) / 100;
+      }
+      return next;
+    });
   };
 
   async function uploadReceipt(file: File) {
@@ -805,6 +827,16 @@ function ExpenseModal({
             </div>
           </Field>
         </div>
+        {/* Conversion EUR */}
+        {form.currency && form.currency !== "EUR" && form.amount_eur != null && rates && (
+          <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[0.68rem] ${isDark ? "bg-white/[0.04] text-white/45" : "bg-amber-50 text-amber-700"}`}>
+            <ArrowLeftRight size={12} className="shrink-0" />
+            <span>
+              {fmtCur(form.amount ?? 0, form.currency)} = <span className="font-semibold">{fmtCur(form.amount_eur)}</span>
+              {" "}(taux : 1 EUR = {(rates[form.currency] ?? 1).toFixed(4)} {form.currency})
+            </span>
+          </div>
+        )}
 
                 <Field label="Description / Motif">
           <input type="text" placeholder="Ex: Déjeuner client Paris"
@@ -1121,11 +1153,12 @@ function BudgetInput({ value, onSave, color }: { value: number; onSave: (v: numb
 }
 
 function BudgetView({
-  expenses, budgets, userId, onBudgetsChange,
+  expenses, budgets, userId, rates, onBudgetsChange,
 }: {
   expenses: Expense[];
   budgets: ExpenseBudget[];
   userId: string;
+  rates: Record<string, number>;
   onBudgetsChange: (b: ExpenseBudget[]) => void;
 }) {
   const supabase = supabaseClient;
@@ -1138,11 +1171,11 @@ function BudgetView({
     const result: Record<string, number> = {};
     expenses.forEach(e => {
       if (e.date.startsWith(month) && e.status !== "rejected") {
-        result[e.category] = (result[e.category] ?? 0) + e.amount;
+        result[e.category] = (result[e.category] ?? 0) + amtEur(e, rates);
       }
     });
     return result;
-  }, [expenses, month]);
+  }, [expenses, month, rates]);
 
   const isDark = useDark();
   const getBudget = (cat: string) =>
@@ -1772,7 +1805,7 @@ function ApprobationView({
   );
 }
 
-function RapportView({ expenses }: { expenses: Expense[] }) {
+function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; rates?: Record<string, number> }) {
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const prevDate  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -1933,7 +1966,12 @@ function RapportView({ expenses }: { expenses: Expense[] }) {
                       <p className={`truncate text-[0.75rem] font-semibold ${isDark ? "text-white/80" : "text-gray-800"}`}>{e.description}</p>
                       <p className={`text-[0.6rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(e.date)} · {getCat(e.category).l}</p>
                     </div>
-                    <span className={`shrink-0 text-[0.8rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(e.amount, e.currency)}</span>
+                    <div className="shrink-0 text-right">
+                      <span className={`text-[0.8rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(e.amount, e.currency)}</span>
+                      {e.currency !== "EUR" && (
+                        <p className={`text-[0.58rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>≈ {fmtCur(amtEur(e, rates))}</p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2139,6 +2177,7 @@ export default function DepensesPage() {
   const [reports,  setReports]  = useState<ExpenseReport[]>([]);
   const [budgets,  setBudgets]  = useState<ExpenseBudget[]>([]);
   const [rules,    setRules]    = useState<ExpenseRule[]>([]);
+  const [rates,    setRates]    = useState<Record<string, number>>({ EUR: 1 });
 
   const [tab,             setTab]             = useState<"depenses"|"notes"|"budgets"|"rapprochement"|"rapport"|"regles"|"approbation">("depenses");
   const [showModal,       setShowModal]       = useState(false);
@@ -2164,6 +2203,10 @@ export default function DepensesPage() {
       if (data.user) setUserId(data.user.id);
       else if (process.env.NODE_ENV !== "development") router.replace("/login");
     });
+    fetch("/api/depenses/exchange-rates")
+      .then(r => r.ok ? r.json() : null)
+      .then((r: Record<string, number> | null) => { if (r) setRates(r); })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2197,9 +2240,9 @@ export default function DepensesPage() {
     return true;
   }), [expenses, search, filterCat, filterSt, filterPay, filterMonth]);
 
-  const filteredTotal = useMemo(() => filtered.filter(e => e.status !== "rejected").reduce((a, e) => a + e.amount, 0), [filtered]);
-  const filteredVAT   = useMemo(() => filtered.filter(e => e.vat_recoverable).reduce((a, e) => a + e.vat_amount, 0), [filtered]);
-  const filteredReimb = useMemo(() => filtered.filter(e => e.payment_method === "carte_perso" && e.status !== "reimbursed" && e.status !== "rejected").reduce((a, e) => a + e.amount, 0), [filtered]);
+  const filteredTotal = useMemo(() => filtered.filter(e => e.status !== "rejected").reduce((a, e) => a + amtEur(e, rates), 0), [filtered, rates]);
+  const filteredVAT   = useMemo(() => filtered.filter(e => e.vat_recoverable).reduce((a, e) => a + (e.currency === "EUR" ? e.vat_amount : e.vat_amount / (rates[e.currency] ?? 1)), 0), [filtered, rates]);
+  const filteredReimb = useMemo(() => filtered.filter(e => e.payment_method === "carte_perso" && e.status !== "reimbursed" && e.status !== "rejected").reduce((a, e) => a + amtEur(e, rates), 0), [filtered, rates]);
   const hasFilters    = !!(search || filterCat || filterSt || filterMonth || filterPay);
 
     async function deleteExpense(id: string) {
@@ -2338,7 +2381,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
     { id: "regles",        l: "Règles",           I: Zap,             badge: rules.filter(r => r.active).length },
   ] as const;
 
-  const grandTotal = expenses.filter(e => e.status !== "rejected").reduce((a, e) => a + e.amount, 0);
+  const grandTotal = expenses.filter(e => e.status !== "rejected").reduce((a, e) => a + amtEur(e, rates), 0);
 
   if (loading) return (
     <div className="flex h-full items-center justify-center" style={{ background: isDark ? "#07080e" : "#f8f9fa" }}>
@@ -2744,7 +2787,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                 {userId && (
                   <BudgetView
                     expenses={expenses} budgets={budgets}
-                    userId={userId} onBudgetsChange={setBudgets}
+                    userId={userId} rates={rates} onBudgetsChange={setBudgets}
                   />
                 )}
               </motion.div>
@@ -2758,7 +2801,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
 
             {tab === "rapport" && (
               <motion.div key="rap" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <RapportView expenses={expenses} />
+                <RapportView expenses={expenses} rates={rates} />
               </motion.div>
             )}
 
@@ -2781,7 +2824,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
       <AnimatePresence>
         {showModal && userId && (
           <ExpenseModal
-            expense={editExpense} reports={reports} userId={userId} rules={rules}
+            expense={editExpense} reports={reports} userId={userId} rules={rules} rates={rates}
             onSave={saved => {
               const isNew = !editExpense;
               if (isNew) {
