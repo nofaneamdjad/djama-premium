@@ -77,7 +77,7 @@ const CATEGORIES: { value: FournCat; label: string; icon: LucideIcon }[] = [
 ];
 
 const ORDER_STATUS: Record<OrderStatus, { label: string; color: string; bg: string }> = {
-  draft:       { label: "Brouillon",         color: "text-white/40",    bg: "bg-white/[0.05]" },
+  draft:       { label: "Brouillon",         color: "text-gray-400",    bg: "bg-gray-400/10" },
   sent:        { label: "Envoyée",           color: "text-sky-400",     bg: "bg-sky-500/10" },
   confirmed:   { label: "Confirmée",         color: "text-yellow-400",  bg: "bg-yellow-500/10" },
   in_delivery: { label: "En livraison",      color: "text-blue-400",    bg: "bg-blue-500/10" },
@@ -610,13 +610,18 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
   const overdue = invoices.filter((i) => i.due_date && i.due_date < today && i.status !== "paid").length;
   const contractsExpiring = fournisseurs.filter((f) => f.contract_expires_at && f.contract_expires_at <= in30).length;
 
+  const scoredCount = fournisseurs.filter((f) => f.score_reliability > 0).length;
+  const avgScore = scoredCount > 0
+    ? (fournisseurs.filter((f) => f.score_reliability > 0).reduce((s, f) => s + (f.score_reliability + f.score_quality + f.score_price + f.score_delays) / 4, 0) / scoredCount).toFixed(1)
+    : "—";
+
   const kpis = [
-    { label: "Fournisseurs actifs",   value: actifs,           icon: Truck,         color: violet, bg: "bg-violet-500/10" },
-    { label: "Commandes en cours",    value: ordersActive,     icon: ShoppingCart,  color: "#3b82f6", bg: "bg-blue-500/10" },
-    { label: "Montant dû",            value: fmtEur(totalDue), icon: DollarSign,    color: "#f97316", bg: "bg-orange-500/10", isStr: true },
-    { label: "Factures en retard",    value: overdue,          icon: AlertOctagon,  color: "#ef4444", bg: "bg-red-500/10" },
-    { label: "Contrats expirant bientôt", value: contractsExpiring, icon: Calendar, color: "#f59e0b", bg: "bg-amber-500/10" },
-    { label: "Fournisseurs total",    value: fournisseurs.length, icon: Building2,  color: "#8b5cf6", bg: "bg-violet-500/10" },
+    { label: "Fournisseurs actifs",    value: actifs,           icon: Truck,         color: violet,    bg: "bg-violet-500/10" },
+    { label: "Commandes en cours",     value: ordersActive,     icon: ShoppingCart,  color: "#3b82f6", bg: "bg-blue-500/10" },
+    { label: "Montant dû",             value: fmtEur(totalDue), icon: DollarSign,    color: "#f97316", bg: "bg-orange-500/10", isStr: true },
+    { label: "Factures en retard",     value: overdue,          icon: AlertOctagon,  color: "#ef4444", bg: "bg-red-500/10" },
+    { label: "Contrats expirant",      value: contractsExpiring, icon: Calendar,     color: "#f59e0b", bg: "bg-amber-500/10" },
+    { label: "Score moyen",            value: avgScore,         icon: Star,          color: "#f59e0b", bg: "bg-amber-500/10", isStr: true },
   ];
 
   // Top fournisseurs par score
@@ -638,7 +643,8 @@ function DashboardView({ fournisseurs, orders, invoices, onNew, onNewOrder, onNe
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className={`rounded-2xl border p-4 flex flex-col gap-2 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
+            className="rounded-2xl p-4 flex flex-col gap-2"
+            style={{ background: isDark ? "rgba(255,255,255,0.035)" : "#ffffff", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}` }}>
             <div className={`h-8 w-8 flex items-center justify-center rounded-xl ${k.bg}`}>
               <k.icon size={15} style={{ color: k.color }}/>
             </div>
@@ -1158,8 +1164,9 @@ export default function FournisseursPage() {
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={exportCSV} title="Exporter CSV" className={`h-8 w-8 flex items-center justify-center rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}>
-                <Download size={14}/>
+              <button onClick={exportCSV} title="Exporter CSV" className={`h-8 flex items-center gap-1.5 px-3 rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}>
+                <Download size={13}/>
+                <span className="hidden sm:inline text-xs font-semibold">Exporter</span>
               </button>
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={() => { setEditFourn(EMPTY_FOURN()); setShowFournModal(true); }}
@@ -1175,21 +1182,21 @@ export default function FournisseursPage() {
         <div className="relative px-5 pb-3 sm:px-8">
           <div className="mx-auto max-w-7xl grid grid-cols-4 gap-2">
             {[
-              { label: "Total",      value: fournisseurs.length,                                                             icon: Building2 },
-              { label: "Actifs",     value: fournisseurs.filter((f) => f.is_active).length,                                  icon: CheckCircle },
-              { label: "Commandes",  value: orders.filter((o) => !["received","cancelled"].includes(o.status)).length,      icon: ShoppingCart },
-              { label: "Montant dû", value: fmtEur(invoices.filter((i) => i.status !== "paid").reduce((s, i) => s + (i.total_amount - i.paid_amount), 0)), icon: DollarSign },
+              { label: "Total",      value: fournisseurs.length,                                                             icon: Building2,   onClick: () => setTab("list") },
+              { label: "Actifs",     value: fournisseurs.filter((f) => f.is_active).length,                                  icon: CheckCircle, onClick: () => setTab("list") },
+              { label: "Commandes",  value: orders.filter((o) => !["received","cancelled"].includes(o.status)).length,      icon: ShoppingCart, onClick: () => setTab("orders") },
+              { label: "Montant dû", value: fmtEur(invoices.filter((i) => i.status !== "paid").reduce((s, i) => s + (i.total_amount - i.paid_amount), 0)), icon: DollarSign, onClick: () => setTab("invoices") },
             ].map((kpi, i) => {
               const KpiIcon = kpi.icon;
               return (
-                <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+                <motion.button key={kpi.label} onClick={kpi.onClick} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2 border cursor-pointer transition-all text-left ${isDark ? "border-white/[0.06] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.06]" : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"}`}>
                   <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
                   <div className="min-w-0">
                     <p className={`text-sm font-bold leading-none truncate ${isDark ? "text-white" : "text-gray-800"}`}>{kpi.value}</p>
                     <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                   </div>
-                </motion.div>
+                </motion.button>
               );
             })}
           </div>
