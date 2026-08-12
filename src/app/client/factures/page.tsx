@@ -2474,8 +2474,9 @@ export default function FacturesPage() {
                   <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-current opacity-60"/>
                 </div>
                 {dirty && (
-                  <span className="hidden items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.08)] px-2.5 py-1 text-[0.6rem] font-semibold text-[#c9a55a] sm:inline-flex">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#c9a55a]"/>Non sauvegardé
+                  <span className="flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.08)] px-2.5 py-1 text-[0.6rem] font-semibold text-[#c9a55a]">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#c9a55a]"/>
+                    <span className="hidden sm:inline">Non sauvegardé</span>
                   </span>
                 )}
                 <div className="ml-auto flex items-center gap-1.5">
@@ -2505,7 +2506,8 @@ export default function FacturesPage() {
                     <Eye size={13}/> Aperçu
                   </button>
                   <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
-                    className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} sm:flex`}>
+                    className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition hover:opacity-90 sm:flex"
+                    style={{ background:`${activeColor}20`, color:activeColor, border:`1px solid ${activeColor}45` }}>
                     <FileDown size={13}/> PDF
                   </button>
                   {draft.type !== "devis" && (
@@ -2517,7 +2519,7 @@ export default function FacturesPage() {
                   )}
                   {selected && (
                     <button onClick={openEmailModal}
-                      className="hidden items-center gap-1.5 rounded-xl border border-sky-400/20 px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-sky-400/40 hover:text-sky-400 sm:flex">
+                      className="hidden items-center gap-1.5 rounded-xl border border-sky-400/40 bg-sky-400/[0.08] px-3 py-2 text-xs font-semibold text-sky-400 transition hover:bg-sky-400/15 sm:flex">
                       <Mail size={13}/> Email
                     </button>
                   )}
@@ -3095,7 +3097,8 @@ export default function FacturesPage() {
                       <Eye size={13}/> Aperçu
                     </button>
                     <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
-                      className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition`}>
+                      className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition hover:opacity-90"
+                      style={{ background:`${activeColor}22`, color:activeColor, border:`1px solid ${activeColor}50` }}>
                       <FileDown size={13}/> PDF
                     </button>
                     {draft.type !== "devis" && (
@@ -3107,7 +3110,7 @@ export default function FacturesPage() {
                     )}
                     {selected && (
                       <button onClick={openEmailModal}
-                        className="flex items-center gap-1.5 rounded-xl border border-sky-400/20 px-3 py-2 text-xs font-semibold text-sky-400/70 transition hover:border-sky-400/40 hover:text-sky-400">
+                        className="flex items-center gap-1.5 rounded-xl border border-sky-400/40 bg-sky-400/[0.08] px-3 py-2 text-xs font-semibold text-sky-400 transition hover:bg-sky-400/15">
                         <Mail size={13}/> Email
                       </button>
                     )}
