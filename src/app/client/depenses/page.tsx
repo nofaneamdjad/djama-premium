@@ -35,8 +35,10 @@ interface Expense {
   vat_amount: number; vat_recoverable: boolean;
   receipt_url: string; invoice_number: string;
   project: string; cost_center: string; notes: string;
-  recur_freq?:      RecurFreq | null;
-  recur_next_date?: string | null;
+  recur_freq?:       RecurFreq | null;
+  recur_next_date?:  string | null;
+  approval_comment?: string;
+  approved_at?:      string | null;
   created_at: string; updated_at: string;
 }
 
@@ -1281,6 +1283,232 @@ function autoMatch(txs: BankTx[], expenses: Expense[]): BankTx[] {
   });
 }
 
+/* ─────────────────────────────── ApprobationView ─────────────────────────── */
+const PIPELINE = [
+  { id: "draft"      as ExpStatus, l: "Brouillons", color: "#6b7280", nextLabel: "Soumettre",  next: "submitted"  as ExpStatus },
+  { id: "submitted"  as ExpStatus, l: "Soumis",     color: "#f59e0b", nextLabel: "Approuver",  next: "approved"   as ExpStatus, rejectLabel: "Rejeter" },
+  { id: "approved"   as ExpStatus, l: "Approuvés",  color: "#10b981", nextLabel: "Rembourser", next: "reimbursed" as ExpStatus },
+  { id: "reimbursed" as ExpStatus, l: "Remboursés", color: "#3b82f6" },
+] as const;
+
+function ApprobationView({
+  expenses, setExpenses,
+}: {
+  expenses: Expense[];
+  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+}) {
+  const isDark   = useDark();
+  const supabase = supabaseClient;
+  const inp      = isDark ? INP_DARK : INP_LITE;
+
+  const [step,    setStep]    = useState<ExpStatus>("submitted");
+  const [pending, setPending] = useState<{ exp: Expense; next: ExpStatus } | null>(null);
+  const [comment, setComment] = useState("");
+  const [saving,  setSaving]  = useState(false);
+
+  const counts = Object.fromEntries(
+    (["draft","submitted","approved","reimbursed","rejected"] as ExpStatus[]).map(s => [
+      s, expenses.filter(e => e.status === s).length,
+    ])
+  );
+  const shown    = expenses.filter(e => e.status === step);
+  const pipe     = PIPELINE.find(p => p.id === step);
+  const rejected = counts["rejected"] ?? 0;
+
+  async function doTransition(exp: Expense, next: ExpStatus, cmt: string) {
+    setSaving(true);
+    const patch: Record<string, unknown> = { status: next, approval_comment: cmt };
+    if (next === "approved") patch.approved_at = new Date().toISOString();
+    if (next === "draft")    patch.approved_at = null;
+    const { error } = await supabase.from("expenses").update(patch).eq("id", exp.id);
+    setSaving(false);
+    if (!error) {
+      setExpenses(es => es.map(e => e.id === exp.id
+        ? { ...e, status: next, approval_comment: cmt, approved_at: next === "approved" ? new Date().toISOString() : e.approved_at }
+        : e
+      ));
+      setPending(null);
+      setComment("");
+    }
+  }
+
+  async function bulkNext(curr: ExpStatus, next: ExpStatus) {
+    const targets = expenses.filter(e => e.status === curr);
+    if (!targets.length) return;
+    setSaving(true);
+    const patch: Record<string, unknown> = { status: next };
+    if (next === "approved") patch.approved_at = new Date().toISOString();
+    await Promise.all(targets.map(e => supabase.from("expenses").update(patch).eq("id", e.id)));
+    setSaving(false);
+    setExpenses(es => es.map(e => e.status === curr
+      ? { ...e, status: next, approved_at: next === "approved" ? new Date().toISOString() : e.approved_at }
+      : e
+    ));
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* ── Pipeline stepper ── */}
+      <div className={`rounded-2xl p-4 ${isDark ? "bg-white/[0.03]" : "bg-white"}`}>
+        <div className="flex items-center gap-0 overflow-x-auto">
+          {PIPELINE.map((p, i) => (
+            <div key={p.id} className="flex items-center flex-1 min-w-0">
+              <button onClick={() => setStep(p.id)}
+                className="flex flex-col items-center gap-1 w-full py-2 px-1 rounded-xl transition-all"
+                style={{
+                  background:   step === p.id ? p.color + "18" : "transparent",
+                  borderBottom: `2px solid ${step === p.id ? p.color : "transparent"}`,
+                }}>
+                <span className="text-xl font-extrabold tabular-nums leading-none" style={{ color: p.color }}>
+                  {counts[p.id] ?? 0}
+                </span>
+                <span className={`text-[0.58rem] font-semibold uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-400"}`}>
+                  {p.l}
+                </span>
+              </button>
+              {i < PIPELINE.length - 1 && (
+                <div className={`w-5 shrink-0 border-t-2 ${isDark ? "border-white/[0.07]" : "border-gray-100"}`} />
+              )}
+            </div>
+          ))}
+          {/* Rejetés — side branch */}
+          {rejected > 0 && <>
+            <div className={`w-5 shrink-0 border-t-2 border-dashed ${isDark ? "border-white/[0.07]" : "border-gray-200"}`} />
+            <button onClick={() => setStep("rejected")}
+              className="flex flex-col items-center gap-1 min-w-[68px] py-2 px-1 rounded-xl transition-all"
+              style={{
+                background:   step === "rejected" ? "#ef444418" : "transparent",
+                borderBottom: `2px solid ${step === "rejected" ? "#ef4444" : "transparent"}`,
+              }}>
+              <span className="text-xl font-extrabold tabular-nums leading-none text-red-400">{rejected}</span>
+              <span className={`text-[0.58rem] font-semibold uppercase tracking-wider ${isDark ? "text-white/50" : "text-gray-400"}`}>Rejetés</span>
+            </button>
+          </>}
+        </div>
+      </div>
+
+      {/* ── Bulk action banner ── */}
+      {pipe && "next" in pipe && pipe.next && shown.length > 1 && (
+        <div className={`flex items-center justify-between rounded-xl px-4 py-2.5 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-100 bg-gray-50"}`}>
+          <span className={`text-[0.72rem] ${isDark ? "text-white/45" : "text-gray-500"}`}>
+            {shown.length} dépenses à traiter
+          </span>
+          <button disabled={saving} onClick={() => bulkNext(pipe.id, pipe.next as ExpStatus)}
+            className="rounded-lg px-3 py-1 text-[0.7rem] font-semibold text-white disabled:opacity-50"
+            style={{ background: pipe.color }}>
+            {saving ? "…" : `Tout ${pipe.nextLabel.toLowerCase()}`}
+          </button>
+        </div>
+      )}
+
+      {/* ── Expense list ── */}
+      {shown.length === 0 ? (
+        <div className={`flex flex-col items-center gap-2 py-16 rounded-2xl ${isDark ? "bg-white/[0.02]" : "bg-white"}`}>
+          <CheckCircle2 size={30} className="opacity-20" style={{ color: pipe?.color ?? "#6b7280" }} />
+          <p className={`text-sm font-medium ${isDark ? "text-white/30" : "text-gray-400"}`}>
+            Aucune dépense dans cette étape
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {shown.map(exp => {
+            const ci = getCat(exp.category);
+            return (
+              <div key={exp.id}
+                className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${isDark ? "bg-white/[0.04]" : "bg-white"}`}>
+                <div className="h-8 w-8 shrink-0 rounded-xl flex items-center justify-center"
+                  style={{ background: ci.c + "22" }}>
+                  <ci.I size={14} style={{ color: ci.c }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[0.78rem] font-semibold truncate ${isDark ? "text-white" : "text-gray-900"}`}>
+                    {exp.description || "—"}
+                  </p>
+                  <p className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                    {fmtDate(exp.date)} · {ci.l} · {fmtCur(exp.amount, exp.currency)}
+                  </p>
+                  {exp.approval_comment && (
+                    <p className={`text-[0.6rem] italic mt-0.5 truncate ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                      « {exp.approval_comment} »
+                    </p>
+                  )}
+                </div>
+                {/* Actions */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {pipe && "next" in pipe && pipe.next && (
+                    <button
+                      onClick={() => { setPending({ exp, next: pipe.next as ExpStatus }); setComment(exp.approval_comment ?? ""); }}
+                      className="h-7 rounded-lg px-2.5 text-[0.65rem] font-semibold text-white"
+                      style={{ background: pipe.color }}>
+                      {pipe.nextLabel}
+                    </button>
+                  )}
+                  {pipe && "rejectLabel" in pipe && (
+                    <button
+                      onClick={() => { setPending({ exp, next: "rejected" }); setComment(""); }}
+                      className={`h-7 rounded-lg px-2 text-[0.65rem] font-semibold border ${isDark ? "border-red-500/30 text-red-400 hover:bg-red-500/10" : "border-red-200 text-red-500 hover:bg-red-50"}`}>
+                      Rejeter
+                    </button>
+                  )}
+                  {step === "rejected" && (
+                    <button
+                      onClick={() => { setPending({ exp, next: "draft" }); setComment(""); }}
+                      className={`h-7 rounded-lg px-2 text-[0.65rem] font-semibold border ${isDark ? "border-white/10 text-white/40" : "border-gray-200 text-gray-500"}`}>
+                      ↩ Brouillon
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Confirm modal ── */}
+      <AnimatePresence>
+        {pending && (
+          <motion.div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPending(null)} />
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 10, opacity: 0 }}
+              className={`relative z-10 w-full max-w-sm rounded-2xl p-5 space-y-4 shadow-2xl ${isDark ? "bg-[#111827]" : "bg-white"}`}>
+              <div>
+                <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                  {pending.next === "rejected" ? "Rejeter" :
+                   pending.next === "draft"    ? "Remettre en brouillon" :
+                   (PIPELINE.find(p => p.id === step) as { nextLabel?: string } | undefined)?.nextLabel ?? "Confirmer"}
+                </h3>
+                <p className={`text-[0.7rem] mt-1 truncate ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                  {pending.exp.description} · {fmtCur(pending.exp.amount, pending.exp.currency)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <label className={`text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>
+                  Commentaire (optionnel)
+                </label>
+                <input value={comment} onChange={e => setComment(e.target.value)}
+                  placeholder={pending.next === "rejected" ? "Motif du rejet…" : "Note…"}
+                  className={inp} />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setPending(null)}
+                  className={`flex-1 rounded-xl py-2 text-[0.75rem] font-semibold border ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>
+                  Annuler
+                </button>
+                <button disabled={saving} onClick={() => doTransition(pending.exp, pending.next, comment)}
+                  className="flex-1 rounded-xl py-2 text-[0.75rem] font-semibold text-white disabled:opacity-50"
+                  style={{ background: pending.next === "rejected" ? "#ef4444" : (PIPELINE.find(p => p.id === step)?.color ?? "#6b7280") }}>
+                  {saving ? "…" : "Confirmer"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function RapportView({ expenses }: { expenses: Expense[] }) {
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -1649,7 +1877,7 @@ export default function DepensesPage() {
   const [budgets,  setBudgets]  = useState<ExpenseBudget[]>([]);
   const [rules,    setRules]    = useState<ExpenseRule[]>([]);
 
-  const [tab,             setTab]             = useState<"depenses"|"notes"|"budgets"|"rapprochement"|"rapport"|"regles">("depenses");
+  const [tab,             setTab]             = useState<"depenses"|"notes"|"budgets"|"rapprochement"|"rapport"|"regles"|"approbation">("depenses");
   const [showModal,       setShowModal]       = useState(false);
   const [editExpense,     setEditExpense]     = useState<Expense | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -1842,6 +2070,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
     { id: "budgets",       l: "Budgets",         I: PiggyBank,       badge: budgetAlertCount },
     { id: "rapprochement", l: "Rapprochement",   I: ArrowLeftRight,  badge: 0 },
     { id: "rapport",       l: "Rapport",         I: BarChart2,       badge: 0 },
+    { id: "approbation",   l: "Approbation",      I: CheckCircle2,    badge: expenses.filter(e => e.status === "submitted").length },
     { id: "regles",        l: "Règles",           I: Zap,             badge: rules.filter(r => r.active).length },
   ] as const;
 
@@ -2260,6 +2489,12 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
             {tab === "rapport" && (
               <motion.div key="rap" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <RapportView expenses={expenses} />
+              </motion.div>
+            )}
+
+            {tab === "approbation" && (
+              <motion.div key="appro" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <ApprobationView expenses={expenses} setExpenses={setExpenses} />
               </motion.div>
             )}
 
