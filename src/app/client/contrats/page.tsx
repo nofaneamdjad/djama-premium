@@ -619,8 +619,8 @@ function ContractCard({ contract, isSelected, onSelect, onDelete, isDark }: {
   );
 }
 
-function DashboardView({ contracts, onNew, onSelect }: {
-  contracts: Contract[]; onNew: () => void; onSelect: (c: Contract) => void;
+function DashboardView({ contracts, onNew, onSelect, isDark }: {
+  contracts: Contract[]; onNew: () => void; onSelect: (c: Contract) => void; isDark: boolean;
 }) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -630,7 +630,7 @@ function DashboardView({ contracts, onNew, onSelect }: {
   const enAttente = contracts.filter((c) => c.status === "envoyé" || c.status === "vu").length;
   const expirentBientot = contracts.filter((c) => c.expires_at && new Date(c.expires_at) <= in30 && c.status !== "expiré" && c.status !== "signé" && c.status !== "actif").length;
   const signesMois = contracts.filter((c) => c.status === "signé" && c.created_at && new Date(c.created_at) >= startOfMonth).length;
-  const valeurTotale = contracts.filter((c) => c.status === "actif" || c.status === "signé").reduce((s, c) => s + (c.amount ?? 0), 0);
+  const valeurTotale = contracts.reduce((s, c) => s + (c.amount ?? 0), 0);
   const brouillons = contracts.filter((c) => c.status === "brouillon").length;
 
   const kpis = [
@@ -638,39 +638,45 @@ function DashboardView({ contracts, onNew, onSelect }: {
     { label: "En attente signature",value: enAttente,         icon: Clock,         color: "text-sky-400",     bg: "bg-sky-500/10" },
     { label: "Expirent bientôt",    value: expirentBientot,   icon: AlertTriangle, color: "text-orange-400",  bg: "bg-orange-500/10" },
     { label: "Signés ce mois",      value: signesMois,        icon: CheckCircle,   color: "text-emerald-400", bg: "bg-emerald-500/10" },
-    { label: "Valeur totale",       value: fmtEur(valeurTotale), icon: DollarSign, color: "text-amber-400",   bg: "bg-amber-500/10", isStr: true },
+    { label: "Valeur portefeuille", value: fmtEur(valeurTotale), icon: DollarSign, color: "text-amber-400",   bg: "bg-amber-500/10", isStr: true },
     { label: "Brouillons IA",       value: brouillons,        icon: FileText,      color: "text-purple-400",  bg: "bg-purple-500/10" },
   ];
 
   const pipeline: ContractStatus[] = ["brouillon", "validation", "envoyé", "vu", "signé", "actif"];
 
+  const cardBg   = isDark ? "rgba(255,255,255,0.035)" : "rgba(255,255,255,0.9)";
+  const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+  const innerBg  = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
+
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 flex flex-col gap-2">
+            className="rounded-2xl p-4 flex flex-col gap-2"
+            style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
             <div className={`h-8 w-8 flex items-center justify-center rounded-xl ${k.bg}`}>
               <k.icon size={15} className={k.color}/>
             </div>
             <div>
-              <div className={`text-xl font-bold ${k.isStr ? "text-base" : ""} text-white/90`}>
-                {k.isStr ? k.value : k.value}
+              <div className={`font-bold ${k.isStr ? "text-base" : "text-xl"} ${isDark ? "text-white/90" : "text-gray-900"}`}>
+                {k.value}
               </div>
-              <div className="text-[10px] text-white/35 mt-0.5">{k.label}</div>
+              <div className={`text-[10px] mt-0.5 ${isDark ? "text-white/35" : "text-gray-500"}`}>{k.label}</div>
             </div>
           </motion.div>
         ))}
       </div>
 
-            <div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3">Pipeline des contrats</h3>
+      <div>
+        <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-white/30" : "text-gray-400"}`}>Pipeline des contrats</h3>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {pipeline.map((stage) => {
             const stageContracts = contracts.filter((c) => c.status === stage);
             const s = STATUS_CFG[stage];
             return (
-              <div key={stage} className="min-w-[180px] flex-1 bg-white/[0.025] rounded-2xl border border-white/[0.06] p-3">
+              <div key={stage} className="min-w-[180px] flex-1 rounded-2xl p-3"
+                style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-xs font-bold ${s.text}`}>{s.label}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${s.bg} ${s.text}`}>{stageContracts.length}</span>
@@ -678,13 +684,16 @@ function DashboardView({ contracts, onNew, onSelect }: {
                 <div className="space-y-1.5">
                   {stageContracts.slice(0, 3).map((c) => (
                     <button key={c.id} onClick={() => onSelect(c)}
-                      className="w-full text-left bg-white/[0.03] rounded-xl px-2.5 py-2 hover:bg-white/[0.06] transition-colors">
-                      <p className="text-xs font-semibold text-white/80 truncate">{c.title}</p>
-                      <p className="text-[10px] text-white/35 truncate">{c.client_name}</p>
+                      className="w-full text-left rounded-xl px-2.5 py-2 transition-colors"
+                      style={{ background: innerBg }}
+                      onMouseEnter={e => (e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)")}
+                      onMouseLeave={e => (e.currentTarget.style.background = innerBg)}>
+                      <p className={`text-xs font-semibold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>{c.title}</p>
+                      <p className={`text-[10px] truncate ${isDark ? "text-white/35" : "text-gray-500"}`}>{c.client_name}</p>
                     </button>
                   ))}
-                  {stageContracts.length === 0 && <p className="text-[10px] text-white/20 text-center py-2">Aucun contrat</p>}
-                  {stageContracts.length > 3 && <p className="text-[10px] text-white/30 text-center">+{stageContracts.length - 3} autres</p>}
+                  {stageContracts.length === 0 && <p className={`text-[10px] text-center py-2 ${isDark ? "text-white/20" : "text-gray-300"}`}>Aucun contrat</p>}
+                  {stageContracts.length > 3 && <p className={`text-[10px] text-center ${isDark ? "text-white/30" : "text-gray-400"}`}>+{stageContracts.length - 3} autres</p>}
                 </div>
               </div>
             );
@@ -692,9 +701,9 @@ function DashboardView({ contracts, onNew, onSelect }: {
         </div>
       </div>
 
-            {contracts.filter((c) => c.expires_at && new Date(c.expires_at) <= in30 && c.status !== "expiré").length > 0 && (
+      {contracts.filter((c) => c.expires_at && new Date(c.expires_at) <= in30 && c.status !== "expiré").length > 0 && (
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white/30 mb-3 flex items-center gap-1.5">
+          <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>
             <Calendar size={12} className="text-orange-400"/> Échéances dans 30 jours
           </h3>
           <div className="space-y-2">
@@ -702,8 +711,8 @@ function DashboardView({ contracts, onNew, onSelect }: {
               <button key={c.id} onClick={() => onSelect(c)}
                 className="w-full flex items-center justify-between bg-orange-500/5 border border-orange-500/10 rounded-xl px-4 py-3 hover:bg-orange-500/10 transition-colors text-left">
                 <div>
-                  <p className="text-sm font-semibold text-white/80">{c.title}</p>
-                  <p className="text-xs text-white/40">{c.client_name}</p>
+                  <p className={`text-sm font-semibold ${isDark ? "text-white/80" : "text-gray-800"}`}>{c.title}</p>
+                  <p className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>{c.client_name}</p>
                 </div>
                 <div className="text-xs text-orange-400 font-semibold shrink-0">{fmtDate(c.expires_at ?? null)}</div>
               </button>
@@ -717,7 +726,7 @@ function DashboardView({ contracts, onNew, onSelect }: {
           <div className="h-14 w-14 flex items-center justify-center rounded-2xl" style={{ background: gold + "15", border: `1px solid ${gold}30` }}>
             <FileText size={24} style={{ color: gold }}/>
           </div>
-          <p className="text-white/50 text-sm">Aucun contrat — créez votre premier</p>
+          <p className={`text-sm ${isDark ? "text-white/50" : "text-gray-500"}`}>Aucun contrat — créez votre premier</p>
           <button onClick={onNew} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
             style={{ background: gold + "20", color: gold, border: `1px solid ${gold}40` }}>
             <Plus size={13}/> Créer un contrat
@@ -1739,8 +1748,9 @@ export default function ContratsPage() {
                   <BookMarked size={13}/> {templates.length}
                 </button>
               )}
-              <button onClick={exportCSV} className={`h-8 w-8 flex items-center justify-center rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`} title="Exporter CSV">
-                <Download size={14}/>
+              <button onClick={exportCSV} className={`h-8 flex items-center gap-1.5 px-3 rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`} title="Exporter CSV">
+                <Download size={13}/>
+                <span className="hidden sm:inline text-xs font-semibold">Exporter</span>
               </button>
               <motion.button onClick={() => setShowModal(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all"
@@ -1781,7 +1791,7 @@ export default function ContratsPage() {
 
       {/* Body */}
       {view === "dashboard" ? (
-        <DashboardView contracts={contracts} onNew={() => setShowModal(true)} onSelect={(c) => { setView("list"); selectContract(c); }}/>
+        <DashboardView contracts={contracts} onNew={() => setShowModal(true)} onSelect={(c) => { setView("list"); selectContract(c); }} isDark={isDark}/>
       ) : (
         <div className="flex h-[calc(100vh-140px)]">
           {/* Left: list */}
@@ -1796,20 +1806,20 @@ export default function ContratsPage() {
               <div className="flex gap-2">
                 <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as ContractStatus | "all")}
                   className="flex-1 rounded-xl border px-2 py-1.5 text-xs focus:outline-none appearance-none"
-                  style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.7)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
+                  style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.7)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                   <option value="all">Tous statuts</option>
                   {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
                 <select value={filterType} onChange={(e) => setFilterType(e.target.value as ContractType | "all")}
                   className="flex-1 rounded-xl border px-2 py-1.5 text-xs focus:outline-none appearance-none"
-                  style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.7)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
+                  style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.7)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                   <option value="all">Tous types</option>
                   {CONTRACT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value as "date" | "amount" | "client")}
                 className="w-full rounded-xl border px-2 py-1.5 text-xs focus:outline-none appearance-none"
-                style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.7)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
+                style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.7)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                 <option value="date">Plus récent</option>
                 <option value="amount">Montant ↓</option>
                 <option value="client">Client A→Z</option>
