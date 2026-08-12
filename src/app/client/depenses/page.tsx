@@ -1333,6 +1333,219 @@ function autoMatch(txs: BankTx[], expenses: Expense[]): BankTx[] {
   });
 }
 
+/* ─────────────────────────────── ExportPackModal ─────────────────────────── */
+
+function sanitizeFilename(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40).replace(/_+/g, "_").replace(/^_|_$/g, "");
+}
+
+function fileExtFromUrl(url: string): string {
+  const m = url.split("?")[0].match(/\.([a-zA-Z0-9]+)$/);
+  return m ? `.${m[1].toLowerCase()}` : ".bin";
+}
+
+function buildExpenseCsv(rows: Expense[]): string {
+  const header = "Date;Catégorie;Description;Montant;Devise;Statut;Note de frais;Mode de paiement;Notes";
+  const lines = rows.map(e => [
+    e.date, getCat(e.category).l, `"${e.description.replace(/"/g,"'")}"`,
+    e.amount.toFixed(2), e.currency, e.status,
+    e.expense_report_id ?? "", e.payment_method,
+    `"${(e.notes ?? "").replace(/"/g,"'")}"`,
+  ].join(";"));
+  return "﻿" + [header, ...lines].join("\r\n");
+}
+
+function ExportPackModal({
+  expenses, reports, onClose,
+}: {
+  expenses: Expense[];
+  reports: ExpenseReport[];
+  onClose: () => void;
+}) {
+  const isDark = useDark();
+  const inp    = isDark ? INP_DARK : INP_LITE;
+  const sel    = isDark ? SEL_DARK : SEL_LITE;
+  const now    = new Date();
+  const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  const [period,    setPeriod]    = useState(defaultPeriod);
+  const [reportId,  setReportId]  = useState("");
+  const [filterSt,  setFilterSt]  = useState("");
+  const [progress,  setProgress]  = useState<{ done: number; total: number } | null>(null);
+  const [error,     setError]     = useState("");
+
+  const matching = useMemo(() => expenses.filter(e => {
+    if (period   && !e.date.startsWith(period))            return false;
+    if (reportId && e.expense_report_id !== reportId)       return false;
+    if (filterSt && e.status !== filterSt)                  return false;
+    return true;
+  }), [expenses, period, reportId, filterSt]);
+
+  const withReceipt = matching.filter(e => !!e.receipt_url);
+  const total       = matching.reduce((a, e) => a + e.amount, 0);
+
+  async function download() {
+    setError("");
+    setProgress({ done: 0, total: withReceipt.length + 1 });
+
+    const JSZip = (await import("jszip")).default;
+    const zip   = new JSZip();
+
+    // CSV summary (all matching, not just receipts)
+    zip.file("index.csv", buildExpenseCsv(matching));
+    setProgress({ done: 1, total: withReceipt.length + 1 });
+
+    // Receipts
+    const folder = zip.folder("justificatifs")!;
+    let done = 1;
+    for (const e of withReceipt) {
+      try {
+        const res = await fetch(e.receipt_url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        const ext  = fileExtFromUrl(e.receipt_url);
+        const name = `${e.date}_${e.category}_${sanitizeFilename(e.description)}${ext}`;
+        folder.file(name, blob);
+      } catch {
+        // skip inaccessible files silently
+      }
+      done++;
+      setProgress({ done, total: withReceipt.length + 1 });
+    }
+
+    const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `pack-depenses-${period || "export"}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setProgress(null);
+    onClose();
+  }
+
+  const pct = progress ? Math.round((progress.done / progress.total) * 100) : 0;
+
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={progress ? undefined : onClose} />
+      <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 12, opacity: 0 }}
+        className={`relative z-10 w-full max-w-md rounded-2xl shadow-2xl ${isDark ? "bg-[#111827]" : "bg-white"}`}>
+
+        {/* Header */}
+        <div className={`flex items-center justify-between px-5 pt-5 pb-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl flex items-center justify-center" style={{ background: "#c9a55a22" }}>
+              <Download size={15} style={{ color: "#c9a55a" }} />
+            </div>
+            <div>
+              <h2 className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Export pack justificatifs</h2>
+              <p className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>ZIP · index CSV + fichiers joints</p>
+            </div>
+          </div>
+          {!progress && (
+            <button onClick={onClose} className={`h-7 w-7 flex items-center justify-center rounded-lg ${isDark ? "hover:bg-white/[0.06]" : "hover:bg-gray-100"}`}>
+              <X size={14} className={isDark ? "text-white/40" : "text-gray-400"} />
+            </button>
+          )}
+        </div>
+
+        {/* Filters */}
+        <div className="px-5 py-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className={`text-[0.63rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>Période (mois)</label>
+              <input type="month" value={period} onChange={e => setPeriod(e.target.value)}
+                className={`${inp} [color-scheme:${isDark ? "dark" : "light"}]`} />
+            </div>
+            <div className="space-y-1">
+              <label className={`text-[0.63rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>Statut</label>
+              <div className="relative">
+                <select value={filterSt} onChange={e => setFilterSt(e.target.value)} className={sel}>
+                  <option value="">Tous les statuts</option>
+                  <option value="draft">Brouillon</option>
+                  <option value="submitted">Soumis</option>
+                  <option value="approved">Approuvé</option>
+                  <option value="reimbursed">Remboursé</option>
+                  <option value="rejected">Rejeté</option>
+                </select>
+                <ChevronDown size={12} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+              </div>
+            </div>
+          </div>
+
+          {reports.length > 0 && (
+            <div className="space-y-1">
+              <label className={`text-[0.63rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>Note de frais (optionnel)</label>
+              <div className="relative">
+                <select value={reportId} onChange={e => setReportId(e.target.value)} className={sel}>
+                  <option value="">Toutes les notes</option>
+                  {reports.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
+                </select>
+                <ChevronDown size={12} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+              </div>
+            </div>
+          )}
+
+          {/* Summary */}
+          <div className={`rounded-xl px-4 py-3 space-y-1.5 ${isDark ? "bg-white/[0.04]" : "bg-gray-50"}`}>
+            <div className="flex justify-between items-center">
+              <span className={`text-[0.68rem] ${isDark ? "text-white/45" : "text-gray-500"}`}>Dépenses sélectionnées</span>
+              <span className={`text-[0.78rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{matching.length} · {fmtCur(total)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className={`text-[0.68rem] ${isDark ? "text-white/45" : "text-gray-500"}`}>Avec justificatif</span>
+              <span className={`text-[0.78rem] font-semibold ${withReceipt.length === 0 ? "text-red-400" : isDark ? "text-white" : "text-gray-900"}`}>
+                {withReceipt.length} fichier{withReceipt.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className={`text-[0.68rem] ${isDark ? "text-white/45" : "text-gray-500"}`}>Contenu du ZIP</span>
+              <span className={`text-[0.68rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>index.csv + {withReceipt.length} justificatif{withReceipt.length !== 1 ? "s" : ""}</span>
+            </div>
+          </div>
+
+          {error && <p className="text-[0.7rem] text-red-400">{error}</p>}
+
+          {/* Progress */}
+          {progress && (
+            <div className="space-y-1.5">
+              <div className={`h-2 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
+                <motion.div className="h-full rounded-full" style={{ background: "#c9a55a" }}
+                  animate={{ width: `${pct}%` }} transition={{ duration: 0.3 }} />
+              </div>
+              <p className={`text-center text-[0.65rem] ${isDark ? "text-white/40" : "text-gray-400"}`}>
+                {progress.done < progress.total
+                  ? `Téléchargement ${progress.done}/${progress.total}…`
+                  : "Génération du ZIP…"}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {!progress && (
+          <div className={`px-5 pb-5 flex gap-2 border-t pt-4 ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
+            <button onClick={onClose}
+              className={`flex-1 rounded-xl py-2.5 text-[0.75rem] font-semibold border ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>
+              Annuler
+            </button>
+            <button disabled={matching.length === 0} onClick={download}
+              className="flex-1 rounded-xl py-2.5 text-[0.75rem] font-semibold text-white disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#e8c97a)" }}>
+              {matching.length === 0 ? "Aucune dépense" : `Télécharger le pack`}
+            </button>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 /* ─────────────────────────────── ApprobationView ─────────────────────────── */
 const PIPELINE = [
   { id: "draft"      as ExpStatus, l: "Brouillons", color: "#6b7280", nextLabel: "Soumettre",  next: "submitted"  as ExpStatus },
@@ -1942,6 +2155,7 @@ export default function DepensesPage() {
   const [confirmDeleteExpenseId, setConfirmDeleteExpenseId] = useState<string | null>(null);
   const [confirmDeleteReportId,  setConfirmDeleteReportId]  = useState<string | null>(null);
   const [showCsvImport,          setShowCsvImport]          = useState(false);
+  const [showExportPack,         setShowExportPack]         = useState(false);
 
   const toast$ = (msg: string, type: "success"|"error" = "success") => setToast({ msg, type });
 
@@ -2186,6 +2400,12 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
               className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${isDark ? "text-white/30 hover:text-green-400" : "text-gray-400 hover:text-green-600"}`}
               style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
               <Table2 size={14} />
+            </motion.button>
+            <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.22 }} onClick={() => setShowExportPack(true)} title="Exporter pack justificatifs"
+              className={`flex h-8 items-center gap-1.5 rounded-xl px-3 text-[0.72rem] font-semibold transition-all ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+              style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
+              <Download size={13} /> Export
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.24 }} onClick={() => setShowCsvImport(true)} title="Importer relevé CSV"
@@ -2625,6 +2845,15 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
               toast$(`${count} dépense${count > 1 ? "s" : ""} importée${count > 1 ? "s" : ""} avec succès`);
               void loadAll();
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showExportPack && (
+          <ExportPackModal
+            expenses={expenses} reports={reports}
+            onClose={() => setShowExportPack(false)}
           />
         )}
       </AnimatePresence>
