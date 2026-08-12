@@ -1805,113 +1805,344 @@ function ApprobationView({
   );
 }
 
-function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; rates?: Record<string, number> }) {
-  const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const prevDate  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+/* ── SVG Donut helper ───────────────────────────────────────────────────────── */
+function DonutChart({ segments }: { segments: { color: string; pct: number }[] }) {
+  const R = 52; const CX = 60; const CY = 60; const stroke = 14;
+  let angle = -Math.PI / 2;
+  const arcs: React.ReactNode[] = [];
+  segments.forEach(({ color, pct }, i) => {
+    if (pct <= 0) return;
+    const sweep = (pct / 100) * 2 * Math.PI;
+    const x1 = CX + R * Math.cos(angle);
+    const y1 = CY + R * Math.sin(angle);
+    angle += sweep;
+    const x2 = CX + R * Math.cos(angle);
+    const y2 = CY + R * Math.sin(angle);
+    const large = sweep > Math.PI ? 1 : 0;
+    arcs.push(
+      <path key={i}
+        d={`M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}`}
+        fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="butt" />
+    );
+  });
+  return (
+    <svg viewBox="0 0 120 120" className="w-full max-w-[120px]">
+      {arcs}
+    </svg>
+  );
+}
 
+function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; rates?: Record<string, number> }) {
+  const now    = new Date();
+  const isDark = useDark();
+
+  /* ── Controls ── */
+  const [year,       setYear]       = useState(now.getFullYear());
+  const [focusMonth, setFocusMonth] = useState<string | null>(null); // "YYYY-MM"
+  const [exporting,  setExporting]  = useState(false);
+
+  /* ── Datasets ── */
   const valid = useMemo(() => expenses.filter(e => e.status !== "rejected"), [expenses]);
 
-  const thisTotal = useMemo(() => valid.filter(e => e.date.startsWith(thisMonth)).reduce((a, e) => a + e.amount, 0), [valid, thisMonth]);
-  const lastTotal = useMemo(() => valid.filter(e => e.date.startsWith(lastMonth)).reduce((a, e) => a + e.amount, 0), [valid, lastMonth]);
-  const totalVAT  = useMemo(() => expenses.filter(e => e.vat_recoverable).reduce((a, e) => a + e.vat_amount, 0), [expenses]);
-  const toReimb   = useMemo(() => expenses.filter(e => e.payment_method === "carte_perso" && e.status !== "reimbursed" && e.status !== "rejected").reduce((a, e) => a + e.amount, 0), [expenses]);
+  const yearStr = String(year);
+  const yearExp = useMemo(() => valid.filter(e => e.date.startsWith(yearStr)), [valid, yearStr]);
 
-  const pct = lastTotal > 0 ? ((thisTotal - lastTotal) / lastTotal) * 100 : 0;
-
-  const byCat = useMemo(() => {
-    const r: Record<string, number> = {};
-    valid.forEach(e => { r[e.category] = (r[e.category] ?? 0) + e.amount; });
-    return Object.entries(r).sort((a, b) => b[1] - a[1]);
-  }, [valid]);
-
-  const byPay = useMemo(() => {
-    const r: Record<string, number> = {};
-    valid.forEach(e => { r[e.payment_method] = (r[e.payment_method] ?? 0) + e.amount; });
-    return Object.entries(r).sort((a, b) => b[1] - a[1]);
-  }, [valid]);
-
-  const trend = useMemo(() => Array.from({ length: 6 }, (_, i) => {
-    const d   = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const trend = useMemo(() => Array.from({ length: 12 }, (_, i) => {
+    const m   = String(i + 1).padStart(2, "0");
+    const key = `${year}-${m}`;
+    const d   = new Date(year, i, 1);
     return {
       label: d.toLocaleDateString("fr-FR", { month: "short" }),
       key,
-      total: valid.filter(e => e.date.startsWith(key)).reduce((a, e) => a + e.amount, 0),
+      total: yearExp.filter(e => e.date.startsWith(key)).reduce((a, e) => a + amtEur(e, rates), 0),
+      count: yearExp.filter(e => e.date.startsWith(key)).length,
     };
+  }), [yearExp, year, rates]);
 
-  }), [valid]);
+  const focusExp = focusMonth
+    ? yearExp.filter(e => e.date.startsWith(focusMonth))
+    : yearExp;
 
-  const isDark   = useDark();
-  const maxTrend = Math.max(...trend.map(t => t.total), 1);
-  const maxCat   = byCat[0]?.[1] ?? 1;
-  const allTotal = valid.reduce((a, e) => a + e.amount, 0) || 1;
-  const top5     = useMemo(() => [...valid].sort((a, b) => b.amount - a.amount).slice(0, 5), [valid]);
+  const byCat = useMemo(() => {
+    const r: Record<string, number> = {};
+    focusExp.forEach(e => { r[e.category] = (r[e.category] ?? 0) + amtEur(e, rates); });
+    return Object.entries(r).sort((a, b) => b[1] - a[1]);
+  }, [focusExp, rates]);
+
+  const byPay = useMemo(() => {
+    const r: Record<string, number> = {};
+    focusExp.forEach(e => { r[e.payment_method] = (r[e.payment_method] ?? 0) + amtEur(e, rates); });
+    return Object.entries(r).sort((a, b) => b[1] - a[1]);
+  }, [focusExp, rates]);
+
+  /* ── KPIs ── */
+  const maxTrend   = Math.max(...trend.map(t => t.total), 1);
+  const allTotal   = yearExp.reduce((a, e) => a + amtEur(e, rates), 0);
+  const allTotalFr = focusExp.reduce((a, e) => a + amtEur(e, rates), 0);
+  const maxCat     = byCat[0]?.[1] ?? 1;
+  const top5       = useMemo(() => [...focusExp].sort((a, b) => amtEur(b, rates) - amtEur(a, rates)).slice(0, 5), [focusExp, rates]);
+
+  const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const prevMonthKey = (() => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  })();
+  const thisTotal = valid.filter(e => e.date.startsWith(thisMonthKey)).reduce((a, e) => a + amtEur(e, rates), 0);
+  const lastTotal = valid.filter(e => e.date.startsWith(prevMonthKey)).reduce((a, e) => a + amtEur(e, rates), 0);
+  const momPct    = lastTotal > 0 ? ((thisTotal - lastTotal) / lastTotal) * 100 : 0;
+
+  const daysInYear = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 366 : 365;
+  const daysPassed = year < now.getFullYear() ? daysInYear
+    : Math.min(now.getFullYear() === year
+      ? Math.floor((now.getTime() - new Date(year, 0, 1).getTime()) / 86_400_000) + 1
+      : daysInYear, daysInYear);
+  const avgDay     = daysPassed > 0 ? allTotal / daysPassed : 0;
+
+  const maxExp     = [...yearExp].sort((a, b) => amtEur(b, rates) - amtEur(a, rates))[0];
+  const noReceipt  = yearExp.filter(e => !e.receipt_url).length;
+  const approvedPct = yearExp.length > 0
+    ? Math.round((yearExp.filter(e => e.status === "approved" || e.status === "reimbursed").length / yearExp.length) * 100)
+    : 0;
 
   const KPI = [
-    { l: "Ce mois",         v: fmtCur(thisTotal),
-      sub: pct !== 0 ? `${pct > 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(0)}% vs mois précédent` : "Premier mois enregistré",
-      c: pct > 0 ? "#ef4444" : "#10b981" },
-    { l: "Mois précédent",  v: fmtCur(lastTotal),  sub: fmtMonthYear(lastMonth),    c: "#3b82f6" },
-    { l: "TVA récupérable", v: fmtCur(totalVAT),   sub: "Toutes dépenses confondues", c: "#8b5cf6" },
-    { l: "À rembourser",    v: fmtCur(toReimb),    sub: "Paiements carte perso",     c: "#f59e0b" },
+    { l: "Ce mois",       v: fmtCur(thisTotal),
+      sub: momPct !== 0 ? `${momPct > 0 ? "▲" : "▼"} ${Math.abs(momPct).toFixed(0)}% vs mois préc.` : "—",
+      c: momPct > 5 ? "#ef4444" : momPct < -5 ? "#10b981" : "#6b7280" },
+    { l: `Total ${year}`, v: fmtCur(allTotal),     sub: `${yearExp.length} dépense${yearExp.length !== 1 ? "s" : ""}`,      c: "#c9a55a" },
+    { l: "Moy. / jour",   v: fmtCur(avgDay),       sub: `sur ${daysPassed} jour${daysPassed !== 1 ? "s" : ""}`,             c: "#3b82f6" },
+    { l: "Dépense max",   v: maxExp ? fmtCur(amtEur(maxExp, rates)) : "—",
+      sub: maxExp ? `${getCat(maxExp.category).l} · ${fmtDate(maxExp.date)}` : "Aucune", c: "#8b5cf6" },
+    { l: "Taux approbation", v: `${approvedPct}%`, sub: `${yearExp.filter(e => e.status==="approved"||e.status==="reimbursed").length} / ${yearExp.length}`, c: "#10b981" },
+    { l: "Sans justificatif", v: String(noReceipt), sub: `${yearExp.length > 0 ? Math.round((noReceipt/yearExp.length)*100) : 0}% des dépenses ${yearStr}`, c: noReceipt > 0 ? "#f59e0b" : "#10b981" },
   ];
+
+  /* ── Donut segments ── */
+  const donutSegs = byCat.slice(0, 8).map(([cat, total]) => ({
+    color: getCat(cat).c,
+    pct:   (total / (allTotalFr || 1)) * 100,
+  }));
+
+  /* ── PDF export ── */
+  async function exportPDF() {
+    setExporting(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const w = 210;
+      // Header
+      doc.setFillColor(10, 10, 14);
+      doc.rect(0, 0, w, 30, "F");
+      doc.setTextColor(201, 165, 90);
+      doc.setFontSize(16); doc.setFont("helvetica", "bold");
+      doc.text(`Rapport de dépenses ${year}`, 14, 13);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9); doc.setFont("helvetica", "normal");
+      doc.text(`Généré le ${new Date().toLocaleDateString("fr-FR")} · ${yearExp.length} dépenses · Total : ${fmtCur(allTotal)}`, 14, 22);
+
+      // KPI tiles
+      doc.setTextColor(50, 50, 50); doc.setFontSize(8);
+      let y = 40;
+      const cols = [14, 65, 116, 160];
+      [KPI.slice(0,3), KPI.slice(3,6)].forEach(row => {
+        row.forEach(({ l, v }, i) => {
+          doc.setFont("helvetica", "bold"); doc.setFontSize(7);
+          doc.setTextColor(130, 130, 130);
+          doc.text(l.toUpperCase(), cols[i], y);
+          doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+          doc.setTextColor(30, 30, 30);
+          doc.text(v, cols[i], y + 6);
+        });
+        y += 16;
+      });
+
+      // Monthly table
+      y += 4;
+      doc.setFillColor(245, 245, 245);
+      doc.rect(14, y, w - 28, 6, "F");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(7);
+      doc.setTextColor(100, 100, 100);
+      doc.text("MOIS", 16, y + 4);
+      doc.text("DÉPENSES", 90, y + 4);
+      doc.text("TOTAL (EUR)", 145, y + 4);
+      y += 8;
+      trend.forEach(({ label, key, total, count }) => {
+        if (total === 0) return;
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+        doc.setTextColor(50, 50, 50);
+        doc.text(label.charAt(0).toUpperCase() + label.slice(1) + ` ${year}`, 16, y);
+        doc.text(String(count), 90, y);
+        doc.setFont("helvetica", "bold");
+        doc.text(fmtCur(total), 145, y);
+        y += 6;
+        if (y > 260) { doc.addPage(); y = 20; }
+      });
+
+      // Category breakdown
+      y += 6;
+      doc.setFillColor(245, 245, 245);
+      doc.rect(14, y, w - 28, 6, "F");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(100, 100, 100);
+      doc.text("CATÉGORIE", 16, y + 4); doc.text("TOTAL", 145, y + 4); doc.text("%", 185, y + 4);
+      y += 8;
+      byCat.forEach(([cat, total]) => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(50, 50, 50);
+        doc.text(getCat(cat).l, 16, y);
+        doc.setFont("helvetica", "bold");
+        doc.text(fmtCur(total), 145, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${Math.round((total / (allTotal || 1)) * 100)}%`, 185, y);
+        y += 6;
+      });
+
+      // Footer
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7);
+      doc.setTextColor(180, 180, 180);
+      doc.text("DJAMA · Gestion financière", 14, 288);
+      doc.text(String(doc.getNumberOfPages()), w - 14, 288, { align: "right" });
+
+      doc.save(`rapport-depenses-${year}.pdf`);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const card = `rounded-2xl border p-4 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`;
 
   return (
     <div className="space-y-5">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* ── Toolbar ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className={`flex items-center gap-1.5 rounded-xl border px-2 py-1.5 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <button onClick={() => setYear(y => y - 1)}
+            className={`h-6 w-6 flex items-center justify-center rounded-lg text-[0.75rem] transition-all ${isDark ? "hover:bg-white/[0.08] text-white/40" : "hover:bg-gray-100 text-gray-500"}`}>
+            ‹
+          </button>
+          <span className={`w-10 text-center text-[0.8rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{year}</span>
+          <button onClick={() => setYear(y => y + 1)} disabled={year >= now.getFullYear()}
+            className={`h-6 w-6 flex items-center justify-center rounded-lg text-[0.75rem] transition-all disabled:opacity-30 ${isDark ? "hover:bg-white/[0.08] text-white/40" : "hover:bg-gray-100 text-gray-500"}`}>
+            ›
+          </button>
+        </div>
+        {focusMonth && (
+          <button onClick={() => setFocusMonth(null)}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.7rem] font-semibold ${isDark ? "border-[#c9a55a]/30 text-[#c9a55a] bg-[#c9a55a]/10" : "border-amber-200 text-amber-700 bg-amber-50"}`}>
+            <X size={10} /> {fmtMonthYear(focusMonth)} — voir toute l'année
+          </button>
+        )}
+        <button disabled={exporting} onClick={exportPDF}
+          className="flex items-center gap-2 rounded-xl px-4 py-1.5 text-[0.72rem] font-semibold text-white disabled:opacity-50 transition-all hover:brightness-110"
+          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+          <Download size={12} /> {exporting ? "Génération…" : `PDF ${year}`}
+        </button>
+      </div>
+
+      {/* ── KPI tiles ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {KPI.map(({ l, v, sub, c }) => (
-          <div key={l} className={`rounded-2xl border p-4 space-y-1 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
-            <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>{l}</p>
-            <p className={`text-xl font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
-            <p className="text-[0.62rem] leading-tight" style={{ color: c }}>{sub}</p>
+          <div key={l} className={`${card} space-y-1`}>
+            <p className={`text-[0.62rem] font-medium uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>{l}</p>
+            <p className={`text-[1.15rem] font-extrabold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
+            <p className="text-[0.6rem] leading-tight truncate" style={{ color: c }}>{sub}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Tendance 6 mois</h3>
-          <div className="flex items-end gap-2" style={{ height: "100px" }}>
-            {trend.map(({ label, key, total }) => (
-              <div key={key} className="flex flex-1 flex-col items-center gap-1.5">
+      {/* ── 12-month trend ── */}
+      <div className={card}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
+            Tendance {year} {focusMonth ? `· ${fmtMonthYear(focusMonth)}` : ""}
+          </h3>
+          <span className={`text-[0.62rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Cliquer pour filtrer</span>
+        </div>
+        <div className="flex items-end gap-1 overflow-x-auto pb-1" style={{ height: "100px" }}>
+          {trend.map(({ label, key, total, count }) => {
+            const isFocus = key === focusMonth;
+            const isCur   = key === thisMonthKey;
+            return (
+              <button key={key} onClick={() => setFocusMonth(isFocus ? null : key)}
+                className="flex flex-1 min-w-0 flex-col items-center gap-1 cursor-pointer group transition-all"
+                style={{ minWidth: "16px" }}>
                 {total > 0 && (
-                  <span className={`text-[0.5rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                  <span className={`text-[0.48rem] leading-none transition-opacity ${isDark ? "text-white/30" : "text-gray-400"} ${isFocus ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                     {total >= 1000 ? `${(total / 1000).toFixed(0)}k` : `${Math.round(total)}`}
                   </span>
                 )}
-                <div className="w-full rounded-t-md transition-all duration-500"
+                <div className="w-full rounded-t-sm transition-all duration-300"
                   style={{
-                    height: `${Math.max((total / maxTrend) * 72, 4)}px`,
-                    backgroundColor: key === thisMonth ? "#c9a55a" : (isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb"),
+                    height:           `${Math.max((total / maxTrend) * 68, total > 0 ? 3 : 1)}px`,
+                    backgroundColor:  isFocus ? "#c9a55a" : isCur ? "#c9a55a88" : isDark ? "rgba(255,255,255,0.07)" : "#e5e7eb",
+                    outline:          isFocus ? "2px solid #c9a55a" : "none",
+                    outlineOffset:    "2px",
                   }} />
-                <span className={`text-[0.55rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</span>
-              </div>
-            ))}
-          </div>
+                <span className={`text-[0.5rem] transition-all ${isFocus ? "font-bold text-[#c9a55a]" : isDark ? "text-white/25" : "text-gray-400"}`}>
+                  {label}
+                </span>
+                {count > 0 && (
+                  <span className={`text-[0.45rem] leading-none ${isDark ? "text-white/15" : "text-gray-300"}`}>{count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Par catégorie</h3>
+      {/* ── Category donut + breakdown ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className={`${card} space-y-3`}>
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
+            Catégories {focusMonth ? `· ${fmtMonthYear(focusMonth)}` : `· ${year}`}
+          </h3>
           {byCat.length === 0
             ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune dépense</p>
             : (
-              <div className="space-y-2.5">
-                {byCat.slice(0, 7).map(([cat, total]) => {
-                  const info = getCat(cat);
-                  const Icon = info.I;
-                  return (
-                    <div key={cat} className="flex items-center gap-2">
-                      <Icon size={11} style={{ color: info.c }} className="shrink-0" />
-                      <span className={`w-20 shrink-0 truncate text-[0.65rem] ${isDark ? "text-white/50" : "text-gray-500"}`}>{info.l}</span>
-                      <div className={`flex-1 h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.05]" : "bg-gray-200"}`}>
-                        <motion.div className="h-full rounded-full"
-                          initial={{ width: 0 }} animate={{ width: `${(total / maxCat) * 100}%` }}
-                          transition={{ duration: 0.7, ease: "easeOut" }}
-                          style={{ backgroundColor: info.c }} />
+              <div className="flex items-center gap-4">
+                <div className="shrink-0">
+                  <DonutChart segments={donutSegs} />
+                </div>
+                <div className="flex-1 space-y-2 min-w-0">
+                  {byCat.slice(0, 6).map(([cat, total]) => {
+                    const info = getCat(cat);
+                    return (
+                      <div key={cat} className="flex items-center gap-2">
+                        <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: info.c }} />
+                        <span className={`flex-1 min-w-0 truncate text-[0.62rem] ${isDark ? "text-white/50" : "text-gray-500"}`}>{info.l}</span>
+                        <span className={`shrink-0 text-[0.62rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>
+                          {Math.round((total / (allTotalFr || 1)) * 100)}%
+                        </span>
                       </div>
-                      <span className={`w-16 shrink-0 text-right text-[0.65rem] font-semibold ${isDark ? "text-white/60" : "text-gray-700"}`}>{fmtCur(total)}</span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+        </div>
+
+        {/* ── Top 5 ── */}
+        <div className={`${card} space-y-3`}>
+          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
+            Top dépenses {focusMonth ? `· ${fmtMonthYear(focusMonth)}` : `· ${year}`}
+          </h3>
+          {top5.length === 0
+            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune dépense</p>
+            : (
+              <div className="space-y-1.5">
+                {top5.map((e, i) => {
+                  const eur = amtEur(e, rates);
+                  return (
+                    <div key={e.id} className={`flex items-center gap-2.5 rounded-xl px-2 py-1.5 ${isDark ? "hover:bg-white/[0.02]" : "hover:bg-gray-50"}`}>
+                      <span className={`w-4 shrink-0 text-[0.58rem] font-semibold ${isDark ? "text-white/20" : "text-gray-300"}`}>#{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`truncate text-[0.72rem] font-semibold ${isDark ? "text-white/80" : "text-gray-800"}`}>{e.description || "—"}</p>
+                        <p className={`text-[0.58rem] ${isDark ? "text-white/28" : "text-gray-400"}`}>{fmtDate(e.date)} · {getCat(e.category).l}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <span className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(e.amount, e.currency)}</span>
+                        {e.currency !== "EUR" && (
+                          <p className={`text-[0.55rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>≈ {fmtCur(eur)}</p>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -1920,63 +2151,41 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Par moyen de paiement</h3>
-          {byPay.length === 0
-            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune dépense</p>
-            : (
-              <div className="space-y-3">
-                {byPay.map(([pay, total]) => {
-                  const info = PAY_METHODS.find(m => m.v === pay);
-                  const Icon = info?.I ?? CreditCard;
-                  const share = (total / allTotal) * 100;
-                  return (
-                    <div key={pay} className="flex items-center gap-3">
-                      <Icon size={13} className={`shrink-0 ${isDark ? "text-white/30" : "text-gray-400"}`} />
-                      <div className="flex-1 space-y-1">
-                        <div className="flex justify-between">
-                          <span className={`text-[0.68rem] ${isDark ? "text-white/60" : "text-gray-600"}`}>{info?.l ?? pay}</span>
-                          <span className={`text-[0.68rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{fmtCur(total)}</span>
-                        </div>
-                        <div className={`h-1 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                          <motion.div className={`h-full rounded-full ${isDark ? "bg-white/25" : "bg-gray-400"}`}
-                            initial={{ width: 0 }} animate={{ width: `${share}%` }}
-                            transition={{ duration: 0.6, ease: "easeOut" }} />
-                        </div>
+      {/* ── Payment method ── */}
+      <div className={`${card} space-y-3`}>
+        <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
+          Par moyen de paiement {focusMonth ? `· ${fmtMonthYear(focusMonth)}` : `· ${year}`}
+        </h3>
+        {byPay.length === 0
+          ? <p className={`py-4 text-center text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune dépense</p>
+          : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">
+              {byPay.map(([pay, total]) => {
+                const info = PAY_METHODS.find(m => m.v === pay);
+                const share = (total / (allTotalFr || 1)) * 100;
+                return (
+                  <div key={pay} className="flex items-center gap-2.5">
+                    <div className={`h-6 w-6 shrink-0 rounded-lg flex items-center justify-center ${isDark ? "bg-white/[0.05]" : "bg-gray-100"}`}>
+                      {info ? <info.I size={11} className={isDark ? "text-white/40" : "text-gray-500"} /> : <CreditCard size={11} />}
+                    </div>
+                    <div className="flex-1 space-y-0.5 min-w-0">
+                      <div className="flex justify-between items-center">
+                        <span className={`text-[0.65rem] truncate ${isDark ? "text-white/55" : "text-gray-600"}`}>{info?.l ?? pay}</span>
+                        <span className={`ml-2 shrink-0 text-[0.65rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{fmtCur(total)}</span>
                       </div>
-                      <span className={`shrink-0 text-[0.62rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{share.toFixed(0)}%</span>
+                      <div className={`h-1 overflow-hidden rounded-full ${isDark ? "bg-white/[0.05]" : "bg-gray-100"}`}>
+                        <motion.div className="h-full rounded-full"
+                          style={{ backgroundColor: "#c9a55a" }}
+                          initial={{ width: 0 }} animate={{ width: `${share}%` }}
+                          transition={{ duration: 0.6, ease: "easeOut" }} />
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-        </div>
-
-                <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Top dépenses</h3>
-          {top5.length === 0
-            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune dépense</p>
-            : (
-              <div className="space-y-1.5">
-                {top5.map((e, i) => (
-                  <div key={e.id} className={`flex items-center gap-3 rounded-xl px-2 py-2 transition-colors ${isDark ? "hover:bg-white/[0.02]" : "hover:bg-gray-50"}`}>
-                    <span className={`w-4 text-[0.6rem] font-semibold ${isDark ? "text-white/20" : "text-gray-400"}`}>#{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`truncate text-[0.75rem] font-semibold ${isDark ? "text-white/80" : "text-gray-800"}`}>{e.description}</p>
-                      <p className={`text-[0.6rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(e.date)} · {getCat(e.category).l}</p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <span className={`text-[0.8rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(e.amount, e.currency)}</span>
-                      {e.currency !== "EUR" && (
-                        <p className={`text-[0.58rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>≈ {fmtCur(amtEur(e, rates))}</p>
-                      )}
-                    </div>
+                    <span className={`shrink-0 text-[0.58rem] w-7 text-right ${isDark ? "text-white/25" : "text-gray-400"}`}>{share.toFixed(0)}%</span>
                   </div>
-                ))}
-              </div>
-            )}
-        </div>
+                );
+              })}
+            </div>
+          )}
       </div>
     </div>
   );
