@@ -2030,21 +2030,23 @@ export default function CRMPage() {
               <div>
                 <h1 className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>CRM</h1>
                 <p className={`text-[0.65rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                  {contacts.length} contacts · {opportunities.filter(o => o.stage !== "perdu").length} opportunités actives
+                  {contacts.length} contact{contacts.length !== 1 ? "s" : ""} · {opportunities.filter(o => o.stage !== "perdu").length} opportunités actives
                 </p>
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
               <label title="Importer CSV"
-                className="h-9 w-9 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:brightness-110"
+                className="h-9 rounded-xl flex items-center gap-1.5 px-3 cursor-pointer transition-all hover:brightness-110"
                 style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
-                <Upload size={14} className={isDark ? "text-white/50" : "text-gray-500"}/>
+                <Upload size={13} className={isDark ? "text-white/50" : "text-gray-500"}/>
+                <span className={`hidden sm:inline text-[0.72rem] font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Importer</span>
                 <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV}/>
               </label>
               <button onClick={exportCSV} title="Exporter CSV"
-                className="h-9 w-9 rounded-xl flex items-center justify-center transition-all hover:brightness-110"
+                className="h-9 rounded-xl flex items-center gap-1.5 px-3 transition-all hover:brightness-110"
                 style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
-                <Download size={14} className={isDark ? "text-white/50" : "text-gray-500"}/>
+                <Download size={13} className={isDark ? "text-white/50" : "text-gray-500"}/>
+                <span className={`hidden sm:inline text-[0.72rem] font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Exporter</span>
               </button>
               <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
                 className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
@@ -2058,7 +2060,7 @@ export default function CRMPage() {
             {[
               { label: "Contacts",       value: contacts.length,                                                    color: "#c9a55a", icon: Users,       onClick: () => { setMainTab("contacts"); setFilterStatus("tous"); } },
               { label: "Actifs",         value: contacts.filter(c => c.status === "actif").length,                 color: "#34d399", icon: UserCheck,    onClick: () => { setMainTab("contacts"); setFilterStatus("actif"); setPage(1); } },
-              { label: "Pipeline",       value: fmtEur(opportunities.filter(o=>o.stage!=="perdu").reduce((s,o)=>s+(o.amount??0),0)), color: "#a78bfa", icon: TrendingUp, onClick: () => setMainTab("pipeline") },
+              { label: "Pipeline",       value: fmtEur(opportunities.filter(o=>o.stage!=="perdu").reduce((s,o)=>s+(o.amount??0),0)), color: "#38bdf8", icon: TrendingUp, onClick: () => setMainTab("pipeline") },
               { label: "Tâches en cours",value: tasks.filter(t => !t.done).length,                                 color: "#f59e0b", icon: CheckSquare,  onClick: () => setMainTab("taches") },
             ].map(k => (
               <motion.button key={k.label} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ type:"spring", stiffness:300, damping:30 }}
@@ -2152,19 +2154,19 @@ export default function CRMPage() {
                     <div className="flex gap-2 flex-wrap">
                       <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value as ContactStatus | "tous"); setPage(1); }}
                         className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
-                        style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
+                        style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="tous">Tous statuts</option>
                         {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
                       <select value={filterType} onChange={e => { setFilterType(e.target.value as ContactType | "tous"); setPage(1); }}
                         className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
-                        style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
+                        style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="tous">Tous types</option>
                         {Object.entries(CONTACT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
                       <select value={sortBy} onChange={e => { setSortBy(e.target.value as "date" | "name" | "budget" | "relance" | "score"); setPage(1); }}
                         className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
-                        style={{ backgroundColor: isDark ? "#111827" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
+                        style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="date">Plus récent</option>
                         <option value="name">Nom A→Z</option>
                         <option value="budget">Budget ↓</option>
@@ -2220,6 +2222,7 @@ export default function CRMPage() {
                                   <span className={`text-[0.82rem] font-bold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{c.name}</span>
                                   <Badge label={STATUSES[c.status].label} color={STATUSES[c.status].color} bg={STATUSES[c.status].bg}/>
                                   <span className="text-[0.58rem] font-black px-1.5 py-0.5 rounded-full hidden sm:inline-flex items-center gap-0.5"
+                                    title={`Score lead : ${score}/100`}
                                     style={{ color: scoreColor, background: `${scoreColor}18`, border: `1px solid ${scoreColor}30` }}>
                                     <Target size={7}/>{score}
                                   </span>
