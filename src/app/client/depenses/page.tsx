@@ -55,6 +55,9 @@ interface ExpenseBudget {
   category: ExpCat; amount: number;
   period: "monthly" | "yearly";
   year: number; month: number | null;
+  alert_threshold: number;
+  notify_push:     boolean;
+  notify_email:    boolean;
   created_at: string;
 }
 
@@ -1153,9 +1156,15 @@ function BudgetView({
     } else {
       const { data } = await supabase.from("expense_budgets").insert({
         user_id: userId, category: cat, amount, period: "monthly", year, month: mo,
+        alert_threshold: 80, notify_push: true, notify_email: false,
       }).select().single();
       if (data) onBudgetsChange([...budgets, data as ExpenseBudget]);
     }
+  }
+
+  async function saveAlertSettings(budgetId: string, patch: Partial<Pick<ExpenseBudget, "alert_threshold" | "notify_push" | "notify_email">>) {
+    const { data } = await supabase.from("expense_budgets").update(patch).eq("id", budgetId).select().single();
+    if (data) onBudgetsChange(budgets.map(b => b.id === budgetId ? data as ExpenseBudget : b));
   }
 
   const totalBudget = CATS.reduce((a, { v }) => a + getBudget(v), 0);
@@ -1199,10 +1208,16 @@ function BudgetView({
 
       <div className="space-y-2">
         {CATS.map(({ v, l, I, c }) => {
-          const budget = getBudget(v);
-          const s    = spent[v] ?? 0;
-          const pct  = budget > 0 ? Math.min((s / budget) * 100, 100) : 0;
+          const budRec  = budgets.find(b => b.category === v && b.period === "monthly" && b.year === year && b.month === mo);
+          const budget  = budRec?.amount ?? 0;
+          const s       = spent[v] ?? 0;
+          const pct     = budget > 0 ? Math.min((s / budget) * 100, 100) : 0;
           const catOver = budget > 0 && s > budget;
+          const alertThr  = budRec?.alert_threshold ?? 80;
+          const nPush     = budRec?.notify_push ?? true;
+          const nEmail    = budRec?.notify_email ?? false;
+          const threshPct = budget > 0 ? (s / budget) * 100 : 0;
+          const nearAlert = budget > 0 && threshPct >= alertThr && !catOver;
           return (
             <div key={v} className={`rounded-xl border p-3 space-y-2 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
               <div className="flex items-center gap-3">
@@ -1214,15 +1229,50 @@ function BudgetView({
                 <span className={`text-[0.72rem] ${isDark ? "text-white/50" : "text-gray-500"}`}>{fmtCur(s)}</span>
                 <span className={`text-[0.6rem] ${isDark ? "text-white/20" : "text-gray-300"}`}>/</span>
                 <BudgetInput value={budget} onSave={v2 => saveBudget(v, v2)} color={c} />
-                {catOver && <AlertTriangle size={13} className="shrink-0 text-red-400" />}
+                {catOver  && <AlertTriangle size={13} className="shrink-0 text-red-400" />}
+                {nearAlert && !catOver && <AlertTriangle size={13} className="shrink-0 text-amber-400" />}
               </div>
               {budget > 0 && (
-                <div className={`h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.05]" : "bg-gray-100"}`}>
-                  <motion.div className="h-full rounded-full"
-                    initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    style={{ backgroundColor: catOver ? "#ef4444" : c }} />
-                </div>
+                <>
+                  {/* Progress bar */}
+                  <div className={`h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.05]" : "bg-gray-100"}`}>
+                    <motion.div className="h-full rounded-full"
+                      initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                      style={{ backgroundColor: catOver ? "#ef4444" : nearAlert ? "#f59e0b" : c }} />
+                  </div>
+                  {/* Alert config */}
+                  {budRec && (
+                    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-0.5 border-t ${isDark ? "border-white/[0.05]" : "border-gray-100"}`}>
+                      <span className={`text-[0.58rem] font-medium uppercase tracking-wider ${isDark ? "text-white/25" : "text-gray-400"}`}>Alerte</span>
+                      {/* Threshold */}
+                      <div className="flex gap-1">
+                        {[50, 75, 80, 90, 100].map(t => (
+                          <button key={t} onClick={() => saveAlertSettings(budRec.id, { alert_threshold: t })}
+                            className="rounded px-1.5 py-0.5 text-[0.55rem] font-semibold border transition-all"
+                            style={alertThr === t
+                              ? { background: c, borderColor: c, color: "#fff" }
+                              : { borderColor: "transparent", color: isDark ? "rgba(255,255,255,0.3)" : "#9ca3af" }
+                            }>
+                            {t}%
+                          </button>
+                        ))}
+                      </div>
+                      {/* Push toggle */}
+                      <label className={`flex items-center gap-1 cursor-pointer select-none text-[0.6rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                        <input type="checkbox" className="h-3 w-3 accent-[#c9a55a]" checked={nPush}
+                          onChange={e => saveAlertSettings(budRec.id, { notify_push: e.target.checked })} />
+                        Push
+                      </label>
+                      {/* Email toggle */}
+                      <label className={`flex items-center gap-1 cursor-pointer select-none text-[0.6rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                        <input type="checkbox" className="h-3 w-3 accent-[#c9a55a]" checked={nEmail}
+                          onChange={e => saveAlertSettings(budRec.id, { notify_email: e.target.checked })} />
+                        Email
+                      </label>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           );
@@ -2545,6 +2595,8 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                   return prev;
                 });
               }
+              // Vérification budgets côté serveur (push/email si seuil franchi)
+              void fetch("/api/depenses/budget-alert", { method: "POST" });
               setShowModal(false);
               setEditExpense(null);
             }}

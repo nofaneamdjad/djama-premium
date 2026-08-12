@@ -8,6 +8,10 @@
     {
       "path": "/api/depenses/recur/cron",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/depenses/budget-alert/cron",
+      "schedule": "0 8 * * *"
     }
   ]
 }
