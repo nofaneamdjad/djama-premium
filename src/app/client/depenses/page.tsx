@@ -2699,27 +2699,32 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
       </div>
 
       {/* ── Tab bar ── */}
-      <div className={`relative shrink-0 flex px-4 sm:px-8 border-b ${isDark ? "border-white/[0.07]" : "border-gray-200"}`}
-        style={{ background: isDark ? "rgba(7,8,14,0.8)" : "rgba(255,255,255,0.9)" }}>
-        {TABS.map(({ id, l, I, badge }) => (
-          <button key={id} onClick={() => setTab(id as typeof tab)}
-            className={`relative flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[0.72rem] font-semibold transition-colors ${
-              tab === id ? (isDark ? "text-white" : "text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600")
-            }`}>
-            <I size={13} />{l}
-            {badge > 0 && (
-              <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[0.55rem] font-bold"
-                style={{ background: id === "budgets" ? "rgba(239,68,68,0.25)" : "rgba(201,165,90,0.2)", color: id === "budgets" ? "#ef4444" : "#c9a55a" }}>
-                {badge}
-              </span>
-            )}
-            {tab === id && (
-              <motion.div layoutId="dep-tab-indicator"
-                className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
-                style={{ background: "linear-gradient(90deg,#c9a55a,#e8c97a)" }} />
-            )}
-          </button>
-        ))}
+      <div className="relative shrink-0" style={{ background: isDark ? "rgba(7,8,14,0.8)" : "rgba(255,255,255,0.9)" }}>
+        <div className={`flex overflow-x-auto border-b px-2 sm:px-8 ${isDark ? "border-white/[0.07]" : "border-gray-200"}`}
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          {TABS.map(({ id, l, I, badge }) => (
+            <button key={id} onClick={() => setTab(id as typeof tab)}
+              className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 sm:px-4 py-3 text-[0.72rem] font-semibold transition-colors ${
+                tab === id ? (isDark ? "text-white" : "text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600")
+              }`}>
+              <I size={13} />{l}
+              {badge > 0 && (
+                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[0.55rem] font-bold"
+                  style={{ background: id === "budgets" ? "rgba(239,68,68,0.25)" : "rgba(201,165,90,0.2)", color: id === "budgets" ? "#ef4444" : "#c9a55a" }}>
+                  {badge}
+                </span>
+              )}
+              {tab === id && (
+                <motion.div layoutId="dep-tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
+                  style={{ background: "linear-gradient(90deg,#c9a55a,#e8c97a)" }} />
+              )}
+            </button>
+          ))}
+        </div>
+        {/* Fade droit — indique qu'il y a d'autres onglets */}
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-10 sm:hidden"
+          style={{ background: `linear-gradient(to left, ${isDark ? "rgba(7,8,14,0.9)" : "rgba(255,255,255,0.9)"}, transparent)` }} />
       </div>
 
       {/* ── Content ── */}
