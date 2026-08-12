@@ -229,7 +229,7 @@ export default function ComptabilitePage() {
               onClick={() => setPeriod(p)}
               className="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
               style={period === p
-                ? { background: "rgba(14,165,233,0.15)", border: "1px solid rgba(14,165,233,0.35)", color: "#0ea5e9" }
+                ? { background: "rgba(201,165,90,0.15)", border: "1px solid rgba(201,165,90,0.35)", color: "#c9a55a" }
                 : isDark
                   ? { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.4)" }
                   : { background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)", color: "rgba(0,0,0,0.4)" }
@@ -283,7 +283,7 @@ export default function ComptabilitePage() {
           }}
         >
           <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-            <Percent size={13} style={{ color: "#0ea5e9" }} />
+            <Percent size={13} style={{ color: "#c9a55a" }} />
             <h2 className={`text-[12px] font-bold ${isDark ? "text-white/70" : "text-gray-700"}`}>Déclaration TVA</h2>
           </div>
 
@@ -300,14 +300,14 @@ export default function ComptabilitePage() {
                 {tvaRows.length > 0 ? tvaRows.map(row => (
                   <div key={row.label} className="flex items-center justify-between rounded-xl px-3 py-2.5"
                     style={{
-                      background: isDark ? "rgba(14,165,233,0.06)" : "rgba(14,165,233,0.07)",
-                      border: isDark ? "1px solid rgba(14,165,233,0.12)" : "1px solid rgba(14,165,233,0.18)"
+                      background: isDark ? "rgba(201,165,90,0.06)" : "rgba(201,165,90,0.07)",
+                      border: isDark ? "1px solid rgba(201,165,90,0.14)" : "1px solid rgba(201,165,90,0.22)"
                     }}>
                     <div>
                       <p className={`text-[11px] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{row.label}</p>
                       <p className={`text-[9.5px] ${isDark ? "text-white/30" : "text-gray-400"}`}>Base {fmtEurInt(row.base)}</p>
                     </div>
-                    <p className="text-[13px] font-black" style={{ color: "#0ea5e9" }}>{fmtEurInt(row.tva)}</p>
+                    <p className="text-[13px] font-black" style={{ color: "#c9a55a" }}>{fmtEurInt(row.tva)}</p>
                   </div>
                 )) : (
                   <p className={`text-[11px] text-center py-3 ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune facture sur la période</p>
@@ -315,33 +315,38 @@ export default function ComptabilitePage() {
               </div>
 
               {/* Solde TVA */}
-              <div className="mx-4 mb-4 mt-1 rounded-xl px-4 py-3 flex items-center justify-between"
-                style={{
-                  background: tvaSolde >= 0 ? "rgba(239,68,68,0.07)" : "rgba(34,197,94,0.07)",
-                  border: `1px solid ${tvaSolde >= 0 ? "rgba(239,68,68,0.18)" : "rgba(34,197,94,0.18)"}`
-                }}>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: tvaSolde >= 0 ? "#dc2626" : "#16a34a" }}>
-                    {tvaSolde >= 0 ? "TVA à payer" : "Crédit de TVA"}
-                  </p>
-                  <p className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Collectée {fmtEurInt(tvaCollectee)}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Déductible</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={tvaDeductible === 0 ? "" : tvaDeductible}
-                      onChange={e => setTvaDeductible(Number(e.target.value) || 0)}
-                      placeholder="0"
-                      className={`w-20 bg-transparent text-[11px] outline-none border-b tabular-nums text-right ${isDark ? "text-white/70 border-white/15 placeholder:text-white/20" : "text-gray-600 border-gray-300 placeholder:text-gray-300"}`}
-                    />
-                    <span className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>€</span>
+              {(() => {
+                const isCredit  = tvaSolde < 0;
+                const isNeutral = tvaSolde === 0;
+                const color  = isNeutral ? "#c9a55a" : isCredit ? "#16a34a" : "#dc2626";
+                const bg     = isNeutral ? "rgba(201,165,90,0.07)"  : isCredit ? "rgba(34,197,94,0.07)"  : "rgba(239,68,68,0.07)";
+                const border = isNeutral ? "rgba(201,165,90,0.18)"  : isCredit ? "rgba(34,197,94,0.18)"  : "rgba(239,68,68,0.18)";
+                const label  = isNeutral ? "TVA — rien à payer"     : isCredit ? "Crédit de TVA"         : "TVA à payer";
+                return (
+                  <div className="mx-4 mb-4 mt-1 rounded-xl px-4 py-3 flex items-center justify-between"
+                    style={{ background: bg, border: `1px solid ${border}` }}>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color }}>{label}</p>
+                      <p className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Collectée {fmtEurInt(tvaCollectee)}</p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>Déductible</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={tvaDeductible === 0 ? "" : tvaDeductible}
+                          onChange={e => setTvaDeductible(Number(e.target.value) || 0)}
+                          placeholder="0"
+                          className={`w-20 bg-transparent text-[11px] outline-none border-b tabular-nums text-right ${isDark ? "text-white/70 border-white/15 placeholder:text-white/20" : "text-gray-600 border-gray-300 placeholder:text-gray-300"}`}
+                        />
+                        <span className={`text-[9px] ${isDark ? "text-white/25" : "text-gray-400"}`}>€</span>
+                      </div>
+                    </div>
+                    <p className="text-[16px] font-black tabular-nums" style={{ color }}>
+                      {fmtEurInt(Math.abs(tvaSolde))}
+                    </p>
                   </div>
-                </div>
-                <p className="text-[16px] font-black tabular-nums" style={{ color: tvaSolde >= 0 ? "#dc2626" : "#16a34a" }}>
-                  {fmtEurInt(Math.abs(tvaSolde))}
-                </p>
-              </div>
+                );
+              })()}
             </div>
           )}
         </motion.div>
