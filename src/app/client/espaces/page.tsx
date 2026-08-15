@@ -53,7 +53,7 @@ export default function EspacesPrives() {
   const pri  = isDark ? "text-white"       : "text-gray-900";
   const sec  = isDark ? "text-white/45"    : "text-gray-500";
   const card = isDark
-    ? "border-white/[0.07] bg-white/[0.025]"
+    ? "border-white/[0.08]"
     : "border-black/[0.08] bg-white shadow-sm";
 
   const load = useCallback(async (uid: string) => {
@@ -153,8 +153,8 @@ export default function EspacesPrives() {
       <ToastStack toasts={toasts} remove={removeToast} />
 
       {/* Header */}
-      <div className={`shrink-0 px-6 py-5 border-b ${isDark ? "border-white/[0.06] bg-[#07080e]" : "border-black/[0.06] bg-white"}`}>
-        <div className="flex items-center justify-between max-w-5xl mx-auto">
+      <div className={`relative shrink-0 border-b ${isDark ? "border-white/[0.06] bg-[#07080e]" : "border-black/[0.06] bg-white"}`}>
+        <div className="flex items-center justify-between px-6 pt-5 pb-3 max-w-5xl mx-auto">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
               style={{ background: `${GOLD}15`, border: `1px solid ${GOLD}25` }}>
@@ -167,10 +167,32 @@ export default function EspacesPrives() {
           </div>
           <button onClick={() => setShowCreate(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:brightness-110"
-            style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
-            <Plus size={14} />Nouvel espace
+            style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a", boxShadow: "0 2px 12px rgba(201,165,90,0.28)" }}>
+            <Plus size={14}/><span className="hidden sm:inline"> Nouvel espace</span>
           </button>
         </div>
+
+        {/* KPI strip */}
+        <div className="flex gap-2 px-6 pb-3 max-w-5xl mx-auto overflow-x-auto scrollbar-none">
+          {[
+            { label: "Espaces",  value: spaces.length },
+            { label: "Actifs",   value: spaces.filter(s => s.is_active).length },
+            { label: "Membres",  value: members.length },
+          ].map((kpi, i) => (
+            <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              className={`shrink-0 flex items-center gap-2 rounded-lg px-2.5 py-1.5 border ${isDark ? "border-white/[0.08]" : "border-gray-200 bg-white"}`}
+              style={isDark ? { background: "rgba(255,255,255,0.035)" } : {}}>
+              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: GOLD }}/>
+              <div>
+                <p className={`text-xs font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
+                <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Gold bottom line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
@@ -203,7 +225,7 @@ export default function EspacesPrives() {
                     transition={{ delay: i * 0.05 }}
                     onClick={() => setSelectedSpace(selectedSpace?.id === space.id ? null : space)}
                     className={`rounded-2xl border cursor-pointer transition-all hover:scale-[1.01] ${card} ${selectedSpace?.id === space.id ? "ring-2" : ""}`}
-                    style={selectedSpace?.id === space.id ? { "--tw-ring-color": space.color } as React.CSSProperties : {}}>
+                    style={{ ...(isDark ? { background: "rgba(255,255,255,0.035)" } : {}), ...(selectedSpace?.id === space.id ? { "--tw-ring-color": space.color } as React.CSSProperties : {}) }}>
 
                     {/* Color bar */}
                     <div className="h-1.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg,${space.color},${space.color}80)` }} />
@@ -237,7 +259,8 @@ export default function EspacesPrives() {
                       )}
 
                       {/* Code d'accès */}
-                      <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${isDark ? "bg-white/[0.04]" : "bg-gray-50"} border ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}
+                      <div className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${isDark ? "border-white/[0.08]" : "bg-gray-50 border-gray-100"}`}
+                        style={isDark ? { background: "rgba(255,255,255,0.05)" } : {}}
                         onClick={e => e.stopPropagation()}>
                         <Lock size={10} style={{ color: space.color }} className="shrink-0" />
                         <span className="text-[11px] font-mono font-bold flex-1 truncate"
