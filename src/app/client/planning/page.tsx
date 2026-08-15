@@ -737,7 +737,8 @@ export default function PlanningPage() {
     const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
 
     return (
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex-1 overflow-x-auto">
+      <div className="flex flex-col" style={{ minWidth: "700px", height: "100%" }}>
         <div className={`grid border-b ${isDark ? "border-white/6" : "border-gray-200"}`} style={{ gridTemplateColumns:"50px repeat(7,1fr)" }}>
           <div />
           {days.map(d => (
@@ -847,6 +848,7 @@ export default function PlanningPage() {
             })}
           </div>
         </div>
+      </div>
       </div>
     );
   }
@@ -1096,8 +1098,8 @@ export default function PlanningPage() {
             </div>
             <h2 className={`text-[10px] sm:text-sm font-bold mr-auto whitespace-nowrap overflow-hidden text-ellipsis min-w-0 ${isDark ? "text-white" : "text-gray-900"}`}>{headerLabel}</h2>
             <button onClick={exportICS} title="Exporter ICS (Google Calendar / Outlook)"
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all ${isDark ? "border-white/8 text-white/40 hover:text-white/70 hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-              <Download size={12}/> ICS
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all ${isDark ? "border-white/8 text-white/40 hover:text-white/70 hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+              <Download size={12}/><span className="hidden sm:inline"> ICS</span>
             </button>
             <button onClick={() => setShowAI(p => !p)}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${showAI
@@ -1117,22 +1119,25 @@ export default function PlanningPage() {
           <div className="relative px-4 pb-2">
             <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
               {[
-                { label: "Total",       value: events.length,                                                                                                                                     icon: Calendar,      accent: "#c9a55a" },
-                { label: "Aujourd'hui", value: events.filter(e => fmtDate(new Date(e.start_at)) === today).length,                                                                                icon: Clock,         accent: "#c9a55a" },
-                { label: "Semaine",     value: events.filter(e => { const d = fmtDate(new Date(e.start_at)); const ws = fmtDate(startOfWeek(new Date())); const we = fmtDate(addDays(startOfWeek(new Date()), 6)); return d >= ws && d <= we; }).length, icon: Target,        accent: "#c9a55a" },
-                { label: "Tâches",      value: todayTasks.length,                                                                                                                                 icon: CheckCircle2,  accent: "#c9a55a" },
-                { label: "Conflits",    value: conflictIds.size,                                                                                                                                  icon: AlertTriangle, accent: conflictIds.size > 0 ? "#f87171" : "#c9a55a" },
+                { label: "Total",       value: events.length,                                                                                                                                     icon: Calendar,      accent: "#c9a55a", onClick: () => setView("agenda") },
+                { label: "Aujourd'hui", value: events.filter(e => fmtDate(new Date(e.start_at)) === today).length,                                                                                icon: Clock,         accent: "#c9a55a", onClick: () => { setCurrent(new Date()); setView("week"); } },
+                { label: "Semaine",     value: events.filter(e => { const d = fmtDate(new Date(e.start_at)); const ws = fmtDate(startOfWeek(new Date())); const we = fmtDate(addDays(startOfWeek(new Date()), 6)); return d >= ws && d <= we; }).length, icon: Target,        accent: "#c9a55a", onClick: () => setView("week") },
+                { label: "Tâches",      value: todayTasks.length,                                                                                                                                 icon: CheckCircle2,  accent: "#c9a55a", onClick: () => setView("agenda") },
+                { label: "Conflits",    value: conflictIds.size,                                                                                                                                  icon: AlertTriangle, accent: conflictIds.size > 0 ? "#f87171" : "#c9a55a", onClick: () => setView("agenda") },
               ].map((kpi, i) => {
                 const KpiIcon = kpi.icon;
                 return (
-                  <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                    className={`shrink-0 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                  <motion.button key={kpi.label} onClick={kpi.onClick}
+                    initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    className={`shrink-0 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border transition-all ${isDark ? "border-white/[0.08] hover:border-white/15" : "border-gray-200 bg-white hover:border-gray-300"}`}
+                    style={isDark ? { background: "rgba(255,255,255,0.035)" } : {}}>
                     <KpiIcon size={11} style={{ color: kpi.accent }} className="shrink-0"/>
                     <div>
                       <p className={`text-xs font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
                       <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                     </div>
-                  </motion.div>
+                  </motion.button>
                 );
               })}
             </div>
