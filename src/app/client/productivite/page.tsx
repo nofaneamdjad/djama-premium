@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, ListChecks, Activity, Target, ArrowRight, Loader2, Plus,
   Play, Square, CornerDownLeft, AlertTriangle, Sparkles, FileText,
-  Link2, LayoutTemplate, Network,
+  Link2, LayoutTemplate, Network, Download,
   Rocket, Phone, Bug, PenLine, Palette, BarChart3, type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -396,11 +396,12 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
 }
 
 function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
+  const isDark = useDark();
   const [msg, setMsg]       = useState("");
   const [resp, setResp]     = useState("");
   const [loading, setLoading] = useState(false);
 
-  const ctx = `Productivité SaaS: ${tasks.length} tâches au total. Urgentes: ${tasks.filter(t => t.priority === "urgent").length}. En retard: ${tasks.filter(isLate).length}. En cours: ${tasks.filter(t => t.status === "in_progress").length}. En validation: ${tasks.filter(t => t.status === "validation").length}. Terminées: ${tasks.filter(t => t.status === "done").length}.`;
+  const ctx =`Productivité SaaS: ${tasks.length} tâches au total. Urgentes: ${tasks.filter(t => t.priority === "urgent").length}. En retard: ${tasks.filter(isLate).length}. En cours: ${tasks.filter(t => t.status === "in_progress").length}. En validation: ${tasks.filter(t => t.status === "validation").length}. Terminées: ${tasks.filter(t => t.status === "done").length}.`;
 
   async function ask(prompt: string) {
     setLoading(true); setResp("");
@@ -427,46 +428,46 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
   return (
     <motion.div initial={{ x: 360 }} animate={{ x: 0 }} exit={{ x: 360 }}
       transition={{ type: "spring", damping: 24, stiffness: 200 }}
-      className="fixed right-0 top-0 h-full w-[340px] bg-white/4 border-l border-white/6 z-50 flex flex-col shadow-2xl">
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/6">
+      className={`fixed right-0 top-0 h-full w-[340px] border-l z-50 flex flex-col shadow-2xl ${isDark ? "bg-white/[0.04] border-white/[0.06]" : "bg-gray-50 border-gray-200"}`}>
+      <div className={`flex items-center justify-between px-4 py-3.5 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
         <div className="flex items-center gap-2">
           <div className="h-5 w-5 rounded-full flex items-center justify-center"
             style={{ background: VIOLET + "30", border: `1px solid ${VIOLET}50` }}>
             <Sparkles size={11} style={{ color: VIOLET }} />
           </div>
-          <span className="text-sm font-semibold text-white/85">IA Productivité</span>
+          <span className={`text-sm font-semibold ${isDark ? "text-white/85" : "text-gray-900"}`}>IA Productivité</span>
         </div>
-        <button onClick={onClose} className="text-white/30 hover:text-white/70 text-xl leading-none">×</button>
+        <button onClick={onClose} className={`text-xl leading-none ${isDark ? "text-white/30 hover:text-white/70" : "text-gray-400 hover:text-gray-600"}`}>×</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        <p className="text-[0.67rem] text-white/30 leading-relaxed">{ctx}</p>
+        <p className={`text-[0.67rem] leading-relaxed ${isDark ? "text-white/30" : "text-gray-400"}`}>{ctx}</p>
         <div className="grid grid-cols-2 gap-2">
           {QUICK.map(q => (
             <button key={q.l} onClick={() => ask(q.p)}
-              className="flex flex-col items-center gap-1.5 rounded-xl border border-white/6 bg-white/4 p-3 text-center transition hover:border-violet-500/40 hover:bg-violet-500/10">
+              className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition hover:border-violet-500/40 hover:bg-violet-500/10 ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-gray-200 bg-white hover:border-violet-400 hover:bg-violet-50"}`}>
               <q.Icon size={18} style={{ color: VIOLET }} />
-              <span className="text-[0.63rem] text-white/55 leading-tight">{q.l}</span>
+              <span className={`text-[0.63rem] leading-tight ${isDark ? "text-white/55" : "text-gray-500"}`}>{q.l}</span>
             </button>
           ))}
         </div>
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-white/40">
+          <div className={`flex items-center gap-2 text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>
             <Loader2 size={12} className="animate-spin" /> Analyse en cours…
           </div>
         )}
         {resp && (
-          <div className="rounded-xl border border-violet-500/20 bg-violet-500/10 p-3 text-xs text-white/78 leading-relaxed whitespace-pre-wrap">
+          <div className={`rounded-xl border border-violet-500/20 bg-violet-500/10 p-3 text-xs leading-relaxed whitespace-pre-wrap ${isDark ? "text-white/78" : "text-gray-700"}`}>
             {resp}
           </div>
         )}
       </div>
 
-      <div className="border-t border-white/6 p-3 flex gap-2">
+      <div className={`border-t p-3 flex gap-2 ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
         <input value={msg} onChange={e => setMsg(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && msg.trim()) { ask(msg.trim()); setMsg(""); } }}
           placeholder="Question libre sur vos tâches…"
-          className="flex-1 rounded-lg border border-white/8 bg-white/6 px-3 py-2 text-xs text-white/75 outline-none placeholder:text-white/25 hover:border-white/15" />
+          className={`flex-1 rounded-lg border px-3 py-2 text-xs outline-none ${isDark ? "border-white/[0.08] bg-white/[0.06] text-white/75 placeholder:text-white/25 hover:border-white/15" : "border-gray-200 bg-white text-gray-700 placeholder:text-gray-300 hover:border-gray-300"}`} />
         <button onClick={() => { if (msg.trim()) { ask(msg.trim()); setMsg(""); } }}
           className="rounded-lg px-3 py-2 text-sm text-white transition hover:opacity-90"
           style={{ background: VIOLET }}><ArrowRight size={13} /></button>
@@ -602,6 +603,20 @@ export default function ProductivitePage() {
     if (!editId) return;
     setConfirmDeleteId(editId);
   };
+
+  const exportCSV = useCallback(() => {
+    const rows = [
+      ["Titre", "Statut", "Priorité", "Catégorie", "Date limite", "Responsable", "Sous-tâches"].join(";"),
+      ...tasks.map(t => [
+        t.title, STAT[t.status].label, PRIO[t.priority].label, t.category ?? "", t.due_date ?? "", t.responsible ?? "",
+        `${t.subtasks.filter((s: { done: boolean }) => s.done).length}/${t.subtasks.length}`,
+      ].join(";")),
+    ];
+    const blob = new Blob(["﻿" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "taches.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }, [tasks]);
 
   const confirmDel = useCallback(async () => {
     if (!confirmDeleteId) return;
@@ -755,19 +770,24 @@ export default function ProductivitePage() {
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
+              <button onClick={exportCSV} title="Exporter CSV"
+                className={`h-8 flex items-center gap-1.5 px-3 rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}>
+                <Download size={13}/>
+                <span className="hidden sm:inline text-xs font-semibold">Exporter</span>
+              </button>
               <button onClick={() => setShowAI(s => !s)}
                 className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${showAI
                   ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
                   : isDark ? "border-white/8 text-white/50 hover:border-violet-500/30 hover:text-violet-300"
                   : "border-gray-200 text-gray-500 hover:border-violet-300 hover:text-violet-600"}`}>
-                <Sparkles size={13}/> IA
+                <Sparkles size={13}/><span className="hidden sm:inline"> IA</span>
               </button>
               <button onClick={() => setShowTemplates(s => !s)}
                 className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${showTemplates
                   ? "border-amber-500/50 bg-amber-500/20 text-amber-300"
                   : isDark ? "border-white/8 text-white/50 hover:border-amber-500/30 hover:text-amber-300"
                   : "border-gray-200 text-gray-500 hover:border-amber-300 hover:text-amber-600"}`}>
-                <LayoutTemplate size={13}/> Templates
+                <LayoutTemplate size={13}/><span className="hidden sm:inline"> Templates</span>
               </button>
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={() => openNew()}
@@ -784,21 +804,23 @@ export default function ProductivitePage() {
           <div className="mx-auto max-w-7xl space-y-2">
             <div className="grid grid-cols-4 gap-2">
               {[
-                { label: "Total",     value: tasks.length,                                         icon: ListChecks },
-                { label: "En cours",  value: tasks.filter(t => t.status === "in_progress").length,  icon: Activity },
-                { label: "En retard", value: tasks.filter(isLate).length,                           icon: AlertTriangle },
-                { label: "Terminées", value: tasks.filter(t => t.status === "done").length,         icon: Target },
+                { label: "Total",     value: tasks.length,                                         icon: ListChecks, onClick: () => { setView("list"); setFprio(""); setFcat(""); setFstat(""); } },
+                { label: "En cours",  value: tasks.filter(t => t.status === "in_progress").length,  icon: Activity,   onClick: () => { setView("list"); setFstat("in_progress"); } },
+                { label: "En retard", value: tasks.filter(isLate).length,                           icon: AlertTriangle, onClick: () => { setView("list"); setListTab("late"); } },
+                { label: "Terminées", value: tasks.filter(t => t.status === "done").length,         icon: Target,     onClick: () => { setView("list"); setFstat("done"); } },
               ].map((kpi, i) => {
                 const KpiIcon = kpi.icon;
                 return (
-                  <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
-                    className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                  <motion.button key={kpi.label} onClick={kpi.onClick}
+                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
+                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 border transition-all ${isDark ? "border-white/6 bg-white/4 hover:border-white/15" : "border-gray-200 bg-white hover:border-gray-300"}`}>
                     <KpiIcon size={13} style={{ color: "#c9a55a" }} className="shrink-0"/>
                     <div className="min-w-0">
                       <p className={`text-sm font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
                       <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                     </div>
-                  </motion.div>
+                  </motion.button>
                 );
               })}
             </div>
@@ -882,7 +904,8 @@ export default function ProductivitePage() {
           </div>
 
                 {view === "kanban" && (
-          <div className="grid grid-cols-4 gap-4" style={{ minHeight: "60vh" }}>
+          <div className="overflow-x-auto pb-2">
+          <div className="grid grid-cols-4 gap-4" style={{ minHeight: "60vh", minWidth: "640px" }}>
             {KANBAN_COLS.map(col => {
               const colTasks = filtered.filter(t => t.status === col.key);
               return (
@@ -951,6 +974,7 @@ export default function ProductivitePage() {
                 </div>
               );
             })}
+          </div>
           </div>
         )}
 
