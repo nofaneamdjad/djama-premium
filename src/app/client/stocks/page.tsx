@@ -85,7 +85,7 @@ const MOV_TYPES: { value: MovementType; label: string; color: string; sign: numb
   { value: "ajustement", label: "Ajustement",  color: "#c9a55a", sign:  0 },
 ];
 const ORDER_STATUS: Record<OrderStatus, { label: string; color: string; bg: string }> = {
-  draft:     { label: "Brouillon",  color: "text-white/40",   bg: "bg-white/[0.05]" },
+  draft:     { label: "Brouillon",  color: "text-gray-400",   bg: "bg-gray-400/10" },
   sent:      { label: "Envoyée",    color: "text-sky-400",    bg: "bg-sky-500/10" },
   confirmed: { label: "Confirmée",  color: "text-yellow-400", bg: "bg-yellow-500/10" },
   received:  { label: "Reçue",      color: "text-emerald-400",bg: "bg-emerald-500/10" },
@@ -672,7 +672,8 @@ function DashboardView({ products, movements, onNewProduct, onNewMovement }: {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className={`rounded-2xl border p-4 flex flex-col gap-2 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-white"}`}>
+            className="rounded-2xl p-4 flex flex-col gap-2"
+            style={{ background: isDark ? "rgba(255,255,255,0.035)" : "#ffffff", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}` }}>
             <div className={`h-8 w-8 flex items-center justify-center rounded-xl ${k.bg}`}>
               <k.icon size={15} style={{ color: k.color }}/>
             </div>
@@ -1530,7 +1531,8 @@ function ReportView({ products, movements }: { products: Product[]; movements: M
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {kpis.map((k, i) => (
-          <div key={i} className={`rounded-2xl border p-4 ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-gray-200"}`}>
+          <div key={i} className="rounded-2xl p-4"
+            style={{ background: isDark ? "rgba(255,255,255,0.035)" : "#ffffff", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}` }}>
             <p className={`text-[10px] uppercase tracking-wider mb-2 ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
             <p className={`text-xl font-bold ${isDark ? "text-white/90" : "text-gray-800"}`}>{k.value}</p>
             <p className={`text-xs mt-1 ${isDark ? "text-white/35" : "text-gray-400"}`}>{k.sub}</p>
@@ -2143,8 +2145,9 @@ export default function StocksPage() {
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={exportCSV} title="Exporter CSV" className={`h-8 w-8 flex items-center justify-center rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}>
-                <Download size={14}/>
+              <button onClick={exportCSV} title="Exporter CSV" className={`h-8 flex items-center gap-1.5 px-3 rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}>
+                <Download size={13}/>
+                <span className="hidden sm:inline text-xs font-semibold">Exporter</span>
               </button>
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={() => { setEditProduct(EMPTY_PRODUCT()); setShowProductModal(true); }}
@@ -2160,21 +2163,23 @@ export default function StocksPage() {
         <div className="relative px-5 pb-3 sm:px-8">
           <div className="mx-auto max-w-7xl flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
             {[
-              { label: "Produits",  value: products.length,                                                              icon: Package },
-              { label: "Ruptures",  value: products.filter((p) => p.stock_current <= 0).length,                         icon: AlertOctagon },
-              { label: "Valeur",    value: fmtEur(products.reduce((s, p) => s + p.stock_current * p.purchase_price, 0)), icon: DollarSign },
-              { label: "Mvts",      value: movements.length,                                                             icon: Activity },
+              { label: "Produits",  value: products.length,                                                              icon: Package,      tab: "products"   as const },
+              { label: "Ruptures",  value: products.filter((p) => p.stock_current <= 0).length,                         icon: AlertOctagon, tab: "products"   as const },
+              { label: "Valeur",    value: fmtEur(products.reduce((s, p) => s + p.stock_current * p.purchase_price, 0)), icon: DollarSign,   tab: "report"     as const },
+              { label: "Mvts",      value: movements.length,                                                             icon: Activity,     tab: "movements"  as const },
             ].map((kpi, i) => {
               const KpiIcon = kpi.icon;
               return (
-                <motion.div key={kpi.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
-                  className={`shrink-0 flex items-center gap-2 rounded-xl px-3 py-2 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+                <motion.button key={kpi.label} onClick={() => setTab(kpi.tab)}
+                  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  className={`shrink-0 flex items-center gap-2 rounded-xl px-3 py-2 border transition-all ${isDark ? "border-white/[0.06] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.06]" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
                   <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
                   <div>
                     <p className={`text-sm font-bold leading-none ${isDark ? "text-white" : "text-gray-800"}`}>{kpi.value}</p>
                     <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                   </div>
-                </motion.div>
+                </motion.button>
               );
             })}
           </div>
