@@ -887,6 +887,24 @@ export default function BlocNotesPage() {
     });
   }, [outgoingRefs, incomingRefs]);
 
+  function exportNotesCSV() {
+    const rows = [
+      ["Titre","Type","Dossier","Tags","Mots","Créée","Modifiée"].join(";"),
+      ...displayNotes.map(n => [
+        n.title || "Sans titre",
+        getNoteType(n),
+        folders.find(f => f.id === n.folder_id)?.name ?? "",
+        (n.tags ?? []).join(","),
+        String(n.word_count ?? 0),
+        n.created_at.slice(0,10),
+        n.updated_at.slice(0,10),
+      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(";"))
+    ];
+    const blob = new Blob(["﻿"+rows.join("\n")], {type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download="notes.csv"; a.click(); URL.revokeObjectURL(url);
+  }
+
   /* ══════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════ */
@@ -1196,26 +1214,53 @@ export default function BlocNotesPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
+                  <button onClick={exportNotesCSV}
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-white/28 transition hover:bg-white/[0.05] hover:text-white/55"
+                    title="Exporter CSV">
+                    <Download size={12}/><span className="hidden sm:inline"> Exporter</span>
+                  </button>
                   <button onClick={() => setShowTemplates(true)}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[0.05] hover:text-white/55"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-white/28 transition hover:bg-white/[0.05] hover:text-white/55"
                     title="Templates">
-                    <Hash size={13}/>
+                    <Hash size={12}/><span className="hidden sm:inline"> Templates</span>
                   </button>
                   <button onClick={() => fileInputRef.current?.click()}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[0.05] hover:text-white/55"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-white/28 transition hover:bg-white/[0.05] hover:text-white/55"
                     title="Importer .txt/.md">
-                    <Upload size={13}/>
+                    <Upload size={12}/><span className="hidden sm:inline"> Importer</span>
                   </button>
                   <input ref={fileInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportFile}/>
                   <button onClick={() => createNote("texte")}
-                    className="flex h-7 w-7 items-center justify-center rounded-xl transition active:scale-95"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition active:scale-95"
                     style={{background:"rgba(245,158,11,0.11)",border:"1px solid rgba(245,158,11,0.2)",color:amber}}>
-                    <Plus size={14}/>
+                    <Plus size={13}/><span className="hidden sm:inline"> Nouvelle</span>
                   </button>
                 </div>
               </div>
-              <div className="h-[1px]" style={{background:"linear-gradient(90deg,rgba(245,158,11,0.2),rgba(255,255,255,0.05),transparent)"}}/>
+
+              {/* KPI strip */}
+              <div className="flex gap-1.5 px-4 pb-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
+                {[
+                  { label:"Toutes",     value: counts.all,       onClick: () => { setSection("all");       setSelected(null); setMobilePanel("list"); } },
+                  { label:"Favoris",    value: counts.favs,      onClick: () => { setSection("favorites"); setSelected(null); setMobilePanel("list"); } },
+                  { label:"Checklists", value: counts.checklist, onClick: () => { setSection("checklist"); setSelected(null); setMobilePanel("list"); } },
+                ].map((kpi, i) => (
+                  <motion.div key={kpi.label}
+                    initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} transition={{ delay: i*0.05 }}
+                    onClick={kpi.onClick}
+                    className="shrink-0 flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-amber-400/25"
+                    style={isDark ? { background:"rgba(255,255,255,0.035)" } : { background:"rgba(12,24,100,0.04)" }}>
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: amber }}/>
+                    <div>
+                      <p className="text-xs font-bold leading-none text-white">{kpi.value}</p>
+                      <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">{kpi.label}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="h-px" style={{background:"linear-gradient(90deg,transparent,rgba(245,158,11,0.45),rgba(201,165,90,0.3),transparent)"}}/>
             </div>
 
             {/* Search */}
