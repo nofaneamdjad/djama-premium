@@ -541,9 +541,32 @@ export default function EquipePage() {
     return groups;
   },[channelMessages]);
 
+  function exportMembersCSV() {
+    const rows = [
+      ["Nom","Email","Téléphone","Poste","Département","Rôle","Statut","Date d'entrée"].join(";"),
+      ...members.map(m => [
+        m.name, m.email, m.phone, m.position, m.department,
+        ROLES.find(r=>r.v===m.role)?.l ?? m.role,
+        STATUSES.find(s=>s.v===m.status)?.l ?? m.status,
+        m.entry_date ?? "",
+      ].join(";")),
+    ];
+    const blob = new Blob(["﻿"+rows.join("\n")],{type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download="equipe.csv"; a.click(); URL.revokeObjectURL(url);
+  }
+
     function renderMembers() {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
+        {members.length > 0 && (
+          <div className={`flex items-center justify-end px-5 pt-2.5 pb-2 border-b ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
+            <button onClick={exportMembersCSV}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+              <Download size={11}/><span className="hidden sm:inline"> Exporter</span>
+            </button>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {filteredMembers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -564,7 +587,10 @@ export default function EquipePage() {
                 return (
                   <motion.div key={m.id} layout
                     initial={{opacity:0,scale:0.95}} animate={{opacity:1,scale:1}}
-                    className={`group relative rounded-2xl border p-4 cursor-pointer transition-all ${isDark ? "border-white/[0.07] bg-white/[0.03] hover:border-white/15 hover:bg-white/[0.05]" : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"}`}
+                    className={`group relative rounded-2xl border p-4 cursor-pointer transition-all ${isDark ? "border-white/[0.07] hover:border-white/15" : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"}`}
+                    style={isDark ? { background: "rgba(255,255,255,0.035)" } : {}}
+                    onMouseEnter={isDark ? e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; } : undefined}
+                    onMouseLeave={isDark ? e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.035)"; } : undefined}
                     onClick={()=>openEditMember(m)}>
 
                                         <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full"
@@ -1392,7 +1418,7 @@ export default function EquipePage() {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${showAI
               ? "border-sky-500/50 bg-sky-500/20 text-sky-400"
               : isDark ? "border-white/[0.08] text-white/50 hover:border-sky-500/30 hover:text-sky-300" : "border-gray-200 text-gray-600 hover:border-sky-400/40 hover:text-sky-600"}`}>
-            <Sparkles size={12}/>IA Équipe
+            <Sparkles size={12}/><span className="hidden sm:inline"> IA Équipe</span><span className="sm:hidden">IA</span>
           </button>
           <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
             onClick={()=>{
@@ -1413,21 +1439,24 @@ export default function EquipePage() {
         <div className="relative px-5 pb-2">
           <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
             {[
-              { label: "Actifs",    value: stats.active,  icon: Users        },
-              { label: "En cours",  value: stats.inProg,  icon: CheckSquare  },
-              { label: "En retard", value: stats.late,    icon: AlertCircle  },
-              { label: "En congé",  value: stats.onLeave, icon: Briefcase    },
+              { label: "Actifs",    value: stats.active,  icon: Users,       onClick: () => setTab("members") },
+              { label: "En cours",  value: stats.inProg,  icon: CheckSquare, onClick: () => setTab("tasks")   },
+              { label: "En retard", value: stats.late,    icon: AlertCircle, onClick: () => setTab("tasks")   },
+              { label: "En congé",  value: stats.onLeave, icon: Briefcase,   onClick: () => setTab("hr")      },
             ].map((kpi, i) => {
               const KpiIcon = kpi.icon;
               return (
-                <motion.div key={kpi.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                  className={`shrink-0 flex items-center gap-2 rounded-lg px-2.5 py-1.5 border ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+                <motion.button key={kpi.label} onClick={kpi.onClick}
+                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  className={`shrink-0 flex items-center gap-2 rounded-lg px-2.5 py-1.5 border transition-all ${isDark ? "border-white/[0.08] hover:border-white/15" : "border-gray-200 bg-white hover:border-gray-300"}`}
+                  style={isDark ? { background: "rgba(255,255,255,0.035)" } : {}}>
                   <KpiIcon size={11} style={{ color: "#c9a55a" }} className="shrink-0"/>
                   <div>
                     <p className={`text-xs font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
                     <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-500"}`}>{kpi.label}</p>
                   </div>
-                </motion.div>
+                </motion.button>
               );
             })}
           </div>
