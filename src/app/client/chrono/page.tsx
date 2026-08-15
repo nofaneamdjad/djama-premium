@@ -765,16 +765,16 @@ export default function ChronoPage() {
           </div>
           <div className="flex items-center gap-2">
             <button onClick={()=>exportICS(entries)} title="Sync calendrier (ICS)"
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:border-sky-500/30 hover:text-sky-400 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
-              <CalendarPlus size={15}/>
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs transition hover:border-sky-500/30 hover:text-sky-400 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
+              <CalendarPlus size={13}/><span className="hidden sm:inline"> ICS</span>
             </button>
             <button onClick={()=>exportTimesheet(entries)} title="Export timesheet CSV"
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:border-emerald-500/30 hover:text-emerald-400 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
-              <Download size={15}/>
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs transition hover:border-emerald-500/30 hover:text-emerald-400 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
+              <Download size={13}/><span className="hidden sm:inline"> Exporter</span>
             </button>
             <button onClick={()=>{setGoalDraft({daily_minutes:String(goal?.daily_minutes??480),weekly_minutes:String(goal?.weekly_minutes??2400),daily_billable_minutes:String(goal?.daily_billable_minutes??360)});setGoalOpen(true)}}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:border-white/20 hover:text-white/60 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`} title="Objectifs">
-              <Target size={15}/>
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs transition hover:border-white/20 hover:text-white/60 ${isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`} title="Objectifs">
+              <Target size={13}/><span className="hidden sm:inline"> Objectifs</span>
             </button>
             <button onClick={()=>{setManualDraft(emptyManual());setManualOpen(true)}}
               className="flex items-center gap-1.5 rounded-xl px-2.5 sm:px-4 py-2 text-xs font-extrabold text-[#080a0f] transition hover:opacity-90"
@@ -783,6 +783,7 @@ export default function ChronoPage() {
             </button>
           </div>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
       </div>
 
             <div className={`relative z-10 border-b px-5 sm:px-8 ${isDark ? "border-white/6 bg-[#07080e]/60" : "border-gray-200 bg-white/80"}`}>
@@ -812,26 +813,31 @@ export default function ChronoPage() {
 
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                {label:"Aujourd'hui",value:fmtMin(todayStats.minutes),sub:`${todayStats.sessions} session${todayStats.sessions!==1?"s":""}`,color:"#a78bfa"},
-                {label:"Facturable",value:fmtMin(todayStats.billable),sub:"heures",color:"#34d399"},
-                {label:"Revenus",value:todayStats.earnings>0?fmtEur(todayStats.earnings):"—",sub:"aujourd'hui",color:"#c9a55a"},
-                {label:"Objectif",value:dailyGoalPct!==null?`${dailyGoalPct}%`:"—",sub:goal?`/${fmtMin(goal.daily_minutes)}`:"Non défini",color:dailyGoalPct!==null&&dailyGoalPct>=100?"#34d399":"#a78bfa"},
+                {label:"Aujourd'hui",value:fmtMin(todayStats.minutes),sub:`${todayStats.sessions} session${todayStats.sessions!==1?"s":""}`,color:"#a78bfa",onClick:()=>setTab("timer")},
+                {label:"Facturable",value:fmtMin(todayStats.billable),sub:"heures",color:"#34d399",onClick:()=>setTab("billing")},
+                {label:"Revenus",value:todayStats.earnings>0?fmtEur(todayStats.earnings):"—",sub:"aujourd'hui",color:"#c9a55a",onClick:()=>setTab("billing")},
+                {label:"Objectif",value:dailyGoalPct!==null?`${dailyGoalPct}%`:"—",sub:goal?`/${fmtMin(goal.daily_minutes)}`:"Non défini",color:dailyGoalPct!==null&&dailyGoalPct>=100?"#34d399":"#a78bfa",onClick:()=>setGoalOpen(true)},
               ].map((k,i)=>(
-                <div key={i} className={`flex flex-col justify-between rounded-xl border px-4 py-3 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                <motion.button key={i} onClick={k.onClick}
+                  whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                  className={`flex flex-col justify-between rounded-xl border px-4 py-3 text-left ${isDark ? "border-white/[0.07]" : "border-gray-200 bg-white"}`}
+                  style={isDark ? { background: "rgba(255,255,255,0.035)" } : {}}>
                   <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
                   <p className="mt-1 text-xl font-bold" style={{color:k.color}}>{k.value}</p>
                   <p className={`text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.sub}</p>
-                </div>
+                </motion.button>
               ))}
             </div>
 
                         {dailyGoalPct!==null&&(
-              <div className={`overflow-hidden rounded-xl border px-5 py-3 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+              <div className={`overflow-hidden rounded-xl border px-5 py-3 ${isDark ? "border-white/[0.07]" : "border-gray-200 bg-white"}`}
+                style={isDark ? { background: "rgba(255,255,255,0.035)" } : {}}>
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className={`text-xs font-bold ${isDark ? "text-white/50" : "text-gray-500"}`}>Objectif quotidien</span>
                   <span className="text-xs font-bold" style={{color:dailyGoalPct>=100?"#34d399":violet}}>{dailyGoalPct}%</span>
                 </div>
-                <div className={`h-1.5 w-full overflow-hidden rounded-full ${isDark ? "bg-white/8" : "bg-gray-200"}`}>
+                <div className={`h-1.5 w-full overflow-hidden rounded-full ${isDark ? "" : "bg-gray-200"}`}
+                  style={isDark ? { background: "rgba(255,255,255,0.07)" } : {}}>
                   <motion.div className="h-full rounded-full" initial={{width:0}} animate={{width:`${dailyGoalPct}%`}} transition={{duration:0.8,ease:[0.16,1,0.3,1]}}
                     style={{background:dailyGoalPct>=100?"#34d399":violet}}/>
                 </div>
@@ -851,7 +857,8 @@ export default function ChronoPage() {
             </div>
 
                         <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.4,ease}}
-              className={`overflow-hidden rounded-2xl border shadow-[0_8px_40px_rgba(0,0,0,0.15)] ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+              className={`overflow-hidden rounded-2xl border shadow-[0_8px_40px_rgba(0,0,0,0.15)] ${isDark ? "border-white/[0.07]" : "border-gray-200 bg-white"}`}
+              style={isDark ? { background: "rgba(255,255,255,0.035)" } : {}}>
 
               <AnimatePresence>
                 {(running||paused)&&(
