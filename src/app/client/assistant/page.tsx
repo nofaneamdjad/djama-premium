@@ -339,7 +339,7 @@ function SidebarInner({
 }) {
   return (
     <>
-            <div className="px-4 py-4 border-b border-white/[0.06] shrink-0">
+            <div className="relative px-4 py-4 border-b border-white/[0.06] shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-lg flex items-center justify-center"
@@ -351,17 +351,33 @@ function SidebarInner({
               <p className="text-[0.58rem] text-white/30">Cerveau central</p>
             </div>
           </div>
-          {onClose && (
-            <button onClick={onClose} className="p-2 text-white/40 hover:text-white/70 rounded-lg transition">
-              <X size={18} />
-            </button>
-          )}
+          <div className="flex items-center gap-1.5">
+            {convs.length > 0 && (
+              <motion.div
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                onClick={onNew}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-cyan-400/25"
+                style={{ background: "rgba(255,255,255,0.035)" }}>
+                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: CYAN }}/>
+                <div>
+                  <p className="text-xs font-bold leading-none text-white">{convs.length}</p>
+                  <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">Conv.</p>
+                </div>
+              </motion.div>
+            )}
+            {onClose && (
+              <button onClick={onClose} className="p-2 text-white/40 hover:text-white/70 rounded-lg transition">
+                <X size={18} />
+              </button>
+            )}
+          </div>
         </div>
         <button onClick={onNew}
           className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-semibold text-white transition hover:opacity-90 active:scale-[0.98]"
           style={{ background: `linear-gradient(135deg, ${CYAN}, ${VIOLET})` }}>
           + Nouvelle conversation
         </button>
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
       </div>
 
             <div className="px-3 py-3 border-b border-white/[0.06] shrink-0">
@@ -822,7 +838,7 @@ export default function AssistantPage() {
 
             <div className="flex-1 flex flex-col min-w-0">
 
-                <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b border-white/[0.06] shrink-0 gap-2">
+                <div className="relative flex items-center justify-between px-3 md:px-5 py-3 border-b border-white/[0.06] shrink-0 gap-2">
           <div className="flex items-center gap-2 min-w-0">
                         <button
               onClick={() => setShowSidebar(true)}
@@ -867,6 +883,7 @@ export default function AssistantPage() {
               <span className="hidden sm:inline font-medium">Live</span>
             </button>
           </div>
+          <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
         </div>
 
                 <div className="flex-1 overflow-y-auto px-3 sm:px-5 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
