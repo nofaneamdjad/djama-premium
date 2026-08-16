@@ -205,17 +205,17 @@ function ProjectCard({
   const doneMiles  = miles.filter(m=>m.done).length;
 
   const cardCls   = isDark
-    ? "border-white/6 bg-white/[0.04] hover:border-white/12 hover:bg-white/[0.06] hover:shadow-black/30"
-    : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:bg-slate-50 hover:shadow-slate-200/80";
+    ? "border-white/[0.06] bg-white/[0.04] hover:border-white/12 hover:bg-white/[0.06] hover:shadow-black/30"
+    : "border-black/[0.08] bg-white shadow-sm hover:border-black/12 hover:bg-slate-50 hover:shadow-slate-200/80";
   const textPri   = isDark ? "text-white"    : "text-[#0e1420]";
   const textSec   = isDark ? "text-white/40" : "text-black/40";
   const textMuted = isDark ? "text-white/35" : "text-black/35";
   const textFaint = isDark ? "text-white/30" : "text-black/30";
-  const barBg     = isDark ? "bg-white/8"    : "bg-black/8";
-  const chipCls   = isDark ? "bg-white/8 text-white/40"  : "bg-black/5 text-black/40";
+  const barBg     = isDark ? "bg-white/[0.08]"    : "bg-black/[0.08]";
+  const chipCls   = isDark ? "bg-white/[0.08] text-white/40"  : "bg-black/5 text-black/40";
   const btnBase   = isDark
-    ? "border-white/8 bg-white/8 text-white/60 hover:bg-white/12 hover:text-white"
-    : "border-black/8 bg-black/5 text-black/50 hover:bg-black/8 hover:text-[#0e1420]";
+    ? "border-white/[0.08] bg-white/[0.08] text-white/60 hover:bg-white/[0.12] hover:text-white"
+    : "border-black/[0.08] bg-black/5 text-black/50 hover:bg-black/[0.08] hover:text-[#0e1420]";
 
   return (
     <motion.div layout initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={{opacity:0,scale:0.97}}
@@ -305,7 +305,7 @@ function ProjectCard({
           </button>
         )}
         <button onClick={onChrono} title="Chrono"
-          className={`flex items-center justify-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${isDark ? "border-white/8 bg-white/8 text-white/40 hover:bg-white/12 hover:text-white" : "border-black/8 bg-black/5 text-black/35 hover:bg-black/8 hover:text-[#0e1420]"}`}>
+          className={`flex items-center justify-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${isDark ? "border-white/[0.08] bg-white/[0.08] text-white/40 hover:bg-white/[0.12] hover:text-white" : "border-black/[0.08] bg-black/5 text-black/35 hover:bg-black/[0.08] hover:text-[#0e1420]"}`}>
           <Timer size={11}/>
         </button>
         <button onClick={()=>onDelete(project.id)}
@@ -326,17 +326,17 @@ function ProjectModal({
 }) {
   function field(key:keyof Draft, value:string|number) { setDraft(d=>({...d,[key]:value})); }
 
-  const modalBg   = isDark ? "bg-[#0e1420] border-white/8" : "bg-white border-black/8";
+  const modalBg   = isDark ? "bg-[#0e1420] border-white/[0.08]" : "bg-white border-black/[0.08]";
   const titleCls  = isDark ? "text-white"    : "text-[#0e1420]";
-  const closeCls  = isDark ? "text-white/40 hover:bg-white/8 hover:text-white" : "text-black/40 hover:bg-black/5 hover:text-[#0e1420]";
+  const closeCls  = isDark ? "text-white/40 hover:bg-white/[0.08] hover:text-white" : "text-black/40 hover:bg-black/5 hover:text-[#0e1420]";
   const labelCls  = isDark ? "text-white/40" : "text-black/40";
   const inputCls  = isDark
-    ? "border-white/8 bg-white/6 text-white placeholder:text-white/25 focus:border-white/20 focus:bg-white/8"
+    ? "border-white/[0.08] bg-white/[0.06] text-white placeholder:text-white/25 focus:border-white/20 focus:bg-white/[0.08]"
     : "border-black/10 bg-slate-50 text-[#0e1420] placeholder:text-black/25 focus:border-violet-300 focus:bg-white";
-  const selectCls = isDark ? "border-white/8 bg-[#0e1420] text-white" : "border-black/10 bg-white text-[#0e1420]";
+  const selectCls = isDark ? "border-white/[0.08] bg-[#0e1420] text-white" : "border-black/10 bg-white text-[#0e1420]";
   const cancelCls = isDark
-    ? "border-white/8 bg-white/8 text-white/50 hover:bg-white/12 hover:text-white/70"
-    : "border-black/8 bg-black/5 text-black/40 hover:bg-black/8 hover:text-black/60";
+    ? "border-white/[0.08] bg-white/[0.08] text-white/50 hover:bg-white/[0.12] hover:text-white/70"
+    : "border-black/[0.08] bg-black/5 text-black/40 hover:bg-black/[0.08] hover:text-black/60";
 
   return (
     <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
@@ -458,13 +458,13 @@ function CahierDesChargesModal({ onClose, isDark, initialName, initialDesc }: {
   const [copied,  setCopied]  = useState(false);
   const [dlPdf,   setDlPdf]   = useState(false);
 
-  const modalBg  = isDark ? "bg-[#0e1420] border-white/8"  : "bg-white border-black/8";
+  const modalBg  = isDark ? "bg-[#0e1420] border-white/[0.08]"  : "bg-white border-black/[0.08]";
   const labelCls = isDark ? "text-white/40" : "text-black/40";
   const inputCls = isDark
-    ? "border-white/8 bg-white/6 text-white placeholder:text-white/20 focus:border-violet-500/40 focus:bg-white/8"
+    ? "border-white/[0.08] bg-white/[0.06] text-white placeholder:text-white/20 focus:border-violet-500/40 focus:bg-white/[0.08]"
     : "border-black/10 bg-slate-50 text-[#0e1420] placeholder:text-black/20 focus:border-violet-300 focus:bg-white";
   const titleCls = isDark ? "text-white" : "text-[#0e1420]";
-  const secBg    = isDark ? "bg-white/[0.03] border-white/6" : "bg-slate-50 border-black/6";
+  const secBg    = isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-slate-50 border-black/[0.06]";
   const secTitle = isDark ? "text-white/80" : "text-[#0e1420]/80";
   const secBody  = isDark ? "text-white/55" : "text-black/55";
 
@@ -519,7 +519,7 @@ function CahierDesChargesModal({ onClose, isDark, initialName, initialDesc }: {
         className={`flex flex-col max-h-[90vh] w-full max-w-2xl rounded-2xl border shadow-2xl overflow-hidden ${modalBg}`}>
 
         {/* Header */}
-        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark?"border-white/6":"border-black/6"} shrink-0`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark?"border-white/[0.06]":"border-black/[0.06]"} shrink-0`}>
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{background:`${VIOLET}20`}}>
               <Sparkles size={14} style={{color:VIOLET}}/>
@@ -531,7 +531,7 @@ function CahierDesChargesModal({ onClose, isDark, initialName, initialDesc }: {
               </p>
             </div>
           </div>
-          <button onClick={onClose} className={`p-1.5 rounded-lg transition ${isDark?"text-white/40 hover:bg-white/8 hover:text-white":"text-black/40 hover:bg-black/5 hover:text-[#0e1420]"}`}>
+          <button onClick={onClose} className={`p-1.5 rounded-lg transition ${isDark?"text-white/40 hover:bg-white/[0.08] hover:text-white":"text-black/40 hover:bg-black/5 hover:text-[#0e1420]"}`}>
             <X size={16}/>
           </button>
         </div>
@@ -612,11 +612,11 @@ function CahierDesChargesModal({ onClose, isDark, initialName, initialDesc }: {
         </div>
 
         {/* Footer */}
-        <div className={`px-6 py-4 border-t shrink-0 flex gap-2 ${isDark?"border-white/6":"border-black/6"}`}>
+        <div className={`px-6 py-4 border-t shrink-0 flex gap-2 ${isDark?"border-white/[0.06]":"border-black/[0.06]"}`}>
           {step==="form" && (
             <>
               <button onClick={onClose}
-                className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark?"border-white/8 bg-white/6 text-white/50 hover:bg-white/10":"border-black/8 bg-black/4 text-black/40 hover:bg-black/8"}`}>
+                className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.06] text-white/50 hover:bg-white/10":"border-black/[0.08] bg-black/[0.04] text-black/40 hover:bg-black/[0.08]"}`}>
                 Annuler
               </button>
               <button onClick={()=>void generate()} disabled={!desc.trim()}
@@ -629,11 +629,11 @@ function CahierDesChargesModal({ onClose, isDark, initialName, initialDesc }: {
           {step==="result" && cdc && (
             <>
               <button onClick={()=>{ setCdc(null); setStep("form"); setError(null); }}
-                className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${isDark?"border-white/8 bg-white/6 text-white/50 hover:bg-white/10":"border-black/8 bg-black/4 text-black/40 hover:bg-black/8"}`}>
+                className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.06] text-white/50 hover:bg-white/10":"border-black/[0.08] bg-black/[0.04] text-black/40 hover:bg-black/[0.08]"}`}>
                 Recommencer
               </button>
               <button onClick={()=>void copyAll()}
-                className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${isDark?"border-white/8 bg-white/8 text-white/60 hover:bg-white/12":"border-black/8 bg-black/5 text-black/50 hover:bg-black/8"}`}>
+                className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.08] text-white/60 hover:bg-white/[0.12]":"border-black/[0.08] bg-black/5 text-black/50 hover:bg-black/[0.08]"}`}>
                 {copied ? <><Check size={13} className="text-emerald-400"/>Copié</> : <><Copy size={13}/>Copier</>}
               </button>
               <button onClick={()=>void handleDownloadPdf()} disabled={dlPdf}
@@ -665,13 +665,13 @@ function GanttPlanModal({ onClose, isDark, onCreated }: {
   const [error,    setError]   = useState<string|null>(null);
   const [creating, setCreating]= useState(false);
 
-  const modalBg  = isDark ? "bg-[#0e1420] border-white/8"  : "bg-white border-black/8";
+  const modalBg  = isDark ? "bg-[#0e1420] border-white/[0.08]"  : "bg-white border-black/[0.08]";
   const labelCls = isDark ? "text-white/40" : "text-black/40";
   const inputCls = isDark
-    ? "border-white/8 bg-white/6 text-white placeholder:text-white/20 focus:border-violet-500/40 focus:bg-white/8"
+    ? "border-white/[0.08] bg-white/[0.06] text-white placeholder:text-white/20 focus:border-violet-500/40 focus:bg-white/[0.08]"
     : "border-black/10 bg-slate-50 text-[#0e1420] placeholder:text-black/20 focus:border-violet-300 focus:bg-white";
   const titleCls = isDark ? "text-white" : "text-[#0e1420]";
-  const divCls   = isDark ? "border-white/6" : "border-black/6";
+  const divCls   = isDark ? "border-white/[0.06]" : "border-black/[0.06]";
 
   async function generate() {
     if (!desc.trim()) return;
@@ -751,7 +751,7 @@ function GanttPlanModal({ onClose, isDark, onCreated }: {
         </div>
 
         {/* Phase bars */}
-        <div className={`rounded-xl border p-3 space-y-1.5 ${isDark?"border-white/6 bg-white/[0.02]":"border-black/6 bg-slate-50"}`}>
+        <div className={`rounded-xl border p-3 space-y-1.5 ${isDark?"border-white/[0.06] bg-white/[0.02]":"border-black/[0.06] bg-slate-50"}`}>
           {plan.phases.map((ph,i)=>(
             <div key={i} className="relative h-7 flex items-center">
               <div className={`absolute inset-0 rounded-lg ${isDark?"bg-white/[0.02]":"bg-black/[0.02]"}`}/>
@@ -796,7 +796,7 @@ function GanttPlanModal({ onClose, isDark, onCreated }: {
 
         {/* Tâches */}
         {plan.taches.length>0 && (
-          <div className={`rounded-xl border p-3 ${isDark?"border-white/6 bg-white/[0.02]":"border-black/6 bg-slate-50"}`}>
+          <div className={`rounded-xl border p-3 ${isDark?"border-white/[0.06] bg-white/[0.02]":"border-black/[0.06] bg-slate-50"}`}>
             <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDark?"text-white/30":"text-black/30"}`}>
               {plan.taches.length} tâches générées
             </p>
@@ -834,7 +834,7 @@ function GanttPlanModal({ onClose, isDark, onCreated }: {
               </p>
             </div>
           </div>
-          <button onClick={onClose} className={`p-1.5 rounded-lg transition ${isDark?"text-white/40 hover:bg-white/8 hover:text-white":"text-black/40 hover:bg-black/5 hover:text-[#0e1420]"}`}>
+          <button onClick={onClose} className={`p-1.5 rounded-lg transition ${isDark?"text-white/40 hover:bg-white/[0.08] hover:text-white":"text-black/40 hover:bg-black/5 hover:text-[#0e1420]"}`}>
             <X size={16}/>
           </button>
         </div>
@@ -903,7 +903,7 @@ function GanttPlanModal({ onClose, isDark, onCreated }: {
           {step==="form" && (
             <>
               <button onClick={onClose}
-                className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark?"border-white/8 bg-white/6 text-white/50 hover:bg-white/10":"border-black/8 bg-black/4 text-black/40 hover:bg-black/8"}`}>
+                className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.06] text-white/50 hover:bg-white/10":"border-black/[0.08] bg-black/[0.04] text-black/40 hover:bg-black/[0.08]"}`}>
                 Annuler
               </button>
               <button onClick={()=>void generate()} disabled={!desc.trim()}
@@ -916,7 +916,7 @@ function GanttPlanModal({ onClose, isDark, onCreated }: {
           {step==="result" && plan && (
             <>
               <button onClick={()=>{setPlan(null);setStep("form");setError(null);}}
-                className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${isDark?"border-white/8 bg-white/6 text-white/50 hover:bg-white/10":"border-black/8 bg-black/4 text-black/40 hover:bg-black/8"}`}>
+                className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.06] text-white/50 hover:bg-white/10":"border-black/[0.08] bg-black/[0.04] text-black/40 hover:bg-black/[0.08]"}`}>
                 Recommencer
               </button>
               <button onClick={()=>void createProject()} disabled={creating}
@@ -978,10 +978,10 @@ export default function ProjetsPage() {
   const textPrimary = isDark ? "text-white"    : "text-[#0e1420]";
   const textSec     = isDark ? "text-white/40" : "text-black/40";
   const textMuted   = isDark ? "text-white/30" : "text-black/30";
-  const cardBase    = isDark ? "border-white/6 bg-white/[0.04]" : "border-black/8 bg-white shadow-sm";
+  const cardBase    = isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-black/[0.08] bg-white shadow-sm";
   const divider     = isDark ? "border-white/5" : "border-black/5";
   const inputCls    = isDark
-    ? "bg-white/[0.04] border-white/8 text-white placeholder:text-white/20 focus:border-sky-500/30 focus:bg-white/[0.06]"
+    ? "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/20 focus:border-sky-500/30 focus:bg-white/[0.06]"
     : "bg-white border-black/10 text-[#0e1420] placeholder:text-black/20 focus:border-violet-300";
 
   const load = useCallback(async () => {
@@ -1200,7 +1200,7 @@ export default function ProjetsPage() {
           <p className={`font-bold ${isDark ? "text-white/40" : "text-black/40"}`}>Aucun projet pour le moment</p>
           <p className={`text-sm ${isDark ? "text-white/25" : "text-black/25"}`}>Créez votre premier projet pour l&apos;organiser en dossiers</p>
           <button onClick={openNew}
-            className={`mt-2 rounded-2xl border px-6 py-2.5 text-sm font-bold transition ${isDark ? "border-white/10 bg-white/8 text-white hover:bg-white/12" : "border-black/10 bg-black/5 text-[#0e1420] hover:bg-black/8"}`}>
+            className={`mt-2 rounded-2xl border px-6 py-2.5 text-sm font-bold transition ${isDark ? "border-white/10 bg-white/[0.08] text-white hover:bg-white/[0.12]" : "border-black/10 bg-black/5 text-[#0e1420] hover:bg-black/[0.08]"}`}>
             Nouveau projet
           </button>
         </div>
@@ -1297,7 +1297,7 @@ export default function ProjetsPage() {
     if (ganttProjects.length===0) {
       return (
         <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-          <div className={`flex h-16 w-16 items-center justify-center rounded-3xl border ${isDark ? "border-white/8 bg-white/[0.04]" : "border-black/8 bg-white shadow-sm"}`}>
+          <div className={`flex h-16 w-16 items-center justify-center rounded-3xl border ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-black/[0.08] bg-white shadow-sm"}`}>
             <BarChart3 size={28} className={isDark ? "text-white/20" : "text-black/20"}/>
           </div>
           <p className={`font-bold ${isDark ? "text-white/40" : "text-black/40"}`}>Aucun projet avec des dates</p>
@@ -1334,7 +1334,7 @@ export default function ProjetsPage() {
             <Sparkles size={11}/>Nouveau projet avec l&apos;IA
           </button>
         </div>
-        <div className={`overflow-x-auto rounded-2xl border ${isDark ? "border-white/8 bg-white/[0.02]" : "border-black/8 bg-white shadow-sm"}`}>
+        <div className={`overflow-x-auto rounded-2xl border ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-black/[0.08] bg-white shadow-sm"}`}>
           <div style={{minWidth: labelW+totalW+32}}>
             <div className={`flex items-center border-b ${divider}`} style={{paddingLeft:labelW}}>
               {months.map((mo,i)=>(
@@ -1410,9 +1410,9 @@ export default function ProjetsPage() {
     const pTeam  = projTeam[p.id] ?? [];
     const doneTasks = pTasks.filter(t=>t.done).length;
     const doneMiles = pMiles.filter(m=>m.done).length;
-    const panelBg  = isDark ? "bg-[#0e1420] border-l border-white/8" : "bg-white border-l border-black/8";
-    const rowBase  = isDark ? "border-white/6 bg-white/[0.025] hover:border-white/10" : "border-black/6 bg-slate-50 hover:border-black/10";
-    const iconBtn  = isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-black/40 hover:text-[#0e1420] hover:bg-black/5";
+    const panelBg  = isDark ? "bg-[#0e1420] border-l border-white/[0.08]" : "bg-white border-l border-black/[0.08]";
+    const rowBase  = isDark ? "border-white/[0.06] bg-white/[0.025] hover:border-white/10" : "border-black/[0.06] bg-slate-50 hover:border-black/10";
+    const iconBtn  = isDark ? "text-white/40 hover:text-white hover:bg-white/[0.08]" : "text-black/40 hover:text-[#0e1420] hover:bg-black/5";
     const DTABS = [
       {k:"tasks",      l:"Tâches",    badge:pTasks.length },
       {k:"milestones", l:"Jalons",    badge:pMiles.length },
@@ -1509,12 +1509,12 @@ export default function ProjetsPage() {
             )}
             {detailTab==="milestones" && (
               <div className="space-y-3">
-                <div className={`space-y-2 rounded-xl border p-3 ${isDark?"border-white/8 bg-white/[0.02]":"border-black/8 bg-slate-50"}`}>
+                <div className={`space-y-2 rounded-xl border p-3 ${isDark?"border-white/[0.08] bg-white/[0.02]":"border-black/[0.08] bg-slate-50"}`}>
                   <input value={mileTitle} onChange={e=>setMileTitle(e.target.value)} placeholder="Titre du jalon…"
-                    className={`w-full bg-transparent border-b pb-2 text-sm outline-none transition-all ${isDark?"border-white/8 text-white placeholder:text-white/20 focus:border-white/20":"border-black/8 text-[#0e1420] placeholder:text-black/20 focus:border-violet-300"}`}/>
+                    className={`w-full bg-transparent border-b pb-2 text-sm outline-none transition-all ${isDark?"border-white/[0.08] text-white placeholder:text-white/20 focus:border-white/20":"border-black/[0.08] text-[#0e1420] placeholder:text-black/20 focus:border-violet-300"}`}/>
                   <div className="flex gap-2 items-center">
                     <input type="date" value={mileDate} onChange={e=>setMileDate(e.target.value)}
-                      className={`flex-1 rounded-xl border px-3 py-1.5 text-sm outline-none transition-all ${isDark?"bg-white/[0.04] border-white/8 text-white [color-scheme:dark]":"bg-white border-black/10 text-[#0e1420] [color-scheme:light]"}`}/>
+                      className={`flex-1 rounded-xl border px-3 py-1.5 text-sm outline-none transition-all ${isDark?"bg-white/[0.04] border-white/[0.08] text-white [color-scheme:dark]":"bg-white border-black/10 text-[#0e1420] [color-scheme:light]"}`}/>
                     <button onClick={()=>addMilestone(p.id)} disabled={!mileTitle.trim()}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-40"
                       style={{background:`${GOLD}20`,border:`1px solid ${GOLD}30`,color:GOLD}}>
@@ -1577,7 +1577,7 @@ export default function ProjetsPage() {
           </div>
           <div className={`px-4 pb-5 pt-3 border-t shrink-0 flex gap-2 ${divider}`}>
             <button onClick={()=>{ openEdit(p); setDetailProj(null); }}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark?"border-white/8 bg-white/8 text-white/60 hover:bg-white/12 hover:text-white":"border-black/8 bg-black/5 text-black/50 hover:bg-black/8 hover:text-[#0e1420]"}`}>
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.08] text-white/60 hover:bg-white/[0.12] hover:text-white":"border-black/[0.08] bg-black/5 text-black/50 hover:bg-black/[0.08] hover:text-[#0e1420]"}`}>
               <Edit2 size={13}/>Modifier le projet
             </button>
             <button onClick={()=>router.push("/client/chrono")}
@@ -1605,48 +1605,51 @@ export default function ProjetsPage() {
         <ToastStack toasts={toasts} remove={removeToast}/>
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="relative flex items-start justify-between gap-3 flex-wrap pb-5">
           <div>
             <p className={`mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Gestion</p>
             <h1 className={`text-2xl font-black ${textPrimary}`}>Projets</h1>
             <p className={`text-sm ${textSec}`}>{projects.length} projet{projects.length!==1?"s":""}</p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             <button onClick={()=>openCdc()}
-              className="flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-bold transition hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition hover:opacity-90 active:scale-[0.98]"
               style={{borderColor:`${VIOLET}30`,background:`${VIOLET}10`,color:VIOLET}}>
-              <Sparkles size={14}/>Cahier des charges IA
+              <Sparkles size={13}/><span className="hidden sm:inline"> Cahier des charges IA</span>
             </button>
             <button onClick={openNew}
-              className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-black shadow-lg transition hover:scale-[1.02] active:scale-[0.98] ${
-                isDark ? "bg-white text-[#07080e] shadow-white/10 hover:shadow-white/20"
-                       : "bg-[#0e1420] text-white shadow-[#0e1420]/15 hover:shadow-[#0e1420]/25"
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition hover:opacity-90 active:scale-[0.98] ${
+                isDark ? "bg-white text-[#07080e]" : "bg-[#0e1420] text-white"
               }`}>
-              <Plus size={16}/>Nouveau projet
+              <Plus size={13}/><span className="hidden sm:inline"> Nouveau projet</span>
             </button>
           </div>
+          <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
         </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            {label:"En cours", value:String(kpis.enCours), color:"#3b82f6", sub:"projets actifs"  },
-            {label:"Terminés", value:String(kpis.terminé),  color:"#10b981", sub:"projets terminés"},
-            {label:"Budget",   value:fmtEur(kpis.budget),   color:GOLD,      sub:"budget total"   },
-            {label:"Encaissé", value:fmtEur(kpis.encaissé), color:VIOLET,    sub:"revenus encaissés"},
+            {label:"En cours", value:String(kpis.enCours), color:"#3b82f6", sub:"projets actifs",   onClick:()=>{setTab("projets");setFilter("en_cours");}},
+            {label:"Terminés", value:String(kpis.terminé),  color:"#10b981", sub:"projets terminés", onClick:()=>{setTab("projets");setFilter("terminé");}},
+            {label:"Budget",   value:fmtEur(kpis.budget),   color:GOLD,      sub:"budget total",     onClick:()=>{setTab("projets");setFilter("tous");}},
+            {label:"Encaissé", value:fmtEur(kpis.encaissé), color:VIOLET,    sub:"revenus encaissés",onClick:()=>{setTab("projets");setFilter("tous");}},
           ].map(k=>(
-            <div key={k.label} className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm ${cardBase}`}>
+            <motion.div key={k.label}
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              onClick={k.onClick}
+              className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm cursor-pointer ${cardBase}`}>
               <div className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 blur-2xl" style={{background:k.color}}/>
               <p className={`text-[0.65rem] font-bold uppercase tracking-[0.18em] ${textMuted}`}>{k.label}</p>
               <p className="mt-1 text-2xl font-black" style={{color:k.color}}>{k.value}</p>
               <p className={`text-[0.65rem] ${isDark ? "text-white/25" : "text-black/25"}`}>{k.sub}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
 
         {/* Tabs + filters */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className={`flex gap-1 rounded-2xl border p-1 ${isDark ? "border-white/8 bg-white/[0.03]" : "border-black/8 bg-white shadow-sm"}`}>
+          <div className={`flex gap-1 rounded-2xl border p-1 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm"}`}>
             {([["projets","Liste"],["dossiers","Dossiers"],["gantt","Gantt"]] as const).map(([k,l])=>(
               <button key={k} onClick={()=>setTab(k)}
                 className="flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold transition-all"
@@ -1682,7 +1685,7 @@ export default function ProjetsPage() {
         : tab==="dossiers" ? renderDossiers()
         : filtered.length===0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-            <div className={`flex h-16 w-16 items-center justify-center rounded-3xl border ${isDark ? "border-white/8 bg-white/[0.04]" : "border-black/8 bg-white shadow-sm"}`}>
+            <div className={`flex h-16 w-16 items-center justify-center rounded-3xl border ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-black/[0.08] bg-white shadow-sm"}`}>
               <FolderOpen size={28} className={isDark ? "text-white/20" : "text-black/20"}/>
             </div>
             <p className={`font-bold ${isDark ? "text-white/50" : "text-black/50"}`}>
@@ -1693,7 +1696,7 @@ export default function ProjetsPage() {
             </p>
             {filter==="tous" && (
               <button onClick={openNew}
-                className={`mt-2 rounded-2xl border px-6 py-2.5 text-sm font-bold transition ${isDark ? "border-white/10 bg-white/8 text-white hover:bg-white/12" : "border-black/10 bg-black/5 text-[#0e1420] hover:bg-black/8"}`}>
+                className={`mt-2 rounded-2xl border px-6 py-2.5 text-sm font-bold transition ${isDark ? "border-white/10 bg-white/[0.08] text-white hover:bg-white/[0.12]" : "border-black/10 bg-black/5 text-[#0e1420] hover:bg-black/[0.08]"}`}>
                 Créer mon premier projet
               </button>
             )}
@@ -1753,13 +1756,13 @@ export default function ProjetsPage() {
             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
               <motion.div initial={{scale:0.96}} animate={{scale:1}} exit={{scale:0.96}}
-                className={`w-full max-w-sm rounded-2xl border p-6 text-center shadow-2xl ${isDark ? "border-white/8 bg-[#0e1420]" : "border-black/8 bg-white"}`}>
+                className={`w-full max-w-sm rounded-2xl border p-6 text-center shadow-2xl ${isDark ? "border-white/[0.08] bg-[#0e1420]" : "border-black/[0.08] bg-white"}`}>
                 <AlertCircle size={36} className="mx-auto mb-3 text-red-400"/>
                 <h3 className={`mb-1 text-lg font-bold ${textPrimary}`}>Supprimer ce projet ?</h3>
                 <p className={`mb-6 text-sm ${textSec}`}>Cette action est irréversible.</p>
                 <div className="flex gap-3">
                   <button onClick={()=>setConfirmDel(null)}
-                    className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark?"border-white/8 bg-white/8 text-white/50 hover:bg-white/12":"border-black/8 bg-black/5 text-black/40 hover:bg-black/8"}`}>
+                    className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.08] text-white/50 hover:bg-white/[0.12]":"border-black/[0.08] bg-black/5 text-black/40 hover:bg-black/[0.08]"}`}>
                     Annuler
                   </button>
                   <button onClick={()=>void deleteProject(confirmDel)}
