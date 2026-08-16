@@ -220,7 +220,7 @@ export default function ChecklistsPage() {
       <div className={`flex flex-col w-full md:w-[280px] shrink-0 border-r border-white/[0.06] ${active ? "hidden md:flex" : "flex"}`}>
 
         {/* Header */}
-        <div className="px-4 pt-5 pb-4">
+        <div className="relative px-4 pt-5 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
               <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl">
@@ -234,10 +234,10 @@ export default function ChecklistsPage() {
             <motion.button
               whileTap={{ scale: 0.88 }}
               onClick={() => { setCreating(v => !v); setTimeout(() => inputRef.current?.focus(), 60); }}
-              className="flex h-9 w-9 items-center justify-center rounded-xl shadow-lg"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white shadow-lg"
               style={{ background: isDark ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#c9a55a,#b08d45)", boxShadow: isDark ? "0 4px 14px rgba(16,185,129,0.35)" : "0 4px 14px rgba(176,141,69,0.28)" }}
             >
-              <Plus size={16} color="white" strokeWidth={2.5} />
+              <Plus size={13} strokeWidth={2.5} /><span className="hidden sm:inline"> Nouvelle</span>
             </motion.button>
           </div>
 
@@ -245,15 +245,18 @@ export default function ChecklistsPage() {
           {!loading && lists.length > 0 && (
             <div className="grid grid-cols-3 gap-2 mb-4">
               {[
-                { label: "Listes",    val: lists.length,   color: "#10b981" },
-                { label: "Tâches",   val: totalItems,      color: "#60a5fa" },
-                { label: "Faites",   val: doneCountGlob,   color: "#fbbf24" },
+                { label: "Listes",  val: lists.length,  color: "#10b981", onClick: () => setActive(null) },
+                { label: "Tâches",  val: totalItems,    color: "#60a5fa", onClick: () => { const l = lists.find(x => x.items.some(i => !i.done)); if (l) { setActive(l); setFilter("active"); } } },
+                { label: "Faites",  val: doneCountGlob, color: "#fbbf24", onClick: () => { const l = lists.find(x => x.items.some(i => i.done)); if (l) { setActive(l); setFilter("done"); } } },
               ].map(s => (
-                <div key={s.label} className="flex flex-col items-center justify-center rounded-xl py-2.5"
-                  style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(12,24,100,0.03)", border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.08)"}` }}>
+                <motion.div key={s.label}
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={s.onClick}
+                  className="flex flex-col items-center justify-center rounded-xl py-2.5 cursor-pointer transition-all"
+                  style={{ background: isDark ? "rgba(255,255,255,0.035)" : "rgba(12,24,100,0.03)", border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.08)"}` }}>
                   <span className="text-[16px] font-black tabular-nums" style={{ color: s.color }}>{s.val}</span>
                   <span className="text-[8.5px] text-white/25 mt-0.5">{s.label}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
@@ -359,6 +362,7 @@ export default function ChecklistsPage() {
               </motion.div>
             )}
           </AnimatePresence>
+          <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
         </div>
 
         {/* Liste des checklists */}
@@ -442,7 +446,7 @@ export default function ChecklistsPage() {
         ) : (
           <>
             {/* ── Header liste active ── */}
-            <div className="px-5 pt-5 pb-4 border-b border-white/[0.06]">
+            <div className="relative px-5 pt-5 pb-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-3 mb-3">
                 <button onClick={() => setActive(null)}
                   className="flex md:hidden h-8 w-8 items-center justify-center rounded-xl shrink-0"
@@ -498,6 +502,7 @@ export default function ChecklistsPage() {
                   </button>
                 ))}
               </div>
+              <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
             </div>
 
             {/* ── Liste items ── */}
