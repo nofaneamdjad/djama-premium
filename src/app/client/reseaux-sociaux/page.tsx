@@ -240,8 +240,8 @@ function CalendarView({posts,selectedDay,onDayClick,calMonth,onPrevMonth,onNextM
     return map;
   },[posts]);
 
-  const cardCls = isDark ? "rounded-2xl border border-white/6 bg-white/[0.04] p-5" : "rounded-2xl border border-black/8 bg-white shadow-sm p-5";
-  const navBtnCls = isDark ? "text-white/40 hover:bg-white/8 hover:text-white" : "text-[#0e1420]/40 hover:bg-black/5 hover:text-[#0e1420]";
+  const cardCls = isDark ? "rounded-2xl border border-white/[0.06] bg-white/[0.04] p-5" : "rounded-2xl border border-black/[0.08] bg-white shadow-sm p-5";
+  const navBtnCls = isDark ? "text-white/40 hover:bg-white/[0.08] hover:text-white" : "text-[#0e1420]/40 hover:bg-black/5 hover:text-[#0e1420]";
   const monthLabel = isDark ? "text-white" : "text-[#0e1420]";
   const dayHeader = isDark ? "text-white/25" : "text-[#0e1420]/30";
 
@@ -518,18 +518,18 @@ export default function ReseauxSociauxPage() {
 
   /* ── Theme vars ── */
   const pageBg    = isDark ? "bg-[#07080e] text-white"       : "bg-[#f0f2fb] text-[#0e1420]";
-  const card      = isDark ? "border-white/6 bg-white/[0.04]"  : "border-black/8 bg-white shadow-sm";
-  const cardInner = isDark ? "border-white/6 bg-white/[0.03]"  : "border-black/6 bg-[#f7f7fb]";
+  const card      = isDark ? "border-white/[0.06] bg-white/[0.04]"  : "border-black/[0.08] bg-white shadow-sm";
+  const cardInner = isDark ? "border-white/[0.06] bg-white/[0.03]"  : "border-black/[0.06] bg-[#f7f7fb]";
   const textPri   = isDark ? "text-white"      : "text-[#0e1420]";
   const textSec   = isDark ? "text-white/60"   : "text-[#0e1420]/60";
   const textMut   = isDark ? "text-white/35"   : "text-[#0e1420]/40";
   const textFaint = isDark ? "text-white/20"   : "text-[#0e1420]/25";
   const labelCls  = isDark ? "text-white/30"   : "text-[#0e1420]/40";
   const inputCls  = isDark
-    ? "bg-white/[0.04] border-white/8 text-white placeholder:text-white/20 [color-scheme:dark]"
+    ? "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/20 [color-scheme:dark]"
     : "bg-white border-black/10 text-[#0e1420] placeholder:text-[#0e1420]/30";
-  const hoverBtn  = isDark ? "hover:bg-white/8" : "hover:bg-black/5";
-  const divider   = isDark ? "border-white/5"  : "border-black/5";
+  const hoverBtn  = isDark ? "hover:bg-white/[0.08]" : "hover:bg-black/5";
+  const divider   = isDark ? "border-white/[0.05]"  : "border-black/5";
 
   if (loading) return (
     <div className={`flex h-64 items-center justify-center ${isDark?"bg-[#07080e]":"bg-[#f0f2fb]"}`}>
@@ -542,7 +542,7 @@ export default function ReseauxSociauxPage() {
       <ToastStack toasts={toasts} remove={remove}/>
 
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="relative flex items-center justify-between flex-wrap gap-3 pb-5">
         <div className="flex items-center gap-3">
           <ModuleHeaderIcon icon={Share2} color="#e1306c" />
           <div>
@@ -550,16 +550,27 @@ export default function ReseauxSociauxPage() {
             <p className={`text-[11px] ${textSec}`}>Créez, planifiez et analysez vos publications</p>
           </div>
         </div>
-        {(() => {
-          const next = posts.filter(p=>p.status==="planifié"&&p.scheduled_at).sort((a,b)=>a.scheduled_at!.localeCompare(b.scheduled_at!))[0];
-          if (!next) return null;
-          return (
-            <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark?"border-blue-500/25 bg-blue-500/8":"border-blue-200 bg-blue-50"}`}>
-              <Clock size={12} className="text-blue-400 animate-pulse"/>
-              <span className={`text-xs ${isDark?"text-blue-300":"text-blue-600"}`}>Prochain post : <strong>{fmtDatePost(next.scheduled_at)}</strong></span>
-            </div>
-          );
-        })()}
+        <div className="flex items-center gap-2 flex-wrap">
+          <motion.button
+            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            onClick={() => document.getElementById("rs-composer")?.scrollIntoView({ behavior: "smooth" })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition hover:opacity-90"
+            style={{ background: "rgba(225,48,108,0.14)", border: "1px solid rgba(225,48,108,0.25)", color: "#e1306c" }}
+          >
+            <Plus size={13}/><span className="hidden sm:inline"> Nouveau post</span>
+          </motion.button>
+          {(() => {
+            const next = posts.filter(p=>p.status==="planifié"&&p.scheduled_at).sort((a,b)=>a.scheduled_at!.localeCompare(b.scheduled_at!))[0];
+            if (!next) return null;
+            return (
+              <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark?"border-blue-500/25 bg-blue-500/[0.08]":"border-blue-200 bg-blue-50"}`}>
+                <Clock size={12} className="text-blue-400 animate-pulse"/>
+                <span className={`text-xs ${isDark?"text-blue-300":"text-blue-600"}`}>Prochain post : <strong>{fmtDatePost(next.scheduled_at)}</strong></span>
+              </div>
+            );
+          })()}
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
       </div>
 
       {/* KPIs */}
@@ -569,17 +580,22 @@ export default function ReseauxSociauxPage() {
           {label:"Brouillons", value:kpis.brouillons, color:"#f59e0b"},
           {label:"Publiés",    value:kpis.publiés,    color:"#10b981"},
         ].map(k=>(
-          <div key={k.label} className={`rounded-2xl border p-4 text-center ${card}`}>
+          <motion.div
+            key={k.label}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            onClick={() => setActiveTab("flux")}
+            className={`rounded-2xl border p-4 text-center cursor-pointer ${card}`}
+          >
             <p className="text-2xl font-extrabold" style={{color:k.color}}>{k.value}</p>
             <p className={`mt-0.5 text-xs ${textMut}`}>{k.label}</p>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
 
         {/* ── Composer ── */}
-        <div className={`space-y-4 rounded-2xl border p-5 self-start ${card}`}>
+        <div id="rs-composer" className={`space-y-4 rounded-2xl border p-5 self-start ${card}`}>
           <div className="flex items-center justify-between">
             <h2 className={`font-bold ${textPri}`}>Créer un post</h2>
             <div className="flex items-center gap-2">
@@ -642,7 +658,7 @@ export default function ReseauxSociauxPage() {
               placeholder="Rédigez votre post ou entrez un sujet pour la génération IA..." rows={5}
               className={`w-full resize-none rounded-xl border px-4 py-3 text-sm focus:outline-none ${inputCls}`}
               style={{borderColor:charOver?"rgba(239,68,68,0.4)":isDark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.1)"}}/>
-            <div className={`mt-1.5 h-0.5 w-full overflow-hidden rounded-full ${isDark?"bg-white/8":"bg-black/6"}`}>
+            <div className={`mt-1.5 h-0.5 w-full overflow-hidden rounded-full ${isDark?"bg-white/[0.08]":"bg-black/6"}`}>
               <div className="h-full rounded-full transition-all" style={{width:`${charPct}%`,background:charOver?"#ef4444":charPct>80?"#f59e0b":VIOLET}}/>
             </div>
           </div>
@@ -669,7 +685,7 @@ export default function ReseauxSociauxPage() {
           </div>
 
           {/* Hashtags */}
-          <div className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${isDark?"border-white/8 bg-white/[0.04]":"border-black/10 bg-white"}`}>
+          <div className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${isDark?"border-white/[0.08] bg-white/[0.04]":"border-black/10 bg-white"}`}>
             <Hash size={13} className={`shrink-0 ${isDark?"text-white/25":"text-[#0e1420]/25"}`}/>
             <input value={draft.hashtags} onChange={e=>setField("hashtags",e.target.value)}
               placeholder="#hashtag #motclé..."
@@ -680,7 +696,7 @@ export default function ReseauxSociauxPage() {
           <AnimatePresence>
             {showPreview && (
               <motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:"auto"}} exit={{opacity:0,height:0}} className="overflow-hidden">
-                <div className={`rounded-xl border p-4 ${isDark?"border-white/8 bg-black/30":"border-black/8 bg-[#f0f2fb]"}`}>
+                <div className={`rounded-xl border p-4 ${isDark?"border-white/[0.08] bg-black/30":"border-black/[0.08] bg-[#f0f2fb]"}`}>
                   <p className={`text-[10px] font-black uppercase tracking-widest mb-4 text-center ${textFaint}`}>Aperçu — {PLATFORMS.find(p=>p.id===draft.platforms[0])?.label}</p>
                   <PostPreview
                     platform={draft.platforms[0]}
@@ -697,14 +713,14 @@ export default function ReseauxSociauxPage() {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={`mb-1.5 block text-xs font-semibold uppercase tracking-wider ${labelCls}`}>Date</label>
-              <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark?"border-white/8 bg-white/[0.04]":"border-black/10 bg-white"}`}>
+              <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark?"border-white/[0.08] bg-white/[0.04]":"border-black/10 bg-white"}`}>
                 <Calendar size={13} className={`shrink-0 ${isDark?"text-white/25":"text-[#0e1420]/25"}`}/>
                 <input type="date" value={draft.scheduled_date} onChange={e=>setField("scheduled_date",e.target.value)} className={`flex-1 bg-transparent text-sm outline-none ${isDark?"text-white [color-scheme:dark]":"text-[#0e1420]"}`}/>
               </div>
             </div>
             <div>
               <label className={`mb-1.5 block text-xs font-semibold uppercase tracking-wider ${labelCls}`}>Heure</label>
-              <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark?"border-white/8 bg-white/[0.04]":"border-black/10 bg-white"}`}>
+              <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark?"border-white/[0.08] bg-white/[0.04]":"border-black/10 bg-white"}`}>
                 <Clock size={13} className={`shrink-0 ${isDark?"text-white/25":"text-[#0e1420]/25"}`}/>
                 <input type="time" value={draft.scheduled_time} onChange={e=>setField("scheduled_time",e.target.value)} className={`flex-1 bg-transparent text-sm outline-none ${isDark?"text-white [color-scheme:dark]":"text-[#0e1420]"}`}/>
               </div>
@@ -729,7 +745,7 @@ export default function ReseauxSociauxPage() {
         {/* ── Right panel ── */}
         <div className="space-y-4">
           {/* Tab bar */}
-          <div className={`flex gap-1 rounded-2xl border p-1 w-fit ${isDark?"border-white/8 bg-white/[0.03]":"border-black/8 bg-white shadow-sm"}`}>
+          <div className={`flex gap-1 rounded-2xl border p-1 w-fit ${isDark?"border-white/[0.08] bg-white/[0.03]":"border-black/[0.08] bg-white shadow-sm"}`}>
             {([
               {k:"flux",          l:"Flux",        icon:<Share2 size={11}/>      },
               {k:"calendrier",    l:"Calendrier",  icon:<Calendar size={11}/>    },
@@ -751,7 +767,7 @@ export default function ReseauxSociauxPage() {
           {activeTab==="flux" && (
             <>
               {posts.some(p=>p.status==="publié"&&postStats[p.id]) && (
-                <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${isDark?"border-amber-400/20 bg-amber-400/6 text-amber-400/70":"border-amber-200 bg-amber-50 text-amber-700/80"}`}>
+                <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${isDark?"border-amber-400/20 bg-amber-400/[0.06] text-amber-400/70":"border-amber-200 bg-amber-50 text-amber-700/80"}`}>
                   <span className="shrink-0 rounded bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-amber-500">Simulé</span>
                   Les statistiques affichées sont estimées — elles ne proviennent pas de vos vrais comptes.
                 </div>
@@ -879,7 +895,7 @@ export default function ReseauxSociauxPage() {
           {/* ── Analytics ── */}
           {activeTab==="analytics" && (
             <div className="space-y-4">
-              <div className={`flex items-center gap-2.5 rounded-xl border px-4 py-2.5 ${isDark?"border-amber-400/20 bg-amber-400/6":"border-amber-200 bg-amber-50"}`}>
+              <div className={`flex items-center gap-2.5 rounded-xl border px-4 py-2.5 ${isDark?"border-amber-400/20 bg-amber-400/[0.06]":"border-amber-200 bg-amber-50"}`}>
                 <span className="shrink-0 rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-amber-500">Simulation</span>
                 <p className={`text-xs ${isDark?"text-amber-400/70":"text-amber-700/80"}`}>Ces statistiques sont des estimations générées automatiquement — connectez vos comptes pour voir vos vraies données.</p>
               </div>
@@ -922,7 +938,7 @@ export default function ReseauxSociauxPage() {
                         </div>
                         <span className={`text-xs font-bold ${textMut}`}>{fmtNum(totalViews)} vues</span>
                       </div>
-                      <div className={`h-1.5 rounded-full mb-3 ${isDark?"bg-white/8":"bg-black/6"}`}>
+                      <div className={`h-1.5 rounded-full mb-3 ${isDark?"bg-white/[0.08]":"bg-black/6"}`}>
                         <div className="h-full rounded-full transition-all" style={{width:`${(totalViews/maxViews)*100}%`,background:pf.color}}/>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
@@ -963,7 +979,7 @@ export default function ReseauxSociauxPage() {
                 {monKeywords.length>0 && (
                   <div className="flex flex-wrap gap-2">
                     {monKeywords.map(k=>(
-                      <div key={k} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 ${isDark?"border-white/10 bg-white/5":"border-black/8 bg-[#f0f2fb]"}`}>
+                      <div key={k} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 ${isDark?"border-white/10 bg-white/5":"border-black/[0.08] bg-[#f0f2fb]"}`}>
                         <Hash size={10} className={textMut}/>
                         <span className={`text-xs ${textSec}`}>{k}</span>
                         <button onClick={()=>removeKeyword(k)} className={`${textFaint} hover:text-red-500 transition-colors`}><X size={10}/></button>
@@ -1015,7 +1031,7 @@ export default function ReseauxSociauxPage() {
                     )}
                   </div>
                   {monMentions.map(m=>(
-                    <div key={m.id} className={`group flex items-start gap-3 rounded-xl border p-3 transition-all ${m.read?(isDark?"border-white/5 bg-white/[0.015]":"border-black/5 bg-[#f7f7fb]"):(isDark?"border-white/10 bg-white/[0.04]":"border-black/8 bg-white shadow-sm")}`}>
+                    <div key={m.id} className={`group flex items-start gap-3 rounded-xl border p-3 transition-all ${m.read?(isDark?"border-white/[0.05] bg-white/[0.015]":"border-black/5 bg-[#f7f7fb]"):(isDark?"border-white/10 bg-white/[0.04]":"border-black/[0.08] bg-white shadow-sm")}`}>
                       <div className="shrink-0 mt-0.5">
                         <div className={`w-2 h-2 rounded-full ${m.read?(isDark?"bg-white/15":"bg-black/15"):"bg-sky-400"}`}/>
                       </div>
