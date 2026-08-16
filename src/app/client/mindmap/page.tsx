@@ -195,22 +195,45 @@ export default function MindMapPage() {
       )}
 
       {/* ── Sidebar cartes ── */}
-      <div className={`flex flex-col w-full md:w-72 md:border-r border-white/6 shrink-0 ${active ? "hidden md:flex" : "flex"}`}>
-        <div className="flex items-center justify-between px-4 pt-5 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl">
-              {APP_ICONS["/client/mindmap"]}
+      <div className={`flex flex-col w-full md:w-72 md:border-r border-white/[0.06] shrink-0 ${active ? "hidden md:flex" : "flex"}`}>
+        <div className="relative px-4 pt-5 pb-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl">
+                {APP_ICONS["/client/mindmap"]}
+              </div>
+              <h1 className="text-[16px] font-black text-white">Mind Maps</h1>
             </div>
-            <h1 className="text-[16px] font-black text-white">Mind Maps</h1>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => { setCreating(true); setTimeout(() => mapInputRef.current?.focus(), 50); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white"
+              style={{ background: isDark ? "linear-gradient(135deg,#8b5cf6,#6d28d9)" : "linear-gradient(135deg,#c9a55a,#b08d45)", boxShadow: isDark ? "none" : "0 4px 12px rgba(176,141,69,0.28)" }}
+            >
+              <Plus size={13} /><span className="hidden sm:inline"> Nouvelle</span>
+            </motion.button>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => { setCreating(true); setTimeout(() => mapInputRef.current?.focus(), 50); }}
-            className="flex h-8 w-8 items-center justify-center rounded-full"
-            style={{ background: isDark ? "linear-gradient(135deg,#8b5cf6,#6d28d9)" : "linear-gradient(135deg,#c9a55a,#b08d45)", boxShadow: isDark ? "none" : "0 4px 12px rgba(176,141,69,0.28)" }}
-          >
-            <Plus size={14} color="white" />
-          </motion.button>
+          {!loading && maps.length > 0 && (
+            <div className="flex gap-1.5">
+              {[
+                { label: "Cartes",    value: maps.length,                                          color: "#8b5cf6", onClick: () => setActive(null) },
+                { label: "Branches",  value: maps.reduce((s, m) => s + m.nodes.length, 0),         color: "#a78bfa", onClick: () => { if (maps[0]) setActive(maps[0]); } },
+              ].map((kpi, i) => (
+                <motion.div key={kpi.label}
+                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                  onClick={kpi.onClick}
+                  className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-violet-400/25"
+                  style={{ background: isDark ? "rgba(255,255,255,0.035)" : "rgba(12,24,100,0.04)" }}>
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: kpi.color }}/>
+                  <div>
+                    <p className="text-xs font-bold leading-none text-white">{kpi.value}</p>
+                    <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">{kpi.label}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+          <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
         </div>
 
         <AnimatePresence>
@@ -248,7 +271,7 @@ export default function MindMapPage() {
             ))
           ) : maps.length === 0 ? (
             <div className="flex flex-col items-center gap-2 pt-16 text-center">
-              <Network size={36} className="text-white/8" />
+              <Network size={36} className="text-white/[0.08]" />
               <p className="text-[11px] text-white/20">Aucune mind map</p>
             </div>
           ) : (
@@ -284,13 +307,13 @@ export default function MindMapPage() {
       <div className={`flex-1 flex flex-col ${active ? "flex" : "hidden md:flex"}`}>
         {!active ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3">
-            <Network size={44} className="text-white/8" />
+            <Network size={44} className="text-white/[0.08]" />
             <p className="text-[12px] text-white/20">Sélectionne ou crée une mind map</p>
           </div>
         ) : (
           <>
             {/* Header */}
-            <div className="flex items-center gap-3 px-4 pt-5 pb-3 border-b border-white/5">
+            <div className="relative flex items-center gap-3 px-4 pt-5 pb-3 border-b border-white/[0.06]">
               <button onClick={() => { setActive(null); setRenamingTitle(false); }} className="flex md:hidden h-8 w-8 items-center justify-center rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.06)" }}>
                 <ArrowLeft size={14} className="text-white/60" />
               </button>
@@ -333,11 +356,12 @@ export default function MindMapPage() {
 
               {!renamingTitle && (
                 <button onClick={() => deleteMap(active.id)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-red-400"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-red-400/60 transition hover:text-red-400 hover:bg-red-500/10 border border-white/[0.08]"
                   style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.06)" }}>
-                  <Trash2 size={13} />
+                  <Trash2 size={12} /><span className="hidden sm:inline"> Supprimer</span>
                 </button>
               )}
+              <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
             </div>
 
             {/* Zone SVG mind map */}
@@ -424,7 +448,7 @@ export default function MindMapPage() {
             </div>
 
             {/* Panneau branches */}
-            <div className="border-t border-white/5 px-4 py-3 space-y-2 max-h-[220px] overflow-y-auto">
+            <div className="border-t border-white/[0.05] px-4 py-3 space-y-2 max-h-[220px] overflow-y-auto">
               <div className="flex items-center justify-between mb-1">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-white/30">Branches ({active.nodes.length})</p>
                 <div className="flex items-center gap-1.5">
