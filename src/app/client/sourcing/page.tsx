@@ -150,7 +150,7 @@ const QUICKSTART = [
 const ACTION_STYLE: Record<string, string> = {
   primary:   "bg-blue-500/12 border-blue-500/25 text-blue-400 hover:bg-blue-500/22",
   warning:   "bg-amber-500/12 border-amber-500/25 text-amber-400 hover:bg-amber-500/22",
-  secondary: "bg-white/6 border-white/8 text-white/50 hover:bg-white/8 hover:text-white/70",
+  secondary: "bg-white/6 border-white/[0.08] text-white/50 hover:bg-white/[0.08] hover:text-white/70",
   ghost:     "border-transparent text-white/30 hover:text-white/55",
 };
 
@@ -202,7 +202,7 @@ function ReasoningBlock({ text }: { text: string }) {
 
 function SupplierCard({ item }: { item: SourcingItem }) {
   return (
-    <div className="rounded-xl border border-white/8 bg-white/4 px-4 py-3.5 space-y-2">
+    <div className="rounded-xl border border-white/[0.08] bg-white/[0.04]px-4 py-3.5 space-y-2">
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <p className="text-[13px] font-bold text-white/92">{item.name}</p>
         <div className="flex gap-1.5 flex-wrap">
@@ -212,7 +212,7 @@ function SupplierCard({ item }: { item: SourcingItem }) {
             </span>
           )}
           {item.type && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/6 border border-white/8 text-white/40 font-semibold">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06]border border-white/[0.08] text-white/40 font-semibold">
               {item.type}
             </span>
           )}
@@ -237,7 +237,7 @@ function StepItem({ item, index }: { item: SourcingItem; index: number }) {
       <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-bold text-white">
         {index + 1}
       </div>
-      <div className="flex-1 border-b border-white/5 last:border-0 pb-4 last:pb-0">
+      <div className="flex-1 border-b border-white/[0.05] last:border-0 pb-4 last:pb-0">
         <p className="text-[13px] font-bold text-white/88 leading-snug mb-1">
           {(item.name ?? "").replace(/^\d+\.\s*/, "")}
         </p>
@@ -294,7 +294,7 @@ function SectionBlock({ section }: { section: SourcingSection }) {
     steps:         { text: "text-sky-400",     bg: "bg-sky-500/8",     border: "border-sky-500/15"     },
     checklist:     { text: "text-emerald-400", bg: "bg-emerald-500/8", border: "border-emerald-500/15" },
     tips:          { text: "text-amber-400",   bg: "bg-amber-500/8",   border: "border-amber-500/15"   },
-    text:          { text: "text-white/40",    bg: "bg-white/4",  border: "border-white/8"        },
+    text:          { text: "text-white/40",    bg: "bg-white/4",  border: "border-white/[0.08]"        },
   };
   const col = colorMap[section.type] ?? colorMap.text;
 
@@ -406,7 +406,7 @@ function MessageBubble({
       <div className="flex-1 min-w-0">
 
                 {msg.loading && (
-          <div className="rounded-3xl rounded-tl-lg bg-white/4 border border-white/6 px-5 py-5 mb-2.5">
+          <div className="rounded-3xl rounded-tl-lg bg-white/[0.04]border border-white/6 px-5 py-5 mb-2.5">
             <div className="flex items-center gap-2 mb-2">
               {[0, 1, 2].map(i => (
                 <span
@@ -447,7 +447,7 @@ function MessageBubble({
 
                 {!msg.loading && !msg.isError && (
           <>
-            <div className="rounded-3xl rounded-tl-lg bg-white/4 border border-white/6 px-5 py-5 mb-3">
+            <div className="rounded-3xl rounded-tl-lg bg-white/[0.04]border border-white/6 px-5 py-5 mb-3">
 
                             {msg.content && (
                 <div className="mb-1">
@@ -467,7 +467,7 @@ function MessageBubble({
               ))}
 
                             {(msg.sections ?? []).length > 0 && (
-                <div className="mt-5 pt-4 border-t border-white/5 flex items-center gap-3 flex-wrap">
+                <div className="mt-5 pt-4 border-t border-white/[0.05] flex items-center gap-3 flex-wrap">
                   <span className="flex items-center gap-1 text-[10px] text-white/20">
                     <Sparkles size={9} />
                     {(msg.sections ?? []).length} sections
@@ -499,7 +499,7 @@ function MessageBubble({
                   <button
                     key={i}
                     onClick={() => onSuggestion(s)}
-                    className="flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-full border border-white/8 text-white/35 hover:text-white/65 hover:border-white/20 transition-all"
+                    className="flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-full border border-white/[0.08] text-white/35 hover:text-white/65 hover:border-white/20 transition-all"
                   >
                     <ChevronRight size={10} className="shrink-0" />
                     {s}
@@ -539,7 +539,7 @@ function ComparisonMatrix({ suppliers }: { suppliers: SourcingItem[] }) {
           </thead>
           <tbody>
             {suppliers.map((s, i) => (
-              <tr key={i} className="border-b border-white/4 last:border-0 hover:bg-white/[0.02] transition-colors">
+              <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
                 <td className="px-4 py-3">
                   <p className="text-[12px] font-bold text-white/85">{s.name ?? "—"}</p>
                 </td>
@@ -550,7 +550,7 @@ function ComparisonMatrix({ suppliers }: { suppliers: SourcingItem[] }) {
                 </td>
                 <td className="px-4 py-3">
                   {s.type
-                    ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/6 border border-white/8 text-white/45">{s.type}</span>
+                    ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06]border border-white/[0.08] text-white/45">{s.type}</span>
                     : <span className="text-[11px] text-white/25">—</span>}
                 </td>
                 <td className="px-4 py-3">
@@ -648,25 +648,25 @@ function NegotiationsPanel() {
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-            className="mb-4 rounded-2xl border border-white/10 bg-white/4 p-4 space-y-3">
+            className="mb-4 rounded-2xl border border-white/10 bg-white/[0.04]p-4 space-y-3">
             <p className="text-[12px] font-semibold text-white/60">{editId ? "Modifier" : "Nouvelle négociation"}</p>
             <input value={form.supplier ?? ""} onChange={e => setForm(p => ({...p, supplier: e.target.value}))}
               placeholder="Nom du fournisseur *"
-              className="w-full rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40" />
+              className="w-full rounded-xl bg-white/[0.06]border border-white/[0.08] px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40" />
             <div className="grid grid-cols-2 gap-3">
               <select value={form.status ?? "En cours"} onChange={e => setForm(p => ({...p, status: e.target.value as NegStatus}))}
-                className="rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white/70 outline-none appearance-none cursor-pointer">
+                className="rounded-xl bg-white/[0.06]border border-white/[0.08] px-3 py-2 text-[12px] text-white/70 outline-none appearance-none cursor-pointer">
                 {(["En cours","Offre reçue","Accepté","Refusé"] as NegStatus[]).map(s => (
                   <option key={s} value={s} className={isDark ? "bg-[#0e1420]" : "bg-white"}>{s}</option>
                 ))}
               </select>
               <input value={form.amount ?? ""} onChange={e => setForm(p => ({...p, amount: e.target.value}))}
                 placeholder="Montant (ex: 15 000 €)"
-                className="rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40" />
+                className="rounded-xl bg-white/[0.06]border border-white/[0.08] px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40" />
             </div>
             <textarea value={form.notes ?? ""} onChange={e => setForm(p => ({...p, notes: e.target.value}))}
               placeholder="Notes, conditions, prochaines étapes…" rows={3}
-              className="w-full rounded-xl bg-white/6 border border-white/8 px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40 resize-none" />
+              className="w-full rounded-xl bg-white/[0.06]border border-white/[0.08] px-3 py-2 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-indigo-500/40 resize-none" />
             <div className="flex gap-2">
               <button onClick={() => { void saveNeg(); }} disabled={!form.supplier?.trim()}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-[12px] font-semibold transition-all disabled:opacity-40"
@@ -674,7 +674,7 @@ function NegotiationsPanel() {
                 <Check size={12}/> {editId ? "Mettre à jour" : "Créer"}
               </button>
               <button onClick={() => { setShowForm(false); setEditId(null); setForm({ status: "En cours" }); }}
-                className="px-3 py-2 rounded-xl text-[12px] text-white/40 hover:text-white hover:bg-white/8 transition-all">
+                className="px-3 py-2 rounded-xl text-[12px] text-white/40 hover:text-white hover:bg-white/[0.08] transition-all">
                 Annuler
               </button>
             </div>
@@ -694,7 +694,7 @@ function NegotiationsPanel() {
         <AnimatePresence>
           {negs.map(n => (
             <motion.div key={n.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }}
-              className="rounded-2xl border border-white/8 bg-white/3 p-4">
+              className="rounded-2xl border border-white/[0.08] bg-white/[0.03]p-4">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-bold text-white/88 truncate">{n.supplier}</p>
@@ -705,7 +705,7 @@ function NegotiationsPanel() {
                 </div>
               </div>
               {n.notes && <p className="text-[12px] text-white/45 leading-relaxed mb-3 whitespace-pre-wrap line-clamp-3">{n.notes}</p>}
-              <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+              <div className="flex items-center gap-2 pt-2 border-t border-white/[0.05]">
                 <p className="text-[10px] text-white/20 flex-1">
                   {new Date(n.updatedAt).toLocaleDateString("fr-FR", { day:"numeric", month:"short" })}
                 </p>
@@ -718,7 +718,7 @@ function NegotiationsPanel() {
                     → {s}
                   </button>
                 ))}
-                <button onClick={() => startEdit(n)} className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/8 transition-all">
+                <button onClick={() => startEdit(n)} className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.08] transition-all">
                   <Check size={11}/>
                 </button>
                 <button onClick={() => { void deleteNeg(n.id); }} className="p-1.5 rounded-lg text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-all">
@@ -950,7 +950,7 @@ export default function SourcingPage() {
           .sr-light .bg-white\/3  { background-color: rgba(12,24,100,0.025) !important; }
           .sr-light .bg-white\/4  { background-color: rgba(12,24,100,0.03) !important; }
           .sr-light [class*="bg-white/6"]  { background-color: rgba(12,24,100,0.04) !important; }
-          .sr-light [class*="bg-white/8"]  { background-color: rgba(12,24,100,0.05) !important; }
+          .sr-light [class*="bg-white/[0.08]"]  { background-color: rgba(12,24,100,0.05) !important; }
           .sr-light .border-white\/10 { border-color: rgba(12,24,100,0.10) !important; }
           .sr-light [class*="hover:bg-white/"]:hover { background-color: rgba(12,24,100,0.06) !important; }
           .sr-light .text-white { color: #111827 !important; }
@@ -980,7 +980,7 @@ export default function SourcingPage() {
           style={{ background: "radial-gradient(circle,#60a5fa,transparent 70%)" }}/>
         {/* Bottom accent line */}
         <div className="absolute bottom-0 left-0 right-0 h-px"
-          style={{ background: "linear-gradient(90deg,rgba(129,140,248,0.5),rgba(96,165,250,0.2),transparent)" }}/>
+          style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
 
         <div className="relative mx-auto flex max-w-2xl items-center justify-between px-5 py-4 sm:px-8">
           <div className="flex items-center gap-3">
@@ -994,10 +994,24 @@ export default function SourcingPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* KPI Sessions */}
+            {history.length > 0 && (
+              <motion.div
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                onClick={() => setShowHistory(v => !v)}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-indigo-400/25"
+                style={{ background: isDark ? "rgba(255,255,255,0.035)" : "rgba(12,24,100,0.04)" }}>
+                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#818cf8" }}/>
+                <div>
+                  <p className="text-xs font-bold leading-none text-white">{history.length}</p>
+                  <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">Session{history.length > 1 ? "s" : ""}</p>
+                </div>
+              </motion.div>
+            )}
             {/* History dropdown */}
             <div className="relative">
               <button onClick={() => setShowHistory(v => !v)}
-                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8">
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.06]px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08]">
                 <History size={12}/>{history.length > 0 && <span className="text-[10px] text-indigo-400">{history.length}</span>}
                 <ChevronDown size={10}/>
               </button>
@@ -1018,7 +1032,7 @@ export default function SourcingPage() {
                             setShowHistory(false);
                             setCrmDone(false);
                           }}
-                            className="w-full flex items-start gap-3 px-4 py-3 hover:bg-white/4 transition-colors border-b border-white/4 last:border-0 text-left">
+                            className="w-full flex items-start gap-3 px-4 py-3 hover:bg-white/4 transition-colors border-b border-white/[0.04] last:border-0 text-left">
                             <div className="flex-1 min-w-0">
                               <p className="text-[12px] text-white/75 font-medium truncate">{s.title}</p>
                               <p className="text-[10px] text-white/30 mt-0.5">
@@ -1046,14 +1060,14 @@ export default function SourcingPage() {
 
             {hasAiMsg && (
               <button onClick={handleGeneratePdf} disabled={pdfLoading}
-                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8 disabled:opacity-40">
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.06]px-3.5 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08] disabled:opacity-40">
                 {pdfLoading ? <RefreshCw size={12} className="animate-spin"/> : <Download size={12}/>}
                 {pdfLoading ? "Génération…" : "PDF"}
               </button>
             )}
             {hasMessages && (
               <button onClick={newChat}
-                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/6 px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/8">
+                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.06]px-3 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.08]">
                 <X size={13}/> Nouveau
               </button>
             )}
@@ -1062,7 +1076,7 @@ export default function SourcingPage() {
       </div>
 
       {/* Tab bar */}
-      <div className={`border-b border-white/6 ${isDark ? "bg-[#07080e]" : "bg-[#f0f2fb]"}`}>
+      <div className={`border-b border-white/[0.06] ${isDark ? "bg-[#07080e]" : "bg-[#f0f2fb]"}`}>
         <div className="max-w-2xl mx-auto px-4 flex gap-1 pt-1">
           {([["chat","Chat IA",Search],["negs","Négociations",Handshake]] as [typeof tab, string, React.ElementType][]).map(([t,label,Icon]) => (
             <button key={t} onClick={() => setTab(t)}
@@ -1219,7 +1233,7 @@ export default function SourcingPage() {
 
       {tab === "chat" && <div className={`fixed bottom-0 inset-x-0 z-30 backdrop-blur-xl border-t border-white/6 ${isDark ? "bg-[#07080e]/98" : "bg-[#f0f2fb]/95"}`}>
         <div className="max-w-2xl mx-auto px-4 py-3">
-          <div className="flex items-end gap-2.5 rounded-2xl border border-white/8 bg-white/6 px-4 py-2.5 transition-colors focus-within:border-[rgba(129,140,248,0.3)]">
+          <div className="flex items-end gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.06]px-4 py-2.5 transition-colors focus-within:border-[rgba(129,140,248,0.3)]">
             <textarea
               ref={inputRef}
               value={input}
