@@ -110,7 +110,7 @@ function CoachingIALayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className={`flex min-h-screen flex-col ${wrap}`}>
       {/* ── Top bar ────────────────────────────────────────── */}
-      <header className={`sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b px-4 backdrop-blur-xl ${hdrBg}`}>
+      <header className={`relative sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b px-4 backdrop-blur-xl ${hdrBg}`}>
 
         {/* Logo + badge */}
         <Link href="/coaching-ia/espace" className="group mr-4 flex items-center gap-2">
@@ -147,6 +147,7 @@ function CoachingIALayoutInner({ children }: { children: React.ReactNode }) {
             <span className="hidden text-xs sm:inline">Déconnexion</span>
           </button>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
       </header>
 
       {/* ── Contenu ─────────────────────────────────────────── */}

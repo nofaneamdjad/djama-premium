@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -131,7 +131,7 @@ function bumpStreak() {
 function VideoPlayer({ title, color, isDark = true }: { title: string; color: string; isDark?: boolean }) {
   const [playing, setPlaying] = useState(false);
   const vidBg = isDark ? `linear-gradient(135deg, #07080e, ${color}18)` : `linear-gradient(135deg, #f0f2fb, ${color}22)`;
-  const borderCls = isDark ? "border-white/8" : "border-black/8";
+  const borderCls = isDark ? "border-white/8" : "border-black/[0.08]";
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
@@ -244,7 +244,7 @@ function InlineModuleQuiz({ moduleId, onComplete }: { moduleId: string; onComple
   const qPipeDim   = isDark ? "bg-white/10" : "bg-black/8";
   const qOptIdle   = isDark
     ? "border-white/8 bg-white/4 text-white/65 hover:border-white/20 hover:text-white"
-    : "border-black/8 bg-black/[0.02] text-[#0e1420]/65 hover:border-black/20 hover:text-[#0e1420]";
+    : "border-black/[0.08] bg-black/[0.02] text-[#0e1420]/65 hover:border-black/20 hover:text-[#0e1420]";
   const qOptDim    = isDark ? "border-white/4 bg-white/2 text-white/20" : "border-black/4 bg-black/[0.01] text-[#0e1420]/20";
   const resetBtn   = isDark
     ? "border-white/10 bg-white/5 text-white/60 hover:text-white"
@@ -677,7 +677,7 @@ function ModuleSidebarItem({
   const sPct  = isDark ? "text-white/25"           : "text-[#0e1420]/30";
   const sBar  = isDark ? "bg-white/[0.08]"         : "bg-black/[0.07]";
   const sArrow= isDark ? "text-white/30"           : "text-[#0e1420]/30";
-  const sBord = isDark ? "border-white/[0.07]"     : "border-black/8";
+  const sBord = isDark ? "border-white/[0.07]"     : "border-black/[0.08]";
   const sCirc = isDark ? "text-white/20"           : "text-[#0e1420]/20";
   const sTypDim = isDark ? "text-white/20"         : "text-[#0e1420]/20";
 
@@ -783,9 +783,9 @@ function ChapterViewer({
   const cMut   = isDark ? "text-white/55"  : "text-[#0e1420]/55";
   const cFaint = isDark ? "text-white/25"  : "text-[#0e1420]/35";
   const cCard  = isDark ? "border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.05]"
-                        : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:shadow-md";
+                        : "border-black/[0.08] bg-white shadow-sm hover:border-black/12 hover:shadow-md";
   const cIntro = isDark ? "border-white/[0.08] from-white/[0.04] to-white/[0.02]"
-                        : "border-black/8 from-white to-[#f7f7fb]";
+                        : "border-black/[0.08] from-white to-[#f7f7fb]";
   const cDivider = isDark ? "border-white/[0.07]" : "border-black/6";
   const cDurBadge = isDark ? "bg-white/[0.06] text-white/35" : "bg-black/[0.05] text-[#0e1420]/45";
   const cHintRow  = isDark ? "bg-white/[0.04]" : "bg-black/[0.03]";
@@ -1073,15 +1073,15 @@ function AssistantPanel({
   const aTitleSec = isDark ? "text-white/30"         : "text-[#0e1420]/35";
   const aSugBtn   = isDark
     ? "border-white/[0.08] bg-white/[0.03] text-white/50 hover:border-white/[0.14] hover:text-white/80"
-    : "border-black/8 bg-black/[0.02] text-[#0e1420]/50 hover:border-black/14 hover:text-[#0e1420]/80";
+    : "border-black/[0.08] bg-black/[0.02] text-[#0e1420]/50 hover:border-black/14 hover:text-[#0e1420]/80";
   const aMsgUser  = isDark ? "bg-[rgba(201,165,90,0.12)] text-white/80"
                            : "bg-[rgba(201,165,90,0.12)] text-[#0e1420]/80";
   const aMsgBot   = isDark
     ? "border border-white/[0.07] bg-white/[0.04] text-white/70"
-    : "border border-black/8 bg-white shadow-sm text-[#0e1420]/70";
+    : "border border-black/[0.08] bg-white shadow-sm text-[#0e1420]/70";
   const aLoadBub  = isDark
     ? "border border-white/[0.07] bg-white/[0.04]"
-    : "border border-black/8 bg-white shadow-sm";
+    : "border border-black/[0.08] bg-white shadow-sm";
   const aInputWrap= isDark
     ? "border-white/[0.09] bg-white/[0.04] focus-within:border-[rgba(167,139,250,0.4)]"
     : "border-black/10 bg-white shadow-sm focus-within:border-[rgba(167,139,250,0.4)]";
@@ -1194,9 +1194,9 @@ function FavoritesPanel({
   const fMut  = isDark ? "text-white/30" : "text-[#0e1420]/35";
   const fCard = isDark
     ? "border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.05]"
-    : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:shadow-md";
+    : "border-black/[0.08] bg-white shadow-sm hover:border-black/12 hover:shadow-md";
   const fIcon = isDark ? "text-white/20" : "text-[#0e1420]/20";
-  const fEmpty= isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
+  const fEmpty= isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm";
   const fArrow= isDark ? "text-white/20 group-hover:text-white/50" : "text-[#0e1420]/20 group-hover:text-[#0e1420]/50";
 
   if (favChapters.length === 0) {
@@ -1303,7 +1303,7 @@ function BookingPanel() {
   const bCard   = isDark ? "border-white/[0.06] bg-white/[0.02]"  : "border-black/6 bg-[#f7f7fb]";
   const bInner  = isDark ? "border-white/[0.06] bg-white/[0.02]"  : "border-black/6 bg-white";
   const bSummary= isDark ? "bg-white/[0.03]" : "bg-black/[0.03]";
-  const bStatCard=isDark ? "border-white/[0.07] bg-white/[0.03]"  : "border-black/8 bg-white shadow-sm";
+  const bStatCard=isDark ? "border-white/[0.07] bg-white/[0.03]"  : "border-black/[0.08] bg-white shadow-sm";
   const bStatTxt =isDark ? "text-white/50"   : "text-[#0e1420]/55";
   const bInput   = isDark
     ? "border-white/[0.08] bg-white/[0.03] text-white placeholder-white/20"
@@ -1444,11 +1444,11 @@ function PendingGate({
   const pSec    = isDark ? "text-white/45"           : "text-[#0e1420]/50";
   const pMut    = isDark ? "text-white/30"           : "text-[#0e1420]/35";
   const pFaint  = isDark ? "text-white/40"           : "text-[#0e1420]/45";
-  const pCard   = isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
-  const pInner  = isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-black/8 bg-white shadow-sm";
+  const pCard   = isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm";
+  const pInner  = isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-black/[0.08] bg-white shadow-sm";
   const pDivider= isDark ? "border-white/[0.06]"    : "border-black/5";
   const pDivRow = isDark ? "divide-white/[0.05]"    : "divide-black/[0.04]";
-  const pEmailPill = isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
+  const pEmailPill = isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm";
   const pBadgeDot  = isDark ? "bg-[#07080e]" : "bg-[#f0f2fb]";
   const pRefreshBtn= isDark
     ? "border-white/[0.1] bg-white/[0.04] text-white/60 hover:border-white/[0.18] hover:text-white/90"
@@ -1633,11 +1633,11 @@ function PreviewGate({ user }: {
   const prSec    = isDark ? "text-white/45": "text-[#0e1420]/50";
   const prMut    = isDark ? "text-white/35": "text-[#0e1420]/40";
   const prFaint  = isDark ? "text-white/25": "text-[#0e1420]/30";
-  const prCard   = isDark ? "border-white/[0.09] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
+  const prCard   = isDark ? "border-white/[0.09] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm";
   const prDiv    = isDark ? "border-white/[0.07]" : "border-black/6";
-  const prTabBar = isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/8 bg-[#f0f2fb]";
+  const prTabBar = isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.08] bg-[#f0f2fb]";
   const prTabIdle= isDark ? "text-white/35 hover:text-white/65" : "text-[#0e1420]/35 hover:text-[#0e1420]/65";
-  const prInner  = isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/8 bg-[#f7f7fb]";
+  const prInner  = isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/[0.08] bg-[#f7f7fb]";
   const prIco    = isDark ? "text-white/25" : "text-[#0e1420]/30";
   const prInputTxt = isDark ? "text-white placeholder-white/20" : "text-[#0e1420] placeholder-[#0e1420]/30";
   const prVirTxt = isDark ? "text-white/45 space-y-0.5" : "text-[#0e1420]/50 space-y-0.5";
@@ -1683,7 +1683,7 @@ function PreviewGate({ user }: {
           {/* Locked modules */}
           <p className={`text-[0.65rem] font-bold uppercase tracking-widest px-1 ${prChipTxt}`}>Modules inclus dans l&apos;accès complet</p>
           {lockedModules.map((mod) => (
-            <div key={mod.id} className={`relative rounded-2xl border overflow-hidden ${isDark ? "border-white/[0.07] bg-white/[0.02]" : "border-black/8 bg-white"}`}>
+            <div key={mod.id} className={`relative rounded-2xl border overflow-hidden ${isDark ? "border-white/[0.07] bg-white/[0.02]" : "border-black/[0.08] bg-white"}`}>
               <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 backdrop-blur-[2px] ${prLockBg}`}>
                 <div className={`flex h-8 w-8 items-center justify-center rounded-full border ${prLockIcon}`}>
                   <Lock size={14} />
@@ -2005,14 +2005,14 @@ function DashboardPanel({
   const dSec    = isDark ? "text-white/40" : "text-[#0e1420]/45";
   const dMut    = isDark ? "text-white/30" : "text-[#0e1420]/35";
   const dFaint  = isDark ? "text-white/25" : "text-[#0e1420]/30";
-  const dCard   = isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/8 bg-white shadow-sm";
+  const dCard   = isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm";
   const dBar    = isDark ? "bg-white/[0.07]" : "bg-black/[0.07]";
   const dModBtn = isDark
     ? "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
-    : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:shadow-md";
+    : "border-black/[0.08] bg-white shadow-sm hover:border-black/12 hover:shadow-md";
   const dQkBtn  = isDark
     ? "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
-    : "border-black/8 bg-white shadow-sm hover:border-black/12 hover:shadow-md";
+    : "border-black/[0.08] bg-white shadow-sm hover:border-black/12 hover:shadow-md";
   const dQkLbl  = isDark ? "text-white/50 group-hover:text-white/80" : "text-[#0e1420]/50 group-hover:text-[#0e1420]/80";
   const dBadge  = isDark ? "border-white/[0.05] bg-white/[0.02]" : "border-black/5 bg-white/60";
 
@@ -2039,7 +2039,7 @@ function DashboardPanel({
       </div>
 
       {/* ── Niveau XP ── */}
-      <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01]" : "border-black/8 bg-white shadow-sm"}`}>
+      <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01]" : "border-black/[0.08] bg-white shadow-sm"}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
@@ -2359,16 +2359,16 @@ export default function EspaceCoachingIA() {
 
   /* ── Access gate ──────────────────────────────────────── */
   const eBg   = isDark ? "bg-[#07080e]" : "bg-[#f0f2fb]";
-  const eSbBg = isDark ? "bg-[#07080e] border-white/[0.06]" : "bg-white border-black/8";
+  const eSbBg = isDark ? "bg-[#07080e] border-white/[0.06]" : "bg-white border-black/[0.08]";
   const eSbTxt= isDark ? "text-white/30" : "text-[#0e1420]/35";
   const eSbFaint = isDark ? "text-white/20" : "text-[#0e1420]/25";
   const eSbBar   = isDark ? "bg-white/[0.07]" : "bg-black/[0.07]";
-  const eTbBord  = isDark ? "border-white/[0.06]" : "border-black/8";
+  const eTbBord  = isDark ? "border-white/[0.06]" : "border-black/[0.08]";
   const eTbBtn   = isDark ? "text-white/30 hover:bg-white/[0.05] hover:text-white/70" : "text-[#0e1420]/30 hover:bg-black/[0.04] hover:text-[#0e1420]/70";
   const eTbDiv   = isDark ? "bg-white/[0.08]" : "bg-black/[0.08]";
   const eTabIdle = isDark ? "text-white/35 hover:bg-white/[0.04] hover:text-white/65" : "text-[#0e1420]/40 hover:bg-black/[0.04] hover:text-[#0e1420]/70";
   const eBreadcrumb = isDark ? "text-white/20" : "text-[#0e1420]/25";
-  const eFocusIdle  = isDark ? "border-white/[0.08] text-white/30 hover:border-white/[0.15] hover:text-white/60" : "border-black/8 text-[#0e1420]/30 hover:border-black/15 hover:text-[#0e1420]/60";
+  const eFocusIdle  = isDark ? "border-white/[0.08] text-white/30 hover:border-white/[0.15] hover:text-white/60" : "border-black/[0.08] text-[#0e1420]/30 hover:border-black/15 hover:text-[#0e1420]/60";
 
   const eSbShortcutAssistant = view === "assistant"
     ? "bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
@@ -2419,7 +2419,7 @@ export default function EspaceCoachingIA() {
             style={{ width: 248 }}
           >
             {/* Progress global */}
-            <div className={`border-b px-4 py-4 ${isDark ? "border-white/[0.06]" : "border-black/8"}`}>
+            <div className={`border-b px-4 py-4 ${isDark ? "border-white/[0.06]" : "border-black/[0.08]"}`}>
               <div className="mb-2 flex items-center justify-between">
                 <span className={`text-[0.62rem] font-semibold uppercase tracking-widest ${eSbTxt}`}>
                   Progression globale
@@ -2460,7 +2460,7 @@ export default function EspaceCoachingIA() {
             </div>
 
             {/* Sidebar bottom shortcuts */}
-            <div className={`border-t space-y-1 px-2 py-3 ${isDark ? "border-white/[0.06]" : "border-black/8"}`}>
+            <div className={`border-t space-y-1 px-2 py-3 ${isDark ? "border-white/[0.06]" : "border-black/[0.08]"}`}>
               <button onClick={() => setView("assistant")}
                 className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${eSbShortcutAssistant}`}>
                 <Bot size={14} /> Assistant IA
@@ -2483,7 +2483,7 @@ export default function EspaceCoachingIA() {
       <main className="flex flex-1 flex-col overflow-hidden">
 
         {/* Toolbar */}
-        <div className={`flex items-center gap-2 border-b px-3 py-2 ${eTbBord} ${isDark ? "bg-[#07080e]" : "bg-white"}`}>
+        <div className={`relative flex items-center gap-2 border-b px-3 py-2 ${eTbBord} ${isDark ? "bg-[#07080e]" : "bg-white"}`}>
 
           {/* Toggle sidebar / focus mode */}
           <button
@@ -2519,8 +2519,22 @@ export default function EspaceCoachingIA() {
             </button>
           ))}
 
-          {/* Spacer */}
+          {/* Spacer + KPI chip progression */}
           <div className="flex-1" />
+          {completedCount > 0 && (
+            <motion.div
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => setView("dashboard")}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-violet-400/25"
+              style={{ background: "rgba(255,255,255,0.035)" }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ACCENT }}/>
+              <div>
+                <p className="text-xs font-bold leading-none" style={{ color: ACCENT }}>{overallPct}%</p>
+                <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">{completedCount}/{totalChapters}</p>
+              </div>
+            </motion.div>
+          )}
 
           {/* Current chapter breadcrumb */}
           {view === "chapter" && currentChapter && !focusMode && (
@@ -2544,6 +2558,7 @@ export default function EspaceCoachingIA() {
               {focusMode ? "Quitter focus" : "Focus"}
             </button>
           )}
+          <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
         </div>
 
         {/* Vue principale */}
