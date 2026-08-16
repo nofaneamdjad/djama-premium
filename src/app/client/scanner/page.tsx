@@ -165,15 +165,38 @@ export default function ScannerPage() {
     <div className="flex h-[calc(100vh-56px)] bg-[#07080e]">
 
       {/* ── Liste documents ── */}
-      <div className={`flex flex-col w-full md:w-72 md:border-r border-white/6 shrink-0 ${active ? "hidden md:flex" : "flex"}`}>
+      <div className={`flex flex-col w-full md:w-72 md:border-r border-white/[0.06] shrink-0 ${active ? "hidden md:flex" : "flex"}`}>
         {/* Header */}
-        <div className="px-4 pt-5 pb-3">
+        <div className="relative px-4 pt-5 pb-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <ScanLine size={18} style={{ color: "#0ea5e9" }} />
               <h1 className="text-[16px] font-black text-white">Scanner</h1>
             </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => fileRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition"
+              style={{ background: "rgba(14,165,233,0.14)", border: "1px solid rgba(14,165,233,0.25)", color: "#38bdf8" }}
+            >
+              <Plus size={13} /><span className="hidden sm:inline"> Scanner</span>
+            </motion.button>
           </div>
+          {!loading && docs.length > 0 && (
+            <div className="flex gap-1.5 mb-3">
+              <motion.div
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                onClick={() => setActive(null)}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-sky-400/25"
+                style={{ background: "rgba(255,255,255,0.035)" }}>
+                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#0ea5e9" }}/>
+                <div>
+                  <p className="text-xs font-bold leading-none text-white">{docs.length}</p>
+                  <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">Document{docs.length > 1 ? "s" : ""}</p>
+                </div>
+              </motion.div>
+            </div>
+          )}
 
           {/* Zone de scan principale */}
           <motion.button
@@ -219,6 +242,7 @@ export default function ScannerPage() {
             className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
           />
+          <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
         </div>
 
         {/* Liste scans */}
@@ -229,7 +253,7 @@ export default function ScannerPage() {
             ))
           ) : docs.length === 0 ? (
             <div className="flex flex-col items-center gap-2 pt-10 text-center">
-              <FileText size={32} className="text-white/8" />
+              <FileText size={32} className="text-white/[0.08]" />
               <p className="text-[11px] text-white/20">Aucun document scanné</p>
             </div>
           ) : (
@@ -284,7 +308,7 @@ export default function ScannerPage() {
         ) : (
           <>
             {/* Header */}
-            <div className="flex items-center gap-3 px-4 pt-5 pb-3 border-b border-white/5">
+            <div className="relative flex items-center gap-3 px-4 pt-5 pb-3 border-b border-white/[0.06]">
               <button onClick={() => setActive(null)} className="flex md:hidden h-8 w-8 items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
                 <ArrowLeft size={14} className="text-white/60" />
               </button>
@@ -296,16 +320,17 @@ export default function ScannerPage() {
                 <button
                   onClick={downloadDoc}
                   disabled={!active.preview && !active.text}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-white/40 transition hover:text-white/70 disabled:opacity-25"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-white/40 transition hover:text-white/70 disabled:opacity-25 border border-white/[0.08]"
                   style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <Download size={13} />
+                  <Download size={12} /><span className="hidden sm:inline"> Télécharger</span>
                 </button>
                 <button onClick={() => deleteDoc(active.id)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-red-400 transition hover:bg-red-500/10"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-red-400/60 transition hover:text-red-400 hover:bg-red-500/10 border border-white/[0.08]"
                   style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <Trash2 size={13} />
+                  <Trash2 size={12} /><span className="hidden sm:inline"> Supprimer</span>
                 </button>
               </div>
+              <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
             </div>
 
             {/* Prévisualisation */}
