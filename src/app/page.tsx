@@ -804,11 +804,23 @@ function HomeContent() {
             <p className="mt-4 text-[1.05rem] leading-relaxed text-gray-700">
               Chaque outil simplifie un processus et permet à davantage d&apos;entrepreneurs d&apos;agir vite et efficacement.
             </p>
-            <Link href="/espace-client"
-              className="mt-7 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[0.92rem] font-black text-white transition-all hover:opacity-90"
-              style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, boxShadow: `0 4px 16px rgba(${GOLDR},0.35)` }}>
-              <Gem size={14} /> Démarrer maintenant
-            </Link>
+            <motion.div className="relative mt-7 inline-flex" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
+              <motion.div
+                animate={{ scale: [1, 1.18, 1], opacity: [0.35, 0, 0.35] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute inset-0 rounded-2xl"
+                style={{ background: `linear-gradient(135deg,${GOLD},#d4aa6a)`, filter: "blur(12px)" }}
+              />
+              <Link href="/espace-client"
+                className="relative flex items-center gap-2 overflow-hidden rounded-2xl px-7 py-3.5 text-[0.95rem] font-black text-[#100800]"
+                style={{ background: `linear-gradient(135deg,${GOLD} 0%,#e2ba70 45%,#b08d45 100%)`, boxShadow: `0 6px 24px rgba(${GOLDR},0.40)` }}>
+                <motion.div animate={{ x: ["-100%","220%"] }} transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+                  className="pointer-events-none absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                <Gem size={14} className="relative z-10 shrink-0" />
+                <span className="relative z-10">Démarrer maintenant</span>
+                <ArrowRight size={13} className="relative z-10 shrink-0" />
+              </Link>
+            </motion.div>
           </motion.div>
         </div>
       </section>
