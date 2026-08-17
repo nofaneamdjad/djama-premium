@@ -689,43 +689,42 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           COMPARATIF — DJAMA vs concurrents (animé)
+           COMPARATIF — DJAMA vs concurrents, style Odoo
       ══════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#07080e] py-20 sm:py-28">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-1/2 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-60"
-            style={{ background: "radial-gradient(ellipse,rgba(201,165,90,0.07),transparent 65%)" }} />
-        </div>
+      <section className="bg-white py-20 sm:py-28">
+        <div className="mx-auto max-w-3xl px-6">
 
-        <div className="relative mx-auto max-w-2xl px-6">
-          {/* Header */}
+          {/* Titre style Odoo — cursive + underline or */}
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport} transition={{ duration: 0.55, ease }}
-            className="mb-10 text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.62rem] font-bold uppercase tracking-[0.16em]"
-              style={{ borderColor: "rgba(201,165,90,0.25)", background: "rgba(201,165,90,0.08)", color: GOLD }}>
-              Pourquoi DJAMA ?
-            </div>
-            <h2 className="text-[2rem] font-black leading-tight text-white sm:text-[2.5rem]">
-              DJAMA <span className="text-white/30">vs</span> les autres
+            className="mb-12 text-center">
+            <h2 className="text-[2.4rem] leading-[1.1] text-gray-900 sm:text-[3rem]"
+              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
+              <span style={{ color: GOLD, textDecoration: "underline wavy", textUnderlineOffset: "6px", textDecorationColor: `rgba(${GOLDR},0.5)` }}>
+                DJAMA
+              </span>{" "}
+              <span className="text-gray-400 font-normal">vs</span>{" "}
+              les autres
             </h2>
-            <p className="mx-auto mt-3 max-w-xs text-[0.85rem] text-white/35">
-              Comparé aux logiciels classiques utilisés par les entrepreneurs
+            <p className="mx-auto mt-4 max-w-sm text-[0.92rem] text-gray-500 leading-relaxed">
+              Tout ce que les logiciels classiques ne font pas —{" "}
+              <strong className="text-gray-700 font-bold">5× moins cher</strong>.
             </p>
           </motion.div>
 
           {/* Tableau comparatif */}
-          <div className="overflow-hidden rounded-2xl border border-white/[0.08]">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
+
             {/* En-tête colonnes */}
-            <div className="grid grid-cols-[1fr_88px_88px] border-b border-white/[0.08] bg-white/[0.03] px-5 py-3">
-              <span className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Fonctionnalité</span>
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[0.72rem] font-black" style={{ color: GOLD }}>DJAMA</span>
-                <span className="text-[0.48rem] font-bold uppercase tracking-wider text-white/20">11,90€/mois</span>
+            <div className="grid grid-cols-[1fr_100px_100px] border-b border-gray-100 bg-gray-50 px-5 py-3">
+              <span className="text-[0.6rem] font-bold uppercase tracking-widest text-gray-400">Fonctionnalité</span>
+              <div className="flex flex-col items-center gap-0.5 rounded-t-lg px-2 py-1" style={{ background: `rgba(${GOLDR},0.06)` }}>
+                <span className="text-[0.76rem] font-black" style={{ color: GOLD }}>DJAMA</span>
+                <span className="text-[0.5rem] font-bold uppercase tracking-wide text-gray-400">11,90€/mois</span>
               </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[0.68rem] font-bold text-white/30">Les autres</span>
-                <span className="text-[0.48rem] font-bold uppercase tracking-wider text-white/15">50–200€/mois</span>
+              <div className="flex flex-col items-center gap-0.5 px-2 py-1">
+                <span className="text-[0.7rem] font-bold text-gray-400">Les autres</span>
+                <span className="text-[0.5rem] font-bold uppercase tracking-wide text-gray-300">50–200€/mois</span>
               </div>
             </div>
 
@@ -738,28 +737,31 @@ function HomeContent() {
               "Conçu pour entrepreneurs FR",
             ].map((feature, i) => (
               <motion.div key={i}
-                initial={{ opacity: 0, x: -14 }}
+                initial={{ opacity: 0, x: -12 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={viewport}
-                transition={{ duration: 0.38, ease, delay: i * 0.08 }}
-                className="grid grid-cols-[1fr_88px_88px] border-b border-white/[0.05] px-5 py-4 transition-colors last:border-0 hover:bg-white/[0.02]">
-                <span className="flex items-center text-[0.82rem] text-white/60">{feature}</span>
-                <div className="flex items-center justify-center">
+                transition={{ duration: 0.35, ease, delay: i * 0.07 }}
+                className="grid grid-cols-[1fr_100px_100px] border-b border-gray-100 px-5 py-4 transition-colors last:border-0 hover:bg-gray-50">
+                <span className="flex items-center text-[0.85rem] font-medium text-gray-700">{feature}</span>
+
+                {/* Colonne DJAMA — légère teinte or */}
+                <div className="flex items-center justify-center" style={{ background: `rgba(${GOLDR},0.03)` }}>
                   <motion.div
                     initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={viewport}
-                    transition={{ duration: 0.28, delay: i * 0.08 + 0.18, type: "spring", stiffness: 420, damping: 18 }}
+                    transition={{ duration: 0.28, delay: i * 0.07 + 0.15, type: "spring", stiffness: 420, damping: 18 }}
                     className="flex h-6 w-6 items-center justify-center rounded-full"
-                    style={{ background: `rgba(${GOLDR},0.14)`, border: `1px solid rgba(${GOLDR},0.35)` }}>
+                    style={{ background: `rgba(${GOLDR},0.15)`, border: `1px solid rgba(${GOLDR},0.4)` }}>
                     <Check size={11} style={{ color: GOLD }} strokeWidth={3} />
                   </motion.div>
                 </div>
+
+                {/* Colonne Les autres */}
                 <div className="flex items-center justify-center">
                   <motion.div
                     initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={viewport}
-                    transition={{ duration: 0.28, delay: i * 0.08 + 0.28, type: "spring", stiffness: 420, damping: 18 }}
-                    className="flex h-6 w-6 items-center justify-center rounded-full"
-                    style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-                    <X size={11} className="text-red-400/70" strokeWidth={2.5} />
+                    transition={{ duration: 0.28, delay: i * 0.07 + 0.25, type: "spring", stiffness: 420, damping: 18 }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-gray-100">
+                    <X size={11} className="text-gray-400" strokeWidth={2.5} />
                   </motion.div>
                 </div>
               </motion.div>
@@ -768,16 +770,14 @@ function HomeContent() {
 
           {/* CTA */}
           <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.45, ease, delay: 0.65 }}
+            viewport={viewport} transition={{ duration: 0.45, ease, delay: 0.6 }}
             className="mt-8 flex flex-col items-center gap-3">
             <Link href="/espace-client"
-              className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-[0.88rem] font-black text-[#100800] transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
-              style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
+              className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-[0.9rem] font-black text-[#100800] transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
+              style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, boxShadow: `0 4px 16px rgba(${GOLDR},0.25)` }}>
               <Gem size={13} /> Essayer DJAMA — 11,90€/mois <ArrowRight size={12} />
             </Link>
-            <p className="text-center text-[0.68rem] text-white/20">
-              Sans engagement · Accès immédiat
-            </p>
+            <p className="text-[0.72rem] text-gray-400">Sans engagement · Accès immédiat</p>
           </motion.div>
         </div>
       </section>
