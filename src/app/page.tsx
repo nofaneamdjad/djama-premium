@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Mail, Users2, Shield, ShieldCheck,
   CheckCircle2, Sparkles, HeartHandshake,
-  Globe, Brain, Check,
+  Globe, Brain, Check, X,
   Code2, BarChart3, Briefcase,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
   Truck, Package, ListTodo, Zap, Wallet, Building2, Banknote,
@@ -443,143 +443,6 @@ const PUBLIC_APP_ICONS = [
   </svg>,
 ];
 
-/* ─── Kanban CRM animé (style Odoo vidéo) ─────────────────────────────── */
-function AnimatedKanban() {
-  const [phase, setPhase] = useState(0);
-
-  useEffect(() => {
-    let t1: ReturnType<typeof setTimeout>;
-    let t2: ReturnType<typeof setTimeout>;
-    let t3: ReturnType<typeof setTimeout>;
-    function runCycle() {
-      t1 = setTimeout(() => setPhase(1), 2200);
-      t2 = setTimeout(() => setPhase(2), 3800);
-      t3 = setTimeout(() => setPhase(3), 5400);
-    }
-    runCycle();
-    const iv = setInterval(() => { setPhase(0); runCycle(); }, 8800);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearInterval(iv); };
-  }, []);
-
-  const B = "#3b82f6", A = "#f59e0b", G = "#059669";
-  const prospects = [
-    { name: "Karima B.",  val: "1 200 €", tag: "Devis envoyé", moving: false },
-    { name: "Riad SARL",  val: "4 800 €", tag: "1er contact",  moving: false },
-    ...(phase < 2
-      ? [{ name: "Imane T.", val: "900 €", tag: "À relancer", moving: phase === 1 }]
-      : []),
-  ];
-  const enCours = [
-    { name: "BTP Malik",    val: "8 500 €", tag: "Contrat signé", isNew: false },
-    { name: "Studio Nova",  val: "2 300 €", tag: "Négociation",   isNew: false },
-    ...(phase >= 2
-      ? [{ name: "Imane T.", val: "900 €", tag: "Qualifié ✓", isNew: true }]
-      : []),
-  ];
-  const gagnes = [
-    { name: "Tech & Co",    val: "12 000 €", tag: "✓ Payé" },
-    { name: "Sarl Dupont",  val: "3 400 €",  tag: "✓ Payé" },
-  ];
-  const total = phase >= 3 ? "34 000 €" : "33 100 €";
-  const pct   = phase >= 3 ? "+27% ce mois" : "+24% ce mois";
-
-  return (
-    <>
-      {/* Barre fenêtre */}
-      <div className="flex items-center gap-2 border-b border-gray-100 bg-white px-4 py-3">
-        <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
-        <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-        <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-        <span className="ml-2 text-[0.7rem] font-medium text-gray-400">djama.pro · CRM Pipeline</span>
-        <AnimatePresence>
-          {phase >= 3 && (
-            <motion.span key="badge"
-              initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className="ml-auto rounded-full bg-green-50 px-2 py-0.5 text-[0.58rem] font-bold text-green-600">
-              🎉 Nouveau deal qualifié !
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </div>
-      {/* Kanban */}
-      <div className="p-4">
-        <div className="grid grid-cols-3 gap-2">
-          {/* Prospects */}
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-[0.65rem] font-black uppercase tracking-wide" style={{ color: B }}>Prospects</span>
-              <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[0.58rem] font-bold text-blue-500">{prospects.length}</span>
-            </div>
-            <div className="space-y-1.5">
-              <AnimatePresence>
-                {prospects.map(c => (
-                  <motion.div key={c.name} layout
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0, scale: c.moving ? 1.04 : 1 }}
-                    exit={{ opacity: 0, x: 40, transition: { duration: 0.35 } }}
-                    transition={{ duration: 0.38 }}
-                    className={`rounded-xl bg-white p-2.5 shadow-sm border transition-shadow ${c.moving ? "border-amber-400 shadow-amber-100 shadow-md ring-1 ring-amber-300" : "border-gray-100"}`}>
-                    <p className="text-[0.68rem] font-bold text-gray-800">{c.name}</p>
-                    <p className="mt-0.5 text-[0.72rem] font-black" style={{ color: B }}>{c.val}</p>
-                    <span className="mt-1 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-[0.55rem] font-semibold text-blue-500">{c.tag}</span>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-          {/* En cours */}
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-[0.65rem] font-black uppercase tracking-wide" style={{ color: A }}>En cours</span>
-              <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[0.58rem] font-bold text-amber-500">{enCours.length}</span>
-            </div>
-            <div className="space-y-1.5">
-              <AnimatePresence>
-                {enCours.map(c => (
-                  <motion.div key={c.name} layout
-                    initial={c.isNew ? { opacity: 0, x: -24, scale: 0.88 } : { opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.45, type: c.isNew ? "spring" : "tween", stiffness: 320, damping: 22 }}
-                    className={`rounded-xl bg-white p-2.5 shadow-sm border border-gray-100 ${c.isNew ? "ring-1 ring-amber-300" : ""}`}>
-                    <p className="text-[0.68rem] font-bold text-gray-800">{c.name}</p>
-                    <p className="mt-0.5 text-[0.72rem] font-black" style={{ color: A }}>{c.val}</p>
-                    <span className="mt-1 inline-block rounded-full bg-amber-50 px-1.5 py-0.5 text-[0.55rem] font-semibold text-amber-500">{c.tag}</span>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-          {/* Gagnés */}
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-[0.65rem] font-black uppercase tracking-wide" style={{ color: G }}>Gagnés</span>
-              <span className="rounded-full bg-green-50 px-1.5 py-0.5 text-[0.58rem] font-bold text-green-600">4</span>
-            </div>
-            <div className="space-y-1.5">
-              {gagnes.map(c => (
-                <div key={c.name} className="rounded-xl bg-white p-2.5 shadow-sm border border-gray-100">
-                  <p className="text-[0.68rem] font-bold text-gray-800">{c.name}</p>
-                  <p className="mt-0.5 text-[0.72rem] font-black text-green-600">{c.val}</p>
-                  <span className="mt-1 inline-block rounded-full bg-green-50 px-1.5 py-0.5 text-[0.55rem] font-semibold text-green-600">{c.tag}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        {/* Total pipeline */}
-        <div className="mt-3 flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm">
-          <span className="text-[0.62rem] text-gray-500">Total pipeline</span>
-          <motion.span key={total} initial={{ opacity: 0.5, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}
-            className="text-[0.88rem] font-black text-gray-900">{total}</motion.span>
-          <motion.span key={pct} initial={{ opacity: 0.5 }} animate={{ opacity: 1 }}
-            className="text-[0.62rem] font-bold text-green-600">↑ {pct}</motion.span>
-        </div>
-      </div>
-    </>
-  );
-}
 
 export default function Page() {
   return (
@@ -826,49 +689,96 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           FEATURE 1 — "Améliorez la qualité de votre travail"
-           style Odoo : titre cursive gauche + mockup droite
+           COMPARATIF — DJAMA vs concurrents (animé)
       ══════════════════════════════════════════════════════ */}
-      <section className="bg-white py-20 sm:py-28">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="grid gap-14 sm:grid-cols-2 sm:items-center">
+      <section className="relative overflow-hidden bg-[#07080e] py-20 sm:py-28">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-1/2 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-60"
+            style={{ background: "radial-gradient(ellipse,rgba(201,165,90,0.07),transparent 65%)" }} />
+        </div>
 
-            {/* Texte gauche */}
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
-              viewport={viewport} transition={{ duration: 0.55, ease }}>
-              <h2 className="text-[2.4rem] leading-[1.12] text-gray-900 sm:text-[3rem]"
-                style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
-                <span style={{ color: "#7c3aed", textDecoration: "underline wavy", textUnderlineOffset: "5px", textDecorationColor: "rgba(124,58,237,0.35)" }}>
-                  Améliorez
-                </span>{" "}
-                la qualité de votre travail
-              </h2>
-              <p className="mt-5 text-[0.95rem] leading-relaxed text-gray-500">
-                Interface ultra-rapide, IA intégrée, données en temps réel. Toutes vos opérations prennent moins de 5 secondes.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {["Factures envoyées en 1 clic", "Rappels automatiques par IA", "Tableau de bord live", "Zéro double saisie"].map(item => (
-                  <li key={item} className="flex items-center gap-2.5 text-[0.88rem] font-medium text-gray-700">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100">
-                      <Check size={11} className="text-purple-600" strokeWidth={2.5} />
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/espace-client"
-                className="mt-8 inline-flex items-center gap-1.5 text-[0.9rem] font-bold text-purple-600 transition-opacity hover:opacity-70">
-                Découvrir la plateforme <ArrowRight size={14} />
-              </Link>
-            </motion.div>
+        <div className="relative mx-auto max-w-2xl px-6">
+          {/* Header */}
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.55, ease }}
+            className="mb-10 text-center">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.62rem] font-bold uppercase tracking-[0.16em]"
+              style={{ borderColor: "rgba(201,165,90,0.25)", background: "rgba(201,165,90,0.08)", color: GOLD }}>
+              Pourquoi DJAMA ?
+            </div>
+            <h2 className="text-[2rem] font-black leading-tight text-white sm:text-[2.5rem]">
+              DJAMA <span className="text-white/30">vs</span> les autres
+            </h2>
+            <p className="mx-auto mt-3 max-w-xs text-[0.85rem] text-white/35">
+              Comparé aux logiciels classiques utilisés par les entrepreneurs
+            </p>
+          </motion.div>
 
-            {/* Mockup droite — Pipeline CRM Kanban */}
-            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }}
-              viewport={viewport} transition={{ duration: 0.55, ease, delay: 0.1 }}
-              className="overflow-hidden rounded-2xl border border-gray-100 bg-[#f8f9fb] shadow-lg">
-              <AnimatedKanban />
-            </motion.div>
+          {/* Tableau comparatif */}
+          <div className="overflow-hidden rounded-2xl border border-white/[0.08]">
+            {/* En-tête colonnes */}
+            <div className="grid grid-cols-[1fr_88px_88px] border-b border-white/[0.08] bg-white/[0.03] px-5 py-3">
+              <span className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Fonctionnalité</span>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[0.72rem] font-black" style={{ color: GOLD }}>DJAMA</span>
+                <span className="text-[0.48rem] font-bold uppercase tracking-wider text-white/20">11,90€/mois</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[0.68rem] font-bold text-white/30">Les autres</span>
+                <span className="text-[0.48rem] font-bold uppercase tracking-wider text-white/15">50–200€/mois</span>
+              </div>
+            </div>
+
+            {[
+              "IA intégrée nativement",
+              "Tout-en-un (CRM + Compta + IA)",
+              "Opérations en moins de 5 secondes",
+              "Sans installation ni formation",
+              "Support WhatsApp direct",
+              "Conçu pour entrepreneurs FR",
+            ].map((feature, i) => (
+              <motion.div key={i}
+                initial={{ opacity: 0, x: -14 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={viewport}
+                transition={{ duration: 0.38, ease, delay: i * 0.08 }}
+                className="grid grid-cols-[1fr_88px_88px] border-b border-white/[0.05] px-5 py-4 transition-colors last:border-0 hover:bg-white/[0.02]">
+                <span className="flex items-center text-[0.82rem] text-white/60">{feature}</span>
+                <div className="flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={viewport}
+                    transition={{ duration: 0.28, delay: i * 0.08 + 0.18, type: "spring", stiffness: 420, damping: 18 }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full"
+                    style={{ background: `rgba(${GOLDR},0.14)`, border: `1px solid rgba(${GOLDR},0.35)` }}>
+                    <Check size={11} style={{ color: GOLD }} strokeWidth={3} />
+                  </motion.div>
+                </div>
+                <div className="flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={viewport}
+                    transition={{ duration: 0.28, delay: i * 0.08 + 0.28, type: "spring", stiffness: 420, damping: 18 }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full"
+                    style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                    <X size={11} className="text-red-400/70" strokeWidth={2.5} />
+                  </motion.div>
+                </div>
+              </motion.div>
+            ))}
           </div>
+
+          {/* CTA */}
+          <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.45, ease, delay: 0.65 }}
+            className="mt-8 flex flex-col items-center gap-3">
+            <Link href="/espace-client"
+              className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-[0.88rem] font-black text-[#100800] transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
+              style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
+              <Gem size={13} /> Essayer DJAMA — 11,90€/mois <ArrowRight size={12} />
+            </Link>
+            <p className="text-center text-[0.68rem] text-white/20">
+              Sans engagement · Accès immédiat
+            </p>
+          </motion.div>
         </div>
       </section>
 
