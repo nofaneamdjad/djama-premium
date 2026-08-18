@@ -612,6 +612,130 @@ function HomeContent() {
             ))}
           </motion.div>
         </motion.div>
+
+        {/* ── Mockup dashboard DJAMA — style Odoo hero screenshot ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease, delay: 0.35 }}
+          className="relative mx-auto mt-14 w-full max-w-4xl px-4 pb-6 sm:px-6"
+        >
+          {/* Cadre navigateur */}
+          <div className="overflow-hidden rounded-2xl shadow-2xl" style={{ border: "1px solid rgba(0,0,0,0.08)" }}>
+            {/* Barre du navigateur */}
+            <div className="flex items-center gap-2 bg-[#1a1d2e] px-4 py-2.5">
+              <div className="flex gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+              </div>
+              <div className="ml-3 flex flex-1 items-center gap-2 rounded-md bg-white/10 px-3 py-1">
+                <div className="h-1.5 w-1.5 rounded-full bg-green-400" />
+                <span className="text-[0.62rem] text-white/50">app.djama.space/dashboard</span>
+              </div>
+            </div>
+
+            {/* App shell */}
+            <div className="flex bg-[#f4f5f7]" style={{ minHeight: "340px" }}>
+
+              {/* Sidebar */}
+              <div className="hidden w-14 flex-col items-center gap-4 bg-[#0e1420] py-4 sm:flex">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: `rgba(${GOLDR},0.20)` }}>
+                  <span className="text-[0.6rem] font-black" style={{ color: GOLD }}>D</span>
+                </div>
+                {[Receipt, Users2, CalendarRange, BarChart2, Brain].map((Icon, i) => (
+                  <div key={i} className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${i === 0 ? "bg-white/10" : "opacity-40 hover:opacity-70"}`}>
+                    <Icon size={14} className="text-white" strokeWidth={1.6} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Contenu principal */}
+              <div className="flex-1 p-4 sm:p-5">
+                {/* Header */}
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[0.6rem] font-bold uppercase tracking-widest text-gray-400">Tableau de bord</p>
+                    <p className="text-[0.85rem] font-black text-gray-900">Bonjour, bienvenue 👋</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.62rem] font-black text-white"
+                    style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
+                    <Sparkles size={9} /> Nouveau
+                  </div>
+                </div>
+
+                {/* Stats cards */}
+                <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  {[
+                    { label: "CA ce mois", value: "4 820 €", icon: Wallet,       color: GOLD,      bg: `rgba(${GOLDR},.10)` },
+                    { label: "Clients actifs", value: "23",      icon: Users2,       color: "#60a5fa", bg: "rgba(96,165,250,.10)" },
+                    { label: "Factures émises", value: "12",    icon: Receipt,      color: "#4ade80", bg: "rgba(74,222,128,.10)" },
+                    { label: "Tâches IA",      value: "8",      icon: Brain,        color: "#a78bfa", bg: "rgba(167,139,250,.10)" },
+                  ].map(({ label, value, icon: Icon, color, bg }) => (
+                    <div key={label} className="rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.04)" }}>
+                      <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: bg }}>
+                        <Icon size={13} style={{ color }} strokeWidth={1.8} />
+                      </div>
+                      <p className="text-[0.65rem] text-gray-400">{label}</p>
+                      <p className="text-[0.95rem] font-extrabold text-gray-900">{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Contenu bas : liste + IA */}
+                <div className="grid gap-2.5 sm:grid-cols-[1fr_220px]">
+                  {/* Factures récentes */}
+                  <div className="rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.04)" }}>
+                    <p className="mb-2.5 text-[0.62rem] font-bold uppercase tracking-widest text-gray-400">Factures récentes</p>
+                    {[
+                      { client: "JUMUKA SAS",     amount: "1 200 €", status: "Payée",    dot: "#4ade80" },
+                      { client: "MyPhone974",      amount: "340 €",   status: "En attente", dot: GOLD },
+                      { client: "Extenso Mayotte", amount: "890 €",   status: "Payée",    dot: "#4ade80" },
+                    ].map(({ client, amount, status, dot }) => (
+                      <div key={client} className="flex items-center justify-between border-b border-gray-50 py-1.5 last:border-0">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-1.5 rounded-full" style={{ background: dot }} />
+                          <span className="text-[0.7rem] font-medium text-gray-700">{client}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[0.62rem] text-gray-400">{status}</span>
+                          <span className="text-[0.7rem] font-bold text-gray-900">{amount}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Assistant IA mini */}
+                  <div className="hidden rounded-xl bg-white p-3 shadow-sm sm:block" style={{ border: "1px solid rgba(0,0,0,0.04)" }}>
+                    <div className="mb-2 flex items-center gap-1.5">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-lg" style={{ background: `rgba(${GOLDR},0.12)` }}>
+                        <Brain size={10} style={{ color: GOLD }} />
+                      </div>
+                      <p className="text-[0.62rem] font-bold uppercase tracking-widest text-gray-400">Assistant IA</p>
+                      <div className="ml-auto h-1.5 w-1.5 rounded-full bg-green-400" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="rounded-lg bg-gray-100 px-2 py-1.5">
+                        <p className="text-[0.62rem] leading-relaxed text-gray-600">Rédige une relance pour MyPhone974</p>
+                      </div>
+                      <div className="rounded-lg px-2 py-1.5" style={{ background: `rgba(${GOLDR},0.08)` }}>
+                        <p className="text-[0.62rem] leading-relaxed" style={{ color: "#7a5c1e" }}>Bonjour, votre facture #0042 de 340 € arrive à échéance sous 3 jours…</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1 rounded-lg border border-gray-100 bg-gray-50 px-2 py-1.5">
+                      <span className="flex-1 text-[0.6rem] text-gray-400">Posez une question…</span>
+                      <Zap size={9} style={{ color: GOLD }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Ombre portée douce */}
+          <div aria-hidden className="pointer-events-none absolute inset-x-4 bottom-0 h-10 blur-xl"
+            style={{ background: `rgba(${GOLDR},0.15)`, borderRadius: "0 0 16px 16px" }} />
+        </motion.div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
