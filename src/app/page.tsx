@@ -506,71 +506,58 @@ function HomeContent() {
             style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.10) 0%, transparent 70%)` }} />
         </div>
 
-        <motion.div initial="hidden" animate="visible" variants={staggerContainer}
-          className="relative z-10 mx-auto max-w-2xl text-center">
-
-          {/* Badge abonnés */}
-          <motion.div variants={fadeIn}
-            className="mb-7 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.65rem] font-black uppercase tracking-[0.20em]"
-            style={{ borderColor: `rgba(${GOLDR},0.30)`, background: `rgba(${GOLDR},0.08)`, color: GOLD }}>
-            <Gem size={10} />
-            {lang === "ar" ? "+1200 مشترك · منصة احترافية" : lang === "en" ? "1200+ subscribers · Pro platform" : "1200+ abonnés · Plateforme pro"}
-          </motion.div>
-
-          {/* Headline Caveat — Odoo style */}
-          <motion.h1 variants={fadeIn}
-            className="text-[3.2rem] leading-[1.12] text-gray-900 sm:text-[5rem]"
-            style={{ fontFamily: lang === "ar" ? "inherit" : "'Caveat', cursive", fontWeight: 800 }}>
-            {lang === "ar" ? (
-              <>
-                كل أعمالك على{" "}
-                <span style={{ background: "linear-gradient(180deg,transparent 58%,rgba(201,165,90,0.38) 58%)", padding: "0 6px" }}>
-                  منصة واحدة.
-                </span>
-                <br />
-                <span style={{ color: GOLD }}>48 أداة</span> — <span style={{ color: GOLD }}>11,90€/شهر</span> فقط !
-              </>
-            ) : lang === "en" ? (
-              <>
-                Your entire business on{" "}
-                <span style={{ background: "linear-gradient(180deg,transparent 58%,rgba(201,165,90,0.38) 58%)", padding: "0 6px" }}>
-                  one platform.
-                </span>
-                <br />
-                <span style={{ color: GOLD }}>48 tools</span> — <span style={{ color: GOLD }}>11.90€/month</span> only!
-              </>
-            ) : (
-              <>
-                Tout votre business sur{" "}
-                <span style={{ background: "linear-gradient(180deg,transparent 58%,rgba(201,165,90,0.38) 58%)", padding: "0 6px" }}>
-                  une plateforme.
-                </span>
-                <br />
-                <span style={{ color: GOLD }}>48 outils pro</span> —{" "}
-                <span style={{
-                  color: GOLD,
-                  textDecoration: "underline",
-                  textDecorationColor: `rgba(${GOLDR},0.45)`,
-                  textUnderlineOffset: "6px",
-                  textDecorationThickness: "3px",
-                }}>
-                  11,90€/mois
-                </span>{" "}seulement !
-              </>
-            )}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease }}
+          className="relative z-10 mx-auto max-w-3xl px-4 text-center"
+        >
+          {/* H1 — surligneur ÉPAIS style Odoo exact */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease, delay: 0.05 }}
+            className="text-[3.6rem] leading-[1.12] text-gray-900 sm:text-[5.8rem]"
+            style={{ fontFamily: lang === "ar" ? "inherit" : "'Caveat', cursive", fontWeight: 800 }}
+          >
+            {lang === "ar" ? "كل أعمالك على " : lang === "en" ? "Your entire business on " : "Tout votre business sur "}
+            <span
+              className="inline-block"
+              style={{
+                background: `rgba(${GOLDR}, 0.88)`,
+                borderRadius: "5px",
+                padding: "2px 10px",
+                color: "#1a0800",
+              }}
+            >
+              {lang === "ar" ? "منصة واحدة." : lang === "en" ? "one platform." : "une seule plateforme."}
+            </span>
           </motion.h1>
 
-          {/* Sous-titre */}
-          <motion.p variants={fadeIn} className="mt-5 text-[1rem] leading-relaxed text-gray-500">
-            {lang === "ar"
-              ? "48 أداة احترافية · وكالة رقمية · ذكاء اصطناعي · بدون التزام"
-              : lang === "en"
-              ? "48 pro tools · Digital agency · AI · No commitment"
-              : "48 outils pro · Agence digitale · IA intégrée · Sans engagement"}
-          </motion.p>
+          {/* Sous-titre — "Simple, efficace, et abordable !" avec trait brushstroke bleu */}
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease, delay: 0.15 }}
+            className="mt-4 text-[2rem] leading-[1.15] text-gray-600 sm:text-[2.9rem]"
+            style={{ fontFamily: lang === "ar" ? "inherit" : "'Caveat', cursive", fontWeight: 600 }}
+          >
+            {lang === "ar" ? (
+              <>بسيط، فعّال، و<span className="relative inline-block">بأسعار معقولة !<svg aria-hidden viewBox="0 0 220 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C40 1, 90 9, 140 5 C185 2, 210 8, 218 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
+            ) : lang === "en" ? (
+              <>Simple, powerful, and{" "}<span className="relative inline-block">affordable !<svg aria-hidden viewBox="0 0 180 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C30 1, 70 9, 110 5 C148 2, 170 8, 178 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
+            ) : (
+              <>Simple, efficace, et{" "}<span className="relative inline-block">abordable !<svg aria-hidden viewBox="0 0 180 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C30 1, 70 9, 110 5 C148 2, 170 8, 178 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
+            )}
+          </motion.h2>
 
-          {/* CTAs — Odoo : bouton plein + bouton outline */}
-          <motion.div variants={fadeIn} className="mt-9 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          {/* CTAs — bouton doré plein + bouton gris léger */}
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease, delay: 0.25 }}
+            className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+          >
             <motion.div className="relative" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
               <motion.div
                 animate={{ scale: [1, 1.18, 1], opacity: [0.40, 0, 0.40] }}
@@ -579,162 +566,33 @@ function HomeContent() {
                 style={{ background: `linear-gradient(135deg, ${GOLD}, #d4aa6a)`, filter: "blur(14px)" }}
               />
               <Link href="/espace-client"
-                className="relative flex items-center justify-center gap-2 overflow-hidden rounded-2xl px-8 py-4 text-[1rem] font-black text-[#100800]"
+                className="relative flex items-center justify-center gap-2 overflow-hidden rounded-2xl px-9 py-4 text-[1rem] font-black text-[#100800]"
                 style={{ background: `linear-gradient(135deg,${GOLD} 0%,#e2ba70 45%,#b08d45 100%)`, boxShadow: `0 8px 30px rgba(${GOLDR},0.45)` }}>
                 <motion.div animate={{ x: ["-100%","220%"] }} transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2.8, ease: "easeInOut" }}
                   className="pointer-events-none absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                 <Gem size={15} className="relative z-10 shrink-0" />
                 <span className="relative z-10">
-                  {lang === "ar" ? "ابدأ DJAMA Pro — 11,90€/شهر" : lang === "en" ? "Start DJAMA Pro — 11.90€/mo" : "Lancez-vous — 11,90€/mois"}
+                  {lang === "ar" ? "ابدأ الآن — مجانًا" : lang === "en" ? "Start now — It's free" : "Commence maintenant — C'est gratuit"}
                 </span>
                 <ArrowRight size={14} className="relative z-10 shrink-0" />
               </Link>
             </motion.div>
             <Link href="/contact"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-8 py-4 text-[1rem] font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-100 active:scale-[.98]">
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-9 py-4 text-[1rem] font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-100 active:scale-[.98]">
               {lang === "ar" ? "تواصل مع مستشار →" : lang === "en" ? "Talk to an advisor →" : "Rencontrer un conseiller →"}
             </Link>
           </motion.div>
 
-          {/* 4 stats — style sobre sur fond blanc */}
-          <motion.div variants={fadeIn}
-            className="mt-12 grid grid-cols-2 gap-4 border-t border-gray-100 pt-10 sm:grid-cols-4">
-            {HERO_STATS.map(({ value, label, Icon }) => (
-              <div key={label} className="flex flex-col items-center gap-1.5">
-                <Icon size={18} style={{ color: GOLD }} strokeWidth={1.8} />
-                <span className="text-[1.6rem] font-extrabold leading-none text-gray-900">
-                  <SmartStat value={value} />
-                </span>
-                <span className="text-center text-[0.65rem] leading-snug text-gray-400" style={{ whiteSpace: "pre-line" }}>
-                  {label}
-                </span>
-              </div>
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* ── Mockup dashboard DJAMA — style Odoo hero screenshot ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease, delay: 0.35 }}
-          className="relative mx-auto mt-14 w-full max-w-4xl px-4 pb-6 sm:px-6"
-        >
-          {/* Cadre navigateur */}
-          <div className="overflow-hidden rounded-2xl shadow-2xl" style={{ border: "1px solid rgba(0,0,0,0.08)" }}>
-            {/* Barre du navigateur */}
-            <div className="flex items-center gap-2 bg-[#1a1d2e] px-4 py-2.5">
-              <div className="flex gap-1.5">
-                <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-              </div>
-              <div className="ml-3 flex flex-1 items-center gap-2 rounded-md bg-white/10 px-3 py-1">
-                <div className="h-1.5 w-1.5 rounded-full bg-green-400" />
-                <span className="text-[0.62rem] text-white/50">app.djama.space/dashboard</span>
-              </div>
-            </div>
-
-            {/* App shell */}
-            <div className="flex bg-[#f4f5f7]" style={{ minHeight: "340px" }}>
-
-              {/* Sidebar */}
-              <div className="hidden w-14 flex-col items-center gap-4 bg-[#0e1420] py-4 sm:flex">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: `rgba(${GOLDR},0.20)` }}>
-                  <span className="text-[0.6rem] font-black" style={{ color: GOLD }}>D</span>
-                </div>
-                {[Receipt, Users2, CalendarRange, BarChart2, Brain].map((Icon, i) => (
-                  <div key={i} className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${i === 0 ? "bg-white/10" : "opacity-40 hover:opacity-70"}`}>
-                    <Icon size={14} className="text-white" strokeWidth={1.6} />
-                  </div>
-                ))}
-              </div>
-
-              {/* Contenu principal */}
-              <div className="flex-1 p-4 sm:p-5">
-                {/* Header */}
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-[0.6rem] font-bold uppercase tracking-widest text-gray-400">Tableau de bord</p>
-                    <p className="text-[0.85rem] font-black text-gray-900">Bonjour, bienvenue 👋</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.62rem] font-black text-white"
-                    style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
-                    <Sparkles size={9} /> Nouveau
-                  </div>
-                </div>
-
-                {/* Stats cards */}
-                <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                  {[
-                    { label: "CA ce mois", value: "4 820 €", icon: Wallet,       color: GOLD,      bg: `rgba(${GOLDR},.10)` },
-                    { label: "Clients actifs", value: "23",      icon: Users2,       color: "#60a5fa", bg: "rgba(96,165,250,.10)" },
-                    { label: "Factures émises", value: "12",    icon: Receipt,      color: "#4ade80", bg: "rgba(74,222,128,.10)" },
-                    { label: "Tâches IA",      value: "8",      icon: Brain,        color: "#a78bfa", bg: "rgba(167,139,250,.10)" },
-                  ].map(({ label, value, icon: Icon, color, bg }) => (
-                    <div key={label} className="rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.04)" }}>
-                      <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: bg }}>
-                        <Icon size={13} style={{ color }} strokeWidth={1.8} />
-                      </div>
-                      <p className="text-[0.65rem] text-gray-400">{label}</p>
-                      <p className="text-[0.95rem] font-extrabold text-gray-900">{value}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Contenu bas : liste + IA */}
-                <div className="grid gap-2.5 sm:grid-cols-[1fr_220px]">
-                  {/* Factures récentes */}
-                  <div className="rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.04)" }}>
-                    <p className="mb-2.5 text-[0.62rem] font-bold uppercase tracking-widest text-gray-400">Factures récentes</p>
-                    {[
-                      { client: "JUMUKA SAS",     amount: "1 200 €", status: "Payée",    dot: "#4ade80" },
-                      { client: "MyPhone974",      amount: "340 €",   status: "En attente", dot: GOLD },
-                      { client: "Extenso Mayotte", amount: "890 €",   status: "Payée",    dot: "#4ade80" },
-                    ].map(({ client, amount, status, dot }) => (
-                      <div key={client} className="flex items-center justify-between border-b border-gray-50 py-1.5 last:border-0">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full" style={{ background: dot }} />
-                          <span className="text-[0.7rem] font-medium text-gray-700">{client}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[0.62rem] text-gray-400">{status}</span>
-                          <span className="text-[0.7rem] font-bold text-gray-900">{amount}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Assistant IA mini */}
-                  <div className="hidden rounded-xl bg-white p-3 shadow-sm sm:block" style={{ border: "1px solid rgba(0,0,0,0.04)" }}>
-                    <div className="mb-2 flex items-center gap-1.5">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-lg" style={{ background: `rgba(${GOLDR},0.12)` }}>
-                        <Brain size={10} style={{ color: GOLD }} />
-                      </div>
-                      <p className="text-[0.62rem] font-bold uppercase tracking-widest text-gray-400">Assistant IA</p>
-                      <div className="ml-auto h-1.5 w-1.5 rounded-full bg-green-400" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="rounded-lg bg-gray-100 px-2 py-1.5">
-                        <p className="text-[0.62rem] leading-relaxed text-gray-600">Rédige une relance pour MyPhone974</p>
-                      </div>
-                      <div className="rounded-lg px-2 py-1.5" style={{ background: `rgba(${GOLDR},0.08)` }}>
-                        <p className="text-[0.62rem] leading-relaxed" style={{ color: "#7a5c1e" }}>Bonjour, votre facture #0042 de 340 € arrive à échéance sous 3 jours…</p>
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-center gap-1 rounded-lg border border-gray-100 bg-gray-50 px-2 py-1.5">
-                      <span className="flex-1 text-[0.6rem] text-gray-400">Posez une question…</span>
-                      <Zap size={9} style={{ color: GOLD }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Ombre portée douce */}
-          <div aria-hidden className="pointer-events-none absolute inset-x-4 bottom-0 h-10 blur-xl"
-            style={{ background: `rgba(${GOLDR},0.15)`, borderRadius: "0 0 16px 16px" }} />
+          {/* Annotation prix manuscrite — style Odoo */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-5 text-[1.05rem] text-gray-400"
+            style={{ fontFamily: "'Caveat', cursive" }}
+          >
+            {lang === "ar" ? "↗ 11,90€ شهريًا لجميع الأدوات الـ 48" : lang === "en" ? "↗ 11.90€/month for ALL 48 tools" : "↗ 11,90€/mois pour TOUS les 48 outils"}
+          </motion.p>
         </motion.div>
       </section>
 
