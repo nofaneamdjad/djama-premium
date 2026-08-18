@@ -476,8 +476,8 @@ function CoachingPayButton() {
   }
   return (
     <button onClick={pay} disabled={loading}
-      className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#a78bfa] disabled:opacity-60">
-      {loading ? <Gem size={11} className="animate-spin text-[#a78bfa]" /> : null}
+      className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#c9a55a] disabled:opacity-60">
+      {loading ? <Gem size={11} className="animate-spin" style={{ color: GOLD }} /> : null}
       {loading ? "…" : <><ArrowRight size={11} /> Acheter</>}
     </button>
   );
@@ -817,7 +817,7 @@ function HomeContent() {
                 ))}
                 <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
                   <span className="flex-1 text-[0.7rem] text-gray-400">Demandez quelque chose…</span>
-                  <Zap size={12} className="text-purple-500" />
+                  <Zap size={12} style={{ color: GOLD }} />
                 </div>
               </div>
             </motion.div>
@@ -859,7 +859,7 @@ function HomeContent() {
       {/* ══════════════════════════════════════════════════════
            DIFFÉRENCIATEURS — style Odoo "conçu pour faire la différence"
       ══════════════════════════════════════════════════════ */}
-      <section className="bg-[#f4f5f7] py-16 sm:py-20">
+      <section className="bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-4xl px-6">
 
           <motion.h2 initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
@@ -905,7 +905,7 @@ function HomeContent() {
       {/* ══════════════════════════════════════════════════════
            COACHING IA — style Odoo : blanc, Caveat, animations
       ══════════════════════════════════════════════════════ */}
-      <section className="overflow-hidden bg-[#f7f8fa] py-16 sm:py-24">
+      <section className="overflow-hidden bg-[#f4f5f7] py-16 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
 
           {/* Badge */}
@@ -913,7 +913,7 @@ function HomeContent() {
             viewport={viewport} transition={{ duration: 0.5, ease }}
             className="mb-6 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.65rem] font-black uppercase tracking-[0.20em]"
-              style={{ borderColor: "rgba(167,139,250,0.35)", background: "rgba(167,139,250,0.08)", color: "#a78bfa" }}>
+              style={{ borderColor: `rgba(${GOLDR},0.35)`, background: `rgba(${GOLDR},0.08)`, color: GOLD }}>
               <Brain size={10} /> Coaching IA DJAMA
             </span>
           </motion.div>
@@ -925,7 +925,7 @@ function HomeContent() {
             <h2 className="text-[2.8rem] leading-[1.1] text-gray-900 sm:text-[4rem]"
               style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
               Maîtrisez l&apos;IA,{" "}
-              <span style={{ background: "linear-gradient(180deg,transparent 58%,rgba(167,139,250,0.40) 58%)", padding: "0 6px" }}>
+              <span style={{ background: `linear-gradient(180deg,transparent 58%,rgba(${GOLDR},0.38) 58%)`, padding: "0 6px" }}>
                 transformez
               </span>{" "}
               votre activité.
@@ -969,13 +969,13 @@ function HomeContent() {
 
             {/* Gauche — offre Pro */}
             <div className="flex flex-col justify-center gap-5 p-8 sm:border-r sm:border-gray-100">
-              <div className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.62rem] font-black uppercase tracking-wider text-white"
-                style={{ background: "linear-gradient(135deg,#a78bfa,#7c5cbf)" }}>
+              <div className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.62rem] font-black uppercase tracking-wider text-[#100800]"
+                style={{ background: `linear-gradient(135deg,${GOLD},#e2ba70)` }}>
                 <Sparkles size={9} /> Abonnés DJAMA Pro
               </div>
               <div>
                 <div className="flex items-end gap-2">
-                  <span className="text-[3rem] font-black leading-none" style={{ color: "#a78bfa" }}>GRATUIT</span>
+                  <span className="text-[3rem] font-black leading-none" style={{ color: GOLD }}>GRATUIT</span>
                   <span className="mb-1.5 text-[0.8rem] text-gray-400 line-through">190€</span>
                 </div>
                 <p className="mt-2 text-[0.88rem] text-gray-500">
@@ -985,7 +985,7 @@ function HomeContent() {
               </div>
               <ul className="space-y-2.5">
                 {([
-                  { color: "#a78bfa", text: "20 cours vidéo + quiz interactifs" },
+                  { color: GOLD,      text: "20 cours vidéo + quiz interactifs" },
                   { color: "#60a5fa", text: "Jeux IA & mises en situation réelles" },
                   { color: "#4ade80", text: "Accès 3 mois · Certificat de complétion" },
                 ] as const).map(({ color, text }) => (
@@ -1002,8 +1002,8 @@ function HomeContent() {
               </div>
               <motion.div className="relative" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
                 <Link href="/espace-client"
-                  className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-[0.95rem] font-black text-white transition hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg,#a78bfa,#7c5cbf)", boxShadow: "0 8px 24px rgba(167,139,250,0.40)" }}>
+                  className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-[0.95rem] font-black text-[#100800] transition hover:opacity-90"
+                  style={{ background: `linear-gradient(135deg,${GOLD} 0%,#e2ba70 45%,#b08d45 100%)`, boxShadow: `0 8px 24px rgba(${GOLDR},0.40)` }}>
                   S&apos;abonner — Formation offerte <ArrowRight size={14} />
                 </Link>
               </motion.div>
@@ -1020,10 +1020,8 @@ function HomeContent() {
               <p className="text-[0.85rem] text-gray-500">Paiement unique · Accès 3 mois complet</p>
               <CoachingPayButton />
               <Link href="/services/coaching-ia"
-                className="inline-flex items-center gap-1.5 text-[0.8rem] font-bold transition-colors"
-                style={{ color: "#a78bfa" }}
-                onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = "#7c5cbf"}
-                onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = "#a78bfa"}>
+                className="inline-flex items-center gap-1.5 text-[0.8rem] font-bold transition-opacity hover:opacity-70"
+                style={{ color: GOLD }}>
                 Voir le programme complet <ArrowRight size={13} />
               </Link>
             </div>
@@ -1032,7 +1030,7 @@ function HomeContent() {
       </section>
 
       {/* ── Tarifs — Découverte / Pro ───────────────────────── */}
-      <section className="bg-[#f5f5f8] py-12 sm:py-16">
+      <section className="bg-white py-12 sm:py-16">
         <motion.div
           initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={viewport} transition={{ duration: 0.55, ease }}
@@ -1040,7 +1038,8 @@ function HomeContent() {
         >
           {/* Header */}
           <div className="mb-8 text-center">
-            <span className="mb-3 inline-block rounded-full border border-[rgba(61,43,109,0.18)] bg-[rgba(61,43,109,0.07)] px-4 py-1.5 text-[0.62rem] font-bold uppercase tracking-widest text-[#3d2b6d]">
+            <span className="mb-3 inline-block rounded-full border px-4 py-1.5 text-[0.62rem] font-bold uppercase tracking-widest"
+              style={{ borderColor: `rgba(${GOLDR},0.30)`, background: `rgba(${GOLDR},0.08)`, color: GOLD }}>
               Tarifs
             </span>
             <h2 className="mt-2 text-[1.8rem] font-black text-gray-900">Simple et transparent</h2>
@@ -1060,7 +1059,7 @@ function HomeContent() {
                 onClick={() => setParAn(!parAn)}
                 aria-label="Basculer facturation annuelle / mensuelle"
                 className="relative h-6 w-11 rounded-full transition-colors duration-300"
-                style={{ background: parAn ? "#3d2b6d" : "#d1d5db" }}
+                style={{ background: parAn ? GOLD : "#d1d5db" }}
               >
                 <span
                   className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300"
@@ -1099,7 +1098,7 @@ function HomeContent() {
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block w-full rounded-xl border border-gray-300 bg-white py-3 text-center text-sm font-bold text-gray-700 transition hover:border-[#3d2b6d] hover:text-[#3d2b6d]">
+              <Link href="/register" className="block w-full rounded-xl border border-gray-300 bg-white py-3 text-center text-sm font-bold text-gray-700 transition hover:border-[#c9a55a] hover:text-[#c9a55a]">
                 Commencer gratuitement
               </Link>
             </motion.div>
@@ -1109,28 +1108,27 @@ function HomeContent() {
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={viewport} transition={{ duration: 0.45, ease, delay: 0.1 }}
               className="relative flex flex-col rounded-2xl p-7 sm:p-9"
-              style={{ background: "linear-gradient(150deg,#3d2b6d 0%,#2a1d4e 100%)", boxShadow: "0 24px 64px rgba(61,43,109,0.38),0 6px 18px rgba(61,43,109,0.2)" }}
+              style={{ background: `linear-gradient(150deg,${GOLD} 0%,#e2ba70 50%,#b08d45 100%)`, boxShadow: `0 24px 64px rgba(${GOLDR},0.38),0 6px 18px rgba(${GOLDR},0.20)` }}
             >
-              <div className="absolute -top-[16px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-5 py-[6px] text-[0.58rem] font-black uppercase tracking-widest text-white shadow-lg"
-                style={{ background: "linear-gradient(135deg,#c9a55a 0%,#b08d45 100%)" }}>
+              <div className="absolute -top-[16px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-900 px-5 py-[6px] text-[0.58rem] font-black uppercase tracking-widest text-white shadow-lg">
                 ★ Recommandé
               </div>
-              <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-widest text-white/40">Pro</p>
-              <h3 className="mb-4 text-[1.4rem] font-black text-white">Professionnel</h3>
+              <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-widest text-[#100800]/50">Pro</p>
+              <h3 className="mb-4 text-[1.4rem] font-black text-[#100800]">Professionnel</h3>
               <div className="mb-1 flex items-baseline gap-1">
-                <span className="text-[2.6rem] font-black leading-none text-white">{parAn ? "9,90 €" : "11,90 €"}</span>
-                <span className="text-sm text-white/45">/mois</span>
+                <span className="text-[2.6rem] font-black leading-none text-[#100800]">{parAn ? "9,90 €" : "11,90 €"}</span>
+                <span className="text-sm text-[#100800]/50">/mois</span>
               </div>
               {parAn ? (
-                <p className="mb-6 mt-1 text-xs text-white/40"><span className="line-through">11,90 €/mois</span> · Facturé 118,80 €/an</p>
+                <p className="mb-6 mt-1 text-xs text-[#100800]/50"><span className="line-through">11,90 €/mois</span> · Facturé 118,80 €/an</p>
               ) : (
-                <p className="mb-6 mt-1 text-xs text-white/40">Facturation mensuelle · Résiliable à tout moment</p>
+                <p className="mb-6 mt-1 text-xs text-[#100800]/50">Facturation mensuelle · Résiliable à tout moment</p>
               )}
               <ul className="mb-7 flex-1 space-y-3">
                 {["Tout le plan Gratuit", "48 outils professionnels", "IA Business & Coaching", "Création de comptes employés", "Gestion des rôles et permissions", "Support prioritaire"].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-[0.82rem] text-white/88">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(201,165,90,0.22)", border: "1px solid rgba(201,165,90,0.4)" }}>
-                      <Check size={11} style={{ color: GOLD }} strokeWidth={2.5} />
+                  <li key={f} className="flex items-center gap-2.5 text-[0.82rem] text-[#100800]/80">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/40">
+                      <Check size={11} className="text-[#100800]" strokeWidth={2.5} />
                     </span>
                     {f}
                   </li>
@@ -1146,8 +1144,8 @@ function HomeContent() {
                   <button key={id} onClick={() => setPayMode(id)}
                     className="flex-1 rounded-xl py-2 text-[0.7rem] font-bold transition-all"
                     style={payMode === id
-                      ? { background: `rgba(${GOLDR},0.22)`, color: GOLD, border: `1px solid rgba(${GOLDR},0.45)` }
-                      : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                      ? { background: "rgba(0,0,0,0.18)", color: "#100800", border: "1px solid rgba(0,0,0,0.25)" }
+                      : { background: "rgba(255,255,255,0.30)", color: "rgba(16,8,0,0.55)", border: "1px solid rgba(255,255,255,0.40)" }}>
                     {label}
                   </button>
                 ))}
@@ -1189,7 +1187,7 @@ function HomeContent() {
                         onChange={e => setVirEmail(e.target.value)}
                         placeholder="Votre email pro"
                         className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                        style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: "white" }}
+                        style={{ background: "rgba(255,255,255,0.40)", border: "1px solid rgba(0,0,0,0.12)", color: "#100800" }}
                       />
                       <button
                         onClick={async () => {
@@ -1211,7 +1209,7 @@ function HomeContent() {
                   )}
                 </div>
               )}
-              <p className="mt-3 text-center text-[0.6rem] text-white/30">✓ Sécurisé · ✓ Accès immédiat · ✓ Sans engagement</p>
+              <p className="mt-3 text-center text-[0.6rem] text-[#100800]/40">✓ Sécurisé · ✓ Accès immédiat · ✓ Sans engagement</p>
             </motion.div>
 
           </div>
@@ -1219,25 +1217,12 @@ function HomeContent() {
         </motion.div>
       </section>
 
-      {/* ── Final CTA — section pleine largeur ─────────────────── */}
-      <section
-        className="relative overflow-hidden px-5 py-20 sm:py-28"
-        style={{ background: "linear-gradient(160deg, #0b0f1a 0%, #0d1829 50%, #071525 100%)" }}
-      >
-        {/* Orbes de fond */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div
-            className="absolute -top-24 left-1/2 -translate-x-1/2 h-[460px] w-[680px] rounded-full blur-[120px]"
-            style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.13) 0%, transparent 70%)` }}
-          />
-          <div
-            className="absolute bottom-0 right-0 h-[320px] w-[320px] rounded-full blur-[100px]"
-            style={{ background: "radial-gradient(circle, rgba(99,102,241,0.10) 0%, transparent 70%)" }}
-          />
-          <div
-            className="absolute bottom-0 left-0 h-[260px] w-[260px] rounded-full blur-[90px]"
-            style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.07) 0%, transparent 70%)` }}
-          />
+      {/* ── Final CTA — style Odoo : fond blanc, titre Caveat, or ── */}
+      <section className="relative overflow-hidden bg-[#f4f5f7] px-5 py-20 sm:py-28">
+        {/* Halo doré léger */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
+          <div className="h-[300px] w-[600px] rounded-full blur-[120px]"
+            style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.12) 0%, transparent 70%)` }} />
         </div>
 
         <motion.div
@@ -1247,30 +1232,19 @@ function HomeContent() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 mx-auto max-w-2xl text-center"
         >
-          {/* Badge */}
-          <div
-            className="mb-7 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.22em]"
-            style={{ borderColor: `rgba(${GOLDR},0.30)`, background: `rgba(${GOLDR},0.09)`, color: GOLD }}
-          >
-            <Sparkles size={10} />
-            {lang === "ar" ? "جاهز للبدء؟" : lang === "en" ? "Ready to start?" : "Prêt à démarrer ?"}
-          </div>
-
-          {/* Titre principal */}
-          <h2 className="text-[2.5rem] font-extrabold leading-[1.06] tracking-tight text-white sm:text-[3.4rem]">
+          {/* Titre Caveat — style Odoo */}
+          <h2 className="text-[2.8rem] leading-[1.08] text-gray-900 sm:text-[3.8rem]"
+            style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
             {lang === "ar"
-              ? <>ابدأ مشروعك<br /><span style={{ color: GOLD }}>اليوم.</span></>
+              ? <>ابدأ مشروعك <span style={{ color: GOLD, textDecoration: "underline wavy", textUnderlineOffset: "6px", textDecorationColor: `rgba(${GOLDR},0.5)` }}>اليوم.</span></>
               : lang === "en"
-              ? <>Launch your project<br /><span style={{ color: GOLD }}>today.</span></>
-              : <>Lancez votre projet<br /><span style={{ color: GOLD }}>dès aujourd&apos;hui.</span></>
+              ? <>Launch your project <span style={{ color: GOLD, textDecoration: "underline wavy", textUnderlineOffset: "6px", textDecorationColor: `rgba(${GOLDR},0.5)` }}>today.</span></>
+              : <>Libérez votre <span style={{ background: `linear-gradient(180deg,transparent 58%,rgba(${GOLDR},0.38) 58%)`, padding: "0 4px" }}>potentiel</span> de croissance.</>
             }
           </h2>
 
           {/* Sous-titre */}
-          <p
-            className="mx-auto mt-5 max-w-md text-[0.95rem] leading-relaxed"
-            style={{ color: "rgba(255,255,255,0.48)" }}
-          >
+          <p className="mx-auto mt-5 max-w-md text-[0.95rem] leading-relaxed text-gray-500">
             {lang === "ar"
               ? "من الفكرة إلى الإطلاق — DJAMA يرافقك في كل خطوة بحلول تناسب ميزانيتك وأهدافك."
               : lang === "en"
@@ -1280,18 +1254,14 @@ function HomeContent() {
           </p>
 
           {/* Trust badges */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2.5">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             {(lang === "ar"
               ? ["بدون التزام", "رد خلال 24 ساعة", "مكالمة مجانية"]
               : lang === "en"
               ? ["No commitment", "Response within 24h", "Free call included"]
               : ["Sans engagement", "Réponse sous 24h", "Appel offert"]
             ).map((text) => (
-              <span
-                key={text}
-                className="flex items-center gap-1.5 text-[0.78rem] font-semibold"
-                style={{ color: "rgba(255,255,255,0.52)" }}
-              >
+              <span key={text} className="flex items-center gap-1.5 text-[0.78rem] font-semibold text-gray-500">
                 <CheckCircle2 size={12} style={{ color: "#4ade80" }} />
                 {text}
               </span>
@@ -1302,10 +1272,10 @@ function HomeContent() {
           <div className="mt-9 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
             <Link
               href="/contact"
-              className="flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-[1rem] font-bold text-[#071525] transition-all duration-200 hover:scale-[1.03] hover:brightness-105 active:scale-[.97]"
+              className="flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-[1rem] font-black text-[#100800] transition-all duration-200 hover:scale-[1.03] active:scale-[.97]"
               style={{
-                background: `linear-gradient(135deg,${GOLD} 0%,#e8cc94 50%,${GOLD} 100%)`,
-                boxShadow: `0 8px 36px rgba(${GOLDR},0.38)`,
+                background: `linear-gradient(135deg,${GOLD} 0%,#e2ba70 45%,#b08d45 100%)`,
+                boxShadow: `0 8px 30px rgba(${GOLDR},0.45)`,
               }}
             >
               {lang === "ar" ? "ابدأ مشروعي" : lang === "en" ? "Start my project" : "Démarrer un projet"}
@@ -1315,10 +1285,9 @@ function HomeContent() {
               href={`https://wa.me/${get("contact.whatsapp").replace(/[^0-9]/g, "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-[1rem] font-semibold text-white transition-all duration-200 hover:bg-white/[0.07] active:scale-[.97]"
-              style={{ borderColor: "rgba(255,255,255,0.16)" }}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-8 py-4 text-[1rem] font-semibold text-gray-700 transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 active:scale-[.97]"
             >
-              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden style={{ color: "#25d366" }}>
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
               </svg>
               WhatsApp
@@ -1331,34 +1300,17 @@ function HomeContent() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-14 grid grid-cols-3 gap-4 border-t pt-10"
-            style={{ borderColor: "rgba(255,255,255,0.08)" }}
+            className="mt-14 grid grid-cols-3 gap-4 border-t border-gray-200 pt-10"
           >
             {(lang === "ar"
-              ? [
-                  { value: "+50",   label: "عميلاً مرافَقاً" },
-                  { value: "24h",   label: "وقت الرد" },
-                  { value: "100%",  label: "رضا العملاء" },
-                ]
+              ? [{ value: "+50", label: "عميلاً مرافَقاً" }, { value: "24h", label: "وقت الرد" }, { value: "100%", label: "رضا العملاء" }]
               : lang === "en"
-              ? [
-                  { value: "50+",   label: "clients supported" },
-                  { value: "24h",   label: "response time" },
-                  { value: "100%",  label: "client satisfaction" },
-                ]
-              : [
-                  { value: "50+",   label: "clients accompagnés" },
-                  { value: "24h",   label: "délai de réponse" },
-                  { value: "100%",  label: "satisfaction client" },
-                ]
+              ? [{ value: "50+", label: "clients supported" }, { value: "24h", label: "response time" }, { value: "100%", label: "client satisfaction" }]
+              : [{ value: "50+", label: "clients accompagnés" }, { value: "24h", label: "délai de réponse" }, { value: "100%", label: "satisfaction client" }]
             ).map(({ value, label }) => (
               <div key={label} className="flex flex-col items-center gap-1.5">
-                <span className="text-[1.6rem] font-extrabold leading-none" style={{ color: GOLD }}>
-                  {value}
-                </span>
-                <span className="text-[0.65rem] leading-snug text-center" style={{ color: "rgba(255,255,255,0.35)" }}>
-                  {label}
-                </span>
+                <span className="text-[1.6rem] font-extrabold leading-none" style={{ color: GOLD }}>{value}</span>
+                <span className="text-center text-[0.65rem] leading-snug text-gray-400">{label}</span>
               </div>
             ))}
           </motion.div>
