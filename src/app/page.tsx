@@ -167,6 +167,18 @@ const ESPACE_TOOLS_20 = [
   "Blog IA", "Réputation", "Portail Client", "Paie & RH",
 ] as const;
 
+const RIVALS: Partial<Record<typeof ESPACE_TOOLS_20[number], string>> = {
+  "Factures & Devis": "QuickBooks",
+  "Agenda":           "Calendly",
+  "CRM Clients":      "HubSpot",
+  "Trésorerie":       "Sage",
+  "Contrats IA":      "DocuSign",
+  "Réseaux Sociaux":  "Hootsuite",
+  "Site Web IA":      "Wix",
+  "Blog IA":          "WordPress",
+  "Paie & RH":        "PayFit",
+};
+
 const PUBLIC_APP_ICONS = [
   /* 0 – Factures & devis */
   <svg key="p0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
@@ -603,36 +615,107 @@ function HomeContent() {
       <section id="outils" className="bg-[#f4f5f7] pb-16 pt-14">
         <div className="mx-auto max-w-5xl px-6">
 
-          {/* Grille 5 cols — cartes BLANCHES avec shadow (Odoo exact) */}
+          {/* Grille 5 cols — cartes BLANCHES + animation "Imagine sans DJAMA" intégrée */}
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.03 } } }}
-            className="grid grid-cols-4 gap-3 sm:grid-cols-5">
-            {ESPACE_TOOLS_20.map((title, i) => (
-              <motion.div key={title}
-                variants={{ hidden: { opacity: 0, scale: 0.88, y: 8 }, visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.3, ease } } }}>
-                <Link href="/espace-client" className="group block">
-                  <motion.div
-                    whileHover={{ scale: 1.06, y: -4, boxShadow: "0 12px 32px rgba(0,0,0,0.12)" }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ duration: 0.18 }}
-                    className="flex flex-col items-center gap-2.5 rounded-2xl bg-white px-2 py-4 shadow-sm">
-                    <div className="h-[68px] w-[68px] overflow-hidden rounded-[18px]">
-                      {PUBLIC_APP_ICONS[i]}
-                    </div>
-                    <p className="text-center text-[0.68rem] font-semibold leading-tight text-gray-500 group-hover:text-gray-800 transition-colors">
-                      {title}
-                    </p>
-                  </motion.div>
-                </Link>
-              </motion.div>
-            ))}
+            className="grid grid-cols-4 gap-3 sm:grid-cols-5 items-start">
+            {ESPACE_TOOLS_20.map((title, i) => {
+              const rival = RIVALS[title];
+              return (
+                <motion.div key={title}
+                  variants={{ hidden: { opacity: 0, scale: 0.88, y: 8 }, visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.3, ease } } }}
+                  className="flex flex-col items-center">
+                  <Link href="/espace-client" className="group block w-full">
+                    <motion.div
+                      animate={sansMode ? { opacity: rival ? 0.30 : 0.52, scale: 0.94 } : { opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.35 }}
+                      whileHover={sansMode ? {} : { scale: 1.06, y: -4, boxShadow: "0 12px 32px rgba(0,0,0,0.12)" }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex flex-col items-center gap-2.5 rounded-2xl bg-white px-2 py-4 shadow-sm">
+                      <div className="h-[68px] w-[68px] overflow-hidden rounded-[18px]">
+                        {PUBLIC_APP_ICONS[i]}
+                      </div>
+                      <p className="text-center text-[0.68rem] font-semibold leading-tight text-gray-500 group-hover:text-gray-800 transition-colors">
+                        {title}
+                      </p>
+                    </motion.div>
+                  </Link>
+
+                  {/* Zone concurrent — visible uniquement si sansMode + rival */}
+                  <AnimatePresence>
+                    {sansMode && rival && (
+                      <motion.div
+                        key={`rival-${i}`}
+                        className="flex flex-col items-center pt-1"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2, delay: i * 0.04 }}
+                      >
+                        <svg width="20" height="34" viewBox="0 0 20 34" overflow="visible">
+                          <motion.path d="M 10 0 C 10 11, 4 21, 10 30"
+                            stroke="#7c3aed" strokeWidth="2" fill="none" strokeLinecap="round"
+                            initial={{ pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ duration: 0.36, delay: i * 0.04, ease: "easeOut" }}
+                          />
+                          <motion.path d="M 6 26 L 10 34 L 14 26"
+                            stroke="#7c3aed" strokeWidth="2" fill="none"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.1, delay: i * 0.04 + 0.34 }}
+                          />
+                        </svg>
+                        <motion.span
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2, delay: i * 0.04 + 0.36 }}
+                          className="mt-0.5 text-center"
+                          style={{ fontFamily: "'Caveat', cursive", fontSize: "1.2rem", fontWeight: 700, color: "#7c3aed", lineHeight: 1.1 }}
+                        >
+                          {rival}
+                        </motion.span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
           </motion.div>
 
-          {/* "Voir tous les 48 outils →" — Odoo style */}
-          <div className="mt-8 text-right">
+          {/* Toggle "Imaginez sans DJAMA" + lien */}
+          <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              onClick={() => setSansMode(v => !v)}
+              className="flex items-center gap-3 rounded-full px-3 py-2 transition-colors hover:bg-gray-200/60"
+            >
+              <motion.div
+                animate={{ backgroundColor: sansMode ? "#7c3aed" : "#d1d5db" }}
+                transition={{ duration: 0.2 }}
+                className="relative h-6 w-11 flex-shrink-0 rounded-full"
+              >
+                <motion.div
+                  animate={{ x: sansMode ? 20 : 2 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  className="absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm"
+                />
+              </motion.div>
+              <span className="text-[0.9rem] font-semibold text-gray-700">Imaginez sans DJAMA</span>
+              <AnimatePresence>
+                {sansMode && (
+                  <motion.span key="shock"
+                    initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -12, 12, 0] }}
+                    exit={{ scale: 0 }} transition={{ duration: 0.3 }} className="text-lg">
+                    😱
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
             <Link href="/espace-client"
-              className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-colors hover:opacity-75"
+              className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-opacity hover:opacity-70"
               style={{ color: GOLD }}>
               Voir tous les 48 outils <ArrowRight size={14} />
             </Link>
@@ -670,127 +753,6 @@ function HomeContent() {
           </motion.div>
         </div>
 
-      </section>
-
-      {/* ══════════════════════════════════════════════════════
-           IMAGINE SANS DJAMA — toggle interactif style Odoo
-      ══════════════════════════════════════════════════════ */}
-      <section className="bg-[#f4f5f7] border-t border-gray-200/50 pb-16 pt-8">
-        <div className="mx-auto max-w-4xl px-6">
-
-          {/* 5 apps + compétiteurs animés */}
-          <div className="grid grid-cols-5 gap-3">
-            {([
-              { title: "Factures & Devis", idx: 0,  rival: "QuickBooks" },
-              { title: "CRM Clients",       idx: 4,  rival: "HubSpot" },
-              { title: "Agenda",            idx: 1,  rival: "Calendly" },
-              { title: "Réseaux Sociaux",   idx: 12, rival: "Hootsuite" },
-              { title: "Paie & RH",         idx: 19, rival: "PayFit" },
-            ] as const).map(({ title, idx, rival }, i) => (
-              <div key={title} className="flex flex-col items-center">
-                {/* App card */}
-                <motion.div
-                  animate={sansMode ? { opacity: 0.35, scale: 0.94 } : { opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.35 }}
-                  className="w-full flex flex-col items-center gap-2.5 rounded-2xl bg-white px-2 py-4 shadow-sm"
-                >
-                  <div className="h-[60px] w-[60px] overflow-hidden rounded-[16px]">
-                    {PUBLIC_APP_ICONS[idx]}
-                  </div>
-                  <p className="text-center text-[0.65rem] font-semibold leading-tight text-gray-500">{title}</p>
-                </motion.div>
-
-                {/* Flèche + nom concurrent — hauteur fixe pour éviter le saut layout */}
-                <div className="flex min-h-[88px] flex-col items-center justify-start pt-1">
-                  <AnimatePresence>
-                    {sansMode && (
-                      <motion.div
-                        key={`rival-${i}`}
-                        className="flex flex-col items-center"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.22, delay: i * 0.07 }}
-                      >
-                        {/* Flèche SVG — pathLength 0→1 */}
-                        <svg width="20" height="36" viewBox="0 0 20 36" overflow="visible">
-                          <motion.path
-                            d="M 10 0 C 10 12, 3 22, 10 32"
-                            stroke="#7c3aed"
-                            strokeWidth="2"
-                            fill="none"
-                            strokeLinecap="round"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 0.38, delay: i * 0.07, ease: "easeOut" }}
-                          />
-                          <motion.path
-                            d="M 6 28 L 10 36 L 14 28"
-                            stroke="#7c3aed"
-                            strokeWidth="2"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.12, delay: i * 0.07 + 0.36 }}
-                          />
-                        </svg>
-                        {/* Nom concurrent — Caveat cursive */}
-                        <motion.span
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 4 }}
-                          transition={{ duration: 0.22, delay: i * 0.07 + 0.38 }}
-                          className="mt-0.5 text-center"
-                          style={{ fontFamily: "'Caveat', cursive", fontSize: "1.3rem", fontWeight: 700, color: "#7c3aed", lineHeight: 1.1 }}
-                        >
-                          {rival}
-                        </motion.span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Toggle + lien */}
-          <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-            <button
-              onClick={() => setSansMode(v => !v)}
-              className="flex items-center gap-3 rounded-full px-4 py-2 transition-colors hover:bg-gray-200/60"
-            >
-              <motion.div
-                animate={{ backgroundColor: sansMode ? "#7c3aed" : "#d1d5db" }}
-                transition={{ duration: 0.2 }}
-                className="relative h-6 w-11 flex-shrink-0 rounded-full"
-              >
-                <motion.div
-                  animate={{ x: sansMode ? 20 : 2 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  className="absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm"
-                />
-              </motion.div>
-              <span className="text-[0.9rem] font-semibold text-gray-700">Imaginez sans DJAMA</span>
-              <AnimatePresence>
-                {sansMode && (
-                  <motion.span key="shock"
-                    initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -12, 12, 0] }}
-                    exit={{ scale: 0 }} transition={{ duration: 0.3 }} className="text-lg">
-                    😱
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
-
-            <Link href="/espace-client"
-              className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-opacity hover:opacity-70"
-              style={{ color: GOLD }}>
-              Voir toutes les applications <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
