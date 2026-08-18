@@ -759,17 +759,24 @@ function HomeContent() {
             </Link>
           </div>
 
-          {/* Grand texte Odoo — "Imaginez une vaste collection..." */}
+          {/* Grand texte — style Odoo exact */}
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport} transition={{ duration: 0.5, ease }}
             className="mt-14 max-w-3xl">
             <p className="text-[1.05rem] leading-relaxed text-gray-700">
-              <strong className="font-black text-gray-900">Imaginez une vaste collection d&apos;outils professionnels à votre disposition.</strong>{" "}
-              Vous avez quelque chose à améliorer dans votre business ? Il existe un outil pour ça.
-              Aucune complexité, aucun logiciel à installer — un simple abonnement à 11,90€/mois.
+              <strong className="font-black text-gray-900">Imaginez une vaste collection d&apos;applications professionnelles à votre disposition.</strong>
             </p>
-            <p className="mt-4 text-[1.05rem] leading-relaxed text-gray-700">
-              Chaque outil simplifie un processus et permet à davantage d&apos;entrepreneurs d&apos;agir vite et efficacement.
+            <p className="mt-2 text-[1.05rem] leading-relaxed text-gray-700">
+              Vous avez quelque chose à améliorer ? Il existe une application pour ça.
+            </p>
+            <p className="text-[1.05rem] leading-relaxed text-gray-700">
+              Pas de complexité, pas de frais, juste une installation en un clic.
+            </p>
+            <p className="mt-6 text-[1.05rem] leading-relaxed text-gray-700">
+              Chaque application simplifie un processus et donne plus de moyens à un plus grand nombre de personnes.
+            </p>
+            <p className="text-[1.05rem] leading-relaxed text-gray-700">
+              Imaginez l&apos;impact lorsque chacun obtient l&apos;outil adapté à la tâche, adapté avec une IA native.
             </p>
             <motion.div className="relative mt-7 inline-flex" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
               <motion.div
