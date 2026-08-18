@@ -8,7 +8,6 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } fr
 import { ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import { useLanguage } from "@/lib/language-context";
-import { ShimmerText } from "@/components/ui/HoverText";
 
 const ease   = [0.22, 1, 0.36, 1] as const;
 const GOLD   = "#c9a55a";
@@ -20,11 +19,10 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const NAV_LINKS = [
-    { href: "/",              label: dict.nav.home       },
-    { href: "/services",      label: "Services"          },
-    { href: "/a-propos",      label: dict.nav.about      },
-    { href: "/contact",       label: dict.nav.contact    },
-    { href: "/espace-client", label: dict.nav.clientArea },
+    { href: "/#outils",      label: "Applications"  },
+    { href: "/coaching-ia",  label: "Coaching IA"   },
+    { href: "/#tarifs",      label: "Tarification"  },
+    { href: "/contact",      label: "Aide"           },
   ];
 
   const [scrolled,  setScrolled]  = useState(false);
@@ -54,14 +52,12 @@ export default function Navbar() {
     return pathname?.startsWith(href);
   };
 
-  /* ── Styles dynamiques ─────────────────────────────── */
+  /* ── Styles dynamiques — fond blanc Odoo ───────────── */
   const headerBg = scrolled
-    ? "border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.35)]"
-    : "border-b border-white/[0.05]";
+    ? "border-b border-gray-100 shadow-[0_1px_12px_rgba(0,0,0,0.06)]"
+    : "border-b border-gray-100";
 
-  const headerStyle = scrolled
-    ? { background: "rgba(10,6,26,0.94)", backdropFilter: "blur(20px)" }
-    : { background: "rgba(10,6,26,0.60)", backdropFilter: "blur(12px)" };
+  const headerStyle: React.CSSProperties = { background: "white" };
 
   return (
     <>
@@ -101,59 +97,50 @@ export default function Navbar() {
             </motion.div>
           </Link>
 
-          {/* Nav desktop */}
-          <nav className="hidden items-center gap-0.5 md:flex">
+          {/* Nav desktop — style Odoo */}
+          <nav className="hidden items-center gap-1 md:flex">
             {NAV_LINKS.map(({ href, label }, i) => {
               const active = isActive(href);
               return (
                 <motion.div
                   key={href}
-                  initial={{ opacity: 0, y: -8 }}
+                  initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.08 + i * 0.05 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.06 + i * 0.04 }}
                 >
                   <Link
                     href={href}
-                    className={`group relative px-3.5 py-2 text-sm font-medium transition-colors duration-200 ${
-                      active ? "text-white" : "text-white/50 hover:text-white"
+                    className={`relative px-3.5 py-2 text-[0.92rem] font-medium transition-colors duration-150 ${
+                      active ? "font-semibold text-gray-900" : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
-                    <ShimmerText variant="gold" className="font-medium">{label}</ShimmerText>
-                    <span className={`absolute inset-x-3.5 -bottom-px h-px rounded-full transition-all duration-300 ${
-                      active ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0 group-hover:opacity-60 group-hover:scale-x-100"
-                    }`} style={{ background: `linear-gradient(90deg, ${GOLD}, #e8cc94)` }} />
+                    {label}
                   </Link>
                 </motion.div>
               );
             })}
           </nav>
 
-          {/* Lang + CTA desktop */}
+          {/* Connexion + CTA desktop */}
           <motion.div
-            initial={{ opacity: 0, x: 14 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-            className="hidden md:flex items-center gap-3"
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+            className="hidden md:flex items-center gap-2"
           >
-            {/* Sélecteur de langue */}
-            <div className="flex items-center gap-1 rounded-full p-1" style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.05)" }}>
-              {(["fr", "en"] as const).map((l) => (
-                <button key={l} onClick={() => setLang(l)}
-                  className="rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-widest transition-all duration-200"
-                  style={lang === l
-                    ? { background: `rgba(${GOLDR},0.90)`, color: "#0a0a0a", boxShadow: `0 1px 6px rgba(${GOLDR},0.35)` }
-                    : { color: "rgba(255,255,255,0.35)" }
-                  }
-                >{l}</button>
-              ))}
-            </div>
+            <Link
+              href="/espace-client"
+              className="px-4 py-2 text-[0.92rem] font-medium text-gray-500 transition-colors hover:text-gray-900"
+            >
+              Connexion
+            </Link>
 
             <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-extrabold text-black transition-shadow hover:shadow-[0_6px_24px_rgba(201,165,90,0.4)]"
+              href="/espace-client"
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[0.88rem] font-extrabold text-black transition-all hover:opacity-90 hover:shadow-[0_4px_20px_rgba(201,165,90,0.35)]"
               style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
             >
-              {dict.nav.freeQuote} <ArrowRight size={14} />
+              Essayer gratuitement
             </Link>
           </motion.div>
 
@@ -170,19 +157,19 @@ export default function Navbar() {
               <motion.span
                 animate={menuOpen ? { rotate: 45, y: 9, width: "28px" } : { rotate: 0, y: 0, width: "28px" }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute block rounded-full bg-white"
+                className="absolute block rounded-full bg-gray-700"
                 style={{ height: "2.5px", top: "3px", originX: "50%", originY: "50%" }}
               />
               <motion.span
                 animate={menuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
                 transition={{ duration: 0.2 }}
-                className="absolute block rounded-full bg-white"
+                className="absolute block rounded-full bg-gray-700"
                 style={{ height: "2.5px", width: "20px", top: "50%", marginTop: "-1.5px" }}
               />
               <motion.span
                 animate={menuOpen ? { rotate: -45, y: -9, width: "28px" } : { rotate: 0, y: 0, width: "28px" }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute block rounded-full bg-white"
+                className="absolute block rounded-full bg-gray-700"
                 style={{ height: "2.5px", bottom: "3px", originX: "50%", originY: "50%" }}
               />
             </span>
@@ -199,29 +186,29 @@ export default function Navbar() {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.28, ease }}
             className="fixed inset-0 z-40 md:hidden overflow-y-auto"
-            style={{ background: "rgba(7,4,20,0.98)", backdropFilter: "blur(24px)" }}
+            style={{ background: "white" }}
           >
             <div className="h-[72px]" />
 
-            {/* Gold top line */}
-            <div className="mx-5 mt-4 h-px" style={{ background: `linear-gradient(90deg, transparent, rgba(${GOLDR},0.35), transparent)` }} />
+            {/* Séparateur */}
+            <div className="mx-5 mt-2 h-px bg-gray-100" />
 
             <motion.nav
               initial="hidden" animate="visible"
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.055, delayChildren: 0.06 } } }}
-              className="flex flex-col gap-1 px-4 pt-5"
+              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05, delayChildren: 0.04 } } }}
+              className="flex flex-col gap-0.5 px-4 pt-4"
             >
               {NAV_LINKS.map(({ href, label }) => {
                 const active = isActive(href);
                 return (
-                  <motion.div key={href} variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } } }}>
+                  <motion.div key={href} variants={{ hidden: { opacity: 0, x: -14 }, visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease } } }}>
                     <Link
                       href={href}
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-between rounded-2xl px-5 py-4 text-xl font-extrabold transition-all duration-200"
+                      className="flex items-center justify-between rounded-xl px-4 py-3.5 text-lg font-semibold transition-all duration-150"
                       style={active
-                        ? { background: `rgba(${GOLDR},0.08)`, color: GOLD, border: `1px solid rgba(${GOLDR},0.20)` }
-                        : { color: "rgba(255,255,255,0.55)", border: "1px solid transparent" }
+                        ? { background: `rgba(${GOLDR},0.08)`, color: "#1a0800" }
+                        : { color: "#374151" }
                       }
                     >
                       <span>{label}</span>
@@ -231,53 +218,48 @@ export default function Navbar() {
                 );
               })}
 
-              {/* Lang toggle */}
-              <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } } }} className="mt-3 px-5">
-                <p className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-[0.16em]" style={{ color: "rgba(255,255,255,0.25)" }}>{dict.nav.language}</p>
-                <div className="inline-flex items-center gap-1 rounded-full p-1" style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)" }}>
-                  {(["fr", "en"] as const).map((l) => (
-                    <button key={l} onClick={() => setLang(l)}
-                      className="rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-widest transition-all duration-200"
-                      style={lang === l
-                        ? { background: `rgba(${GOLDR},0.90)`, color: "#0a0a0a" }
-                        : { color: "rgba(255,255,255,0.35)" }
-                      }
-                    >{l === "fr" ? "🇫🇷 FR" : "🇬🇧 EN"}</button>
-                  ))}
-                </div>
+              {/* Connexion mobile */}
+              <motion.div variants={{ hidden: { opacity: 0, x: -14 }, visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease } } }}>
+                <Link
+                  href="/espace-client"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center px-4 py-3.5 text-lg font-semibold text-gray-500 transition-colors hover:text-gray-900"
+                >
+                  Connexion
+                </Link>
               </motion.div>
 
               {/* Contacts rapides */}
-              <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease } } }} className="mt-4 px-5">
-                <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.16em]" style={{ color: "rgba(255,255,255,0.25)" }}>Contact</p>
-                <div className="flex flex-col gap-2">
+              <motion.div variants={{ hidden: { opacity: 0, x: -14 }, visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease } } }} className="mt-3 px-4">
+                <p className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-gray-400">Contact</p>
+                <div className="flex flex-col gap-1.5">
                   <a href={`mailto:${data.contact.email}`}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition"
-                    style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)" }}>
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:text-gray-800"
+                    style={{ border: "1px solid #f3f4f6", background: "#fafafa" }}>
                     <Mail size={14} style={{ color: GOLD }} className="shrink-0" />{data.contact.email}
                   </a>
                   <a href={`https://wa.me/${data.contact.whatsapp.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition"
-                    style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)" }}>
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:text-gray-800"
+                    style={{ border: "1px solid #f3f4f6", background: "#fafafa" }}>
                     <MessageCircle size={14} style={{ color: "#25d366" }} className="shrink-0" />WhatsApp — {data.contact.whatsapp}
                   </a>
                   <a href={`tel:${data.contact.phone.replace(/\s/g,"")}`}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition"
-                    style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)" }}>
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:text-gray-800"
+                    style={{ border: "1px solid #f3f4f6", background: "#fafafa" }}>
                     <Phone size={14} style={{ color: "#60a5fa" }} className="shrink-0" />{data.contact.phone}
                   </a>
                 </div>
               </motion.div>
 
               {/* CTA */}
-              <motion.div variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease } } }} className="mt-5 px-5 pb-8">
+              <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease } } }} className="mt-5 px-4 pb-8">
                 <Link
-                  href="/contact"
+                  href="/espace-client"
                   onClick={() => setMenuOpen(false)}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-lg font-extrabold text-black transition-shadow hover:shadow-[0_6px_24px_rgba(201,165,90,0.4)]"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-4 text-lg font-extrabold text-black transition-shadow hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
                   style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
                 >
-                  {dict.nav.freeQuote} <ArrowRight size={16} />
+                  Essayer gratuitement <ArrowRight size={16} />
                 </Link>
               </motion.div>
             </motion.nav>
