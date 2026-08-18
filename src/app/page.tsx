@@ -167,15 +167,26 @@ const ESPACE_TOOLS_20 = [
   "Blog IA", "Réputation", "Portail Client", "Paie & RH",
 ] as const;
 
-const RIVALS: Partial<Record<typeof ESPACE_TOOLS_20[number], string>> = {
+const RIVALS: Record<typeof ESPACE_TOOLS_20[number], string> = {
   "Factures & Devis": "QuickBooks",
   "Agenda":           "Calendly",
+  "Notes IA":         "Notion",
+  "Coaching IA":      "Udemy",
   "CRM Clients":      "HubSpot",
+  "Chrono":           "Toggl",
+  "Dépenses":         "Expensify",
   "Trésorerie":       "Sage",
   "Contrats IA":      "DocuSign",
+  "Stocks":           "Zoho",
+  "Assistant IA":     "ChatGPT",
+  "Sourcing IA":      "LinkedIn",
   "Réseaux Sociaux":  "Hootsuite",
+  "Mind Map":         "Miro",
+  "Scanner":          "Adobe Scan",
   "Site Web IA":      "Wix",
   "Blog IA":          "WordPress",
+  "Réputation":       "Trustpilot",
+  "Portail Client":   "Notion",
   "Paie & RH":        "PayFit",
 };
 
@@ -686,38 +697,65 @@ function HomeContent() {
             })}
           </motion.div>
 
-          {/* Toggle "Imaginez sans DJAMA" + lien */}
-          <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              onClick={() => setSansMode(v => !v)}
-              className="flex items-center gap-3 rounded-full px-3 py-2 transition-colors hover:bg-gray-200/60"
-            >
-              <motion.div
-                animate={{ backgroundColor: sansMode ? "#7c3aed" : "#d1d5db" }}
-                transition={{ duration: 0.2 }}
-                className="relative h-6 w-11 flex-shrink-0 rounded-full"
+          {/* Toggle + compteur coût + lien */}
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setSansMode(v => !v)}
+                className="flex items-center gap-3 rounded-full px-3 py-2 transition-colors hover:bg-gray-200/60"
               >
                 <motion.div
-                  animate={{ x: sansMode ? 20 : 2 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  className="absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm"
-                />
-              </motion.div>
-              <span className="text-[0.9rem] font-semibold text-gray-700">Imaginez sans DJAMA</span>
+                  animate={{ backgroundColor: sansMode ? "#7c3aed" : "#d1d5db" }}
+                  transition={{ duration: 0.2 }}
+                  className="relative h-6 w-11 flex-shrink-0 rounded-full"
+                >
+                  <motion.div
+                    animate={{ x: sansMode ? 20 : 2 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    className="absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm"
+                  />
+                </motion.div>
+                <span className="text-[0.9rem] font-semibold text-gray-700">Imaginez sans DJAMA</span>
+                <AnimatePresence>
+                  {sansMode && (
+                    <motion.span key="shock"
+                      initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -12, 12, 0] }}
+                      exit={{ scale: 0 }} transition={{ duration: 0.3 }} className="text-lg">
+                      😱
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+
+              {/* Résumé coût — visible quand sansMode ON */}
               <AnimatePresence>
                 {sansMode && (
-                  <motion.span key="shock"
-                    initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -12, 12, 0] }}
-                    exit={{ scale: 0 }} transition={{ duration: 0.3 }} className="text-lg">
-                    😱
-                  </motion.span>
+                  <motion.div
+                    key="cost"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, delay: 0.15 }}
+                    className="overflow-hidden pl-3"
+                  >
+                    <p className="text-[0.82rem] leading-snug text-gray-500">
+                      Pour remplacer les <strong className="text-gray-800">48 outils DJAMA</strong> il vous faudrait :{" "}
+                      <span className="font-black" style={{ color: "#7c3aed" }}>~48 abonnements · 600€+/mois</span>
+                    </p>
+                    <p className="mt-0.5 text-[0.78rem] text-gray-400">
+                      vs DJAMA Pro :{" "}
+                      <strong style={{ color: GOLD }}>11,90€/mois</strong> tout inclus
+                    </p>
+                  </motion.div>
                 )}
               </AnimatePresence>
-            </button>
+            </div>
+
             <Link href="/espace-client"
-              className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-opacity hover:opacity-70"
-              style={{ color: GOLD }}>
-              Voir tous les 48 outils <ArrowRight size={14} />
+              className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-opacity hover:opacity-70 shrink-0"
+              style={{ color: sansMode ? "#7c3aed" : GOLD }}>
+              {sansMode ? "Revenir à DJAMA" : "Voir tous les 48 outils"}
+              <ArrowRight size={14} />
             </Link>
           </div>
 
