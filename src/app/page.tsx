@@ -491,6 +491,7 @@ function HomeContent() {
   const [payMode, setPayMode] = useState<"card" | "paypal" | "virement">("card");
   const [virEmail, setVirEmail] = useState("");
   const [virSent, setVirSent]   = useState(false);
+  const [sansMode, setSansMode] = useState(false);
 
 
   return (
@@ -669,6 +670,127 @@ function HomeContent() {
           </motion.div>
         </div>
 
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+           IMAGINE SANS DJAMA — toggle interactif style Odoo
+      ══════════════════════════════════════════════════════ */}
+      <section className="bg-[#f4f5f7] border-t border-gray-200/50 pb-16 pt-8">
+        <div className="mx-auto max-w-4xl px-6">
+
+          {/* 5 apps + compétiteurs animés */}
+          <div className="grid grid-cols-5 gap-3">
+            {([
+              { title: "Factures & Devis", idx: 0,  rival: "QuickBooks" },
+              { title: "CRM Clients",       idx: 4,  rival: "HubSpot" },
+              { title: "Agenda",            idx: 1,  rival: "Calendly" },
+              { title: "Réseaux Sociaux",   idx: 12, rival: "Hootsuite" },
+              { title: "Paie & RH",         idx: 19, rival: "PayFit" },
+            ] as const).map(({ title, idx, rival }, i) => (
+              <div key={title} className="flex flex-col items-center">
+                {/* App card */}
+                <motion.div
+                  animate={sansMode ? { opacity: 0.35, scale: 0.94 } : { opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.35 }}
+                  className="w-full flex flex-col items-center gap-2.5 rounded-2xl bg-white px-2 py-4 shadow-sm"
+                >
+                  <div className="h-[60px] w-[60px] overflow-hidden rounded-[16px]">
+                    {PUBLIC_APP_ICONS[idx]}
+                  </div>
+                  <p className="text-center text-[0.65rem] font-semibold leading-tight text-gray-500">{title}</p>
+                </motion.div>
+
+                {/* Flèche + nom concurrent — hauteur fixe pour éviter le saut layout */}
+                <div className="flex min-h-[88px] flex-col items-center justify-start pt-1">
+                  <AnimatePresence>
+                    {sansMode && (
+                      <motion.div
+                        key={`rival-${i}`}
+                        className="flex flex-col items-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.22, delay: i * 0.07 }}
+                      >
+                        {/* Flèche SVG — pathLength 0→1 */}
+                        <svg width="20" height="36" viewBox="0 0 20 36" overflow="visible">
+                          <motion.path
+                            d="M 10 0 C 10 12, 3 22, 10 32"
+                            stroke="#7c3aed"
+                            strokeWidth="2"
+                            fill="none"
+                            strokeLinecap="round"
+                            initial={{ pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ duration: 0.38, delay: i * 0.07, ease: "easeOut" }}
+                          />
+                          <motion.path
+                            d="M 6 28 L 10 36 L 14 28"
+                            stroke="#7c3aed"
+                            strokeWidth="2"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.12, delay: i * 0.07 + 0.36 }}
+                          />
+                        </svg>
+                        {/* Nom concurrent — Caveat cursive */}
+                        <motion.span
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 4 }}
+                          transition={{ duration: 0.22, delay: i * 0.07 + 0.38 }}
+                          className="mt-0.5 text-center"
+                          style={{ fontFamily: "'Caveat', cursive", fontSize: "1.3rem", fontWeight: 700, color: "#7c3aed", lineHeight: 1.1 }}
+                        >
+                          {rival}
+                        </motion.span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Toggle + lien */}
+          <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+            <button
+              onClick={() => setSansMode(v => !v)}
+              className="flex items-center gap-3 rounded-full px-4 py-2 transition-colors hover:bg-gray-200/60"
+            >
+              <motion.div
+                animate={{ backgroundColor: sansMode ? "#7c3aed" : "#d1d5db" }}
+                transition={{ duration: 0.2 }}
+                className="relative h-6 w-11 flex-shrink-0 rounded-full"
+              >
+                <motion.div
+                  animate={{ x: sansMode ? 20 : 2 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  className="absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm"
+                />
+              </motion.div>
+              <span className="text-[0.9rem] font-semibold text-gray-700">Imaginez sans DJAMA</span>
+              <AnimatePresence>
+                {sansMode && (
+                  <motion.span key="shock"
+                    initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -12, 12, 0] }}
+                    exit={{ scale: 0 }} transition={{ duration: 0.3 }} className="text-lg">
+                    😱
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+
+            <Link href="/espace-client"
+              className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-opacity hover:opacity-70"
+              style={{ color: GOLD }}>
+              Voir toutes les applications <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
