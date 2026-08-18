@@ -687,34 +687,6 @@ function HomeContent() {
           </motion.div>
         </div>
 
-        {/* ── Citation style Odoo — photo + blob or + quote ── */}
-        <div className="mx-auto mt-16 max-w-3xl px-6 pb-16">
-          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.55, ease }}
-            className="relative rounded-3xl bg-white p-7 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
-
-            {/* Photo + blob doré (style Odoo) */}
-            <div className="mb-5 flex items-center gap-4">
-              <div className="relative shrink-0">
-                <div className="absolute -left-1.5 -top-1.5 h-11 w-12 rounded-[42%_58%_62%_38%/40%_38%_62%_60%]"
-                  style={{ background: `rgba(${GOLDR},0.28)` }} />
-                <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white shadow"
-                  style={{ background: `rgba(${GOLDR},0.15)` }}>
-                  <span className="text-sm font-black" style={{ color: GOLD }}>K</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-[0.82rem] font-bold text-gray-900">Karima B.</p>
-                <p className="text-[0.7rem] text-gray-400">Boutique mode · La Réunion</p>
-              </div>
-            </div>
-
-            <blockquote className="text-[1.08rem] leading-relaxed text-gray-700"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontStyle: "italic" }}>
-              &ldquo;DJAMA m&apos;a économisé 3h par semaine sur ma comptabilité. J&apos;ai tout en un seul endroit et l&apos;IA répond à mes clients quand je dors.&rdquo;
-            </blockquote>
-          </motion.div>
-        </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
