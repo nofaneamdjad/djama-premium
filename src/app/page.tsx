@@ -686,6 +686,35 @@ function HomeContent() {
             </motion.div>
           </motion.div>
         </div>
+
+        {/* ── Citation style Odoo — photo + blob or + quote ── */}
+        <div className="mx-auto mt-16 max-w-3xl px-6 pb-16">
+          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.55, ease }}
+            className="relative rounded-3xl bg-white p-7 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
+
+            {/* Photo + blob doré (style Odoo) */}
+            <div className="mb-5 flex items-center gap-4">
+              <div className="relative shrink-0">
+                <div className="absolute -left-1.5 -top-1.5 h-11 w-12 rounded-[42%_58%_62%_38%/40%_38%_62%_60%]"
+                  style={{ background: `rgba(${GOLDR},0.28)` }} />
+                <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white shadow"
+                  style={{ background: `rgba(${GOLDR},0.15)` }}>
+                  <span className="text-sm font-black" style={{ color: GOLD }}>K</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-[0.82rem] font-bold text-gray-900">Karima B.</p>
+                <p className="text-[0.7rem] text-gray-400">Boutique mode · La Réunion</p>
+              </div>
+            </div>
+
+            <blockquote className="text-[1.08rem] leading-relaxed text-gray-700"
+              style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontStyle: "italic" }}>
+              &ldquo;DJAMA m&apos;a économisé 3h par semaine sur ma comptabilité. J&apos;ai tout en un seul endroit et l&apos;IA répond à mes clients quand je dors.&rdquo;
+            </blockquote>
+          </motion.div>
+        </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
@@ -850,6 +879,49 @@ function HomeContent() {
                 style={{ color: GOLD }}>
                 Essayer l&apos;IA DJAMA <ArrowRight size={14} />
               </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+           DIFFÉRENCIATEURS — style Odoo "conçu pour faire la différence"
+      ══════════════════════════════════════════════════════ */}
+      <section className="bg-[#f4f5f7] py-16 sm:py-20">
+        <div className="mx-auto max-w-4xl px-6">
+
+          <motion.h2 initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.55, ease }}
+            className="mb-10 text-[2.2rem] leading-[1.1] text-gray-900 sm:text-[2.8rem]"
+            style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
+            Une plateforme{" "}
+            <span style={{ background: "linear-gradient(180deg,transparent 52%,rgba(96,165,250,0.32) 52%)", padding: "0 5px" }}>
+              conçue
+            </span>{" "}
+            pour faire la différence.
+          </motion.h2>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={viewport} transition={{ duration: 0.45, ease }}
+              className="rounded-2xl bg-white p-7 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+              <h3 className="mb-3 text-[1.1rem] font-black text-gray-900">Pas de baratin</h3>
+              <p className="text-[0.88rem] leading-relaxed italic text-gray-500">
+                &ldquo;Avec la plupart des logiciels, vous obtenez ce que vous espériez. Avec DJAMA, vous obtenez ce que vous voyez — et souvent plus.&rdquo;
+              </p>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={viewport} transition={{ duration: 0.45, ease, delay: 0.08 }}
+              className="rounded-2xl bg-white p-7 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+              <h3 className="mb-3 text-[1.1rem] font-black text-gray-900">Support humain direct</h3>
+              <p className="text-[0.88rem] leading-relaxed text-gray-500">
+                Un vrai conseiller DJAMA disponible sur WhatsApp. Pas de chatbot, pas de ticket, une vraie personne — en français, disponible dès maintenant.
+              </p>
+              <a href="https://wa.me/262693523665" target="_blank" rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-1.5 text-[0.82rem] font-bold text-[#25d366] transition-opacity hover:opacity-70">
+                <ArrowRight size={13} /> Contacter DJAMA
+              </a>
             </motion.div>
           </div>
         </div>
