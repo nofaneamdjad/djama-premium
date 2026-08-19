@@ -902,35 +902,44 @@ function HomeContent() {
             <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={viewport} transition={{ duration: 0.5, ease }}
               className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
                 {TOOLS_DATA_48.map(({ name, rival, icon: Icon, g }) => {
                   const sel = selectedTools.has(name);
                   return (
                     <motion.button key={name} onClick={() => setSelectedTools(prev => {
                       const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n;
                     })}
-                      whileTap={{ scale: 0.92 }}
-                      className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 transition-all duration-150"
-                      style={sel
-                        ? { background: `rgba(${GOLDR},0.08)`, border: `1.5px solid ${GOLD}`, boxShadow: `0 0 0 3px rgba(${GOLDR},0.12)` }
-                        : { background: "#f9fafb", border: "1.5px solid #e5e7eb" }
-                      }
+                      whileTap={{ scale: 0.90 }}
+                      className="relative flex flex-col items-center gap-2 p-2 transition-all duration-150"
                     >
-                      <AnimatePresence>
-                        {sel && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                            transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                            className="absolute top-1 right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full"
-                            style={{ background: GOLD }}>
-                            <Check size={7} strokeWidth={3.5} className="text-white" />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: g }}>
-                        <Icon size={24} className="text-white" strokeWidth={1.5} />
+                      <div className="relative">
+                        <motion.div
+                          animate={sel ? { scale: 1.08 } : { scale: 1 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                          className="flex h-[68px] w-[68px] items-center justify-center"
+                          style={{
+                            background: g,
+                            borderRadius: "22px",
+                            boxShadow: sel
+                              ? `0 0 0 3px ${GOLD}, 0 8px 20px rgba(0,0,0,0.18)`
+                              : "0 4px 12px rgba(0,0,0,0.14)"
+                          }}
+                        >
+                          <Icon size={34} className="text-white" strokeWidth={1.4} />
+                        </motion.div>
+                        <AnimatePresence>
+                          {sel && (
+                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                              transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                              className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white"
+                              style={{ background: GOLD }}>
+                              <Check size={10} strokeWidth={3} className="text-white" />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                      <span className="text-center text-[0.6rem] font-semibold leading-tight text-gray-600">{name}</span>
-                      <span className="text-center text-[0.52rem] text-gray-400">{rival}</span>
+                      <span className="text-center text-[0.62rem] font-semibold leading-tight text-gray-700">{name}</span>
+                      <span className="text-center text-[0.55rem] text-gray-400">{rival}</span>
                     </motion.button>
                   );
                 })}
