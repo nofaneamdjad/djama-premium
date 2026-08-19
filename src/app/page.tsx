@@ -1070,23 +1070,26 @@ function HomeContent() {
           <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
             <img src="/avatars/women-44.jpg" alt="" className="w-full h-full object-cover" />
           </div>
-          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-45" style={{ background: "#d1d5db" }} />
-          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-32.jpg" alt="" className="w-full h-full object-cover" />
+          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/men-63.jpg" alt="" className="w-full h-full object-cover" />
           </div>
-          <div className="h-[76px] w-[76px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
+          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/women-71.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
             <img src="/avatars/women-56.jpg" alt="" className="w-full h-full object-cover" />
           </div>
           <div className="h-[84px] w-[84px] flex-shrink-0 rounded-[18px] opacity-55" style={{ background: "#e5e7eb" }} />
           <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-18.jpg" alt="" className="w-full h-full object-cover" />
+            <img src="/avatars/men-76.jpg" alt="" className="w-full h-full object-cover" />
           </div>
           <div className="h-[88px] w-[88px] flex-shrink-0 rounded-[18px] opacity-70" style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }} />
           <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
             <img src="/avatars/women-22.jpg" alt="" className="w-full h-full object-cover" />
           </div>
-          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
+          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/men-74.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
             <img src="/avatars/men-45.jpg" alt="" className="w-full h-full object-cover" />
           </div>
@@ -1122,16 +1125,18 @@ function HomeContent() {
         {/* Ligne basse */}
         <div className="flex items-start gap-3 pt-2" style={{ marginLeft: "1%", width: "112%" }}>
           <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-7.jpg" alt="" className="w-full h-full object-cover" />
+            <img src="/avatars/men-83.jpg" alt="" className="w-full h-full object-cover" />
           </div>
           <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-50" style={{ background: "#e5e7eb" }} />
           <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-33.jpg" alt="" className="w-full h-full object-cover" />
+            <img src="/avatars/women-62.jpg" alt="" className="w-full h-full object-cover" />
           </div>
           <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-52.jpg" alt="" className="w-full h-full object-cover" />
+            <img src="/avatars/men-62.jpg" alt="" className="w-full h-full object-cover" />
           </div>
-          <div className="h-[84px] w-[84px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
+          <div className="h-[84px] w-[84px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/women-64.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
             <img src="/avatars/women-19.jpg" alt="" className="w-full h-full object-cover" />
           </div>
@@ -1139,7 +1144,9 @@ function HomeContent() {
           <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
             <img src="/avatars/men-61.jpg" alt="" className="w-full h-full object-cover" />
           </div>
-          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
+          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/women-68.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
             <img src="/avatars/women-28.jpg" alt="" className="w-full h-full object-cover" />
           </div>
