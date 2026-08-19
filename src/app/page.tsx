@@ -1060,76 +1060,69 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           FEATURE 2 — "L'IA travaille pour vous"
-           style Odoo : mockup gauche + texte droite, fond gris
+           SOCIAL PROOF — "1 200 Utilisateurs heureux" style Odoo
       ══════════════════════════════════════════════════════ */}
-      <section className="bg-[#f4f5f7] py-20 sm:py-28">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="grid gap-14 sm:grid-cols-2 sm:items-center">
+      <section className="overflow-hidden bg-white py-16 sm:py-24">
 
-            {/* Mockup IA gauche */}
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
-              viewport={viewport} transition={{ duration: 0.55, ease }}
-              className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg order-2 sm:order-1">
-              <div className="flex items-center gap-2 border-b border-gray-100 bg-[#0e1420] px-4 py-3">
-                <div className="h-2 w-2 rounded-full bg-white/20" />
-                <span className="text-[0.7rem] font-medium text-white/60">Assistant IA DJAMA</span>
-                <span className="ml-auto text-[0.6rem] rounded-full bg-green-500/20 text-green-400 px-2 py-0.5 font-bold">En ligne</span>
-              </div>
-              <div className="p-4 space-y-3">
-                {[
-                  { role: "user",      text: "Génère une réponse à cet avis négatif Google" },
-                  { role: "assistant", text: "Bonjour, merci pour votre retour. Nous sommes navrés de cette expérience et souhaitons y remédier rapidement. Pouvez-vous nous contacter en privé ?" },
-                  { role: "user",      text: "Crée une checklist d'ouverture de boutique" },
-                  { role: "assistant", text: "✅ Prête ! 8 étapes générées : Permis, Stock, Caisse, Personnel, Vitrine, Réseaux sociaux, Newsletter, Inauguration." },
-                ].map((m, i) => (
-                  <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[82%] rounded-2xl px-3 py-2 text-[0.72rem] leading-relaxed ${
-                      m.role === "user"
-                        ? "bg-[#7c3aed] text-white"
-                        : "bg-gray-100 text-gray-700"
-                    }`}>{m.text}</div>
-                  </div>
-                ))}
-                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                  <span className="flex-1 text-[0.7rem] text-gray-400">Demandez quelque chose…</span>
-                  <Zap size={12} style={{ color: GOLD }} />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Texte droite */}
-            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }}
-              viewport={viewport} transition={{ duration: 0.55, ease, delay: 0.1 }}
-              className="order-1 sm:order-2">
-              <h2 className="text-[2.4rem] leading-[1.12] text-gray-900 sm:text-[3rem]"
-                style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
-                Découvrez la vraie{" "}
-                <span style={{ color: GOLD, background: "linear-gradient(180deg,transparent 58%,rgba(201,165,90,0.38) 58%)", padding: "0 4px" }}>
-                  productivité
-                </span>
-              </h2>
-              <p className="mt-5 text-[0.95rem] leading-relaxed text-gray-500">
-                L&apos;IA intégrée génère vos documents, répond à vos clients, crée vos listes et analyse vos données — en quelques secondes.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {["Réponses avis Google en 1 clic", "Checklists générées par IA", "Analyse comptable automatique", "Assistant disponible 24h/24"].map(item => (
-                  <li key={item} className="flex items-center gap-2.5 text-[0.88rem] font-medium text-gray-700">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: `rgba(${GOLDR},0.15)` }}>
-                      <Check size={11} style={{ color: GOLD }} strokeWidth={2.5} />
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/espace-client"
-                className="mt-8 inline-flex items-center gap-1.5 text-[0.9rem] font-bold transition-opacity hover:opacity-70"
-                style={{ color: GOLD }}>
-                Essayer l&apos;IA DJAMA <ArrowRight size={14} />
-              </Link>
-            </motion.div>
-          </div>
+        {/* Ligne haute */}
+        <div className="flex items-end gap-3 pb-2" style={{ marginLeft: "-2%", width: "112%" }}>
+          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-[18px] opacity-60" style={{ background: "#9b59b6" }} />
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#f472b6,#be185d)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>KD</div>
+          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-45" style={{ background: "#d1d5db" }} />
+          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#60a5fa,#2563eb)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>MB</div>
+          <div className="h-[76px] w-[76px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#34d399,#059669)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>AS</div>
+          <div className="h-[84px] w-[84px] flex-shrink-0 rounded-[18px] opacity-55" style={{ background: "#e5e7eb" }} />
+          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#fb923c,#c2410c)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>YT</div>
+          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-[18px] opacity-70" style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }} />
+          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#a78bfa,#6d28d9)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>LM</div>
+          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#22d3ee,#0891b2)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>SR</div>
+          <div className="h-[84px] w-[84px] flex-shrink-0 rounded-[18px] opacity-50" style={{ background: "#9b59b6" }} />
         </div>
+
+        {/* Texte central */}
+        <div className="my-10 px-6 text-center">
+          <div className="relative inline-block">
+            <span className="absolute -top-7 right-2"
+              style={{ fontFamily: "'Caveat', cursive", color: GOLD, fontSize: "1.35rem", fontWeight: 700, display: "inline-block", transform: "rotate(-5deg)" }}>
+              heureux
+            </span>
+            <h2 className="text-[2.6rem] font-black leading-tight text-gray-900 sm:text-[4rem]"
+              style={{ fontFamily: "'Caveat', cursive" }}>
+              Rejoignez{" "}
+              <span style={{ color: GOLD }}>1 200</span>{" "}
+              Utilisateurs
+            </h2>
+          </div>
+          <p className="mx-auto mt-4 max-w-md text-[0.95rem] leading-relaxed text-gray-400">
+            qui développent leur entreprise avec DJAMA
+          </p>
+          <motion.div className="mt-7 inline-block" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Link href="/espace-client"
+              className="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-[0.9rem] font-extrabold text-black transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
+              style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
+              Commencer gratuitement <ArrowRight size={15} />
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Ligne basse */}
+        <div className="flex items-start gap-3 pt-2" style={{ marginLeft: "1%", width: "112%" }}>
+          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#f59e0b,#b45309)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>JR</div>
+          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-50" style={{ background: "#e5e7eb" }} />
+          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#c084fc,#6d28d9)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>FN</div>
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#34d399,#0d9488)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>AL</div>
+          <div className="h-[84px] w-[84px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
+          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#f43f5e,#be123c)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>MS</div>
+          <div className="h-[76px] w-[76px] flex-shrink-0 rounded-[18px] opacity-60" style={{ background: "#7c3aed" }} />
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#60a5fa,#6366f1)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>RK</div>
+          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
+          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: `linear-gradient(135deg,${GOLD},#c9a55a)`, boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>ZA</div>
+          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-60" style={{ background: "#9b59b6" }} />
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#818cf8,#4338ca)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>NA</div>
+        </div>
+
       </section>
 
       {/* ══════════════════════════════════════════════════════
