@@ -56,8 +56,8 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' js.stripe.com",
               // Styles Tailwind inline
               "style-src 'self' 'unsafe-inline'",
-              // Images Supabase Storage + data URIs (aperçus inline)
-              "img-src 'self' data: blob: *.supabase.co *.supabase.in",
+              // Images Supabase Storage + data URIs (aperçus inline) + avatars social proof
+              "img-src 'self' data: blob: *.supabase.co *.supabase.in randomuser.me",
               // Fonts locales uniquement
               "font-src 'self'",
               // API calls autorisées

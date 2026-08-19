@@ -1067,17 +1067,29 @@ function HomeContent() {
         {/* Ligne haute */}
         <div className="flex items-end gap-3 pb-2" style={{ marginLeft: "-2%", width: "112%" }}>
           <div className="h-[88px] w-[88px] flex-shrink-0 rounded-[18px] opacity-60" style={{ background: "#9b59b6" }} />
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#f472b6,#be185d)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>KD</div>
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/women-44.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-45" style={{ background: "#d1d5db" }} />
-          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#60a5fa,#2563eb)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>MB</div>
+          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/men-32.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[76px] w-[76px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#34d399,#059669)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>AS</div>
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/women-56.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[84px] w-[84px] flex-shrink-0 rounded-[18px] opacity-55" style={{ background: "#e5e7eb" }} />
-          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#fb923c,#c2410c)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>YT</div>
+          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/men-18.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[88px] w-[88px] flex-shrink-0 rounded-[18px] opacity-70" style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }} />
-          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#a78bfa,#6d28d9)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>LM</div>
+          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/women-22.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[80px] w-[80px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#22d3ee,#0891b2)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>SR</div>
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/men-45.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[84px] w-[84px] flex-shrink-0 rounded-[18px] opacity-50" style={{ background: "#9b59b6" }} />
         </div>
 
@@ -1109,18 +1121,32 @@ function HomeContent() {
 
         {/* Ligne basse */}
         <div className="flex items-start gap-3 pt-2" style={{ marginLeft: "1%", width: "112%" }}>
-          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#f59e0b,#b45309)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>JR</div>
+          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/men-7.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-50" style={{ background: "#e5e7eb" }} />
-          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#c084fc,#6d28d9)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>FN</div>
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#34d399,#0d9488)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>AL</div>
+          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/women-33.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/men-52.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[84px] w-[84px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
-          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#f43f5e,#be123c)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>MS</div>
+          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/women-19.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[76px] w-[76px] flex-shrink-0 rounded-[18px] opacity-60" style={{ background: "#7c3aed" }} />
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#60a5fa,#6366f1)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>RK</div>
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/men-61.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[88px] w-[88px] flex-shrink-0 rounded-full opacity-35" style={{ background: "#d1d5db" }} />
-          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: `linear-gradient(135deg,${GOLD},#c9a55a)`, boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>ZA</div>
+          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/women-28.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
           <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-60" style={{ background: "#9b59b6" }} />
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full flex items-center justify-center text-white text-xl font-black" style={{ background: "linear-gradient(135deg,#818cf8,#4338ca)", boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>NA</div>
+          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
+            <img src="/avatars/men-36.jpg" alt="" className="w-full h-full object-cover" />
+          </div>
         </div>
 
       </section>
