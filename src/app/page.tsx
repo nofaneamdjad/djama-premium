@@ -18,6 +18,7 @@ import {
   Network, FolderOpen, Share2, ShoppingBag, Bot, BarChart2,
   Store, Contact2, CalendarPlus, QrCode, PenLine, ShoppingCart,
   Landmark, FileCheck2, BookOpen, Target,
+  MessageCircle, Gift, Search, Clock, GraduationCap, UserPlus, Video, Mic,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -189,6 +190,89 @@ const RIVALS: Record<typeof ESPACE_TOOLS_20[number], string> = {
   "Portail Client":   "Notion",
   "Paie & RH":        "PayFit",
 };
+
+const RIVAL_PRICES: Record<typeof ESPACE_TOOLS_20[number], number> = {
+  "Factures & Devis": 29,
+  "Agenda":           12,
+  "Notes IA":         10,
+  "Coaching IA":      20,
+  "CRM Clients":      45,
+  "Chrono":           10,
+  "Dépenses":          8,
+  "Trésorerie":       25,
+  "Contrats IA":      25,
+  "Stocks":           20,
+  "Assistant IA":     20,
+  "Sourcing IA":      39,
+  "Réseaux Sociaux":  50,
+  "Mind Map":         10,
+  "Scanner":           8,
+  "Site Web IA":      20,
+  "Blog IA":           8,
+  "Réputation":       99,
+  "Portail Client":   16,
+  "Paie & RH":        49,
+};
+
+type ToolEntry = { name: string; rival: string; price: number; icon: React.ElementType; g: string };
+const TOOLS_DATA_48: ToolEntry[] = [
+  // ── Finance ──
+  { name: "Factures & Devis",  rival: "QuickBooks",       price: 29,  icon: Receipt,        g: "linear-gradient(135deg,#f59e0b,#c9a55a)" },
+  { name: "Trésorerie",         rival: "Sage",             price: 25,  icon: Wallet,         g: "linear-gradient(135deg,#34d399,#059669)" },
+  { name: "Dépenses",           rival: "Expensify",        price: 8,   icon: CreditCard,     g: "linear-gradient(135deg,#f43f5e,#be123c)" },
+  { name: "Comptabilité",       rival: "FreshBooks",       price: 15,  icon: Banknote,       g: "linear-gradient(135deg,#4ade80,#16a34a)" },
+  { name: "Paiements",          rival: "Stripe",           price: 15,  icon: Landmark,       g: "linear-gradient(135deg,#6366f1,#4f46e5)" },
+  // ── Commerce ──
+  { name: "CRM Clients",        rival: "HubSpot",          price: 45,  icon: Contact2,       g: "linear-gradient(135deg,#22d3ee,#0891b2)" },
+  { name: "Pipeline Ventes",    rival: "Pipedrive",        price: 15,  icon: Building2,      g: "linear-gradient(135deg,#a78bfa,#7c3aed)" },
+  { name: "E-commerce",         rival: "Shopify",          price: 32,  icon: ShoppingCart,   g: "linear-gradient(135deg,#86efac,#16a34a)" },
+  { name: "Devis Interactif",   rival: "Proposify",        price: 35,  icon: FileCheck2,     g: "linear-gradient(135deg,#fbbf24,#d97706)" },
+  { name: "Fidélité Client",    rival: "Smile.io",         price: 49,  icon: Gift,           g: "linear-gradient(135deg,#f472b6,#db2777)" },
+  { name: "Portail Client",     rival: "Notion",           price: 16,  icon: FolderOpen,     g: "linear-gradient(135deg,#c084fc,#7c3aed)" },
+  // ── Communication ──
+  { name: "E-mail Marketing",   rival: "Mailchimp",        price: 13,  icon: Mail,           g: "linear-gradient(135deg,#fde68a,#f59e0b)" },
+  { name: "Réseaux Sociaux",    rival: "Hootsuite",        price: 50,  icon: Share2,         g: "linear-gradient(135deg,#fb923c,#ea580c)" },
+  { name: "Chat en Direct",     rival: "Intercom",         price: 39,  icon: MessageCircle,  g: "linear-gradient(135deg,#34d399,#0d9488)" },
+  { name: "Réputation",         rival: "Trustpilot",       price: 99,  icon: Star,           g: "linear-gradient(135deg,#facc15,#ca8a04)" },
+  { name: "Blog IA",            rival: "WordPress",        price: 8,   icon: PenLine,        g: "linear-gradient(135deg,#60a5fa,#3b82f6)" },
+  // ── IA & Productivité ──
+  { name: "Assistant IA",       rival: "ChatGPT",          price: 20,  icon: Bot,            g: "linear-gradient(135deg,#a78bfa,#7c3aed)" },
+  { name: "Notes IA",           rival: "Notion",           price: 10,  icon: StickyNote,     g: "linear-gradient(135deg,#4ade80,#16a34a)" },
+  { name: "Mind Map",           rival: "Miro",             price: 10,  icon: Network,        g: "linear-gradient(135deg,#f472b6,#db2777)" },
+  { name: "Contrats IA",        rival: "DocuSign",         price: 25,  icon: Shield,         g: "linear-gradient(135deg,#facc15,#ca8a04)" },
+  { name: "Sourcing IA",        rival: "LinkedIn",         price: 39,  icon: Target,         g: "linear-gradient(135deg,#22d3ee,#0284c7)" },
+  { name: "Coaching IA",        rival: "Udemy",            price: 20,  icon: Brain,          g: "linear-gradient(135deg,#a78bfa,#6d28d9)" },
+  { name: "Transcription IA",   rival: "Otter.ai",         price: 17,  icon: Zap,            g: "linear-gradient(135deg,#fbbf24,#d97706)" },
+  // ── Site & Marketing ──
+  { name: "Site Web IA",        rival: "Wix",              price: 20,  icon: Globe,          g: "linear-gradient(135deg,#60a5fa,#2563eb)" },
+  { name: "SEO IA",             rival: "SEMrush",          price: 120, icon: Search,         g: "linear-gradient(135deg,#f87171,#dc2626)" },
+  { name: "Formulaires",        rival: "Typeform",         price: 25,  icon: ListTodo,       g: "linear-gradient(135deg,#6366f1,#4338ca)" },
+  { name: "Analytics IA",       rival: "Hotjar",           price: 39,  icon: BarChart2,      g: "linear-gradient(135deg,#f97316,#c2410c)" },
+  { name: "Publicité IA",       rival: "Canva Pro",        price: 13,  icon: Sparkles,       g: "linear-gradient(135deg,#c084fc,#6d28d9)" },
+  // ── Opérations ──
+  { name: "Agenda",             rival: "Calendly",         price: 12,  icon: CalendarRange,  g: "linear-gradient(135deg,#3b82f6,#6366f1)" },
+  { name: "Chrono",             rival: "Toggl",            price: 10,  icon: Timer,          g: "linear-gradient(135deg,#fb923c,#ea580c)" },
+  { name: "Stocks",             rival: "Zoho",             price: 20,  icon: Package,        g: "linear-gradient(135deg,#fbbf24,#d97706)" },
+  { name: "Scanner",            rival: "Adobe Scan",       price: 8,   icon: QrCode,         g: "linear-gradient(135deg,#64748b,#334155)" },
+  { name: "Suivi Projets",      rival: "Asana",            price: 13,  icon: Briefcase,      g: "linear-gradient(135deg,#f59e0b,#b45309)" },
+  { name: "Planning Équipe",    rival: "Monday.com",       price: 17,  icon: CalendarPlus,   g: "linear-gradient(135deg,#ec4899,#db2777)" },
+  { name: "Tâches Équipe",      rival: "Trello",           price: 10,  icon: CheckCircle2,   g: "linear-gradient(135deg,#0ea5e9,#0284c7)" },
+  // ── RH & Admin ──
+  { name: "Paie & RH",          rival: "PayFit",           price: 49,  icon: Users2,         g: "linear-gradient(135deg,#818cf8,#4f46e5)" },
+  { name: "Pointeuse",          rival: "Clockify",         price: 8,   icon: Clock,          g: "linear-gradient(135deg,#94a3b8,#475569)" },
+  { name: "Formation Équipe",   rival: "Teachable",        price: 39,  icon: GraduationCap,  g: "linear-gradient(135deg,#a78bfa,#7c3aed)" },
+  { name: "Recrutement",        rival: "Indeed Pro",       price: 25,  icon: UserPlus,       g: "linear-gradient(135deg,#2dd4bf,#0d9488)" },
+  { name: "Contrats RH",        rival: "BambooHR",         price: 35,  icon: ShieldCheck,    g: "linear-gradient(135deg,#4ade80,#15803d)" },
+  // ── Support & Croissance ──
+  { name: "Support Client",     rival: "Zendesk",          price: 55,  icon: HeartHandshake, g: "linear-gradient(135deg,#f472b6,#be185d)" },
+  { name: "Base Connaissance",  rival: "Confluence",       price: 5,   icon: BookOpen,       g: "linear-gradient(135deg,#60a5fa,#1d4ed8)" },
+  { name: "Sondages Client",    rival: "SurveyMonkey",     price: 30,  icon: BarChart3,      g: "linear-gradient(135deg,#34d399,#047857)" },
+  { name: "Affiliation",        rival: "Tapfiliate",       price: 59,  icon: ShoppingBag,    g: "linear-gradient(135deg,#f59e0b,#b45309)" },
+  { name: "Parrainage",         rival: "Referral Factory", price: 95,  icon: HeartHandshake, g: "linear-gradient(135deg,#ec4899,#9d174d)" },
+  { name: "Vidéo IA",           rival: "Loom",             price: 15,  icon: Video,          g: "linear-gradient(135deg,#f87171,#991b1b)" },
+  { name: "Podcast IA",         rival: "Riverside.fm",     price: 20,  icon: Mic,            g: "linear-gradient(135deg,#a78bfa,#5b21b6)" },
+  { name: "Formation IA",       rival: "Kajabi",           price: 149, icon: GraduationCap,  g: "linear-gradient(135deg,#fbbf24,#92400e)" },
+];
 
 const PUBLIC_APP_ICONS = [
   /* 0 – Factures & devis */
@@ -515,6 +599,7 @@ function HomeContent() {
   const [virEmail, setVirEmail] = useState("");
   const [virSent, setVirSent]   = useState(false);
   const [sansMode, setSansMode] = useState(false);
+  const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
 
 
   return (
@@ -801,96 +886,175 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           COMPARATIF — DJAMA vs concurrents, style Odoo
+           CALCULATEUR D'ÉCONOMIES — style Odoo
       ══════════════════════════════════════════════════════ */}
-      <section className="bg-white py-20 sm:py-28">
-        <div className="mx-auto max-w-3xl px-6">
+      <section className="bg-[#f4f5f7] py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-5">
 
-          {/* Titre style Odoo — cursive + underline or */}
+          {/* Titre */}
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.55, ease }}
-            className="mb-12 text-center">
-            <h2 className="text-[2.4rem] leading-[1.1] text-gray-900 sm:text-[3rem]"
+            viewport={viewport} transition={{ duration: 0.5, ease }}
+            className="mb-10 text-center">
+            <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[3.4rem]"
               style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
-              <span style={{ color: GOLD, textDecoration: "underline wavy", textUnderlineOffset: "6px", textDecorationColor: `rgba(${GOLDR},0.5)` }}>
-                DJAMA
-              </span>{" "}
-              <span className="text-gray-400 font-normal">vs</span>{" "}
-              les autres
+              Calculez vos économies
             </h2>
-            <p className="mx-auto mt-4 max-w-sm text-[0.92rem] text-gray-500 leading-relaxed">
-              Tout ce que les logiciels classiques ne font pas —{" "}
-              <strong className="text-gray-700 font-bold">5× moins cher</strong>.
+            <p className="mt-3 text-[0.95rem] text-gray-500">
+              Sélectionnez les outils que vous utilisez déjà
             </p>
           </motion.div>
 
-          {/* Tableau comparatif */}
-          <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
 
-            {/* En-tête colonnes */}
-            <div className="grid grid-cols-[1fr_100px_100px] border-b border-gray-100 bg-gray-50 px-5 py-3">
-              <span className="text-[0.6rem] font-bold uppercase tracking-widest text-gray-400">Fonctionnalité</span>
-              <div className="flex flex-col items-center gap-0.5 rounded-t-lg px-2 py-1" style={{ background: `rgba(${GOLDR},0.06)` }}>
-                <span className="text-[0.76rem] font-black" style={{ color: GOLD }}>DJAMA</span>
-                <span className="text-[0.5rem] font-bold uppercase tracking-wide text-gray-400">11,90€/mois</span>
+            {/* ── Grille des outils ── */}
+            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={viewport} transition={{ duration: 0.5, ease }}
+              className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
+                {TOOLS_DATA_48.map(({ name, rival, icon: Icon, g }) => {
+                  const sel = selectedTools.has(name);
+                  return (
+                    <motion.button key={name} onClick={() => setSelectedTools(prev => {
+                      const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n;
+                    })}
+                      whileTap={{ scale: 0.92 }}
+                      className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 transition-all duration-150"
+                      style={sel
+                        ? { background: `rgba(${GOLDR},0.08)`, border: `1.5px solid ${GOLD}`, boxShadow: `0 0 0 3px rgba(${GOLDR},0.12)` }
+                        : { background: "#f9fafb", border: "1.5px solid #e5e7eb" }
+                      }
+                    >
+                      <AnimatePresence>
+                        {sel && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                            className="absolute top-1 right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full"
+                            style={{ background: GOLD }}>
+                            <Check size={7} strokeWidth={3.5} className="text-white" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: g }}>
+                        <Icon size={17} className="text-white" strokeWidth={1.6} />
+                      </div>
+                      <span className="text-center text-[0.55rem] font-semibold leading-tight text-gray-600">{name}</span>
+                      <span className="text-center text-[0.48rem] text-gray-400">{rival}</span>
+                    </motion.button>
+                  );
+                })}
               </div>
-              <div className="flex flex-col items-center gap-0.5 px-2 py-1">
-                <span className="text-[0.7rem] font-bold text-gray-400">Les autres</span>
-                <span className="text-[0.5rem] font-bold uppercase tracking-wide text-gray-300">50–200€/mois</span>
+
+              <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-3">
+                <button onClick={() => setSelectedTools(new Set(TOOLS_DATA_48.map(t => t.name)))}
+                  className="text-[0.72rem] font-semibold text-gray-400 transition-colors hover:text-gray-700">
+                  Tout sélectionner
+                </button>
+                <span className="text-gray-200">·</span>
+                <button onClick={() => setSelectedTools(new Set())}
+                  className="text-[0.72rem] font-semibold text-gray-400 transition-colors hover:text-gray-700">
+                  Effacer
+                </button>
+                <span className="ml-auto text-[0.7rem] text-gray-400">
+                  {selectedTools.size} / {TOOLS_DATA_48.length} sélectionnés
+                </span>
               </div>
-            </div>
+            </motion.div>
 
-            {[
-              "IA intégrée nativement",
-              "Tout-en-un (CRM + Compta + IA)",
-              "Opérations en moins de 5 secondes",
-              "Sans installation ni formation",
-              "Support WhatsApp direct",
-              "Conçu pour entrepreneurs FR",
-            ].map((feature, i) => (
-              <motion.div key={i}
-                initial={{ opacity: 0, x: -12 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={viewport}
-                transition={{ duration: 0.35, ease, delay: i * 0.07 }}
-                className="grid grid-cols-[1fr_100px_100px] border-b border-gray-100 px-5 py-4 transition-colors last:border-0 hover:bg-gray-50">
-                <span className="flex items-center text-[0.85rem] font-medium text-gray-700">{feature}</span>
+            {/* ── Panneau de droite ── */}
+            <div className="space-y-3 lg:sticky lg:top-24">
 
-                {/* Colonne DJAMA — légère teinte or */}
-                <div className="flex items-center justify-center" style={{ background: `rgba(${GOLDR},0.03)` }}>
-                  <motion.div
-                    initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={viewport}
-                    transition={{ duration: 0.28, delay: i * 0.07 + 0.15, type: "spring", stiffness: 420, damping: 18 }}
-                    className="flex h-6 w-6 items-center justify-center rounded-full"
-                    style={{ background: `rgba(${GOLDR},0.15)`, border: `1px solid rgba(${GOLDR},0.4)` }}>
-                    <Check size={11} style={{ color: GOLD }} strokeWidth={3} />
-                  </motion.div>
+              {/* Concurrents */}
+              <motion.div initial={{ opacity: 0, x: 16 }} whileInView={{ opacity: 1, x: 0 }}
+                viewport={viewport} transition={{ duration: 0.5, ease }}
+                className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <div className="border-b border-gray-100 px-5 py-3.5">
+                  <p className="text-[0.82rem] font-bold text-gray-900">Applications à remplacer</p>
+                  <p className="text-[0.65rem] text-gray-400">Sans DJAMA, vous payez :</p>
                 </div>
-
-                {/* Colonne Les autres */}
-                <div className="flex items-center justify-center">
-                  <motion.div
-                    initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={viewport}
-                    transition={{ duration: 0.28, delay: i * 0.07 + 0.25, type: "spring", stiffness: 420, damping: 18 }}
-                    className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-gray-100">
-                    <X size={11} className="text-gray-400" strokeWidth={2.5} />
-                  </motion.div>
+                <div className="min-h-[72px] px-5 py-3">
+                  {selectedTools.size === 0 ? (
+                    <p className="py-2 text-[0.75rem] italic text-gray-400">← Sélectionnez des outils</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <AnimatePresence>
+                        {Array.from(selectedTools).map(name => {
+                          const t = TOOLS_DATA_48.find(x => x.name === name);
+                          if (!t) return null;
+                          return (
+                            <motion.div key={name}
+                              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="flex items-center justify-between overflow-hidden">
+                              <span className="text-[0.75rem] text-gray-600">{t.rival}</span>
+                              <span className="text-[0.75rem] font-bold text-gray-800">
+                                {t.price}€<span className="text-[0.6rem] font-normal text-gray-400">/mois</span>
+                              </span>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  )}
                 </div>
+                {selectedTools.size > 0 && (
+                  <div className="border-t border-gray-100 bg-red-50 px-5 py-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[0.78rem] font-bold text-gray-800">TOTAL</span>
+                      <span className="text-[1rem] font-black text-red-500">
+                        {Array.from(selectedTools).reduce((s, name) => s + (TOOLS_DATA_48.find(x => x.name === name)?.price ?? 0), 0)}€<span className="text-[0.65rem] font-normal">/mois</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
               </motion.div>
-            ))}
-          </div>
 
-          {/* CTA */}
-          <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.45, ease, delay: 0.6 }}
-            className="mt-8 flex flex-col items-center gap-3">
-            <Link href="/espace-client"
-              className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-[0.9rem] font-black text-[#100800] transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
-              style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, boxShadow: `0 4px 16px rgba(${GOLDR},0.25)` }}>
-              <Gem size={13} /> Essayer DJAMA — 11,90€/mois <ArrowRight size={12} />
-            </Link>
-            <p className="text-[0.72rem] text-gray-400">Sans engagement · Accès immédiat</p>
-          </motion.div>
+              {/* DJAMA */}
+              <div className="rounded-2xl border px-5 py-4"
+                style={{ background: `rgba(${GOLDR},0.05)`, borderColor: `rgba(${GOLDR},0.3)` }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[0.8rem] font-bold text-gray-900">Toutes les apps DJAMA</p>
+                    <p className="text-[0.62rem] text-gray-500">48 outils inclus</p>
+                  </div>
+                  <span className="text-[1.1rem] font-black" style={{ color: GOLD }}>
+                    11,90€<span className="text-[0.65rem] font-normal text-gray-500">/mois</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Économies */}
+              <AnimatePresence>
+                {selectedTools.size > 0 && (() => {
+                  const saving = Array.from(selectedTools).reduce((s, name) => s + (TOOLS_DATA_48.find(x => x.name === name)?.price ?? 0), 0) - 11.90;
+                  return saving > 0 ? (
+                    <motion.div key="saving"
+                      initial={{ opacity: 0, y: 8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
+                      transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 22 }}
+                      className="rounded-2xl border border-gray-100 bg-white px-5 py-5 text-center shadow-sm">
+                      <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-widest text-gray-400">Vos économies</p>
+                      <p className="text-[2.4rem] font-black leading-none"
+                        style={{ fontFamily: "'Caveat', cursive" }}>
+                        <span style={{ background: `rgba(${GOLDR},0.28)`, borderRadius: "6px", padding: "0 8px", color: "#6b4200" }}>
+                          {saving.toFixed(0)}€/mois
+                        </span>
+                      </p>
+                      <p className="mt-2 text-[0.7rem] text-gray-500">
+                        soit <strong className="text-gray-700">{(saving * 12).toFixed(0)}€ économisés par an</strong>
+                      </p>
+                    </motion.div>
+                  ) : null;
+                })()}
+              </AnimatePresence>
+
+              {/* CTA */}
+              <Link href="/espace-client"
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[0.9rem] font-black text-black transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
+                style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
+                <Gem size={13} /> Essayer gratuitement <ArrowRight size={13} />
+              </Link>
+              <p className="text-center text-[0.65rem] text-gray-400">11,90€/mois · Sans engagement · Accès immédiat</p>
+            </div>
+          </div>
         </div>
       </section>
 
