@@ -926,11 +926,11 @@ function HomeContent() {
                           </motion.div>
                         )}
                       </AnimatePresence>
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: g }}>
-                        <Icon size={17} className="text-white" strokeWidth={1.6} />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: g }}>
+                        <Icon size={24} className="text-white" strokeWidth={1.5} />
                       </div>
-                      <span className="text-center text-[0.55rem] font-semibold leading-tight text-gray-600">{name}</span>
-                      <span className="text-center text-[0.48rem] text-gray-400">{rival}</span>
+                      <span className="text-center text-[0.6rem] font-semibold leading-tight text-gray-600">{name}</span>
+                      <span className="text-center text-[0.52rem] text-gray-400">{rival}</span>
                     </motion.button>
                   );
                 })}
