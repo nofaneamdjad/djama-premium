@@ -543,6 +543,262 @@ const PUBLIC_APP_ICONS = [
 ];
 
 
+const APP_SCREENS = [
+  { id: "dashboard", nav: "Tableau de bord" },
+  { id: "factures",  nav: "Facturation"    },
+  { id: "crm",       nav: "CRM"            },
+  { id: "ia",        nav: "IA Assistant"   },
+] as const;
+
+function DjamaScreenContent({ screen }: { screen: string }) {
+  if (screen === "dashboard") return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-widest text-gray-400">Août 2026</p>
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: "CA du mois", value: "18 400 €", badge: "+12%", ok: true },
+          { label: "Factures",   value: "7 en attente", badge: "2 retards", ok: false },
+          { label: "Clients",    value: "34 actifs", badge: "+3", ok: true  },
+        ].map(k => (
+          <div key={k.label} className="rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
+            <p className="text-[0.6rem] text-gray-400">{k.label}</p>
+            <p className="mt-1 text-[0.85rem] font-black text-gray-900">{k.value}</p>
+            <span className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[0.55rem] font-bold"
+              style={{ background: k.ok ? "#dcfce7" : "#fef3c7", color: k.ok ? "#166534" : "#92400e" }}>
+              {k.badge}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
+        <p className="mb-2 text-[0.6rem] font-semibold text-gray-400">CA 6 derniers mois</p>
+        <div className="flex items-end gap-1 h-12">
+          {[40, 55, 48, 70, 62, 88].map((h, i) => (
+            <div key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: i === 5 ? GOLD : "#e5e7eb" }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (screen === "factures") return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-widest text-gray-400">Factures récentes</p>
+        <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold text-white" style={{ background: GOLD }}>+ Nouvelle</span>
+      </div>
+      {[
+        { ref: "#2026-089", client: "Groupe Esseba", amount: "3 200 €", status: "Payée",    ok: true  },
+        { ref: "#2026-088", client: "Entreprise Koné", amount: "1 840 €", status: "En retard", ok: false },
+        { ref: "#2026-087", client: "SCI Bézavana",  amount: "5 100 €", status: "En attente", ok: null },
+        { ref: "#2026-086", client: "Maison Jasmina", amount: "920 €",  status: "Payée",    ok: true  },
+      ].map(f => (
+        <div key={f.ref} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 shadow-sm"
+          style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+          <div>
+            <p className="text-[0.7rem] font-bold text-gray-800">{f.client}</p>
+            <p className="text-[0.58rem] text-gray-400">{f.ref}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[0.72rem] font-black text-gray-900">{f.amount}</p>
+            <span className="rounded-full px-1.5 py-0.5 text-[0.55rem] font-semibold"
+              style={{ background: f.ok === true ? "#dcfce7" : f.ok === false ? "#fee2e2" : "#f3f4f6",
+                       color: f.ok === true ? "#166534" : f.ok === false ? "#991b1b" : "#6b7280" }}>
+              {f.status}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  if (screen === "crm") return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-widest text-gray-400">Pipeline commercial</p>
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { col: "Prospects", color: "#6366f1", items: ["Startup Tekki", "Agence Soleil", "Mr. Diallo"] },
+          { col: "En cours",  color: GOLD,      items: ["Groupe Esseba", "SCI Bézavana"] },
+          { col: "Gagnés",    color: "#10b981", items: ["Entreprise Koné", "Maison Jasmina", "Tech Réunion"] },
+        ].map(col => (
+          <div key={col.col}>
+            <div className="mb-1.5 flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: col.color }} />
+              <p className="text-[0.6rem] font-bold text-gray-500">{col.col}</p>
+            </div>
+            {col.items.map(item => (
+              <div key={item} className="mb-1 rounded-lg bg-white px-2 py-1.5 shadow-sm text-[0.62rem] font-semibold text-gray-700"
+                style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+                {item}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-widest text-gray-400">IA Assistant DJAMA</p>
+      <div className="flex flex-col gap-2 rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
+        {[
+          { who: "Vous",  msg: "Génère une relance pour la facture #2026-088",  right: true  },
+          { who: "DJAMA", msg: "Relance rédigée et envoyée à Entreprise Koné. Objet : Rappel facture échue — réponse attendue sous 48h.", right: false },
+          { who: "Vous",  msg: "Quels clients ont le plus de retards ?",         right: true  },
+          { who: "DJAMA", msg: "Entreprise Koné (2 factures), SCI Bézavana (1). Total : 6 980 € à recouvrer.", right: false },
+        ].map((m, i) => (
+          <motion.div key={i} initial={{ opacity: 0, x: m.right ? 10 : -10 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.15, duration: 0.3 }}
+            className={`flex ${m.right ? "justify-end" : "justify-start"}`}>
+            <div className="max-w-[80%] rounded-xl px-2.5 py-1.5 text-[0.62rem] leading-snug"
+              style={{ background: m.right ? `${GOLD}22` : "#f3f4f6", color: "#374151" }}>
+              <p className="mb-0.5 text-[0.55rem] font-bold" style={{ color: m.right ? GOLD : "#6b7280" }}>{m.who}</p>
+              {m.msg}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DjamaVideoSection() {
+  const [step,    setStep]    = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!playing) return;
+    const DURATION = 4500;
+    const TICK = 60;
+    let elapsed = 0;
+    const t = setInterval(() => {
+      elapsed += TICK;
+      setProgress(Math.min((elapsed / DURATION) * 100, 100));
+      if (elapsed >= DURATION) { elapsed = 0; setStep(s => (s + 1) % APP_SCREENS.length); }
+    }, TICK);
+    return () => clearInterval(t);
+  }, [playing, step]);
+
+  const NAV_ICONS = [BarChart2, Receipt, Users2, Brain];
+
+  return (
+    <section className="overflow-hidden py-0">
+      {/* Dark hero — style Odoo */}
+      <div className="relative flex min-h-[340px] flex-col items-center justify-center px-6 py-20 sm:py-28"
+        style={{ background: "linear-gradient(135deg, #0d1f37 0%, #0f2744 50%, #0a1929 100%)" }}>
+        {/* Subtle grid overlay */}
+        <div className="pointer-events-none absolute inset-0"
+          style={{ backgroundImage: "radial-gradient(circle, rgba(201,165,90,0.06) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+
+        <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport} transition={{ duration: 0.8, ease }}
+          className="relative text-center">
+          <p className="mb-4 text-[0.72rem] font-black uppercase tracking-[0.22em]" style={{ color: GOLD }}>
+            Bienvenue dans la nouvelle ère
+          </p>
+          <h2 className="text-[2.8rem] font-black leading-[1.05] text-white sm:text-[4.5rem]"
+            style={{ fontFamily: "'Caveat', cursive" }}>
+            Votre business,{" "}
+            <span style={{
+              background: `linear-gradient(90deg, ${GOLD}, #e8c97a)`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}>
+              enfin unifié.
+            </span>
+          </h2>
+          <p className="mt-5 text-[1rem] text-blue-100/70 sm:text-[1.1rem]">
+            Factures · CRM · IA · Paie · Projets — tout sur une seule plateforme.
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Product mockup */}
+      <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
+        <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport} transition={{ duration: 0.7, ease, delay: 0.15 }}
+          className="-mt-16">
+          <div className="overflow-hidden rounded-2xl bg-white shadow-2xl"
+            style={{ border: "1px solid rgba(0,0,0,0.1)" }}>
+
+            {/* Browser chrome */}
+            <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-100 px-4 py-2.5">
+              <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+              <div className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
+              <div className="h-3 w-3 rounded-full bg-[#28c840]" />
+              <div className="mx-auto flex items-center gap-2 rounded-md bg-white px-3 py-1 shadow-sm"
+                style={{ border: "1px solid rgba(0,0,0,0.1)", minWidth: 180 }}>
+                <Shield size={9} className="text-green-500" />
+                <span className="text-[0.68rem] text-gray-500">app.djama.fr</span>
+              </div>
+            </div>
+
+            {/* App layout */}
+            <div className="flex" style={{ minHeight: 340 }}>
+              {/* Sidebar */}
+              <div className="flex w-[140px] shrink-0 flex-col border-r border-gray-100 bg-[#f9fafb] py-4">
+                <div className="mb-4 px-3">
+                  <img src="/logo.png" alt="DJAMA" className="h-[22px] w-auto object-contain opacity-90" />
+                </div>
+                {APP_SCREENS.map((s, i) => {
+                  const Icon = NAV_ICONS[i];
+                  return (
+                    <button key={s.id} onClick={() => { setStep(i); setProgress(0); }}
+                      className="flex items-center gap-2 px-3 py-2 text-left text-[0.72rem] font-semibold transition-colors"
+                      style={{ background: i === step ? `${GOLD}15` : "transparent",
+                               color: i === step ? GOLD : "#6b7280",
+                               borderLeft: i === step ? `2px solid ${GOLD}` : "2px solid transparent" }}>
+                      <Icon size={13} />
+                      {s.nav}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Main content */}
+              <div className="flex-1 overflow-hidden bg-[#f4f5f7] p-4">
+                <AnimatePresence mode="wait">
+                  <motion.div key={step}
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -16 }}
+                    transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}>
+                    <DjamaScreenContent screen={APP_SCREENS[step].id} />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="flex items-center gap-3 border-t border-gray-100 bg-gray-50 px-5 py-2.5">
+              <button onClick={() => setPlaying(p => !p)}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200">
+                {playing
+                  ? <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="3.5" height="10" rx="1"/><rect x="7.5" y="1" width="3.5" height="10" rx="1"/></svg>
+                  : <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1.5l9 4.5-9 4.5V1.5z"/></svg>
+                }
+              </button>
+              <div className="relative flex-1 h-1 rounded-full bg-gray-200 overflow-hidden">
+                <div className="absolute inset-y-0 left-0 rounded-full transition-none"
+                  style={{ width: `${progress}%`, background: GOLD }} />
+              </div>
+              <div className="flex gap-1">
+                {APP_SCREENS.map((_, i) => (
+                  <button key={i} onClick={() => { setStep(i); setProgress(0); }}
+                    className="h-1 rounded-full transition-all duration-300"
+                    style={{ width: i === step ? 20 : 6, background: i === step ? GOLD : "#d1d5db" }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 export default function Page() {
   return (
     <LanguageProvider>
@@ -1195,47 +1451,9 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           DIFFÉRENCIATEURS — style Odoo "conçu pour faire la différence"
+           VIDEO ANIMATION — "IA au cœur de votre business"
       ══════════════════════════════════════════════════════ */}
-      <section className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-4xl px-6">
-
-          <motion.h2 initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.55, ease }}
-            className="mb-10 text-[2.2rem] leading-[1.1] text-gray-900 sm:text-[2.8rem]"
-            style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
-            Une plateforme{" "}
-            <span style={{ background: "linear-gradient(180deg,transparent 52%,rgba(96,165,250,0.32) 52%)", padding: "0 5px" }}>
-              conçue
-            </span>{" "}
-            pour faire la différence.
-          </motion.h2>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewport} transition={{ duration: 0.45, ease }}
-              className="rounded-2xl bg-white p-7 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
-              <h3 className="mb-3 text-[1.1rem] font-black text-gray-900">Pas de baratin</h3>
-              <p className="text-[0.88rem] leading-relaxed italic text-gray-500">
-                &ldquo;Avec la plupart des logiciels, vous obtenez ce que vous espériez. Avec DJAMA, vous obtenez ce que vous voyez — et souvent plus.&rdquo;
-              </p>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewport} transition={{ duration: 0.45, ease, delay: 0.08 }}
-              className="rounded-2xl bg-white p-7 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
-              <h3 className="mb-3 text-[1.1rem] font-black text-gray-900">Support humain direct</h3>
-              <p className="text-[0.88rem] leading-relaxed text-gray-500">
-                Un vrai conseiller DJAMA disponible sur WhatsApp. Pas de chatbot, pas de ticket, une vraie personne — en français, disponible dès maintenant.
-              </p>
-              <a href="https://wa.me/262693523665" target="_blank" rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-1.5 text-[0.82rem] font-bold text-[#25d366] transition-opacity hover:opacity-70">
-                <ArrowRight size={13} /> Contacter DJAMA
-              </a>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+      <DjamaVideoSection />
 
       <PartnerLogosSection />
       <TestimonialsSection dynamic />
