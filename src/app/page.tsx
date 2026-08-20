@@ -18,7 +18,7 @@ import {
   Network, FolderOpen, Share2, ShoppingBag, Bot, BarChart2,
   Store, Contact2, CalendarPlus, QrCode, PenLine, ShoppingCart,
   Landmark, FileCheck2, BookOpen, Target,
-  MessageCircle, Gift, Search, Clock, GraduationCap, UserPlus, Video, Mic,
+  MessageCircle, Gift, Search, Clock, GraduationCap, UserPlus, Video, Mic, Bell,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import {
@@ -543,38 +543,72 @@ const PUBLIC_APP_ICONS = [
 ];
 
 
-const APP_SCREENS = [
-  { id: "dashboard", nav: "Tableau de bord" },
-  { id: "factures",  nav: "Facturation"    },
-  { id: "crm",       nav: "CRM"            },
-  { id: "ia",        nav: "IA Assistant"   },
-] as const;
+/* ── Vraie palette DJAMA espace client ── */
+const D_SIDEBAR  = "#111318";
+const D_CONTENT  = "#07090e";
+const D_BORDER   = "rgba(255,255,255,0.07)";
+const D_TEXT     = "rgba(255,255,255,0.65)";
+const D_MUTED    = "rgba(255,255,255,0.25)";
+const D_CARD     = "rgba(255,255,255,0.04)";
+
+/* Groupes sidebar réels */
+const MOCK_NAV = [
+  { group: null, items: [
+    { id: "dashboard", label: "Tableau de bord", Icon: BarChart2 },
+  ]},
+  { group: "Finance", items: [
+    { id: "factures",  label: "Factures",    Icon: Receipt  },
+    { id: "tresorerie",label: "Trésorerie",  Icon: Wallet   },
+  ]},
+  { group: "Commercial", items: [
+    { id: "crm",       label: "CRM",         Icon: Users2   },
+    { id: "contrats",  label: "Contrats",    Icon: FileCheck2 },
+  ]},
+  { group: "Intelligence", items: [
+    { id: "ia",        label: "Assistant IA", Icon: Zap     },
+    { id: "coaching",  label: "Coaching IA",  Icon: Brain   },
+  ]},
+];
+
+const CYCLE_SCREENS = ["dashboard", "factures", "crm", "ia"] as const;
 
 function DjamaScreenContent({ screen }: { screen: string }) {
   if (screen === "dashboard") return (
-    <div className="flex flex-col gap-3">
-      <p className="text-[0.7rem] font-semibold uppercase tracking-widest text-gray-400">Août 2026</p>
+    <div className="flex flex-col gap-3 p-4">
+      <p className="text-[0.58rem] font-semibold uppercase tracking-widest" style={{ color: D_MUTED }}>Bonjour · Août 2026</p>
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: "CA du mois", value: "18 400 €", badge: "+12%", ok: true },
-          { label: "Factures",   value: "7 en attente", badge: "2 retards", ok: false },
-          { label: "Clients",    value: "34 actifs", badge: "+3", ok: true  },
+          { label: "CA du mois",  value: "18 400 €", badge: "+12%",    ok: true  },
+          { label: "Factures",    value: "7",         badge: "2 retards",ok: false },
+          { label: "Clients",     value: "34",        badge: "+3 ce mois",ok: true },
         ].map(k => (
-          <div key={k.label} className="rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
-            <p className="text-[0.6rem] text-gray-400">{k.label}</p>
-            <p className="mt-1 text-[0.85rem] font-black text-gray-900">{k.value}</p>
-            <span className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[0.55rem] font-bold"
-              style={{ background: k.ok ? "#dcfce7" : "#fef3c7", color: k.ok ? "#166534" : "#92400e" }}>
+          <div key={k.label} className="rounded-xl p-3" style={{ background: D_CARD, border: D_BORDER }}>
+            <p className="text-[0.55rem]" style={{ color: D_MUTED }}>{k.label}</p>
+            <p className="mt-1 text-[0.9rem] font-black text-white">{k.value}</p>
+            <span className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[0.5rem] font-bold"
+              style={{ background: k.ok ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
+                       color: k.ok ? "#34d399" : "#f87171" }}>
               {k.badge}
             </span>
           </div>
         ))}
       </div>
-      <div className="rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
-        <p className="mb-2 text-[0.6rem] font-semibold text-gray-400">CA 6 derniers mois</p>
-        <div className="flex items-end gap-1 h-12">
+      <div className="rounded-xl p-3" style={{ background: D_CARD, border: D_BORDER }}>
+        <p className="mb-2 text-[0.55rem] font-semibold" style={{ color: D_MUTED }}>CA · 6 derniers mois</p>
+        <div className="flex items-end gap-1.5 h-10">
           {[40, 55, 48, 70, 62, 88].map((h, i) => (
-            <div key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: i === 5 ? GOLD : "#e5e7eb" }} />
+            <div key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: i === 5 ? GOLD : "rgba(255,255,255,0.12)" }} />
+          ))}
+        </div>
+      </div>
+      <div className="rounded-xl p-3" style={{ background: D_CARD, border: D_BORDER }}>
+        <p className="mb-2 text-[0.55rem] font-semibold" style={{ color: D_MUTED }}>Actions rapides</p>
+        <div className="flex gap-2">
+          {["Facture", "Devis", "Dépense", "Contact"].map(a => (
+            <div key={a} className="flex-1 rounded-lg py-1.5 text-center text-[0.52rem] font-bold"
+              style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}25` }}>
+              {a}
+            </div>
           ))}
         </div>
       </div>
@@ -582,53 +616,58 @@ function DjamaScreenContent({ screen }: { screen: string }) {
   );
 
   if (screen === "factures") return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-widest text-gray-400">Factures récentes</p>
-        <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold text-white" style={{ background: GOLD }}>+ Nouvelle</span>
+    <div className="flex flex-col gap-0 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-[0.7rem] font-bold text-white">Factures & Devis</p>
+        <span className="rounded-lg px-2.5 py-1 text-[0.58rem] font-bold"
+          style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}25` }}>+ Nouvelle facture</span>
+      </div>
+      <div className="mb-2 grid grid-cols-4 gap-2 text-[0.52rem] font-semibold uppercase tracking-wider" style={{ color: D_MUTED }}>
+        <span>Numéro</span><span>Client</span><span className="text-right">Montant</span><span className="text-right">Statut</span>
       </div>
       {[
-        { ref: "#2026-089", client: "Groupe Esseba", amount: "3 200 €", status: "Payée",    ok: true  },
-        { ref: "#2026-088", client: "Entreprise Koné", amount: "1 840 €", status: "En retard", ok: false },
-        { ref: "#2026-087", client: "SCI Bézavana",  amount: "5 100 €", status: "En attente", ok: null },
-        { ref: "#2026-086", client: "Maison Jasmina", amount: "920 €",  status: "Payée",    ok: true  },
-      ].map(f => (
-        <div key={f.ref} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 shadow-sm"
-          style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
-          <div>
-            <p className="text-[0.7rem] font-bold text-gray-800">{f.client}</p>
-            <p className="text-[0.58rem] text-gray-400">{f.ref}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[0.72rem] font-black text-gray-900">{f.amount}</p>
-            <span className="rounded-full px-1.5 py-0.5 text-[0.55rem] font-semibold"
-              style={{ background: f.ok === true ? "#dcfce7" : f.ok === false ? "#fee2e2" : "#f3f4f6",
-                       color: f.ok === true ? "#166534" : f.ok === false ? "#991b1b" : "#6b7280" }}>
-              {f.status}
+        { ref: "2026-089", client: "Groupe Esseba",   amount: "3 200 €", s: "Payée",      ok: true  },
+        { ref: "2026-088", client: "Entreprise Koné", amount: "1 840 €", s: "En retard",  ok: false },
+        { ref: "2026-087", client: "SCI Bézavana",    amount: "5 100 €", s: "En attente", ok: null  },
+        { ref: "2026-086", client: "Maison Jasmina",  amount: "920 €",   s: "Payée",      ok: true  },
+      ].map((f, i) => (
+        <div key={f.ref} className="grid grid-cols-4 items-center gap-2 py-2 text-[0.62rem]"
+          style={{ borderTop: i === 0 ? D_BORDER : D_BORDER }}>
+          <span className="font-mono text-[0.55rem]" style={{ color: D_MUTED }}>#{f.ref}</span>
+          <span className="font-semibold text-white truncate">{f.client}</span>
+          <span className="text-right font-black text-white">{f.amount}</span>
+          <span className="text-right">
+            <span className="rounded-full px-1.5 py-0.5 text-[0.5rem] font-semibold"
+              style={{ background: f.ok === true ? "rgba(16,185,129,0.15)" : f.ok === false ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.08)",
+                       color: f.ok === true ? "#34d399" : f.ok === false ? "#f87171" : D_MUTED }}>
+              {f.s}
             </span>
-          </div>
+          </span>
         </div>
       ))}
     </div>
   );
 
   if (screen === "crm") return (
-    <div className="flex flex-col gap-2">
-      <p className="text-[0.7rem] font-semibold uppercase tracking-widest text-gray-400">Pipeline commercial</p>
+    <div className="flex flex-col gap-3 p-4">
+      <p className="text-[0.7rem] font-bold text-white">CRM — Pipeline</p>
       <div className="grid grid-cols-3 gap-2">
         {[
-          { col: "Prospects", color: "#6366f1", items: ["Startup Tekki", "Agence Soleil", "Mr. Diallo"] },
-          { col: "En cours",  color: GOLD,      items: ["Groupe Esseba", "SCI Bézavana"] },
-          { col: "Gagnés",    color: "#10b981", items: ["Entreprise Koné", "Maison Jasmina", "Tech Réunion"] },
+          { col: "Prospects", color: "#6366f1", count: 3, items: ["Startup Tekki", "Agence Soleil", "Mr. Diallo"] },
+          { col: "En cours",  color: GOLD,      count: 2, items: ["Groupe Esseba", "SCI Bézavana"]               },
+          { col: "Gagnés",    color: "#10b981", count: 3, items: ["Ent. Koné", "M. Jasmina", "Tech Réunion"]    },
         ].map(col => (
           <div key={col.col}>
-            <div className="mb-1.5 flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: col.color }} />
-              <p className="text-[0.6rem] font-bold text-gray-500">{col.col}</p>
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: col.color }} />
+                <p className="text-[0.58rem] font-bold" style={{ color: D_MUTED }}>{col.col}</p>
+              </div>
+              <span className="rounded-full px-1.5 text-[0.5rem] font-bold" style={{ background: `${col.color}20`, color: col.color }}>{col.count}</span>
             </div>
             {col.items.map(item => (
-              <div key={item} className="mb-1 rounded-lg bg-white px-2 py-1.5 shadow-sm text-[0.62rem] font-semibold text-gray-700"
-                style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+              <div key={item} className="mb-1 rounded-lg px-2 py-2 text-[0.58rem] font-semibold"
+                style={{ background: D_CARD, border: D_BORDER, color: D_TEXT }}>
                 {item}
               </div>
             ))}
@@ -639,21 +678,23 @@ function DjamaScreenContent({ screen }: { screen: string }) {
   );
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-[0.7rem] font-semibold uppercase tracking-widest text-gray-400">IA Assistant DJAMA</p>
-      <div className="flex flex-col gap-2 rounded-xl bg-white p-3 shadow-sm" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
+    <div className="flex flex-col gap-2 p-4">
+      <p className="mb-1 text-[0.7rem] font-bold text-white">Assistant IA</p>
+      <div className="flex flex-col gap-2">
         {[
           { who: "Vous",  msg: "Génère une relance pour la facture #2026-088",  right: true  },
-          { who: "DJAMA", msg: "Relance rédigée et envoyée à Entreprise Koné. Objet : Rappel facture échue — réponse attendue sous 48h.", right: false },
-          { who: "Vous",  msg: "Quels clients ont le plus de retards ?",         right: true  },
-          { who: "DJAMA", msg: "Entreprise Koné (2 factures), SCI Bézavana (1). Total : 6 980 € à recouvrer.", right: false },
+          { who: "DJAMA IA", msg: "Relance envoyée à Entreprise Koné — Objet : Rappel facture échue, réponse attendue sous 48h.", right: false },
+          { who: "Vous",  msg: "Résumé du CA de ce mois ?",         right: true  },
+          { who: "DJAMA IA", msg: "CA août 2026 : 18 400 € — en hausse de +12% vs juillet. 34 clients actifs.", right: false },
         ].map((m, i) => (
-          <motion.div key={i} initial={{ opacity: 0, x: m.right ? 10 : -10 }} animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.15, duration: 0.3 }}
+          <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.12, duration: 0.25 }}
             className={`flex ${m.right ? "justify-end" : "justify-start"}`}>
-            <div className="max-w-[80%] rounded-xl px-2.5 py-1.5 text-[0.62rem] leading-snug"
-              style={{ background: m.right ? `${GOLD}22` : "#f3f4f6", color: "#374151" }}>
-              <p className="mb-0.5 text-[0.55rem] font-bold" style={{ color: m.right ? GOLD : "#6b7280" }}>{m.who}</p>
+            <div className="max-w-[85%] rounded-xl px-2.5 py-1.5 text-[0.6rem] leading-snug"
+              style={{ background: m.right ? `${GOLD}22` : D_CARD,
+                       border: `1px solid ${m.right ? `${GOLD}30` : D_BORDER}`,
+                       color: m.right ? "#f5e6cc" : D_TEXT }}>
+              <p className="mb-0.5 text-[0.5rem] font-bold" style={{ color: m.right ? GOLD : D_MUTED }}>{m.who}</p>
               {m.msg}
             </div>
           </motion.div>
@@ -664,8 +705,8 @@ function DjamaScreenContent({ screen }: { screen: string }) {
 }
 
 function DjamaVideoSection() {
-  const [step,    setStep]    = useState(0);
-  const [playing, setPlaying] = useState(true);
+  const [step,     setStep]     = useState(0);
+  const [playing,  setPlaying]  = useState(true);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -676,119 +717,165 @@ function DjamaVideoSection() {
     const t = setInterval(() => {
       elapsed += TICK;
       setProgress(Math.min((elapsed / DURATION) * 100, 100));
-      if (elapsed >= DURATION) { elapsed = 0; setStep(s => (s + 1) % APP_SCREENS.length); }
+      if (elapsed >= DURATION) { elapsed = 0; setStep(s => (s + 1) % CYCLE_SCREENS.length); }
     }, TICK);
     return () => clearInterval(t);
   }, [playing, step]);
 
-  const NAV_ICONS = [BarChart2, Receipt, Users2, Brain];
+  const activeId = CYCLE_SCREENS[step];
 
   return (
-    <section className="overflow-hidden py-0">
-      {/* Dark hero — style Odoo */}
-      <div className="relative flex min-h-[340px] flex-col items-center justify-center px-6 py-20 sm:py-28"
-        style={{ background: "linear-gradient(135deg, #0d1f37 0%, #0f2744 50%, #0a1929 100%)" }}>
-        {/* Subtle grid overlay */}
-        <div className="pointer-events-none absolute inset-0"
-          style={{ backgroundImage: "radial-gradient(circle, rgba(201,165,90,0.06) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+    <section className="py-0" style={{ background: "linear-gradient(160deg, #0d1f37 0%, #0f2744 45%, #0a1929 100%)" }}>
+      {/* Dot grid overlay */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden"
+        style={{ backgroundImage: "radial-gradient(circle, rgba(201,165,90,0.055) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
 
+      {/* Hero text */}
+      <div className="relative px-6 pb-10 pt-20 text-center sm:pt-28">
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport} transition={{ duration: 0.8, ease }}
-          className="relative text-center">
+          viewport={viewport} transition={{ duration: 0.8, ease }}>
           <p className="mb-4 text-[0.72rem] font-black uppercase tracking-[0.22em]" style={{ color: GOLD }}>
             Bienvenue dans la nouvelle ère
           </p>
           <h2 className="text-[2.8rem] font-black leading-[1.05] text-white sm:text-[4.5rem]"
             style={{ fontFamily: "'Caveat', cursive" }}>
             Votre business,{" "}
-            <span style={{
-              background: `linear-gradient(90deg, ${GOLD}, #e8c97a)`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}>
+            <span style={{ background: `linear-gradient(90deg, ${GOLD}, #e8c97a)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               enfin unifié.
             </span>
           </h2>
-          <p className="mt-5 text-[1rem] text-blue-100/70 sm:text-[1.1rem]">
+          <p className="mt-5 text-[1rem] sm:text-[1.1rem]" style={{ color: "rgba(186,210,255,0.65)" }}>
             Factures · CRM · IA · Paie · Projets — tout sur une seule plateforme.
           </p>
         </motion.div>
       </div>
 
       {/* Product mockup */}
-      <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
+      <div className="relative mx-auto max-w-5xl px-4 pb-20 sm:px-6">
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport} transition={{ duration: 0.7, ease, delay: 0.15 }}
-          className="-mt-16">
-          <div className="overflow-hidden rounded-2xl bg-white shadow-2xl"
-            style={{ border: "1px solid rgba(0,0,0,0.1)" }}>
+          viewport={viewport} transition={{ duration: 0.7, ease, delay: 0.15 }}>
 
-            {/* Browser chrome */}
-            <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-100 px-4 py-2.5">
-              <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-              <div className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
-              <div className="h-3 w-3 rounded-full bg-[#28c840]" />
-              <div className="mx-auto flex items-center gap-2 rounded-md bg-white px-3 py-1 shadow-sm"
-                style={{ border: "1px solid rgba(0,0,0,0.1)", minWidth: 180 }}>
-                <Shield size={9} className="text-green-500" />
-                <span className="text-[0.68rem] text-gray-500">app.djama.fr</span>
+          <div className="overflow-hidden rounded-2xl shadow-2xl"
+            style={{ background: D_CONTENT, border: "1px solid rgba(255,255,255,0.1)" }}>
+
+            {/* macOS browser chrome */}
+            <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: "#1a1d26", borderBottom: D_BORDER }}>
+              <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+              <div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
+              <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+              <div className="mx-auto flex items-center gap-1.5 rounded-md px-3 py-1"
+                style={{ background: "rgba(255,255,255,0.06)", border: D_BORDER, minWidth: 180 }}>
+                <ShieldCheck size={9} className="text-green-400" />
+                <span className="text-[0.65rem]" style={{ color: D_MUTED }}>app.djama.space</span>
               </div>
             </div>
 
             {/* App layout */}
-            <div className="flex" style={{ minHeight: 340 }}>
-              {/* Sidebar */}
-              <div className="flex w-[140px] shrink-0 flex-col border-r border-gray-100 bg-[#f9fafb] py-4">
-                <div className="mb-4 px-3">
-                  <img src="/logo.png" alt="DJAMA" className="h-[22px] w-auto object-contain opacity-90" />
+            <div className="flex" style={{ minHeight: 360 }}>
+
+              {/* Sidebar — vraie DJAMA */}
+              <div className="flex w-[148px] shrink-0 flex-col" style={{ background: D_SIDEBAR, borderRight: D_BORDER }}>
+                {/* Logo */}
+                <div className="flex h-[44px] items-center gap-2 px-3" style={{ borderBottom: D_BORDER }}>
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}28` }}>
+                    <Sparkles size={11} style={{ color: GOLD }} />
+                  </div>
+                  <div className="leading-none">
+                    <p className="text-[0.8rem] font-bold" style={{ color: GOLD }}>DJAMA</p>
+                    <p className="text-[0.45rem] uppercase tracking-widest" style={{ color: D_MUTED }}>PRO · Actif</p>
+                  </div>
                 </div>
-                {APP_SCREENS.map((s, i) => {
-                  const Icon = NAV_ICONS[i];
-                  return (
-                    <button key={s.id} onClick={() => { setStep(i); setProgress(0); }}
-                      className="flex items-center gap-2 px-3 py-2 text-left text-[0.72rem] font-semibold transition-colors"
-                      style={{ background: i === step ? `${GOLD}15` : "transparent",
-                               color: i === step ? GOLD : "#6b7280",
-                               borderLeft: i === step ? `2px solid ${GOLD}` : "2px solid transparent" }}>
-                      <Icon size={13} />
-                      {s.nav}
-                    </button>
-                  );
-                })}
+
+                {/* Nav */}
+                <nav className="flex-1 overflow-hidden px-1.5 py-2">
+                  {MOCK_NAV.map((section, si) => (
+                    <div key={si} className={si > 0 ? "mt-3" : ""}>
+                      {section.group && (
+                        <p className="mb-1 px-2 text-[0.47rem] font-semibold uppercase tracking-wider" style={{ color: D_MUTED }}>
+                          {section.group}
+                        </p>
+                      )}
+                      {section.items.map(({ id, label, Icon }) => {
+                        const active = id === activeId;
+                        return (
+                          <button key={id} onClick={() => { setStep(CYCLE_SCREENS.indexOf(id as typeof CYCLE_SCREENS[number])); setProgress(0); }}
+                            className="relative flex w-full items-center gap-2 rounded-lg px-2 py-[5px] text-left text-[0.68rem] font-medium transition-colors"
+                            style={{ background: active ? `${GOLD}1c` : "transparent",
+                                     color: active ? GOLD : D_TEXT }}>
+                            {active && <span className="absolute left-0 top-1/2 h-3 w-0.5 -translate-y-1/2 rounded-r-full" style={{ background: GOLD }} />}
+                            <Icon size={12} style={{ color: active ? GOLD : undefined }} />
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </nav>
+
+                {/* User footer */}
+                <div className="flex items-center gap-2 px-3 py-2.5" style={{ borderTop: D_BORDER }}>
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[0.58rem] font-bold"
+                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}22`, color: GOLD }}>
+                    A
+                  </div>
+                  <div className="leading-none">
+                    <p className="text-[0.6rem] font-medium" style={{ color: D_TEXT }}>Awa Diallo</p>
+                    <p className="text-[0.45rem]" style={{ color: D_MUTED }}>DJAMA PRO</p>
+                  </div>
+                </div>
               </div>
 
-              {/* Main content */}
-              <div className="flex-1 overflow-hidden bg-[#f4f5f7] p-4">
-                <AnimatePresence mode="wait">
-                  <motion.div key={step}
-                    initial={{ opacity: 0, x: 16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -16 }}
-                    transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}>
-                    <DjamaScreenContent screen={APP_SCREENS[step].id} />
-                  </motion.div>
-                </AnimatePresence>
+              {/* Main */}
+              <div className="flex flex-1 flex-col overflow-hidden">
+                {/* Topbar */}
+                <div className="flex h-[44px] shrink-0 items-center gap-2 px-3" style={{ background: D_SIDEBAR, borderBottom: D_BORDER }}>
+                  <div className="flex flex-1 items-center gap-1.5 rounded-lg px-2.5 py-1.5"
+                    style={{ background: "rgba(255,255,255,0.05)", border: D_BORDER, maxWidth: 200 }}>
+                    <Search size={10} style={{ color: D_MUTED }} />
+                    <span className="text-[0.6rem]" style={{ color: D_MUTED }}>Rechercher…</span>
+                    <kbd className="ml-auto rounded px-1 py-0.5 text-[0.45rem]"
+                      style={{ background: "rgba(255,255,255,0.06)", border: D_BORDER, color: D_MUTED }}>⌘K</kbd>
+                  </div>
+                  <div className="flex-1" />
+                  <Bell size={13} style={{ color: D_MUTED }} />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg text-[0.58rem] font-bold"
+                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}22`, color: GOLD }}>A</div>
+                </div>
+
+                {/* Page content */}
+                <div className="flex-1 overflow-hidden" style={{ background: D_CONTENT }}>
+                  <AnimatePresence mode="wait">
+                    <motion.div key={step}
+                      initial={{ opacity: 0, x: 12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -12 }}
+                      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}>
+                      <DjamaScreenContent screen={activeId} />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
 
-            {/* Progress bar */}
-            <div className="flex items-center gap-3 border-t border-gray-100 bg-gray-50 px-5 py-2.5">
+            {/* Progress controls */}
+            <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: D_SIDEBAR, borderTop: D_BORDER }}>
               <button onClick={() => setPlaying(p => !p)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200">
+                className="flex h-6 w-6 items-center justify-center rounded-full transition-colors"
+                style={{ background: "rgba(255,255,255,0.06)", color: D_MUTED }}>
                 {playing
-                  ? <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="3.5" height="10" rx="1"/><rect x="7.5" y="1" width="3.5" height="10" rx="1"/></svg>
-                  : <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1.5l9 4.5-9 4.5V1.5z"/></svg>
+                  ? <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><rect x="1" y="1" width="3" height="8" rx="0.8"/><rect x="6" y="1" width="3" height="8" rx="0.8"/></svg>
+                  : <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1l7 4-7 4V1z"/></svg>
                 }
               </button>
-              <div className="relative flex-1 h-1 rounded-full bg-gray-200 overflow-hidden">
-                <div className="absolute inset-y-0 left-0 rounded-full transition-none"
-                  style={{ width: `${progress}%`, background: GOLD }} />
+              <div className="relative flex-1 h-0.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progress}%`, background: GOLD }} />
               </div>
               <div className="flex gap-1">
-                {APP_SCREENS.map((_, i) => (
+                {CYCLE_SCREENS.map((_, i) => (
                   <button key={i} onClick={() => { setStep(i); setProgress(0); }}
-                    className="h-1 rounded-full transition-all duration-300"
-                    style={{ width: i === step ? 20 : 6, background: i === step ? GOLD : "#d1d5db" }} />
+                    className="h-0.5 rounded-full transition-all duration-300"
+                    style={{ width: i === step ? 18 : 5, background: i === step ? GOLD : "rgba(255,255,255,0.2)" }} />
                 ))}
               </div>
             </div>
