@@ -1545,192 +1545,90 @@ function HomeContent() {
       <PartnerLogosSection />
       <TestimonialsSection dynamic />
 
-      {/* ── Tarifs — Découverte / Pro ───────────────────────── */}
-      <section className="bg-white py-12 sm:py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport} transition={{ duration: 0.55, ease }}
-          className="mx-auto max-w-3xl px-6"
-        >
-          {/* Header */}
-          <div className="mb-8 text-center">
-            <span className="mb-3 inline-block rounded-full border px-4 py-1.5 text-[0.62rem] font-bold uppercase tracking-widest"
-              style={{ borderColor: `rgba(${GOLDR},0.30)`, background: `rgba(${GOLDR},0.08)`, color: GOLD }}>
-              Tarifs
-            </span>
-            <h2 className="mt-2 text-[1.8rem] font-black text-gray-900">Simple et transparent</h2>
-            <p className="mt-2 text-[0.85rem] text-gray-500">Deux offres claires. Sans frais cachés, sans engagement.</p>
+      {/* ── Fonctionnalités — bento grid ───────────────────────── */}
+      <section className="overflow-hidden bg-[#f4f5f7] py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-6">
 
-            {/* Toggle Par an / Par mois */}
-            <div className="mt-5 flex items-center justify-center gap-3">
-              <span className={`text-sm font-semibold transition-colors ${parAn ? "text-gray-900" : "text-gray-400"}`}>
-                Par an
-                {parAn && (
-                  <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider text-emerald-700">
-                    −2 mois offerts
-                  </span>
-                )}
+          {/* Titre */}
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.65, ease }}
+            className="mb-14 text-center">
+            <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[4rem]"
+              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
+              Tout ce dont vous avez{" "}
+              <span className="relative inline-block whitespace-nowrap">
+                besoin.
+                <span className="pointer-events-none absolute -bottom-1 left-0 right-0 h-[5px] rounded-full"
+                  style={{ background: `linear-gradient(90deg,transparent,rgba(${GOLDR},0.6) 20%,rgba(${GOLDR},0.6) 80%,transparent)` }} />
               </span>
-              <button
-                onClick={() => setParAn(!parAn)}
-                aria-label="Basculer facturation annuelle / mensuelle"
-                className="relative h-6 w-11 rounded-full transition-colors duration-300"
-                style={{ background: parAn ? GOLD : "#d1d5db" }}
-              >
-                <span
-                  className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300"
-                  style={{ transform: parAn ? "translateX(22px)" : "translateX(2px)" }}
-                />
-              </button>
-              <span className={`text-sm font-semibold transition-colors ${!parAn ? "text-gray-900" : "text-gray-400"}`}>
-                Par mois
-              </span>
-            </div>
-          </div>
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-[0.95rem] text-gray-500">
+              48 outils professionnels. Une seule plateforme. Un seul abonnement.
+            </p>
+          </motion.div>
 
-          {/* 2 cartes */}
-          <div className="grid items-center gap-5 sm:grid-cols-2">
-
-            {/* Gratuit */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewport} transition={{ duration: 0.45, ease }}
-              className="flex flex-col rounded-2xl border border-gray-200 bg-white p-7 shadow-sm"
-            >
-              <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-widest text-gray-400">Gratuit</p>
-              <h3 className="mb-4 text-[1.4rem] font-black text-gray-900">Découverte</h3>
-              <div className="mb-1 flex items-baseline gap-1">
-                <span className="text-[2.6rem] font-black leading-none text-gray-900">0 €</span>
-                <span className="text-sm text-gray-400">/mois</span>
-              </div>
-              <p className="mb-6 mt-1 text-xs text-gray-400">Pour découvrir DJAMA gratuitement.</p>
-              <ul className="mb-7 flex-1 space-y-3">
-                {["Factures & devis (5 max.)", "Planning", "Bloc-notes", "1 utilisateur"].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-[0.82rem] text-gray-600">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50">
-                      <Check size={11} className="text-gray-400" strokeWidth={2.5} />
-                    </span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/register" className="block w-full rounded-xl border border-gray-300 bg-white py-3 text-center text-sm font-bold text-gray-700 transition hover:border-[#c9a55a] hover:text-[#c9a55a]">
-                Commencer gratuitement
-              </Link>
-            </motion.div>
-
-            {/* Pro */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewport} transition={{ duration: 0.45, ease, delay: 0.1 }}
-              className="relative flex flex-col rounded-2xl p-7 sm:p-9"
-              style={{ background: `linear-gradient(150deg,${GOLD} 0%,#e2ba70 50%,#b08d45 100%)`, boxShadow: `0 24px 64px rgba(${GOLDR},0.38),0 6px 18px rgba(${GOLDR},0.20)` }}
-            >
-              <div className="absolute -top-[16px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-900 px-5 py-[6px] text-[0.58rem] font-black uppercase tracking-widest text-white shadow-lg">
-                ★ Recommandé
-              </div>
-              <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-widest text-[#100800]/50">Pro</p>
-              <h3 className="mb-4 text-[1.4rem] font-black text-[#100800]">Professionnel</h3>
-              <div className="mb-1 flex items-baseline gap-1">
-                <span className="text-[2.6rem] font-black leading-none text-[#100800]">{parAn ? "9,90 €" : "11,90 €"}</span>
-                <span className="text-sm text-[#100800]/50">/mois</span>
-              </div>
-              {parAn ? (
-                <p className="mb-6 mt-1 text-xs text-[#100800]/50"><span className="line-through">11,90 €/mois</span> · Facturé 118,80 €/an</p>
-              ) : (
-                <p className="mb-6 mt-1 text-xs text-[#100800]/50">Facturation mensuelle · Résiliable à tout moment</p>
-              )}
-              <ul className="mb-7 flex-1 space-y-3">
-                {["Tout le plan Gratuit", "48 outils professionnels", "IA Business & Coaching", "Création de comptes employés", "Gestion des rôles et permissions", "Support prioritaire"].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-[0.82rem] text-[#100800]/80">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/40">
-                      <Check size={11} className="text-[#100800]" strokeWidth={2.5} />
-                    </span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              {/* Sélecteur mode de paiement */}
-              <div className="mb-4 flex gap-1.5">
-                {([
-                  { id: "card",     label: "💳 CB" },
-                  { id: "paypal",   label: "🅿 PayPal" },
-                  { id: "virement", label: "🏦 Virement" },
-                ] as const).map(({ id, label }) => (
-                  <button key={id} onClick={() => setPayMode(id)}
-                    className="flex-1 rounded-xl py-2 text-[0.7rem] font-bold transition-all"
-                    style={payMode === id
-                      ? { background: "rgba(0,0,0,0.18)", color: "#100800", border: "1px solid rgba(0,0,0,0.25)" }
-                      : { background: "rgba(255,255,255,0.30)", color: "rgba(16,8,0,0.55)", border: "1px solid rgba(255,255,255,0.40)" }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Paiement CB via Stripe */}
-              {payMode === "card" && (
-                <StripeButton
-                  billing={parAn ? "yearly" : "monthly"}
-                  label={parAn ? "Commencer — 9,90€/mois →" : "Commencer — 11,90€/mois →"}
-                  className="rounded-xl py-3 text-sm font-black"
-                />
-              )}
-
-              {/* Paiement PayPal */}
-              {payMode === "paypal" && (
-                <motion.a
-                  href="/api/checkout/coaching-ia/paypal"
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-black text-white"
-                  style={{ background: "linear-gradient(135deg,#003087,#009cde)", boxShadow: "0 4px 14px rgba(0,48,135,0.45)" }}>
-                  Payer avec PayPal →
-                </motion.a>
-              )}
-
-              {/* Paiement Virement */}
-              {payMode === "virement" && (
-                <div className="space-y-2">
-                  {virSent ? (
-                    <div className="flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-green-400"
-                      style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)" }}>
-                      <Check size={15} /> Demande envoyée — on vous recontacte !
-                    </div>
-                  ) : (
-                    <>
-                      <input
-                        type="email"
-                        value={virEmail}
-                        onChange={e => setVirEmail(e.target.value)}
-                        placeholder="Votre email pro"
-                        className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                        style={{ background: "rgba(255,255,255,0.40)", border: "1px solid rgba(0,0,0,0.12)", color: "#100800" }}
-                      />
-                      <button
-                        onClick={async () => {
-                          if (!virEmail.trim()) return;
-                          try {
-                            await fetch("/api/checkout/coaching-ia/virement", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ email: virEmail, fullName: "Prospect DJAMA Pro" }),
-                            });
-                            setVirSent(true);
-                          } catch { /* silent */ }
-                        }}
-                        className="w-full rounded-xl py-3 text-sm font-black text-white transition-all"
-                        style={{ background: "linear-gradient(135deg,#1e3a5f,#2563eb)", boxShadow: "0 4px 14px rgba(37,99,235,0.35)" }}>
-                        Demander les coordonnées bancaires →
-                      </button>
-                    </>
-                  )}
+          {/* Bento grid — 6 fonctionnalités */}
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={viewport}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {([
+              {
+                icon: Receipt, color: GOLD, bg: `rgba(${GOLDR},0.09)`,
+                title: "Facturation IA",
+                desc: "Créez, envoyez et relancez vos factures en quelques secondes. Devis, avoir et suivi des paiements inclus.",
+                tag: "Finance",
+              },
+              {
+                icon: Users2, color: "#60a5fa", bg: "rgba(96,165,250,0.09)",
+                title: "CRM Clients",
+                desc: "Pipeline commercial visuel, historique des échanges et relances automatiques pour ne rater aucune opportunité.",
+                tag: "Commercial",
+              },
+              {
+                icon: Brain, color: "#a78bfa", bg: "rgba(167,139,250,0.09)",
+                title: "Assistant IA",
+                desc: "Un assistant business disponible 24h/24 — rédige, analyse, relance et répond à vos questions métier.",
+                tag: "Intelligence",
+              },
+              {
+                icon: CreditCard, color: "#4ade80", bg: "rgba(74,222,128,0.09)",
+                title: "Paie & RH",
+                desc: "Bulletins de paie automatiques, suivi des congés et déclarations sociales conformes à la législation.",
+                tag: "Ressources humaines",
+              },
+              {
+                icon: FolderOpen, color: "#fb923c", bg: "rgba(251,146,60,0.09)",
+                title: "Gestion de projets",
+                desc: "Planifiez vos projets, assignez les tâches et suivez l'avancement en temps réel avec votre équipe.",
+                tag: "Opérations",
+              },
+              {
+                icon: Truck, color: "#34d399", bg: "rgba(52,211,153,0.09)",
+                title: "Sourcing & Marchés",
+                desc: "Trouvez les meilleurs fournisseurs, analysez les appels d'offres et répondez aux marchés publics.",
+                tag: "Sourcing",
+              },
+            ] as const).map(({ icon: Icon, color, bg, title, desc, tag }) => (
+              <motion.div key={title}
+                variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
+                className="group flex flex-col rounded-2xl bg-white p-6 shadow-sm transition-all duration-300"
+                style={{ border: "1px solid rgba(0,0,0,0.06)" }}
+                whileHover={{ y: -5, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: color + "44" }}
+                transition={{ duration: 0.22 }}>
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: bg, border: `1px solid ${color}28` }}>
+                  <Icon size={22} style={{ color }} strokeWidth={1.6} />
                 </div>
-              )}
-              <p className="mt-3 text-center text-[0.6rem] text-[#100800]/40">✓ Sécurisé · ✓ Accès immédiat · ✓ Sans engagement</p>
-            </motion.div>
+                <p className="mb-0.5 text-[0.6rem] font-bold uppercase tracking-[0.15em]"
+                  style={{ color: color + "cc" }}>{tag}</p>
+                <p className="mb-2 text-[1rem] font-black text-gray-900">{title}</p>
+                <p className="text-[0.82rem] leading-relaxed text-gray-400">{desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
 
-          </div>
-          <p className="mt-6 text-center text-[0.62rem] text-gray-400">Paiement sécurisé par Stripe · Sans préavis · Résiliable à tout moment</p>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── Final CTA — style Odoo : fond blanc, titre Caveat, or ── */}
