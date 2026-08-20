@@ -1634,7 +1634,6 @@ function HomeContent() {
                   <span className="dj-count text-[0.9rem] font-black" style={{ color: GOLD }}>4 800 €</span>
                 </div>
               </div>
-              <p className="mt-3 text-[0.75rem] leading-relaxed text-gray-400">Créez, envoyez et relancez vos factures en quelques secondes.</p>
             </motion.div>
 
             {/* ── Card 2 — CRM Clients — blanc · 1 col */}
@@ -1678,7 +1677,6 @@ function HomeContent() {
                 </div>
                 <span className="text-[0.46rem] text-gray-500">34 clients actifs · +3 ce mois</span>
               </div>
-              <p className="mt-3 text-[0.73rem] leading-relaxed text-gray-400">Pipeline commercial et relances automatiques.</p>
             </motion.div>
 
             {/* ── Card 3 — Assistant IA — blanc · 1 col */}
@@ -1760,7 +1758,6 @@ function HomeContent() {
                   </div>
                 ))}
               </div>
-              <p className="mt-4 text-[0.75rem] leading-relaxed text-gray-400">Bulletins de paie automatiques et déclarations sociales conformes.</p>
             </motion.div>
 
             {/* ── Card 5 — Gestion de projets — blanc · 1 col */}
@@ -1845,7 +1842,6 @@ function HomeContent() {
                   </div>
                 ))}
               </div>
-              <p className="mt-3 text-[0.75rem] leading-relaxed text-gray-400">Trouvez les meilleurs fournisseurs et répondez aux marchés publics en Afrique et en France.</p>
             </motion.div>
 
           </motion.div>
