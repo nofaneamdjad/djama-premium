@@ -1547,6 +1547,26 @@ function HomeContent() {
 
       {/* ── Fonctionnalités — bento grid ───────────────────────── */}
       <section className="overflow-hidden bg-[#f4f5f7] py-20 sm:py-28">
+        <style>{`
+          @keyframes djBb{from{width:0}to{width:var(--bw,100%)}}
+          @keyframes djBd{0%,60%,100%{opacity:0}30%{opacity:1}}
+          @keyframes djBs{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+          @keyframes djPing{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.4);opacity:0}}
+          @keyframes djCount{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+          .dj-bar{width:0;animation:djBb 1.8s ease-out var(--bd,0s) forwards}
+          .dj-d1{animation:djBd 1.3s infinite}
+          .dj-d2{animation:djBd 1.3s .22s infinite}
+          .dj-d3{animation:djBd 1.3s .44s infinite}
+          .dj-ping{animation:djPing 2s ease-out infinite}
+          .dj-s1{animation:djBs .45s ease-out .25s both}
+          .dj-s2{animation:djBs .45s ease-out .65s both}
+          .dj-s3{animation:djBs .45s ease-out 1.05s both}
+          .dj-s4{animation:djBs .45s ease-out 1.45s both}
+          .dj-s5{animation:djBs .45s ease-out 1.85s both}
+          .dj-s6{animation:djBs .45s ease-out 2.25s both}
+          .dj-count{animation:djCount .5s ease-out .4s both}
+        `}</style>
+
         <div className="mx-auto max-w-6xl px-6">
 
           {/* Titre */}
@@ -1567,65 +1587,267 @@ function HomeContent() {
             </p>
           </motion.div>
 
-          {/* Bento grid — 6 fonctionnalités */}
+          {/* Bento grid — layout asymétrique 3 cols */}
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {([
-              {
-                icon: Receipt, color: GOLD, bg: `rgba(${GOLDR},0.09)`,
-                title: "Facturation IA",
-                desc: "Créez, envoyez et relancez vos factures en quelques secondes. Devis, avoir et suivi des paiements inclus.",
-                tag: "Finance",
-              },
-              {
-                icon: Users2, color: "#60a5fa", bg: "rgba(96,165,250,0.09)",
-                title: "CRM Clients",
-                desc: "Pipeline commercial visuel, historique des échanges et relances automatiques pour ne rater aucune opportunité.",
-                tag: "Commercial",
-              },
-              {
-                icon: Brain, color: "#a78bfa", bg: "rgba(167,139,250,0.09)",
-                title: "Assistant IA",
-                desc: "Un assistant business disponible 24h/24 — rédige, analyse, relance et répond à vos questions métier.",
-                tag: "Intelligence",
-              },
-              {
-                icon: CreditCard, color: "#4ade80", bg: "rgba(74,222,128,0.09)",
-                title: "Paie & RH",
-                desc: "Bulletins de paie automatiques, suivi des congés et déclarations sociales conformes à la législation.",
-                tag: "Ressources humaines",
-              },
-              {
-                icon: FolderOpen, color: "#fb923c", bg: "rgba(251,146,60,0.09)",
-                title: "Gestion de projets",
-                desc: "Planifiez vos projets, assignez les tâches et suivez l'avancement en temps réel avec votre équipe.",
-                tag: "Opérations",
-              },
-              {
-                icon: Truck, color: "#34d399", bg: "rgba(52,211,153,0.09)",
-                title: "Sourcing & Marchés",
-                desc: "Trouvez les meilleurs fournisseurs, analysez les appels d'offres et répondez aux marchés publics.",
-                tag: "Sourcing",
-              },
-            ] as const).map(({ icon: Icon, color, bg, title, desc, tag }) => (
-              <motion.div key={title}
-                variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
-                className="group flex flex-col rounded-2xl bg-white p-6 shadow-sm transition-all duration-300"
-                style={{ border: "1px solid rgba(0,0,0,0.06)" }}
-                whileHover={{ y: -5, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: color + "44" }}
-                transition={{ duration: 0.22 }}>
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
-                  style={{ background: bg, border: `1px solid ${color}28` }}>
-                  <Icon size={22} style={{ color }} strokeWidth={1.6} />
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.09 } } }}
+            className="grid auto-rows-auto grid-cols-1 gap-4 sm:grid-cols-3">
+
+            {/* ── Card 1 — Facturation IA — dark · 2 cols */}
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
+              whileHover={{ y: -4, boxShadow: "0 28px 64px rgba(0,0,0,0.25)" }}
+              transition={{ duration: 0.22 }}
+              className="relative overflow-hidden rounded-2xl p-6 sm:col-span-2"
+              style={{ background: "linear-gradient(135deg,#111827 0%,#1a253a 100%)", minHeight: 288, border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full"
+                style={{ background: `radial-gradient(circle,rgba(${GOLDR},0.14) 0%,transparent 70%)` }} />
+              <div className="mb-4 flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `rgba(${GOLDR},0.14)` }}>
+                  <Receipt size={17} style={{ color: GOLD }} strokeWidth={1.7} />
                 </div>
-                <p className="mb-0.5 text-[0.6rem] font-bold uppercase tracking-[0.15em]"
-                  style={{ color: color + "cc" }}>{tag}</p>
-                <p className="mb-2 text-[1rem] font-black text-gray-900">{title}</p>
-                <p className="text-[0.82rem] leading-relaxed text-gray-400">{desc}</p>
-              </motion.div>
-            ))}
+                <div>
+                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: GOLD + "99" }}>Finance</p>
+                  <p className="text-[0.92rem] font-black text-white">Facturation IA</p>
+                </div>
+              </div>
+              {/* Mini invoice */}
+              <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="mb-2.5 flex items-center justify-between">
+                  <span className="text-[0.52rem] font-bold text-white">Facture #2026-094</span>
+                  <span className="rounded-full px-2 py-0.5 text-[0.4rem] font-bold" style={{ background: "rgba(74,222,128,0.15)", color: "#4ade80" }}>✓ Envoyée</span>
+                </div>
+                {[
+                  { label: "Consulting stratégie", qty: "8h", price: "1 600 €", cls: "dj-s1" },
+                  { label: "Développement web", qty: "12h", price: "2 400 €", cls: "dj-s2" },
+                  { label: "Formation IA", qty: "4h", price: "800 €", cls: "dj-s3" },
+                ].map(({ label, qty, price, cls }) => (
+                  <div key={label} className={`${cls} mb-1 flex items-center justify-between rounded-lg px-2 py-1.5`}
+                    style={{ background: "rgba(255,255,255,0.03)" }}>
+                    <span className="text-[0.46rem]" style={{ color: "rgba(255,255,255,0.5)" }}>{label}</span>
+                    <span className="text-[0.44rem]" style={{ color: "rgba(255,255,255,0.3)" }}>{qty}</span>
+                    <span className="text-[0.5rem] font-bold text-white">{price}</span>
+                  </div>
+                ))}
+                <div className="mt-2 flex items-center justify-between border-t pt-2" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                  <span className="text-[0.5rem] text-gray-400">Total TTC</span>
+                  <span className="dj-count text-[0.9rem] font-black" style={{ color: GOLD }}>4 800 €</span>
+                </div>
+              </div>
+              <p className="mt-3 text-[0.75rem] leading-relaxed text-gray-400">Créez, envoyez et relancez vos factures en quelques secondes.</p>
+            </motion.div>
+
+            {/* ── Card 2 — CRM Clients — blanc · 1 col */}
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
+              whileHover={{ y: -4, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: "#60a5fa44" }}
+              transition={{ duration: 0.22 }}
+              className="relative overflow-hidden rounded-2xl bg-white p-6"
+              style={{ border: "1px solid rgba(0,0,0,0.06)", minHeight: 288 }}>
+              <div className="mb-4 flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(96,165,250,0.12)" }}>
+                  <Users2 size={17} style={{ color: "#60a5fa" }} strokeWidth={1.7} />
+                </div>
+                <div>
+                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#60a5fa99" }}>Commercial</p>
+                  <p className="text-[0.92rem] font-black text-gray-900">CRM Clients</p>
+                </div>
+              </div>
+              {/* Kanban */}
+              <div className="flex gap-1.5">
+                {[
+                  { label: "Prospects", color: "#94a3b8", cards: ["Groupe A", "M. Diallo"], cls: ["dj-s1", "dj-s2"] },
+                  { label: "Devis", color: "#f59e0b", cards: ["SCI Béza…"], cls: ["dj-s3"] },
+                  { label: "Signés", color: "#4ade80", cards: ["Koné & Co"], cls: ["dj-s4"] },
+                ].map(({ label, color, cards, cls }) => (
+                  <div key={label} className="flex-1 rounded-xl p-1.5" style={{ background: `${color}0d` }}>
+                    <p className="mb-1.5 text-[0.4rem] font-bold uppercase tracking-wider" style={{ color }}>{label}</p>
+                    {cards.map((c, i) => (
+                      <div key={c} className={`${cls[i]} mb-1 rounded-lg px-1.5 py-1.5 text-[0.4rem] font-semibold text-gray-700`}
+                        style={{ background: "white", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>{c}</div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              {/* Stat */}
+              <div className="mt-3 flex items-center gap-2 rounded-xl px-2.5 py-2"
+                style={{ background: "rgba(96,165,250,0.06)", border: "1px solid rgba(96,165,250,0.12)" }}>
+                <div className="relative h-2 w-2 flex-shrink-0">
+                  <div className="absolute inset-0 rounded-full" style={{ background: "#4ade80" }} />
+                  <div className="dj-ping absolute inset-0 rounded-full" style={{ background: "#4ade80" }} />
+                </div>
+                <span className="text-[0.46rem] text-gray-500">34 clients actifs · +3 ce mois</span>
+              </div>
+              <p className="mt-3 text-[0.73rem] leading-relaxed text-gray-400">Pipeline commercial et relances automatiques.</p>
+            </motion.div>
+
+            {/* ── Card 3 — Assistant IA — blanc · 1 col */}
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
+              whileHover={{ y: -4, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: "#a78bfa44" }}
+              transition={{ duration: 0.22 }}
+              className="relative overflow-hidden rounded-2xl bg-white p-6"
+              style={{ border: "1px solid rgba(0,0,0,0.06)", minHeight: 240 }}>
+              <div className="mb-4 flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(167,139,250,0.12)" }}>
+                  <Brain size={17} style={{ color: "#a78bfa" }} strokeWidth={1.7} />
+                </div>
+                <div>
+                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#a78bfa99" }}>Intelligence</p>
+                  <p className="text-[0.92rem] font-black text-gray-900">Assistant IA</p>
+                </div>
+              </div>
+              {/* Chat animé */}
+              <div className="flex flex-col gap-2">
+                <div className="dj-s1 ml-auto max-w-[85%] rounded-xl rounded-br-none px-2.5 py-1.5"
+                  style={{ background: "rgba(167,139,250,0.10)" }}>
+                  <p className="text-[0.45rem] text-gray-700">Génère une relance pour la facture #2026-088</p>
+                </div>
+                <div className="dj-s2 rounded-xl rounded-bl-none px-2.5 py-1.5"
+                  style={{ background: "#f8f7ff", border: "1px solid rgba(167,139,250,0.18)" }}>
+                  <p className="mb-0.5 text-[0.4rem] font-bold" style={{ color: "#a78bfa" }}>DJAMA IA</p>
+                  <p className="text-[0.45rem] text-gray-600">Relance envoyée à Ent. Koné — réponse attendue sous 48h.</p>
+                </div>
+                <div className="dj-s3 ml-auto max-w-[85%] rounded-xl rounded-br-none px-2.5 py-1.5"
+                  style={{ background: "rgba(167,139,250,0.10)" }}>
+                  <p className="text-[0.45rem] text-gray-700">Résumé du CA de ce mois ?</p>
+                </div>
+                {/* Typing */}
+                <div className="dj-s4 flex w-fit items-center gap-1 rounded-xl rounded-bl-none px-2.5 py-1.5"
+                  style={{ background: "#f8f7ff", border: "1px solid rgba(167,139,250,0.18)" }}>
+                  <span className="dj-d1 h-1.5 w-1.5 rounded-full" style={{ background: "#a78bfa" }} />
+                  <span className="dj-d2 h-1.5 w-1.5 rounded-full" style={{ background: "#a78bfa" }} />
+                  <span className="dj-d3 h-1.5 w-1.5 rounded-full" style={{ background: "#a78bfa" }} />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* ── Card 4 — Paie & RH — dark · 2 cols */}
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
+              whileHover={{ y: -4, boxShadow: "0 28px 64px rgba(0,0,0,0.25)" }}
+              transition={{ duration: 0.22 }}
+              className="relative overflow-hidden rounded-2xl p-6 sm:col-span-2"
+              style={{ background: "linear-gradient(135deg,#111827 0%,#1a253a 100%)", minHeight: 240, border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full"
+                style={{ background: "radial-gradient(circle,rgba(74,222,128,0.10) 0%,transparent 70%)" }} />
+              <div className="mb-5 flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(74,222,128,0.12)" }}>
+                  <CreditCard size={17} style={{ color: "#4ade80" }} strokeWidth={1.7} />
+                </div>
+                <div>
+                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#4ade8099" }}>Ressources humaines</p>
+                  <p className="text-[0.92rem] font-black text-white">Paie & RH</p>
+                </div>
+                <span className="ml-auto rounded-full px-2 py-0.5 text-[0.44rem] font-bold"
+                  style={{ background: "rgba(74,222,128,0.12)", color: "#4ade80" }}>Conforme OHADA</span>
+              </div>
+              {/* Bars */}
+              <div className="flex flex-col gap-3">
+                {[
+                  { label: "Cadres", pct: "85%", color: "#4ade80", amt: "4 200 €", delay: "0s" },
+                  { label: "Techniciens", pct: "62%", color: "#60a5fa", amt: "2 800 €", delay: "0.2s" },
+                  { label: "Agents", pct: "44%", color: GOLD, amt: "1 950 €", delay: "0.4s" },
+                ].map(({ label, pct, color, amt, delay }) => (
+                  <div key={label}>
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-[0.46rem]" style={{ color: "rgba(255,255,255,0.45)" }}>{label}</span>
+                      <span className="text-[0.5rem] font-bold" style={{ color }}>{amt}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
+                      <div className="dj-bar h-full rounded-full" style={{ "--bw": pct, "--bd": delay, background: color } as React.CSSProperties} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-[0.75rem] leading-relaxed text-gray-400">Bulletins de paie automatiques et déclarations sociales conformes.</p>
+            </motion.div>
+
+            {/* ── Card 5 — Gestion de projets — blanc · 1 col */}
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
+              whileHover={{ y: -4, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: "#fb923c44" }}
+              transition={{ duration: 0.22 }}
+              className="relative overflow-hidden rounded-2xl bg-white p-6"
+              style={{ border: "1px solid rgba(0,0,0,0.06)", minHeight: 220 }}>
+              <div className="mb-4 flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(251,146,60,0.12)" }}>
+                  <FolderOpen size={17} style={{ color: "#fb923c" }} strokeWidth={1.7} />
+                </div>
+                <div>
+                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#fb923c99" }}>Opérations</p>
+                  <p className="text-[0.92rem] font-black text-gray-900">Gestion de projets</p>
+                </div>
+              </div>
+              {/* Task list */}
+              <div className="flex flex-col gap-1.5">
+                {[
+                  { task: "Livraison client Esseba", done: true, cls: "dj-s1" },
+                  { task: "Rapport mensuel Q3", done: true, cls: "dj-s2" },
+                  { task: "Formation équipe", done: false, cls: "dj-s3" },
+                  { task: "Audit fournisseurs", done: false, cls: "dj-s4" },
+                ].map(({ task, done, cls }) => (
+                  <div key={task}
+                    className={`${cls} flex items-center gap-2 rounded-lg px-2 py-1.5`}
+                    style={{ background: done ? "rgba(251,146,60,0.06)" : "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.04)" }}>
+                    <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
+                      style={{ background: done ? "rgba(251,146,60,0.18)" : "transparent", border: done ? "none" : "1.5px solid rgba(0,0,0,0.15)" }}>
+                      {done && <span style={{ color: "#fb923c", fontSize: "0.45rem", lineHeight: 1 }}>✓</span>}
+                    </div>
+                    <span className="text-[0.46rem]"
+                      style={{ color: done ? "#fb923c" : "#6b7280", textDecoration: done ? "line-through" : "none", opacity: done ? 0.65 : 1 }}>{task}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Progress bar */}
+              <div className="mt-3 flex items-center gap-2">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,0.06)" }}>
+                  <div className="dj-bar h-full rounded-full" style={{ "--bw": "65%", "--bd": "0.3s", background: "#fb923c" } as React.CSSProperties} />
+                </div>
+                <span className="text-[0.46rem] font-bold" style={{ color: "#fb923c" }}>65%</span>
+              </div>
+            </motion.div>
+
+            {/* ── Card 6 — Sourcing & Marchés — blanc · 2 cols */}
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
+              whileHover={{ y: -4, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: "#34d39944" }}
+              transition={{ duration: 0.22 }}
+              className="relative overflow-hidden rounded-2xl bg-white p-6 sm:col-span-2"
+              style={{ border: "1px solid rgba(0,0,0,0.06)", minHeight: 220 }}>
+              <div className="mb-4 flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(52,211,153,0.12)" }}>
+                  <Truck size={17} style={{ color: "#34d399" }} strokeWidth={1.7} />
+                </div>
+                <div>
+                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#34d39999" }}>Sourcing</p>
+                  <p className="text-[0.92rem] font-black text-gray-900">Sourcing & Marchés</p>
+                </div>
+              </div>
+              {/* Badges pays animés */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { flag: "🇫🇷", country: "France", type: "Marché public", color: "#3b82f6", cls: "dj-s1" },
+                  { flag: "🇨🇲", country: "Cameroun", type: "Appel d'offres", color: "#34d399", cls: "dj-s2" },
+                  { flag: "🇸🇳", country: "Sénégal", type: "Fournisseur", color: GOLD, cls: "dj-s3" },
+                  { flag: "🇨🇮", country: "Côte d'Ivoire", type: "Marché public", color: "#f87171", cls: "dj-s4" },
+                  { flag: "🇲🇦", country: "Maroc", type: "Appel d'offres", color: "#a78bfa", cls: "dj-s5" },
+                  { flag: "🇬🇦", country: "Gabon", type: "Fournisseur", color: "#fb923c", cls: "dj-s6" },
+                ].map(({ flag, country, type, color, cls }) => (
+                  <div key={country}
+                    className={`${cls} flex items-center gap-1.5 rounded-full px-2.5 py-1.5`}
+                    style={{ background: `${color}0f`, border: `1px solid ${color}22` }}>
+                    <span style={{ fontSize: "0.75rem" }}>{flag}</span>
+                    <div>
+                      <p className="text-[0.46rem] font-bold leading-none" style={{ color }}>{country}</p>
+                      <p className="mt-0.5 text-[0.38rem] leading-none text-gray-400">{type}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-[0.75rem] leading-relaxed text-gray-400">Trouvez les meilleurs fournisseurs et répondez aux marchés publics en Afrique et en France.</p>
+            </motion.div>
+
           </motion.div>
 
         </div>
