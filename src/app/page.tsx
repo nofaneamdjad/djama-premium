@@ -1159,6 +1159,42 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
+           TÉMOIGNAGE FONDATEUR — style Odoo quote card
+      ══════════════════════════════════════════════════════ */}
+      <section className="bg-[#f8f8f8] py-14 sm:py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport} transition={{ duration: 0.55, ease }}
+          className="mx-auto max-w-4xl px-6">
+          <div className="flex flex-col gap-8 rounded-2xl bg-white p-8 shadow-sm sm:flex-row sm:items-center sm:gap-12 sm:p-10"
+            style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
+
+            {/* Citation gauche */}
+            <div className="flex-1">
+              <span className="mb-5 block text-[3.5rem] leading-none" style={{ color: GOLD, fontFamily: "serif" }}>&ldquo;&ldquo;</span>
+              <p className="text-[1.05rem] font-semibold leading-relaxed text-gray-800">
+                J&apos;ai créé DJAMA parce que chaque entrepreneur, où qu&apos;il soit dans le monde, mérite des outils aussi puissants que les grandes entreprises mondiales — mais accessibles, simples, et pensés pour eux. Notre marché, c&apos;est le monde entier. Chaque outil que nous construisons est une porte ouverte vers l&apos;indépendance économique.
+              </p>
+            </div>
+
+            {/* Photo + identité droite */}
+            <div className="flex shrink-0 flex-col items-center gap-3 sm:items-center">
+              <div className="h-[100px] w-[100px] overflow-hidden rounded-full"
+                style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
+                <img src="/founder-nofane.jpg" alt="Nofane AMDJAD" className="h-full w-full object-cover" />
+              </div>
+              <div className="text-center">
+                <p className="text-[0.95rem] font-black text-gray-900">Nofane AMDJAD</p>
+                <p className="text-[0.78rem] text-gray-400">Fondateur de DJAMA</p>
+              </div>
+              <img src="/logo.png" alt="DJAMA" className="mt-1 h-[28px] w-auto object-contain opacity-80" />
+            </div>
+
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
            DIFFÉRENCIATEURS — style Odoo "conçu pour faire la différence"
       ══════════════════════════════════════════════════════ */}
       <section className="bg-white py-16 sm:py-20">
