@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -66,15 +66,15 @@ function SmartStat({ value }: { value: string }) {
 }
 
 const SCHEMA_STEPS = [
-  { num: "01", icon: Sparkles,  color: GOLD,       bg: `rgba(${GOLDR},.07)`,    border: `rgba(${GOLDR},.22)`,    title: "Idée / besoin",               desc: "Vous arrivez avec un besoin, un projet ou un problème à résoudre." },
-  { num: "02", icon: Brain,     color: "#a78bfa",  bg: "rgba(167,139,250,.07)", border: "rgba(167,139,250,.22)", title: "Assistant IA DJAMA",          desc: "L'IA vous guide, clarifie vos options et vous aide à choisir la bonne direction." },
-  { num: "03", icon: Code2,     color: "#60a5fa",  bg: "rgba(96,165,250,.07)",  border: "rgba(96,165,250,.22)",  title: "Construction de la solution", desc: "Site, application, outil métier, automatisation ou espace client sur mesure." },
-  { num: "04", icon: BarChart3, color: "#4ade80",  bg: "rgba(74,222,128,.06)",  border: "rgba(74,222,128,.20)",  title: "Croissance & gestion",        desc: "Vous pilotez, améliorez et développez votre activité avec une base solide." },
+  { num: "01", icon: Sparkles,  color: GOLD,       bg: `rgba(${GOLDR},.07)`,    border: `rgba(${GOLDR},.22)`,    title: "IdÃ©e / besoin",               desc: "Vous arrivez avec un besoin, un projet ou un problÃ¨me Ã  rÃ©soudre." },
+  { num: "02", icon: Brain,     color: "#a78bfa",  bg: "rgba(167,139,250,.07)", border: "rgba(167,139,250,.22)", title: "Assistant IA DJAMA",          desc: "L'IA vous guide, clarifie vos options et vous aide Ã  choisir la bonne direction." },
+  { num: "03", icon: Code2,     color: "#60a5fa",  bg: "rgba(96,165,250,.07)",  border: "rgba(96,165,250,.22)",  title: "Construction de la solution", desc: "Site, application, outil mÃ©tier, automatisation ou espace client sur mesure." },
+  { num: "04", icon: BarChart3, color: "#4ade80",  bg: "rgba(74,222,128,.06)",  border: "rgba(74,222,128,.20)",  title: "Croissance & gestion",        desc: "Vous pilotez, amÃ©liorez et dÃ©veloppez votre activitÃ© avec une base solide." },
 ] as const;
 
 const TICKER_ITEMS = [
   "Sites web", "Plateformes SaaS", "Automatisation", "Applications",
-  "E-commerce", "Outils métiers", "IA", "Design", "SEO",
+  "E-commerce", "Outils mÃ©tiers", "IA", "Design", "SEO",
 ] as const;
 
 const TOOL_GROUPS_LANDING = [
@@ -82,11 +82,11 @@ const TOOL_GROUPS_LANDING = [
     label: "Finance", color: "#059669", bg: "#d1fae5", icon: Wallet,
     tools: [
       { icon: Receipt,      label: "Factures & Devis" },
-      { icon: CreditCard,   label: "Dépenses" },
-      { icon: Wallet,       label: "Trésorerie" },
-      { icon: BarChart2,    label: "Comptabilité IA" },
+      { icon: CreditCard,   label: "DÃ©penses" },
+      { icon: Wallet,       label: "TrÃ©sorerie" },
+      { icon: BarChart2,    label: "ComptabilitÃ© IA" },
       { icon: Landmark,     label: "Connexion bancaire" },
-      { icon: FileCheck2,   label: "Déclarations" },
+      { icon: FileCheck2,   label: "DÃ©clarations" },
     ],
   },
   {
@@ -99,11 +99,11 @@ const TOOL_GROUPS_LANDING = [
     ],
   },
   {
-    label: "Opérations", color: "#4f46e5", bg: "#e0e7ff", icon: CalendarRange,
+    label: "OpÃ©rations", color: "#4f46e5", bg: "#e0e7ff", icon: CalendarRange,
     tools: [
-      { icon: ListTodo,      label: "Tâches" },
+      { icon: ListTodo,      label: "TÃ¢ches" },
       { icon: CalendarRange, label: "Planning" },
-      { icon: Users2,        label: "Équipe" },
+      { icon: Users2,        label: "Ã‰quipe" },
       { icon: Timer,         label: "Chrono" },
     ],
   },
@@ -122,7 +122,7 @@ const TOOL_GROUPS_LANDING = [
       { icon: Globe,       label: "Sourcing IA" },
       { icon: Zap,         label: "Assistant IA" },
       { icon: FolderOpen,  label: "Projets" },
-      { icon: Share2,      label: "Réseaux Sociaux IA" },
+      { icon: Share2,      label: "RÃ©seaux Sociaux IA" },
       { icon: Brain,       label: "Coaching IA" },
     ],
   },
@@ -151,9 +151,9 @@ const TOOL_GROUPS_LANDING = [
     tools: [
       { icon: Building2,   label: "Portail Client" },
       { icon: Banknote,    label: "Paie & RH" },
-      { icon: Star,        label: "Réputation" },
+      { icon: Star,        label: "RÃ©putation" },
       { icon: BookOpen,    label: "Blog" },
-      { icon: Globe,       label: "Créateur de site IA" },
+      { icon: Globe,       label: "CrÃ©ateur de site IA" },
       { icon: Target,      label: "Planification OKR" },
       { icon: Briefcase,   label: "Agences" },
     ],
@@ -162,10 +162,10 @@ const TOOL_GROUPS_LANDING = [
 
 const ESPACE_TOOLS_20 = [
   "Factures & Devis", "Agenda", "Notes IA", "Coaching IA",
-  "CRM Clients", "Chrono", "Dépenses", "Trésorerie",
+  "CRM Clients", "Chrono", "DÃ©penses", "TrÃ©sorerie",
   "Contrats IA", "Stocks", "Assistant IA", "Sourcing IA",
-  "Réseaux Sociaux", "Mind Map", "Scanner", "Site Web IA",
-  "Blog IA", "Réputation", "Portail Client", "Paie & RH",
+  "RÃ©seaux Sociaux", "Mind Map", "Scanner", "Site Web IA",
+  "Blog IA", "RÃ©putation", "Portail Client", "Paie & RH",
 ] as const;
 
 const RIVALS: Record<typeof ESPACE_TOOLS_20[number], string> = {
@@ -175,18 +175,18 @@ const RIVALS: Record<typeof ESPACE_TOOLS_20[number], string> = {
   "Coaching IA":      "Udemy",
   "CRM Clients":      "HubSpot",
   "Chrono":           "Toggl",
-  "Dépenses":         "Expensify",
-  "Trésorerie":       "Sage",
+  "DÃ©penses":         "Expensify",
+  "TrÃ©sorerie":       "Sage",
   "Contrats IA":      "DocuSign",
   "Stocks":           "Zoho",
   "Assistant IA":     "ChatGPT",
   "Sourcing IA":      "LinkedIn",
-  "Réseaux Sociaux":  "Hootsuite",
+  "RÃ©seaux Sociaux":  "Hootsuite",
   "Mind Map":         "Miro",
   "Scanner":          "Adobe Scan",
   "Site Web IA":      "Wix",
   "Blog IA":          "WordPress",
-  "Réputation":       "Trustpilot",
+  "RÃ©putation":       "Trustpilot",
   "Portail Client":   "Notion",
   "Paie & RH":        "PayFit",
 };
@@ -198,59 +198,59 @@ const RIVAL_PRICES: Record<typeof ESPACE_TOOLS_20[number], number> = {
   "Coaching IA":      20,
   "CRM Clients":      45,
   "Chrono":           10,
-  "Dépenses":          8,
-  "Trésorerie":       25,
+  "DÃ©penses":          8,
+  "TrÃ©sorerie":       25,
   "Contrats IA":      25,
   "Stocks":           20,
   "Assistant IA":     20,
   "Sourcing IA":      39,
-  "Réseaux Sociaux":  50,
+  "RÃ©seaux Sociaux":  50,
   "Mind Map":         10,
   "Scanner":           8,
   "Site Web IA":      20,
   "Blog IA":           8,
-  "Réputation":       99,
+  "RÃ©putation":       99,
   "Portail Client":   16,
   "Paie & RH":        49,
 };
 
 type ToolEntry = { name: string; rival: string; price: number; icon: React.ElementType; g: string };
 const TOOLS_DATA_48: ToolEntry[] = [
-  // ── Finance & Compta ──
+  // â”€â”€ Finance & Compta â”€â”€
   { name: "Factures & Devis",      rival: "QuickBooks",       price: 29, icon: Receipt,        g: "linear-gradient(135deg,#f59e0b,#c9a55a)" },
-  { name: "Dépenses",              rival: "Expensify",        price: 8,  icon: CreditCard,     g: "linear-gradient(135deg,#f43f5e,#be123c)" },
-  { name: "Trésorerie",            rival: "Sage",             price: 25, icon: Wallet,         g: "linear-gradient(135deg,#34d399,#059669)" },
-  { name: "Comptabilité",          rival: "FreshBooks",       price: 15, icon: Banknote,       g: "linear-gradient(135deg,#4ade80,#16a34a)" },
+  { name: "DÃ©penses",              rival: "Expensify",        price: 8,  icon: CreditCard,     g: "linear-gradient(135deg,#f43f5e,#be123c)" },
+  { name: "TrÃ©sorerie",            rival: "Sage",             price: 25, icon: Wallet,         g: "linear-gradient(135deg,#34d399,#059669)" },
+  { name: "ComptabilitÃ©",          rival: "FreshBooks",       price: 15, icon: Banknote,       g: "linear-gradient(135deg,#4ade80,#16a34a)" },
   { name: "Banque",                rival: "Qonto",            price: 9,  icon: Landmark,       g: "linear-gradient(135deg,#60a5fa,#2563eb)" },
-  { name: "Déclarations Fiscales", rival: "Indy",             price: 20, icon: FileCheck2,     g: "linear-gradient(135deg,#818cf8,#4338ca)" },
+  { name: "DÃ©clarations Fiscales", rival: "Indy",             price: 20, icon: FileCheck2,     g: "linear-gradient(135deg,#818cf8,#4338ca)" },
   { name: "Paie & RH",            rival: "PayFit",           price: 49, icon: Users2,         g: "linear-gradient(135deg,#818cf8,#4f46e5)" },
   { name: "Liens de Paiement",    rival: "Stripe",           price: 15, icon: ShoppingCart,   g: "linear-gradient(135deg,#6366f1,#4f46e5)" },
-  // ── Commerce & Ventes ──
+  // â”€â”€ Commerce & Ventes â”€â”€
   { name: "CRM",                  rival: "HubSpot",          price: 45, icon: Contact2,       g: "linear-gradient(135deg,#22d3ee,#0891b2)" },
   { name: "Boutique en ligne",    rival: "Shopify",          price: 32, icon: Store,          g: "linear-gradient(135deg,#86efac,#16a34a)" },
   { name: "Caisse / POS",        rival: "Square",           price: 15, icon: ShoppingBag,    g: "linear-gradient(135deg,#fb923c,#ea580c)" },
   { name: "Marketplace",          rival: "Malt",             price: 20, icon: Globe,          g: "linear-gradient(135deg,#f97316,#c2410c)" },
   { name: "Agences",             rival: "Comet",            price: 15, icon: Briefcase,      g: "linear-gradient(135deg,#a78bfa,#6d28d9)" },
   { name: "Portail Client",      rival: "Notion",           price: 16, icon: FolderOpen,     g: "linear-gradient(135deg,#c084fc,#7c3aed)" },
-  // ── Marketing & Com ──
+  // â”€â”€ Marketing & Com â”€â”€
   { name: "Email Marketing",     rival: "Mailchimp",        price: 13, icon: Mail,           g: "linear-gradient(135deg,#fde68a,#f59e0b)" },
-  { name: "Réseaux Sociaux",    rival: "Hootsuite",        price: 50, icon: Share2,         g: "linear-gradient(135deg,#fb923c,#d97706)" },
+  { name: "RÃ©seaux Sociaux",    rival: "Hootsuite",        price: 50, icon: Share2,         g: "linear-gradient(135deg,#fb923c,#d97706)" },
   { name: "Blog IA",            rival: "WordPress",        price: 8,  icon: PenLine,        g: "linear-gradient(135deg,#60a5fa,#3b82f6)" },
   { name: "Site Web IA",        rival: "Wix",              price: 20, icon: Code2,          g: "linear-gradient(135deg,#0ea5e9,#0284c7)" },
-  { name: "Réputation",         rival: "Trustpilot",       price: 99, icon: Star,           g: "linear-gradient(135deg,#facc15,#ca8a04)" },
+  { name: "RÃ©putation",         rival: "Trustpilot",       price: 99, icon: Star,           g: "linear-gradient(135deg,#facc15,#ca8a04)" },
   { name: "Avis Clients",       rival: "Google My Biz.",   price: 30, icon: HeartHandshake, g: "linear-gradient(135deg,#f472b6,#be185d)" },
   { name: "Carte de Visite",    rival: "Canva",            price: 13, icon: Gem,            g: "linear-gradient(135deg,#64748b,#334155)" },
   { name: "Chatbot IA",         rival: "Intercom",         price: 39, icon: MessageCircle,  g: "linear-gradient(135deg,#34d399,#0d9488)" },
   { name: "Analytics",          rival: "Hotjar",           price: 39, icon: BarChart2,      g: "linear-gradient(135deg,#f97316,#c2410c)" },
-  // ── IA & Productivité ──
+  // â”€â”€ IA & ProductivitÃ© â”€â”€
   { name: "Assistant IA",       rival: "ChatGPT",          price: 20, icon: Bot,            g: "linear-gradient(135deg,#a78bfa,#7c3aed)" },
   { name: "Coaching IA",        rival: "Udemy",            price: 20, icon: Brain,          g: "linear-gradient(135deg,#a78bfa,#6d28d9)" },
   { name: "Contrats IA",        rival: "DocuSign",         price: 25, icon: Shield,         g: "linear-gradient(135deg,#facc15,#ca8a04)" },
   { name: "Sourcing IA",        rival: "LinkedIn",         price: 39, icon: Target,         g: "linear-gradient(135deg,#22d3ee,#0284c7)" },
-  { name: "Signature Élec.",    rival: "HelloSign",        price: 20, icon: Zap,            g: "linear-gradient(135deg,#fbbf24,#d97706)" },
+  { name: "Signature Ã‰lec.",    rival: "HelloSign",        price: 20, icon: Zap,            g: "linear-gradient(135deg,#fbbf24,#d97706)" },
   { name: "Bloc-notes",         rival: "Notion",           price: 10, icon: StickyNote,     g: "linear-gradient(135deg,#4ade80,#16a34a)" },
   { name: "Mind Maps",          rival: "Miro",             price: 10, icon: Network,        g: "linear-gradient(135deg,#f472b6,#db2777)" },
-  // ── Opérations ──
+  // â”€â”€ OpÃ©rations â”€â”€
   { name: "Stocks & Inventaire",rival: "Zoho",             price: 20, icon: Package,        g: "linear-gradient(135deg,#fbbf24,#d97706)" },
   { name: "Fournisseurs",       rival: "SAP Ariba",        price: 20, icon: Truck,          g: "linear-gradient(135deg,#94a3b8,#475569)" },
   { name: "Rendez-vous",        rival: "Calendly",         price: 12, icon: CalendarRange,  g: "linear-gradient(135deg,#3b82f6,#6366f1)" },
@@ -259,15 +259,15 @@ const TOOLS_DATA_48: ToolEntry[] = [
   { name: "Planification Strat.",rival: "Monday.com",      price: 17, icon: BarChart3,      g: "linear-gradient(135deg,#34d399,#047857)" },
   { name: "Checklists",         rival: "Todoist",          price: 5,  icon: CheckCircle2,   g: "linear-gradient(135deg,#0ea5e9,#0284c7)" },
   { name: "Scanner",            rival: "Adobe Scan",       price: 8,  icon: QrCode,         g: "linear-gradient(135deg,#64748b,#334155)" },
-  // ── Équipe & Admin ──
-  { name: "Équipe",             rival: "BambooHR",         price: 35, icon: UserPlus,       g: "linear-gradient(135deg,#2dd4bf,#0d9488)" },
-  { name: "Espaces Privés",     rival: "Slack",            price: 8,  icon: Building2,      g: "linear-gradient(135deg,#818cf8,#4338ca)" },
-  { name: "Productivité",       rival: "Notion",           price: 10, icon: Sparkles,       g: "linear-gradient(135deg,#c084fc,#6d28d9)" },
+  // â”€â”€ Ã‰quipe & Admin â”€â”€
+  { name: "Ã‰quipe",             rival: "BambooHR",         price: 35, icon: UserPlus,       g: "linear-gradient(135deg,#2dd4bf,#0d9488)" },
+  { name: "Espaces PrivÃ©s",     rival: "Slack",            price: 8,  icon: Building2,      g: "linear-gradient(135deg,#818cf8,#4338ca)" },
+  { name: "ProductivitÃ©",       rival: "Notion",           price: 10, icon: Sparkles,       g: "linear-gradient(135deg,#c084fc,#6d28d9)" },
   { name: "Chrono Pro",         rival: "Toggl",            price: 10, icon: Timer,          g: "linear-gradient(135deg,#fb923c,#ea580c)" },
 ];
 
 const PUBLIC_APP_ICONS = [
-  /* 0 – Factures & devis */
+  /* 0 â€“ Factures & devis */
   <svg key="p0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub0" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f59e0b"/><stop offset="1" stopColor="#c9a55a"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub0)"/>
@@ -279,7 +279,7 @@ const PUBLIC_APP_ICONS = [
     <path d="M27.5 33l2.5 2.5 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>,
 
-  /* 1 – Agenda & Planification */
+  /* 1 â€“ Agenda & Planification */
   <svg key="p1" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub1" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#3b82f6"/><stop offset="1" stopColor="#6366f1"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub1)"/>
@@ -296,7 +296,7 @@ const PUBLIC_APP_ICONS = [
     <circle cx="31" cy="34" r="1.8" fill="#6366f1" fillOpacity="0.5"/>
   </svg>,
 
-  /* 2 – Bloc-notes pro */
+  /* 2 â€“ Bloc-notes pro */
   <svg key="p2" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub2" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#4ade80"/><stop offset="1" stopColor="#16a34a"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub2)"/>
@@ -312,7 +312,7 @@ const PUBLIC_APP_ICONS = [
     <rect x="33" y="25" width="3" height="8" rx="1.5" transform="rotate(45 33 25)" fill="#4ade80"/>
   </svg>,
 
-  /* 3 – Coach Business IA */
+  /* 3 â€“ Coach Business IA */
   <svg key="p3" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub3" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#a78bfa"/><stop offset="1" stopColor="#7c3aed"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub3)"/>
@@ -325,7 +325,7 @@ const PUBLIC_APP_ICONS = [
     <path d="M37 9v6M34 12h6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
   </svg>,
 
-  /* 4 – CRM Client */
+  /* 4 â€“ CRM Client */
   <svg key="p4" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub4" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#22d3ee"/><stop offset="1" stopColor="#0891b2"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub4)"/>
@@ -337,7 +337,7 @@ const PUBLIC_APP_ICONS = [
     <path d="M43 35 C43 31.134 39.866 28 36 28" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.55"/>
   </svg>,
 
-  /* 5 – Chrono Pro */
+  /* 5 â€“ Chrono Pro */
   <svg key="p5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub5" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#fb923c"/><stop offset="1" stopColor="#ea580c"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub5)"/>
@@ -351,7 +351,7 @@ const PUBLIC_APP_ICONS = [
     <line x1="12" y1="28" x2="14" y2="28" stroke="#fb923c" strokeWidth="2" strokeOpacity="0.5"/>
   </svg>,
 
-  /* 6 – Dépenses Pro */
+  /* 6 â€“ DÃ©penses Pro */
   <svg key="p6" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub6" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f43f5e"/><stop offset="1" stopColor="#be123c"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub6)"/>
@@ -364,7 +364,7 @@ const PUBLIC_APP_ICONS = [
     <line x1="37" y1="27" x2="37" y2="32.5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
   </svg>,
 
-  /* 7 – Trésorerie */
+  /* 7 â€“ TrÃ©sorerie */
   <svg key="p7" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub7" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#34d399"/><stop offset="1" stopColor="#059669"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub7)"/>
@@ -375,7 +375,7 @@ const PUBLIC_APP_ICONS = [
     <circle cx="38" cy="11" r="3" fill="white" fillOpacity="0.9"/>
   </svg>,
 
-  /* 8 – Contrats IA */
+  /* 8 â€“ Contrats IA */
   <svg key="p8" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub8" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#facc15"/><stop offset="1" stopColor="#ca8a04"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub8)"/>
@@ -387,7 +387,7 @@ const PUBLIC_APP_ICONS = [
     <path d="M31 34 L33.5 36.5 L37.5 32" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>,
 
-  /* 9 – Sourcing IA */
+  /* 9 â€“ Sourcing IA */
   <svg key="p9" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub9" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#fbbf24"/><stop offset="1" stopColor="#d97706"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub9)"/>
@@ -398,7 +398,7 @@ const PUBLIC_APP_ICONS = [
     <line x1="40.5" y1="40.5" x2="44" y2="44" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round"/>
   </svg>,
 
-  /* 10 – Fournisseurs */
+  /* 10 â€“ Fournisseurs */
   <svg key="p10" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub10" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#4ade80"/><stop offset="1" stopColor="#166534"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub10)"/>
@@ -411,7 +411,7 @@ const PUBLIC_APP_ICONS = [
     <circle cx="33" cy="36" r="2" fill="#166534" fillOpacity="0.6"/>
   </svg>,
 
-  /* 11 – Stocks */
+  /* 11 â€“ Stocks */
   <svg key="p11" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub11" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#14b8a6"/><stop offset="1" stopColor="#0f766e"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub11)"/>
@@ -423,7 +423,7 @@ const PUBLIC_APP_ICONS = [
     <line x1="24" y1="29" x2="24" y2="40" stroke="#0f766e" strokeWidth="1.5" strokeOpacity="0.25"/>
   </svg>,
 
-  /* 12 – Tâches */
+  /* 12 â€“ TÃ¢ches */
   <svg key="p12" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub12" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f472b6"/><stop offset="1" stopColor="#be185d"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub12)"/>
@@ -440,7 +440,7 @@ const PUBLIC_APP_ICONS = [
     <path d="M30 35l2.5 2.5 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>,
 
-  /* 13 – Équipe */
+  /* 13 â€“ Ã‰quipe */
   <svg key="p13" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub13" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#38bdf8"/><stop offset="1" stopColor="#0891b2"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub13)"/>
@@ -450,7 +450,7 @@ const PUBLIC_APP_ICONS = [
     <path d="M21 38 C21 31.6 25.5 27 31 27 C36.5 27 41 31.6 41 38" fill="white" fillOpacity="0.95"/>
   </svg>,
 
-  /* 14 – Notes IA */
+  /* 14 â€“ Notes IA */
   <svg key="p14" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub14" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#fbbf24"/><stop offset="1" stopColor="#92400e"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub14)"/>
@@ -463,7 +463,7 @@ const PUBLIC_APP_ICONS = [
     <path d="M36 7 L33 14 L35.5 14 L33.5 19 L40 13 L37 13 Z" fill="white" fillOpacity="0.95"/>
   </svg>,
 
-  /* 15 – Assistant IA */
+  /* 15 â€“ Assistant IA */
   <svg key="p15" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub15" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#38bdf8"/><stop offset="1" stopColor="#0369a1"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub15)"/>
@@ -473,7 +473,7 @@ const PUBLIC_APP_ICONS = [
     <circle cx="38" cy="36" r="2" fill="white" fillOpacity="0.4"/>
   </svg>,
 
-  /* 16 – Réputation */
+  /* 16 â€“ RÃ©putation */
   <svg key="p16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub16" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f87171"/><stop offset="1" stopColor="#b91c1c"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub16)"/>
@@ -484,7 +484,7 @@ const PUBLIC_APP_ICONS = [
     <circle cx="8" cy="39" r="2" fill="white" fillOpacity="0.35"/>
   </svg>,
 
-  /* 17 – Réseaux Sociaux IA */
+  /* 17 â€“ RÃ©seaux Sociaux IA */
   <svg key="p17" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub17" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#e1306c"/><stop offset="1" stopColor="#833ab4"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub17)"/>
@@ -497,15 +497,15 @@ const PUBLIC_APP_ICONS = [
     <path d="M37 40 C34 37 31 34.5 31 32 C31 30.3 32.3 29 34 29 C35.2 29 36.3 29.8 37 31 C37.7 29.8 38.8 29 40 29 C41.7 29 43 30.3 43 32 C43 34.5 40 37 37 40Z" fill="white" fillOpacity="0.95"/>
   </svg>,
 
-  /* 18 – Portail Client */
+  /* 18 â€“ Portail Client */
   <svg key="p18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub18" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#3b82f6"/><stop offset="1" stopColor="#7c3aed"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub18)"/>
-    {/* Bâtiment */}
+    {/* BÃ¢timent */}
     <rect x="10" y="17" width="26" height="22" rx="2" fill="white" fillOpacity="0.92"/>
     {/* Toit */}
     <path d="M7 19 L23 8 L39 19" fill="white" fillOpacity="0.55"/>
-    {/* Fenêtres */}
+    {/* FenÃªtres */}
     <rect x="14" y="22" width="6" height="5" rx="1" fill="#3b82f6" fillOpacity="0.45"/>
     <rect x="27" y="22" width="6" height="5" rx="1" fill="#3b82f6" fillOpacity="0.45"/>
     {/* Porte */}
@@ -516,7 +516,7 @@ const PUBLIC_APP_ICONS = [
     <path d="M32.5 18 C32.5 15.5 34.6 14 37 14 C39.4 14 41.5 15.5 41.5 18" fill="white" fillOpacity="0.9"/>
   </svg>,
 
-  /* 19 – Paie & RH */
+  /* 19 â€“ Paie & RH */
   <svg key="p19" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
     <defs><linearGradient id="pub19" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#10b981"/><stop offset="1" stopColor="#065f46"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub19)"/>
@@ -527,7 +527,7 @@ const PUBLIC_APP_ICONS = [
     {/* Cercle valeur */}
     <circle cx="22" cy="24" r="5.5" fill="#10b981" fillOpacity="0.18"/>
     <circle cx="22" cy="24" r="3.5" fill="#10b981" fillOpacity="0.35"/>
-    {/* Barre € */}
+    {/* Barre â‚¬ */}
     <rect x="21" y="20" width="2" height="8" rx="1" fill="#065f46" fillOpacity="0.6"/>
     <rect x="18.5" y="22.5" width="7" height="1.5" rx="0.75" fill="#065f46" fillOpacity="0.6"/>
     <rect x="18.5" y="25" width="7" height="1.5" rx="0.75" fill="#065f46" fillOpacity="0.5"/>
@@ -543,7 +543,7 @@ const PUBLIC_APP_ICONS = [
 ];
 
 
-/* ── Vraie palette DJAMA espace client ── */
+/* â”€â”€ Vraie palette DJAMA espace client â”€â”€ */
 const D_SIDEBAR  = "#111318";
 const D_CONTENT  = "#07090e";
 const D_BORDER   = "rgba(255,255,255,0.07)";
@@ -551,14 +551,14 @@ const D_TEXT     = "rgba(255,255,255,0.65)";
 const D_MUTED    = "rgba(255,255,255,0.25)";
 const D_CARD     = "rgba(255,255,255,0.04)";
 
-/* Groupes sidebar réels */
+/* Groupes sidebar rÃ©els */
 const MOCK_NAV = [
   { group: null, items: [
     { id: "dashboard", label: "Tableau de bord", Icon: BarChart2 },
   ]},
   { group: "Finance", items: [
     { id: "factures",  label: "Factures",    Icon: Receipt  },
-    { id: "tresorerie",label: "Trésorerie",  Icon: Wallet   },
+    { id: "tresorerie",label: "TrÃ©sorerie",  Icon: Wallet   },
   ]},
   { group: "Commercial", items: [
     { id: "crm",       label: "CRM",         Icon: Users2   },
@@ -575,10 +575,10 @@ const CYCLE_SCREENS = ["dashboard", "factures", "crm", "ia"] as const;
 function DjamaScreenContent({ screen }: { screen: string }) {
   if (screen === "dashboard") return (
     <div className="flex flex-col gap-3 p-4">
-      <p className="text-[0.58rem] font-semibold uppercase tracking-widest" style={{ color: D_MUTED }}>Bonjour · Août 2026</p>
+      <p className="text-[0.58rem] font-semibold uppercase tracking-widest" style={{ color: D_MUTED }}>Bonjour Â· AoÃ»t 2026</p>
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: "CA du mois",  value: "18 400 €", badge: "+12%",    ok: true  },
+          { label: "CA du mois",  value: "18 400 â‚¬", badge: "+12%",    ok: true  },
           { label: "Factures",    value: "7",         badge: "2 retards",ok: false },
           { label: "Clients",     value: "34",        badge: "+3 ce mois",ok: true },
         ].map(k => (
@@ -594,7 +594,7 @@ function DjamaScreenContent({ screen }: { screen: string }) {
         ))}
       </div>
       <div className="rounded-xl p-3" style={{ background: D_CARD, border: D_BORDER }}>
-        <p className="mb-2 text-[0.55rem] font-semibold" style={{ color: D_MUTED }}>CA · 6 derniers mois</p>
+        <p className="mb-2 text-[0.55rem] font-semibold" style={{ color: D_MUTED }}>CA Â· 6 derniers mois</p>
         <div className="flex items-end gap-1.5 h-10">
           {[40, 55, 48, 70, 62, 88].map((h, i) => (
             <div key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: i === 5 ? GOLD : "rgba(255,255,255,0.12)" }} />
@@ -604,7 +604,7 @@ function DjamaScreenContent({ screen }: { screen: string }) {
       <div className="rounded-xl p-3" style={{ background: D_CARD, border: D_BORDER }}>
         <p className="mb-2 text-[0.55rem] font-semibold" style={{ color: D_MUTED }}>Actions rapides</p>
         <div className="flex gap-2">
-          {["Facture", "Devis", "Dépense", "Contact"].map(a => (
+          {["Facture", "Devis", "DÃ©pense", "Contact"].map(a => (
             <div key={a} className="flex-1 rounded-lg py-1.5 text-center text-[0.52rem] font-bold"
               style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}25` }}>
               {a}
@@ -623,13 +623,13 @@ function DjamaScreenContent({ screen }: { screen: string }) {
           style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}25` }}>+ Nouvelle facture</span>
       </div>
       <div className="mb-2 grid grid-cols-4 gap-2 text-[0.52rem] font-semibold uppercase tracking-wider" style={{ color: D_MUTED }}>
-        <span>Numéro</span><span>Client</span><span className="text-right">Montant</span><span className="text-right">Statut</span>
+        <span>NumÃ©ro</span><span>Client</span><span className="text-right">Montant</span><span className="text-right">Statut</span>
       </div>
       {[
-        { ref: "2026-089", client: "Groupe Esseba",   amount: "3 200 €", s: "Payée",      ok: true  },
-        { ref: "2026-088", client: "Entreprise Koné", amount: "1 840 €", s: "En retard",  ok: false },
-        { ref: "2026-087", client: "SCI Bézavana",    amount: "5 100 €", s: "En attente", ok: null  },
-        { ref: "2026-086", client: "Maison Jasmina",  amount: "920 €",   s: "Payée",      ok: true  },
+        { ref: "2026-089", client: "Groupe Esseba",   amount: "3 200 â‚¬", s: "PayÃ©e",      ok: true  },
+        { ref: "2026-088", client: "Entreprise KonÃ©", amount: "1 840 â‚¬", s: "En retard",  ok: false },
+        { ref: "2026-087", client: "SCI BÃ©zavana",    amount: "5 100 â‚¬", s: "En attente", ok: null  },
+        { ref: "2026-086", client: "Maison Jasmina",  amount: "920 â‚¬",   s: "PayÃ©e",      ok: true  },
       ].map((f, i) => (
         <div key={f.ref} className="grid grid-cols-4 items-center gap-2 py-2 text-[0.62rem]"
           style={{ borderTop: i === 0 ? D_BORDER : D_BORDER }}>
@@ -650,12 +650,12 @@ function DjamaScreenContent({ screen }: { screen: string }) {
 
   if (screen === "crm") return (
     <div className="flex flex-col gap-3 p-4">
-      <p className="text-[0.7rem] font-bold text-white">CRM — Pipeline</p>
+      <p className="text-[0.7rem] font-bold text-white">CRM â€” Pipeline</p>
       <div className="grid grid-cols-3 gap-2">
         {[
           { col: "Prospects", color: "#6366f1", count: 3, items: ["Startup Tekki", "Agence Soleil", "Mr. Diallo"] },
-          { col: "En cours",  color: GOLD,      count: 2, items: ["Groupe Esseba", "SCI Bézavana"]               },
-          { col: "Gagnés",    color: "#10b981", count: 3, items: ["Ent. Koné", "M. Jasmina", "Tech Réunion"]    },
+          { col: "En cours",  color: GOLD,      count: 2, items: ["Groupe Esseba", "SCI BÃ©zavana"]               },
+          { col: "GagnÃ©s",    color: "#10b981", count: 3, items: ["Ent. KonÃ©", "M. Jasmina", "Tech RÃ©union"]    },
         ].map(col => (
           <div key={col.col}>
             <div className="mb-2 flex items-center justify-between">
@@ -682,10 +682,10 @@ function DjamaScreenContent({ screen }: { screen: string }) {
       <p className="mb-1 text-[0.7rem] font-bold text-white">Assistant IA</p>
       <div className="flex flex-col gap-2">
         {[
-          { who: "Vous",  msg: "Génère une relance pour la facture #2026-088",  right: true  },
-          { who: "DJAMA IA", msg: "Relance envoyée à Entreprise Koné — Objet : Rappel facture échue, réponse attendue sous 48h.", right: false },
-          { who: "Vous",  msg: "Résumé du CA de ce mois ?",         right: true  },
-          { who: "DJAMA IA", msg: "CA août 2026 : 18 400 € — en hausse de +12% vs juillet. 34 clients actifs.", right: false },
+          { who: "Vous",  msg: "GÃ©nÃ¨re une relance pour la facture #2026-088",  right: true  },
+          { who: "DJAMA IA", msg: "Relance envoyÃ©e Ã  Entreprise KonÃ© â€” Objet : Rappel facture Ã©chue, rÃ©ponse attendue sous 48h.", right: false },
+          { who: "Vous",  msg: "RÃ©sumÃ© du CA de ce mois ?",         right: true  },
+          { who: "DJAMA IA", msg: "CA aoÃ»t 2026 : 18 400 â‚¬ â€” en hausse de +12% vs juillet. 34 clients actifs.", right: false },
         ].map((m, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.12, duration: 0.25 }}
@@ -735,17 +735,17 @@ function DjamaVideoSection() {
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={viewport} transition={{ duration: 0.8, ease }}>
           <p className="mb-4 text-[0.72rem] font-black uppercase tracking-[0.22em]" style={{ color: GOLD }}>
-            Bienvenue dans la nouvelle ère
+            Bienvenue dans la nouvelle Ã¨re
           </p>
           <h2 className="text-[2.8rem] font-black leading-[1.05] text-white sm:text-[4.5rem]"
             style={{ fontFamily: "'Caveat', cursive" }}>
             Votre business,{" "}
             <span style={{ background: `linear-gradient(90deg, ${GOLD}, #e8c97a)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              enfin unifié.
+              enfin unifiÃ©.
             </span>
           </h2>
           <p className="mt-5 text-[1rem] sm:text-[1.1rem]" style={{ color: "rgba(186,210,255,0.65)" }}>
-            Factures · CRM · IA · Paie · Projets — tout sur une seule plateforme.
+            Factures Â· CRM Â· IA Â· Paie Â· Projets â€” tout sur une seule plateforme.
           </p>
         </motion.div>
       </div>
@@ -773,7 +773,7 @@ function DjamaVideoSection() {
             {/* App layout */}
             <div className="flex" style={{ minHeight: 360 }}>
 
-              {/* Sidebar — vraie DJAMA */}
+              {/* Sidebar â€” vraie DJAMA */}
               <div className="flex w-[148px] shrink-0 flex-col" style={{ background: D_SIDEBAR, borderRight: D_BORDER }}>
                 {/* Logo */}
                 <div className="flex h-[44px] items-center gap-2 px-3" style={{ borderBottom: D_BORDER }}>
@@ -783,7 +783,7 @@ function DjamaVideoSection() {
                   </div>
                   <div className="leading-none">
                     <p className="text-[0.8rem] font-bold" style={{ color: GOLD }}>DJAMA</p>
-                    <p className="text-[0.45rem] uppercase tracking-widest" style={{ color: D_MUTED }}>PRO · Actif</p>
+                    <p className="text-[0.45rem] uppercase tracking-widest" style={{ color: D_MUTED }}>PRO Â· Actif</p>
                   </div>
                 </div>
 
@@ -833,9 +833,9 @@ function DjamaVideoSection() {
                   <div className="flex flex-1 items-center gap-1.5 rounded-lg px-2.5 py-1.5"
                     style={{ background: "rgba(255,255,255,0.05)", border: D_BORDER, maxWidth: 200 }}>
                     <Search size={10} style={{ color: D_MUTED }} />
-                    <span className="text-[0.6rem]" style={{ color: D_MUTED }}>Rechercher…</span>
+                    <span className="text-[0.6rem]" style={{ color: D_MUTED }}>Rechercherâ€¦</span>
                     <kbd className="ml-auto rounded px-1 py-0.5 text-[0.45rem]"
-                      style={{ background: "rgba(255,255,255,0.06)", border: D_BORDER, color: D_MUTED }}>⌘K</kbd>
+                      style={{ background: "rgba(255,255,255,0.06)", border: D_BORDER, color: D_MUTED }}>âŒ˜K</kbd>
                   </div>
                   <div className="flex-1" />
                   <Bell size={13} style={{ color: D_MUTED }} />
@@ -898,9 +898,9 @@ export default function Page() {
 }
 
 const HERO_STATS = [
-  { value: "1200+", label: "abonnés\nDJAMA Pro",   Icon: Gem         },
-  { value: "50+",   label: "clients\naccompagnés", Icon: Users2      },
-  { value: "100+",  label: "projets\nlivrés",       Icon: Briefcase   },
+  { value: "1200+", label: "abonnÃ©s\nDJAMA Pro",   Icon: Gem         },
+  { value: "50+",   label: "clients\naccompagnÃ©s", Icon: Users2      },
+  { value: "100+",  label: "projets\nlivrÃ©s",       Icon: Briefcase   },
   { value: "Sans",  label: "engagement",            Icon: ShieldCheck },
 ];
 
@@ -920,7 +920,7 @@ function CoachingPayButton() {
     <button onClick={pay} disabled={loading}
       className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#c9a55a] disabled:opacity-60">
       {loading ? <Gem size={11} className="animate-spin" style={{ color: GOLD }} /> : null}
-      {loading ? "…" : <><ArrowRight size={11} /> Acheter</>}
+      {loading ? "â€¦" : <><ArrowRight size={11} /> Acheter</>}
     </button>
   );
 }
@@ -940,11 +940,11 @@ function HomeContent() {
   return (
     <div className="overflow-hidden">
 
-      {/* ══════════════════════════════════════════════════════
-           HERO — style Odoo : blanc, Caveat, surligneur or
-      ══════════════════════════════════════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           HERO â€” style Odoo : blanc, Caveat, surligneur or
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="relative overflow-hidden bg-white px-5 pb-16 pt-[108px] sm:pb-24 sm:pt-[150px]">
-        {/* Léger halo doré centré */}
+        {/* LÃ©ger halo dorÃ© centrÃ© */}
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[380px] w-[700px] rounded-full blur-[120px]"
             style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.10) 0%, transparent 70%)` }} />
@@ -956,7 +956,7 @@ function HomeContent() {
           transition={{ duration: 0.7, ease }}
           className="relative z-10 mx-auto max-w-3xl px-4 text-center"
         >
-          {/* H1 — surligneur ÉPAIS style Odoo exact */}
+          {/* H1 â€” surligneur Ã‰PAIS style Odoo exact */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -964,7 +964,7 @@ function HomeContent() {
             className="text-[3.6rem] leading-[1.12] text-gray-900 sm:text-[5.8rem]"
             style={{ fontFamily: lang === "ar" ? "inherit" : "'Caveat', cursive", fontWeight: 800 }}
           >
-            {lang === "ar" ? "كل أعمالك على " : lang === "en" ? "Your entire business on " : "Tout votre business sur "}
+            {lang === "ar" ? "ÙƒÙ„ Ø£Ø¹Ù…Ø§Ù„Ùƒ Ø¹Ù„Ù‰ " : lang === "en" ? "Your entire business on " : "Tout votre business sur "}
             <span
               className="inline-block"
               style={{
@@ -974,11 +974,11 @@ function HomeContent() {
                 color: "#1a0800",
               }}
             >
-              {lang === "ar" ? "منصة واحدة." : lang === "en" ? "one platform." : "une seule plateforme."}
+              {lang === "ar" ? "Ù…Ù†ØµØ© ÙˆØ§Ø­Ø¯Ø©." : lang === "en" ? "one platform." : "une seule plateforme."}
             </span>
           </motion.h1>
 
-          {/* Sous-titre — "Simple, efficace, et abordable !" avec trait brushstroke bleu */}
+          {/* Sous-titre â€” "Simple, efficace, et abordable !" avec trait brushstroke bleu */}
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -987,7 +987,7 @@ function HomeContent() {
             style={{ fontFamily: lang === "ar" ? "inherit" : "'Caveat', cursive", fontWeight: 600 }}
           >
             {lang === "ar" ? (
-              <>بسيط، فعّال، و<span className="relative inline-block">بأسعار معقولة !<svg aria-hidden viewBox="0 0 220 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C40 1, 90 9, 140 5 C185 2, 210 8, 218 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
+              <>Ø¨Ø³ÙŠØ·ØŒ ÙØ¹Ù‘Ø§Ù„ØŒ Ùˆ<span className="relative inline-block">Ø¨Ø£Ø³Ø¹Ø§Ø± Ù…Ø¹Ù‚ÙˆÙ„Ø© !<svg aria-hidden viewBox="0 0 220 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C40 1, 90 9, 140 5 C185 2, 210 8, 218 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
             ) : lang === "en" ? (
               <>Simple, powerful, and{" "}<span className="relative inline-block">affordable !<svg aria-hidden viewBox="0 0 180 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C30 1, 70 9, 110 5 C148 2, 170 8, 178 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
             ) : (
@@ -995,7 +995,7 @@ function HomeContent() {
             )}
           </motion.h2>
 
-          {/* CTAs — bouton doré plein + bouton gris léger */}
+          {/* CTAs â€” bouton dorÃ© plein + bouton gris lÃ©ger */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1016,18 +1016,18 @@ function HomeContent() {
                   className="pointer-events-none absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                 <Gem size={15} className="relative z-10 shrink-0" />
                 <span className="relative z-10">
-                  {lang === "ar" ? "ابدأ الآن — مجانًا" : lang === "en" ? "Start now — It's free" : "Commence maintenant — C'est gratuit"}
+                  {lang === "ar" ? "Ø§Ø¨Ø¯Ø£ Ø§Ù„Ø¢Ù† â€” Ù…Ø¬Ø§Ù†Ù‹Ø§" : lang === "en" ? "Start now â€” It's free" : "Commence maintenant â€” C'est gratuit"}
                 </span>
                 <ArrowRight size={14} className="relative z-10 shrink-0" />
               </Link>
             </motion.div>
             <Link href="/contact"
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-9 py-4 text-[1rem] font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-100 active:scale-[.98]">
-              {lang === "ar" ? "تواصل مع مستشار →" : lang === "en" ? "Talk to an advisor →" : "Rencontrer un conseiller →"}
+              {lang === "ar" ? "ØªÙˆØ§ØµÙ„ Ù…Ø¹ Ù…Ø³ØªØ´Ø§Ø± â†’" : lang === "en" ? "Talk to an advisor â†’" : "Rencontrer un conseiller â†’"}
             </Link>
           </motion.div>
 
-          {/* Annotation prix manuscrite — style Odoo */}
+          {/* Annotation prix manuscrite â€” style Odoo */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1035,18 +1035,18 @@ function HomeContent() {
             className="mt-5 text-[1.05rem] text-gray-400"
             style={{ fontFamily: "'Caveat', cursive" }}
           >
-            {lang === "ar" ? "↗ 11,90€ شهريًا لجميع الأدوات الـ 48" : lang === "en" ? "↗ 11.90€/month for ALL 48 tools" : "↗ 11,90€/mois pour TOUS les 48 outils"}
+            {lang === "ar" ? "â†— 11,90â‚¬ Ø´Ù‡Ø±ÙŠÙ‹Ø§ Ù„Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø£Ø¯ÙˆØ§Øª Ø§Ù„Ù€ 48" : lang === "en" ? "â†— 11.90â‚¬/month for ALL 48 tools" : "â†— 11,90â‚¬/mois pour TOUS les 48 outils"}
           </motion.p>
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-           APP GRID — style Odoo pur : fond gris, cartes blanches
-      ══════════════════════════════════════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           APP GRID â€” style Odoo pur : fond gris, cartes blanches
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section id="outils" className="bg-[#f4f5f7] pb-16 pt-14">
         <div className="mx-auto max-w-5xl px-6">
 
-          {/* Grille 5 cols — cartes BLANCHES + animation "Imagine sans DJAMA" intégrée */}
+          {/* Grille 5 cols â€” cartes BLANCHES + animation "Imagine sans DJAMA" intÃ©grÃ©e */}
           <motion.div
             initial="hidden" whileInView="visible" viewport={viewport}
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.03 } } }}
@@ -1073,7 +1073,7 @@ function HomeContent() {
                     </motion.div>
                   </Link>
 
-                  {/* Zone concurrent — visible uniquement si sansMode + rival */}
+                  {/* Zone concurrent â€” visible uniquement si sansMode + rival */}
                   <AnimatePresence>
                     {sansMode && rival && (
                       <motion.div
@@ -1117,7 +1117,7 @@ function HomeContent() {
             })}
           </motion.div>
 
-          {/* Toggle + compteur coût + lien */}
+          {/* Toggle + compteur coÃ»t + lien */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-2">
               <button
@@ -1141,13 +1141,13 @@ function HomeContent() {
                     <motion.span key="shock"
                       initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -12, 12, 0] }}
                       exit={{ scale: 0 }} transition={{ duration: 0.3 }} className="text-lg">
-                      😱
+                      ðŸ˜±
                     </motion.span>
                   )}
                 </AnimatePresence>
               </button>
 
-              {/* Résumé coût — visible quand sansMode ON */}
+              {/* RÃ©sumÃ© coÃ»t â€” visible quand sansMode ON */}
               <AnimatePresence>
                 {sansMode && (
                   <motion.div
@@ -1160,11 +1160,11 @@ function HomeContent() {
                   >
                     <p className="text-[0.82rem] leading-snug text-gray-500">
                       Pour remplacer les <strong className="text-gray-800">48 outils DJAMA</strong> il vous faudrait :{" "}
-                      <span className="font-black" style={{ color: "#7c3aed" }}>~48 abonnements · 600€+/mois</span>
+                      <span className="font-black" style={{ color: "#7c3aed" }}>~48 abonnements Â· 600â‚¬+/mois</span>
                     </p>
                     <p className="mt-0.5 text-[0.78rem] text-gray-400">
                       vs DJAMA Pro :{" "}
-                      <strong style={{ color: GOLD }}>11,90€/mois</strong> tout inclus
+                      <strong style={{ color: GOLD }}>11,90â‚¬/mois</strong> tout inclus
                     </p>
                   </motion.div>
                 )}
@@ -1174,29 +1174,29 @@ function HomeContent() {
             <Link href="/espace-client"
               className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-opacity hover:opacity-70 shrink-0"
               style={{ color: sansMode ? "#7c3aed" : GOLD }}>
-              {sansMode ? "Revenir à DJAMA" : "Voir tous les 48 outils"}
+              {sansMode ? "Revenir Ã  DJAMA" : "Voir tous les 48 outils"}
               <ArrowRight size={14} />
             </Link>
           </div>
 
-          {/* Grand texte — style Odoo exact */}
+          {/* Grand texte â€” style Odoo exact */}
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport} transition={{ duration: 0.5, ease }}
             className="mt-14 max-w-3xl">
             <p className="text-[1.05rem] leading-relaxed text-gray-700">
-              <strong className="font-black text-gray-900">Imaginez une vaste collection d&apos;applications professionnelles à votre disposition.</strong>
+              <strong className="font-black text-gray-900">Imaginez une vaste collection d&apos;applications professionnelles Ã  votre disposition.</strong>
             </p>
             <p className="mt-2 text-[1.05rem] leading-relaxed text-gray-700">
-              Vous avez quelque chose à améliorer ? Il existe une application pour ça.
+              Vous avez quelque chose Ã  amÃ©liorer ? Il existe une application pour Ã§a.
             </p>
             <p className="text-[1.05rem] leading-relaxed text-gray-700">
-              Pas de complexité, pas de frais, juste une installation en un clic.
+              Pas de complexitÃ©, pas de frais, juste une installation en un clic.
             </p>
             <p className="mt-6 text-[1.05rem] leading-relaxed text-gray-700">
-              Chaque application simplifie un processus et donne plus de moyens à un plus grand nombre de personnes.
+              Chaque application simplifie un processus et donne plus de moyens Ã  un plus grand nombre de personnes.
             </p>
             <p className="text-[1.05rem] leading-relaxed text-gray-700">
-              Imaginez l&apos;impact lorsque chacun obtient l&apos;outil adapté à la tâche, adapté avec une IA native.
+              Imaginez l&apos;impact lorsque chacun obtient l&apos;outil adaptÃ© Ã  la tÃ¢che, adaptÃ© avec une IA native.
             </p>
             <motion.div className="relative mt-7 inline-flex" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
               <motion.div
@@ -1211,7 +1211,7 @@ function HomeContent() {
                 <motion.div animate={{ x: ["-100%","220%"] }} transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
                   className="pointer-events-none absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                 <Gem size={14} className="relative z-10 shrink-0" />
-                <span className="relative z-10">Démarrer maintenant</span>
+                <span className="relative z-10">DÃ©marrer maintenant</span>
                 <ArrowRight size={13} className="relative z-10 shrink-0" />
               </Link>
             </motion.div>
@@ -1220,9 +1220,9 @@ function HomeContent() {
 
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-           CALCULATEUR D'ÉCONOMIES — style Odoo
-      ══════════════════════════════════════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           CALCULATEUR D'Ã‰CONOMIES â€” style Odoo
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="bg-[#f4f5f7] py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-5">
 
@@ -1232,16 +1232,16 @@ function HomeContent() {
             className="mb-10 text-center">
             <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[3.4rem]"
               style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
-              Calculez vos économies
+              Calculez vos Ã©conomies
             </h2>
             <p className="mt-3 text-[0.95rem] text-gray-500">
-              Sélectionnez les outils que vous utilisez déjà
+              SÃ©lectionnez les outils que vous utilisez dÃ©jÃ 
             </p>
           </motion.div>
 
           <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
 
-            {/* ── Grille des outils ── */}
+            {/* â”€â”€ Grille des outils â”€â”€ */}
             <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={viewport} transition={{ duration: 0.5, ease }}
               className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
@@ -1291,20 +1291,20 @@ function HomeContent() {
               <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-3">
                 <button onClick={() => setSelectedTools(new Set(TOOLS_DATA_48.map(t => t.name)))}
                   className="text-[0.72rem] font-semibold text-gray-400 transition-colors hover:text-gray-700">
-                  Tout sélectionner
+                  Tout sÃ©lectionner
                 </button>
-                <span className="text-gray-200">·</span>
+                <span className="text-gray-200">Â·</span>
                 <button onClick={() => setSelectedTools(new Set())}
                   className="text-[0.72rem] font-semibold text-gray-400 transition-colors hover:text-gray-700">
                   Effacer
                 </button>
                 <span className="ml-auto text-[0.7rem] text-gray-400">
-                  {selectedTools.size} / {TOOLS_DATA_48.length} sélectionnés
+                  {selectedTools.size} / {TOOLS_DATA_48.length} sÃ©lectionnÃ©s
                 </span>
               </div>
             </motion.div>
 
-            {/* ── Panneau de droite ── */}
+            {/* â”€â”€ Panneau de droite â”€â”€ */}
             <div className="space-y-3 lg:sticky lg:top-24">
 
               {/* Concurrents */}
@@ -1312,12 +1312,12 @@ function HomeContent() {
                 viewport={viewport} transition={{ duration: 0.5, ease }}
                 className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                 <div className="border-b border-gray-100 px-5 py-3.5">
-                  <p className="text-[0.82rem] font-bold text-gray-900">Applications à remplacer</p>
+                  <p className="text-[0.82rem] font-bold text-gray-900">Applications Ã  remplacer</p>
                   <p className="text-[0.65rem] text-gray-400">Sans DJAMA, vous payez :</p>
                 </div>
                 <div className="min-h-[72px] px-5 py-3">
                   {selectedTools.size === 0 ? (
-                    <p className="py-2 text-[0.75rem] italic text-gray-400">← Sélectionnez des outils</p>
+                    <p className="py-2 text-[0.75rem] italic text-gray-400">â† SÃ©lectionnez des outils</p>
                   ) : (
                     <div className="space-y-1.5">
                       <AnimatePresence>
@@ -1331,7 +1331,7 @@ function HomeContent() {
                               className="flex items-center justify-between overflow-hidden">
                               <span className="text-[0.75rem] text-gray-600">{t.rival}</span>
                               <span className="text-[0.75rem] font-bold text-gray-800">
-                                {t.price}€<span className="text-[0.6rem] font-normal text-gray-400">/mois</span>
+                                {t.price}â‚¬<span className="text-[0.6rem] font-normal text-gray-400">/mois</span>
                               </span>
                             </motion.div>
                           );
@@ -1345,7 +1345,7 @@ function HomeContent() {
                     <div className="flex items-center justify-between">
                       <span className="text-[0.78rem] font-bold text-gray-800">TOTAL</span>
                       <span className="text-[1rem] font-black text-red-500">
-                        {Array.from(selectedTools).reduce((s, name) => s + (TOOLS_DATA_48.find(x => x.name === name)?.price ?? 0), 0)}€<span className="text-[0.65rem] font-normal">/mois</span>
+                        {Array.from(selectedTools).reduce((s, name) => s + (TOOLS_DATA_48.find(x => x.name === name)?.price ?? 0), 0)}â‚¬<span className="text-[0.65rem] font-normal">/mois</span>
                       </span>
                     </div>
                   </div>
@@ -1361,12 +1361,12 @@ function HomeContent() {
                     <p className="text-[0.62rem] text-gray-500">48 outils inclus</p>
                   </div>
                   <span className="text-[1.1rem] font-black" style={{ color: GOLD }}>
-                    11,90€<span className="text-[0.65rem] font-normal text-gray-500">/mois</span>
+                    11,90â‚¬<span className="text-[0.65rem] font-normal text-gray-500">/mois</span>
                   </span>
                 </div>
               </div>
 
-              {/* Économies */}
+              {/* Ã‰conomies */}
               <AnimatePresence>
                 {selectedTools.size > 0 && (() => {
                   const saving = Array.from(selectedTools).reduce((s, name) => s + (TOOLS_DATA_48.find(x => x.name === name)?.price ?? 0), 0) - 11.90;
@@ -1375,15 +1375,15 @@ function HomeContent() {
                       initial={{ opacity: 0, y: 8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
                       transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 22 }}
                       className="rounded-2xl border border-gray-100 bg-white px-5 py-5 text-center shadow-sm">
-                      <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-widest text-gray-400">Vos économies</p>
+                      <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-widest text-gray-400">Vos Ã©conomies</p>
                       <p className="text-[2.4rem] font-black leading-none"
                         style={{ fontFamily: "'Caveat', cursive" }}>
                         <span style={{ background: `rgba(${GOLDR},0.28)`, borderRadius: "6px", padding: "0 8px", color: "#6b4200" }}>
-                          {saving.toFixed(0)}€/mois
+                          {saving.toFixed(0)}â‚¬/mois
                         </span>
                       </p>
                       <p className="mt-2 text-[0.7rem] text-gray-500">
-                        soit <strong className="text-gray-700">{(saving * 12).toFixed(0)}€ économisés par an</strong>
+                        soit <strong className="text-gray-700">{(saving * 12).toFixed(0)}â‚¬ Ã©conomisÃ©s par an</strong>
                       </p>
                     </motion.div>
                   ) : null;
@@ -1396,15 +1396,15 @@ function HomeContent() {
                 style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
                 <Gem size={13} /> Essayer gratuitement <ArrowRight size={13} />
               </Link>
-              <p className="text-center text-[0.65rem] text-gray-400">11,90€/mois · Sans engagement · Accès immédiat</p>
+              <p className="text-center text-[0.65rem] text-gray-400">11,90â‚¬/mois Â· Sans engagement Â· AccÃ¨s immÃ©diat</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-           SOCIAL PROOF — "1 200 Utilisateurs heureux" style Odoo
-      ══════════════════════════════════════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           SOCIAL PROOF â€” "1 200 Utilisateurs heureux" style Odoo
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="overflow-hidden bg-white py-16 sm:py-24">
 
         {/* Ligne haute */}
@@ -1454,7 +1454,7 @@ function HomeContent() {
             </h2>
           </div>
           <p className="mx-auto mt-4 max-w-md text-[0.95rem] leading-relaxed text-gray-400">
-            qui développent leur entreprise avec DJAMA
+            qui dÃ©veloppent leur entreprise avec DJAMA
           </p>
           <motion.div className="mt-7 inline-block" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
             <Link href="/espace-client"
@@ -1501,9 +1501,9 @@ function HomeContent() {
 
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-           TÉMOIGNAGE FONDATEUR — style Odoo quote card
-      ══════════════════════════════════════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           TÃ‰MOIGNAGE FONDATEUR â€” style Odoo quote card
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="bg-[#f8f8f8] py-14 sm:py-20">
         <motion.div
           initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
@@ -1516,11 +1516,11 @@ function HomeContent() {
             <div className="flex-1">
               <span className="mb-5 block text-[3.5rem] leading-none" style={{ color: GOLD, fontFamily: "serif" }}>&ldquo;&ldquo;</span>
               <p className="text-[1.05rem] font-semibold leading-relaxed text-gray-800">
-                J&apos;ai créé DJAMA parce que chaque entrepreneur, où qu&apos;il soit dans le monde, mérite des outils aussi puissants que les grandes entreprises mondiales — mais accessibles, simples, et pensés pour eux. Notre marché, c&apos;est le monde entier. Chaque outil que nous construisons est une porte ouverte vers l&apos;indépendance économique.
+                J&apos;ai crÃ©Ã© DJAMA parce que chaque entrepreneur, oÃ¹ qu&apos;il soit dans le monde, mÃ©rite des outils aussi puissants que les grandes entreprises mondiales â€” mais accessibles, simples, et pensÃ©s pour eux. Notre marchÃ©, c&apos;est le monde entier. Chaque outil que nous construisons est une porte ouverte vers l&apos;indÃ©pendance Ã©conomique.
               </p>
             </div>
 
-            {/* Photo + identité droite */}
+            {/* Photo + identitÃ© droite */}
             <div className="flex shrink-0 flex-col items-center gap-3 sm:items-center">
               <div className="h-[100px] w-[100px] overflow-hidden rounded-full"
                 style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
@@ -1537,321 +1537,41 @@ function HomeContent() {
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-           VIDEO ANIMATION — "IA au cœur de votre business"
-      ══════════════════════════════════════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           VIDEO ANIMATION â€” "IA au cÅ“ur de votre business"
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <DjamaVideoSection />
 
       <PartnerLogosSection />
       <TestimonialsSection dynamic />
 
-      {/* ── Fonctionnalités — bento grid ───────────────────────── */}
-      <section className="overflow-hidden bg-[#f4f5f7] py-20 sm:py-28">
-        <style>{`
-          @keyframes djBb{from{width:0}to{width:var(--bw,100%)}}
-          @keyframes djBd{0%,60%,100%{opacity:0}30%{opacity:1}}
-          @keyframes djBs{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-          @keyframes djPing{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.4);opacity:0}}
-          @keyframes djCount{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-          .dj-bar{width:0;animation:djBb 1.8s ease-out var(--bd,0s) forwards}
-          .dj-d1{animation:djBd 1.3s infinite}
-          .dj-d2{animation:djBd 1.3s .22s infinite}
-          .dj-d3{animation:djBd 1.3s .44s infinite}
-          .dj-ping{animation:djPing 2s ease-out infinite}
-          .dj-s1{animation:djBs .45s ease-out .25s both}
-          .dj-s2{animation:djBs .45s ease-out .65s both}
-          .dj-s3{animation:djBs .45s ease-out 1.05s both}
-          .dj-s4{animation:djBs .45s ease-out 1.45s both}
-          .dj-s5{animation:djBs .45s ease-out 1.85s both}
-          .dj-s6{animation:djBs .45s ease-out 2.25s both}
-          .dj-count{animation:djCount .5s ease-out .4s both}
-        `}</style>
-
-        <div className="mx-auto max-w-6xl px-6">
-
-          {/* Titre */}
+      {/* â”€â”€ Texte manifeste â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <section className="bg-white py-24 sm:py-32">
+        <div className="mx-auto max-w-2xl px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.65, ease }}
-            className="mb-14 text-center">
-            <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[4rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
-              Tout ce dont vous avez{" "}
-              <span className="relative inline-block whitespace-nowrap">
-                besoin.
-                <span className="pointer-events-none absolute -bottom-1 left-0 right-0 h-[5px] rounded-full"
-                  style={{ background: `linear-gradient(90deg,transparent,rgba(${GOLDR},0.6) 20%,rgba(${GOLDR},0.6) 80%,transparent)` }} />
-              </span>
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[0.95rem] text-gray-500">
-              48 outils professionnels. Une seule plateforme. Un seul abonnement.
+            viewport={viewport} transition={{ duration: 0.7, ease }}>
+            <p className="text-[1.15rem] font-black leading-snug text-gray-900 sm:text-[1.4rem]">
+              Imaginez une vaste collection d&apos;applications professionnelles Ã  votre disposition.
+            </p>
+            <p className="mt-4 text-[1rem] leading-relaxed text-gray-500">
+              Vous avez quelque chose Ã  amÃ©liorer ? Il existe une app pour Ã§a.
+            </p>
+            <p className="text-[1rem] leading-relaxed text-gray-500">
+              Aucune complexitÃ©, aucun frais, une simple installation en un clic.
+            </p>
+            <p className="mt-8 text-[1rem] leading-relaxed text-gray-500">
+              Chaque application simplifie un processus et permet Ã  davantage de personnes d&apos;agir.
+            </p>
+            <p className="text-[1rem] leading-relaxed text-gray-500">
+              Imaginez l&apos;impact lorsque chacun dispose de l&apos;outil adaptÃ© Ã  ses besoins, enrichi par l&apos;IA native.
             </p>
           </motion.div>
-
-          {/* Bento grid — layout asymétrique 3 cols */}
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={viewport}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.09 } } }}
-            className="grid auto-rows-auto grid-cols-1 gap-4 sm:grid-cols-3">
-
-            {/* ── Card 1 — Facturation IA — dark · 2 cols */}
-            <motion.div
-              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
-              whileHover={{ y: -4, boxShadow: "0 28px 64px rgba(0,0,0,0.25)" }}
-              transition={{ duration: 0.22 }}
-              className="relative overflow-hidden rounded-2xl p-6 sm:col-span-2"
-              style={{ background: "linear-gradient(135deg,#111827 0%,#1a253a 100%)", minHeight: 288, border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full"
-                style={{ background: `radial-gradient(circle,rgba(${GOLDR},0.14) 0%,transparent 70%)` }} />
-              <div className="mb-4 flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `rgba(${GOLDR},0.14)` }}>
-                  <Receipt size={17} style={{ color: GOLD }} strokeWidth={1.7} />
-                </div>
-                <div>
-                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: GOLD + "99" }}>Finance</p>
-                  <p className="text-[0.92rem] font-black text-white">Facturation IA</p>
-                </div>
-              </div>
-              {/* Mini invoice */}
-              <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <div className="mb-2.5 flex items-center justify-between">
-                  <span className="text-[0.52rem] font-bold text-white">Facture #2026-094</span>
-                  <span className="rounded-full px-2 py-0.5 text-[0.4rem] font-bold" style={{ background: "rgba(74,222,128,0.15)", color: "#4ade80" }}>✓ Envoyée</span>
-                </div>
-                {[
-                  { label: "Consulting stratégie", qty: "8h", price: "1 600 €", cls: "dj-s1" },
-                  { label: "Développement web", qty: "12h", price: "2 400 €", cls: "dj-s2" },
-                  { label: "Formation IA", qty: "4h", price: "800 €", cls: "dj-s3" },
-                ].map(({ label, qty, price, cls }) => (
-                  <div key={label} className={`${cls} mb-1 flex items-center justify-between rounded-lg px-2 py-1.5`}
-                    style={{ background: "rgba(255,255,255,0.03)" }}>
-                    <span className="text-[0.46rem]" style={{ color: "rgba(255,255,255,0.5)" }}>{label}</span>
-                    <span className="text-[0.44rem]" style={{ color: "rgba(255,255,255,0.3)" }}>{qty}</span>
-                    <span className="text-[0.5rem] font-bold text-white">{price}</span>
-                  </div>
-                ))}
-                <div className="mt-2 flex items-center justify-between border-t pt-2" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-                  <span className="text-[0.5rem] text-gray-400">Total TTC</span>
-                  <span className="dj-count text-[0.9rem] font-black" style={{ color: GOLD }}>4 800 €</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* ── Card 2 — CRM Clients — blanc · 1 col */}
-            <motion.div
-              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
-              whileHover={{ y: -4, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: "#60a5fa44" }}
-              transition={{ duration: 0.22 }}
-              className="relative overflow-hidden rounded-2xl bg-white p-6"
-              style={{ border: "1px solid rgba(0,0,0,0.06)", minHeight: 288 }}>
-              <div className="mb-4 flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(96,165,250,0.12)" }}>
-                  <Users2 size={17} style={{ color: "#60a5fa" }} strokeWidth={1.7} />
-                </div>
-                <div>
-                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#60a5fa99" }}>Commercial</p>
-                  <p className="text-[0.92rem] font-black text-gray-900">CRM Clients</p>
-                </div>
-              </div>
-              {/* Kanban */}
-              <div className="flex gap-1.5">
-                {[
-                  { label: "Prospects", color: "#94a3b8", cards: ["Groupe A", "M. Diallo"], cls: ["dj-s1", "dj-s2"] },
-                  { label: "Devis", color: "#f59e0b", cards: ["SCI Béza…"], cls: ["dj-s3"] },
-                  { label: "Signés", color: "#4ade80", cards: ["Koné & Co"], cls: ["dj-s4"] },
-                ].map(({ label, color, cards, cls }) => (
-                  <div key={label} className="flex-1 rounded-xl p-1.5" style={{ background: `${color}0d` }}>
-                    <p className="mb-1.5 text-[0.4rem] font-bold uppercase tracking-wider" style={{ color }}>{label}</p>
-                    {cards.map((c, i) => (
-                      <div key={c} className={`${cls[i]} mb-1 rounded-lg px-1.5 py-1.5 text-[0.4rem] font-semibold text-gray-700`}
-                        style={{ background: "white", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>{c}</div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-              {/* Stat */}
-              <div className="mt-3 flex items-center gap-2 rounded-xl px-2.5 py-2"
-                style={{ background: "rgba(96,165,250,0.06)", border: "1px solid rgba(96,165,250,0.12)" }}>
-                <div className="relative h-2 w-2 flex-shrink-0">
-                  <div className="absolute inset-0 rounded-full" style={{ background: "#4ade80" }} />
-                  <div className="dj-ping absolute inset-0 rounded-full" style={{ background: "#4ade80" }} />
-                </div>
-                <span className="text-[0.46rem] text-gray-500">34 clients actifs · +3 ce mois</span>
-              </div>
-            </motion.div>
-
-            {/* ── Card 3 — Assistant IA — blanc · 1 col */}
-            <motion.div
-              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
-              whileHover={{ y: -4, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: "#a78bfa44" }}
-              transition={{ duration: 0.22 }}
-              className="relative overflow-hidden rounded-2xl bg-white p-6"
-              style={{ border: "1px solid rgba(0,0,0,0.06)", minHeight: 240 }}>
-              <div className="mb-4 flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(167,139,250,0.12)" }}>
-                  <Brain size={17} style={{ color: "#a78bfa" }} strokeWidth={1.7} />
-                </div>
-                <div>
-                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#a78bfa99" }}>Intelligence</p>
-                  <p className="text-[0.92rem] font-black text-gray-900">Assistant IA</p>
-                </div>
-              </div>
-              {/* Chat animé */}
-              <div className="flex flex-col gap-2">
-                <div className="dj-s1 ml-auto max-w-[85%] rounded-xl rounded-br-none px-2.5 py-1.5"
-                  style={{ background: "rgba(167,139,250,0.10)" }}>
-                  <p className="text-[0.45rem] text-gray-700">Génère une relance pour la facture #2026-088</p>
-                </div>
-                <div className="dj-s2 rounded-xl rounded-bl-none px-2.5 py-1.5"
-                  style={{ background: "#f8f7ff", border: "1px solid rgba(167,139,250,0.18)" }}>
-                  <p className="mb-0.5 text-[0.4rem] font-bold" style={{ color: "#a78bfa" }}>DJAMA IA</p>
-                  <p className="text-[0.45rem] text-gray-600">Relance envoyée à Ent. Koné — réponse attendue sous 48h.</p>
-                </div>
-                <div className="dj-s3 ml-auto max-w-[85%] rounded-xl rounded-br-none px-2.5 py-1.5"
-                  style={{ background: "rgba(167,139,250,0.10)" }}>
-                  <p className="text-[0.45rem] text-gray-700">Résumé du CA de ce mois ?</p>
-                </div>
-                {/* Typing */}
-                <div className="dj-s4 flex w-fit items-center gap-1 rounded-xl rounded-bl-none px-2.5 py-1.5"
-                  style={{ background: "#f8f7ff", border: "1px solid rgba(167,139,250,0.18)" }}>
-                  <span className="dj-d1 h-1.5 w-1.5 rounded-full" style={{ background: "#a78bfa" }} />
-                  <span className="dj-d2 h-1.5 w-1.5 rounded-full" style={{ background: "#a78bfa" }} />
-                  <span className="dj-d3 h-1.5 w-1.5 rounded-full" style={{ background: "#a78bfa" }} />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* ── Card 4 — Paie & RH — dark · 2 cols */}
-            <motion.div
-              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
-              whileHover={{ y: -4, boxShadow: "0 28px 64px rgba(0,0,0,0.25)" }}
-              transition={{ duration: 0.22 }}
-              className="relative overflow-hidden rounded-2xl p-6 sm:col-span-2"
-              style={{ background: "linear-gradient(135deg,#111827 0%,#1a253a 100%)", minHeight: 240, border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full"
-                style={{ background: "radial-gradient(circle,rgba(74,222,128,0.10) 0%,transparent 70%)" }} />
-              <div className="mb-5 flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(74,222,128,0.12)" }}>
-                  <CreditCard size={17} style={{ color: "#4ade80" }} strokeWidth={1.7} />
-                </div>
-                <div>
-                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#4ade8099" }}>Ressources humaines</p>
-                  <p className="text-[0.92rem] font-black text-white">Paie & RH</p>
-                </div>
-                <span className="ml-auto rounded-full px-2 py-0.5 text-[0.44rem] font-bold"
-                  style={{ background: "rgba(74,222,128,0.12)", color: "#4ade80" }}>Conforme OHADA</span>
-              </div>
-              {/* Bars */}
-              <div className="flex flex-col gap-3">
-                {[
-                  { label: "Cadres", pct: "85%", color: "#4ade80", amt: "4 200 €", delay: "0s" },
-                  { label: "Techniciens", pct: "62%", color: "#60a5fa", amt: "2 800 €", delay: "0.2s" },
-                  { label: "Agents", pct: "44%", color: GOLD, amt: "1 950 €", delay: "0.4s" },
-                ].map(({ label, pct, color, amt, delay }) => (
-                  <div key={label}>
-                    <div className="mb-1 flex items-center justify-between">
-                      <span className="text-[0.46rem]" style={{ color: "rgba(255,255,255,0.45)" }}>{label}</span>
-                      <span className="text-[0.5rem] font-bold" style={{ color }}>{amt}</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
-                      <div className="dj-bar h-full rounded-full" style={{ "--bw": pct, "--bd": delay, background: color } as React.CSSProperties} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* ── Card 5 — Gestion de projets — blanc · 1 col */}
-            <motion.div
-              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
-              whileHover={{ y: -4, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: "#fb923c44" }}
-              transition={{ duration: 0.22 }}
-              className="relative overflow-hidden rounded-2xl bg-white p-6"
-              style={{ border: "1px solid rgba(0,0,0,0.06)", minHeight: 220 }}>
-              <div className="mb-4 flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(251,146,60,0.12)" }}>
-                  <FolderOpen size={17} style={{ color: "#fb923c" }} strokeWidth={1.7} />
-                </div>
-                <div>
-                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#fb923c99" }}>Opérations</p>
-                  <p className="text-[0.92rem] font-black text-gray-900">Gestion de projets</p>
-                </div>
-              </div>
-              {/* Task list */}
-              <div className="flex flex-col gap-1.5">
-                {[
-                  { task: "Livraison client Esseba", done: true, cls: "dj-s1" },
-                  { task: "Rapport mensuel Q3", done: true, cls: "dj-s2" },
-                  { task: "Formation équipe", done: false, cls: "dj-s3" },
-                  { task: "Audit fournisseurs", done: false, cls: "dj-s4" },
-                ].map(({ task, done, cls }) => (
-                  <div key={task}
-                    className={`${cls} flex items-center gap-2 rounded-lg px-2 py-1.5`}
-                    style={{ background: done ? "rgba(251,146,60,0.06)" : "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.04)" }}>
-                    <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
-                      style={{ background: done ? "rgba(251,146,60,0.18)" : "transparent", border: done ? "none" : "1.5px solid rgba(0,0,0,0.15)" }}>
-                      {done && <span style={{ color: "#fb923c", fontSize: "0.45rem", lineHeight: 1 }}>✓</span>}
-                    </div>
-                    <span className="text-[0.46rem]"
-                      style={{ color: done ? "#fb923c" : "#6b7280", textDecoration: done ? "line-through" : "none", opacity: done ? 0.65 : 1 }}>{task}</span>
-                  </div>
-                ))}
-              </div>
-              {/* Progress bar */}
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,0.06)" }}>
-                  <div className="dj-bar h-full rounded-full" style={{ "--bw": "65%", "--bd": "0.3s", background: "#fb923c" } as React.CSSProperties} />
-                </div>
-                <span className="text-[0.46rem] font-bold" style={{ color: "#fb923c" }}>65%</span>
-              </div>
-            </motion.div>
-
-            {/* ── Card 6 — Sourcing & Marchés — blanc · 2 cols */}
-            <motion.div
-              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease } } }}
-              whileHover={{ y: -4, boxShadow: "0 20px 48px rgba(0,0,0,0.10)", borderColor: "#34d39944" }}
-              transition={{ duration: 0.22 }}
-              className="relative overflow-hidden rounded-2xl bg-white p-6 sm:col-span-2"
-              style={{ border: "1px solid rgba(0,0,0,0.06)", minHeight: 220 }}>
-              <div className="mb-4 flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(52,211,153,0.12)" }}>
-                  <Truck size={17} style={{ color: "#34d399" }} strokeWidth={1.7} />
-                </div>
-                <div>
-                  <p className="text-[0.52rem] font-bold uppercase tracking-[0.15em]" style={{ color: "#34d39999" }}>Sourcing</p>
-                  <p className="text-[0.92rem] font-black text-gray-900">Sourcing & Marchés</p>
-                </div>
-              </div>
-              {/* Badges pays animés */}
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { flag: "🇫🇷", country: "France", type: "Marché public", color: "#3b82f6", cls: "dj-s1" },
-                  { flag: "🇨🇲", country: "Cameroun", type: "Appel d'offres", color: "#34d399", cls: "dj-s2" },
-                  { flag: "🇸🇳", country: "Sénégal", type: "Fournisseur", color: GOLD, cls: "dj-s3" },
-                  { flag: "🇨🇮", country: "Côte d'Ivoire", type: "Marché public", color: "#f87171", cls: "dj-s4" },
-                  { flag: "🇲🇦", country: "Maroc", type: "Appel d'offres", color: "#a78bfa", cls: "dj-s5" },
-                  { flag: "🇬🇦", country: "Gabon", type: "Fournisseur", color: "#fb923c", cls: "dj-s6" },
-                ].map(({ flag, country, type, color, cls }) => (
-                  <div key={country}
-                    className={`${cls} flex items-center gap-1.5 rounded-full px-2.5 py-1.5`}
-                    style={{ background: `${color}0f`, border: `1px solid ${color}22` }}>
-                    <span style={{ fontSize: "0.75rem" }}>{flag}</span>
-                    <div>
-                      <p className="text-[0.46rem] font-bold leading-none" style={{ color }}>{country}</p>
-                      <p className="mt-0.5 text-[0.38rem] leading-none text-gray-400">{type}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-          </motion.div>
-
         </div>
       </section>
 
-      {/* ── Final CTA — style Odoo : fond blanc, titre Caveat, or ── */}
+      {/* â”€â”€ Final CTA â€” style Odoo : fond blanc, titre Caveat, or â”€â”€ */}
       <section className="relative overflow-hidden bg-[#f4f5f7] px-5 py-20 sm:py-28">
-        {/* Halo doré léger */}
+        {/* Halo dorÃ© lÃ©ger */}
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <div className="h-[300px] w-[600px] rounded-full blur-[120px]"
             style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.12) 0%, transparent 70%)` }} />
@@ -1864,34 +1584,34 @@ function HomeContent() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 mx-auto max-w-2xl text-center"
         >
-          {/* Titre Caveat — style Odoo */}
+          {/* Titre Caveat â€” style Odoo */}
           <h2 className="text-[2.8rem] leading-[1.08] text-gray-900 sm:text-[3.8rem]"
             style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
             {lang === "ar"
-              ? <>ابدأ مشروعك <span style={{ color: GOLD, textDecoration: "underline wavy", textUnderlineOffset: "6px", textDecorationColor: `rgba(${GOLDR},0.5)` }}>اليوم.</span></>
+              ? <>Ø§Ø¨Ø¯Ø£ Ù…Ø´Ø±ÙˆØ¹Ùƒ <span style={{ color: GOLD, textDecoration: "underline wavy", textUnderlineOffset: "6px", textDecorationColor: `rgba(${GOLDR},0.5)` }}>Ø§Ù„ÙŠÙˆÙ….</span></>
               : lang === "en"
               ? <>Launch your project <span style={{ color: GOLD, textDecoration: "underline wavy", textUnderlineOffset: "6px", textDecorationColor: `rgba(${GOLDR},0.5)` }}>today.</span></>
-              : <>Libérez votre <span style={{ background: `linear-gradient(180deg,transparent 58%,rgba(${GOLDR},0.38) 58%)`, padding: "0 4px" }}>potentiel</span> de croissance.</>
+              : <>LibÃ©rez votre <span style={{ background: `linear-gradient(180deg,transparent 58%,rgba(${GOLDR},0.38) 58%)`, padding: "0 4px" }}>potentiel</span> de croissance.</>
             }
           </h2>
 
           {/* Sous-titre */}
           <p className="mx-auto mt-5 max-w-md text-[0.95rem] leading-relaxed text-gray-500">
             {lang === "ar"
-              ? "من الفكرة إلى الإطلاق — DJAMA يرافقك في كل خطوة بحلول تناسب ميزانيتك وأهدافك."
+              ? "Ù…Ù† Ø§Ù„ÙÙƒØ±Ø© Ø¥Ù„Ù‰ Ø§Ù„Ø¥Ø·Ù„Ø§Ù‚ â€” DJAMA ÙŠØ±Ø§ÙÙ‚Ùƒ ÙÙŠ ÙƒÙ„ Ø®Ø·ÙˆØ© Ø¨Ø­Ù„ÙˆÙ„ ØªÙ†Ø§Ø³Ø¨ Ù…ÙŠØ²Ø§Ù†ÙŠØªÙƒ ÙˆØ£Ù‡Ø¯Ø§ÙÙƒ."
               : lang === "en"
-              ? "From idea to launch — DJAMA supports you at every step with solutions tailored to your budget and goals."
-              : "De l'idée à la mise en ligne — DJAMA vous accompagne à chaque étape avec des solutions adaptées à votre budget et vos objectifs."
+              ? "From idea to launch â€” DJAMA supports you at every step with solutions tailored to your budget and goals."
+              : "De l'idÃ©e Ã  la mise en ligne â€” DJAMA vous accompagne Ã  chaque Ã©tape avec des solutions adaptÃ©es Ã  votre budget et vos objectifs."
             }
           </p>
 
           {/* Trust badges */}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             {(lang === "ar"
-              ? ["بدون التزام", "رد خلال 24 ساعة", "مكالمة مجانية"]
+              ? ["Ø¨Ø¯ÙˆÙ† Ø§Ù„ØªØ²Ø§Ù…", "Ø±Ø¯ Ø®Ù„Ø§Ù„ 24 Ø³Ø§Ø¹Ø©", "Ù…ÙƒØ§Ù„Ù…Ø© Ù…Ø¬Ø§Ù†ÙŠØ©"]
               : lang === "en"
               ? ["No commitment", "Response within 24h", "Free call included"]
-              : ["Sans engagement", "Réponse sous 24h", "Appel offert"]
+              : ["Sans engagement", "RÃ©ponse sous 24h", "Appel offert"]
             ).map((text) => (
               <span key={text} className="flex items-center gap-1.5 text-[0.78rem] font-semibold text-gray-500">
                 <CheckCircle2 size={12} style={{ color: "#4ade80" }} />
@@ -1910,7 +1630,7 @@ function HomeContent() {
                 boxShadow: `0 8px 30px rgba(${GOLDR},0.45)`,
               }}
             >
-              {lang === "ar" ? "ابدأ مشروعي" : lang === "en" ? "Start my project" : "Démarrer un projet"}
+              {lang === "ar" ? "Ø§Ø¨Ø¯Ø£ Ù…Ø´Ø±ÙˆØ¹ÙŠ" : lang === "en" ? "Start my project" : "DÃ©marrer un projet"}
               <ArrowRight size={15} />
             </Link>
             <a
@@ -1935,10 +1655,10 @@ function HomeContent() {
             className="mt-14 grid grid-cols-3 gap-4 border-t border-gray-200 pt-10"
           >
             {(lang === "ar"
-              ? [{ value: "+50", label: "عميلاً مرافَقاً" }, { value: "24h", label: "وقت الرد" }, { value: "100%", label: "رضا العملاء" }]
+              ? [{ value: "+50", label: "Ø¹Ù…ÙŠÙ„Ø§Ù‹ Ù…Ø±Ø§ÙÙŽÙ‚Ø§Ù‹" }, { value: "24h", label: "ÙˆÙ‚Øª Ø§Ù„Ø±Ø¯" }, { value: "100%", label: "Ø±Ø¶Ø§ Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡" }]
               : lang === "en"
               ? [{ value: "50+", label: "clients supported" }, { value: "24h", label: "response time" }, { value: "100%", label: "client satisfaction" }]
-              : [{ value: "50+", label: "clients accompagnés" }, { value: "24h", label: "délai de réponse" }, { value: "100%", label: "satisfaction client" }]
+              : [{ value: "50+", label: "clients accompagnÃ©s" }, { value: "24h", label: "dÃ©lai de rÃ©ponse" }, { value: "100%", label: "satisfaction client" }]
             ).map(({ value, label }) => (
               <div key={label} className="flex flex-col items-center gap-1.5">
                 <span className="text-[1.6rem] font-extrabold leading-none" style={{ color: GOLD }}>{value}</span>
