@@ -1872,6 +1872,37 @@ function HomeContent() {
         </div>
       </section></> }
 
+      {/* ── Chiffres clés ── */}
+      <section className="bg-white pb-4 pt-0">
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={viewport}
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
+          className="mx-auto grid max-w-2xl grid-cols-3 divide-x divide-gray-100 px-6"
+        >
+          {[
+            { n: "48", label: "outils inclus" },
+            { n: "1 200+", label: "entrepreneurs actifs" },
+            { n: "1 clic", label: "pour installer" },
+          ].map(({ n, label }) => (
+            <motion.div
+              key={label}
+              variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
+              className="flex flex-col items-center gap-1 px-4 py-6 text-center"
+            >
+              <span
+                className="text-[2rem] leading-none sm:text-[2.4rem]"
+                style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, color: GOLD }}
+              >
+                {n}
+              </span>
+              <span className="text-[0.72rem] font-medium uppercase tracking-widest text-gray-400">
+                {label}
+              </span>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
       {/* ── Final CTA — style manifeste ── */}
       <section className="relative overflow-hidden bg-white px-5 py-24 text-center sm:py-32">
         <motion.div

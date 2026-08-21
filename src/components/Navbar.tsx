@@ -19,10 +19,10 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const NAV_LINKS = [
-    { href: "/#outils",      label: "Applications"  },
-    { href: "/coaching-ia",  label: "Coaching IA"   },
-    { href: "/#tarifs",      label: "Tarification"  },
-    { href: "/contact",      label: "Aide"           },
+    { href: "/",                label: "Accueil"       },
+    { href: "/applications",    label: "Applications"  },
+    { href: "/coaching-ia",     label: "Coaching IA"   },
+    { href: "/contact",         label: "Aide"          },
   ];
 
   const [scrolled,  setScrolled]  = useState(false);
