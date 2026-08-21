@@ -1950,25 +1950,6 @@ function HomeContent() {
           </div>
 
           {/* Stats strip */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-14 grid grid-cols-3 gap-4 border-t border-gray-200 pt-10"
-          >
-            {(lang === "ar"
-              ? [{ value: "+50", label: "عميلاً مرافَقاً" }, { value: "24h", label: "وقت الرد" }, { value: "100%", label: "رضا العملاء" }]
-              : lang === "en"
-              ? [{ value: "50+", label: "clients supported" }, { value: "24h", label: "response time" }, { value: "100%", label: "client satisfaction" }]
-              : [{ value: "50+", label: "clients accompagnés" }, { value: "24h", label: "délai de réponse" }, { value: "100%", label: "satisfaction client" }]
-            ).map(({ value, label }) => (
-              <div key={label} className="flex flex-col items-center gap-1.5">
-                <span className="text-[1.6rem] font-extrabold leading-none" style={{ color: GOLD }}>{value}</span>
-                <span className="text-center text-[0.65rem] leading-snug text-gray-400">{label}</span>
-              </div>
-            ))}
-          </motion.div>
         </motion.div>
       </section>
 
