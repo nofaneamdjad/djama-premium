@@ -3,13 +3,19 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { MODULE_GROUPS } from "@/lib/module-groups";
+import { APPS_DATA } from "@/lib/applications-data";
 
 const GOLD = "#c9a55a";
 const ease = [0.22, 1, 0.36, 1] as const;
 const viewport = { once: true, margin: "-40px" };
 
-const totalApps = MODULE_GROUPS.reduce((sum, g) => sum + g.modules.length, 0);
+/* Regroupe les apps par catégorie */
+const categories = Array.from(new Set(APPS_DATA.map((a) => a.category)));
+const byCategory = Object.fromEntries(
+  categories.map((cat) => [cat, APPS_DATA.filter((a) => a.category === cat)])
+);
+
+const totalApps = APPS_DATA.length;
 
 export default function ApplicationsPage() {
   return (
@@ -23,13 +29,13 @@ export default function ApplicationsPage() {
             transition={{ duration: 0.7, ease }}
           >
             <p className="mb-3 text-[0.75rem] font-bold uppercase tracking-[0.18em] text-gray-400">
-              {totalApps} applications · 1 abonnement
+              {totalApps} applications · {categories.length} catégories · 1 abonnement
             </p>
             <h1 className="text-[2.8rem] font-extrabold leading-[1.08] text-gray-900 sm:text-[4rem]">
               Toutes nos applications
             </h1>
             <p className="mx-auto mt-4 max-w-lg text-[1rem] leading-relaxed text-gray-500">
-              Des outils professionnels organisés par métier, intégrés nativement et enrichis par l&apos;IA.
+              Des outils professionnels organisés par métier, intégrés nativement et enrichis par l&apos;IA — inclus dans votre abonnement.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
@@ -51,44 +57,55 @@ export default function ApplicationsPage() {
           variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
           className="grid grid-cols-1 gap-x-10 gap-y-14 sm:grid-cols-2 lg:grid-cols-4"
         >
-          {MODULE_GROUPS.map((group) => {
-            const GroupIcon = group.icon;
+          {categories.map((cat) => {
+            const apps = byCategory[cat];
+            const firstApp = apps[0];
+            const CatIcon = firstApp.icon;
+            const catColor = apps.find((a) => a.color)?.color ?? "#6b7280";
+
             return (
               <motion.div
-                key={group.label}
+                key={cat}
                 variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
               >
                 {/* En-tête catégorie */}
-                <div className="mb-4 flex items-center gap-2 border-b-2 pb-3" style={{ borderColor: group.color }}>
-                  <GroupIcon size={16} style={{ color: group.color }} />
+                <div className="mb-4 flex items-center gap-2 border-b-2 pb-3" style={{ borderColor: catColor }}>
+                  <CatIcon size={15} style={{ color: catColor }} />
                   <h2
-                    className="text-[0.78rem] font-extrabold uppercase tracking-[0.14em]"
-                    style={{ color: group.color }}
+                    className="text-[0.75rem] font-extrabold uppercase tracking-[0.14em]"
+                    style={{ color: catColor }}
                   >
-                    {group.label}
+                    {cat}
                   </h2>
                 </div>
 
                 {/* Liste d'apps */}
                 <ul className="flex flex-col gap-0">
-                  {group.modules.map((mod) => (
-                    <li key={mod.href}>
-                      <Link
-                        href={mod.href}
-                        className="group flex flex-col py-2 transition-colors"
-                      >
-                        <span className="text-[0.92rem] font-medium text-gray-800 transition-colors group-hover:text-gray-900"
-                          style={{ transitionProperty: "color" }}>
-                          <span className="group-hover:underline group-hover:decoration-gray-300">
-                            {mod.label}
-                          </span>
-                        </span>
-                        <span className="mt-0.5 text-[0.75rem] leading-snug text-gray-400">
-                          {mod.sub}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
+                  {apps.map((app) => {
+                    const AppIcon = app.icon;
+                    return (
+                      <li key={app.slug}>
+                        <Link
+                          href={`/applications/${app.slug}`}
+                          className="group flex items-start gap-2.5 py-2"
+                        >
+                          <AppIcon
+                            size={15}
+                            className="mt-0.5 shrink-0 transition-colors"
+                            style={{ color: app.color }}
+                          />
+                          <div>
+                            <span className="block text-[0.9rem] font-medium text-gray-800 group-hover:underline group-hover:decoration-gray-300">
+                              {app.label}
+                            </span>
+                            <span className="block text-[0.73rem] leading-snug text-gray-400">
+                              {app.hero.subtitle.split(".")[0]}.
+                            </span>
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               </motion.div>
             );
