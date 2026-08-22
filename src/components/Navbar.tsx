@@ -5,9 +5,10 @@ import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
-import { ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
+import { ArrowRight, Mail, MessageCircle, Phone, ChevronDown } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import { useLanguage } from "@/lib/language-context";
+import { APPS_DATA } from "@/lib/applications-data";
 
 const ease   = [0.22, 1, 0.36, 1] as const;
 const GOLD   = "#c9a55a";
@@ -28,7 +29,29 @@ export default function Navbar() {
   const [scrolled,  setScrolled]  = useState(false);
   const [menuOpen,  setMenuOpen]  = useState(false);
   const [hidden,    setHidden]    = useState(false);
+  const [appsOpen,  setAppsOpen]  = useState(false);
   const lastY = useRef(0);
+  const megaRef = useRef<HTMLDivElement>(null);
+
+  /* Données mega-menu — groupées par catégorie */
+  const categories = Array.from(new Set(APPS_DATA.map(a => a.category)));
+  const byCategory = categories.map(cat => ({
+    cat,
+    color: APPS_DATA.find(a => a.category === cat)?.color ?? "#6b7280",
+    apps:  APPS_DATA.filter(a => a.category === cat),
+  }));
+
+  /* Ferme le mega-menu si clic extérieur */
+  useEffect(() => {
+    if (!appsOpen) return;
+    const handle = (e: MouseEvent) => {
+      if (megaRef.current && !megaRef.current.contains(e.target as Node)) {
+        setAppsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [appsOpen]);
 
   const { scrollY, scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 400, damping: 40 });
@@ -68,6 +91,7 @@ export default function Navbar() {
       />
 
       <motion.header
+        ref={megaRef}
         initial={{ y: 0, opacity: 1 }}
         animate={{ y: hidden ? -100 : 0, opacity: hidden ? 0 : 1 }}
         transition={{ duration: 0.4, ease }}
@@ -101,6 +125,7 @@ export default function Navbar() {
           <nav className="hidden items-center gap-1 md:flex">
             {NAV_LINKS.map(({ href, label }, i) => {
               const active = isActive(href);
+              const isApps = href === "/applications";
               return (
                 <motion.div
                   key={href}
@@ -108,17 +133,97 @@ export default function Navbar() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.06 + i * 0.04 }}
                 >
-                  <Link
-                    href={href}
-                    className={`relative px-3.5 py-2 text-[0.92rem] font-medium transition-colors duration-150 ${
-                      active ? "font-semibold text-gray-900" : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    {label}
-                  </Link>
+                  {isApps ? (
+                    <button
+                      onClick={() => setAppsOpen(v => !v)}
+                      className={`inline-flex items-center gap-1 px-3.5 py-2 text-[0.92rem] font-medium transition-colors duration-150 ${
+                        active || appsOpen ? "font-semibold text-gray-900" : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      {label}
+                      <ChevronDown
+                        size={14}
+                        className="transition-transform duration-200"
+                        style={{ transform: appsOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                      />
+                    </button>
+                  ) : (
+                    <Link
+                      href={href}
+                      onClick={() => setAppsOpen(false)}
+                      className={`relative px-3.5 py-2 text-[0.92rem] font-medium transition-colors duration-150 ${
+                        active ? "font-semibold text-gray-900" : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  )}
                 </motion.div>
               );
             })}
+
+            {/* ── Mega-menu Applications ── */}
+            <AnimatePresence>
+              {appsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.22, ease }}
+                  className="absolute left-0 right-0 top-[72px] z-50 border-b border-gray-100 bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
+                >
+                  <div className="mx-auto max-w-6xl px-8 py-10">
+                    <div className="grid grid-cols-4 gap-x-10 gap-y-8">
+                      {byCategory.map(({ cat, color, apps }) => (
+                        <div key={cat}>
+                          {/* Titre catégorie */}
+                          <div className="mb-3 border-b-2 pb-2" style={{ borderColor: color }}>
+                            <span
+                              className="text-[0.7rem] font-extrabold uppercase tracking-[0.14em]"
+                              style={{ color }}
+                            >
+                              {cat}
+                            </span>
+                          </div>
+                          {/* Liste apps */}
+                          <ul className="flex flex-col gap-1">
+                            {apps.map(app => (
+                              <li key={app.slug}>
+                                <Link
+                                  href={`/applications/${app.slug}`}
+                                  onClick={() => setAppsOpen(false)}
+                                  className="block text-[0.88rem] text-gray-600 transition-colors duration-100 hover:text-gray-900"
+                                >
+                                  {app.label}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Footer mega-menu */}
+                    <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-5">
+                      <Link
+                        href="/applications"
+                        onClick={() => setAppsOpen(false)}
+                        className="text-[0.85rem] font-semibold text-gray-500 underline-offset-2 hover:underline hover:text-gray-800"
+                      >
+                        Voir toutes les applications →
+                      </Link>
+                      <Link
+                        href="/espace-client"
+                        onClick={() => setAppsOpen(false)}
+                        className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-[0.85rem] font-extrabold text-black"
+                        style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                      >
+                        Essayer gratuitement <ArrowRight size={13} />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </nav>
 
           {/* Connexion + CTA desktop */}
