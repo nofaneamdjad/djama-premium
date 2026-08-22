@@ -5,9 +5,7 @@ import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
-import { ArrowRight, Mail, MessageCircle, Phone, ChevronDown } from "lucide-react";
-import { getSiteData } from "@/lib/site-data";
-import { useLanguage } from "@/lib/language-context";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { APPS_DATA } from "@/lib/applications-data";
 
 const ease   = [0.22, 1, 0.36, 1] as const;
@@ -15,15 +13,15 @@ const GOLD   = "#c9a55a";
 const GOLDR  = "201,165,90";
 
 export default function Navbar() {
-  const data   = getSiteData();
-  const { lang, setLang, dict } = useLanguage();
   const pathname = usePathname();
 
   const NAV_LINKS = [
     { href: "/",                label: "Accueil"       },
     { href: "/applications",    label: "Applications"  },
-    { href: "/coaching-ia",     label: "Coaching IA"   },
-    { href: "/contact",         label: "Aide"          },
+    { href: "/industries",      label: "Industries"    },
+    { href: "/communaute",      label: "Communauté"    },
+    { href: "/tarification",    label: "Tarification"  },
+{ href: "/contact",         label: "Aide"          },
   ];
 
   const [scrolled,  setScrolled]  = useState(false);
@@ -323,50 +321,6 @@ export default function Navbar() {
                 );
               })}
 
-              {/* Connexion mobile */}
-              <motion.div variants={{ hidden: { opacity: 0, x: -14 }, visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease } } }}>
-                <Link
-                  href="/espace-client"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center px-4 py-3.5 text-lg font-semibold text-gray-500 transition-colors hover:text-gray-900"
-                >
-                  Connexion
-                </Link>
-              </motion.div>
-
-              {/* Contacts rapides */}
-              <motion.div variants={{ hidden: { opacity: 0, x: -14 }, visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease } } }} className="mt-3 px-4">
-                <p className="mb-2.5 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-gray-400">Contact</p>
-                <div className="flex flex-col gap-1.5">
-                  <a href={`mailto:${data.contact.email}`}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:text-gray-800"
-                    style={{ border: "1px solid #f3f4f6", background: "#fafafa" }}>
-                    <Mail size={14} style={{ color: GOLD }} className="shrink-0" />{data.contact.email}
-                  </a>
-                  <a href={`https://wa.me/${data.contact.whatsapp.replace(/[^0-9]/g,"")}`} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:text-gray-800"
-                    style={{ border: "1px solid #f3f4f6", background: "#fafafa" }}>
-                    <MessageCircle size={14} style={{ color: "#25d366" }} className="shrink-0" />WhatsApp — {data.contact.whatsapp}
-                  </a>
-                  <a href={`tel:${data.contact.phone.replace(/\s/g,"")}`}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:text-gray-800"
-                    style={{ border: "1px solid #f3f4f6", background: "#fafafa" }}>
-                    <Phone size={14} style={{ color: "#60a5fa" }} className="shrink-0" />{data.contact.phone}
-                  </a>
-                </div>
-              </motion.div>
-
-              {/* CTA */}
-              <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease } } }} className="mt-5 px-4 pb-8">
-                <Link
-                  href="/espace-client"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-4 text-lg font-extrabold text-black transition-shadow hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
-                  style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
-                >
-                  Essayer gratuitement <ArrowRight size={16} />
-                </Link>
-              </motion.div>
             </motion.nav>
           </motion.div>
         )}
