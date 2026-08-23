@@ -37,12 +37,12 @@ const PLANS: Plan[] = [
   {
     id: "free",
     color: "#5bb4f5",
-    name: "Une App Gratuite",
+    name: "2 Apps Gratuites",
     free: true,
     annual:  { integer: "0", decimal: "", unit: "€", strikethrough: null },
     monthly: { integer: "0", decimal: "", unit: "€", strikethrough: null },
     features: [
-      { bold: "Une app", rest: ", un nombre illimité d'utilisateurs" },
+      { bold: "2 apps", rest: ", un nombre illimité d'utilisateurs" },
       { bold: "DJAMA Online", rest: "" },
     ],
     cta: "Démarrer maintenant",
@@ -54,8 +54,8 @@ const PLANS: Plan[] = [
     color: "#e05c5c",
     name: "Standard",
     free: false,
-    annual:  { integer: "17", decimal: ",43",  unit: "€ / utilisateur / mois", strikethrough: "21,77 €*" },
-    monthly: { integer: "21", decimal: ",77",  unit: "€ / utilisateur / mois", strikethrough: null },
+    annual:  { integer: "9",  decimal: ",52",  unit: "€ / utilisateur / mois", strikethrough: "11,90 €*" },
+    monthly: { integer: "11", decimal: ",90",  unit: "€ / utilisateur / mois", strikethrough: null },
     features: [
       { bold: "Toutes les apps", rest: "" },
       { bold: "DJAMA Online", rest: "" },
@@ -69,8 +69,8 @@ const PLANS: Plan[] = [
     color: "#2ab5a0",
     name: "Personnalisé",
     free: false,
-    annual:  { integer: "34", decimal: ",30",  unit: "€ / utilisateur / mois", strikethrough: "42,70 €*" },
-    monthly: { integer: "42", decimal: ",70",  unit: "€ / utilisateur / mois", strikethrough: null },
+    annual:  { integer: "30", decimal: ",32",  unit: "€ / utilisateur / mois", strikethrough: "37,90 €*" },
+    monthly: { integer: "37", decimal: ",90",  unit: "€ / utilisateur / mois", strikethrough: null },
     features: [
       { bold: "Toutes les apps", rest: "" },
       { bold: "DJAMA Online", rest: " / DJAMA.sh** / On-premise" },
