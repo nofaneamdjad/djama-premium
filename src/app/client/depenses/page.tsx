@@ -2675,27 +2675,30 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
           </div>
         </div>
 
-        {/* KPI cards */}
-        <div className="relative z-10 mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { l: "Total dépenses",  v: fmtCur(grandTotal),    c: "#c9a55a", sub: `${expenses.length} dépense${expenses.length !== 1 ? "s" : ""}`, delay: 0.08 },
-            { l: "Total filtré",    v: fmtCur(filteredTotal),  c: "#6366f1", sub: `${filtered.length} résultat${filtered.length !== 1 ? "s" : ""}`,  delay: 0.13 },
-            { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981", sub: "Récupérable", delay: 0.18 },
-            { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b", sub: "Carte perso",  delay: 0.23 },
-          ].map(({ l, v, c, sub, delay }) => (
-            <motion.div key={l} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay, type: "spring", stiffness: 260, damping: 22 }}
-              className="relative overflow-hidden rounded-2xl p-3.5"
-              style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)" }}>
-              <div className="pointer-events-none absolute -top-4 -right-4 h-16 w-16 rounded-full opacity-[0.15]"
-                style={{ background: `radial-gradient(circle,${c},transparent 70%)` }} />
-              <p className="text-[0.58rem] font-bold uppercase tracking-widest" style={{ color: c + "aa" }}>{l}</p>
-              <p className={`mt-1.5 text-[1.1rem] font-black leading-tight ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
-              <p className="mt-0.5 text-[0.58rem]" style={{ color: c + "77" }}>{sub}</p>
-              <div className="mt-2.5 h-0.5 rounded-full" style={{ background: `linear-gradient(90deg,${c}55,transparent)` }} />
-            </motion.div>
+        {/* KPI strip — 4 colonnes */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08, type: "spring", stiffness: 260, damping: 24 }}
+          className="relative z-10 mt-5 grid grid-cols-4 overflow-hidden rounded-2xl border"
+          style={{ background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.88)", borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+          {([
+            { l: "Total dépenses",  v: fmtCur(grandTotal),    c: "#c9a55a", I: Receipt,   sub: `${expenses.length} dep.` },
+            { l: "Total filtré",    v: fmtCur(filteredTotal),  c: "#6366f1", I: BarChart2, sub: `${filtered.length} résultats` },
+            { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981", I: Zap,       sub: "Récupérable" },
+            { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b", I: Wallet,    sub: "Carte perso" },
+          ] as const).map(({ l, v, c, I: Icon, sub }, i) => (
+            <div key={l}
+              className={`flex flex-col gap-1 px-3 py-3 ${i < 3 ? (isDark ? "border-r border-white/[0.07]" : "border-r border-gray-100") : ""}`}>
+              <div className="flex w-full items-start justify-between">
+                <span className="text-[0.95rem] font-black leading-tight tabular-nums" style={{ color: c }}>{v}</span>
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: c + "18" }}>
+                  <Icon size={10} style={{ color: c }} />
+                </div>
+              </div>
+              <span className="text-[0.55rem] font-bold uppercase tracking-wide"
+                style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)" }}>{l}</span>
+            </div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* ── Tab bar ── */}
@@ -2796,55 +2799,64 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className={`overflow-hidden rounded-2xl border ${isDark ? "border-white/[0.07] bg-white/[0.02]" : "border-gray-200 bg-white"}`}>
                     <AnimatePresence initial={false}>
-                      {filtered.map(e => {
+                      {filtered.map((e, idx) => {
                         const ci = getCat(e.category);
                         const CI = ci.I;
                         return (
                           <motion.div key={e.id} layout
                             initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
-                            className={`group flex items-center gap-3 rounded-2xl border p-3 transition-all ${isDark ? "border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.05]" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+                            className={`group flex items-center gap-3 px-4 py-3 transition-all ${idx > 0 ? (isDark ? "border-t border-white/[0.05]" : "border-t border-gray-100") : ""} ${isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50/80"}`}>
 
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                              style={{ backgroundColor: ci.c + "22" }}>
-                              <CI size={16} style={{ color: ci.c }} />
-                            </div>
+                            {/* Icône catégorie iOS-style */}
+                            <motion.div whileTap={{ scale: 0.88 }}
+                              className="relative flex h-[44px] w-[44px] shrink-0 items-center justify-center overflow-hidden rounded-[13px]"
+                              style={{
+                                background: `linear-gradient(145deg, ${ci.c}38 0%, ${ci.c}18 100%)`,
+                                border: `1px solid ${ci.c}28`,
+                                boxShadow: `0 2px 8px ${ci.c}18`,
+                              }}>
+                              <div className="pointer-events-none absolute inset-0 rounded-[inherit]"
+                                style={{ background: "linear-gradient(165deg,rgba(255,255,255,0.18) 0%,transparent 60%)" }} />
+                              <CI size={19} style={{ color: ci.c }} strokeWidth={1.8} />
+                            </motion.div>
 
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className={`truncate text-[0.78rem] font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{e.description}</p>
+                              {/* Ligne 1 : description + badges */}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className={`text-[0.78rem] font-extrabold leading-tight truncate ${isDark ? "text-white/90" : "text-gray-800"}`}>{e.description}</p>
                                 {e.recur_freq && (
-                                  <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.52rem] font-bold"
-                                    style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.25)" }}
-                                    title={`Récurrente — ${RECUR_FREQS.find(r => r.v === e.recur_freq)?.l ?? e.recur_freq}`}>
-                                    <Repeat2 size={8} /> {RECUR_FREQS.find(r => r.v === e.recur_freq)?.l}
+                                  <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.5rem] font-bold"
+                                    style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.22)" }}>
+                                    <Repeat2 size={7} /> {RECUR_FREQS.find(r => r.v === e.recur_freq)?.l}
                                   </span>
                                 )}
                                 {e.receipt_url && (
                                   <a href={e.receipt_url} target="_blank" rel="noreferrer"
-                                    className="shrink-0 text-[0.6rem] text-blue-400/60 hover:text-blue-400 transition-colors" title="Justificatif">📎</a>
+                                    className="shrink-0 text-[0.65rem] leading-none text-blue-400/50 hover:text-blue-400 transition-colors" title="Justificatif">📎</a>
                                 )}
                               </div>
-                              <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                                <span className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(e.date)}</span>
-                                {e.project && <span className={`rounded-full px-1.5 py-0.5 text-[0.58rem] ${isDark ? "bg-white/[0.05] text-white/30" : "bg-gray-100 text-gray-500"}`}>{e.project}</span>}
-                                {e.invoice_number && <span className={`text-[0.58rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>{e.invoice_number}</span>}
+                              {/* Ligne 2 : date + statut + projet */}
+                              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                <span className={`text-[0.6rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(e.date)}</span>
+                                <StBadge st={e.status} />
+                                {e.project && <span className={`rounded-full px-1.5 py-0.5 text-[0.55rem] font-medium ${isDark ? "bg-white/[0.05] text-white/28" : "bg-gray-100 text-gray-500"}`}>{e.project}</span>}
                               </div>
                             </div>
 
-                            <div className="hidden sm:flex shrink-0 flex-col items-end gap-1">
-                              <CatBadge cat={e.category} />
-                              <StBadge st={e.status} />
+                            {/* Catégorie + montant */}
+                            <div className="shrink-0 flex flex-col items-end gap-1">
+                              <p className={`text-[0.9rem] font-black tabular-nums ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(e.amount, e.currency)}</p>
+                              <div className="flex items-center gap-1">
+                                <CatBadge cat={e.category} />
+                                {e.vat_recoverable && e.vat_amount > 0 && (
+                                  <span className="text-[0.52rem] font-bold text-green-400/70">+TVA</span>
+                                )}
+                              </div>
                             </div>
 
-                            <div className="shrink-0 text-right">
-                              <p className={`text-[0.88rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(e.amount, e.currency)}</p>
-                              {e.vat_recoverable && e.vat_amount > 0 && (
-                                <p className="text-[0.58rem] text-green-400/60">TVA {fmtCur(e.vat_amount)}</p>
-                              )}
-                            </div>
-
+                            {/* Actions au hover */}
                             <div className="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               {confirmDeleteExpenseId === e.id ? (
                                 <>
@@ -2881,7 +2893,8 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                       })}
                     </AnimatePresence>
 
-                    <div className={`flex flex-wrap items-center justify-end gap-4 rounded-2xl border px-4 py-2.5 text-[0.72rem] ${isDark ? "border-white/[0.04] bg-white/[0.01]" : "border-gray-200 bg-white"}`}>
+                    {/* Footer récap */}
+                    <div className={`flex flex-wrap items-center justify-end gap-4 border-t px-4 py-2.5 text-[0.72rem] ${isDark ? "border-white/[0.05] bg-white/[0.01]" : "border-gray-100 bg-gray-50/80"}`}>
                       <span className={isDark ? "text-white/30" : "text-gray-400"}>{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</span>
                       <span className={isDark ? "text-white/50" : "text-gray-500"}>TVA rép. : <span className="font-semibold text-green-500">{fmtCur(filteredVAT)}</span></span>
                       <span className={`font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Total : {fmtCur(filteredTotal)}</span>
