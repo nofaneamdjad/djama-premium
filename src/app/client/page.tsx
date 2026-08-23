@@ -1202,7 +1202,7 @@ export default function CockpitPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-            style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+            style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(8px)" }}
             onClick={(e) => { if (e.target === e.currentTarget) setEditingQA(false); }}
           >
             <motion.div
@@ -1210,82 +1210,96 @@ export default function CockpitPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 340, damping: 30 }}
-              className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 pb-8"
-              style={{ background: "#0f1117", border: "1px solid rgba(255,255,255,0.08)" }}
+              className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 pb-8"
+              style={{ background: "#111318", border: "1px solid rgba(255,255,255,0.10)" }}
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-1">
-                <h3 className="text-base font-black text-white">Mes raccourcis</h3>
+                <h3 style={{ fontFamily: "'Georgia','Times New Roman',serif", fontStyle: "italic", fontWeight: 700, fontSize: "1.2rem", color: "rgba(255,255,255,0.92)" }}>
+                  Mes raccourcis
+                </h3>
                 <button onClick={() => setEditingQA(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full"
-                  style={{ background: "rgba(255,255,255,0.08)" }}>
-                  <X size={14} className="text-white/60" />
+                  className="flex h-7 w-7 items-center justify-center rounded-full transition hover:bg-white/10"
+                  style={{ background: "rgba(255,255,255,0.07)" }}>
+                  <X size={13} className="text-white/50" />
                 </button>
               </div>
-              <p className="text-[11px] text-white/35 mb-4">
-                Choisissez jusqu'à <strong className="text-white/55">6 modules</strong> à afficher en accès rapide
+              <p className="text-[10.5px] mb-4" style={{ color: "rgba(255,255,255,0.30)" }}>
+                Choisissez jusqu&apos;à <strong style={{ color: "rgba(255,255,255,0.50)" }}>6 modules</strong> à afficher en accès rapide
               </p>
 
-              {/* Grille tous les modules */}
-              <div className="grid grid-cols-4 gap-3 max-h-[52vh] overflow-y-auto pr-1">
-                {ALL_QA_OPTIONS.map((opt) => {
-                  const selected = pickerDraft.some(a => a.href === opt.href);
+              {/* Grille modules avec icônes gradient iOS */}
+              <div className="grid grid-cols-4 gap-2 max-h-[54vh] overflow-y-auto pr-1">
+                {MODULE_GROUPS.flatMap(g => g.modules).map((mod) => {
+                  const selected = pickerDraft.some(a => a.href === mod.href);
                   const atMax    = pickerDraft.length >= 6;
-                  const icon     = APP_ICONS[opt.iconKey];
-                  if (!icon) return null;
+                  const Icon     = mod.icon;
+                  const light    = lighten(mod.color, 0.35);
                   return (
-                    <button
-                      key={opt.href}
+                    <motion.button
+                      key={mod.href}
+                      whileTap={{ scale: 0.88 }}
                       onClick={() => {
                         if (selected) {
-                          setPickerDraft(d => d.filter(a => a.href !== opt.href));
+                          setPickerDraft(d => d.filter(a => a.href !== mod.href));
                         } else if (!atMax) {
-                          setPickerDraft(d => [...d, opt]);
+                          setPickerDraft(d => [...d, { href: mod.href, iconKey: mod.href, label: mod.label }]);
                         }
                       }}
-                      className="relative flex flex-col items-center gap-1.5 rounded-xl py-2 transition"
+                      className="relative flex flex-col items-center gap-1.5 rounded-2xl py-2.5 px-1 transition"
                       style={{
-                        opacity: !selected && atMax ? 0.3 : 1,
-                        background: selected ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.03)",
-                        border: selected ? "1.5px solid rgba(34,197,94,0.35)" : "1.5px solid rgba(255,255,255,0.06)",
+                        opacity: !selected && atMax ? 0.28 : 1,
+                        background: selected ? "rgba(255,255,255,0.06)" : "transparent",
                         cursor: !selected && atMax ? "not-allowed" : "pointer",
                       }}
                     >
-                      <div className="relative h-[44px] w-[44px] overflow-hidden rounded-[12px]">
-                        {icon}
+                      {/* Icône gradient 56px */}
+                      <div className="relative">
+                        <div
+                          className="relative flex items-center justify-center overflow-hidden"
+                          style={{
+                            width: 56, height: 56, borderRadius: 16,
+                            background: `linear-gradient(145deg, ${light} 0%, ${mod.color} 100%)`,
+                            boxShadow: selected ? `0 0 0 2.5px #22c55e, 0 2px 10px rgba(0,0,0,0.30)` : "0 2px 8px rgba(0,0,0,0.30)",
+                          }}
+                        >
+                          <div className="pointer-events-none absolute inset-0"
+                            style={{ borderRadius: "inherit", background: "linear-gradient(160deg,rgba(255,255,255,0.22) 0%,rgba(255,255,255,0.03) 45%,transparent 100%)" }} />
+                          <Icon size={24} color="white" strokeWidth={1.8} />
+                        </div>
                         {selected && (
-                          <div className="absolute inset-0 flex items-center justify-center"
-                            style={{ background: "rgba(0,0,0,0.28)" }}>
-                            <Check size={18} strokeWidth={3} className="text-green-400" />
+                          <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full"
+                            style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", border: "1.5px solid #111318" }}>
+                            <Check size={10} color="white" strokeWidth={3} />
                           </div>
                         )}
                       </div>
-                      <span className="text-[9px] font-semibold text-white/60 text-center leading-tight line-clamp-2 px-0.5">
-                        {opt.label}
+                      <span className="text-[9px] font-bold text-center leading-tight line-clamp-2 px-0.5"
+                        style={{ color: selected ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.45)" }}>
+                        {mod.label}
                       </span>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
 
-              {/* Sélection actuelle */}
+              {/* Compteur */}
               <div className="mt-4 flex items-center gap-2">
-                <span className="text-[10px] text-white/35">Sélection :</span>
                 <div className="flex gap-1.5">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-2 w-2 rounded-full"
-                      style={{ background: i < pickerDraft.length ? "#22c55e" : "rgba(255,255,255,0.12)" }} />
+                    <div key={i} className="h-1.5 w-1.5 rounded-full transition-all"
+                      style={{ background: i < pickerDraft.length ? "#22c55e" : "rgba(255,255,255,0.10)", transform: i < pickerDraft.length ? "scale(1.2)" : "scale(1)" }} />
                   ))}
                 </div>
-                <span className="text-[10px] font-bold text-white/50">{pickerDraft.length}/6</span>
+                <span className="text-[10px] font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>{pickerDraft.length}/6</span>
               </div>
 
               {/* Boutons */}
-              <div className="mt-4 flex gap-2">
+              <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => setPickerDraft(DEFAULT_QA)}
-                  className="flex-1 rounded-xl py-2.5 text-[12px] font-semibold text-white/40 transition hover:text-white/60"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  className="flex-1 rounded-2xl py-3 text-[12px] font-semibold transition"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.40)" }}
                 >
                   Réinitialiser
                 </button>
@@ -1296,8 +1310,8 @@ export default function CockpitPage() {
                     await saveQuickActions(pickerDraft);
                   }}
                   disabled={pickerDraft.length === 0}
-                  className="flex-2 flex-1 rounded-xl py-2.5 text-[12px] font-bold text-white transition"
-                  style={{ background: pickerDraft.length === 0 ? "rgba(34,197,94,0.2)" : "linear-gradient(135deg,#22c55e,#16a34a)" }}
+                  className="flex-[2] rounded-2xl py-3 text-[13px] font-bold text-white transition"
+                  style={{ background: pickerDraft.length === 0 ? "rgba(34,197,94,0.18)" : "linear-gradient(135deg,#22c55e,#16a34a)", boxShadow: pickerDraft.length > 0 ? "0 4px 16px rgba(34,197,94,0.30)" : "none" }}
                 >
                   Enregistrer
                 </button>
