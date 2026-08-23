@@ -156,19 +156,33 @@ function DarkNavItem({
     <Link
       href={href}
       onClick={onClick}
-      className={`relative flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[0.8rem] font-medium transition-colors duration-150 ${
+      className={`group relative flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-[0.8rem] font-medium transition-all duration-150 ${
         dark
-          ? active ? "text-white" : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"
-          : active ? "text-gray-900" : "text-gray-500 hover:text-gray-800 hover:bg-black/[0.04]"
+          ? active ? "text-white" : "text-white/45 hover:text-white/75"
+          : active ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
       }`}
-      style={active ? { background: dark ? `${accent}1c` : `${accent}14` } : {}}
+      style={active ? { background: dark ? `${accent}15` : `${accent}10` } : {}}
     >
-      <span
-        className="absolute left-0 top-1/2 h-3.5 w-0.5 -translate-y-1/2 rounded-r-full transition-opacity"
-        style={{ background: accent, opacity: active ? 1 : 0 }}
-      />
-      <Icon size={14} style={{ color: active ? accent : undefined }} />
+      {/* Icon badge */}
+      <div
+        className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg transition-all duration-150"
+        style={{
+          background: active
+            ? `linear-gradient(135deg, ${accent}, ${accent}cc)`
+            : dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+          boxShadow: active ? `0 2px 8px ${accent}40` : "none",
+        }}
+      >
+        <Icon size={12} color={active ? "#fff" : undefined} strokeWidth={active ? 2.2 : 1.8} />
+      </div>
       <span className="flex-1 truncate">{label}</span>
+      {active && (
+        <motion.span
+          layoutId="navActiveDot"
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ background: accent }}
+        />
+      )}
     </Link>
   );
 }
@@ -1140,10 +1154,15 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
             </>
           ) : (
             PREMIUM_GROUPS.map((group, gi) => (
-              <div key={gi} className={gi > 0 ? "mt-4" : ""}>
+              <div key={gi} className={gi > 0 ? "mt-5" : ""}>
                 {group.label && (
-                  <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
-                    style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
+                  <p className="mb-1 px-2 text-[0.78rem]"
+                    style={{
+                      fontFamily: "'Georgia','Times New Roman',serif",
+                      fontStyle: "italic",
+                      fontWeight: 700,
+                      color: isDark ? "rgba(255,255,255,0.32)" : "rgba(0,0,0,0.30)",
+                    }}>
                     {group.label}
                   </p>
                 )}
@@ -1260,10 +1279,15 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
                   </>
                 ) : (
                   PREMIUM_GROUPS.map((group, gi) => (
-                    <div key={gi} className={gi > 0 ? "mt-4" : ""}>
+                    <div key={gi} className={gi > 0 ? "mt-5" : ""}>
                       {group.label && (
-                        <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
-                          style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
+                        <p className="mb-1 px-2 text-[0.78rem]"
+                          style={{
+                            fontFamily: "'Georgia','Times New Roman',serif",
+                            fontStyle: "italic",
+                            fontWeight: 700,
+                            color: isDark ? "rgba(255,255,255,0.32)" : "rgba(0,0,0,0.30)",
+                          }}>
                           {group.label}
                         </p>
                       )}
