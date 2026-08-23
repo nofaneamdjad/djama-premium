@@ -47,7 +47,7 @@ const PLANS: Plan[] = [
     ],
     cta: "Démarrer maintenant",
     ctaSecondary: null,
-    href: "/espace-client",
+    href: "/demarrer",
   },
   {
     id: "standard",
