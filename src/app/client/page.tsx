@@ -827,135 +827,177 @@ export default function CockpitPage() {
           transition={{ duration: 0.35, delay: 0.12, ease }}
           className="mb-5"
         >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-1 w-1 rounded-full" style={{ background: accent }} />
-            <h2 className={`text-[12px] font-black uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-gray-400"}`}>Aujourd&apos;hui</h2>
+          {/* Header avec date */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full" style={{ background: accent }} />
+              <h2 className={`text-[12px] font-black uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                Aujourd&apos;hui
+              </h2>
+            </div>
+            <span className={`text-[10px] font-medium capitalize ${isDark ? "text-white/18" : "text-gray-300"}`}>
+              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "short" })}
+            </span>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
 
-            {/* Card Tâches */}
+            {/* ── Card Tâches ── */}
             <Link href="/client/productivite">
               <motion.div
                 whileTap={{ scale: 0.96 }}
                 className="relative overflow-hidden rounded-2xl p-4 transition-all"
                 style={{
                   background: isDark
-                    ? "linear-gradient(145deg, rgba(190,24,93,0.10) 0%, rgba(15,10,20,0.95) 60%)"
-                    : "linear-gradient(145deg, rgba(190,24,93,0.07) 0%, #ffffff 65%)",
-                  border: "1px solid rgba(190,24,93,0.18)",
+                    ? "linear-gradient(145deg, rgba(190,24,93,0.14) 0%, rgba(12,8,18,0.97) 70%)"
+                    : "linear-gradient(145deg, #fff0f6 0%, #ffffff 70%)",
+                  border: isDark ? "1px solid rgba(190,24,93,0.22)" : "1px solid rgba(190,24,93,0.14)",
                   boxShadow: isDark
-                    ? "0 4px 24px rgba(190,24,93,0.08), inset 0 1px 0 rgba(255,255,255,0.04)"
-                    : "0 6px 28px rgba(190,24,93,0.11), 0 2px 8px rgba(0,0,0,0.06)",
+                    ? "0 4px 28px rgba(190,24,93,0.10)"
+                    : "0 4px 20px rgba(190,24,93,0.10), 0 1px 4px rgba(0,0,0,0.05)",
+                  minHeight: 170,
                 }}
               >
-                <div className="pointer-events-none absolute -top-8 -left-4 h-24 w-24 rounded-full blur-2xl"
-                  style={{ background: "rgba(190,24,93,0.12)" }} />
+                {/* Orb ambiance */}
+                <div className="pointer-events-none absolute -top-6 -left-6 h-28 w-28 rounded-full blur-2xl opacity-60"
+                  style={{ background: "rgba(190,24,93,0.18)" }} />
 
-                <div className="relative flex items-start justify-between mb-3">
+                {/* Icône + compteur */}
+                <div className="relative mb-4 flex items-center justify-between">
                   <div className="relative flex items-center justify-center overflow-hidden"
-                    style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(150deg, ${lighten("#be185d", 0.42)} 0%, #be185d 100%)`, boxShadow: "0 4px 14px rgba(190,24,93,0.38)" }}>
-                    <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)" }} />
-                    <ListTodo size={20} color="white" strokeWidth={1.7} />
+                    style={{ width: 56, height: 56, borderRadius: 16,
+                      background: `linear-gradient(145deg, ${lighten("#be185d", 0.38)} 0%, #be185d 100%)`,
+                      boxShadow: "0 6px 18px rgba(190,24,93,0.38)" }}>
+                    <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }} />
+                    <ListTodo size={24} color="white" strokeWidth={1.7} />
                   </div>
                   {!todayLoading && (
-                    <span className="text-[24px] font-black tabular-nums leading-none"
-                      style={{ color: nbTasks > 0 ? "#e879a0" : isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)" }}>
-                      {nbTasks}
-                    </span>
+                    <div className="text-right">
+                      <span className="block text-[32px] font-black tabular-nums leading-none"
+                        style={{ color: nbTasks > 0 ? "#e879a0" : isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }}>
+                        {nbTasks}
+                      </span>
+                      <span className="text-[8.5px] font-semibold uppercase tracking-wide"
+                        style={{ color: isDark ? "rgba(255,255,255,0.20)" : "rgba(0,0,0,0.25)" }}>
+                        {nbTasks === 1 ? "tâche" : "tâches"}
+                      </span>
+                    </div>
                   )}
                 </div>
 
-                <p className={`relative text-[12px] font-bold mb-2 ${isDark ? "text-white/85" : "text-gray-800"}`}>Tâches</p>
+                <p className={`relative text-[13px] font-extrabold mb-2.5 ${isDark ? "text-white/90" : "text-gray-900"}`}>
+                  Tâches
+                </p>
 
                 {todayLoading ? (
                   <div className="space-y-2">
                     {[0, 1].map(i => (
                       <div key={i} className="h-2 rounded-full animate-pulse"
-                        style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", width: i === 0 ? "85%" : "60%" }} />
+                        style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", width: i === 0 ? "80%" : "55%" }} />
                     ))}
                   </div>
                 ) : todayTasks.length > 0 ? (
                   <div className="relative space-y-1.5">
                     {todayTasks.slice(0, 2).map(t => (
-                      <div key={t.id} className="flex items-center gap-2 rounded-lg px-2 py-1"
-                        style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(190,24,93,0.05)" }}>
+                      <div key={t.id} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
+                        style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(190,24,93,0.06)" }}>
                         <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: priorityColor(t.priority) }} />
-                        <p className={`text-[10px] truncate leading-tight ${isDark ? "text-white/55" : "text-gray-600"}`}>{t.title}</p>
+                        <p className={`text-[10.5px] font-medium truncate leading-tight ${isDark ? "text-white/60" : "text-gray-600"}`}>{t.title}</p>
                       </div>
                     ))}
                     {todayTasks.length > 2 && (
-                      <p className={`text-[9px] px-2 ${isDark ? "text-white/30" : "text-gray-400"}`}>+{todayTasks.length - 2} autres</p>
+                      <p className={`text-[9px] px-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>+{todayTasks.length - 2} autres</p>
                     )}
                   </div>
                 ) : (
-                  <div className="relative">
-                    <div className="flex items-center gap-1.5 mb-2.5">
-                      <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
-                      <span className="text-[10px] font-semibold text-emerald-500">Tout est bon !</span>
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                      <span className="text-[10.5px] font-semibold text-emerald-500">Tout est bon !</span>
                     </div>
-                    <span className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[9px] font-bold"
+                    <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-bold"
                       style={{ background: "rgba(190,24,93,0.08)", border: "1px solid rgba(190,24,93,0.18)", color: "#e879a0" }}>
-                      + Nouvelle tâche
+                      + Ajouter
                     </span>
                   </div>
                 )}
               </motion.div>
             </Link>
 
-            {/* Card Agenda */}
+            {/* ── Card Agenda ── */}
             <Link href="/client/planning">
               <motion.div
                 whileTap={{ scale: 0.96 }}
                 className="relative overflow-hidden rounded-2xl p-4 transition-all"
                 style={{
                   background: isDark
-                    ? "linear-gradient(145deg, rgba(79,70,229,0.10) 0%, rgba(10,12,22,0.95) 60%)"
-                    : "linear-gradient(145deg, rgba(79,70,229,0.07) 0%, #ffffff 65%)",
-                  border: "1px solid rgba(79,70,229,0.18)",
+                    ? "linear-gradient(145deg, rgba(79,70,229,0.14) 0%, rgba(8,10,20,0.97) 70%)"
+                    : "linear-gradient(145deg, #f0f0ff 0%, #ffffff 70%)",
+                  border: isDark ? "1px solid rgba(79,70,229,0.22)" : "1px solid rgba(79,70,229,0.14)",
                   boxShadow: isDark
-                    ? "0 4px 24px rgba(79,70,229,0.08), inset 0 1px 0 rgba(255,255,255,0.04)"
-                    : "0 6px 28px rgba(79,70,229,0.11), 0 2px 8px rgba(0,0,0,0.06)",
+                    ? "0 4px 28px rgba(79,70,229,0.10)"
+                    : "0 4px 20px rgba(79,70,229,0.10), 0 1px 4px rgba(0,0,0,0.05)",
+                  minHeight: 170,
                 }}
               >
-                <div className="pointer-events-none absolute -top-8 -left-4 h-24 w-24 rounded-full blur-2xl"
-                  style={{ background: "rgba(79,70,229,0.12)" }} />
+                <div className="pointer-events-none absolute -top-6 -left-6 h-28 w-28 rounded-full blur-2xl opacity-60"
+                  style={{ background: "rgba(79,70,229,0.18)" }} />
 
-                <div className="relative flex items-start justify-between mb-3">
-                  <div className="relative flex items-center justify-center overflow-hidden"
-                    style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(150deg, ${lighten("#4f46e5", 0.42)} 0%, #4f46e5 100%)`, boxShadow: "0 4px 14px rgba(79,70,229,0.38)" }}>
-                    <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)" }} />
-                    <Calendar size={20} color="white" strokeWidth={1.7} />
+                {/* Icône calendrier avec le jour dedans */}
+                <div className="relative mb-4 flex items-center justify-between">
+                  <div className="relative flex flex-col items-center justify-center overflow-hidden"
+                    style={{ width: 56, height: 56, borderRadius: 16,
+                      background: `linear-gradient(145deg, ${lighten("#4f46e5", 0.38)} 0%, #4f46e5 100%)`,
+                      boxShadow: "0 6px 18px rgba(79,70,229,0.38)" }}>
+                    <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }} />
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-white/60 leading-none">
+                      {new Date().toLocaleDateString("fr-FR", { month: "short" })}
+                    </span>
+                    <span className="text-[22px] font-black text-white leading-none tabular-nums">
+                      {new Date().getDate()}
+                    </span>
                   </div>
                   {!todayLoading && nextEvent && (
-                    <span className="text-[24px] font-black tabular-nums leading-none"
-                      style={{ color: "#818cf8" }}>
-                      {new Date(nextEvent.start_at).getDate()}
-                    </span>
+                    <div className="text-right">
+                      <span className="block text-[11px] font-black uppercase tracking-wide"
+                        style={{ color: "#818cf8" }}>
+                        {fmtEventDate(nextEvent.start_at)}
+                      </span>
+                      <span className="text-[20px] font-black tabular-nums leading-none"
+                        style={{ color: "#818cf8" }}>
+                        {fmtEventTime(nextEvent.start_at)}
+                      </span>
+                    </div>
                   )}
                 </div>
 
-                <p className={`relative text-[12px] font-bold mb-2 ${isDark ? "text-white/85" : "text-gray-800"}`}>Agenda</p>
+                <p className={`relative text-[13px] font-extrabold mb-2.5 ${isDark ? "text-white/90" : "text-gray-900"}`}>
+                  Agenda
+                </p>
 
                 {todayLoading ? (
                   <div className="space-y-2">
-                    <div className="h-2 rounded-full animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", width: "75%" }} />
-                    <div className="h-2 rounded-full animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", width: "50%" }} />
+                    <div className="h-2 rounded-full animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", width: "70%" }} />
+                    <div className="h-2 rounded-full animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", width: "45%" }} />
                   </div>
                 ) : nextEvent ? (
-                  <div className="relative space-y-1">
-                    <div className="flex items-center gap-2 rounded-lg px-2 py-1.5"
-                      style={{ background: isDark ? "rgba(79,70,229,0.08)" : "rgba(79,70,229,0.06)" }}>
-                      <Clock size={9} style={{ color: "#818cf8" }} className="shrink-0" />
-                      <p className={`text-[10px] font-semibold truncate leading-tight ${isDark ? "text-white/70" : "text-gray-700"}`}>{nextEvent.title}</p>
+                  <div className="relative space-y-1.5">
+                    <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
+                      style={{ background: isDark ? "rgba(79,70,229,0.08)" : "rgba(79,70,229,0.07)" }}>
+                      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
+                      <p className={`text-[10.5px] font-semibold truncate leading-tight ${isDark ? "text-white/70" : "text-gray-700"}`}>{nextEvent.title}</p>
                     </div>
-                    <p className={`text-[9px] px-2 ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                    <p className={`text-[9px] px-2.5 ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                      <Clock size={8} className="inline mr-1 opacity-60" />
                       {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
                     </p>
                   </div>
                 ) : (
-                  <div className="relative">
-                    <p className={`text-[10px] mb-2.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>Journée libre</p>
-                    <span className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[9px] font-bold"
+                  <div className="relative flex items-center justify-between">
+                    <span className={`text-[10.5px] font-medium ${isDark ? "text-white/28" : "text-gray-400"}`}>
+                      Journée libre
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-bold"
                       style={{ background: "rgba(79,70,229,0.08)", border: "1px solid rgba(79,70,229,0.18)", color: "#818cf8" }}>
                       + Planifier
                     </span>
@@ -963,6 +1005,7 @@ export default function CockpitPage() {
                 )}
               </motion.div>
             </Link>
+
           </div>
         </motion.div>
 
@@ -1117,7 +1160,7 @@ export default function CockpitPage() {
 
         {/* ── Module groups ── */}
         {!search.trim() && (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
             {MODULE_GROUPS.map((group, gi) => (
               <ModuleGroupSection
                 key={group.label}

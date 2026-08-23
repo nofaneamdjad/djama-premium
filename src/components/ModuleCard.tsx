@@ -11,7 +11,6 @@ import { useTheme } from "@/lib/theme-context";
 const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
 
-/* Éclaircit un hex en interpolant vers blanc */
 function lighten(hex: string, t = 0.32): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -20,7 +19,13 @@ function lighten(hex: string, t = 0.32): string {
   return `#${f(r)}${f(g)}${f(b)}`;
 }
 
-/* ── Icône style iOS/Samsung ─────────────────────────────── */
+const cursive: React.CSSProperties = {
+  fontFamily: "'Georgia', 'Times New Roman', serif",
+  fontStyle: "italic",
+  fontWeight: 700,
+};
+
+/* ── Icône style iOS ─────────────────────────────────────── */
 export function ModuleCard({
   mod,
   index,
@@ -30,6 +35,7 @@ export function ModuleCard({
   index: number;
   isPremium: boolean;
 }) {
+  const { isDark } = useTheme();
   const tier = getToolTier(mod.href);
   const isLocked = tier === "premium" && !isPremium;
   const Icon = mod.icon;
@@ -37,66 +43,62 @@ export function ModuleCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.70 }}
+      initial={{ opacity: 0, scale: 0.80 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.22, delay: 0.02 + index * 0.016, ease }}
     >
       <Link
         href={isLocked ? "/client/abonnements" : mod.href}
-        className="group flex flex-col items-center gap-[6px] py-3 px-1"
+        className="group flex flex-col items-center gap-2 rounded-xl p-2 text-center transition-all hover:bg-black/[0.04]"
+        style={{ opacity: isLocked ? 0.5 : 1 }}
       >
         <motion.div
           whileTap={{ scale: 0.84 }}
           transition={{ duration: 0.1 }}
           className="relative"
         >
-          {/* Conteneur icône — style iOS */}
+          {/* Icône 68×68 style iOS */}
           <div
-            className="relative flex items-center justify-center overflow-hidden"
+            className="relative flex items-center justify-center overflow-hidden transition-transform duration-200 group-hover:scale-105"
             style={{
-              width: 60,
-              height: 60,
-              borderRadius: 15,
-              background: `linear-gradient(150deg, ${light} 0%, ${mod.color} 100%)`,
+              width: 68,
+              height: 68,
+              borderRadius: 18,
+              background: `linear-gradient(145deg, ${light} 0%, ${mod.color} 100%)`,
               boxShadow: isLocked
                 ? "none"
-                : `0 4px 16px ${mod.color}40, 0 1px 4px rgba(0,0,0,0.18)`,
-              opacity: isLocked ? 0.38 : 1,
+                : `0 2px 8px rgba(0,0,0,0.12)`,
             }}
           >
-            {/* Reflet gloss en haut */}
             <div
               className="pointer-events-none absolute inset-0"
               style={{
                 borderRadius: "inherit",
-                background:
-                  "linear-gradient(165deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)",
+                background: "linear-gradient(165deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)",
               }}
             />
-            <Icon size={27} color="white" strokeWidth={1.7} />
+            <Icon size={28} color="white" strokeWidth={1.8} />
           </div>
 
           {/* Badge cadenas PRO */}
           {isLocked && (
             <div
-              className="absolute -bottom-1 -right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full"
+              className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full"
               style={{
                 background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
                 border: "1.5px solid rgba(0,0,0,0.4)",
                 boxShadow: `0 2px 6px ${GOLD}40`,
               }}
             >
-              <Lock size={8} color="white" strokeWidth={2.5} />
+              <Lock size={9} color="white" strokeWidth={2.5} />
             </div>
           )}
         </motion.div>
 
         {/* Label */}
         <p
-          className={`text-[10px] font-medium text-center leading-[1.25] line-clamp-2 w-full max-w-[64px] transition-opacity ${
-            isLocked ? "opacity-25" : "opacity-65 group-hover:opacity-90"
-          }`}
-          style={{ color: "inherit" }}
+          className="text-[0.72rem] font-bold leading-tight"
+          style={{ color: isDark ? "rgba(255,255,255,0.80)" : "#1f2937" }}
         >
           {mod.label}
         </p>
@@ -105,7 +107,7 @@ export function ModuleCard({
   );
 }
 
-/* ── Section groupe ───────────────────────────────────────── */
+/* ── Section groupe — style homepage ─────────────────────── */
 export function ModuleGroupSection({
   group,
   groupIndex,
@@ -117,7 +119,6 @@ export function ModuleGroupSection({
   isPremium: boolean;
   isFree: boolean;
 }) {
-  const GroupIcon = group.icon;
   const allPremium = group.modules.every((m) => getToolTier(m.href) === "premium");
   const groupIsLocked = allPremium && isFree;
   const { isDark } = useTheme();
@@ -126,61 +127,51 @@ export function ModuleGroupSection({
     <motion.section
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, delay: 0.06 + groupIndex * 0.045, ease }}
+      transition={{ duration: 0.3, delay: 0.05 + groupIndex * 0.04, ease }}
+      className="mb-6"
     >
-      {/* En-tête section — minimaliste */}
-      <div className="flex items-center gap-1.5 mb-2.5 px-0.5">
-        <GroupIcon size={10} style={{ color: group.color }} strokeWidth={2.5} />
-        <span
-          className="text-[10px] font-semibold tracking-[0.07em]"
-          style={{ color: isDark ? "rgba(255,255,255,0.38)" : "rgba(0,0,0,0.38)" }}
+      {/* Titre cursif style homepage */}
+      <div className="mb-3 flex items-center gap-2 px-1">
+        <h2
+          className="text-[1.25rem]"
+          style={{
+            ...cursive,
+            color: isDark ? "rgba(255,255,255,0.70)" : "#374151",
+          }}
         >
-          {group.label.toUpperCase()}
-        </span>
-        <span
-          className="ml-auto text-[9.5px] font-bold tabular-nums"
-          style={{ color: isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.22)" }}
-        >
-          {group.modules.length}
-        </span>
+          {group.label}
+        </h2>
         {groupIsLocked && (
-          <div
-            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide"
-            style={{
-              background: `${GOLD}12`,
-              border: `1px solid ${GOLD}28`,
-              color: GOLD,
-            }}
+          <span
+            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-wide"
+            style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}28`, color: GOLD }}
           >
-            <Crown size={6} /> PRO
-          </div>
+            <Crown size={7} /> PRO
+          </span>
         )}
       </div>
 
-      {/* Grille — carte semi-transparente */}
+      {/* Carte blanche (light) / sombre (dark) */}
       <div
-        className="grid grid-cols-4 rounded-[20px] overflow-hidden"
+        className="rounded-2xl p-4"
         style={{
-          background: isDark
-            ? "rgba(255,255,255,0.05)"
-            : "rgba(255,255,255,0.92)",
-          border: isDark
-            ? "1px solid rgba(255,255,255,0.08)"
-            : "1px solid rgba(0,0,0,0.06)",
+          background: isDark ? "rgba(255,255,255,0.05)" : "#ffffff",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
           boxShadow: isDark
-            ? "0 2px 24px rgba(0,0,0,0.22)"
-            : "0 2px 18px rgba(0,0,0,0.07)",
-          color: isDark ? "white" : "#1a1a1a",
+            ? "0 2px 16px rgba(0,0,0,0.25)"
+            : "0 1px 6px rgba(0,0,0,0.07)",
         }}
       >
-        {group.modules.map((mod, mi) => (
-          <ModuleCard
-            key={mod.href}
-            mod={mod}
-            index={groupIndex * 6 + mi}
-            isPremium={isPremium}
-          />
-        ))}
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+          {group.modules.map((mod, mi) => (
+            <ModuleCard
+              key={mod.href}
+              mod={mod}
+              index={groupIndex * 6 + mi}
+              isPremium={isPremium}
+            />
+          ))}
+        </div>
       </div>
     </motion.section>
   );
