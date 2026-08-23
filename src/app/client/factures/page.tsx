@@ -2171,18 +2171,23 @@ export default function FacturesPage() {
 
           {/* KPI strip */}
           {documents.length > 0 && (
-            <div className={`grid grid-cols-3 gap-px border-b ${tbd2} ${tbg1}`}>
+            <div className={`grid grid-cols-3 border-b ${tbd2}`} style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#fafafa" }}>
               {[
-                { label: "CA encaissé",  val: fmtEur(stats.ca),          color: "#4ade80", click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
-                { label: "En attente",   val: fmtEur(stats.pendingAmt),  color: "#60a5fa", click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
-                { label: "En retard",    val: fmtEur(stats.overdueAmt),  color: "#f87171", click: () => { setFilterType("facture"); setFilterStatut("en_retard"); } },
-              ].map(k => (
+                { label: "Encaissé",  val: fmtEur(stats.ca),          color: "#4ade80", bg: "rgba(74,222,128,0.08)",  Icon: TrendingUp,   click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
+                { label: "En attente",val: fmtEur(stats.pendingAmt),  color: "#60a5fa", bg: "rgba(96,165,250,0.08)",  Icon: Clock,        click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
+                { label: "En retard", val: fmtEur(stats.overdueAmt),  color: "#f87171", bg: "rgba(248,113,113,0.08)", Icon: AlertTriangle, click: () => { setFilterType("facture"); setFilterStatut("en_retard"); } },
+              ].map((k, i) => (
                 <motion.button key={k.label} onClick={k.click}
-                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className={`flex flex-col items-center gap-0.5 px-2 py-3 transition ${isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50"}`}>
-                  <span className="text-[0.85rem] font-black leading-none" style={{ color: k.color }}>{k.val}</span>
-                  <span className={`text-[0.52rem] font-semibold uppercase tracking-wide ${tw5}`}>{k.label}</span>
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: "spring", stiffness: 320, damping: 24 }}
+                  className={`relative flex flex-col items-start gap-1 px-3 py-3 transition ${isDark ? "hover:bg-white/[0.03]" : "hover:bg-gray-50"} ${i < 2 ? (isDark ? "border-r border-white/[0.07]" : "border-r border-gray-100") : ""}`}>
+                  <div className="flex w-full items-start justify-between">
+                    <span className="text-[1rem] font-black leading-tight tabular-nums" style={{ color: k.color }}>{k.val}</span>
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: k.bg }}>
+                      <k.Icon size={10} style={{ color: k.color }} />
+                    </div>
+                  </div>
+                  <span className="text-[0.56rem] font-bold uppercase tracking-wide" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)" }}>{k.label}</span>
                 </motion.button>
               ))}
             </div>
@@ -2297,48 +2302,59 @@ export default function FacturesPage() {
                       initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-12 }}
                       transition={{ duration:0.22, ease }}
                       onClick={() => openDoc(doc)}
-                      className={`group relative w-full text-left transition-all ${isActive ? (isDark ? "bg-white/[0.07]" : "bg-gray-100") : (isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50")}`}>
-                      {/* Barre latérale couleur */}
-                      <div className="absolute left-0 top-0 h-full w-[3px] rounded-r transition-all"
-                        style={{ background: isActive ? docColor : "transparent", opacity: isActive ? 1 : 0 }}/>
-                      <div className="px-4 py-3.5 pl-5">
-                        {/* Ligne 1 : référence + montant */}
-                        <div className="flex items-center justify-between gap-2">
-                          <p className={`text-[0.82rem] font-extrabold leading-tight truncate ${tw1}`}>{doc.numero || "(sans numéro)"}</p>
-                          <span className="shrink-0 text-sm font-black" style={{ color: docColor }}>{fmtEur(doc.total_ttc)}</span>
-                        </div>
-                        {/* Ligne 2 : sujet */}
-                        {doc.sujet && <p className={`mt-0.5 text-[0.72rem] truncate ${tw2}`}>{doc.sujet}</p>}
-                        {/* Ligne 3 : badges + date */}
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className="rounded-full px-2 py-0.5 text-[0.55rem] font-extrabold uppercase tracking-widest"
-                            style={doc.type === "facture"
-                              ? { background:"rgba(201,165,90,0.12)", color:"#c9a55a" }
+                      className={`group relative w-full text-left transition-all border-b ${tbd2} ${isActive ? (isDark ? "bg-white/[0.07]" : "bg-amber-50/60") : (isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50/80")}`}>
+                      {/* Barre latérale couleur active */}
+                      <motion.div className="absolute left-0 top-0 h-full w-[3px] rounded-r"
+                        animate={{ opacity: isActive ? 1 : 0, scaleY: isActive ? 1 : 0.4 }}
+                        transition={{ duration: 0.18 }}
+                        style={{ background: `linear-gradient(180deg, ${docColor}, ${docColor}88)` }}/>
+                      <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
+                        {/* Icône type document */}
+                        <div className="relative mt-0.5 flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[10px]"
+                          style={{
+                            background: doc.type === "facture"
+                              ? `linear-gradient(145deg, rgba(201,165,90,0.22), rgba(201,165,90,0.10))`
                               : doc.type === "avoir"
-                              ? { background: AVOIR_BADGE.bg, color: AVOIR_BADGE.color, border:`1px solid ${AVOIR_BADGE.border}` }
-                              : { background:"rgba(59,130,246,0.12)", color:"#60a5fa" }}>
-                            {DOC_TYPE_LABELS[doc.type]}
+                              ? `linear-gradient(145deg, rgba(244,114,182,0.18), rgba(244,114,182,0.08))`
+                              : `linear-gradient(145deg, rgba(96,165,250,0.18), rgba(96,165,250,0.08))`,
+                            border: `1px solid ${doc.type === "facture" ? "rgba(201,165,90,0.22)" : doc.type === "avoir" ? "rgba(244,114,182,0.22)" : "rgba(96,165,250,0.22)"}`,
+                          }}>
+                          <span className="text-[0.65rem] font-black"
+                            style={{ color: doc.type === "facture" ? "#c9a55a" : doc.type === "avoir" ? "#f472b6" : "#60a5fa" }}>
+                            {doc.type === "facture" ? "F" : doc.type === "avoir" ? "A" : "D"}
                           </span>
-                          <StatutBadge statut={doc.statut}/>
-                          <span className={`ml-auto text-[0.6rem] ${tw6}`}>{fmtDate(doc.date_document)}</span>
                         </div>
-                        {/* Ligne 4 : client + échéance */}
-                        <div className="mt-1 flex items-center justify-between gap-1">
-                          {doc.client_nom && (
-                            <p className={`text-[0.65rem] truncate ${tw4}`}>{doc.client_nom}</p>
-                          )}
-                          {doc.date_echeance && (doc.statut === "envoyé" || doc.statut === "en_retard") && (() => {
-                            const days = Math.floor((new Date(doc.date_echeance).getTime() - Date.now()) / 86_400_000);
-                            const late = days < 0;
-                            return (
-                              <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[0.52rem] font-bold"
-                                style={{ background: late ? "rgba(248,113,113,0.12)" : "rgba(251,191,36,0.12)", color: late ? "#f87171" : "#fbbf24" }}>
-                                {late ? `−${Math.abs(days)}j` : `+${days}j`}
-                              </span>
-                            );
-                          })()}
-                        </div>
-                        {/* Ligne 5 : lien Avoir ↔ Facture source */}
+                        {/* Contenu */}
+                        <div className="min-w-0 flex-1">
+                          {/* Ligne 1 : référence + montant */}
+                          <div className="flex items-baseline justify-between gap-2">
+                            <p className={`text-[0.8rem] font-extrabold leading-tight truncate ${tw1}`}>{doc.numero || "(sans numéro)"}</p>
+                            <span className="shrink-0 text-[0.9rem] font-black" style={{ color: docColor }}>{fmtEur(doc.total_ttc)}</span>
+                          </div>
+                          {/* Ligne 2 : sujet */}
+                          {doc.sujet && <p className={`mt-0.5 text-[0.7rem] truncate ${tw3}`}>{doc.sujet}</p>}
+                          {/* Ligne 3 : statut + date */}
+                          <div className="mt-1.5 flex items-center gap-1.5">
+                            <StatutBadge statut={doc.statut}/>
+                            <span className={`ml-auto text-[0.58rem] ${tw6}`}>{fmtDate(doc.date_document)}</span>
+                          </div>
+                          {/* Ligne 4 : client + délai */}
+                          <div className="mt-0.5 flex items-center justify-between gap-1">
+                            {doc.client_nom && (
+                              <p className={`text-[0.63rem] font-medium truncate ${tw4}`}>{doc.client_nom}</p>
+                            )}
+                            {doc.date_echeance && (doc.statut === "envoyé" || doc.statut === "en_retard") && (() => {
+                              const days = Math.floor((new Date(doc.date_echeance).getTime() - Date.now()) / 86_400_000);
+                              const late = days < 0;
+                              return (
+                                <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[0.52rem] font-bold"
+                                  style={{ background: late ? "rgba(248,113,113,0.14)" : "rgba(251,191,36,0.14)", color: late ? "#f87171" : "#fbbf24" }}>
+                                  {late ? `−${Math.abs(days)}j` : `+${days}j`}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                          {/* Ligne 5 : lien Avoir ↔ Facture source */}
                         {doc.type === "avoir" && doc.source_id && docById.has(doc.source_id) && (
                           <div className="mt-1 flex items-center gap-1">
                             <span className="text-[0.52rem] font-bold" style={{ color: "#f472b6", opacity: 0.6 }}>↗</span>
@@ -2358,7 +2374,7 @@ export default function FacturesPage() {
                           </div>
                         )}
                       </div>
-                      <div className={`mx-4 h-px ${tsep}`}/>
+                      </div>
                     </motion.button>
                   );
                 })}
