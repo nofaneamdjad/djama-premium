@@ -609,84 +609,88 @@ export default function CockpitPage() {
 
           {/* ── Quick Actions ── */}
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.44, delay: 0.18, ease }}
-            className="rounded-2xl overflow-hidden"
-            style={{
-              background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.90)",
-              border: isDark ? "1px solid rgba(255,255,255,0.09)" : "1px solid rgba(255,255,255,0.97)",
-              backdropFilter: "blur(22px)",
-              boxShadow: isDark
-                ? "0 8px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06)"
-                : "0 8px 36px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,1)",
-            }}
           >
-            {/* Card header */}
-            <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
+            {/* Header hors carte */}
+            <div className="flex items-center justify-between mb-3 px-0.5">
               <div className="flex items-center gap-2">
                 <div className="h-[5px] w-[5px] rounded-full" style={{ background: GOLD }} />
-                <span className={`text-[10px] font-bold uppercase tracking-[0.18em] ${isDark ? "text-white/35" : "text-gray-500"}`}>
+                <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${isDark ? "text-white/30" : "text-gray-400"}`}>
                   Raccourcis
                 </span>
               </div>
               <button
                 onClick={() => { setPickerDraft(quickActions); setEditingQA(true); }}
-                className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[9.5px] font-semibold transition ${isDark ? "text-white/40 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}
-                style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[9.5px] font-semibold transition ${isDark ? "text-white/35 hover:text-white/65" : "text-gray-400 hover:text-gray-700"}`}
+                style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.07)" }}
               >
                 <Settings2 size={9} /> Modifier
               </button>
             </div>
 
-            {/* Icons grid */}
+            {/* Carte blanche iOS */}
             <div
-              className="grid gap-0 px-3 pb-4"
-              style={{ gridTemplateColumns: `repeat(${Math.min(quickActions.length, 6)}, 1fr)` }}
+              className="rounded-2xl p-4"
+              style={{
+                background: isDark ? "rgba(255,255,255,0.05)" : "#ffffff",
+                border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+                boxShadow: isDark ? "0 2px 16px rgba(0,0,0,0.25)" : "0 1px 6px rgba(0,0,0,0.07)",
+              }}
             >
-              {quickActions.map((a, i) => {
-                const isLocked = getToolTier(a.href) === "premium" && isFree;
-                return (
-                  <motion.div key={a.href + i}
-                    initial={{ opacity: 0, y: 14, scale: 0.80 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 380, damping: 22, delay: 0.28 + i * 0.045 }}
-                  >
-                    <Link href={isLocked ? "/client/abonnements" : a.href} className="relative flex flex-col items-center gap-[6px] py-1 px-0.5 transition">
-                      {(() => {
-                        const mod = MODULE_BY_HREF[a.href];
-                        const Icon = mod?.icon;
-                        const color = mod?.color ?? GOLD;
-                        const light = lighten(color, 0.35);
-                        return (
-                          <div className="relative">
-                            <div
-                              className="relative flex items-center justify-center overflow-hidden"
-                              style={{
-                                width: 52, height: 52,
-                                borderRadius: 14,
-                                background: `linear-gradient(150deg, ${light} 0%, ${color} 100%)`,
-                                boxShadow: isLocked ? "none" : `0 4px 14px ${color}40, 0 1px 4px rgba(0,0,0,0.18)`,
-                                opacity: isLocked ? 0.38 : 1,
-                              }}
-                            >
-                              <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.04) 45%, transparent 100%)" }} />
-                              {Icon && <Icon size={24} color="white" strokeWidth={1.7} />}
-                            </div>
-                            {isLocked && (
-                              <div className="absolute -bottom-1 -right-1 flex h-[16px] w-[16px] items-center justify-center rounded-full"
-                                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, border: "1.5px solid rgba(0,0,0,0.4)" }}>
-                                <Lock size={7} color="white" strokeWidth={2.5} />
-                              </div>
-                            )}
+              <div
+                className="grid gap-2"
+                style={{ gridTemplateColumns: `repeat(${Math.min(quickActions.length, 6)}, 1fr)` }}
+              >
+                {quickActions.map((a, i) => {
+                  const isLocked = getToolTier(a.href) === "premium" && isFree;
+                  const mod = MODULE_BY_HREF[a.href];
+                  const Icon = mod?.icon;
+                  const color = mod?.color ?? GOLD;
+                  const light = lighten(color, 0.35);
+                  return (
+                    <motion.div key={a.href + i}
+                      initial={{ opacity: 0, scale: 0.80 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ type: "spring", stiffness: 380, damping: 22, delay: 0.28 + i * 0.045 }}
+                    >
+                      <Link
+                        href={isLocked ? "/client/abonnements" : a.href}
+                        className="group flex flex-col items-center gap-2 rounded-xl p-1.5 text-center transition-all hover:bg-black/[0.04]"
+                        style={{ opacity: isLocked ? 0.45 : 1 }}
+                      >
+                        <div className="relative">
+                          <div
+                            className="relative flex items-center justify-center overflow-hidden transition-transform duration-200 group-hover:scale-105"
+                            style={{
+                              width: 64, height: 64,
+                              borderRadius: 18,
+                              background: `linear-gradient(145deg, ${light} 0%, ${color} 100%)`,
+                              boxShadow: isLocked ? "none" : `0 2px 8px rgba(0,0,0,0.12)`,
+                            }}
+                          >
+                            <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }} />
+                            {Icon && <Icon size={26} color="white" strokeWidth={1.8} />}
                           </div>
-                        );
-                      })()}
-                      <span className={`text-[9.5px] font-medium text-center leading-tight ${isDark ? "text-white/65" : "text-gray-600"}`}>{a.label}</span>
-                    </Link>
-                  </motion.div>
-                );
-              })}
+                          {isLocked && (
+                            <div className="absolute -bottom-1 -right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full"
+                              style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, border: "1.5px solid rgba(0,0,0,0.4)" }}>
+                              <Lock size={8} color="white" strokeWidth={2.5} />
+                            </div>
+                          )}
+                        </div>
+                        <span
+                          className="text-[0.7rem] font-bold leading-tight"
+                          style={{ color: isDark ? "rgba(255,255,255,0.75)" : "#1f2937" }}
+                        >
+                          {a.label}
+                        </span>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           </motion.div>
 
