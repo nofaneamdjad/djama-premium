@@ -21,6 +21,7 @@ import {
   MessageCircle, Gift, Search, Clock, GraduationCap, UserPlus, Video, Mic, Bell,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
+import { APPS_DATA } from "@/lib/applications-data";
 import {
   fadeIn, staggerContainer, staggerContainerFast, cardReveal, viewport,
 } from "@/lib/animations";
@@ -64,6 +65,12 @@ function SmartStat({ value }: { value: string }) {
   if (!match) return <>{value}</>;
   return <><CountUp to={parseInt(match[1], 10)} />{match[2]}</>;
 }
+
+const HOME_CURSIVE: React.CSSProperties = {
+  fontFamily: "'Georgia', 'Times New Roman', serif",
+  fontStyle: "italic",
+  fontWeight: 700,
+};
 
 const SCHEMA_STEPS = [
   { num: "01", icon: Sparkles,  color: GOLD,       bg: `rgba(${GOLDR},.07)`,    border: `rgba(${GOLDR},.22)`,    title: "Idée / besoin",               desc: "Vous arrivez avec un besoin, un projet ou un problème à résoudre." },
@@ -928,12 +935,14 @@ function CoachingPayButton() {
 function HomeContent() {
   const data                  = getSiteData();
   const { lang }              = useLanguage();
+  const HOME_GROUPED = ["Finance","Commercial","Ventes","Digital","Opérations","Gestion","Notes","Intelligence"]
+    .map((cat) => ({ cat, apps: APPS_DATA.filter((a) => a.category === cat) }))
+    .filter(({ apps }) => apps.length > 0);
   const { settings, get }     = useSiteSettings();
   const [parAn, setParAn]     = useState(false);
   const [payMode, setPayMode] = useState<"card" | "paypal" | "virement">("card");
   const [virEmail, setVirEmail] = useState("");
   const [virSent, setVirSent]   = useState(false);
-  const [sansMode, setSansMode] = useState(false);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
 
 
@@ -1041,183 +1050,46 @@ function HomeContent() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           APP GRID — style Odoo pur : fond gris, cartes blanches
+           APPS PAR CATÉGORIE — style iOS / /demarrer
       ══════════════════════════════════════════════════════ */}
-      <section id="outils" className="bg-[#f4f5f7] pb-16 pt-14">
-        <div className="mx-auto max-w-5xl px-6">
-
-          {/* Grille 5 cols — cartes BLANCHES + animation "Imagine sans DJAMA" intégrée */}
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={viewport}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.03 } } }}
-            className="grid grid-cols-4 gap-3 sm:grid-cols-5 items-start">
-            {ESPACE_TOOLS_20.map((title, i) => {
-              const rival = RIVALS[title];
-              return (
-                <motion.div key={title}
-                  variants={{ hidden: { opacity: 0, scale: 0.88, y: 8 }, visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.3, ease } } }}
-                  className="flex flex-col items-center">
-                  <Link href="/espace-client" className="group block w-full">
-                    <motion.div
-                      animate={sansMode ? { opacity: rival ? 0.30 : 0.52, scale: 0.94 } : { opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.35 }}
-                      whileHover={sansMode ? {} : { scale: 1.06, y: -4, boxShadow: "0 12px 32px rgba(0,0,0,0.12)" }}
-                      whileTap={{ scale: 0.95 }}
-                      className="flex flex-col items-center gap-2.5 rounded-2xl bg-white px-2 py-4 shadow-sm">
-                      <div className="h-[68px] w-[68px] overflow-hidden rounded-[18px]">
-                        {PUBLIC_APP_ICONS[i]}
-                      </div>
-                      <p className="text-center text-[0.68rem] font-semibold leading-tight text-gray-500 group-hover:text-gray-800 transition-colors">
-                        {title}
-                      </p>
-                    </motion.div>
-                  </Link>
-
-                  {/* Zone concurrent — visible uniquement si sansMode + rival */}
-                  <AnimatePresence>
-                    {sansMode && rival && (
-                      <motion.div
-                        key={`rival-${i}`}
-                        className="flex flex-col items-center pt-1"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2, delay: i * 0.04 }}
+      <section id="outils" className="bg-[#f4f5f7] pb-10 pt-14">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          {HOME_GROUPED.map(({ cat, apps }, gi) => (
+            <motion.div key={cat}
+              initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={viewport} transition={{ duration: 0.4, ease, delay: gi * 0.04 }}
+              className="mb-6">
+              <h3 className="mb-3 px-1 text-[1.35rem] text-gray-700" style={HOME_CURSIVE}>{cat}</h3>
+              <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+                  {apps.map((app) => {
+                    const Icon = app.icon;
+                    return (
+                      <Link
+                        key={app.slug}
+                        href={`/applications/${app.slug}`}
+                        className="group flex flex-col items-center gap-2 rounded-xl p-2 text-center transition-all hover:bg-gray-50"
                       >
-                        <svg width="20" height="34" viewBox="0 0 20 34" overflow="visible">
-                          <motion.path d="M 10 0 C 10 11, 4 21, 10 30"
-                            stroke="#7c3aed" strokeWidth="2" fill="none" strokeLinecap="round"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 0.36, delay: i * 0.04, ease: "easeOut" }}
-                          />
-                          <motion.path d="M 6 26 L 10 34 L 14 26"
-                            stroke="#7c3aed" strokeWidth="2" fill="none"
-                            strokeLinecap="round" strokeLinejoin="round"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.1, delay: i * 0.04 + 0.34 }}
-                          />
-                        </svg>
-                        <motion.span
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2, delay: i * 0.04 + 0.36 }}
-                          className="mt-0.5 text-center"
-                          style={{ fontFamily: "'Caveat', cursive", fontSize: "1.2rem", fontWeight: 700, color: "#7c3aed", lineHeight: 1.1 }}
+                        <div
+                          className="flex h-[68px] w-[68px] items-center justify-center rounded-[18px] transition-transform duration-200 group-hover:scale-105"
+                          style={{
+                            background: `linear-gradient(145deg, ${app.color}ee, ${app.color}bb)`,
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                          }}
                         >
-                          {rival}
-                        </motion.span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-
-          {/* Toggle + compteur coût + lien */}
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => setSansMode(v => !v)}
-                className="flex items-center gap-3 rounded-full px-3 py-2 transition-colors hover:bg-gray-200/60"
-              >
-                <motion.div
-                  animate={{ backgroundColor: sansMode ? "#7c3aed" : "#d1d5db" }}
-                  transition={{ duration: 0.2 }}
-                  className="relative h-6 w-11 flex-shrink-0 rounded-full"
-                >
-                  <motion.div
-                    animate={{ x: sansMode ? 20 : 2 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    className="absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm"
-                  />
-                </motion.div>
-                <span className="text-[0.9rem] font-semibold text-gray-700">Imaginez sans DJAMA</span>
-                <AnimatePresence>
-                  {sansMode && (
-                    <motion.span key="shock"
-                      initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -12, 12, 0] }}
-                      exit={{ scale: 0 }} transition={{ duration: 0.3 }} className="text-lg">
-                      😱
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
-
-              {/* Résumé coût — visible quand sansMode ON */}
-              <AnimatePresence>
-                {sansMode && (
-                  <motion.div
-                    key="cost"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3, delay: 0.15 }}
-                    className="overflow-hidden pl-3"
-                  >
-                    <p className="text-[0.82rem] leading-snug text-gray-500">
-                      Pour remplacer les <strong className="text-gray-800">48 outils DJAMA</strong> il vous faudrait :{" "}
-                      <span className="font-black" style={{ color: "#7c3aed" }}>~48 abonnements · 600€+/mois</span>
-                    </p>
-                    <p className="mt-0.5 text-[0.78rem] text-gray-400">
-                      vs DJAMA Pro :{" "}
-                      <strong style={{ color: GOLD }}>11,90€/mois</strong> tout inclus
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <Link href="/espace-client"
-              className="inline-flex items-center gap-1.5 text-[0.88rem] font-bold transition-opacity hover:opacity-70 shrink-0"
-              style={{ color: sansMode ? "#7c3aed" : GOLD }}>
-              {sansMode ? "Revenir à DJAMA" : "Voir tous les 48 outils"}
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          {/* Grand texte — style Odoo exact */}
-          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.5, ease }}
-            className="mt-14 max-w-3xl">
-            <p className="text-[1.05rem] leading-relaxed text-gray-700">
-              <strong className="font-black text-gray-900">Imaginez une vaste collection d&apos;applications professionnelles à votre disposition.</strong>
-            </p>
-            <p className="mt-2 text-[1.05rem] leading-relaxed text-gray-700">
-              Vous avez quelque chose à améliorer ? Il existe une application pour ça.
-            </p>
-            <p className="text-[1.05rem] leading-relaxed text-gray-700">
-              Pas de complexité, pas de frais, juste une installation en un clic.
-            </p>
-            <p className="mt-6 text-[1.05rem] leading-relaxed text-gray-700">
-              Chaque application simplifie un processus et donne plus de moyens à un plus grand nombre de personnes.
-            </p>
-            <p className="text-[1.05rem] leading-relaxed text-gray-700">
-              Imaginez l&apos;impact lorsque chacun obtient l&apos;outil adapté à la tâche, adapté avec une IA native.
-            </p>
-            <motion.div className="relative mt-7 inline-flex" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
-              <motion.div
-                animate={{ scale: [1, 1.18, 1], opacity: [0.35, 0, 0.35] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute inset-0 rounded-2xl"
-                style={{ background: `linear-gradient(135deg,${GOLD},#d4aa6a)`, filter: "blur(12px)" }}
-              />
-              <Link href="/espace-client"
-                className="relative flex items-center gap-2 overflow-hidden rounded-2xl px-7 py-3.5 text-[0.95rem] font-black text-[#100800]"
-                style={{ background: `linear-gradient(135deg,${GOLD} 0%,#e2ba70 45%,#b08d45 100%)`, boxShadow: `0 6px 24px rgba(${GOLDR},0.40)` }}>
-                <motion.div animate={{ x: ["-100%","220%"] }} transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
-                  className="pointer-events-none absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                <Gem size={14} className="relative z-10 shrink-0" />
-                <span className="relative z-10">Démarrer maintenant</span>
-                <ArrowRight size={13} className="relative z-10 shrink-0" />
-              </Link>
+                          <Icon size={28} color="#fff" strokeWidth={1.8} />
+                        </div>
+                        <p className="text-[0.72rem] font-bold leading-tight text-gray-800">
+                          {app.label}
+                        </p>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             </motion.div>
-          </motion.div>
+          ))}
         </div>
-
       </section>
 
       {/* ══════════════════════════════════════════════════════
