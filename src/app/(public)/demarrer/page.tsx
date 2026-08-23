@@ -15,51 +15,6 @@ const cursive: React.CSSProperties = {
   fontWeight: 700,
 };
 
-/* ─── Concurrent remplacé par chaque app DJAMA ─── */
-const COMPETITOR: Record<string, string> = {
-  "factures":       "QuickBooks",
-  "depenses":       "Expensify",
-  "tresorerie":     "Float / Agicap",
-  "comptabilite":   "Sage / FreshBooks",
-  "banque":         "Qonto",
-  "declarations":   "Dougs / Indy",
-  "crm":            "HubSpot / Salesforce",
-  "contrats":       "PandaDoc",
-  "fournisseurs":   "Pennylane",
-  "stocks":         "Zoho Inventory",
-  "productivite":   "Asana / Trello",
-  "planning":       "Google Calendar",
-  "equipe":         "Slack",
-  "chrono":         "Toggl / Harvest",
-  "bloc-notes":     "Notion / Evernote",
-  "checklists":     "Todoist",
-  "scanner":        "Adobe Scan",
-  "mindmap":        "MindMeister",
-  "sourcing":       "LinkedIn / Lusha",
-  "assistant":      "ChatGPT",
-  "projets":        "Monday.com",
-  "reseaux-sociaux":"Buffer / Hootsuite",
-  "coaching-ia":    "MasterClass",
-  "rendez-vous":    "Calendly",
-  "paiements":      "Stripe",
-  "signature":      "DocuSign",
-  "boutique":       "Shopify",
-  "caisse":         "SumUp",
-  "email-marketing":"Mailchimp",
-  "chatbot":        "Intercom / Drift",
-  "analytics":      "Google Analytics",
-  "marketplace":    "Malt / Fiverr",
-  "carte-visite":   "Canva",
-  "portail":        "Notion",
-  "paie":           "PayFit / Silae",
-  "reputation":     "Trustpilot",
-  "blog":           "WordPress",
-  "temoignages":    "Typeform",
-  "planification":  "Asana / OKR",
-  "site-web":       "Wix / WordPress",
-  "mes-sites":      "Webflow",
-  "agences":        "Malt / Upwork",
-};
 
 /* ─── Gradient vif pour chaque app ─── */
 function iconBg(color: string): string {
@@ -201,13 +156,6 @@ export default function DemarrerPage() {
                       <p className="text-[0.72rem] font-bold leading-tight text-gray-800">
                         {app.label}
                       </p>
-
-                      {/* Concurrent remplacé */}
-                      {COMPETITOR[app.slug] && (
-                        <p className="text-[0.62rem] leading-tight text-gray-400">
-                          {COMPETITOR[app.slug]}
-                        </p>
-                      )}
                     </button>
                   );
                 })}
