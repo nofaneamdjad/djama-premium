@@ -231,13 +231,6 @@ function LoginPageInner() {
 
             {/* Bas de page */}
             <div className="flex flex-col items-center gap-3">
-              <Link
-                href="/espace-client"
-                className="text-[0.78rem] transition hover:opacity-60"
-                style={{ color: "rgba(0,0,0,0.35)" }}
-              >
-                Connexion espace équipe
-              </Link>
               <div className="flex flex-wrap justify-center gap-4 text-[0.68rem]" style={{ color: "rgba(0,0,0,0.25)" }}>
                 <Link href="/legal/confidentialite" className="transition hover:opacity-60">Confidentialité</Link>
                 <span>·</span>
