@@ -138,13 +138,13 @@ function LoginPageInner() {
   return (
     <div
       className="relative flex min-h-screen flex-col"
-      style={{ background: `linear-gradient(175deg, #1a0c35 0%, ${BG} 50%, #060c18 100%)` }}
+      style={{ background: "#ffffff" }}
     >
       <SplashScreen visible={showSplash} />
 
-      {/* Orb */}
+      {/* Orb doré subtil */}
       <div aria-hidden className="pointer-events-none fixed left-1/2 top-[-5%] h-[400px] w-[400px] -translate-x-1/2 rounded-full blur-[120px]"
-        style={{ background: `rgba(${GOLDR},0.12)` }} />
+        style={{ background: `rgba(${GOLDR},0.07)` }} />
 
       <AnimatePresence mode="wait">
 
@@ -161,11 +161,11 @@ function LoginPageInner() {
             {/* Logo + tagline */}
             <div className="flex flex-col items-center gap-5">
               <Link href="/">
-                <Image src="/logo-navbar.png" alt="DJAMA" width={240} height={54} className="h-[50px] w-auto object-contain" priority />
+                <Image src="/logo.png" alt="DJAMA" width={480} height={108} className="h-[108px] w-auto object-contain" priority />
               </Link>
               <p
                 className="text-[0.75rem] font-black uppercase tracking-[0.22em]"
-                style={{ color: `rgba(${GOLDR},0.70)` }}
+                style={{ color: GOLD }}
               >
                 Votre espace professionnel
               </p>
@@ -183,7 +183,7 @@ function LoginPageInner() {
                 className="w-full rounded-full py-4 text-[1rem] font-black uppercase tracking-widest text-white transition-all"
                 style={{
                   background: `linear-gradient(135deg, rgba(${GOLDR},0.95) 0%, rgba(${GOLDR},0.75) 100%)`,
-                  boxShadow: `0 8px 30px rgba(${GOLDR},0.30)`,
+                  boxShadow: `0 8px 30px rgba(${GOLDR},0.25)`,
                   letterSpacing: "0.08em",
                 }}
               >
@@ -199,7 +199,7 @@ function LoginPageInner() {
                 <Link
                   href="/register"
                   className="flex w-full items-center justify-center rounded-full py-4 text-[1rem] font-semibold transition-all"
-                  style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.80)" }}
+                  style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)", color: "rgba(0,0,0,0.75)" }}
                 >
                   Créer un compte
                 </Link>
@@ -215,14 +215,14 @@ function LoginPageInner() {
                 disabled={googleLoading}
                 whileTap={{ scale: 0.97 }}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-[0.88rem] font-medium transition-all disabled:opacity-50"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.60)" }}
+                style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.09)", color: "rgba(0,0,0,0.55)" }}
               >
                 {googleLoading ? (
                   <motion.span
                     animate={{ rotate: 360 }}
                     transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
                     className="inline-block h-4 w-4 rounded-full"
-                    style={{ borderWidth: "2px", borderStyle: "solid", borderTopColor: "rgba(255,255,255,0.7)", borderRightColor: "rgba(255,255,255,0.15)", borderBottomColor: "rgba(255,255,255,0.15)", borderLeftColor: "rgba(255,255,255,0.15)" }}
+                    style={{ borderWidth: "2px", borderStyle: "solid", borderTopColor: "rgba(0,0,0,0.5)", borderRightColor: "rgba(0,0,0,0.1)", borderBottomColor: "rgba(0,0,0,0.1)", borderLeftColor: "rgba(0,0,0,0.1)" }}
                   />
                 ) : <GoogleIcon />}
                 {googleLoading ? "Connexion…" : "Continuer avec Google"}
@@ -233,12 +233,12 @@ function LoginPageInner() {
             <div className="flex flex-col items-center gap-3">
               <Link
                 href="/espace-client"
-                className="text-[0.78rem] transition"
-                style={{ color: "rgba(255,255,255,0.28)" }}
+                className="text-[0.78rem] transition hover:opacity-60"
+                style={{ color: "rgba(0,0,0,0.35)" }}
               >
                 Connexion espace équipe
               </Link>
-              <div className="flex flex-wrap justify-center gap-4 text-[0.68rem]" style={{ color: "rgba(255,255,255,0.18)" }}>
+              <div className="flex flex-wrap justify-center gap-4 text-[0.68rem]" style={{ color: "rgba(0,0,0,0.25)" }}>
                 <Link href="/legal/confidentialite" className="transition hover:opacity-60">Confidentialité</Link>
                 <span>·</span>
                 <Link href="/legal/cgu" className="transition hover:opacity-60">Conditions</Link>
@@ -262,8 +262,8 @@ function LoginPageInner() {
             {/* Retour */}
             <button
               onClick={() => { setStep("welcome"); setError(""); }}
-              className="mb-8 flex items-center gap-1.5 self-start text-[0.82rem] font-medium transition"
-              style={{ color: "rgba(255,255,255,0.45)" }}
+              className="mb-8 flex items-center gap-1.5 self-start text-[0.82rem] font-medium transition hover:opacity-60"
+              style={{ color: "rgba(0,0,0,0.45)" }}
             >
               <ChevronLeft size={16} />
               Retour
@@ -272,14 +272,14 @@ function LoginPageInner() {
             {/* Logo */}
             <div className="mb-8 flex justify-center">
               <Link href="/">
-                <Image src="/logo-navbar.png" alt="DJAMA" width={200} height={45} className="h-[40px] w-auto object-contain" priority />
+                <Image src="/logo.png" alt="DJAMA" width={280} height={63} className="h-[60px] w-auto object-contain" priority />
               </Link>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-3">
               {/* Email */}
-              <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
-                <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Adresse e-mail</p>
+              <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)" }}>
+                <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(0,0,0,0.40)" }}>Adresse e-mail</p>
                 <input
                   type="email"
                   value={email}
@@ -288,15 +288,15 @@ function LoginPageInner() {
                   autoComplete="email"
                   required
                   autoFocus
-                  className="w-full bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
+                  className="w-full bg-transparent text-[0.95rem] text-gray-900 placeholder:text-black/25 outline-none"
                 />
               </div>
 
               {/* Password */}
-              <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
+              <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)" }}>
                 <div className="mb-0.5 flex items-center justify-between">
-                  <p className="text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Mot de passe</p>
-                  <Link href="/forgot-password" className="text-[0.68rem] font-medium transition" style={{ color: `rgba(${GOLDR},0.70)` }}>
+                  <p className="text-[0.68rem] font-semibold" style={{ color: "rgba(0,0,0,0.40)" }}>Mot de passe</p>
+                  <Link href="/forgot-password" className="text-[0.68rem] font-medium transition" style={{ color: GOLD }}>
                     Oublié ?
                   </Link>
                 </div>
@@ -308,9 +308,9 @@ function LoginPageInner() {
                     placeholder="••••••••"
                     autoComplete="current-password"
                     required
-                    className="flex-1 bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
+                    className="flex-1 bg-transparent text-[0.95rem] text-gray-900 placeholder:text-black/25 outline-none"
                   />
-                  <button type="button" onClick={() => setShowPwd((v) => !v)} className="ml-2 shrink-0 transition" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  <button type="button" onClick={() => setShowPwd((v) => !v)} className="ml-2 shrink-0 transition" style={{ color: "rgba(0,0,0,0.35)" }}>
                     {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
@@ -320,24 +320,24 @@ function LoginPageInner() {
               <AnimatePresence mode="wait">
                 {resendOk && (
                   <motion.div key="ok" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden rounded-xl px-3.5 py-3" style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.22)" }}>
+                    className="overflow-hidden rounded-xl px-3.5 py-3" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.22)" }}>
                     <div className="flex gap-2.5">
                       <CheckCircle2 size={13} className="mt-0.5 shrink-0" style={{ color: "#10b981" }} />
-                      <p className="text-xs" style={{ color: "rgba(110,230,180,0.90)" }}>Email renvoyé à <strong>{email}</strong>. Vérifiez vos spams.</p>
+                      <p className="text-xs" style={{ color: "#065f46" }}>Email renvoyé à <strong>{email}</strong>. Vérifiez vos spams.</p>
                     </div>
                   </motion.div>
                 )}
                 {error && (
                   <motion.div key="err" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.22 }}
-                    className="overflow-hidden rounded-xl px-3.5 py-3" style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.22)" }}>
+                    className="overflow-hidden rounded-xl px-3.5 py-3" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)" }}>
                     <div className="flex gap-2.5">
                       <AlertCircle size={13} className="mt-0.5 shrink-0" style={{ color: "#ef4444" }} />
                       <div>
-                        <p className="text-xs" style={{ color: "rgba(255,160,160,0.90)" }}>{error}</p>
+                        <p className="text-xs" style={{ color: "#b91c1c" }}>{error}</p>
                         {errorType === "credentials" && (
                           <button type="button" onClick={handleResend} disabled={resending}
                             className="mt-1.5 flex items-center gap-1 text-[0.68rem] font-semibold underline underline-offset-2 transition disabled:opacity-50"
-                            style={{ color: "rgba(255,255,255,0.55)" }}>
+                            style={{ color: "rgba(0,0,0,0.50)" }}>
                             <RefreshCw size={9} className={resending ? "animate-spin" : ""} />
                             {resending ? "Envoi…" : "Renvoyer l'email de confirmation"}
                           </button>
@@ -356,7 +356,7 @@ function LoginPageInner() {
                 className="w-full rounded-full py-4 text-[1rem] font-black uppercase tracking-widest text-white transition-all disabled:opacity-60"
                 style={{
                   background: `linear-gradient(135deg, rgba(${GOLDR},0.95) 0%, rgba(${GOLDR},0.75) 100%)`,
-                  boxShadow: `0 6px 24px rgba(${GOLDR},0.28)`,
+                  boxShadow: `0 6px 24px rgba(${GOLDR},0.22)`,
                   letterSpacing: "0.08em",
                 }}
               >
@@ -366,9 +366,9 @@ function LoginPageInner() {
 
             {/* Google */}
             <div className="mt-4 flex items-center gap-3">
-              <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
-              <span className="text-[0.72rem]" style={{ color: "rgba(255,255,255,0.22)" }}>ou</span>
-              <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+              <div className="h-px flex-1" style={{ background: "rgba(0,0,0,0.08)" }} />
+              <span className="text-[0.72rem]" style={{ color: "rgba(0,0,0,0.28)" }}>ou</span>
+              <div className="h-px flex-1" style={{ background: "rgba(0,0,0,0.08)" }} />
             </div>
             <motion.button
               type="button"
@@ -376,16 +376,16 @@ function LoginPageInner() {
               disabled={googleLoading || loading}
               whileTap={{ scale: 0.985 }}
               className="mt-3 flex w-full items-center justify-center gap-3 rounded-full py-3.5 text-[0.92rem] font-semibold transition-all disabled:opacity-50"
-              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.80)" }}
+              style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.10)", color: "rgba(0,0,0,0.70)" }}
             >
               {googleLoading ? (
                 <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                  className="inline-block h-4 w-4 rounded-full" style={{ borderWidth: "2px", borderStyle: "solid", borderTopColor: "rgba(255,255,255,0.7)", borderRightColor: "rgba(255,255,255,0.15)", borderBottomColor: "rgba(255,255,255,0.15)", borderLeftColor: "rgba(255,255,255,0.15)" }} />
+                  className="inline-block h-4 w-4 rounded-full" style={{ borderWidth: "2px", borderStyle: "solid", borderTopColor: "rgba(0,0,0,0.5)", borderRightColor: "rgba(0,0,0,0.1)", borderBottomColor: "rgba(0,0,0,0.1)", borderLeftColor: "rgba(0,0,0,0.1)" }} />
               ) : <GoogleIcon />}
               {googleLoading ? "Connexion…" : "Continuer avec Google"}
             </motion.button>
 
-            <p className="mt-6 text-center text-[0.85rem]" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <p className="mt-6 text-center text-[0.85rem]" style={{ color: "rgba(0,0,0,0.40)" }}>
               Pas encore de compte ?{" "}
               <Link href="/register" className="font-bold transition" style={{ color: GOLD }}>Créer un compte</Link>
             </p>
