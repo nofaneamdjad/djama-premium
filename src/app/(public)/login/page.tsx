@@ -161,7 +161,7 @@ function LoginPageInner() {
             {/* Logo + tagline */}
             <div className="flex flex-col items-center gap-5">
               <Link href="/">
-                <Image src="/logo.png" alt="DJAMA" width={480} height={108} className="h-[108px] w-auto object-contain" priority />
+                <Image src="/logo.png" alt="DJAMA" width={700} height={700} className="h-[220px] w-auto object-contain" priority />
               </Link>
               <p
                 className="text-[0.75rem] font-black uppercase tracking-[0.22em]"
