@@ -81,33 +81,47 @@ export default function Footer() {
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[320px]"
         style={{ background: `radial-gradient(ellipse 70% 50% at 50% -10%, rgba(${GOLDR},0.10) 0%, transparent 70%)` }} />
 
-      {/* ── CTA strip ──────────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, ease }}
-        className="relative mx-auto max-w-6xl px-6 pt-16 pb-12 text-center"
-      >
-        <p className="mb-2 text-[0.65rem] font-black uppercase tracking-[0.25em]" style={{ color: GOLD }}>
-          {"— Commencez dès aujourd'hui —"}
-        </p>
-        <h2 className="mb-6 text-[1.8rem] font-black leading-tight text-white md:text-[2.4rem]">
-          Tout votre business.<br />
-          <span style={{ color: GOLD }}>Une seule plateforme.</span>
-        </h2>
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[0.85rem] font-black uppercase tracking-widest text-white transition-all hover:brightness-110"
-          style={{
-            background: `linear-gradient(135deg, rgba(${GOLDR},0.90) 0%, rgba(${GOLDR},0.65) 100%)`,
-            boxShadow: `0 8px 32px rgba(${GOLDR},0.28)`,
-          }}
+      {/* ── CTA strip style Odoo ───────────────────────────────────── */}
+      <div className="relative" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        {/* Glow centré */}
+        <div aria-hidden className="pointer-events-none absolute inset-0"
+          style={{ background: `radial-gradient(ellipse 55% 80% at 50% 50%, rgba(${GOLDR},0.07) 0%, transparent 70%)` }} />
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.55, ease }}
+          className="relative mx-auto max-w-4xl px-6 py-20 text-center"
         >
-          Essayer gratuitement
-          <ArrowUpRight size={15} strokeWidth={2.5} />
-        </Link>
-      </motion.div>
+          <h2 className="mb-4 text-[2.2rem] font-black leading-[1.15] text-white md:text-[3rem]">
+            Prêt à lancer votre business ?
+          </h2>
+          <p className="mx-auto mb-10 max-w-xl text-[1rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.50)" }}>
+            Rejoignez des milliers d&apos;entrepreneurs qui gèrent tout depuis une seule plateforme.
+          </p>
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-lg px-8 py-3.5 text-[0.9rem] font-bold text-white transition-all hover:brightness-110 active:scale-95"
+              style={{
+                background: GOLD,
+                boxShadow: `0 4px 20px rgba(${GOLDR},0.30)`,
+              }}
+            >
+              Commencer gratuitement
+              <ArrowUpRight size={16} strokeWidth={2.5} />
+            </Link>
+            <Link
+              href="/abonnement"
+              className="inline-flex items-center gap-2 rounded-lg px-8 py-3.5 text-[0.9rem] font-bold transition-all hover:bg-white/10 active:scale-95"
+              style={{ border: "1px solid rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.80)" }}
+            >
+              Voir les tarifs
+            </Link>
+          </div>
+        </motion.div>
+      </div>
 
       {/* ── Divider ─────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-6xl px-6">
