@@ -93,6 +93,28 @@ function PlanDetail({
   const [annual, setAnnual] = useState(true);
   const [users, setUsers] = useState(1);
   const [service, setService] = useState<"self" | "accomp">("self");
+  const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  async function handleBuy(trial = false) {
+    if (plan.id === "custom") { window.location.href = "/contact"; return; }
+    setLoading(true);
+    setCheckoutError(null);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billing: annual ? "yearly" : "monthly", quantity: users }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (data.url) { window.location.href = data.url; return; }
+      setCheckoutError(data.error ?? "Erreur de paiement. Réessayez.");
+    } catch {
+      setCheckoutError("Erreur réseau. Vérifiez votre connexion.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const unitPrice = annual ? plan.annualPrice : plan.monthlyPrice;
   const accompPrice = service === "accomp" ? users * 5 : 0;
@@ -300,19 +322,26 @@ function PlanDetail({
 
               {/* CTAs */}
               <div className="space-y-2 px-5 pb-5">
-                <Link
-                  href={plan.href}
-                  className="block w-full rounded-xl py-3.5 text-center text-[0.85rem] font-extrabold uppercase tracking-[0.1em] text-white transition-opacity hover:opacity-90"
+                {checkoutError && (
+                  <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-[0.75rem] text-red-600">
+                    {checkoutError}
+                  </p>
+                )}
+                <button
+                  onClick={() => handleBuy()}
+                  disabled={loading}
+                  className="block w-full rounded-xl py-3.5 text-center text-[0.85rem] font-extrabold uppercase tracking-[0.1em] text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ background: PLUM }}
                 >
-                  Acheter maintenant
-                </Link>
-                <Link
-                  href="/espace-client"
-                  className="block w-full rounded-xl border border-gray-200 py-3 text-center text-[0.8rem] font-semibold uppercase tracking-[0.07em] text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                  {loading ? "Redirection…" : "Acheter maintenant"}
+                </button>
+                <button
+                  onClick={() => handleBuy(true)}
+                  disabled={loading}
+                  className="block w-full rounded-xl border border-gray-200 py-3 text-center text-[0.8rem] font-semibold uppercase tracking-[0.07em] text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:opacity-60"
                 >
                   Essai gratuit — 14 jours
-                </Link>
+                </button>
                 <p className="mt-1.5 text-center text-[0.7rem] text-gray-400">
                   Puis {fmt(total)} / mois après 14 jours · Sans carte bancaire requise
                 </p>
@@ -483,12 +512,21 @@ export default function TarificationPage() {
                       </button>
                     )}
 
-                    <button
-                      onClick={() => plan.free ? undefined : setSelectedPlan(plan)}
-                      className="mt-2 block w-full rounded-xl border border-gray-200 py-3 text-center text-[0.8rem] font-semibold uppercase tracking-[0.07em] text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-50"
-                    >
-                      {plan.free ? <Link href="/espace-client" className="w-full block">En savoir plus</Link> : "Essai gratuit"}
-                    </button>
+                    {plan.free ? (
+                      <Link
+                        href="/applications"
+                        className="mt-2 block w-full rounded-xl border border-gray-200 py-3 text-center text-[0.8rem] font-semibold uppercase tracking-[0.07em] text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                      >
+                        En savoir plus
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => setSelectedPlan(plan)}
+                        className="mt-2 block w-full rounded-xl border border-gray-200 py-3 text-center text-[0.8rem] font-semibold uppercase tracking-[0.07em] text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                      >
+                        Essai gratuit
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               );

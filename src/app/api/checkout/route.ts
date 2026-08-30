@@ -11,6 +11,7 @@ const CheckoutSchema = z.object({
   userEmail:     z.string().email().optional(),
   promotionCode: z.string().max(50).optional(),
   billing:       z.enum(["monthly", "yearly"]).optional(),
+  quantity:      z.number().int().min(1).max(500).optional(),
 }).optional();
 
 /* ─────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ export async function POST(req: Request) {
   let userEmail: string | undefined;
   let promotionCode: string | undefined;
   let billing: "monthly" | "yearly" = "monthly";
+  let quantity = 1;
   try {
     const raw = await req.json();
     const parsed = CheckoutSchema.safeParse(raw);
@@ -83,6 +85,7 @@ export async function POST(req: Request) {
       userEmail     = parsed.data.userEmail;
       promotionCode = parsed.data.promotionCode;
       billing       = parsed.data.billing ?? "monthly";
+      quantity      = parsed.data.quantity ?? 1;
     }
   } catch {
     /* body absent ou non-JSON → pas grave, on continue sans */
@@ -126,7 +129,7 @@ export async function POST(req: Request) {
       line_items: [
         {
           price: priceId,
-          quantity: 1,
+          quantity: Math.max(1, quantity),
         },
       ],
 
