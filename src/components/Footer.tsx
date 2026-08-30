@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   Instagram, Linkedin, Facebook, Youtube, Twitter, Globe,
-  Mail, Phone, ArrowUpRight,
+  Mail, Phone,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import type { Lang } from "@/lib/language-context";
@@ -80,48 +80,6 @@ export default function Footer() {
       {/* Glow ambiant */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[320px]"
         style={{ background: `radial-gradient(ellipse 70% 50% at 50% -10%, rgba(${GOLDR},0.10) 0%, transparent 70%)` }} />
-
-      {/* ── CTA strip style Odoo ───────────────────────────────────── */}
-      <div className="relative" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        {/* Glow centré */}
-        <div aria-hidden className="pointer-events-none absolute inset-0"
-          style={{ background: `radial-gradient(ellipse 55% 80% at 50% 50%, rgba(${GOLDR},0.07) 0%, transparent 70%)` }} />
-
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.55, ease }}
-          className="relative mx-auto max-w-4xl px-6 py-20 text-center"
-        >
-          <h2 className="mb-4 text-[2.2rem] font-black leading-[1.15] text-white md:text-[3rem]">
-            Prêt à lancer votre business ?
-          </h2>
-          <p className="mx-auto mb-10 max-w-xl text-[1rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.50)" }}>
-            Rejoignez des milliers d&apos;entrepreneurs qui gèrent tout depuis une seule plateforme.
-          </p>
-          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 rounded-lg px-8 py-3.5 text-[0.9rem] font-bold text-white transition-all hover:brightness-110 active:scale-95"
-              style={{
-                background: GOLD,
-                boxShadow: `0 4px 20px rgba(${GOLDR},0.30)`,
-              }}
-            >
-              Commencer gratuitement
-              <ArrowUpRight size={16} strokeWidth={2.5} />
-            </Link>
-            <Link
-              href="/abonnement"
-              className="inline-flex items-center gap-2 rounded-lg px-8 py-3.5 text-[0.9rem] font-bold transition-all hover:bg-white/10 active:scale-95"
-              style={{ border: "1px solid rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.80)" }}
-            >
-              Voir les tarifs
-            </Link>
-          </div>
-        </motion.div>
-      </div>
 
       {/* ── Divider ─────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-6xl px-6">
