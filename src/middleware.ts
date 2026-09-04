@@ -3,14 +3,14 @@ import { createServerClient }            from "@supabase/ssr";
 import { verifyAdminToken }              from "@/lib/admin-token";
 
 /**
- * Proxy (anciennement Middleware) — Accès aux outils DJAMA
+ * Middleware Next.js — Accès aux outils DJAMA
  *
  * - Client routes (/client/*) : vérifie la session Supabase côté serveur
  *   → redirige vers /login si non connecté
  * - Admin routes : vérifie le cookie httpOnly djama_admin_tok (token HMAC)
  */
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ── Admin protection (pages + API routes) ────────────────────────────────

@@ -144,7 +144,7 @@ export async function POST(req: Request) {
 
       /* Redirections */
       success_url: `${origin}/paiement-confirme?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${origin}/espace-client?annule=1`,
+      cancel_url:  `${origin}/tarification?annule=1`,
 
       locale: "fr",
 

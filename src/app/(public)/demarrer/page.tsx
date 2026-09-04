@@ -194,7 +194,7 @@ export default function DemarrerPage() {
               : "2 / 2 apps gratuites sélectionnées ✓"}
           </p>
           <Link
-            href={count > 0 ? "/espace-client" : "#"}
+            href={count > 0 ? "/register" : "#"}
             onClick={(e) => { if (count === 0) e.preventDefault(); }}
             className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[0.88rem] font-extrabold text-white transition-all"
             style={{
