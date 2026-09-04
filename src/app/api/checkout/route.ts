@@ -120,11 +120,11 @@ export async function POST(req: Request) {
 
     const priceId = isYearly
       ? isUsd
-        ? (process.env.STRIPE_PRICE_YEARLY_USD ?? process.env.STRIPE_PRICE_ID_USD!)
-        : (process.env.STRIPE_PRICE_YEARLY     ?? process.env.STRIPE_PRICE_ID!)
+        ? (process.env.STRIPE_PRICE_YEARLY_USD || process.env.STRIPE_PRICE_ID_USD || "")
+        : (process.env.STRIPE_PRICE_YEARLY     || process.env.STRIPE_PRICE_ID     || "")
       : isUsd
-        ? process.env.STRIPE_PRICE_ID_USD!
-        : process.env.STRIPE_PRICE_ID!;
+        ? (process.env.STRIPE_PRICE_ID_USD || "")
+        : (process.env.STRIPE_PRICE_ID     || "");
 
     if (!priceId) throw new Error(
       `STRIPE_PRICE_ID${isUsd ? "_USD" : ""}${isYearly ? "_YEARLY" : ""} manquant dans les variables d'environnement`
