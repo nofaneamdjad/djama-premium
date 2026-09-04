@@ -15,6 +15,8 @@ const handwriting: React.CSSProperties = {
   fontWeight: 700,
 };
 
+type Currency = "eur" | "usd";
+
 /* ─── Données plans ─── */
 interface Plan {
   id: "free" | "standard" | "custom";
@@ -22,8 +24,10 @@ interface Plan {
   name: string;
   tagline: string;
   free: boolean;
-  monthlyPrice: number;  // prix mensuel affiché (par mois)
-  annualPrice: number;   // prix annuel par mois (facturé annuel)
+  monthlyPrice: number;
+  annualPrice: number;
+  monthlyPriceUsd: number;
+  annualPriceUsd: number;
   features: { bold: string; rest: string }[];
   cta: string;
   href: string;
@@ -38,6 +42,8 @@ const PLANS: Plan[] = [
     free: true,
     monthlyPrice: 0,
     annualPrice: 0,
+    monthlyPriceUsd: 0,
+    annualPriceUsd: 0,
     features: [
       { bold: "2 apps", rest: " au choix, utilisateurs illimités" },
       { bold: "DJAMA Online", rest: "" },
@@ -54,6 +60,8 @@ const PLANS: Plan[] = [
     free: false,
     monthlyPrice: 11.90,
     annualPrice: 9.52,
+    monthlyPriceUsd: 12.90,
+    annualPriceUsd: 10.32,
     features: [
       { bold: "Toutes les apps", rest: " (48 incluses)" },
       { bold: "DJAMA Online", rest: "" },
@@ -71,6 +79,8 @@ const PLANS: Plan[] = [
     free: false,
     monthlyPrice: 37.90,
     annualPrice: 30.32,
+    monthlyPriceUsd: 39.90,
+    annualPriceUsd: 31.92,
     features: [
       { bold: "Toutes les apps", rest: "" },
       { bold: "DJAMA Online / DJAMA.sh / On-premise", rest: "" },
@@ -85,9 +95,11 @@ const PLANS: Plan[] = [
 /* ─── Vue détail plan (configurateur) ─── */
 function PlanDetail({
   plan,
+  currency,
   onBack,
 }: {
   plan: Plan;
+  currency: Currency;
   onBack: () => void;
 }) {
   const [annual, setAnnual] = useState(true);
@@ -95,6 +107,14 @@ function PlanDetail({
   const [service, setService] = useState<"self" | "accomp">("self");
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const sym = currency === "eur" ? "€" : "$";
+  const unitPrice = annual
+    ? (currency === "eur" ? plan.annualPrice : plan.annualPriceUsd)
+    : (currency === "eur" ? plan.monthlyPrice : plan.monthlyPriceUsd);
+  const monthlyPrice = currency === "eur" ? plan.monthlyPrice : plan.monthlyPriceUsd;
+
+  const fmt = (n: number) => n.toFixed(2).replace(".", ",") + ` ${sym}`;
 
   async function handleBuy(trial = false) {
     if (plan.id === "custom") { window.location.href = "/contact"; return; }
@@ -104,7 +124,11 @@ function PlanDetail({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billing: annual ? "yearly" : "monthly", quantity: users }),
+        body: JSON.stringify({
+          billing: annual ? "yearly" : "monthly",
+          quantity: users,
+          currency,
+        }),
       });
       const data = await res.json() as { url?: string; error?: string };
       if (data.url) { window.location.href = data.url; return; }
@@ -116,14 +140,10 @@ function PlanDetail({
     }
   }
 
-  const unitPrice = annual ? plan.annualPrice : plan.monthlyPrice;
-  const accompPrice = service === "accomp" ? users * 5 : 0;
+  const accompPrice = service === "accomp" ? users * (currency === "eur" ? 5 : 5.5) : 0;
   const baseTotal = users * unitPrice;
-  const discountLine = annual ? -(users * (plan.monthlyPrice - plan.annualPrice)) : 0;
+  const discountLine = annual ? -(users * (monthlyPrice - unitPrice)) : 0;
   const total = baseTotal + accompPrice;
-
-  const fmt = (n: number) =>
-    n.toFixed(2).replace(".", ",") + " €";
 
   return (
     <motion.div
@@ -196,7 +216,7 @@ function PlanDetail({
               <div className="space-y-3">
                 {[
                   { id: "self" as const, label: "En self-service", sub: "Accès immédiat, documentations incluses" },
-                  { id: "accomp" as const, label: "Avec accompagnement DJAMA", sub: `+5 € / utilisateur / mois — onboarding & formation` },
+                  { id: "accomp" as const, label: "Avec accompagnement DJAMA", sub: `+${sym}5 / utilisateur / mois — onboarding & formation` },
                 ].map(({ id, label, sub }) => (
                   <label
                     key={id}
@@ -361,7 +381,10 @@ function PlanDetail({
 /* ─── Page principale ─── */
 export default function TarificationPage() {
   const [annual, setAnnual] = useState(true);
+  const [currency, setCurrency] = useState<Currency>("eur");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+
+  const sym = currency === "eur" ? "€" : "$";
 
   if (selectedPlan && !selectedPlan.free) {
     return (
@@ -369,6 +392,7 @@ export default function TarificationPage() {
         <PlanDetail
           key={selectedPlan.id}
           plan={selectedPlan}
+          currency={currency}
           onBack={() => setSelectedPlan(null)}
         />
       </AnimatePresence>
@@ -402,7 +426,7 @@ export default function TarificationPage() {
               <div className="mx-auto mt-1 h-[4px] w-[70%] rounded-full" style={{ background: CORAL }} />
             </div>
 
-            {/* Toggle */}
+            {/* Toggle période */}
             <div className="flex items-center justify-center gap-4">
               <span
                 onClick={() => setAnnual(true)}
@@ -430,6 +454,24 @@ export default function TarificationPage() {
                 Par mois
               </span>
             </div>
+
+            {/* Sélecteur de devise */}
+            <div className="mt-5 flex items-center justify-center gap-2">
+              {(["eur", "usd"] as const).map(c => (
+                <button
+                  key={c}
+                  onClick={() => setCurrency(c)}
+                  className="rounded-lg px-4 py-1.5 text-[0.78rem] font-extrabold uppercase tracking-wider transition-all focus:outline-none"
+                  style={{
+                    background: currency === c ? PLUM : "transparent",
+                    color: currency === c ? "#fff" : "#9ca3af",
+                    border: `1.5px solid ${currency === c ? PLUM : "#e5e7eb"}`,
+                  }}
+                >
+                  {c === "eur" ? "€ EUR" : "$ USD"}
+                </button>
+              ))}
+            </div>
           </motion.div>
         </section>
 
@@ -437,8 +479,12 @@ export default function TarificationPage() {
         <section className="mx-auto max-w-5xl px-6 py-16 sm:px-8 sm:py-20">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             {PLANS.map((plan, i) => {
-              const price = annual ? plan.annualPrice : plan.monthlyPrice;
-              const strike = annual && !plan.free ? plan.monthlyPrice : null;
+              const price = annual
+                ? (currency === "eur" ? plan.annualPrice : plan.annualPriceUsd)
+                : (currency === "eur" ? plan.monthlyPrice : plan.monthlyPriceUsd);
+              const strikePrice = annual && !plan.free
+                ? (currency === "eur" ? plan.monthlyPrice : plan.monthlyPriceUsd)
+                : null;
 
               return (
                 <motion.div
@@ -457,13 +503,13 @@ export default function TarificationPage() {
                     {/* Prix */}
                     {plan.free ? (
                       <div className="mb-4 flex items-baseline gap-1">
-                        <span className="text-[1.4rem] font-bold" style={{ color: plan.color, alignSelf: "flex-start", paddingTop: "0.3rem" }}>€</span>
+                        <span className="text-[1.4rem] font-bold" style={{ color: plan.color, alignSelf: "flex-start", paddingTop: "0.3rem" }}>{sym}</span>
                         <span className="text-[3.8rem] font-extrabold leading-none" style={{ color: plan.color }}>0</span>
                       </div>
                     ) : (
                       <div className="mb-1">
                         <div className="flex items-baseline leading-none">
-                          <span className="mr-0.5 text-[1.4rem] font-bold" style={{ color: plan.color, alignSelf: "flex-start", paddingTop: "0.55rem" }}>€</span>
+                          <span className="mr-0.5 text-[1.4rem] font-bold" style={{ color: plan.color, alignSelf: "flex-start", paddingTop: "0.55rem" }}>{sym}</span>
                           <span className="text-[3.8rem] font-extrabold" style={{ color: plan.color }}>
                             {Math.floor(price)}
                           </span>
@@ -471,10 +517,10 @@ export default function TarificationPage() {
                             ,{(price % 1).toFixed(2).slice(2)}
                           </span>
                         </div>
-                        <p className="mt-1 text-[0.83rem] text-gray-400">€ / utilisateur / mois</p>
-                        {strike ? (
+                        <p className="mt-1 text-[0.83rem] text-gray-400">{sym} / utilisateur / mois</p>
+                        {strikePrice ? (
                           <p className="mt-1 text-[0.8rem]">
-                            <span className="text-gray-400 line-through">{strike.toFixed(2).replace(".", ",")} €</span>
+                            <span className="text-gray-400 line-through">{strikePrice.toFixed(2).replace(".", ",")} {sym}</span>
                             <span className="ml-0.5" style={{ color: CORAL }}>*</span>
                           </p>
                         ) : (
@@ -536,7 +582,7 @@ export default function TarificationPage() {
           <p className="mt-8 text-center text-[0.77rem] text-gray-400">
             * Prix mensuel affiché, facturé annuellement (économisez 20 %). Hébergement géré DJAMA.sh disponible sur plan Personnalisé.
             <br />
-            Tous les prix sont en euros HT · 14 jours d&apos;essai gratuit · Résiliable à tout moment.
+            Tous les prix sont hors taxes · 14 jours d&apos;essai gratuit · Résiliable à tout moment.
           </p>
         </section>
       </motion.main>

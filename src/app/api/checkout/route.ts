@@ -12,6 +12,7 @@ const CheckoutSchema = z.object({
   promotionCode: z.string().max(50).optional(),
   billing:       z.enum(["monthly", "yearly"]).optional(),
   quantity:      z.number().int().min(1).max(500).optional(),
+  currency:      z.enum(["eur", "usd"]).optional(),
 }).optional();
 
 /* ─────────────────────────────────────────────────────────────
@@ -77,6 +78,7 @@ export async function POST(req: Request) {
   let promotionCode: string | undefined;
   let billing: "monthly" | "yearly" = "monthly";
   let quantity = 1;
+  let currency: "eur" | "usd" = "eur";
   try {
     const raw = await req.json();
     const parsed = CheckoutSchema.safeParse(raw);
@@ -86,6 +88,7 @@ export async function POST(req: Request) {
       promotionCode = parsed.data.promotionCode;
       billing       = parsed.data.billing ?? "monthly";
       quantity      = parsed.data.quantity ?? 1;
+      currency      = parsed.data.currency ?? "eur";
     }
   } catch {
     /* body absent ou non-JSON → pas grave, on continue sans */
@@ -111,17 +114,30 @@ export async function POST(req: Request) {
       promotionCodeId = codes.data[0].id;
     }
 
-    /* Sélection du price ID selon la facturation */
+    /* Sélection du price ID selon la facturation et la devise */
     const isYearly = billing === "yearly";
+    const isUsd    = currency === "usd";
+
     const priceId = isYearly
-      ? (process.env.STRIPE_PRICE_YEARLY ?? process.env.STRIPE_PRICE_ID!)
-      : process.env.STRIPE_PRICE_ID!;
+      ? isUsd
+        ? (process.env.STRIPE_PRICE_YEARLY_USD ?? process.env.STRIPE_PRICE_ID_USD!)
+        : (process.env.STRIPE_PRICE_YEARLY     ?? process.env.STRIPE_PRICE_ID!)
+      : isUsd
+        ? process.env.STRIPE_PRICE_ID_USD!
+        : process.env.STRIPE_PRICE_ID!;
 
-    if (!priceId) throw new Error("STRIPE_PRICE_ID manquant dans les variables d'environnement");
+    if (!priceId) throw new Error(
+      `STRIPE_PRICE_ID${isUsd ? "_USD" : ""}${isYearly ? "_YEARLY" : ""} manquant dans les variables d'environnement`
+    );
 
+    const sym = isUsd ? "$" : "€";
     const submitMessage = isYearly
-      ? "Vous serez débité de 118,80 € par an (9,90 €/mois). Sans engagement, résiliable à tout moment."
-      : "Vous serez débité de 11,90 € chaque mois. Sans engagement, résiliable à tout moment.";
+      ? isUsd
+        ? `You will be billed ${sym}123.84 per year (${sym}10.32/month). Cancel anytime.`
+        : `Vous serez débité de 114,24 € par an (9,52 €/mois). Sans engagement, résiliable à tout moment.`
+      : isUsd
+        ? `You will be billed ${sym}12.90 each month. Cancel anytime.`
+        : `Vous serez débité de 11,90 € chaque mois. Sans engagement, résiliable à tout moment.`;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
