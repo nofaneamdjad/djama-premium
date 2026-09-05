@@ -96,7 +96,7 @@ export default function CommunautePage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/espace-client"
+                href="/register"
                 className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-[0.92rem] font-extrabold text-black transition-all hover:opacity-90"
                 style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
               >
@@ -171,7 +171,7 @@ export default function CommunautePage() {
           </p>
           <p className="mt-3 text-[0.9rem] text-gray-400">Gratuit · Accès immédiat · Entrepreneurs africains</p>
           <Link
-            href="/espace-client"
+            href="/register"
             className="mt-7 inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-[0.95rem] font-extrabold text-black transition-all hover:opacity-90"
             style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
           >

@@ -232,7 +232,7 @@ function LoginPageInner() {
             {/* Bas de page */}
             <div className="flex flex-col items-center gap-3">
               <Link
-                href="/espace-client"
+                href="/client"
                 className="text-[0.78rem] transition"
                 style={{ color: "rgba(255,255,255,0.28)" }}
               >

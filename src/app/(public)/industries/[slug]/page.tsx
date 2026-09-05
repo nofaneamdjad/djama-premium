@@ -70,7 +70,7 @@ export default function IndustryDetailPage({ params }: { params: Promise<{ slug:
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
-                href="/espace-client"
+                href="/login"
                 className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-[0.92rem] font-extrabold text-black transition-all hover:opacity-90"
                 style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
               >
@@ -191,7 +191,7 @@ export default function IndustryDetailPage({ params }: { params: Promise<{ slug:
             Accès immédiat · Aucune carte requise · IA native incluse
           </p>
           <Link
-            href="/espace-client"
+            href="/login"
             className="mt-7 inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-[0.95rem] font-extrabold text-black transition-all hover:opacity-90"
             style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
           >

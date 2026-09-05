@@ -467,7 +467,7 @@ export default function OffresPage() {
                     </Link>
 
                     <Link
-                      href="/espace-client"
+                      href="/login"
                       className="w-full max-w-[200px] rounded-xl border border-gray-200 bg-gray-50 py-2.5 text-center text-sm font-semibold text-gray-500 transition-all duration-200 hover:border-gray-300 hover:text-gray-700"
                     >
                       Voir DJAMA Pro
@@ -679,7 +679,7 @@ export default function OffresPage() {
                 <div className="absolute inset-0 -translate-x-full bg-white/[.08] transition-transform duration-500 group-hover:translate-x-0" />
               </Link>
               <Link
-                href="/espace-client"
+                href="/login"
                 className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-white/30 bg-white/10 px-8 py-[0.95rem] font-bold text-white transition hover:bg-white/20"
               >
                 Essayer DJAMA Pro — 11,90 €/mois

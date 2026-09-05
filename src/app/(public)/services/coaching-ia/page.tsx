@@ -612,7 +612,7 @@ export default function ServicesCoachingIAPage() {
                 </ul>
                 <div className="mt-8">
                   <Link
-                    href="/espace-client"
+                    href="/login"
                     className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#d946ef] to-[#a78bfa] px-6 py-4 text-sm font-extrabold text-white shadow-[0_4px_20px_rgba(217,70,239,0.35)] transition-shadow hover:shadow-[0_8px_36px_rgba(217,70,239,0.5)]"
                   >
                     <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
