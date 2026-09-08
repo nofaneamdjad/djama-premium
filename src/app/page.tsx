@@ -1263,12 +1263,11 @@ function HomeContent() {
               </AnimatePresence>
 
               {/* CTA */}
-              <Link href="/espace-client"
+              <Link href="/tarification"
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[0.9rem] font-black text-black transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
                 style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
-                <Gem size={13} /> Essayer gratuitement <ArrowRight size={13} />
+                <Gem size={13} /> Voir les offres <ArrowRight size={13} />
               </Link>
-              <p className="text-center text-[0.65rem] text-gray-400">11,90€/mois · Sans engagement · Accès immédiat</p>
             </div>
           </div>
         </div>
