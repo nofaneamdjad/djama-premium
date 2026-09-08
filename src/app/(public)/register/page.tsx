@@ -262,6 +262,24 @@ export default function RegisterPage() {
       statut: "actif",
     });
 
+    // Sauvegarder les apps gratuites choisies depuis /demarrer
+    if (data.session) {
+      try {
+        const raw = localStorage.getItem("djama_pending_apps");
+        const pending = raw ? JSON.parse(raw) : null;
+        if (Array.isArray(pending) && pending.length > 0) {
+          await fetch("/api/free-plan/save-apps", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ slugs: pending }),
+          });
+          localStorage.removeItem("djama_pending_apps");
+          // Rafraîchir la session pour que les métadonnées soient à jour dans le middleware
+          await supabase.auth.refreshSession();
+        }
+      } catch {}
+    }
+
     setLoading(false);
     if (data.session) {
       setSuccess(true);

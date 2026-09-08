@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSubscription } from "@/lib/use-require-subscription";
-import { getToolTier } from "@/lib/plans";
+import { isPathAllowedForFreeUser } from "@/lib/free-plan";
 import FloatingAIAssistant from "@/components/FloatingAIAssistant";
 import OnboardingModal from "@/components/OnboardingModal";
 import { ThemeProvider, useTheme, ACCENT_OPTIONS } from "@/lib/theme-context";
@@ -684,6 +684,75 @@ function PremiumGate() {
   );
 }
 
+/* ─────────── FREE APP GATE — app non sélectionnée ─────────── */
+function FreeAppGate() {
+  return (
+    <div className="relative min-h-full overflow-hidden" style={{ background: "#f6f7f9" }}>
+      <div className="absolute inset-0" style={{ filter: "blur(3px)", transform: "scale(1.02)", transformOrigin: "top" }}>
+        <PremiumGateMockRows />
+      </div>
+      <div className="absolute inset-0" style={{ background: "rgba(246,247,249,0.82)" }} />
+
+      <div className="relative flex min-h-full items-center justify-center px-4 py-16">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-[360px]"
+        >
+          <div className="absolute inset-0 rounded-3xl opacity-40 blur-sm"
+            style={{ background: "linear-gradient(135deg, #4a3f5c28, transparent 60%)" }} />
+
+          <div className="relative overflow-hidden rounded-3xl bg-white px-7 py-8 shadow-[0_24px_64px_rgba(0,0,0,0.12)] text-center"
+            style={{ border: "1px solid rgba(74,63,92,0.15)" }}>
+
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-20"
+              style={{ background: "linear-gradient(180deg, #4a3f5c22, transparent)" }} />
+
+            <motion.div
+              initial={{ scale: 0, rotate: -12 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 360, damping: 20, delay: 0.12 }}
+              className="relative mx-auto mb-5 flex h-[72px] w-[72px] items-center justify-center rounded-[22px]"
+              style={{ background: "rgba(74,63,92,0.08)", border: "1.5px solid rgba(74,63,92,0.18)" }}
+            >
+              <Lock size={30} style={{ color: "#4a3f5c" }} />
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.18 }}>
+              <h2 className="mt-2 text-xl font-extrabold text-gray-900">Application non sélectionnée</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-gray-400">
+                Cette application ne fait pas partie de vos{" "}
+                <strong className="text-gray-600">2 apps gratuites</strong>.<br />
+                Passez au plan Standard pour tout débloquer.
+              </p>
+            </motion.div>
+
+            <motion.a
+              href="/tarification"
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.32 }}
+              className="group relative mt-6 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-3.5 text-sm font-extrabold text-white"
+              style={{ background: "linear-gradient(135deg, #4a3f5c, #6b5c80)", boxShadow: "0 6px 24px rgba(74,63,92,0.3)" }}
+            >
+              <Sparkles size={14} />
+              Changer de forfait
+              <ArrowRight size={13} />
+            </motion.a>
+
+            <Link href="/client" className="mt-3 block text-center text-[0.7rem] text-gray-300 transition hover:text-gray-500">
+              ← Retour à l&apos;accueil
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
 /* ─────────── GLOBAL SEARCH MODAL ─────────── */
 type SearchResult = {
   id: string;
@@ -1009,13 +1078,13 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
   /* Pages with their own complete mobile nav — hide the global bottom bar */
   const hasOwnMobileNav = pathname.startsWith("/client/bloc-notes");
 
-  const { level, isPremium, name, email } = subscription;
+  const { level, isPremium, name, email, freeApps } = subscription;
   const userInitial = (name?.[0] ?? email?.[0] ?? "U").toUpperCase();
   const displayName = name || email || "Mon compte";
   const isReady     = level !== "loading" && level !== "unauthenticated";
 
-  /* Block premium pages for free users — gate replaces content */
-  const isGated = level === "free" && getToolTier(pathname) === "premium";
+  /* Block pages for free users whose chosen apps don't include this route */
+  const isGated = level === "free" && isReady && !isPathAllowedForFreeUser(pathname, freeApps);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -1398,9 +1467,9 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Page — gated for free users on premium routes */}
+        {/* Page — gated for free users on non-selected apps */}
         <main className={`flex-1 overflow-auto ${hasOwnMobileNav ? "" : "pb-16 lg:pb-0"}`}>
-          {isGated ? <PremiumGate /> : children}
+          {isGated ? <FreeAppGate /> : children}
         </main>
       </div>
 

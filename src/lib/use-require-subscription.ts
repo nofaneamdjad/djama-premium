@@ -8,17 +8,18 @@ export type AccessLevel = "loading" | "free" | "premium" | "unauthenticated";
 
 export interface SubscriptionState {
   level:     AccessLevel;
-  isPremium: boolean;  // abonnement actif
-  isFree:    boolean;  // connecté, pas d'abonnement
+  isPremium: boolean;
+  isFree:    boolean;
   email:     string;
   name:      string;
   userId:    string;
+  freeApps:  string[];  // slugs des apps choisies (vide = pas encore sélectionné)
 }
 
 const DEFAULT_STATE: SubscriptionState =
   process.env.NODE_ENV === "development"
-    ? { level: "premium", isPremium: true, isFree: false, email: "dev@local", name: "Dev Preview", userId: "dev" }
-    : { level: "loading", isPremium: false, isFree: false, email: "", name: "", userId: "" };
+    ? { level: "premium", isPremium: true, isFree: false, email: "dev@local", name: "Dev Preview", userId: "dev", freeApps: [] }
+    : { level: "loading", isPremium: false, isFree: false, email: "", name: "", userId: "", freeApps: [] };
 
 export function useSubscription(): SubscriptionState {
   const [state, setState] = useState<SubscriptionState>(DEFAULT_STATE);
@@ -28,13 +29,12 @@ export function useSubscription(): SubscriptionState {
     let cancelled = false;
 
     async function check() {
-      /* 1. Session locale (pas de requête réseau) */
       const { data: { session } } = await supabase.auth.getSession();
       if (cancelled) return;
 
       if (!session?.user) {
         if (process.env.NODE_ENV === "development") {
-          setState({ level: "premium", isPremium: true, isFree: false, email: "dev@local", name: "Dev Preview", userId: "dev" });
+          setState({ level: "premium", isPremium: true, isFree: false, email: "dev@local", name: "Dev Preview", userId: "dev", freeApps: [] });
           return;
         }
         router.replace("/login?redirect=/client");
@@ -51,7 +51,7 @@ export function useSubscription(): SubscriptionState {
       if (meta.subscription_active === true) {
         if (!cancelled) setState({
           level: "premium", isPremium: true, isFree: false,
-          email, name, userId: user.id,
+          email, name, userId: user.id, freeApps: [],
         });
         return;
       }
@@ -70,7 +70,7 @@ export function useSubscription(): SubscriptionState {
         if (!expired) {
           if (!cancelled) setState({
             level: "premium", isPremium: true, isFree: false,
-            email, name, userId: user.id,
+            email, name, userId: user.id, freeApps: [],
           });
           return;
         }
@@ -79,7 +79,7 @@ export function useSubscription(): SubscriptionState {
       /* 4. Table clients (legacy Stripe) */
       const { data: client } = await supabase
         .from("clients")
-        .select("subscription_active")
+        .select("subscription_active, free_apps")
         .eq("email", email)
         .maybeSingle();
 
@@ -88,15 +88,17 @@ export function useSubscription(): SubscriptionState {
       if (client?.subscription_active === true) {
         if (!cancelled) setState({
           level: "premium", isPremium: true, isFree: false,
-          email, name, userId: user.id,
+          email, name, userId: user.id, freeApps: [],
         });
         return;
       }
 
-      /* 5. Plan gratuit */
+      /* 5. Plan gratuit — lire les apps sélectionnées */
+      const freeApps: string[] = Array.isArray(client?.free_apps) ? client.free_apps : [];
+
       if (!cancelled) setState({
         level: "free", isPremium: false, isFree: true,
-        email, name, userId: user.id,
+        email, name, userId: user.id, freeApps,
       });
     }
 

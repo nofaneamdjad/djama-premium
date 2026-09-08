@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { APPS_DATA } from "@/lib/applications-data";
+import { supabase } from "@/lib/supabase";
 
 const FREE_LIMIT = 2;
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -15,10 +17,7 @@ const cursive: React.CSSProperties = {
   fontWeight: 700,
 };
 
-
-/* ─── Gradient vif pour chaque app ─── */
 function iconBg(color: string): string {
-  // darken color → lighter color gradient
   return `linear-gradient(145deg, ${color}ee, ${color}bb)`;
 }
 
@@ -39,9 +38,20 @@ const grouped = CAT_ORDER.map((cat) => ({
 })).filter(({ apps }) => apps.length > 0);
 
 export default function DemarrerPage() {
+  const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
   const count = selected.size;
   const atLimit = count >= FREE_LIMIT;
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session?.user);
+    });
+  }, []);
 
   function toggle(slug: string) {
     setSelected((prev) => {
@@ -50,6 +60,47 @@ export default function DemarrerPage() {
       else if (next.size < FREE_LIMIT) { next.add(slug); }
       return next;
     });
+  }
+
+  async function handleConfirm(e: React.MouseEvent) {
+    e.preventDefault();
+    if (count === 0) return;
+
+    const slugs = Array.from(selected);
+
+    if (isLoggedIn) {
+      // Utilisateur déjà connecté → sauvegarder directement
+      setSaving(true);
+      setError("");
+      try {
+        const res = await fetch("/api/free-plan/save-apps", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slugs }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (data.locked) {
+            // Déjà verrouillé — aller au dashboard quand même
+            router.push("/client");
+            return;
+          }
+          throw new Error(data.error ?? "Erreur lors de la sauvegarde");
+        }
+        // Rafraîchir la session pour que les métadonnées soient à jour
+        await supabase.auth.refreshSession();
+        router.push("/client");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Erreur inattendue");
+        setSaving(false);
+      }
+    } else {
+      // Non connecté → sauvegarder en localStorage et aller à /register
+      try {
+        localStorage.setItem("djama_pending_apps", JSON.stringify(slugs));
+      } catch {}
+      router.push("/register");
+    }
   }
 
   return (
@@ -63,15 +114,15 @@ export default function DemarrerPage() {
           className="mx-auto max-w-xl"
         >
           <h1 className="text-[2rem] font-extrabold uppercase tracking-tight text-gray-900 sm:text-[2.8rem]">
-            Calculez vos économies
+            Choisissez vos 2 applications
           </h1>
           <p className="mt-3 text-[0.95rem] text-gray-400">
-            Sélectionnez les outils que vous utilisez déjà
+            Plan gratuit · 2 apps au choix · Sans carte bancaire · Accès illimité
           </p>
         </motion.div>
       </section>
 
-      {/* ── Bandeau 2 apps gratuites ── */}
+      {/* ── Bandeau ── */}
       <div className="border-y border-gray-200 bg-white px-6 py-3">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 sm:px-4">
           <p className="text-[0.83rem] text-gray-500">
@@ -108,10 +159,8 @@ export default function DemarrerPage() {
             transition={{ duration: 0.4, ease, delay: gi * 0.05 }}
             className="mb-6"
           >
-            {/* Titre de catégorie */}
             <h2 className="mb-3 px-1 text-[1.35rem] text-gray-700" style={cursive}>{cat}</h2>
 
-            {/* Carte blanche contenant les apps */}
             <div className="rounded-2xl bg-white p-4 shadow-sm">
               <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
                 {apps.map((app) => {
@@ -123,14 +172,13 @@ export default function DemarrerPage() {
                     <button
                       key={app.slug}
                       onClick={() => toggle(app.slug)}
-                      disabled={isDisabled}
+                      disabled={isDisabled || saving}
                       className="group flex flex-col items-center gap-2 rounded-xl p-2 text-center transition-all"
                       style={{
                         opacity: isDisabled ? 0.35 : 1,
                         cursor: isDisabled ? "not-allowed" : "pointer",
                       }}
                     >
-                      {/* Icône grande */}
                       <div
                         className="relative flex h-[68px] w-[68px] items-center justify-center rounded-[18px] transition-transform duration-200 group-hover:scale-105"
                         style={{
@@ -141,7 +189,6 @@ export default function DemarrerPage() {
                         }}
                       >
                         <Icon size={28} color="#fff" strokeWidth={1.8} />
-                        {/* Badge check */}
                         {isSelected && (
                           <span
                             className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full text-[0.6rem] font-extrabold text-white"
@@ -151,8 +198,6 @@ export default function DemarrerPage() {
                           </span>
                         )}
                       </div>
-
-                      {/* Nom de l'app */}
                       <p className="text-[0.72rem] font-bold leading-tight text-gray-800">
                         {app.label}
                       </p>
@@ -164,7 +209,6 @@ export default function DemarrerPage() {
           </motion.div>
         ))}
 
-        {/* Message limite atteinte */}
         <AnimatePresence>
           {atLimit && (
             <motion.div
@@ -185,25 +229,34 @@ export default function DemarrerPage() {
 
       {/* ── Barre sticky ── */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white px-6 py-4 shadow-lg">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
-          <p className="text-[0.85rem] text-gray-400">
-            {count === 0
-              ? "Choisissez jusqu'à 2 applications gratuites"
-              : count === 1
-              ? "1 / 2 app sélectionnée"
-              : "2 / 2 apps gratuites sélectionnées ✓"}
-          </p>
-          <Link
-            href={count > 0 ? "/register" : "#"}
-            onClick={(e) => { if (count === 0) e.preventDefault(); }}
+        <div className="mx-auto flex max-w-4xl flex-col items-center gap-2 sm:flex-row sm:justify-between">
+          {error && (
+            <p className="text-[0.78rem] text-red-500">{error}</p>
+          )}
+          {!error && (
+            <p className="text-[0.85rem] text-gray-400">
+              {count === 0
+                ? "Choisissez jusqu'à 2 applications gratuites"
+                : count === 1
+                ? "1 / 2 app sélectionnée"
+                : "2 / 2 apps gratuites sélectionnées ✓"}
+            </p>
+          )}
+          <button
+            onClick={handleConfirm}
+            disabled={count === 0 || saving}
             className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[0.88rem] font-extrabold text-white transition-all"
             style={{
-              background: count > 0 ? "#4a3f5c" : "#d1d5db",
-              cursor: count > 0 ? "pointer" : "not-allowed",
+              background: count > 0 && !saving ? "#4a3f5c" : "#d1d5db",
+              cursor: count > 0 && !saving ? "pointer" : "not-allowed",
             }}
           >
-            Démarrer maintenant <ArrowRight size={14} />
-          </Link>
+            {saving ? (
+              <><Loader2 size={14} className="animate-spin" /> Enregistrement…</>
+            ) : (
+              <>Démarrer maintenant <ArrowRight size={14} /></>
+            )}
+          </button>
         </div>
       </div>
 
