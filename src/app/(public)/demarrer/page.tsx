@@ -87,8 +87,6 @@ export default function DemarrerPage() {
           }
           throw new Error(data.error ?? "Erreur lors de la sauvegarde");
         }
-        // Rafraîchir la session pour que les métadonnées soient à jour
-        await supabase.auth.refreshSession();
         router.push("/client");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inattendue");

@@ -74,7 +74,14 @@ export async function middleware(request: NextRequest) {
   const isSubscribed = meta.subscription_active === true;
 
   if (!isSubscribed && pathname.startsWith("/client")) {
-    const freeApps: string[] = Array.isArray(meta.free_apps) ? meta.free_apps : [];
+    // Lire free_apps depuis la table clients (source de vérité)
+    const { data: clientRow } = await supabase
+      .from("clients")
+      .select("free_apps")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const freeApps: string[] = Array.isArray(clientRow?.free_apps) ? clientRow.free_apps : [];
 
     // Pas encore choisi ses apps → aller à la sélection
     if (freeApps.length === 0) {

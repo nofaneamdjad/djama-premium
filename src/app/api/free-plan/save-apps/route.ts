@@ -62,10 +62,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: dbErr.message }, { status: 500 });
   }
 
-  // Mettre à jour user_metadata pour que le middleware puisse lire les apps sans requête DB
-  await admin.auth.admin.updateUserById(user.id, {
-    user_metadata: { ...(user.user_metadata ?? {}), free_apps: slugs },
-  });
-
   return NextResponse.json({ ok: true, free_apps: slugs });
 }
