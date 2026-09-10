@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient }            from "@supabase/ssr";
 import { verifyAdminToken }              from "@/lib/admin-token";
-import { isPathAllowedForFreeUser, getSlugForApiPath } from "@/lib/free-plan";
+import { isPathAllowedForFreeUser, getSlugForApiPath, getSlugForClientPath } from "@/lib/free-plan";
 
 /**
  * Middleware Next.js — Contrôle d'accès DJAMA
@@ -66,7 +66,27 @@ export async function middleware(request: NextRequest) {
       (!apiAccess?.expires_at || new Date(apiAccess.expires_at) >= new Date());
     if (apiAccessActive) return NextResponse.next();
 
-    // 3. Plan gratuit — vérifier que l'app est dans la sélection verrouillée
+    // 3. Org membership — membre d'une org premium avec permission can_view sur ce slug
+    const { data: apiMemberships } = await supabaseApi
+      .from("organization_members")
+      .select("organization_id, role, organizations!inner(plan, owner_id)")
+      .eq("user_id", apiUser.id);
+    for (const m of apiMemberships ?? []) {
+      const apiOrg = m.organizations as { plan: string; owner_id: string };
+      if (apiOrg.owner_id === apiUser.id) continue; // propriétaire : vérifié via user_subscriptions
+      if (apiOrg.plan !== "premium") continue;
+      if (m.role === "admin") return NextResponse.next();
+      const { data: apiPerm } = await supabaseApi
+        .from("organization_permissions")
+        .select("can_view")
+        .eq("organization_id", m.organization_id)
+        .eq("user_id", apiUser.id)
+        .eq("app_slug", featureApiSlug)
+        .maybeSingle();
+      if (apiPerm?.can_view) return NextResponse.next();
+    }
+
+    // 4. Plan gratuit — vérifier que l'app est dans la sélection verrouillée
     const { data: apiFreeRow } = await supabaseApi
       .from("user_free_apps")
       .select("selected_apps")
@@ -145,6 +165,40 @@ export async function middleware(request: NextRequest) {
     (!access?.expires_at || new Date(access.expires_at) >= new Date());
 
   if (accessActive) return response;
+
+  // ── 3. Org membership — accès via entreprise abonnée ─────────────────────
+  // Un employé n'a pas sa propre subscription mais appartient à une org
+  // dont le propriétaire (owner) a un abonnement actif.
+  // organizations.plan est mis à "premium" par syncSubscriptionAccess().
+  {
+    const { data: memberships } = await supabase
+      .from("organization_members")
+      .select("organization_id, role, organizations!inner(plan, owner_id)")
+      .eq("user_id", user.id);
+
+    for (const m of (memberships ?? [])) {
+      const org = (m as { organization_id: string; role: string; organizations: { plan: string; owner_id: string } }).organizations;
+      if (org.owner_id === user.id) continue; // le propriétaire utilise son propre abonnement
+      if (org.plan !== "premium") continue;   // org non abonnée
+
+      // Propriétaire abonné → l'employé a accès selon son rôle
+      if (m.role === "admin") return response;
+
+      // Vérification granulaire par app pour les autres rôles
+      const pageSlug = getSlugForClientPath(pathname);
+      if (!pageSlug) return response; // pages communes (dashboard, profil…)
+
+      const { data: perm } = await supabase
+        .from("organization_permissions")
+        .select("can_view")
+        .eq("organization_id", m.organization_id)
+        .eq("user_id", user.id)
+        .eq("app_slug", pageSlug)
+        .maybeSingle();
+
+      if (perm?.can_view) return response;
+    }
+  }
 
   // ── Contrôle du plan gratuit ──────────────────────────────────────────────
   if (!pathname.startsWith("/client")) {

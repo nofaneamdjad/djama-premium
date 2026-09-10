@@ -274,6 +274,12 @@ export async function syncSubscriptionAccess(opts: {
   if (periodEnd)        subPatch.current_period_end  = periodEnd;
   await supabase.from("user_subscriptions").upsert(subPatch, { onConflict: "user_id" });
 
+  /* ── 1b. Sync plan de l'organisation du propriétaire ────────── */
+  await supabase
+    .from("organizations")
+    .update({ plan: active ? "premium" : "free" })
+    .eq("owner_id", userId);
+
   /* ── 2. user_access ──────────────────────────────────────── */
   const { data: existing } = await supabase
     .from("user_access")

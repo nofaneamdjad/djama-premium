@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, AlertCircle, CheckCircle2, ChevronDown, Search, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -194,7 +195,9 @@ function CountryPicker({
   );
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const redirectTo   = searchParams.get("redirect") ?? "/client";
   const [country,       setCountry]       = useState<Country>(COUNTRIES[0]);
   const [countryOpen,   setCountryOpen]   = useState(false);
   const [nom,           setNom]           = useState("");
@@ -215,7 +218,7 @@ export default function RegisterPage() {
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/client`,
+        redirectTo: `${window.location.origin}${redirectTo}`,
         queryParams: { access_type: "offline", prompt: "select_account" },
       },
     });
@@ -234,7 +237,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: { name: nom.trim() },
-        emailRedirectTo: `${window.location.origin}/client`,
+        emailRedirectTo: `${window.location.origin}${redirectTo}`,
       },
     });
 
@@ -283,7 +286,7 @@ export default function RegisterPage() {
     setLoading(false);
     if (data.session) {
       setSuccess(true);
-      setTimeout(() => { window.location.href = "/client"; }, 1000);
+      setTimeout(() => { window.location.href = redirectTo; }, 1000);
     } else {
       setShowSplash(false);
       setSuccess(true);
@@ -531,5 +534,13 @@ export default function RegisterPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

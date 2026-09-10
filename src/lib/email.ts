@@ -1321,3 +1321,130 @@ export async function sendAccessActivatedEmail(
     return { sent: false, reason };
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   INVITATION D'UN MEMBRE D'ORGANISATION
+═══════════════════════════════════════════════════════════════════ */
+
+const ROLE_LABELS: Record<string, string> = {
+  admin:     "Administrateur",
+  member:    "Membre",
+  accountant:"Comptable",
+  readonly:  "Lecture seule",
+};
+
+function buildInvitationHtml(opts: {
+  orgName: string;
+  inviterName: string;
+  roleLabel: string;
+  inviteUrl: string;
+  expiresAt: string;
+}): string {
+  const { orgName, inviterName, roleLabel, inviteUrl, expiresAt } = opts;
+  const expiry = new Date(expiresAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Invitation DJAMA</title></head>
+<body style="margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+        <!-- Logo -->
+        <tr><td style="padding-bottom:32px;" align="center">
+          <img src="${getSite()}/logo-navbar.png" alt="DJAMA" height="36" style="display:block;height:36px;">
+        </td></tr>
+
+        <!-- Card -->
+        <tr><td style="background:${CARD};border-radius:16px;border:1px solid rgba(255,255,255,0.08);padding:40px 36px;">
+
+          <!-- Icône -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr><td align="center">
+              <div style="width:60px;height:60px;background:rgba(201,165,90,0.12);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;">
+                <span style="font-size:28px;">🤝</span>
+              </div>
+            </td></tr>
+          </table>
+
+          <!-- Titre -->
+          <h1 style="margin:0 0 8px;color:${TEXT};font-size:22px;font-weight:700;text-align:center;">
+            Vous êtes invité(e) à rejoindre<br>
+            <span style="color:${GOLD};">${orgName}</span>
+          </h1>
+          <p style="margin:0 0 28px;color:${MUTED};font-size:14px;text-align:center;">
+            <strong style="color:${TEXT};">${inviterName}</strong> vous invite à rejoindre l'espace de travail <strong style="color:${TEXT};">${orgName}</strong> sur DJAMA en tant que <strong style="color:${GOLD};">${roleLabel}</strong>.
+          </p>
+
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr><td align="center">
+              <a href="${inviteUrl}" style="display:inline-block;background:${GOLD};color:#000;font-size:15px;font-weight:700;padding:14px 36px;border-radius:10px;text-decoration:none;letter-spacing:0.3px;">
+                Accepter l'invitation →
+              </a>
+            </td></tr>
+          </table>
+
+          <!-- Note expiry -->
+          <p style="margin:0 0 20px;color:${MUTED};font-size:12px;text-align:center;">
+            Cette invitation expire le <strong style="color:${TEXT};">${expiry}</strong>
+          </p>
+
+          <!-- Séparateur -->
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:24px 0;">
+
+          <!-- Info compte -->
+          <p style="margin:0;color:${MUTED};font-size:12px;text-align:center;line-height:1.6;">
+            Si vous n'avez pas encore de compte DJAMA, vous pourrez en créer un en cliquant sur le lien ci-dessus.<br>
+            Si vous possédez déjà un compte, connectez-vous simplement avec votre email habituel.<br><br>
+            <span style="opacity:0.6;">Si vous n'attendiez pas cette invitation, ignorez simplement cet email.</span>
+          </p>
+
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding-top:24px;" align="center">
+          <p style="margin:0;color:rgba(255,255,255,0.25);font-size:11px;">
+            © ${new Date().getFullYear()} DJAMA — <a href="${getSite()}" style="color:rgba(255,255,255,0.35);text-decoration:none;">djama.space</a>
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendInvitationEmail(opts: {
+  toEmail:     string;
+  orgName:     string;
+  inviterName: string;
+  role:        string;
+  inviteUrl:   string;
+  expiresAt:   string;
+}): Promise<{ sent: boolean; reason?: string }> {
+  try {
+    const resend    = getResend();
+    const from      = getFrom();
+    const roleLabel = ROLE_LABELS[opts.role] ?? opts.role;
+
+    const res = await resend.emails.send({
+      from,
+      to:      opts.toEmail,
+      subject: `Invitation à rejoindre ${opts.orgName} sur DJAMA`,
+      html:    buildInvitationHtml({ ...opts, roleLabel }),
+    });
+
+    if (res.error) {
+      console.error("[Email Invitation] ❌ Resend:", res.error);
+      return { sent: false, reason: res.error.message };
+    }
+    return { sent: true };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error("[Email Invitation] ❌ Exception:", reason);
+    return { sent: false, reason };
+  }
+}

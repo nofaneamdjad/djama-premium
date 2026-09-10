@@ -93,6 +93,17 @@ export const API_PREFIX_TO_SLUG: Array<[string, string]> = [
 ];
 
 /**
+ * Renvoie le slug d'app pour un chemin /client/..., ou null si non couvert.
+ * Utilisé par le middleware pour l'enforcement des permissions organisation.
+ */
+export function getSlugForClientPath(pathname: string): string | null {
+  for (const [slug, href] of Object.entries(SLUG_TO_HREF)) {
+    if (pathname === href || pathname.startsWith(href + "/")) return slug;
+  }
+  return null;
+}
+
+/**
  * Renvoie le slug d'app pour un chemin d'API feature, ou null si non couvert.
  * Utilisé par le middleware pour l'enforcement du plan gratuit sur les routes API.
  */
