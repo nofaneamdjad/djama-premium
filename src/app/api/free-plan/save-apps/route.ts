@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { VALID_FREE_SLUGS } from "@/lib/free-plan";
 
 const MAX_FREE_APPS = 2;
@@ -35,32 +34,35 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const admin = createSupabaseAdmin();
+  // Écrire dans user_free_apps (RLS : INSERT WITH CHECK user_id = auth.uid() + max 2 apps)
+  // La contrainte PRIMARY KEY garantit qu'une 2ème tentative échoue (locked)
+  const { error: insertErr } = await supabase
+    .from("user_free_apps")
+    .insert({ user_id: user.id, selected_apps: slugs, locked_at: new Date().toISOString() });
 
-  // Vérifier si déjà verrouillé
-  const { data: existing } = await admin
-    .from("clients")
-    .select("free_apps_locked_at")
-    .eq("id", user.id)
-    .maybeSingle();
+  if (insertErr) {
+    // code 23505 = violation de clé primaire = déjà sélectionné
+    if (insertErr.code === "23505") {
+      return NextResponse.json(
+        { error: "La sélection est déjà verrouillée.", locked: true },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: insertErr.message }, { status: 500 });
+  }
 
-  if (existing?.free_apps_locked_at) {
-    return NextResponse.json(
-      { error: "La sélection d'applications est déjà verrouillée.", locked: true },
-      { status: 409 }
+  // Aussi mettre à jour clients.free_apps pour la rétrocompatibilité
+  // (utilise le supabase client user — RLS sur clients maintenant permissive pour SELECT,
+  //  mais UPDATE toujours service_role only → on utilise le client user pour l'upsert
+  //  car clients est géré côté webhook ; ici on fait juste le meilleur effort)
+  try {
+    const { createSupabaseAdmin } = await import("@/lib/supabase-server");
+    const admin = createSupabaseAdmin();
+    await admin.from("clients").upsert(
+      { id: user.id, email: user.email!, free_apps: slugs, free_apps_locked_at: new Date().toISOString() },
+      { onConflict: "email" }
     );
-  }
-
-  const now = new Date().toISOString();
-
-  // Enregistrer dans la table clients
-  const { error: dbErr } = await admin.from("clients").upsert(
-    { id: user.id, email: user.email!, free_apps: slugs, free_apps_locked_at: now },
-    { onConflict: "id" }
-  );
-  if (dbErr) {
-    return NextResponse.json({ error: dbErr.message }, { status: 500 });
-  }
+  } catch {}
 
   return NextResponse.json({ ok: true, free_apps: slugs });
 }

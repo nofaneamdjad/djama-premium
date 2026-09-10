@@ -237,29 +237,44 @@ export async function confirmActiveByPayPalSubId(paypalSubId: string) {
 /* ═══════════════════════════════════════════════════════════════
    SOURCE DE VÉRITÉ UNIQUE — syncSubscriptionAccess
    ═══════════════════════════════════════════════════════════════
-   Synchronise les 3 tables en une seule opération atomique :
-     • user_access  (outils_saas + espace_premium)
-     • clients      (subscription_active + statut + abonnement)
-     • user_metadata (subscription_active + statut + abonnement)
-
-   Appelé par les webhooks Stripe ET PayPal pour les événements :
-     - renouvellement (invoice.paid / BILLING.SUBSCRIPTION.RENEWED)
-     - mise à jour statut (subscription.updated / ACTIVATED)
-     - désactivation (subscription.deleted / CANCELLED / SUSPENDED)
+   Synchronise 4 tables :
+     • user_subscriptions (SOURCE SÉCURISÉE — service_role only)
+     • user_access        (outils_saas + espace_premium)
+     • clients            (subscription_active + statut)
+     • user_metadata      (abonnement + statut — affichage uniquement,
+                           JAMAIS utilisé pour les décisions d'accès)
 ═══════════════════════════════════════════════════════════════ */
 export async function syncSubscriptionAccess(opts: {
-  email:           string;
-  userId:          string;
-  active:          boolean;
-  provider:        "stripe" | "paypal";
-  subscriptionId?: string;
-  userData?:       Record<string, unknown>;
+  email:             string;
+  userId:            string;
+  active:            boolean;
+  provider:          "stripe" | "paypal";
+  subscriptionId?:   string;
+  stripeCustomerId?: string;
+  periodEnd?:        string;
+  userData?:         Record<string, unknown>;
 }) {
-  const { email, userId, active, provider, subscriptionId, userData } = opts;
+  const { email, userId, active, provider, subscriptionId, stripeCustomerId, periodEnd, userData } = opts;
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
 
-  /* ── 1. user_access ──────────────────────────────────────── */
+  /* ── 1. user_subscriptions (source sécurisée, service_role only) */
+  const subPatch: Record<string, unknown> = {
+    user_id:    userId,
+    is_active:  active,
+    plan_name:  active ? "outils_djama" : null,
+    provider,
+    updated_at: now,
+  };
+  if (subscriptionId) {
+    if (provider === "stripe") subPatch.stripe_sub_id = subscriptionId;
+    if (provider === "paypal") subPatch.paypal_sub_id = subscriptionId;
+  }
+  if (stripeCustomerId) subPatch.stripe_customer_id = stripeCustomerId;
+  if (periodEnd)        subPatch.current_period_end  = periodEnd;
+  await supabase.from("user_subscriptions").upsert(subPatch, { onConflict: "user_id" });
+
+  /* ── 2. user_access ──────────────────────────────────────── */
   const { data: existing } = await supabase
     .from("user_access")
     .select("id")
@@ -277,7 +292,6 @@ export async function syncSubscriptionAccess(opts: {
       })
       .eq("email", email);
   } else if (active) {
-    /* Créer la ligne seulement lors d'une activation */
     await supabase.from("user_access").insert({
       email,
       outils_saas:    true,
@@ -287,7 +301,7 @@ export async function syncSubscriptionAccess(opts: {
     });
   }
 
-  /* ── 2. clients ──────────────────────────────────────────── */
+  /* ── 3. clients ──────────────────────────────────────────── */
   const clientPatch: Record<string, unknown> = {
     subscription_active: active,
     statut:              active ? "actif" : "inactif",
@@ -300,13 +314,14 @@ export async function syncSubscriptionAccess(opts: {
   }
   await supabase.from("clients").update(clientPatch).eq("email", email);
 
-  /* ── 3. user_metadata ────────────────────────────────────── */
+  /* ── 4. user_metadata (affichage seulement — jamais source d'accès) */
   await supabase.auth.admin.updateUserById(userId, {
     user_metadata: {
       ...(userData ?? {}),
-      subscription_active: active,
-      abonnement:          active ? "outils_djama" : null,
-      statut:              active ? "actif" : "inactif",
+      abonnement: active ? "outils_djama" : null,
+      statut:     active ? "actif" : "inactif",
+      // subscription_active retiré intentionnellement :
+      // lire user_subscriptions depuis le serveur, pas les métadonnées
     },
   });
 }

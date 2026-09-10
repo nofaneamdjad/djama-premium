@@ -4,14 +4,15 @@ import { verifyAdminToken }              from "@/lib/admin-token";
 import { isPathAllowedForFreeUser }      from "@/lib/free-plan";
 
 /**
- * Middleware Next.js — Accès aux outils DJAMA
+ * Middleware Next.js — Contrôle d'accès DJAMA
  *
- * - Admin routes : vérifie le cookie httpOnly djama_admin_tok (token HMAC)
- * - Client routes (/client/*) :
- *     1. Vérifie la session Supabase (→ /login si non connecté)
- *     2. Pour les utilisateurs gratuits :
- *        - Pas d'apps sélectionnées → /demarrer
- *        - App non sélectionnée     → /client?locked=1
+ * Sources de vérité (ordre de priorité) :
+ *  1. user_subscriptions.is_active  — service_role only, non forgeable
+ *  2. user_access.outils_saas       — legacy Stripe/PayPal
+ *  3. user_free_apps.selected_apps  — apps gratuites sélectionnées
+ *
+ * Principe : ne jamais faire confiance à user_metadata pour les
+ * décisions d'accès (peut être modifié par l'utilisateur via updateUser).
  */
 
 export async function middleware(request: NextRequest) {
@@ -69,34 +70,60 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // ── Vérification abonnement (source sécurisée) ────────────────────────────
+  // 1. user_subscriptions — service_role only, impossible à forger
+  const { data: sub } = await supabase
+    .from("user_subscriptions")
+    .select("is_active, current_period_end")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const subActive = sub?.is_active === true && (
+    !sub.current_period_end || new Date(sub.current_period_end) >= new Date()
+  );
+
+  if (subActive) return response;
+
+  // 2. user_access legacy (INSERT/UPDATE fermés après migration 052)
+  const { data: access } = await supabase
+    .from("user_access")
+    .select("outils_saas, espace_premium, expires_at")
+    .eq("email", user.email ?? "")
+    .maybeSingle();
+
+  const accessActive = (access?.outils_saas === true || access?.espace_premium === true) &&
+    (!access?.expires_at || new Date(access.expires_at) >= new Date());
+
+  if (accessActive) return response;
+
   // ── Contrôle du plan gratuit ──────────────────────────────────────────────
-  const meta = user.user_metadata ?? {};
-  const isSubscribed = meta.subscription_active === true;
+  if (!pathname.startsWith("/client")) {
+    // /membre, /coaching-ia/espace, /planning-agenda → accès refusé si pas abonné
+    return NextResponse.redirect(new URL("/tarification", request.url));
+  }
 
-  if (!isSubscribed && pathname.startsWith("/client")) {
-    // Lire free_apps depuis la table clients (source de vérité)
-    const { data: clientRow } = await supabase
-      .from("clients")
-      .select("free_apps")
-      .eq("id", user.id)
-      .maybeSingle();
+  // 3. user_free_apps — apps sélectionnées (SELECT autorisé, write verrouillé)
+  const { data: freeRow } = await supabase
+    .from("user_free_apps")
+    .select("selected_apps")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-    const freeApps: string[] = Array.isArray(clientRow?.free_apps) ? clientRow.free_apps : [];
+  const freeApps: string[] = Array.isArray(freeRow?.selected_apps) ? freeRow.selected_apps : [];
 
-    // Pas encore choisi ses apps → aller à la sélection
-    if (freeApps.length === 0) {
-      const alwaysOk = ["/client/profil", "/client/abonnements"];
-      if (!alwaysOk.some(p => pathname === p || pathname.startsWith(p + "/"))) {
-        return NextResponse.redirect(new URL("/demarrer", request.url));
-      }
+  // Pas encore choisi ses apps → sélection obligatoire
+  if (freeApps.length === 0) {
+    const alwaysOk = ["/client/profil", "/client/abonnements"];
+    if (!alwaysOk.some(p => pathname === p || pathname.startsWith(p + "/"))) {
+      return NextResponse.redirect(new URL("/demarrer", request.url));
     }
+  }
 
-    // Apps choisies — vérifier l'accès au chemin demandé
-    if (freeApps.length > 0 && !isPathAllowedForFreeUser(pathname, freeApps)) {
-      const url = new URL("/client", request.url);
-      url.searchParams.set("locked", "1");
-      return NextResponse.redirect(url);
-    }
+  // Apps choisies — vérifier l'accès au chemin demandé
+  if (freeApps.length > 0 && !isPathAllowedForFreeUser(pathname, freeApps)) {
+    const url = new URL("/client", request.url);
+    url.searchParams.set("locked", "1");
+    return NextResponse.redirect(url);
   }
 
   return response;

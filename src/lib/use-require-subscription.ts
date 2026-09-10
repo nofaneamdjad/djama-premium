@@ -13,7 +13,7 @@ export interface SubscriptionState {
   email:     string;
   name:      string;
   userId:    string;
-  freeApps:  string[];  // slugs des apps choisies (vide = pas encore sélectionné)
+  freeApps:  string[];
 }
 
 const DEFAULT_STATE: SubscriptionState =
@@ -44,19 +44,32 @@ export function useSubscription(): SubscriptionState {
       const user  = session.user;
       const meta  = user.user_metadata ?? {};
       const email = (user.email ?? "").toLowerCase();
-      const name  = meta.name ?? email.split("@")[0] ?? "Utilisateur";
-      const now   = new Date();
+      const name  = meta.name ?? meta.full_name ?? email.split("@")[0] ?? "Utilisateur";
 
-      /* 2. subscription_active dans metadata (activé via webhook Stripe) */
-      if (meta.subscription_active === true) {
-        if (!cancelled) setState({
-          level: "premium", isPremium: true, isFree: false,
-          email, name, userId: user.id, freeApps: [],
-        });
-        return;
+      /* ── 1. SOURCE SÉCURISÉE : user_subscriptions ─────────────
+         Écrite uniquement par le service_role (webhooks).
+         Un utilisateur ne peut jamais modifier cette table.
+      ────────────────────────────────────────────────────────── */
+      const { data: sub } = await supabase
+        .from("user_subscriptions")
+        .select("is_active, current_period_end")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (sub?.is_active === true) {
+        const expired = sub.current_period_end
+          ? new Date(sub.current_period_end) < new Date()
+          : false;
+
+        if (!expired) {
+          setState({ level: "premium", isPremium: true, isFree: false, email, name, userId: user.id, freeApps: [] });
+          return;
+        }
       }
 
-      /* 3. Table user_access (accès admin / Stripe / PayPal) */
+      /* ── 2. LEGACY : user_access (fermeture INSERT/UPDATE migrée) */
       const { data: access } = await supabase
         .from("user_access")
         .select("espace_premium, outils_saas, expires_at")
@@ -66,40 +79,28 @@ export function useSubscription(): SubscriptionState {
       if (cancelled) return;
 
       if (access?.espace_premium === true || access?.outils_saas === true) {
-        const expired = access.expires_at ? new Date(access.expires_at) < now : false;
+        const expired = access.expires_at ? new Date(access.expires_at) < new Date() : false;
         if (!expired) {
-          if (!cancelled) setState({
-            level: "premium", isPremium: true, isFree: false,
-            email, name, userId: user.id, freeApps: [],
-          });
+          setState({ level: "premium", isPremium: true, isFree: false, email, name, userId: user.id, freeApps: [] });
           return;
         }
       }
 
-      /* 4. Table clients (legacy Stripe) */
-      const { data: client } = await supabase
-        .from("clients")
-        .select("subscription_active, free_apps")
-        .eq("email", email)
+      /* ── 3. Plan gratuit — apps sélectionnées ─────────────────
+         user_free_apps : SELECT autorisé, INSERT max 2 apps,
+         UPDATE interdit (sélection verrouillée).
+      ────────────────────────────────────────────────────────── */
+      const { data: freeRow } = await supabase
+        .from("user_free_apps")
+        .select("selected_apps")
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (cancelled) return;
 
-      if (client?.subscription_active === true) {
-        if (!cancelled) setState({
-          level: "premium", isPremium: true, isFree: false,
-          email, name, userId: user.id, freeApps: [],
-        });
-        return;
-      }
+      const freeApps: string[] = Array.isArray(freeRow?.selected_apps) ? freeRow.selected_apps : [];
 
-      /* 5. Plan gratuit — lire les apps sélectionnées */
-      const freeApps: string[] = Array.isArray(client?.free_apps) ? client.free_apps : [];
-
-      if (!cancelled) setState({
-        level: "free", isPremium: false, isFree: true,
-        email, name, userId: user.id, freeApps,
-      });
+      setState({ level: "free", isPremium: false, isFree: true, email, name, userId: user.id, freeApps });
     }
 
     check();
