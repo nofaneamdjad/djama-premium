@@ -3,15 +3,59 @@
 import { useState, useRef, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, AlertCircle, CheckCircle2, ChevronDown, Search, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Eye, EyeOff, Check, AlertCircle, CheckCircle2,
+  ChevronDown, Search, X,
+} from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { APPS_DATA } from "@/lib/applications-data";
 
+const GOLD = "#c9a55a";
 const ease = [0.16, 1, 0.3, 1] as const;
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const BG    = "#0d0821";
+
+/* ── Bandeau apps sélectionnées (comme Odoo) ── */
+function SelectedAppsBanner() {
+  const [apps, setApps] = useState<typeof APPS_DATA>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("djama_pending_apps");
+      const slugs: string[] = raw ? JSON.parse(raw) : [];
+      const mapped = slugs
+        .map((s) => APPS_DATA.find((a) => a.slug === s))
+        .filter(Boolean) as typeof APPS_DATA;
+      setApps(mapped);
+    } catch {}
+  }, []);
+
+  if (apps.length === 0) return null;
+
+  return (
+    <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-gray-100 bg-white px-5 py-3.5">
+      <div className="flex flex-wrap items-center gap-3">
+        {apps.map(({ slug, label, color, icon: Icon }) => (
+          <div key={slug} className="flex items-center gap-2">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: `linear-gradient(145deg, ${color}ee, ${color}bb)` }}
+            >
+              <Icon size={20} color="#fff" strokeWidth={1.8} />
+            </div>
+            <span className="text-[0.875rem] font-medium text-gray-700">{label}</span>
+          </div>
+        ))}
+      </div>
+      <Link
+        href="/demarrer"
+        className="shrink-0 text-[0.8rem] text-gray-400 transition hover:text-gray-600"
+      >
+        Modifier la sélection
+      </Link>
+    </div>
+  );
+}
 
 /* ── Pays ── */
 type Country = { code: string; name: string; flag: string; tel: string };
@@ -59,7 +103,7 @@ const COUNTRIES: Country[] = [
   { code: "AU", name: "Australie",            flag: "🇦🇺", tel: "+61"  },
 ];
 
-/* ── Splash ── */
+/* ── SplashScreen ── */
 function SplashScreen({ visible }: { visible: boolean }) {
   return (
     <AnimatePresence>
@@ -71,14 +115,14 @@ function SplashScreen({ visible }: { visible: boolean }) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
-          style={{ background: BG }}
+          style={{ background: "#0d0821" }}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.85, y: 10 }}
+            initial={{ opacity: 0, scale: 0.88, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.07, ease }}
+            transition={{ duration: 0.45, delay: 0.06, ease }}
           >
-            <Image src="/logo-navbar.png" alt="DJAMA" width={220} height={50} className="h-[46px] w-auto object-contain" />
+            <Image src="/logo-navbar.png" alt="DJAMA" width={220} height={50} className="h-[44px] w-auto object-contain" />
           </motion.div>
           <div className="absolute bottom-12 left-8 right-8 h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.10)" }}>
             <motion.div
@@ -95,25 +139,13 @@ function SplashScreen({ visible }: { visible: boolean }) {
   );
 }
 
-/* ── Google icon ── */
-function GoogleIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-    </svg>
-  );
-}
 
-/* ── Country picker modal ── */
+/* ── CountryPicker (modal indicatif) ── */
 function CountryPicker({
   selected, onSelect, onClose,
 }: { selected: Country; onSelect: (c: Country) => void; onClose: () => void }) {
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const filtered = COUNTRIES.filter((c) =>
@@ -128,66 +160,66 @@ function CountryPicker({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[999] flex items-end justify-center sm:items-center"
-      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+      style={{ background: "rgba(0,0,0,0.28)", backdropFilter: "blur(4px)" }}
       onClick={onClose}
     >
       <motion.div
-        initial={{ y: 80, opacity: 0 }}
+        initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 80, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full max-w-[440px] rounded-t-3xl sm:rounded-3xl overflow-hidden"
-        style={{ background: "#141028", border: "1px solid rgba(255,255,255,0.10)", maxHeight: "70vh" }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 340, damping: 32 }}
+        className="w-full max-w-[440px] rounded-t-3xl sm:rounded-2xl overflow-hidden"
+        style={{
+          background: "#ffffff",
+          border: "1px solid rgba(17,24,39,0.10)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.16)",
+          maxHeight: "72vh",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <p className="text-[0.9rem] font-bold text-white">Sélectionnez votre pays</p>
-          <button onClick={onClose} style={{ color: "rgba(255,255,255,0.40)" }}>
+          <p className="text-[0.9rem] font-bold text-gray-900">Indicatif téléphonique</p>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
             <X size={18} />
           </button>
         </div>
-
-        {/* Search */}
         <div className="px-4 pb-3">
-          <div className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.09)" }}>
-            <Search size={14} style={{ color: "rgba(255,255,255,0.35)" }} />
+          <div className="flex items-center gap-2.5 rounded-lg px-3.5 py-2.5" style={{ background: "#f5f6f8", border: "1px solid rgba(17,24,39,0.07)" }}>
+            <Search size={14} className="text-gray-400 shrink-0" />
             <input
               ref={inputRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un pays…"
-              className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 outline-none"
+              className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 outline-none"
             />
             {search && (
-              <button onClick={() => setSearch("")} style={{ color: "rgba(255,255,255,0.30)" }}>
+              <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600 transition">
                 <X size={13} />
               </button>
             )}
           </div>
         </div>
-
-        {/* List */}
-        <div className="overflow-y-auto pb-6" style={{ maxHeight: "calc(70vh - 120px)" }}>
+        <div className="overflow-y-auto pb-6" style={{ maxHeight: "calc(72vh - 120px)" }}>
           {filtered.map((c) => (
             <button
               key={c.code}
               onClick={() => { onSelect(c); onClose(); }}
               className="flex w-full items-center gap-3 px-5 py-3 text-left transition"
               style={{
-                background: c.code === selected.code ? "rgba(201,165,90,0.10)" : "transparent",
+                background: c.code === selected.code ? "rgba(201,165,90,0.07)" : "transparent",
                 borderLeft: c.code === selected.code ? `3px solid ${GOLD}` : "3px solid transparent",
               }}
-              onMouseEnter={(e) => { if (c.code !== selected.code) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+              onMouseEnter={(e) => { if (c.code !== selected.code) (e.currentTarget as HTMLElement).style.background = "#f5f6f8"; }}
               onMouseLeave={(e) => { if (c.code !== selected.code) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
             >
-              <span className="text-xl">{c.flag}</span>
-              <span className="flex-1 text-[0.88rem] font-medium text-white/85">{c.name}</span>
-              <span className="text-[0.78rem]" style={{ color: "rgba(255,255,255,0.35)" }}>{c.tel}</span>
+              <span className="text-xl leading-none">{c.flag}</span>
+              <span className="flex-1 text-[0.88rem] font-medium text-gray-800">{c.name}</span>
+              <span className="text-[0.78rem] tabular-nums text-gray-400">{c.tel}</span>
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="py-8 text-center text-sm" style={{ color: "rgba(255,255,255,0.30)" }}>Aucun résultat</p>
+            <p className="py-8 text-center text-sm text-gray-400">Aucun résultat</p>
           )}
         </div>
       </motion.div>
@@ -195,35 +227,83 @@ function CountryPicker({
   );
 }
 
+/* ── Classes communes des champs ── */
+const fieldBase =
+  "h-[56px] w-full rounded-lg border border-gray-200 bg-white transition-all outline-none " +
+  "focus:border-[#c9a55a] focus:ring-2 focus:ring-[#c9a55a]/[0.16]";
+
+/* Champ texte/email avec label flottant */
+function FloatInput({
+  id, label, type = "text", value, onChange,
+  autoComplete, required, autoFocus,
+  suffix,
+}: {
+  id: string;
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete?: string;
+  required?: boolean;
+  autoFocus?: boolean;
+  suffix?: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder=" "
+        autoComplete={autoComplete}
+        required={required}
+        autoFocus={autoFocus}
+        className={
+          fieldBase +
+          " px-4 pt-[22px] pb-[6px] text-[0.9rem] text-gray-900 peer" +
+          (suffix ? " pr-11" : "")
+        }
+      />
+      <label
+        htmlFor={id}
+        className="pointer-events-none absolute left-4 top-[18px] text-[0.9rem] text-gray-400 transition-all duration-150
+          peer-focus:top-[8px] peer-focus:text-[0.72rem] peer-focus:text-gray-500
+          peer-[:not(:placeholder-shown)]:top-[8px] peer-[:not(:placeholder-shown)]:text-[0.72rem] peer-[:not(:placeholder-shown)]:text-gray-500"
+      >
+        {label}
+      </label>
+      {suffix && (
+        <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+          {suffix}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── RegisterForm ── */
 function RegisterForm() {
-  const searchParams = useSearchParams();
-  const redirectTo   = searchParams.get("redirect") ?? "/client";
-  const [country,       setCountry]       = useState<Country>(COUNTRIES[0]);
-  const [countryOpen,   setCountryOpen]   = useState(false);
+  const searchParams   = useSearchParams();
+  const redirectTo     = searchParams.get("redirect") ?? "/client";
+
+  const [dialCountry,   setDialCountry]   = useState<Country>(COUNTRIES[0]);
+  const [pickerOpen,    setPickerOpen]    = useState(false);
   const [nom,           setNom]           = useState("");
   const [email,         setEmail]         = useState("");
   const [telNumber,     setTelNumber]     = useState("");
+  const [pays,          setPays]          = useState("FR");
   const [password,      setPassword]      = useState("");
   const [showPwd,       setShowPwd]       = useState(false);
   const [loading,       setLoading]       = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [showSplash,    setShowSplash]    = useState(false);
   const [error,         setError]         = useState("");
   const [success,       setSuccess]       = useState(false);
 
-  const telephone = telNumber ? `${country.tel} ${telNumber}` : "";
-
-  async function handleGoogleAuth() {
-    setError(""); setGoogleLoading(true); setShowSplash(true);
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}${redirectTo}`,
-        queryParams: { access_type: "offline", prompt: "select_account" },
-      },
-    });
-    if (err) { setError(err.message); setGoogleLoading(false); setShowSplash(false); }
-  }
+  const telephone = telNumber ? `${dialCountry.tel} ${telNumber}` : "";
+  const pwdHas8     = password.length >= 8;
+  const pwdHasUpper = /[A-Z]/.test(password);
+  const pwdHasDigit = /\d/.test(password);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -232,11 +312,13 @@ function RegisterForm() {
     if (password.length < 8) { setError("Le mot de passe doit contenir au moins 8 caractères."); return; }
     setError(""); setLoading(true); setShowSplash(true);
 
+    const selectedCountry = COUNTRIES.find(c => c.code === pays);
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
       options: {
-        data: { name: nom.trim() },
+        data: { name: nom.trim(), pays, pays_nom: selectedCountry?.name },
         emailRedirectTo: `${window.location.origin}${redirectTo}`,
       },
     });
@@ -259,13 +341,13 @@ function RegisterForm() {
     }
 
     await supabase.from("clients").insert({
-      id: userId, nom: nom.trim(),
-      email: email.trim().toLowerCase(),
+      id:        userId,
+      nom:       nom.trim(),
+      email:     email.trim().toLowerCase(),
       telephone: telephone || null,
-      statut: "actif",
+      statut:    "actif",
     });
 
-    // Sauvegarder les apps gratuites choisies depuis /demarrer
     if (data.session) {
       try {
         const raw = localStorage.getItem("djama_pending_apps");
@@ -277,7 +359,6 @@ function RegisterForm() {
             body: JSON.stringify({ slugs: pending }),
           });
           localStorage.removeItem("djama_pending_apps");
-          // Rafraîchir la session pour que les métadonnées soient à jour dans le middleware
           await supabase.auth.refreshSession();
         }
       } catch {}
@@ -294,245 +375,310 @@ function RegisterForm() {
   }
 
   return (
-    <div
-      className="relative min-h-screen px-5 pb-10 pt-14"
-      style={{ background: `linear-gradient(175deg, #1a0c35 0%, ${BG} 50%, #060c18 100%)` }}
-    >
+    <div className="min-h-screen bg-white">
       <SplashScreen visible={showSplash} />
 
-      {/* Country picker modal */}
       <AnimatePresence>
-        {countryOpen && (
+        {pickerOpen && (
           <CountryPicker
-            selected={country}
-            onSelect={(c) => setCountry(c)}
-            onClose={() => setCountryOpen(false)}
+            selected={dialCountry}
+            onSelect={setDialCountry}
+            onClose={() => setPickerOpen(false)}
           />
         )}
       </AnimatePresence>
 
-      {/* Orb */}
-      <div aria-hidden className="pointer-events-none fixed left-1/2 top-0 h-[320px] w-[320px] -translate-x-1/2 rounded-full blur-[100px] opacity-30"
-        style={{ background: `rgba(${GOLDR},0.25)` }} />
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease }}
-        className="mx-auto w-full max-w-[420px]"
-      >
-        {/* Logo */}
-        <div className="mb-10 flex justify-center">
+      {/* ── Header minimal ── */}
+      <header className="sticky top-0 z-40 border-b border-gray-100 bg-white">
+        <div className="mx-auto flex h-[60px] max-w-6xl items-center justify-between px-6">
           <Link href="/">
-            <Image src="/logo-navbar.png" alt="DJAMA" width={200} height={45} className="h-[40px] w-auto object-contain" priority />
+            <Image
+              src="/logo.png"
+              alt="DJAMA"
+              width={120}
+              height={28}
+              className="h-7 w-auto object-contain"
+              priority
+            />
+          </Link>
+          <Link
+            href="/login"
+            className="text-[0.875rem] font-medium text-gray-500 transition hover:text-gray-900"
+          >
+            Se connecter
           </Link>
         </div>
+      </header>
 
-        {/* Heading */}
-        <div className="mb-8">
-          <h1 className="mb-2 text-[2rem] font-extrabold leading-tight text-white">
-            Démarrez maintenant
+      {/* ── Contenu ── */}
+      <main className="mx-auto w-full max-w-[620px] px-5 pb-20 pt-12 md:pt-16">
+
+        {/* Titre Caveat + soulignement doré */}
+        <div className="mb-10 text-center">
+          <h1
+            className="text-[2.6rem] font-bold leading-tight text-gray-900 md:text-[3rem]"
+            style={{ fontFamily: "'Caveat', cursive" }}
+          >
+            Commencez avec{" "}
+            <span className="relative inline-block">
+              DJAMA
+              <svg
+                aria-hidden
+                viewBox="0 0 140 10"
+                preserveAspectRatio="none"
+                className="absolute -bottom-1 left-0 w-full"
+                style={{ height: "9px", overflow: "visible" }}
+              >
+                <path
+                  d="M2 7 Q35 1, 70 6 Q105 10, 138 4"
+                  stroke="#c9a55a"
+                  strokeWidth="2.8"
+                  fill="none"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
           </h1>
-          <p className="text-[0.9rem]" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Accès gratuit et instantané. Aucune carte bancaire requise.
+          <p className="mt-4 text-[0.9rem] text-gray-500">
+            Accès gratuit et instantané. Aucune carte de crédit nécessaire.
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleRegister} className="space-y-3">
+        {/* Apps pré-sélectionnées */}
+        <SelectedAppsBanner />
 
-          {/* Nom */}
-          <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
-            <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Nom et prénom</p>
-            <input
-              type="text"
+        {/* ── Carte formulaire ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease }}
+          className="rounded-xl p-7 md:p-9"
+          style={{ background: "#f5f6f8" }}
+        >
+          <form onSubmit={handleRegister} noValidate className="space-y-4">
+
+            {/* Nom et prénom */}
+            <FloatInput
+              id="nom"
+              label="Nom et prénom"
               value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              placeholder="Jean Dupont"
+              onChange={setNom}
               autoComplete="name"
               required
               autoFocus
-              className="w-full bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
             />
-          </div>
 
-          {/* Email */}
-          <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
-            <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Adresse e-mail</p>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="vous@exemple.com"
-              autoComplete="email"
-              required
-              className="w-full bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
-            />
-          </div>
+            {/* Email + Téléphone — 2 colonnes sur sm+ */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-          {/* Téléphone avec préfixe pays */}
-          <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
-            <p className="mb-1.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>
-              Numéro de téléphone <span className="opacity-60">(optionnel)</span>
-            </p>
-            <div className="flex items-center gap-3">
-              {/* Préfixe pays */}
-              <button
-                type="button"
-                onClick={() => setCountryOpen(true)}
-                className="flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-1 transition"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}
-              >
-                <span className="text-base leading-none">{country.flag}</span>
-                <span className="text-[0.82rem] font-semibold" style={{ color: "rgba(255,255,255,0.70)" }}>{country.tel}</span>
-                <ChevronDown size={12} style={{ color: "rgba(255,255,255,0.35)" }} />
-              </button>
-              {/* Numéro */}
-              <input
-                type="tel"
-                value={telNumber}
-                onChange={(e) => setTelNumber(e.target.value)}
-                placeholder="6 00 00 00 00"
-                autoComplete="tel-national"
-                className="flex-1 bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Mot de passe */}
-          <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
-            <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Mot de passe</p>
-            <div className="flex items-center">
-              <input
-                type={showPwd ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 8 caractères"
-                autoComplete="new-password"
+              {/* Email */}
+              <FloatInput
+                id="email"
+                label="Adresse e-mail"
+                type="email"
+                value={email}
+                onChange={setEmail}
+                autoComplete="email"
                 required
-                className="flex-1 bg-transparent text-[0.95rem] text-white placeholder:text-white/25 outline-none"
               />
-              <button type="button" onClick={() => setShowPwd((v) => !v)} className="ml-2 shrink-0 transition" style={{ color: "rgba(255,255,255,0.35)" }}>
-                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
 
-          {/* Pays */}
-          <button
-            type="button"
-            onClick={() => setCountryOpen(true)}
-            className="flex w-full items-center justify-between rounded-2xl px-4 py-3.5 transition text-left"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}
-          >
-            <div>
-              <p className="mb-0.5 text-[0.68rem] font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>Pays</p>
-              <div className="flex items-center gap-2">
-                <span className="text-base leading-none">{country.flag}</span>
-                <span className="text-[0.95rem] text-white/85">{country.name}</span>
+              {/* Téléphone : champ composite avec label fixe en haut */}
+              <div className="relative">
+                <div
+                  className={
+                    "flex h-[56px] items-center overflow-hidden rounded-lg border border-gray-200 bg-white " +
+                    "transition-all focus-within:border-[#c9a55a] focus-within:ring-2 focus-within:ring-[#c9a55a]/[0.16]"
+                  }
+                >
+                  <button
+                    type="button"
+                    onClick={() => setPickerOpen(true)}
+                    className="flex h-full shrink-0 items-center gap-1 pl-4 pr-2 text-[0.82rem] font-medium text-gray-700 transition-colors hover:text-gray-900 outline-none"
+                  >
+                    <span className="text-base leading-none">{dialCountry.flag}</span>
+                    <span className="tabular-nums">{dialCountry.tel}</span>
+                    <ChevronDown size={11} className="text-gray-400" />
+                  </button>
+                  <div className="h-5 w-px shrink-0 bg-gray-200" />
+                  <input
+                    type="tel"
+                    value={telNumber}
+                    onChange={(e) => setTelNumber(e.target.value)}
+                    placeholder="Numéro de téléphone"
+                    autoComplete="tel-national"
+                    className="flex-1 min-w-0 bg-transparent px-3 text-[0.875rem] text-gray-900 placeholder:text-gray-400 outline-none"
+                  />
+                </div>
               </div>
             </div>
-            <ChevronDown size={16} style={{ color: "rgba(255,255,255,0.30)" }} />
-          </button>
 
-          {/* Erreur / succès */}
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden rounded-xl px-3.5 py-3"
-                style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.22)" }}
+            {/* Pays */}
+            <div className="relative">
+              <select
+                id="pays"
+                value={pays}
+                onChange={(e) => setPays(e.target.value)}
+                className={
+                  fieldBase +
+                  " appearance-none cursor-pointer pl-4 pr-10 pt-[22px] pb-[6px] text-[0.9rem] text-gray-900"
+                }
               >
-                <div className="flex gap-2.5">
-                  <AlertCircle size={13} className="mt-0.5 shrink-0" style={{ color: "#ef4444" }} />
-                  <p className="text-xs" style={{ color: "rgba(255,160,160,0.90)" }}>{error}</p>
-                </div>
-              </motion.div>
-            )}
-            {success && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="overflow-hidden rounded-xl px-3.5 py-3"
-                style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.22)" }}
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.name}</option>
+                ))}
+              </select>
+              <label
+                htmlFor="pays"
+                className="pointer-events-none absolute left-4 top-[8px] text-[0.72rem] text-gray-500"
               >
-                <div className="flex gap-2.5">
-                  <CheckCircle2 size={13} className="mt-0.5 shrink-0" style={{ color: "#10b981" }} />
-                  <p className="text-xs" style={{ color: "rgba(110,230,180,0.90)" }}>
-                    Compte créé ! Vérifiez votre email pour activer votre compte.
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                Pays
+              </label>
+              <ChevronDown
+                size={14}
+                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+            </div>
 
-          {/* Terms */}
-          <p className="px-1 text-[0.72rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.28)" }}>
-            En cliquant sur <strong className="text-white/50">Créer mon espace</strong>, vous acceptez nos{" "}
-            <Link href="/legal/cgu" className="underline underline-offset-2 transition hover:opacity-70">Conditions d&apos;utilisation</Link>{" "}
-            et notre{" "}
-            <Link href="/legal/confidentialite" className="underline underline-offset-2 transition hover:opacity-70">Politique de confidentialité</Link>.
-          </p>
+            {/* Mot de passe */}
+            <div>
+              <FloatInput
+                id="password"
+                label="Mot de passe"
+                type={showPwd ? "text" : "password"}
+                value={password}
+                onChange={setPassword}
+                autoComplete="new-password"
+                required
+                suffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd((v) => !v)}
+                    className="text-gray-400 transition hover:text-gray-600 outline-none"
+                    aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  >
+                    {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                }
+              />
 
-          {/* CTA */}
-          <motion.button
-            type="submit"
-            whileTap={{ scale: 0.98 }}
-            disabled={loading || success || googleLoading}
-            className="w-full rounded-2xl py-4 text-[1rem] font-bold text-white transition-all disabled:opacity-60"
-            style={{
-              background: `linear-gradient(135deg, rgba(${GOLDR},0.95) 0%, rgba(${GOLDR},0.72) 100%)`,
-              boxShadow: `0 6px 24px rgba(${GOLDR},0.28)`,
-            }}
-          >
-            {loading ? "Création…" : success ? "Compte créé !" : "Créer mon espace DJAMA"}
-          </motion.button>
-        </form>
+              {/* Critères */}
+              <AnimatePresence>
+                {password.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-2.5 space-y-1.5 overflow-hidden"
+                  >
+                    {[
+                      { met: pwdHas8,     label: "8 caractères minimum" },
+                      { met: pwdHasUpper, label: "Une lettre majuscule"  },
+                      { met: pwdHasDigit, label: "Un chiffre"            },
+                    ].map(({ met, label }) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <span
+                          className="flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-full border transition-all duration-200"
+                          style={{
+                            borderColor: met ? "#22c55e" : "#d1d5db",
+                            background:  met ? "#22c55e" : "transparent",
+                          }}
+                        >
+                          {met && <Check size={8} color="#fff" strokeWidth={3} />}
+                        </span>
+                        <span
+                          className="text-[0.78rem] transition-colors duration-200"
+                          style={{ color: met ? "#16a34a" : "#9ca3af" }}
+                        >
+                          {label}
+                        </span>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-        {/* Divider */}
-        <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
-          <span className="text-[0.72rem]" style={{ color: "rgba(255,255,255,0.22)" }}>ou</span>
-          <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
-        </div>
+            {/* Erreur / succès */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden rounded-lg px-3.5 py-3"
+                  style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.18)" }}
+                >
+                  <div className="flex gap-2.5">
+                    <AlertCircle size={13} className="mt-0.5 shrink-0 text-red-500" />
+                    <p className="text-xs text-red-600">{error}</p>
+                  </div>
+                </motion.div>
+              )}
+              {success && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="overflow-hidden rounded-lg px-3.5 py-3"
+                  style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.20)" }}
+                >
+                  <div className="flex gap-2.5">
+                    <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-emerald-500" />
+                    <p className="text-xs text-emerald-700">
+                      Compte créé ! Vérifiez votre email pour activer votre compte.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-        {/* Google */}
-        <motion.button
-          type="button"
-          onClick={handleGoogleAuth}
-          disabled={googleLoading || loading || success}
-          whileTap={{ scale: 0.985 }}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl py-4 text-[0.95rem] font-semibold transition-all disabled:opacity-50"
-          style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.85)" }}
-        >
-          {googleLoading ? (
-            <motion.span
-              animate={{ rotate: 360 }}
-              transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-              className="inline-block h-5 w-5 rounded-full"
-              style={{ borderWidth: "2px", borderStyle: "solid", borderTopColor: "rgba(255,255,255,0.7)", borderRightColor: "rgba(255,255,255,0.15)", borderBottomColor: "rgba(255,255,255,0.15)", borderLeftColor: "rgba(255,255,255,0.15)" }}
-            />
-          ) : <GoogleIcon />}
-          {googleLoading ? "Connexion…" : "Continuer avec Google"}
-        </motion.button>
+            {/* Conditions */}
+            <p className="text-[0.75rem] leading-relaxed text-gray-400">
+              En cliquant sur{" "}
+              <strong className="font-semibold text-gray-500">Créer mon compte</strong>
+              , vous acceptez nos{" "}
+              <Link href="/legal/cgu" className="text-gray-500 underline underline-offset-2 transition hover:text-gray-700">
+                Conditions d&apos;utilisation
+              </Link>{" "}
+              et notre{" "}
+              <Link href="/legal/confidentialite" className="text-gray-500 underline underline-offset-2 transition hover:text-gray-700">
+                Politique de confidentialité
+              </Link>.
+            </p>
 
-        <p className="mt-8 text-center text-[0.9rem]" style={{ color: "rgba(255,255,255,0.38)" }}>
+            {/* Bouton principal */}
+            <button
+              type="submit"
+              disabled={loading || success}
+              className="btn-primary w-full h-[48px] justify-center text-[0.925rem] disabled:opacity-60"
+              style={{ borderRadius: "6px" }}
+            >
+              {loading ? "Création en cours…" : success ? "Compte créé !" : "Créer mon compte"}
+            </button>
+
+          </form>
+        </motion.div>
+
+        {/* Login */}
+        <p className="mt-7 text-center text-[0.875rem] text-gray-500">
           Déjà un compte ?{" "}
-          <Link href="/login" className="font-bold transition" style={{ color: GOLD }}>
+          <Link
+            href="/login"
+            className="font-semibold transition hover:opacity-80"
+            style={{ color: GOLD }}
+          >
             Se connecter
           </Link>
         </p>
 
-        <div className="mt-8 flex flex-wrap justify-center gap-4 text-[0.70rem]" style={{ color: "rgba(255,255,255,0.20)" }}>
-          <Link href="/legal/confidentialite" className="transition hover:opacity-60">Confidentialité</Link>
-          <span>·</span>
-          <Link href="/legal/cgu" className="transition hover:opacity-60">Conditions</Link>
-          <span>·</span>
-          <Link href="/contact" className="transition hover:opacity-60">Besoin d&apos;aide ?</Link>
+        {/* Liens légaux discrets */}
+        <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1">
+          <Link href="/legal/confidentialite" className="text-[0.70rem] text-gray-300 transition hover:text-gray-500">Confidentialité</Link>
+          <span className="text-[0.70rem] text-gray-200">·</span>
+          <Link href="/legal/cgu" className="text-[0.70rem] text-gray-300 transition hover:text-gray-500">Conditions</Link>
+          <span className="text-[0.70rem] text-gray-200">·</span>
+          <Link href="/contact" className="text-[0.70rem] text-gray-300 transition hover:text-gray-500">Besoin d&apos;aide ?</Link>
         </div>
-      </motion.div>
+      </main>
     </div>
   );
 }
