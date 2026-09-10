@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, UserPlus, MoreHorizontal, Mail, Shield, RefreshCw, Loader2, Users, Download, X, Check } from "lucide-react";
+import { Search, UserPlus, MoreHorizontal, Mail, Shield, RefreshCw, Loader2, Users, Download, X, Check, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
@@ -502,12 +503,13 @@ export default function AdminClients() {
                         >
                           <Mail size={12} />
                         </a>
-                        <button
-                          title="Plus d'actions"
+                        <Link
+                          href={`/admin/clients/${c.id}`}
+                          title="Voir la fiche"
                           className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-white/35 transition-all hover:bg-white/[0.10] hover:text-white/70"
                         >
-                          <MoreHorizontal size={12} />
-                        </button>
+                          <ExternalLink size={12} />
+                        </Link>
                       </div>
                     </td>
                   </tr>
