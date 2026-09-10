@@ -8,9 +8,18 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { createLogger }        from "@/lib/logger";
 import { requireAdmin }        from "@/lib/admin-auth";
+
+const PartenaireSchema = z.object({
+  name:       z.string().min(1).max(100),
+  logo_url:   z.string().url().optional().nullable(),
+  website:    z.string().url().optional().nullable(),
+  sort_order: z.number().int().min(0).optional(),
+  active:     z.boolean().optional(),
+});
 
 const log = createLogger("admin/partenaires");
 
@@ -45,11 +54,14 @@ export async function POST(req: NextRequest) {
   if (deny) return deny;
 
   try {
-    const payload = await req.json();
+    const parsed = PartenaireSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+    }
     const sb = createSupabaseAdmin();
     const { data, error } = await sb
       .from("partner_logos")
-      .insert(payload)
+      .insert(parsed.data)
       .select()
       .single();
 
@@ -68,11 +80,14 @@ export async function PATCH(req: NextRequest) {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
 
-    const payload = await req.json();
+    const parsed = PartenaireSchema.partial().safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+    }
     const sb = createSupabaseAdmin();
     const { data, error } = await sb
       .from("partner_logos")
-      .update(payload)
+      .update(parsed.data)
       .eq("id", id)
       .select()
       .single();

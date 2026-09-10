@@ -45,14 +45,30 @@ export async function GET() {
   }
 }
 
+/* Colonnes modifiables via PATCH — liste blanche explicite */
+const PATCHABLE_FIELDS = new Set([
+  "email", "name", "outils_saas", "espace_premium",
+  "coaching_ia", "soutien_scolaire", "source",
+  "access_code", "expires_at", "notes",
+]);
+
 /* ── PATCH — mise à jour d'une ligne ──────────────────────── */
 export async function PATCH(req: Request) {
   try {
     const body = await req.json() as Record<string, unknown>;
-    const { id, ...fields } = body;
+    const { id, ...raw } = body;
 
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "id requis" }, { status: 400 });
+    }
+
+    const fields: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(raw)) {
+      if (PATCHABLE_FIELDS.has(k)) fields[k] = v;
+    }
+
+    if (Object.keys(fields).length === 0) {
+      return NextResponse.json({ error: "Aucun champ valide fourni" }, { status: 400 });
     }
 
     const supabase = getSupabaseAdmin();
@@ -66,7 +82,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    log.info("Ligne mise à jour — id:", id);
+    log.info(`Ligne mise à jour — id: ${id} champs: ${Object.keys(fields).join(", ")}`);
     return NextResponse.json({ success: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

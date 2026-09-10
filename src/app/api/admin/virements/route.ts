@@ -7,9 +7,14 @@
  * DELETE — supprimer un virement
  */
 
-import { NextResponse }   from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient }   from "@supabase/supabase-js";
 import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
+import { requireAdmin }   from "@/lib/admin-auth";
+import { createLogger }   from "@/lib/logger";
+import { logAdminAction, getRequestMeta } from "@/lib/admin-log";
+
+const log = createLogger("admin/virements");
 
 function getAdmin() {
   return createClient(
@@ -28,7 +33,10 @@ function nextPaymentDate(jourPrelevement: number): string {
 }
 
 /* ─── GET — liste ─────────────────────────────────────── */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
+
   const sb = getAdmin();
   const { data, error } = await sb
     .from("virements")
@@ -40,7 +48,9 @@ export async function GET() {
 }
 
 /* ─── POST — création ─────────────────────────────────── */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
   const body = await req.json() as {
     email: string; nom: string; montant?: number;
     jour_prelevement?: number; notes?: string;
@@ -65,7 +75,9 @@ export async function POST(req: Request) {
 }
 
 /* ─── PATCH — paiement reçu / bloquer ────────────────── */
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
   const body = await req.json() as {
     id: string; action: "paye" | "bloquer"; email: string; nom?: string;
   };
@@ -125,6 +137,8 @@ export async function PATCH(req: Request) {
       console.error("[virements] sync error:", e);
     }
 
+    const meta = getRequestMeta(req);
+    await logAdminAction({ action: "virement_paye", target_type: "virement", target_id: email, details: { id, prochain }, ...meta });
     return NextResponse.json({ success: true, action: "paye", prochain });
 
   } else {
@@ -158,17 +172,23 @@ export async function PATCH(req: Request) {
       console.error("[virements] revoke error:", e);
     }
 
+    const meta = getRequestMeta(req);
+    await logAdminAction({ action: "virement_bloquer", target_type: "virement", target_id: email, details: { id }, ...meta });
     return NextResponse.json({ success: true, action: "bloquer" });
   }
 }
 
 /* ─── DELETE ──────────────────────────────────────────── */
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
   const { id } = await req.json() as { id: string };
   if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
 
   const sb = getAdmin();
   const { error } = await sb.from("virements").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const meta = getRequestMeta(req);
+  await logAdminAction({ action: "virement_delete", target_type: "virement", target_id: id, ...meta });
   return NextResponse.json({ success: true });
 }
