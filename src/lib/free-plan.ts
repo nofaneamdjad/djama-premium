@@ -59,6 +59,50 @@ export const SLUG_TO_HREF: Record<string, string> = {
 
 export const VALID_FREE_SLUGS = new Set(Object.keys(SLUG_TO_HREF));
 
+/** Mapping préfixe /api → slug, pour l'enforcement du plan gratuit sur les API features */
+export const API_PREFIX_TO_SLUG: Array<[string, string]> = [
+  ["/api/factures",        "factures"],
+  ["/api/relances",        "factures"],
+  ["/api/rapport-mensuel", "factures"],
+  ["/api/depenses",        "depenses"],
+  ["/api/tresorerie",      "tresorerie"],
+  ["/api/comptabilite",    "comptabilite"],
+  ["/api/crm-rapport",     "crm"],
+  ["/api/contrats",        "contrats"],
+  ["/api/stocks",          "stocks"],
+  ["/api/stocks-rapport",  "stocks"],
+  ["/api/catalog",         "stocks"],
+  ["/api/planning",        "planning"],
+  ["/api/equipe",          "equipe"],
+  ["/api/notes",           "bloc-notes"],
+  ["/api/projets",         "projets"],
+  ["/api/sourcing",        "sourcing"],
+  ["/api/social",          "reseaux-sociaux"],
+  ["/api/assistant",       "assistant"],
+  ["/api/ai-chat",         "assistant"],
+  ["/api/scanner",         "scanner"],
+  ["/api/checklists",      "checklists"],
+  ["/api/mindmap",         "mindmap"],
+  ["/api/transcribe",      "productivite"],
+  ["/api/summarize-meeting","productivite"],
+  ["/api/coaching-ia",     "coaching-ia"],
+  ["/api/coaching",        "coaching-ia"],
+  ["/api/blog",            "blog"],
+  ["/api/reputation",      "reputation"],
+  ["/api/site-builder",    "site-web"],
+];
+
+/**
+ * Renvoie le slug d'app pour un chemin d'API feature, ou null si non couvert.
+ * Utilisé par le middleware pour l'enforcement du plan gratuit sur les routes API.
+ */
+export function getSlugForApiPath(pathname: string): string | null {
+  for (const [prefix, slug] of API_PREFIX_TO_SLUG) {
+    if (pathname === prefix || pathname.startsWith(prefix + "/")) return slug;
+  }
+  return null;
+}
+
 /**
  * Renvoie true si un utilisateur gratuit est autorisé à accéder au chemin.
  * @param pathname  Chemin de la requête (ex: "/client/factures/liste")

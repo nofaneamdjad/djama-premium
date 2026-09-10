@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient }            from "@supabase/ssr";
 import { verifyAdminToken }              from "@/lib/admin-token";
-import { isPathAllowedForFreeUser }      from "@/lib/free-plan";
+import { isPathAllowedForFreeUser, getSlugForApiPath } from "@/lib/free-plan";
 
 /**
  * Middleware Next.js — Contrôle d'accès DJAMA
@@ -31,6 +31,56 @@ export async function middleware(request: NextRequest) {
       if (isAdminApi) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
+    return NextResponse.next();
+  }
+
+  // ── Feature API routes (free plan enforcement) ───────────────────────────
+  const featureApiSlug = getSlugForApiPath(pathname);
+  if (featureApiSlug !== null && process.env.NODE_ENV !== "development") {
+    const supabaseApi = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} } },
+    );
+
+    const { data: { user: apiUser } } = await supabaseApi.auth.getUser();
+    if (!apiUser) return NextResponse.next(); // route individuelle gère le 401
+
+    // 1. user_subscriptions (source sécurisée)
+    const { data: apiSub } = await supabaseApi
+      .from("user_subscriptions")
+      .select("is_active, current_period_end")
+      .eq("user_id", apiUser.id)
+      .maybeSingle();
+    const apiSubActive = apiSub?.is_active === true &&
+      (!apiSub.current_period_end || new Date(apiSub.current_period_end) >= new Date());
+    if (apiSubActive) return NextResponse.next();
+
+    // 2. user_access legacy
+    const { data: apiAccess } = await supabaseApi
+      .from("user_access")
+      .select("outils_saas, espace_premium, expires_at")
+      .eq("email", apiUser.email ?? "")
+      .maybeSingle();
+    const apiAccessActive = (apiAccess?.outils_saas === true || apiAccess?.espace_premium === true) &&
+      (!apiAccess?.expires_at || new Date(apiAccess.expires_at) >= new Date());
+    if (apiAccessActive) return NextResponse.next();
+
+    // 3. Plan gratuit — vérifier que l'app est dans la sélection verrouillée
+    const { data: apiFreeRow } = await supabaseApi
+      .from("user_free_apps")
+      .select("selected_apps")
+      .eq("user_id", apiUser.id)
+      .maybeSingle();
+    const apiFreeApps: string[] = Array.isArray(apiFreeRow?.selected_apps) ? apiFreeRow.selected_apps : [];
+
+    if (!apiFreeApps.includes(featureApiSlug)) {
+      return NextResponse.json(
+        { error: "Cette fonctionnalité n'est pas incluse dans votre plan gratuit.", slug: featureApiSlug },
+        { status: 403 },
+      );
+    }
+
     return NextResponse.next();
   }
 
@@ -141,5 +191,35 @@ export const config = {
     "/planning-agenda/:path*",
     "/admin/:path*",
     "/api/admin/:path*",
+    // Feature API routes — plan gratuit enforcement
+    "/api/factures/:path*",
+    "/api/relances/:path*",
+    "/api/rapport-mensuel",
+    "/api/depenses/:path*",
+    "/api/tresorerie/:path*",
+    "/api/comptabilite/:path*",
+    "/api/crm-rapport",
+    "/api/contrats/:path*",
+    "/api/stocks/:path*",
+    "/api/stocks-rapport",
+    "/api/catalog/:path*",
+    "/api/planning/:path*",
+    "/api/equipe/:path*",
+    "/api/notes/:path*",
+    "/api/projets/:path*",
+    "/api/sourcing/:path*",
+    "/api/social/:path*",
+    "/api/assistant/:path*",
+    "/api/ai-chat",
+    "/api/scanner/:path*",
+    "/api/checklists/:path*",
+    "/api/mindmap/:path*",
+    "/api/transcribe",
+    "/api/summarize-meeting",
+    "/api/coaching-ia/:path*",
+    "/api/coaching/:path*",
+    "/api/blog/:path*",
+    "/api/reputation/:path*",
+    "/api/site-builder/:path*",
   ],
 };
