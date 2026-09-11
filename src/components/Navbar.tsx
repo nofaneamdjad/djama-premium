@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import DjamaLogo from "@/components/DjamaLogo";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
@@ -110,10 +111,10 @@ export default function Navbar() {
                 whileTap={{ scale: 0.95, transition: { duration: 0.12 } }}
               >
                 <Image
-                  src="/logo.png"
+                  src="/logo-transparent.png"
                   alt="Logo DJAMA"
-                  width={160} height={40} priority
-                  className="h-[42px] md:h-[48px] w-auto object-contain"
+                  width={320} height={107} priority
+                  className="h-[34px] w-auto object-contain"
                 />
               </motion.div>
             </motion.div>

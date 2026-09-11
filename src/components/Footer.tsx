@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import DjamaLogo from "@/components/DjamaLogo";
 import { motion } from "framer-motion";
 import {
   Instagram, Linkedin, Facebook, Youtube, Twitter, Globe,
@@ -95,9 +96,12 @@ export default function Footer() {
         className="flex justify-center pt-10 pb-8"
       >
         <Link href="/" aria-label="DJAMA — Accueil">
-          <motion.div whileHover={{ filter: `drop-shadow(0 0 18px rgba(${GOLDR},0.50))` }} transition={{ duration: 0.2 }}>
-            <Image src="/logo-navbar.png" alt="Logo DJAMA" width={280} height={64} priority
-              className="h-[52px] w-auto object-contain" />
+          <motion.div
+            whileHover={{ filter: `drop-shadow(0 0 18px rgba(${GOLDR},0.50))` }}
+            transition={{ duration: 0.2 }}
+          >
+            <Image src="/logo-white.png" alt="Logo DJAMA" width={320} height={107} priority
+              className="h-[44px] w-auto object-contain" />
           </motion.div>
         </Link>
       </motion.div>

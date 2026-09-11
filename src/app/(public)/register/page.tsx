@@ -392,14 +392,7 @@ function RegisterForm() {
       <header className="sticky top-0 z-40 border-b border-gray-100 bg-white">
         <div className="mx-auto flex h-[60px] max-w-6xl items-center justify-between px-6">
           <Link href="/">
-            <Image
-              src="/logo.png"
-              alt="DJAMA"
-              width={120}
-              height={28}
-              className="h-7 w-auto object-contain"
-              priority
-            />
+            <Image src="/logo.png" alt="DJAMA" width={120} height={28} className="h-7 w-auto object-contain" priority />
           </Link>
           <Link
             href="/login"

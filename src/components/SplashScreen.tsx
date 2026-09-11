@@ -47,13 +47,12 @@ export default function SplashScreen() {
         className="flex flex-col items-center mb-14"
       >
         <Image
-          src="/logo-navbar.png"
+          src="/logo.png"
           alt="DJAMA"
-          width={435}
-          height={97}
+          width={192}
+          height={192}
           priority
-          className="w-36 h-auto object-contain"
-          style={{ filter: "brightness(0) invert(1)" }}
+          className="w-28 h-28 object-contain rounded-2xl"
         />
         <p className="mt-4 text-xs font-semibold tracking-widest uppercase"
           style={{ color: `${GOLD}80` }}>
