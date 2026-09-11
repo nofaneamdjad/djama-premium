@@ -72,7 +72,8 @@ export async function middleware(request: NextRequest) {
       .select("organization_id, role, organizations!inner(plan, owner_id)")
       .eq("user_id", apiUser.id);
     for (const m of apiMemberships ?? []) {
-      const apiOrg = m.organizations as { plan: string; owner_id: string };
+      const apiOrgRaw = m.organizations;
+      const apiOrg = (Array.isArray(apiOrgRaw) ? apiOrgRaw[0] : apiOrgRaw) as unknown as { plan: string; owner_id: string };
       if (apiOrg.owner_id === apiUser.id) continue; // propriétaire : vérifié via user_subscriptions
       if (apiOrg.plan !== "premium") continue;
       if (m.role === "admin") return NextResponse.next();
@@ -177,7 +178,8 @@ export async function middleware(request: NextRequest) {
       .eq("user_id", user.id);
 
     for (const m of (memberships ?? [])) {
-      const org = (m as { organization_id: string; role: string; organizations: { plan: string; owner_id: string } }).organizations;
+      const orgRaw3 = (m as { organization_id: string; role: string; organizations: unknown }).organizations;
+      const org = (Array.isArray(orgRaw3) ? orgRaw3[0] : orgRaw3) as { plan: string; owner_id: string };
       if (org.owner_id === user.id) continue; // le propriétaire utilise son propre abonnement
       if (org.plan !== "premium") continue;   // org non abonnée
 

@@ -28,7 +28,7 @@ export async function GET() {
   const orgs = (memberships ?? []).map((m) => ({
     role: m.role,
     joinedAt: m.joined_at,
-    ...(m.organizations as Record<string, unknown>),
+    ...((Array.isArray(m.organizations) ? m.organizations[0] : m.organizations) as Record<string, unknown>),
   }));
 
   return NextResponse.json({ orgs });

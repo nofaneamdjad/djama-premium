@@ -40,7 +40,8 @@ export async function GET(
     return NextResponse.json({ error: "Cette invitation a expiré.", status: "expired" }, { status: 410 });
   }
 
-  const org = (inv.organizations as { name: string });
+  const orgRaw = inv.organizations;
+  const org = (Array.isArray(orgRaw) ? orgRaw[0] : orgRaw) as unknown as { name: string };
   return NextResponse.json({
     id:           inv.id,
     invitedEmail: inv.invited_email,
@@ -73,7 +74,8 @@ export async function POST(
   if (inv.status !== "pending") return NextResponse.json({ error: "Cette invitation a déjà été utilisée ou annulée." }, { status: 410 });
   if (new Date(inv.expires_at) < new Date()) return NextResponse.json({ error: "Cette invitation a expiré." }, { status: 410 });
 
-  const org = inv.organizations as { name: string; owner_id: string };
+  const orgRaw2 = inv.organizations;
+  const org = (Array.isArray(orgRaw2) ? orgRaw2[0] : orgRaw2) as unknown as { name: string; owner_id: string };
 
   // Vérifier que l'utilisateur n'est pas déjà membre
   const { data: existingMember } = await admin

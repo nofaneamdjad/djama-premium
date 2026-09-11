@@ -116,7 +116,8 @@ export async function POST(
   // Générer le token
   const token     = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const org       = (membership.organizations as { name: string; plan: string });
+  const orgsRaw = membership.organizations;
+  const org = (Array.isArray(orgsRaw) ? orgsRaw[0] : orgsRaw) as unknown as { name: string; plan: string };
 
   // Insérer l'invitation (via service_role pour contourner RLS sur l'insert)
   const { data: invitation, error: invErr } = await admin

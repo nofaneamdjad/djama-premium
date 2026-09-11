@@ -52,7 +52,8 @@ export function useOrganization(): State {
       // Priorité : la première org où l'utilisateur est owner, sinon la première
       const ownerRow = data.find(m => m.role === "owner");
       const row      = ownerRow ?? data[0];
-      const org      = row.organizations as { id: string; name: string; plan: string; owner_id: string };
+      const orgRaw   = row.organizations;
+      const org      = (Array.isArray(orgRaw) ? orgRaw[0] : orgRaw) as unknown as { id: string; name: string; plan: string; owner_id: string };
 
       setState({
         status: "ready",
