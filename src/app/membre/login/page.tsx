@@ -1,14 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight, Shield, Key } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#c9a55a";
 
 function Field({
@@ -21,48 +20,69 @@ function Field({
   const [focused, setFocused] = useState(false);
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-bold uppercase tracking-widest text-white/40">{label}</label>
-      <div className="relative">
-        <motion.div
-          animate={{ opacity: focused ? 1 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="pointer-events-none absolute inset-0 rounded-2xl"
-          style={{ boxShadow: `0 0 0 2px rgba(201,165,90,0.5)` }}
-        />
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-          <Icon size={15} style={{ color: focused ? GOLD : "rgba(255,255,255,0.25)" }} />
-        </div>
+      <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--ink-secondary)" }}>
+        {label}
+      </label>
+      <div
+        className="field-wrap flex items-center gap-2.5 rounded-xl border px-3.5 transition-colors"
+        style={{
+          borderColor: focused ? GOLD : "var(--border-strong)",
+          background: "var(--bg-base)",
+          boxShadow: focused ? `0 0 0 3px rgba(201,165,90,0.12)` : "none",
+        }}
+      >
+        <Icon size={15} style={{ color: focused ? GOLD : "var(--ink-muted)", flexShrink: 0 }} />
         <input
           type={type} value={value} onChange={e => onChange(e.target.value)}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
           placeholder={placeholder}
-          className="w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-12 text-sm text-white placeholder:text-white/25 outline-none transition-colors hover:border-white/20"
+          className="h-[46px] flex-1 bg-transparent text-sm outline-none"
+          style={{ color: "var(--text-primary)" }}
         />
-        {right && <div className="absolute right-4 top-1/2 -translate-y-1/2">{right}</div>}
+        {right}
       </div>
     </div>
   );
 }
 
+type OrgMembership = {
+  organization_id: string;
+  role: string;
+  suspended_at: string | null;
+  organizations: { name: string; logo_url: string | null } | null;
+};
+
 function MembreLoginInner() {
+  const router       = useRouter();
   const searchParams = useSearchParams();
-  const codeParam = searchParams.get("code") ?? "";
+  const redirectTo   = searchParams.get("redirect") ?? "/membre/dashboard";
+  const suspended    = searchParams.get("suspended") === "1";
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode]         = useState(codeParam.toUpperCase());
   const [showPwd, setShowPwd]   = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
 
+  // Multi-org selector state
+  const [orgs, setOrgs]           = useState<OrgMembership[]>([]);
+  const [selectingOrg, setSelectingOrg] = useState(false);
+
+  // Redirect already-authenticated active members
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      const role = user?.user_metadata?.role;
-      if (role === "member" || role === "chef") {
-        window.location.href = "/membre/dashboard";
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("organization_members")
+        .select("organization_id, role, suspended_at")
+        .eq("user_id", user.id)
+        .is("suspended_at", null)
+        .limit(1);
+      if (data && data.length > 0) {
+        router.replace("/membre/dashboard");
       }
     });
-  }, []);
+  }, [router]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -70,56 +90,65 @@ function MembreLoginInner() {
     setLoading(true);
 
     try {
-      const { data, error: sbErr } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: sbErr } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
       });
 
-      if (sbErr || !data.session) {
+      if (sbErr || !authData.session) {
         setError("Email ou mot de passe incorrect.");
         return;
       }
 
-      const user = data.session.user;
-      const role = user.user_metadata?.role;
+      const user = authData.session.user;
 
-      if (role !== "member") {
+      // Vérifier que l'utilisateur est membre d'au moins une organisation
+      const { data: memberships, error: memErr } = await supabase
+        .from("organization_members")
+        .select("organization_id, role, suspended_at, organizations!inner(name, logo_url)")
+        .eq("user_id", user.id);
+
+      if (memErr) {
         await supabase.auth.signOut();
-        setError("Cet espace est réservé aux membres d'équipe. Utilisez /login pour l'espace chef.");
+        setError("Erreur lors de la vérification de votre accès.");
         return;
       }
 
-      const teamId = user.user_metadata?.team_id ?? user.id;
-
-      if (code.trim()) {
-        const { data: spaceData } = await supabase
-          .from("private_spaces")
-          .select("id, name, is_active")
-          .eq("user_id", teamId)
-          .eq("access_code", code.trim().toUpperCase())
-          .single();
-
-        if (!spaceData) {
-          setError("Code d'accès invalide ou espace introuvable.");
-          return;
-        }
-
-        if (!spaceData.is_active) {
-          setError("Cet espace privé est désactivé. Contactez votre chef d'équipe.");
-          return;
-        }
-
-        await Promise.all([
-          supabase.auth.updateUser({ data: { space_id: spaceData.id } }),
-          supabase
-            .from("team_members")
-            .update({ space_id: spaceData.id })
-            .eq("user_id", teamId)
-            .eq("id", user.user_metadata?.member_id ?? ""),
-        ]);
+      if (!memberships || memberships.length === 0) {
+        await supabase.auth.signOut();
+        setError("Votre compte n'est associé à aucune organisation. Contactez votre responsable.");
+        return;
       }
 
-      window.location.href = "/membre/dashboard";
+      // Vérifier si tous les memberships sont suspendus
+      const activeMembers = memberships.filter(m => !m.suspended_at);
+      if (activeMembers.length === 0) {
+        await supabase.auth.signOut();
+        setError("Votre accès a été suspendu. Contactez votre responsable d'organisation.");
+        return;
+      }
+
+      const typedMemberships = memberships.map(m => ({
+        organization_id: m.organization_id,
+        role: m.role,
+        suspended_at: m.suspended_at as string | null,
+        organizations: Array.isArray(m.organizations)
+          ? (m.organizations[0] as { name: string; logo_url: string | null })
+          : (m.organizations as { name: string; logo_url: string | null } | null),
+      }));
+
+      // Si plusieurs orgs actives : afficher le sélecteur
+      if (activeMembers.length > 1) {
+        setOrgs(typedMemberships.filter(m => !m.suspended_at));
+        setSelectingOrg(true);
+        return;
+      }
+
+      // Sinon : redirection directe
+      const orgId = activeMembers[0].organization_id;
+      await supabase.auth.updateUser({ data: { active_org_id: orgId } });
+      router.replace(redirectTo);
+
     } catch {
       setError("Erreur inattendue. Réessayez.");
     } finally {
@@ -127,140 +156,161 @@ function MembreLoginInner() {
     }
   }
 
-  return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080a0f] px-4">
-      {/* Glows */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(176,141,87,0.07)] blur-[120px]" />
-        <div className="absolute left-[-100px] top-[10%] h-[300px] w-[300px] rounded-full bg-[rgba(14,165,233,0.04)] blur-[80px]" />
-        <div className="absolute inset-0 opacity-[0.015]" style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)`,
-          backgroundSize: "40px 40px",
-        }} />
-      </div>
+  async function selectOrg(orgId: string) {
+    await supabase.auth.updateUser({ data: { active_org_id: orgId } });
+    router.replace(redirectTo);
+  }
 
-      <motion.div
-        initial={{ opacity: 0, y: 32, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.65, ease }}
-        className="relative z-10 w-full max-w-[420px]"
-      >
-        <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-[rgba(201,165,90,0.12)] to-transparent opacity-70 blur-sm" />
-
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f1117]/90 p-8 shadow-[0_32px_80px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.12, ease }}
-            className="mb-8 flex flex-col items-center gap-4"
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.09)]">
-              <Image src="/logo.png" alt="DJAMA" width={38} height={38} className="object-contain" style={{ filter: "brightness(0) invert(1)" }} />
-            </div>
-            <div className="text-center">
-              {codeParam ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.35)] bg-[rgba(201,165,90,0.1)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-[#c9a55a]">
-                  <Shield size={9} />Espace Privé
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(14,165,233,0.3)] bg-[rgba(14,165,233,0.08)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-sky-400">
-                  <Lock size={9} />Espace Équipe
-                </span>
-              )}
-              <h1 className="mt-3 text-2xl font-extrabold text-white">Bienvenue</h1>
-              <p className="mt-1 text-sm text-white/35">Connectez-vous à votre espace membre</p>
-            </div>
-          </motion.div>
-
-          <motion.form
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.25 }}
-            onSubmit={handleLogin} className="space-y-4"
-          >
-            <Field label="Adresse e-mail" type="email" value={email} onChange={setEmail}
-              placeholder="vous@exemple.com" icon={Mail} />
-            <Field label="Mot de passe" type={showPwd ? "text" : "password"}
-              value={password} onChange={setPassword} placeholder="••••••••" icon={Lock}
-              right={
-                <button type="button" onClick={() => setShowPwd(v => !v)}
-                  className="text-white/30 transition hover:text-white/60">
-                  {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              }
-            />
-
-            {/* Code d'accès espace privé */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold uppercase tracking-widest text-white/40">
-                Code d&apos;accès <span className="normal-case font-normal text-white/25">(optionnel)</span>
-              </label>
-              <div className="relative">
-                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-                  <Key size={15} style={{ color: code ? GOLD : "rgba(255,255,255,0.25)" }} />
+  // ─── Sélecteur multi-org ─────────────────────────────────────────────────
+  if (selectingOrg) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg-base)" }}>
+        <style>{`
+          :root { color-scheme: light; }
+          body { background: #ffffff; }
+        `}</style>
+        <div className="w-full max-w-[400px]">
+          <div className="mb-6 flex flex-col items-center gap-3">
+            <Image src="/logo-transparent.png" alt="DJAMA" width={120} height={40} className="h-[36px] w-auto object-contain" />
+            <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+              Choisissez votre organisation
+            </h1>
+            <p className="text-sm text-center" style={{ color: "var(--ink-secondary)" }}>
+              Vous appartenez à plusieurs organisations.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {orgs.map(m => (
+              <button
+                key={m.organization_id}
+                onClick={() => selectOrg(m.organization_id)}
+                className="w-full flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all hover:border-[#c9a55a] hover:shadow-sm"
+                style={{ borderColor: "var(--border-strong)", color: "var(--text-primary)" }}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                  style={{ background: "rgba(201,165,90,0.1)" }}>
+                  {m.organizations?.logo_url
+                    ? <img src={m.organizations.logo_url} alt="" className="h-8 w-8 rounded object-cover" />
+                    : <Users size={18} style={{ color: GOLD }} />
+                  }
                 </div>
-                <input
-                  type="text" value={code}
-                  onChange={e => setCode(e.target.value.toUpperCase())}
-                  placeholder="XXXXXXXX"
-                  maxLength={12}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-4 text-sm font-mono tracking-widest text-white placeholder:text-white/25 outline-none transition-colors hover:border-white/20"
-                  style={{ borderColor: code ? "rgba(201,165,90,0.35)" : undefined }}
-                />
-              </div>
-              {code && (
-                <p className="text-[10px] text-[#c9a55a]/70">
-                  Vous rejoindrez l&apos;espace privé associé à ce code.
-                </p>
-              )}
-            </div>
-
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  key="err"
-                  initial={{ opacity: 0, y: -6, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25 }}
-                  className="overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3"
-                >
-                  <div className="flex items-start gap-2.5">
-                    <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-400" />
-                    <p className="text-xs leading-relaxed text-red-300">{error}</p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <motion.button
-              type="submit"
-              whileHover={{ scale: 1.015, y: -1 }} whileTap={{ scale: 0.985 }}
-              disabled={loading}
-              className="group relative mt-2 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-6 py-4 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_20px_rgba(201,165,90,0.3)] transition-shadow hover:shadow-[0_8px_32px_rgba(201,165,90,0.45)] disabled:opacity-60"
-            >
-              <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-              <span className="relative flex items-center justify-center gap-2">
-                {loading ? (
-                  <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                    className="inline-block h-4 w-4 rounded-full border-2 border-black/20 border-t-black/70" />
-                ) : (
-                  <>Se connecter <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" /></>
-                )}
-              </span>
-            </motion.button>
-          </motion.form>
-
-          <p className="mt-6 text-center text-xs text-white/20">
-            Accès réservé aux membres d&apos;équipe DJAMA.
-          </p>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{m.organizations?.name ?? "Organisation"}</p>
+                  <p className="text-xs capitalize" style={{ color: "var(--ink-secondary)" }}>{m.role}</p>
+                </div>
+                <ArrowRight size={14} className="ml-auto shrink-0" style={{ color: "var(--ink-muted)" }} />
+              </button>
+            ))}
+          </div>
         </div>
-      </motion.div>
+      </div>
+    );
+  }
+
+  // ─── Formulaire de connexion ─────────────────────────────────────────────
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg-base)" }}>
+      <style>{`
+        :root { color-scheme: light; }
+        body { background: #ffffff; }
+      `}</style>
+
+      <div className="w-full max-w-[400px]">
+
+        {/* Logo + titres */}
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <Image
+            src="/logo-transparent.png"
+            alt="DJAMA"
+            width={140}
+            height={48}
+            className="h-[42px] w-auto object-contain"
+            priority
+          />
+          <div className="text-center">
+            <h1 className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>
+              Espace membre
+            </h1>
+            <p className="mt-1 text-sm" style={{ color: "var(--ink-secondary)" }}>
+              Connectez-vous à votre espace de travail.
+            </p>
+          </div>
+        </div>
+
+        {/* Formulaire */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <Field
+            label="Adresse e-mail"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="vous@exemple.com"
+            icon={Mail}
+          />
+          <Field
+            label="Mot de passe"
+            type={showPwd ? "text" : "password"}
+            value={password}
+            onChange={setPassword}
+            placeholder="••••••••"
+            icon={Lock}
+            right={
+              <button
+                type="button"
+                onClick={() => setShowPwd(v => !v)}
+                className="transition"
+                style={{ color: "var(--ink-muted)" }}
+              >
+                {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            }
+          />
+
+          {suspended && !error && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber-600" />
+              <p className="text-xs leading-relaxed text-amber-800">
+                Votre accès a été suspendu. Contactez votre responsable d&apos;organisation.
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+              <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-500" />
+              <p className="text-xs leading-relaxed text-red-700">{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || !email || !password}
+            className="mt-2 flex h-[50px] w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60"
+            style={{ background: GOLD }}
+          >
+            {loading ? (
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <>Se connecter <ArrowRight size={15} /></>
+            )}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <p className="mt-8 text-center text-[11px]" style={{ color: "var(--ink-muted)" }}>
+          Vous n&apos;êtes pas membre ?{" "}
+          <Link href="/login" className="font-medium hover:underline" style={{ color: GOLD }}>
+            Espace principal
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
 
 export default function MembreLoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#080a0f]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
       <MembreLoginInner />
     </Suspense>
   );

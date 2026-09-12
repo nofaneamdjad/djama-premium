@@ -31,7 +31,7 @@ export async function GET(
   // Récupérer les membres
   const { data: members, error } = await supabase
     .from("organization_members")
-    .select("id, user_id, role, joined_at, invite_email")
+    .select("id, user_id, role, joined_at, invite_email, suspended_at, suspended_by, suspension_reason, display_name, last_seen_at")
     .eq("organization_id", orgId)
     .order("joined_at", { ascending: true });
 

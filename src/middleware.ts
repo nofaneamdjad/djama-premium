@@ -107,7 +107,8 @@ export async function middleware(request: NextRequest) {
 
   // ── Client routes ─────────────────────────────────────────────────────────
   const clientPrefixes = ["/client", "/membre", "/coaching-ia/espace", "/planning-agenda"];
-  const isClientRoute = clientPrefixes.some(
+  const isMembreRoute  = (pathname === "/membre" || pathname.startsWith("/membre/")) && pathname !== "/membre/login";
+  const isClientRoute  = clientPrefixes.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   ) && pathname !== "/membre/login";
 
@@ -202,9 +203,34 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ── Vérification suspension membre ────────────────────────────────────────
+  // Pour /membre/* : vérifier que le membre n'est pas suspendu dans son org active
+  if (isMembreRoute) {
+    const activeOrgId = user.user_metadata?.active_org_id as string | undefined;
+    if (activeOrgId) {
+      const { data: membership } = await supabase
+        .from("organization_members")
+        .select("suspended_at")
+        .eq("organization_id", activeOrgId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!membership) {
+        // Pas membre de cette org → rediriger vers login membre
+        return NextResponse.redirect(new URL("/membre/login", request.url));
+      }
+      if (membership.suspended_at) {
+        // Suspendu → 403
+        return NextResponse.redirect(new URL("/membre/login?suspended=1", request.url));
+      }
+    }
+    // Pas d'org active → laisser passer (layout gérera la redirection)
+    return response;
+  }
+
   // ── Contrôle du plan gratuit ──────────────────────────────────────────────
   if (!pathname.startsWith("/client")) {
-    // /membre, /coaching-ia/espace, /planning-agenda → accès refusé si pas abonné
+    // /coaching-ia/espace, /planning-agenda → accès refusé si pas abonné
     return NextResponse.redirect(new URL("/tarification", request.url));
   }
 

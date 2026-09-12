@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Users, UserPlus, Mail, Shield, Trash2, ChevronDown, CheckSquare, Square, Building2, RefreshCw, Clock, X, Check } from "lucide-react";
+import { Users, UserPlus, Mail, Trash2, ChevronDown, CheckSquare, Square, Building2, RefreshCw, Clock, X, Check, PauseCircle, PlayCircle, Link as LinkIcon, Eye } from "lucide-react";
 import { useSubscription } from "@/lib/use-require-subscription";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -60,8 +60,13 @@ const APP_GROUPS: { label: string; apps: { slug: string; label: string }[] }[] =
 ];
 
 type Org = { id: string; name: string; plan: string; owner_id: string };
-type OrgMember = { id: string; user_id: string; role: string; joined_at: string; invite_email?: string; permissions: { app_slug: string }[] };
-type Invitation = { id: string; invited_email: string; role: string; status: string; expires_at: string };
+type OrgMember = {
+  id: string; user_id: string; role: string; joined_at: string; invite_email?: string;
+  permissions: { app_slug: string }[];
+  suspended_at?: string | null; suspended_by?: string | null; suspension_reason?: string | null;
+  display_name?: string | null; last_seen_at?: string | null;
+};
+type Invitation = { id: string; invited_email: string; role: string; status: string; expires_at: string; token?: string };
 
 export default function EquipePage() {
   const { userId } = useSubscription();
@@ -163,6 +168,36 @@ export default function EquipePage() {
     if (res.ok) { await loadData(); }
   }
 
+  async function toggleSuspend(member: OrgMember) {
+    if (!org) return;
+    const action = member.suspended_at ? "reactivate" : "suspend";
+    if (action === "suspend" && !confirm(`Suspendre ${member.invite_email ?? "ce membre"} ? Ils perdront immédiatement l'accès.`)) return;
+    const res = await fetch(`/api/organizations/${org.id}/members/${member.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    if (res.ok) { await loadData(); }
+    else { const d = await res.json(); alert(d.error); }
+  }
+
+  function copyInviteLink(token: string) {
+    const link = `${window.location.origin}/rejoindre/${token}`;
+    navigator.clipboard.writeText(link).then(() => {
+      alert("Lien copié dans le presse-papiers !");
+    });
+  }
+
+  function lastSeenLabel(iso: string | null | undefined) {
+    if (!iso) return "Jamais connecté";
+    const diff = Date.now() - new Date(iso).getTime();
+    if (diff < 60000) return "En ligne";
+    if (diff < 3600000) return `Il y a ${Math.floor(diff / 60000)} min`;
+    if (diff < 86400000) return `Il y a ${Math.floor(diff / 3600000)} h`;
+    if (diff < 7 * 86400000) return `Il y a ${Math.floor(diff / 86400000)} j`;
+    return new Date(iso).toLocaleDateString("fr-FR");
+  }
+
   function toggleApp(slug: string) {
     setInvApps(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]);
   }
@@ -252,35 +287,75 @@ export default function EquipePage() {
           {/* ─── Tab Membres ─── */}
           {tab === "members" && (
             <div className="space-y-3">
-              {members.map(m => (
-                <div key={m.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-white/8 dark:bg-white/3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: ROLE_COLORS[m.role] ?? "#6b7280" }}>
-                      {(m.invite_email ?? "?")[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{m.invite_email ?? `Utilisateur ${m.user_id.slice(0, 8)}`}</p>
-                      <p className="text-xs text-gray-500">
-                        <span className="font-medium" style={{ color: ROLE_COLORS[m.role] }}>{ROLE_LABELS[m.role] ?? m.role}</span>
-                        {m.permissions.length > 0 && ` · ${m.permissions.length} app${m.permissions.length > 1 ? "s" : ""}`}
-                      </p>
+              {members.map(m => {
+                const isSuspended = !!m.suspended_at;
+                const isMe = m.user_id === userId;
+                const isOwner = m.role === "owner";
+                return (
+                  <div key={m.id}
+                    className="rounded-xl border bg-white p-4 dark:bg-white/3 transition"
+                    style={{ borderColor: isSuspended ? "rgba(239,68,68,0.2)" : "rgba(229,231,235,1)", background: isSuspended ? "rgba(239,68,68,0.02)" : undefined }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="relative flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
+                          style={{ background: isSuspended ? "#6b7280" : (ROLE_COLORS[m.role] ?? "#6b7280"), opacity: isSuspended ? 0.6 : 1 }}>
+                          {(m.display_name ?? m.invite_email ?? "?")[0].toUpperCase()}
+                          {isSuspended && (
+                            <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 ring-1 ring-white dark:ring-gray-900">
+                              <PauseCircle size={9} className="text-white" />
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium" style={{ opacity: isSuspended ? 0.6 : 1 }}>
+                              {m.display_name ?? m.invite_email ?? `Utilisateur ${m.user_id.slice(0, 8)}`}
+                            </p>
+                            {isSuspended && (
+                              <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-500 dark:bg-red-500/10">
+                                Suspendu
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            <span className="font-medium" style={{ color: isSuspended ? "#9ca3af" : (ROLE_COLORS[m.role] ?? "#9ca3af") }}>
+                              {ROLE_LABELS[m.role] ?? m.role}
+                            </span>
+                            {m.permissions.length > 0 && ` · ${m.permissions.length} app${m.permissions.length > 1 ? "s" : ""}`}
+                            {!isSuspended && m.last_seen_at && (
+                              <> · <Eye size={9} className="inline" /> {lastSeenLabel(m.last_seen_at)}</>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {isMe || isOwner ? (
+                          <span className="text-xs text-gray-400">{isMe ? "Vous" : "Propriétaire"}</span>
+                        ) : (
+                          <>
+                            {/* Suspendre / Réactiver */}
+                            <button
+                              onClick={() => toggleSuspend(m)}
+                              className={`rounded-lg p-2 transition ${isSuspended ? "text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10" : "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10"}`}
+                              title={isSuspended ? "Réactiver" : "Suspendre"}
+                            >
+                              {isSuspended ? <PlayCircle size={15} /> : <PauseCircle size={15} />}
+                            </button>
+                            {/* Retirer */}
+                            <button
+                              onClick={() => removeMember(m.id)}
+                              className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                              title="Retirer ce membre"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {m.user_id === userId || m.role === "owner" ? (
-                      <span className="text-xs text-gray-400">{m.user_id === userId ? "Vous" : "Propriétaire"}</span>
-                    ) : (
-                      <button
-                        onClick={() => removeMember(m.id)}
-                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
-                        title="Retirer ce membre"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {members.length === 0 && (
                 <p className="py-6 text-center text-sm text-gray-400">Aucun membre pour l'instant.</p>
@@ -292,23 +367,36 @@ export default function EquipePage() {
           {tab === "invitations" && (
             <div className="space-y-3">
               {invitations.map(inv => (
-                <div key={inv.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-white/8 dark:bg-white/3">
-                  <div className="flex items-center gap-3">
-                    <Clock size={18} className="text-amber-400" />
-                    <div>
-                      <p className="text-sm font-medium">{inv.invited_email}</p>
-                      <p className="text-xs text-gray-500">
-                        {ROLE_LABELS[inv.role] ?? inv.role} · Expire le {new Date(inv.expires_at).toLocaleDateString("fr-FR")}
-                      </p>
+                <div key={inv.id} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/8 dark:bg-white/3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Clock size={18} className="text-amber-400 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">{inv.invited_email}</p>
+                        <p className="text-xs text-gray-500">
+                          {ROLE_LABELS[inv.role] ?? inv.role} · Expire le {new Date(inv.expires_at).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {inv.token && (
+                        <button
+                          onClick={() => copyInviteLink(inv.token!)}
+                          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-amber-600 transition hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-500/10"
+                          title="Copier le lien d'invitation"
+                        >
+                          <LinkIcon size={13} />Copier le lien
+                        </button>
+                      )}
+                      <button
+                        onClick={() => cancelInvitation(inv.id)}
+                        className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
+                        title="Annuler l'invitation"
+                      >
+                        <X size={15} />
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => cancelInvitation(inv.id)}
-                    className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
-                    title="Annuler l'invitation"
-                  >
-                    <X size={15} />
-                  </button>
                 </div>
               ))}
               {invitations.length === 0 && (

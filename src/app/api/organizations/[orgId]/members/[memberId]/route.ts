@@ -148,6 +148,48 @@ export async function PATCH(
     }
   }
 
+  // Action de suspension / réactivation
+  const action = body.action as string | undefined;
+  if (action === "suspend" || action === "reactivate") {
+    if (target.role === "owner") {
+      return NextResponse.json({ error: "Impossible de suspendre le propriétaire." }, { status: 400 });
+    }
+    if (action === "suspend") {
+      await admin.from("organization_members").update({
+        suspended_at:       new Date().toISOString(),
+        suspended_by:       user.id,
+        suspension_reason:  (body.reason as string | undefined) ?? null,
+      }).eq("id", memberId);
+
+      const callerName2 = user.user_metadata?.name ?? user.email ?? "Admin";
+      await admin.from("org_activity_log").insert({
+        organization_id: orgId,
+        actor_id:        user.id,
+        actor_name:      callerName2,
+        action:          "member.suspended",
+        resource_type:   "member",
+        resource_id:     target.user_id,
+        details:         { reason: body.reason ?? null },
+      });
+    } else {
+      await admin.from("organization_members").update({
+        suspended_at:      null,
+        suspended_by:      null,
+        suspension_reason: null,
+      }).eq("id", memberId);
+
+      const callerName3 = user.user_metadata?.name ?? user.email ?? "Admin";
+      await admin.from("org_activity_log").insert({
+        organization_id: orgId,
+        actor_id:        user.id,
+        actor_name:      callerName3,
+        action:          "member.reactivated",
+        resource_type:   "member",
+        resource_id:     target.user_id,
+      });
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
 
