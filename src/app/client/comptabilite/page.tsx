@@ -1,22 +1,22 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Euro,
   Download, ChevronRight, ChevronUp, ArrowUpRight, ArrowDownRight,
-  Percent, Calendar, FileText, RefreshCw, BookMarked, Info,
-  Sparkles, Loader2,
+  Percent, Calendar, FileText, RefreshCw, BookMarked,
+  Sparkles, Loader2, RefreshCcw,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
+import type { AccountingPdfData } from "@/lib/pdf/generateAccountingPdf";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const DarkCtx = createContext(true);
-const useDark = () => useContext(DarkCtx);
 
 interface JournalLine {
   date: string;
@@ -39,7 +39,6 @@ export default function ComptabilitePage() {
   const [period,  setPeriod]      = useState<"month" | "quarter" | "year">("month");
 
   const [caHT,    setCaHT]        = useState(0);
-  const [caTTC,   setCaTTC]       = useState(0);
   const [charges, setCharges]     = useState(0);
   const [tvaCollectee, setTvaCollectee] = useState(0);
   const [tvaDeductible, setTvaDeductible] = useState(0);
@@ -48,6 +47,12 @@ export default function ComptabilitePage() {
   const [showAll,        setShowAll]        = useState(false);
   const [analyse,        setAnalyse]        = useState("");
   const [analyseLoading, setAnalyseLoading] = useState(false);
+  const [syncLoading,    setSyncLoading]    = useState(false);
+  const [syncResult,     setSyncResult]     = useState<{ created: number; skipped: number } | null>(null);
+  const [pdfLoading,     setPdfLoading]     = useState(false);
+  const [fecLoading,     setFecLoading]     = useState(false);
+  const [hasData,        setHasData]        = useState(false);
+  const [orgId,          setOrgId]          = useState<string | null>(null);
 
   function getPeriodRange(p: "month" | "quarter" | "year") {
     const now = new Date();
@@ -67,78 +72,111 @@ export default function ComptabilitePage() {
     return { start: `${y}-01-01`, end: `${y}-12-31`, label: `Année ${y}` };
   }
 
+  // Correspondance compte TVA → taux (pour reconstruire la ventilation depuis le journal)
+  const TVA_ACCOUNT_RATE: Record<string, number> = {
+    "44571": 20, "44572": 10, "44573": 5.5, "44574": 2.1, "4457": 0,
+  };
+  const RATE_LABELS: Record<number, string> = {
+    20: "TVA 20%", 10: "TVA 10%", 5.5: "TVA 5,5%", 2.1: "TVA 2,1%", 0: "TVA 0%",
+  };
+
   useEffect(() => {
     (async () => {
-      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Récupérer l'org_id une seule fois (conservé dans le state pour FEC et sync)
+      const { data: memberRows } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .is("suspended_at", null)
+        .limit(1);
+      const currentOrgId: string | null = memberRows?.[0]?.organization_id ?? null;
+      setOrgId(currentOrgId);
+
+      setLoading(true);
       const { start, end } = getPeriodRange(period);
 
-      const [facRes, expRes] = await Promise.all([
-        supabase.from("documents")
-          .select("montant_ht, montant_tva, montant_ttc, date_emission, client_nom, numero, statut")
-          .eq("user_id", user.id)
-          .eq("type", "facture")
-          .gte("date_emission", start)
-          .lte("date_emission", end)
-          .order("date_emission", { ascending: false }),
-        supabase.from("expenses")
-          .select("amount, description, date, category")
-          .eq("user_id", user.id)
-          .gte("date", start)
-          .lte("date", end)
-          .order("date", { ascending: false }),
+      // ── Source unique de vérité : journal_entry_lines ────────────────────────
+      // RPC get_kpis_from_journal agrège CA HT, Charges, TVA depuis les écritures.
+      // has_data=false si aucune écriture pour la période → invite à synchroniser.
+      const [kpisRes, tvaRes, journalRes] = await Promise.all([
+        supabase.rpc("get_kpis_from_journal", {
+          p_user_id: user.id,
+          p_org_id:  currentOrgId,
+          p_start:   start,
+          p_end:     end,
+        }),
+        supabase.rpc("get_tva_breakdown_from_journal", {
+          p_user_id: user.id,
+          p_org_id:  currentOrgId,
+          p_start:   start,
+          p_end:     end,
+        }),
+        supabase.rpc("get_journal_lines", {
+          p_user_id: user.id,
+          p_org_id:  currentOrgId,
+          p_start:   start,
+          p_end:     end,
+          p_limit:   500,
+        }),
       ]);
 
-      const facs = facRes.data ?? [];
-      const exps = expRes.data ?? [];
+      // ── KPIs depuis le journal ───────────────────────────────────────────────
+      const kRow = (kpisRes.data as Array<{
+        ca_ht: number; tva_collectee: number; charges_ht: number;
+        tva_deductible: number; resultat: number; has_data: boolean;
+      }>)?.[0];
 
-      const totalHT  = facs.reduce((s, f) => s + (f.montant_ht  ?? 0), 0);
-      const totalTTC = facs.reduce((s, f) => s + (f.montant_ttc ?? 0), 0);
-      const totalTVA = facs.reduce((s, f) => s + (f.montant_tva ?? 0), 0);
-      const totalExp = exps.reduce((s, e) => s + (e.amount ?? 0), 0);
+      if (kRow) {
+        setCaHT(kRow.ca_ht ?? 0);
+        setCharges(kRow.charges_ht ?? 0);
+        setTvaCollectee(kRow.tva_collectee ?? 0);
+        setTvaDeductible(kRow.tva_deductible ?? 0);
+        setHasData(kRow.has_data ?? false);
+      } else {
+        setCaHT(0); setCharges(0); setTvaCollectee(0); setTvaDeductible(0);
+        setHasData(false);
+      }
 
-      setCaHT(totalHT);
-      setCaTTC(totalTTC);
-      setTvaCollectee(totalTVA);
-      setTvaDeductible(0);
-      setCharges(totalExp);
+      // ── Ventilation TVA par taux depuis les comptes PCG ──────────────────────
+      const tvaRaw = (tvaRes.data as Array<{
+        account_code: string; account_label: string; net_amount: number;
+      }>) ?? [];
 
-      const lines: JournalLine[] = [
-        ...facs.map(f => ({
-          date: f.date_emission,
-          libelle: `Facture ${f.numero ?? ""} — ${f.client_nom ?? "Client"}`,
-          debit: 0,
-          credit: f.montant_ht ?? 0,
-          compte: "706",
-        })),
-        ...exps.map(e => ({
-          date: e.date,
-          libelle: e.description ?? e.category ?? "Charge",
-          debit: e.amount ?? 0,
-          credit: 0,
-          compte: "60x",
-        })),
-      ]
-        .sort((a, b) => b.date.localeCompare(a.date));
+      setTvaRows(
+        tvaRaw
+          .filter(r => r.account_code !== "44566" && Math.abs(r.net_amount) > 0.01)
+          .map(r => {
+            const rate = TVA_ACCOUNT_RATE[r.account_code] ?? 0;
+            const tva  = r.net_amount;
+            const base = rate > 0 ? tva / (rate / 100) : 0;
+            return {
+              label: RATE_LABELS[rate] ?? `TVA ${rate}%`,
+              base,
+              tva,
+              taux: rate,
+            };
+          })
+          .sort((a, b) => b.taux - a.taux)
+      );
 
-      setJournal(lines);
+      // ── Journal des opérations depuis journal_entry_lines ────────────────────
+      const journalRaw = (journalRes.data as Array<{
+        date: string; description: string; reference: string;
+        account_code: string; account_label: string; debit: number; credit: number;
+      }>) ?? [];
 
-      const tva20 = facs.filter(f => {
-        const ht  = f.montant_ht ?? 0;
-        const tva = f.montant_tva ?? 0;
-        return ht > 0 && Math.round((tva / ht) * 100) === 20;
-      });
-      const tva10 = facs.filter(f => {
-        const ht  = f.montant_ht ?? 0;
-        const tva = f.montant_tva ?? 0;
-        return ht > 0 && Math.round((tva / ht) * 100) === 10;
-      });
-      setTvaRows([
-        { label: "TVA 20%", base: tva20.reduce((s, f) => s + (f.montant_ht ?? 0), 0), tva: tva20.reduce((s, f) => s + (f.montant_tva ?? 0), 0), taux: 20 },
-        { label: "TVA 10%", base: tva10.reduce((s, f) => s + (f.montant_ht ?? 0), 0), tva: tva10.reduce((s, f) => s + (f.montant_tva ?? 0), 0), taux: 10 },
-      ].filter(r => r.base > 0));
+      setJournal(
+        journalRaw.map(r => ({
+          date:    r.date,
+          libelle: r.description || r.reference || r.account_label,
+          debit:   r.debit,
+          credit:  r.credit,
+          compte:  r.account_code,
+        }))
+      );
 
       setLoading(false);
     })();
@@ -149,17 +187,156 @@ export default function ComptabilitePage() {
   const tvaSolde     = tvaCollectee - tvaDeductible;
   const { label: periodLabel } = getPeriodRange(period);
 
-  function exportCSV() {
-    const rows = [
-      ["Date", "Compte", "Libellé", "Débit (€)", "Crédit (€)"],
-      ...journal.map(l => [l.date, l.compte, l.libelle, l.debit || "", l.credit || ""]),
-    ];
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = `journal-comptable-${periodLabel.replace(/ /g, "-")}.csv`;
-    a.click(); URL.revokeObjectURL(url);
+  // Export FEC — Fichier des Écritures Comptables (Art. A. 47 A-1 LPF)
+  // Format conforme double entrée : lit journal_entries + journal_entry_lines
+  // Une écriture (EcritureNum) = plusieurs lignes (411, 706, 4457x) équilibrées.
+  async function exportFEC() {
+    setFecLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { start, end } = getPeriodRange(period);
+
+      // Récupérer toutes les écritures de la période
+      const { data: entries, error: entriesErr } = await supabase
+        .from("journal_entries")
+        .select("id, date, journal, reference, description")
+        .or(orgId ? `user_id.eq.${user.id},organization_id.eq.${orgId}` : `user_id.eq.${user.id}`)
+        .gte("date", start)
+        .lte("date", end)
+        .neq("status", "draft")
+        .order("date", { ascending: true });
+
+      if (entriesErr || !entries?.length) {
+        alert("Aucune écriture comptable pour cette période. Lancez une synchronisation d'abord.");
+        return;
+      }
+
+      const entryIds = entries.map(e => e.id);
+
+      // Récupérer toutes les lignes de ces écritures
+      const { data: lines, error: linesErr } = await supabase
+        .from("journal_entry_lines")
+        .select("entry_id, account_code, account_label, debit, credit, description")
+        .in("entry_id", entryIds)
+        .order("entry_id");
+
+      if (linesErr || !lines) {
+        alert("Erreur lors de la récupération des lignes d'écriture.");
+        return;
+      }
+
+      // Grouper les lignes par entry_id
+      const linesByEntry = lines.reduce<Record<string, typeof lines>>((acc, l) => {
+        if (!acc[l.entry_id]) acc[l.entry_id] = [];
+        acc[l.entry_id].push(l);
+        return acc;
+      }, {});
+
+      const JOURNAL_LIB: Record<string, string> = {
+        VTE: "Ventes", ACH: "Achats", BNQ: "Banque",
+        CAI: "Caisse", SAL: "Salaires", GEN: "Général", OD: "Opérations diverses",
+      };
+      const fmtDate = (d: string) => d.replace(/-/g, "");
+      const fmtAmt  = (n: number) => (n ?? 0).toFixed(2);
+      const esc     = (s: string) => (s ?? "").replace(/\|/g, " ");
+
+      const HEADER = [
+        "JournalCode","JournalLib","EcritureNum","EcritureDate",
+        "CompteNum","CompteLib","CompAuxNum","CompAuxLib",
+        "PieceRef","PieceDate","EcritureLib",
+        "Debit","Credit",
+        "EcritureLet","DateLet","ValidDate","Montantdevise","Idevise",
+      ].join("|");
+
+      const rows: string[] = [];
+      let ecritureNum = 1;
+
+      for (const entry of entries) {
+        const entryLines = linesByEntry[entry.id] ?? [];
+        const numStr = String(ecritureNum).padStart(6, "0");
+        const jLib   = JOURNAL_LIB[entry.journal] ?? entry.journal;
+
+        for (const line of entryLines) {
+          rows.push([
+            esc(entry.journal),
+            esc(jLib),
+            numStr,
+            fmtDate(entry.date),
+            esc(line.account_code),
+            esc(line.account_label),
+            "",
+            "",
+            esc(entry.reference),
+            fmtDate(entry.date),
+            esc(entry.description || entry.reference),
+            fmtAmt(line.debit),
+            fmtAmt(line.credit),
+            "",
+            "",
+            fmtDate(entry.date),
+            "",
+            "",
+          ].join("|"));
+        }
+        ecritureNum++;
+      }
+
+      const content = [HEADER, ...rows].join("\r\n");
+      const blob = new Blob(["﻿" + content], { type: "text/plain;charset=utf-8;" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url;
+      a.download = `FEC_${periodLabel.replace(/ /g, "_")}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("FEC export failed:", err);
+    } finally {
+      setFecLoading(false);
+    }
+  }
+
+  async function exportPDF() {
+    setPdfLoading(true);
+    try {
+      const { generateAccountingPdf } = await import("@/lib/pdf/generateAccountingPdf");
+      const pdfData: AccountingPdfData = {
+        period:        periodLabel,
+        caHT,
+        charges,
+        resultat,
+        tvaCollectee,
+        tvaDeductible,
+        tvaSolde,
+        tvaRows,
+        journal,
+        analyse:       analyse || undefined,
+      };
+      await generateAccountingPdf(pdfData);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    }
+    setPdfLoading(false);
+  }
+
+  async function syncJournal() {
+    setSyncLoading(true);
+    setSyncResult(null);
+    try {
+      const { start, end } = getPeriodRange(period);
+      const res = await fetch("/api/comptabilite/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ start, end }),
+      });
+      const data = await res.json() as { created?: number; skipped?: number };
+      setSyncResult({ created: data.created ?? 0, skipped: data.skipped ?? 0 });
+    } catch {
+      setSyncResult(null);
+    }
+    setSyncLoading(false);
   }
 
   async function analyseFinances() {
@@ -208,17 +385,46 @@ export default function ComptabilitePage() {
               <p className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{periodLabel}</p>
             </div>
           </div>
-          <button
-            onClick={exportCSV}
-            disabled={journal.length === 0}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold transition ${isDark ? "text-white/60 hover:text-white/80 disabled:opacity-30" : "text-gray-500 hover:text-gray-700 disabled:opacity-30"}`}
-            style={{
-              background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-              border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)"
-            }}
-          >
-            <Download size={12} /> Exporter
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={syncJournal}
+              disabled={syncLoading}
+              title="Synchroniser les écritures dans le journal comptable"
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold transition ${isDark ? "text-white/60 hover:text-white/80 disabled:opacity-30" : "text-gray-500 hover:text-gray-700 disabled:opacity-30"}`}
+              style={{
+                background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)"
+              }}
+            >
+              {syncLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCcw size={12} />}
+              {syncResult ? `+${syncResult.created}` : "Sync"}
+            </button>
+            <button
+              onClick={exportPDF}
+              disabled={pdfLoading || loading || (caHT === 0 && charges === 0)}
+              title="Exporter le rapport comptable en PDF"
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold transition ${isDark ? "text-white/60 hover:text-white/80 disabled:opacity-30" : "text-gray-500 hover:text-gray-700 disabled:opacity-30"}`}
+              style={{
+                background: isDark ? "rgba(201,165,90,0.10)" : "rgba(201,165,90,0.12)",
+                border: isDark ? "1px solid rgba(201,165,90,0.25)" : "1px solid rgba(201,165,90,0.30)"
+              }}
+            >
+              {pdfLoading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+              <span style={{ color: "#c9a55a" }}>PDF</span>
+            </button>
+            <button
+              onClick={() => { void exportFEC(); }}
+              disabled={!hasData || fecLoading}
+              title="Exporter au format FEC (Fichier des Écritures Comptables — double entrée)"
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold transition ${isDark ? "text-white/60 hover:text-white/80 disabled:opacity-30" : "text-gray-500 hover:text-gray-700 disabled:opacity-30"}`}
+              style={{
+                background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)"
+              }}
+            >
+              {fecLoading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />} FEC
+            </button>
+          </div>
         </motion.div>
 
         {/* Sélecteur période */}
@@ -242,6 +448,32 @@ export default function ComptabilitePage() {
       </div>
 
       <div className="px-4 space-y-5 pt-2">
+
+        {/* Bannière : aucune écriture — invite à synchroniser */}
+        {!loading && !hasData && (
+          <div className="rounded-2xl px-4 py-3.5 flex items-center justify-between"
+            style={{
+              background: isDark ? "rgba(251,191,36,0.06)" : "rgba(251,191,36,0.08)",
+              border: isDark ? "1px solid rgba(251,191,36,0.20)" : "1px solid rgba(251,191,36,0.28)"
+            }}>
+            <div>
+              <p className="text-[12px] font-bold" style={{ color: "#fbbf24" }}>
+                Aucune écriture pour cette période
+              </p>
+              <p className={`text-[10.5px] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                Appuyez sur <strong>Sync</strong> pour comptabiliser les factures et dépenses.
+              </p>
+            </div>
+            <button
+              onClick={syncJournal}
+              disabled={syncLoading}
+              className="shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-bold"
+              style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.35)" }}
+            >
+              {syncLoading ? <Loader2 size={11} className="animate-spin inline" /> : "Sync"}
+            </button>
+          </div>
+        )}
 
         {/* KPIs */}
         <div className="grid grid-cols-3 gap-2.5">
