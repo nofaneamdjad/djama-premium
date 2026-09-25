@@ -11,7 +11,7 @@ import {
   CheckSquare, Square, AlertCircle, AlertTriangle, Ticket, BarChart2, Filter,
   ArrowUpRight, DollarSign, Target, Activity, Check, SlidersHorizontal,
   Zap, Award, Flag, MoreVertical, Send, Link2, ChevronLeft,
-  RefreshCw, PieChart, Layers, Bell, Hash, CheckCircle, XCircle,
+  RefreshCw, PieChart, Layers, Bell, Hash, CheckCircle, XCircle, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useOrganization } from "@/lib/use-organization";
@@ -875,6 +875,14 @@ function TachesView({
   );
 }
 
+type ContactAIInsight = {
+  resume:           string;
+  prochaine_action: string;
+  risque:           "faible" | "moyen" | "élevé";
+  score_engagement: number;
+  tags_suggeres:    string[];
+};
+
 type CrmRapport = {
   score_sante:         number;
   resume_executif:     string;
@@ -1545,8 +1553,33 @@ function ContactDetail({
   const [newTask, setNewTask] = useState<Partial<CrmTask> | null>(null);
   const [newTicket, setNewTicket] = useState<Partial<SupportTicket> | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [insight, setInsight]           = useState<ContactAIInsight | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [insightError, setInsightError] = useState<string | null>(null);
   const today = new Date().toISOString().split("T")[0];
   const isDark = useDark();
+
+  async function fetchInsight() {
+    setInsightLoading(true);
+    setInsightError(null);
+    try {
+      const res = await fetch("/api/crm-ia/contact-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact_id: contact.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setInsightError(json.error ?? "Erreur analyse IA");
+      } else {
+        setInsight(json as ContactAIInsight);
+      }
+    } catch {
+      setInsightError("Erreur réseau");
+    } finally {
+      setInsightLoading(false);
+    }
+  }
 
   const typeColor = CONTACT_TYPES[contact.type ?? "prospect"]?.color ?? "#60a5fa";
 
@@ -1590,6 +1623,17 @@ function ContactDetail({
             </div>
           </div>
           <div className="flex gap-1.5 shrink-0">
+            <button
+              onClick={fetchInsight}
+              disabled={insightLoading}
+              title="Analyse IA du contact"
+              className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all disabled:opacity-50 ${
+                insight
+                  ? (isDark ? "bg-violet-500/20 text-violet-300 hover:bg-violet-500/30" : "bg-violet-100 text-violet-600 hover:bg-violet-200")
+                  : (isDark ? "bg-white/[0.04] text-white/30 hover:text-violet-300 hover:bg-violet-500/10" : "bg-gray-100 text-gray-400 hover:text-violet-600 hover:bg-violet-50")
+              }`}>
+              {insightLoading ? <Loader2 size={13} className="animate-spin"/> : <Sparkles size={13}/>}
+            </button>
             {contact.email && (
               <button onClick={onEmail} title={`Envoyer un email à ${contact.email}`}
                 className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${isDark ? "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300" : "bg-blue-50 text-blue-400 hover:bg-blue-100 hover:text-blue-600"}`}>
@@ -1688,6 +1732,61 @@ function ContactDetail({
           </div>
         )}
       </div>
+
+      {/* ── Insight IA ───────────────────────────────────────────── */}
+      <AnimatePresence>
+        {(insight || insightError) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className={`shrink-0 border-b px-5 py-3 ${isDark ? "border-white/[0.06] bg-violet-500/[0.04]" : "border-violet-100 bg-violet-50/60"}`}>
+            {insightError ? (
+              <p className="text-[0.68rem] text-red-400">{insightError}</p>
+            ) : insight && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles size={11} className={isDark ? "text-violet-400" : "text-violet-500"}/>
+                    <span className={`text-[0.6rem] font-black uppercase tracking-wider ${isDark ? "text-violet-400/70" : "text-violet-500/80"}`}>Analyse IA</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded-md ${
+                      insight.risque === "élevé"  ? "bg-red-500/15 text-red-400" :
+                      insight.risque === "moyen"  ? "bg-amber-500/15 text-amber-400" :
+                                                    "bg-emerald-500/15 text-emerald-400"
+                    }`}>Risque {insight.risque}</span>
+                    <span className={`text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                      Score {insight.score_engagement}/100
+                    </span>
+                    <button onClick={() => { setInsight(null); setInsightError(null); }}
+                      className={`text-[0.6rem] transition-opacity ${isDark ? "text-white/20 hover:text-white/50" : "text-gray-300 hover:text-gray-500"}`}>
+                      <X size={10}/>
+                    </button>
+                  </div>
+                </div>
+                <p className={`text-[0.68rem] leading-relaxed ${isDark ? "text-white/60" : "text-gray-600"}`}>{insight.resume}</p>
+                <div className={`rounded-lg px-2.5 py-2 border ${isDark ? "border-violet-500/20 bg-violet-500/[0.06]" : "border-violet-200 bg-violet-50"}`}>
+                  <div className="flex items-start gap-1.5">
+                    <Zap size={10} className={`mt-0.5 shrink-0 ${isDark ? "text-violet-400" : "text-violet-500"}`}/>
+                    <p className={`text-[0.68rem] font-semibold ${isDark ? "text-violet-300" : "text-violet-700"}`}>{insight.prochaine_action}</p>
+                  </div>
+                </div>
+                {insight.tags_suggeres?.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {insight.tags_suggeres.map(tag => (
+                      <span key={tag} className={`text-[0.6rem] px-1.5 py-0.5 rounded-md ${isDark ? "bg-white/[0.06] text-white/40" : "bg-gray-100 text-gray-500"}`}>
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
             <div className={`shrink-0 flex border-b overflow-x-auto ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
         {TABS.map(t => (
