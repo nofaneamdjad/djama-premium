@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useOrganization } from "@/lib/use-organization";
+import { useCrmPermissions } from "@/lib/use-crm-permissions";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import Pagination from "@/components/client/Pagination";
 import { usePagination } from "@/hooks/usePagination";
@@ -229,7 +230,7 @@ function Select({ label, children, ...props }: React.SelectHTMLAttributes<HTMLSe
 }
 
 function PipelineView({
-  opportunities, contacts, onUpdate, onDelete, onAdd, loading,
+  opportunities, contacts, onUpdate, onDelete, onAdd, loading, canDelete,
 }: {
   opportunities: Opportunity[];
   contacts: Contact[];
@@ -237,6 +238,7 @@ function PipelineView({
   onDelete: (id: string) => Promise<void>;
   onAdd: (data: Partial<Opportunity>) => Promise<void>;
   loading: boolean;
+  canDelete: boolean;
 }) {
   const [addModal, setAddModal]     = useState<OppStage | null>(null);
   const [editOpp, setEditOpp]       = useState<Opportunity | null>(null);
@@ -335,12 +337,14 @@ function PipelineView({
                   onClick={() => openEdit(opp)}>
                   <div className="flex items-start justify-between gap-1">
                     <p className={`text-[0.72rem] font-semibold leading-tight ${isDark ? "text-white" : "text-gray-900"}`}>{opp.title}</p>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      <button onClick={e => { e.stopPropagation(); onDelete(opp.id); }}
-                        className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400 transition-colors`}>
-                        <Trash2 size={10}/>
-                      </button>
-                    </div>
+                    {canDelete && (
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button onClick={e => { e.stopPropagation(); onDelete(opp.id); }}
+                          className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400 transition-colors`}>
+                          <Trash2 size={10}/>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   {opp.contact && (
                     <p className={`text-[0.62rem] mt-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
@@ -419,7 +423,7 @@ function PipelineView({
 }
 
 function TachesView({
-  tasks, contacts, onToggle, onDelete, onAdd, onUpdate,
+  tasks, contacts, onToggle, onDelete, onAdd, onUpdate, canDelete,
 }: {
   tasks: CrmTask[];
   contacts: Contact[];
@@ -427,6 +431,7 @@ function TachesView({
   onDelete: (id: string) => Promise<void>;
   onAdd: (data: Partial<CrmTask>) => Promise<void>;
   onUpdate: (id: string, data: Partial<CrmTask>) => Promise<void>;
+  canDelete: boolean;
 }) {
   const [filter, setFilter]   = useState<"all" | "today" | "late" | "done">("all");
   const [addModal, setAddModal] = useState(false);
@@ -522,10 +527,12 @@ function TachesView({
                       )}
                     </div>
                   </div>
-                  <button onClick={() => onDelete(task.id)}
-                    className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all shrink-0 mt-0.5 ${isDark ? "text-white/20" : "text-gray-300"}`}>
-                    <Trash2 size={12}/>
-                  </button>
+                  {canDelete && (
+                    <button onClick={() => onDelete(task.id)}
+                      className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all shrink-0 mt-0.5 ${isDark ? "text-white/20" : "text-gray-300"}`}>
+                      <Trash2 size={12}/>
+                    </button>
+                  )}
                 </motion.div>
               );
             })}
@@ -941,13 +948,14 @@ function RapportView({
 }
 
 function TicketsGlobalView({
-  tickets, contacts, onAdd, onUpdate, onDelete,
+  tickets, contacts, onAdd, onUpdate, onDelete, canDelete,
 }: {
   tickets: SupportTicket[];
   contacts: Contact[];
   onAdd: (data: Partial<SupportTicket>) => Promise<void>;
   onUpdate: (id: string, data: Partial<SupportTicket>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  canDelete: boolean;
 }) {
   const [filter, setFilter] = useState<TicketStatus | "tous">("tous");
   const [addModal, setAddModal] = useState(false);
@@ -1023,10 +1031,12 @@ function TicketsGlobalView({
                       style={{ background: `${TICKET_PRIORITIES[ticket.priority]}18`, color: TICKET_PRIORITIES[ticket.priority] }}>
                       {ticket.priority}
                     </span>
-                    <button onClick={() => onDelete(ticket.id)}
-                      className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ml-1 ${isDark ? "text-white/20" : "text-gray-300"}`}>
-                      <Trash2 size={11}/>
-                    </button>
+                    {canDelete && (
+                      <button onClick={() => onDelete(ticket.id)}
+                        className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ml-1 ${isDark ? "text-white/20" : "text-gray-300"}`}>
+                        <Trash2 size={11}/>
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3 mt-3">
@@ -1097,6 +1107,7 @@ function ContactDetail({
   onAddTicket, onUpdateTicket, onDeleteTicket,
   onAddOpportunity,
   allContacts,
+  perms,
 }: {
   contact: Contact;
   activities: Activity[];
@@ -1116,6 +1127,7 @@ function ContactDetail({
   onDeleteTicket: (id: string) => Promise<void>;
   onAddOpportunity: (data: Partial<Opportunity>) => Promise<void>;
   allContacts: Contact[];
+  perms: { can_create: boolean; can_edit: boolean; can_delete: boolean };
 }) {
   const [tab, setTab]       = useState<"infos" | "activites" | "opps" | "taches" | "tickets">("infos");
   const [editing, setEditing] = useState(false);
@@ -1169,10 +1181,12 @@ function ContactDetail({
             </div>
           </div>
           <div className="flex gap-1.5 shrink-0">
-            <button onClick={() => setEditing(!editing)}
-              className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${isDark ? "bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/[0.08]" : "bg-gray-100 text-gray-400 hover:text-gray-700 hover:bg-gray-200"}`}>
-              <Pencil size={13}/>
-            </button>
+            {perms.can_edit && (
+              <button onClick={() => setEditing(!editing)}
+                className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${isDark ? "bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/[0.08]" : "bg-gray-100 text-gray-400 hover:text-gray-700 hover:bg-gray-200"}`}>
+                <Pencil size={13}/>
+              </button>
+            )}
             <button onClick={onClose}
               className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${isDark ? "bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/[0.08]" : "bg-gray-100 text-gray-400 hover:text-gray-700 hover:bg-gray-200"}`}>
               <X size={13}/>
@@ -1338,20 +1352,22 @@ function ContactDetail({
                   </div>
                 )}
 
-                                <div className={`pt-2 border-t ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
-                  {!confirmDel ? (
-                    <button onClick={() => setConfirmDel(true)}
-                      className="text-[0.65rem] text-red-400/50 hover:text-red-400 transition-colors flex items-center gap-1">
-                      <Trash2 size={10}/> Supprimer ce contact
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[0.65rem] text-red-400">Confirmer la suppression ?</span>
-                      <button onClick={onDeleteContact} className="text-[0.65rem] font-bold text-red-400 hover:text-red-300">Oui</button>
-                      <button onClick={() => setConfirmDel(false)} className={`text-[0.65rem] ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>Non</button>
-                    </div>
-                  )}
-                </div>
+                                {perms.can_delete && (
+                  <div className={`pt-2 border-t ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
+                    {!confirmDel ? (
+                      <button onClick={() => setConfirmDel(true)}
+                        className="text-[0.65rem] text-red-400/50 hover:text-red-400 transition-colors flex items-center gap-1">
+                        <Trash2 size={10}/> Supprimer ce contact
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[0.65rem] text-red-400">Confirmer la suppression ?</span>
+                        <button onClick={onDeleteContact} className="text-[0.65rem] font-bold text-red-400 hover:text-red-300">Oui</button>
+                        <button onClick={() => setConfirmDel(false)} className={`text-[0.65rem] ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>Non</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1408,11 +1424,13 @@ function ContactDetail({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{act.title}</p>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                          <button onClick={() => onDeleteActivity(act.id)} className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400`}>
-                            <Trash2 size={10}/>
-                          </button>
-                        </div>
+                        {perms.can_delete && (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button onClick={() => onDeleteActivity(act.id)} className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400`}>
+                              <Trash2 size={10}/>
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <p className={`text-[0.6rem] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(act.activity_date)}</p>
                       {act.description && <p className={`text-[0.68rem] mt-1 leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>{act.description}</p>}
@@ -1522,9 +1540,11 @@ function ContactDetail({
                       </p>
                     )}
                   </div>
-                  <button onClick={() => onDeleteTask(task.id)} className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ${isDark ? "text-white/20" : "text-gray-300"}`}>
-                    <Trash2 size={11}/>
-                  </button>
+                  {perms.can_delete && (
+                    <button onClick={() => onDeleteTask(task.id)} className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ${isDark ? "text-white/20" : "text-gray-300"}`}>
+                      <Trash2 size={11}/>
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -1566,9 +1586,11 @@ function ContactDetail({
                   <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Badge label={TICKET_STATUSES[ticket.status].label} color={TICKET_STATUSES[ticket.status].color}/>
-                    <button onClick={() => onDeleteTicket(ticket.id)} className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ${isDark ? "text-white/20" : "text-gray-300"}`}>
-                      <Trash2 size={10}/>
-                    </button>
+                    {perms.can_delete && (
+                      <button onClick={() => onDeleteTicket(ticket.id)} className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ${isDark ? "text-white/20" : "text-gray-300"}`}>
+                        <Trash2 size={10}/>
+                      </button>
+                    )}
                   </div>
                 </div>
                 {ticket.description && <p className={`text-[0.65rem] mt-1.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{ticket.description}</p>}
@@ -1706,6 +1728,7 @@ export default function CRMPage() {
   const { isDark } = useTheme();
   const orgState  = useOrganization();
   const orgId     = orgState.status === "ready" ? orgState.org.id : null;
+  const perms     = useCrmPermissions();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -2041,24 +2064,30 @@ export default function CRMPage() {
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
-              <label title="Importer CSV"
-                className="h-9 rounded-xl flex items-center gap-1.5 px-3 cursor-pointer transition-all hover:brightness-110"
-                style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
-                <Upload size={13} className={isDark ? "text-white/50" : "text-gray-500"}/>
-                <span className={`hidden sm:inline text-[0.72rem] font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Importer</span>
-                <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV}/>
-              </label>
-              <button onClick={exportCSV} title="Exporter CSV"
-                className="h-9 rounded-xl flex items-center gap-1.5 px-3 transition-all hover:brightness-110"
-                style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
-                <Download size={13} className={isDark ? "text-white/50" : "text-gray-500"}/>
-                <span className={`hidden sm:inline text-[0.72rem] font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Exporter</span>
-              </button>
-              <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
-                className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
-                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
-                <Plus size={13}/> Nouveau contact
-              </button>
+              {perms.can_create && (
+                <label title="Importer CSV"
+                  className="h-9 rounded-xl flex items-center gap-1.5 px-3 cursor-pointer transition-all hover:brightness-110"
+                  style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
+                  <Upload size={13} className={isDark ? "text-white/50" : "text-gray-500"}/>
+                  <span className={`hidden sm:inline text-[0.72rem] font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Importer</span>
+                  <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV}/>
+                </label>
+              )}
+              {perms.can_export && (
+                <button onClick={exportCSV} title="Exporter CSV"
+                  className="h-9 rounded-xl flex items-center gap-1.5 px-3 transition-all hover:brightness-110"
+                  style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
+                  <Download size={13} className={isDark ? "text-white/50" : "text-gray-500"}/>
+                  <span className={`hidden sm:inline text-[0.72rem] font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Exporter</span>
+                </button>
+              )}
+              {perms.can_create && (
+                <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
+                  className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                  <Plus size={13}/> Nouveau contact
+                </button>
+              )}
             </div>
           </div>
           {/* KPI strip */}
@@ -2314,6 +2343,7 @@ export default function CRMPage() {
                   onDelete={deleteOpportunity}
                   onAdd={addOpportunity}
                   loading={loading}
+                  canDelete={!perms.loading && perms.can_delete}
                 />
               )}
 
@@ -2325,6 +2355,7 @@ export default function CRMPage() {
                   onDelete={deleteTask}
                   onAdd={addTask}
                   onUpdate={async () => {}}
+                  canDelete={!perms.loading && perms.can_delete}
                 />
               )}
 
@@ -2335,6 +2366,7 @@ export default function CRMPage() {
                   onAdd={addTicket}
                   onUpdate={updateTicket}
                   onDelete={deleteTicket}
+                  canDelete={!perms.loading && perms.can_delete}
                 />
               )}
 
@@ -2370,6 +2402,7 @@ export default function CRMPage() {
                 onDeleteTicket={deleteTicket}
                 onAddOpportunity={addOpportunity}
                 allContacts={contacts}
+                perms={perms}
               />
             </>
           )}

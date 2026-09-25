@@ -1,40 +1,39 @@
 /**
  * POST /api/crm-rapport
  * Génère une analyse IA du CRM via Claude Haiku.
- * Body : {
- *   totalContacts, actifs, prospects, partenaires, fournisseurs,
- *   totalOpp, caMtot, convRate, overdueTasks, openTickets,
- *   topContacts: [{ name, company, amount }],
- *   topOpps: [{ title, amount, stage }],
- *   byStage: Record<stage, { count, amount }>,
- *   nextRelances: [{ name, company, date }]
- * }
+ *
+ * Sécurité (Phase 2) :
+ *  - Auth obligatoire
+ *  - Rate limit persistant (checkRateLimitAsync — tient en serverless)
+ *  - Validation Zod du body
+ *  - Permissions can_view vérifiées pour les membres org
+ *  - KPIs recalculés depuis la DB — les chiffres envoyés par le client
+ *    sont utilisés uniquement comme "hints" de présentation (noms, etc.)
+ *    Les valeurs numériques sensibles (CA, pipeline, taux) sont recalculées.
  */
-import { NextRequest, NextResponse } from "next/server";
-import Anthropic                     from "@anthropic-ai/sdk";
-import { createServerClient }        from "@supabase/ssr";
-import { cookies }                   from "next/headers";
-import { createLogger }              from "@/lib/logger";
+import { NextRequest, NextResponse }      from "next/server";
+import Anthropic                          from "@anthropic-ai/sdk";
+import { createServerClient }             from "@supabase/ssr";
+import { cookies }                        from "next/headers";
+import { z }                              from "zod";
+import { checkRateLimitAsync }            from "@/lib/rate-limit";
+import { createLogger }                   from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const log = createLogger("crm-rapport");
 
-// Rate limit : 10 analyses CRM/user/heure
-const rapportLimits = new Map<string, { count: number; resetAt: number }>();
-function checkRateLimit(userId: string): boolean {
-  const now  = Date.now();
-  const slot = rapportLimits.get(userId);
-  if (!slot || now > slot.resetAt) {
-    rapportLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    return true;
-  }
-  if (slot.count >= 10) return false;
-  slot.count++;
-  return true;
-}
+// ── Validation Zod du body ──────────────────────────────────────────────────
+// Ces champs ne servent qu'à alimenter les parties textuelles du prompt
+// (noms de contacts, labels d'étapes). Les chiffres sont recalculés côté serveur.
+const BodySchema = z.object({
+  topContacts:  z.array(z.object({ name: z.string().max(100), company: z.string().max(100), amount: z.number() })).max(5).optional().default([]),
+  topOpps:      z.array(z.object({ title: z.string().max(200), amount: z.number(), stage: z.string().max(50) })).max(5).optional().default([]),
+  nextRelances: z.array(z.object({ name: z.string().max(100), company: z.string().max(100), date: z.string().max(20) })).max(10).optional().default([]),
+});
 
+// ── Prompt système ──────────────────────────────────────────────────────────
 const SYSTEM = `\
 Tu es un expert en ventes et gestion de la relation client pour TPE/freelances françaises.
 Génère une analyse CRM synthétique en JSON valide (sans markdown) :
@@ -51,84 +50,150 @@ Le score_sante évalue : pipeline actif, taux de conversion, régularité des re
 Sois direct, concret, orienté action. Utilise les vrais chiffres fournis.`;
 
 export async function POST(req: NextRequest) {
-  /* ── Auth ── */
+
+  // ── 1. Auth ─────────────────────────────────────────────────────────────────
   const cookieStore = await cookies();
-  const supabaseAuth = createServerClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
   );
-  const { data: { user } } = await supabaseAuth.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  if (!checkRateLimit(user.id)) {
-    return NextResponse.json({ error: "Limite atteinte : 10 analyses par heure." }, { status: 429 });
+  // ── 2. Rate limit persistant ────────────────────────────────────────────────
+  const { allowed } = await checkRateLimitAsync(`crm-rapport:${user.id}`, 10, 60 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "Limite atteinte : 10 analyses par heure." }, { status: 429 });
+
+  // ── 3. Vérification permission can_view pour membres org ───────────────────
+  const { data: memberRow } = await supabase
+    .from("organization_members")
+    .select("organization_id, role")
+    .eq("user_id", user.id)
+    .is("suspended_at", null)
+    .limit(1)
+    .maybeSingle();
+
+  if (memberRow && memberRow.role !== "owner" && memberRow.role !== "admin") {
+    const { data: perm } = await supabase
+      .from("organization_permissions")
+      .select("can_view")
+      .eq("organization_id", memberRow.organization_id)
+      .eq("user_id", user.id)
+      .eq("app_slug", "crm")
+      .maybeSingle();
+    if (!perm?.can_view) {
+      return NextResponse.json({ error: "Accès non autorisé au CRM" }, { status: 403 });
+    }
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "Clé API manquante" }, { status: 500 });
+  // ── 4. Validation Zod du body ───────────────────────────────────────────────
+  let rawBody: unknown;
+  try { rawBody = await req.json(); } catch { rawBody = {}; }
+  const parsed = BodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Corps de requête invalide", details: parsed.error.flatten() }, { status: 400 });
   }
+  const body = parsed.data;
 
-  const body = await req.json() as {
-    totalContacts: number;
-    actifs:        number;
-    prospects:     number;
-    partenaires:   number;
-    fournisseurs:  number;
-    totalOpp:      number;
-    caMtot:        number;
-    convRate:      number;
-    overdueTasks:  number;
-    openTickets:   number;
-    topContacts:   { name: string; company: string; amount: number }[];
-    topOpps:       { title: string; amount: number; stage: string }[];
-    stageSummary:  string;
-    nextRelances:  { name: string; company: string; date: string }[];
+  // ── 5. KPIs recalculés côté serveur (source de vérité = DB) ──────────────
+  // RLS garantit que l'utilisateur ne voit que ses propres données / celles de son org.
+  const orgId = memberRow?.organization_id ?? null;
+
+  const [ctRes, opRes, tkRes, tiRes] = await Promise.all([
+    // Contacts : counts par statut
+    supabase.from("contacts").select("status", { count: "exact" }),
+    // Opportunités : montants par étape
+    supabase.from("opportunities").select("stage, amount"),
+    // Tâches en retard
+    supabase.from("crm_tasks").select("done, due_date"),
+    // Tickets ouverts
+    supabase.from("tickets").select("status"),
+  ]);
+
+  const contacts    = ctRes.data ?? [];
+  const opps        = (opRes.data ?? []) as { stage: string; amount: number | null }[];
+  const tasks       = (tkRes.data ?? []) as { done: boolean; due_date: string | null }[];
+  const tickets     = (tiRes.data ?? []) as { status: string }[];
+
+  const totalContacts = contacts.length;
+  const actifs        = contacts.filter(c => c.status === "actif").length;
+  const prospects     = contacts.filter(c => c.status === "prospect").length;
+  const partenaires   = contacts.filter(c => c.status === "partenaire").length;
+  const fournisseurs  = contacts.filter(c => c.status === "fournisseur").length;
+
+  const activeOpps  = opps.filter(o => !["perdu", "en_pause"].includes(o.stage));
+  const wonOpps     = opps.filter(o => o.stage === "gagné");
+  const totalOpp    = activeOpps.reduce((s, o) => s + (o.amount ?? 0), 0);
+  const caMtot      = wonOpps.reduce((s, o) => s + (o.amount ?? 0), 0);
+  const convRate    = opps.length > 0 ? Math.round((wonOpps.length / opps.length) * 100) : 0;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const overdueTasks = tasks.filter(t => !t.done && t.due_date && t.due_date < today).length;
+  const openTickets  = tickets.filter(t => t.status !== "résolu").length;
+
+  const stageLabels: Record<string, string> = {
+    nouveau: "Nouveau", qualifié: "Qualifié", proposition: "Proposition",
+    négociation: "Négociation", gagné: "Gagné", perdu: "Perdu", en_pause: "En pause",
   };
+  const byStage = opps.reduce<Record<string, { count: number; amount: number }>>((acc, o) => {
+    const s = o.stage ?? "inconnu";
+    if (!acc[s]) acc[s] = { count: 0, amount: 0 };
+    acc[s].count++;
+    acc[s].amount += o.amount ?? 0;
+    return acc;
+  }, {});
+  const stageSummary = Object.entries(byStage)
+    .map(([s, v]) => `${stageLabels[s] ?? s}: ${v.count} (${v.amount.toLocaleString("fr-FR")} €)`)
+    .join(", ") || "Aucune opportunité";
 
   const fmt = (n: number) =>
     n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
-
-  const topContactsStr = body.topContacts.length > 0
-    ? body.topContacts.map(c => `${c.name} (${c.company}): ${fmt(c.amount)}`).join("; ")
-    : "Aucun client notable";
 
   const topOppsStr = body.topOpps.length > 0
     ? body.topOpps.map(o => `${o.title}: ${fmt(o.amount)} — ${o.stage}`).join("; ")
     : "Aucune opportunité";
 
+  const topContactsStr = body.topContacts.length > 0
+    ? body.topContacts.map(c => `${c.name} (${c.company})`).join("; ")
+    : "Aucun client notable";
+
   const relancesStr = body.nextRelances.length > 0
-    ? body.nextRelances.map(r => `${r.name} (${r.company}) — due le ${r.date}`).join("; ")
+    ? body.nextRelances.map(r => `${r.name} (${r.company}) — ${r.date}`).join("; ")
     : "Aucune relance planifiée";
 
+  // ── 6. Appel IA ──────────────────────────────────────────────────────────
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return NextResponse.json({ error: "Clé API manquante" }, { status: 500 });
+
   const prompt = [
-    `Analyse CRM — état actuel :`,
+    `Analyse CRM — état actuel (données vérifiées côté serveur) :`,
     ``,
-    `Contacts :`,
-    `- Total contacts    : ${body.totalContacts}`,
-    `- Clients actifs    : ${body.actifs}`,
-    `- Prospects actifs  : ${body.prospects}`,
-    `- Partenaires       : ${body.partenaires}`,
-    `- Fournisseurs      : ${body.fournisseurs}`,
+    `Contacts (total base) :`,
+    `- Total              : ${totalContacts}`,
+    `- Clients actifs     : ${actifs}`,
+    `- Prospects          : ${prospects}`,
+    `- Partenaires        : ${partenaires}`,
+    `- Fournisseurs       : ${fournisseurs}`,
     ``,
     `Commercial :`,
-    `- Pipeline total    : ${fmt(body.totalOpp)}`,
-    `- CA gagné          : ${fmt(body.caMtot)}`,
-    `- Taux conversion   : ${body.convRate}%`,
-    `- Tâches en retard  : ${body.overdueTasks}`,
-    `- Tickets ouverts   : ${body.openTickets}`,
+    `- Pipeline actif     : ${fmt(totalOpp)}`,
+    `- CA gagné total     : ${fmt(caMtot)}`,
+    `- Taux de conversion : ${convRate}%`,
+    `- Tâches en retard   : ${overdueTasks}`,
+    `- Tickets ouverts    : ${openTickets}`,
     ``,
-    `Pipeline par étape  : ${body.stageSummary}`,
-    `Meilleures opps     : ${topOppsStr}`,
-    `Top clients CA      : ${topContactsStr}`,
-    `Relances à venir    : ${relancesStr}`,
+    `Pipeline par étape   : ${stageSummary}`,
+    `Meilleures opps      : ${topOppsStr}`,
+    `Top contacts notables: ${topContactsStr}`,
+    `Relances à venir     : ${relancesStr}`,
+    orgId ? `Organisation active  : oui (données équipe)` : `Mode solo`,
     ``,
     `Génère l'analyse complète en JSON.`,
   ].join("\n");
 
   try {
-    const ai = new Anthropic({ apiKey, maxRetries: 0, timeout: 25_000 });
+    const ai  = new Anthropic({ apiKey, maxRetries: 0, timeout: 25_000 });
     const res = await ai.messages.create({
       model:      "claude-haiku-4-5-20251001",
       max_tokens: 1200,
