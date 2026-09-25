@@ -64,11 +64,19 @@ interface Opportunity {
   contact?: Pick<Contact, "name" | "company">;
 }
 
+interface OrgMember {
+  user_id: string;
+  display_name: string | null;
+  role: string;
+}
+
 interface CrmTask {
   id: string; user_id: string; contact_id: string | null;
   opportunity_id: string | null;
   title: string; description: string; due_date: string | null;
   priority: Priority; done: boolean; type: TaskType;
+  assigned_to: string | null;
+  reminder_at: string | null;
   created_at: string;
   contact?: Pick<Contact, "name" | "company">;
 }
@@ -556,26 +564,51 @@ function PipelineView({
 }
 
 function TachesView({
-  tasks, contacts, onToggle, onDelete, onAdd, onUpdate, canDelete,
+  tasks, contacts, members, onToggle, onDelete, onAdd, onUpdate, canDelete,
 }: {
   tasks: CrmTask[];
   contacts: Contact[];
+  members: OrgMember[];
   onToggle: (id: string, done: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onAdd: (data: Partial<CrmTask>) => Promise<void>;
   onUpdate: (id: string, data: Partial<CrmTask>) => Promise<void>;
   canDelete: boolean;
 }) {
-  const [filter, setFilter]   = useState<"all" | "today" | "late" | "done">("all");
+  const [filter, setFilter]   = useState<"all" | "today" | "late" | "done" | "mine">("all");
   const [addModal, setAddModal] = useState(false);
   const [form, setForm]       = useState<Partial<CrmTask>>({ priority: "normal", type: "action" });
   const today = new Date().toISOString().split("T")[0];
   const isDark = useDark();
+  const notifiedRef = useRef<Set<string>>(new Set());
+
+  /* ── Rappels client-side (browser Notification) ───────────────── */
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+    const now = new Date().toISOString();
+    const oneHourAgo = new Date(Date.now() - 3_600_000).toISOString();
+    tasks.forEach(t => {
+      if (!t.reminder_at || t.done || notifiedRef.current.has(t.id)) return;
+      if (t.reminder_at > now || t.reminder_at < oneHourAgo) return;
+      notifiedRef.current.add(t.id);
+      new Notification(`Rappel : ${t.title}`, {
+        body: t.contact ? `Contact : ${t.contact.name}` : t.description || undefined,
+        icon: "/icon-192.png",
+        tag: `crm-task-${t.id}`,
+      });
+    });
+  }, [tasks]);
+
+  const currentUserId = useMemo(() => {
+    return members.find(() => true)?.user_id ?? null;
+  }, [members]);
 
   const filtered = useMemo(() => tasks.filter(t => {
     if (filter === "done")  return t.done;
     if (filter === "today") return !t.done && t.due_date === today;
     if (filter === "late")  return !t.done && t.due_date && t.due_date < today;
+    if (filter === "mine")  return !t.done && !!t.assigned_to;
     return !t.done;
   }), [tasks, filter, today]);
 
@@ -583,6 +616,7 @@ function TachesView({
     all:   tasks.filter(t => !t.done).length,
     today: tasks.filter(t => !t.done && t.due_date === today).length,
     late:  tasks.filter(t => !t.done && t.due_date && t.due_date < today).length,
+    mine:  tasks.filter(t => !t.done && !!t.assigned_to).length,
     done:  tasks.filter(t => t.done).length,
   }), [tasks, today]);
 
@@ -601,12 +635,18 @@ function TachesView({
     <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1.5 flex-wrap">
-          {(["all","today","late","done"] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${filter === f ? (isDark ? "bg-white/10 text-white" : "bg-black/[0.06] text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700")}`}>
-              {f === "all" ? "En cours" : f === "today" ? "Aujourd'hui" : f === "late" ? "En retard" : "Terminées"}
-              {counts[f] > 0 && <span className={`ml-1.5 rounded-full px-1.5 text-[0.6rem] ${
-                f === "late" ? "bg-red-500/20 text-red-400" : (isDark ? "bg-white/10 text-white/50" : "bg-black/[0.06] text-gray-500")}`}>{counts[f]}</span>}
+          {([
+            { id: "all",   label: "En cours" },
+            { id: "today", label: "Aujourd'hui" },
+            { id: "late",  label: "En retard" },
+            ...(members.length > 0 ? [{ id: "mine", label: "Assignées" }] : []),
+            { id: "done",  label: "Terminées" },
+          ] as { id: typeof filter; label: string }[]).map(f => (
+            <button key={f.id} onClick={() => setFilter(f.id)}
+              className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${filter === f.id ? (isDark ? "bg-white/10 text-white" : "bg-black/[0.06] text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700")}`}>
+              {f.label}
+              {counts[f.id] > 0 && <span className={`ml-1.5 rounded-full px-1.5 text-[0.6rem] ${
+                f.id === "late" ? "bg-red-500/20 text-red-400" : (isDark ? "bg-white/10 text-white/50" : "bg-black/[0.06] text-gray-500")}`}>{counts[f.id]}</span>}
             </button>
           ))}
         </div>
@@ -658,6 +698,26 @@ function TachesView({
                           {isLate && " · En retard"}
                         </span>
                       )}
+                      {task.reminder_at && (
+                        <span className={`text-[0.65rem] flex items-center gap-0.5 ${isDark ? "text-amber-400/60" : "text-amber-500"}`}
+                          title={`Rappel : ${new Date(task.reminder_at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}`}>
+                          <Bell size={9}/>
+                          {new Date(task.reminder_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                        </span>
+                      )}
+                      {task.assigned_to && (() => {
+                        const m = members.find(x => x.user_id === task.assigned_to);
+                        const label = m?.display_name ?? "Assigné";
+                        const initials = label.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+                        return (
+                          <span className={`text-[0.6rem] flex items-center gap-1 rounded-full px-1.5 py-0.5 ${isDark ? "bg-white/[0.06] text-white/50" : "bg-gray-100 text-gray-500"}`}
+                            title={`Assigné à : ${label}`}>
+                            <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[0.5rem] font-black text-white"
+                              style={{ background: "#a78bfa" }}>{initials}</span>
+                            {label}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                   {canDelete && (
@@ -696,11 +756,32 @@ function TachesView({
                   {Object.entries(PRIORITIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </Select>
               </div>
-              <Input label="Échéance" type="date" value={form.due_date ?? ""} onChange={e => setForm(f => ({ ...f, due_date: e.target.value || null }))}/>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Échéance" type="date" value={form.due_date ?? ""} onChange={e => setForm(f => ({ ...f, due_date: e.target.value || null }))}/>
+                <div className="space-y-1">
+                  <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                    Rappel <Bell size={9} className="inline mb-0.5"/>
+                  </label>
+                  <input type="datetime-local" value={form.reminder_at?.slice(0, 16) ?? ""}
+                    onChange={e => setForm(f => ({ ...f, reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null }))}
+                    className={`w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 focus:border-gray-300"}`}
+                    style={{ colorScheme: isDark ? "dark" : "light" }}/>
+                </div>
+              </div>
               <Select label="Contact lié" value={form.contact_id ?? ""} onChange={e => setForm(f => ({ ...f, contact_id: e.target.value || null }))}>
                 <option value="">— Aucun —</option>
                 {contacts.map(c => <option key={c.id} value={c.id}>{c.name}{c.company ? ` (${c.company})` : ""}</option>)}
               </Select>
+              {members.length > 0 && (
+                <Select label="Assigné à" value={form.assigned_to ?? ""} onChange={e => setForm(f => ({ ...f, assigned_to: e.target.value || null }))}>
+                  <option value="">— Non assigné —</option>
+                  {members.map(m => (
+                    <option key={m.user_id} value={m.user_id}>
+                      {m.display_name ?? m.user_id.slice(0, 8)} ({m.role})
+                    </option>
+                  ))}
+                </Select>
+              )}
               <Textarea label="Description" placeholder="Détails…" value={form.description ?? ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}/>
               <div className="flex gap-2">
                 <button onClick={() => setAddModal(false)}
@@ -1965,6 +2046,7 @@ export default function CRMPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [tasks,         setTasks]         = useState<CrmTask[]>([]);
   const [tickets,       setTickets]       = useState<SupportTicket[]>([]);
+  const [orgMembers,    setOrgMembers]    = useState<OrgMember[]>([]);
 
   const [loading,       setLoading]       = useState(true);
   const [mainTab,       setMainTab]       = useState<"contacts" | "pipeline" | "taches" | "tickets" | "rapport">("contacts");
@@ -2060,6 +2142,15 @@ export default function CRMPage() {
   }, [userId]);
 
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
+
+  useEffect(() => {
+    if (!orgId) return;
+    supabase.from("organization_members")
+      .select("user_id, display_name, role")
+      .eq("organization_id", orgId)
+      .is("suspended_at", null)
+      .then(({ data }) => setOrgMembers((data as OrgMember[]) ?? []));
+  }, [orgId]);
 
   async function doSaveContact() {
     if (!userId) return;
@@ -2706,6 +2797,7 @@ export default function CRMPage() {
                 <TachesView
                   tasks={tasks}
                   contacts={contacts}
+                  members={orgMembers}
                   onToggle={toggleTask}
                   onDelete={deleteTask}
                   onAdd={addTask}
