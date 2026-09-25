@@ -3177,9 +3177,9 @@ export default function CRMPage() {
 
       {/* ── HEADER ── */}
       <div className="relative overflow-hidden shrink-0" style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#f0f2f5,#f5f7fa,#f0f2f5)" }}>
-        <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
-        <div className="pointer-events-none absolute -bottom-8 right-10 h-32 w-32 rounded-full opacity-[0.04]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
-        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.3),transparent)" }}/>
+        <div className="pointer-events-none absolute -top-16 -left-12 h-48 w-48 rounded-full opacity-[0.07]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 65%)" }}/>
+        <div className="pointer-events-none absolute -bottom-12 right-8 h-40 w-40 rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle,#7c3aed,transparent 65%)" }}/>
+        <div className="absolute bottom-0 left-0 right-0 h-[1.5px]" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),rgba(124,58,237,0.25),transparent)" }}/>
         <div className="relative px-4 sm:px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -3237,16 +3237,20 @@ export default function CRMPage() {
               { label: "Pipeline",       value: fmtEur(opportunities.filter(o=>o.stage!=="perdu").reduce((s,o)=>s+(o.amount??0),0)), color: "#38bdf8", icon: TrendingUp, onClick: () => setMainTab("pipeline") },
               { label: "Tâches en cours",value: tasks.filter(t => !t.done).length,                                 color: "#f59e0b", icon: CheckSquare,  onClick: () => setMainTab("taches") },
             ].map(k => (
-              <motion.button key={k.label} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ type:"spring", stiffness:300, damping:30 }}
+              <motion.button key={k.label} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ type:"spring", stiffness:300, damping:30, delay: 0.04 * MAIN_TABS.findIndex(t=>t.id==="contacts") }}
                 onClick={k.onClick}
-                className="rounded-xl p-3 flex items-center gap-2.5 text-left transition-all hover:brightness-110 active:scale-[0.98]"
-                style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.8)", border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.08)" }}>
-                <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${k.color}18` }}>
-                  <k.icon size={13} style={{ color: k.color }}/>
+                className="rounded-xl p-3 flex items-center gap-2.5 text-left transition-all hover:brightness-105 active:scale-[0.97]"
+                style={{
+                  background: isDark ? "rgba(255,255,255,0.035)" : "rgba(255,255,255,0.9)",
+                  border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)",
+                  boxShadow: isDark ? "0 1px 4px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.05)",
+                }}>
+                <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${k.color}1c` }}>
+                  <k.icon size={14} style={{ color: k.color }}/>
                 </div>
                 <div>
-                  <p className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>{k.label}</p>
-                  <p className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>{k.value}</p>
+                  <p className={`text-[0.58rem] font-semibold uppercase tracking-wide ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
+                  <p className={`text-sm font-black mt-0.5 ${isDark ? "text-white" : "text-gray-900"}`}>{k.value}</p>
                 </div>
               </motion.button>
             ))}
@@ -3255,20 +3259,26 @@ export default function CRMPage() {
       </div>
 
       {/* ── TABS ── */}
-      <div className="relative shrink-0 flex overflow-x-auto" style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.08)", background: isDark ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.8)" }}>
+      <div className={`shrink-0 px-4 sm:px-6 py-2.5 flex gap-1 overflow-x-auto ${isDark ? "border-b border-white/[0.05] bg-[#07080e]" : "border-b border-black/[0.05] bg-[#f0f2f5]"}`}>
         {MAIN_TABS.map(t => (
           <button key={t.id} onClick={() => setMainTab(t.id)}
-            className="relative flex items-center gap-1.5 px-4 py-3.5 text-[0.67rem] font-bold uppercase tracking-wider whitespace-nowrap transition-colors"
-            style={{ color: mainTab === t.id ? (isDark ? "#ffffff" : "#111827") : (isDark ? "rgba(255,255,255,0.3)" : "rgba(17,24,39,0.4)") }}>
-            <t.icon size={11}/>{t.label}
+            className="relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[0.67rem] font-bold uppercase tracking-wider whitespace-nowrap transition-all active:scale-[0.97]"
+            style={{
+              background: mainTab === t.id ? "rgba(201,165,90,0.14)" : "transparent",
+              color: mainTab === t.id ? "#c9a55a" : (isDark ? "rgba(255,255,255,0.35)" : "rgba(17,24,39,0.45)"),
+              border: mainTab === t.id ? "1px solid rgba(201,165,90,0.28)" : "1px solid transparent",
+              boxShadow: mainTab === t.id ? "0 1px 6px rgba(201,165,90,0.12)" : "none",
+            }}>
+            <t.icon size={11}/>
+            {t.label}
             {t.badge > 0 && (
-              <span className="rounded-full px-1.5 text-[0.58rem]"
-                style={{ background: mainTab===t.id ? "rgba(201,165,90,0.2)" : (isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"), color: mainTab===t.id ? "#c9a55a" : (isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)") }}>
-                {t.badge}
+              <span className="rounded-full px-1.5 py-0.5 text-[0.56rem] font-black"
+                style={{
+                  background: mainTab === t.id ? "rgba(201,165,90,0.2)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"),
+                  color: mainTab === t.id ? "#c9a55a" : (isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.45)"),
+                }}>
+                {t.badge > 99 ? "99+" : t.badge}
               </span>
-            )}
-            {mainTab === t.id && (
-              <motion.div layoutId="crm-tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: "#c9a55a" }}/>
             )}
           </button>
         ))}
@@ -3350,15 +3360,22 @@ export default function CRMPage() {
                     </div>
                   </div>
 
-                                    <div className="flex items-center gap-3 flex-wrap">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                     {(Object.keys(STATUSES) as ContactStatus[]).map(s => {
                       const count = contacts.filter(c => c.status === s).length;
+                      const isActive = filterStatus === s;
+                      const isOther  = filterStatus !== "tous" && !isActive;
                       return count > 0 ? (
-                        <button key={s} onClick={() => setFilterStatus(filterStatus === s ? "tous" : s)}
-                          className="flex items-center gap-1.5 text-[0.62rem] font-bold transition-opacity"
-                          style={{ color: STATUSES[s].color, opacity: filterStatus !== "tous" && filterStatus !== s ? 0.35 : 1 }}>
-                          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUSES[s].color }}/>
-                          {STATUSES[s].label} ({count})
+                        <button key={s} onClick={() => setFilterStatus(isActive ? "tous" : s)}
+                          className="flex items-center gap-1.5 text-[0.62rem] font-bold rounded-xl px-2.5 py-1 transition-all"
+                          style={{
+                            color: STATUSES[s].color,
+                            background: isActive ? `${STATUSES[s].color}1a` : "transparent",
+                            border: `1px solid ${isActive ? `${STATUSES[s].color}38` : "transparent"}`,
+                            opacity: isOther ? 0.35 : 1,
+                          }}>
+                          <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: STATUSES[s].color }}/>
+                          {STATUSES[s].label} <span className="font-black">({count})</span>
                         </button>
                       ) : null;
                     })}
@@ -3370,9 +3387,23 @@ export default function CRMPage() {
                   </div>
 
                                     {contacts.length === 0 && !contactsLoading ? (
-                    <div className={`text-center py-16 ${isDark ? "text-white/20" : "text-gray-400"}`}>
-                      <Users size={36} className="mx-auto mb-4 opacity-20"/>
-                      <p className="text-sm">{contactsTotal === 0 ? "Aucun contact — ajoutez votre premier !" : "Aucun résultat"}</p>
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                      <div className={`h-16 w-16 rounded-2xl flex items-center justify-center mb-4 ${isDark ? "bg-white/[0.04]" : "bg-gray-100"}`}>
+                        <Users size={28} className={isDark ? "text-white/20" : "text-gray-300"}/>
+                      </div>
+                      <p className={`text-sm font-bold mb-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                        {contactsTotal === 0 ? "Aucun contact pour l'instant" : "Aucun résultat"}
+                      </p>
+                      <p className={`text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>
+                        {contactsTotal === 0 ? "Ajoutez votre premier contact ou importez un fichier CSV." : "Modifiez les filtres pour voir plus de contacts."}
+                      </p>
+                      {contactsTotal === 0 && perms.can_create && (
+                        <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
+                          className="mt-5 flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+                          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                          <Plus size={13}/> Ajouter un contact
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-1.5">
@@ -3388,10 +3419,21 @@ export default function CRMPage() {
                             <motion.div key={c.id} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                               onClick={() => setSelected(isSelected ? null : c)}
-                              className={`flex items-center gap-3 rounded-2xl border p-3.5 cursor-pointer transition-all group ${
+                              className={`flex items-center gap-3 rounded-2xl cursor-pointer transition-all group overflow-hidden ${
                                 isSelected
-                                  ? isDark ? "border-white/15 bg-white/[0.06]" : "border-gray-300 bg-gray-100"
-                                  : isDark ? "border-white/[0.05] bg-white/[0.03] hover:border-white/10 hover:bg-white/[0.03]" : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"}`}>
+                                  ? isDark ? "bg-white/[0.06]" : "bg-gray-100/80"
+                                  : isDark ? "bg-white/[0.03] hover:bg-white/[0.05]" : "bg-white hover:bg-gray-50"}`}
+                              style={{
+                                padding: "14px",
+                                border: isSelected
+                                  ? `1px solid ${isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`
+                                  : `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.07)"}`,
+                                borderLeftWidth: "3px",
+                                borderLeftColor: STATUSES[c.status].color,
+                                boxShadow: isSelected
+                                  ? (isDark ? "0 4px 16px rgba(0,0,0,0.35)" : "0 2px 10px rgba(0,0,0,0.07)")
+                                  : "none",
+                              }}>
                               <Avatar name={c.name} color={typeColor} size={38}/>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
