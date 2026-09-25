@@ -18,7 +18,6 @@ import { useOrganization } from "@/lib/use-organization";
 import { useCrmPermissions } from "@/lib/use-crm-permissions";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import Pagination from "@/components/client/Pagination";
-import { usePagination } from "@/hooks/usePagination";
 import { GridSkeleton } from "@/components/client/Skeleton";
 import EmptyState from "@/components/client/EmptyState";
 import { validate, ContactSchema } from "@/lib/schemas/client";
@@ -2365,6 +2364,9 @@ export default function CRMPage() {
   const router = useRouter();
 
   const [contacts,        setContacts]        = useState<Contact[]>([]);
+  const [contactsTotal,   setContactsTotal]   = useState(0);
+  const [contactsPage,    setContactsPage]    = useState(1);
+  const [contactsLoading, setContactsLoading] = useState(false);
   const [activities,      setActivities]      = useState<Activity[]>([]);
   const [opportunities,   setOpportunities]   = useState<Opportunity[]>([]);
   const [tasks,           setTasks]           = useState<CrmTask[]>([]);
@@ -2387,8 +2389,6 @@ export default function CRMPage() {
   const [form,          setForm]          = useState<Partial<Contact>>({ status: "prospect", type: "prospect" });
   const [formErrors,    setFormErrors]    = useState<Record<string, string>>({});
   const [saveError,     setSaveError]     = useState("");
-  const [hasMoreContacts, setHasMoreContacts] = useState(false);
-  const [loadingMore,   setLoadingMore]   = useState(false);
   const [corbeilleOpen, setCorbeilleOpen] = useState(false);
   const [deletedContacts, setDeletedContacts] = useState<Contact[]>([]);
   const [dupWarning,    setDupWarning]    = useState<{ contact: Contact; onConfirm: () => void } | null>(null);
@@ -2414,7 +2414,55 @@ export default function CRMPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-    const loadAll = useCallback(async () => {
+  const CONTACTS_PAGE_SIZE = 50;
+
+  const buildContactsQuery = useCallback((
+    pg: number, q: string, status: ContactStatus | "tous",
+    type: ContactType | "tous", sort: "date" | "name" | "budget" | "relance" | "score",
+    withCount: boolean,
+  ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let qb: any = supabase.from("contacts")
+      .select("*", withCount ? { count: "exact" } : undefined)
+      .is("deleted_at", null);
+    if (q.trim()) {
+      const esc = q.replace(/[%_]/g, "\\$&");
+      qb = qb.or(`name.ilike.%${esc}%,company.ilike.%${esc}%,email.ilike.%${esc}%,phone.ilike.%${esc}%`);
+    }
+    if (status !== "tous") qb = qb.eq("status", status);
+    if (type   !== "tous") qb = qb.eq("type",   type);
+    switch (sort) {
+      case "name":    qb = qb.order("name",         { ascending: true });  break;
+      case "budget":  qb = qb.order("budget",       { ascending: false, nullsFirst: false }); break;
+      case "relance": qb = qb.order("next_relance", { ascending: true,  nullsFirst: false }); break;
+      default:        qb = qb.order("updated_at",   { ascending: false }); break;
+    }
+    if (pg > 0) qb = qb.range((pg - 1) * CONTACTS_PAGE_SIZE, pg * CONTACTS_PAGE_SIZE - 1);
+    return qb;
+  }, []);
+
+  const loadContactPage = useCallback(async (
+    pg: number, q: string, status: ContactStatus | "tous",
+    type: ContactType | "tous", sort: "date" | "name" | "budget" | "relance" | "score",
+  ) => {
+    setContactsLoading(true);
+    const { data, count, error } = await buildContactsQuery(pg, q, status, type, sort, true);
+    setContactsLoading(false);
+    if (error) { toast("Impossible de charger les contacts", "error"); return; }
+    let list = (data ?? []) as Contact[];
+    if (sort === "score") {
+      list = [...list].sort((a, b) => {
+        const sa = computeLeadScore(a, activities.filter(x => x.contact_id === a.id).length);
+        const sb = computeLeadScore(b, activities.filter(x => x.contact_id === b.id).length);
+        return sb - sa;
+      });
+    }
+    setContacts(list);
+    setContactsTotal(count ?? 0);
+    setContactsPage(pg);
+  }, [buildContactsQuery, activities]);
+
+  const loadAll = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     try {
@@ -2422,11 +2470,11 @@ export default function CRMPage() {
       // du cache schema PostgREST — on résout les noms de contacts localement.
       // Pas de filtre user_id — RLS garantit l'isolation (user_id = auth.uid() OU org member)
       const [ctRes, acRes, opRes, tkRes, tiRes] = await Promise.all([
-        supabase.from("contacts").select("*").is("deleted_at", null).order("updated_at", { ascending: false }).limit(200),
-        supabase.from("contact_activities").select("*").order("created_at", { ascending: false }).limit(500),
-        supabase.from("opportunities").select("*").order("created_at", { ascending: false }).limit(200),
-        supabase.from("crm_tasks").select("*").order("due_date", { ascending: true }).limit(200),
-        supabase.from("tickets").select("*").order("created_at", { ascending: false }).limit(200),
+        buildContactsQuery(1, "", "tous", "tous", "date", true),
+        supabase.from("contact_activities").select("*").order("created_at", { ascending: false }).limit(1000),
+        supabase.from("opportunities").select("*").order("created_at", { ascending: false }).limit(500),
+        supabase.from("crm_tasks").select("*").order("due_date", { ascending: true }).limit(500),
+        supabase.from("tickets").select("*").order("created_at", { ascending: false }).limit(500),
       ]);
 
       const contactsList = (ctRes.data ?? []) as Contact[];
@@ -2438,7 +2486,8 @@ export default function CRMPage() {
       if (ctRes.error) toast("Impossible de charger les contacts", "error");
       else {
         setContacts(contactsList);
-        setHasMoreContacts(contactsList.length === 200);
+        setContactsTotal(ctRes.count ?? 0);
+        setContactsPage(1);
       }
 
       if (acRes.error) {
@@ -2466,11 +2515,11 @@ export default function CRMPage() {
       })) as SupportTicket[]);
 
     } catch {
-      // Erreur réseau — silencieux pour éviter les rejections non-gérées
+      // Erreur réseau — silencieux
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, buildContactsQuery]);
 
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
 
@@ -2487,6 +2536,19 @@ export default function CRMPage() {
       .order("created_at", { ascending: true })
       .then(({ data }) => setCustomTemplates((data as CustomEmailTemplate[]) ?? []));
   }, [orgId]);
+
+  // Recharge la page 1 côté serveur à chaque changement de filtre/tri (debounce 300ms)
+  const filtersRef = useRef({ query, filterStatus, filterType, sortBy });
+  filtersRef.current = { query, filterStatus, filterType, sortBy };
+  useEffect(() => {
+    if (!userId) return;
+    const t = setTimeout(() => {
+      const f = filtersRef.current;
+      loadContactPage(1, f.query, f.filterStatus, f.filterType, f.sortBy);
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, filterStatus, filterType, sortBy, userId]);
 
   async function saveCustomTemplate(t: Omit<CustomEmailTemplate, "id">) {
     if (!orgId || !userId) return;
@@ -2569,27 +2631,6 @@ export default function CRMPage() {
       .order("deleted_at", { ascending: false })
       .limit(50);
     setDeletedContacts((data as Contact[]) ?? []);
-  }
-
-  async function loadMoreContacts() {
-    if (!userId || loadingMore) return;
-    setLoadingMore(true);
-    const { data } = await supabase.from("contacts")
-      .select("*")
-      .is("deleted_at", null)
-      .order("updated_at", { ascending: false })
-      .range(contacts.length, contacts.length + 199);
-    if (data?.length) {
-      setContacts(cs => {
-        const ids = new Set(cs.map(c => c.id));
-        const fresh = (data as Contact[]).filter(c => !ids.has(c.id));
-        return [...cs, ...fresh];
-      });
-      setHasMoreContacts((data as Contact[]).length === 200);
-    } else {
-      setHasMoreContacts(false);
-    }
-    setLoadingMore(false);
   }
 
   async function updateContact(id: string, data: Partial<Contact>) {
@@ -2697,9 +2738,12 @@ export default function CRMPage() {
     setTickets(t => t.filter(tk => tk.id !== id));
   }
 
-    function exportCSV() {
+  async function exportCSV() {
+    // Requête sans .range() pour exporter TOUS les contacts correspondant aux filtres
+    const { data, error } = await buildContactsQuery(0, query, filterStatus, filterType, sortBy, false);
+    if (error || !data) { toast("Erreur lors de l'export", "error"); return; }
     let csv = "﻿" + toRFC4180Row(CSV_EXPORT_HEADERS);
-    for (const c of filtered) {
+    for (const c of data as Contact[]) {
       csv += toRFC4180Row([
         c.name, c.company ?? "", c.email ?? "", c.phone ?? "",
         c.status, c.type ?? "prospect", c.sector ?? "", c.source ?? "",
@@ -2711,40 +2755,15 @@ export default function CRMPage() {
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     a.download = `contacts_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
+    toast(`${(data as Contact[]).length} contact(s) exportés`, "success");
   }
 
-    const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    const result = contacts.filter(c => {
-      const matchQ = !q || c.name.toLowerCase().includes(q) ||
-        (c.company ?? "").toLowerCase().includes(q) ||
-        (c.email ?? "").toLowerCase().includes(q) ||
-        (c.phone ?? "").toLowerCase().includes(q);
-      const matchStatus = filterStatus === "tous" || c.status === filterStatus;
-      const matchType   = filterType   === "tous" || c.type   === filterType;
-      return matchQ && matchStatus && matchType;
-    });
-    return result.sort((a, b) => {
-      switch (sortBy) {
-        case "name":    return a.name.localeCompare(b.name, "fr");
-        case "budget":  return (b.budget ?? 0) - (a.budget ?? 0);
-        case "relance": {
-          if (!a.next_relance && !b.next_relance) return 0;
-          if (!a.next_relance) return 1;
-          if (!b.next_relance) return -1;
-          return a.next_relance.localeCompare(b.next_relance);
-        }
-        case "score": {
-          const sa = computeLeadScore(a, activities.filter(x => x.contact_id === a.id).length);
-          const sb = computeLeadScore(b, activities.filter(x => x.contact_id === b.id).length);
-          return sb - sa;
-        }
-        default: return b.updated_at.localeCompare(a.updated_at);
-      }
-    });
-  }, [contacts, query, filterStatus, filterType, sortBy, activities]);
-
-  const { page, setPage, paginated: pageItems, totalPages, totalItems } = usePagination(filtered, 20);
+  // Pagination serveur — contacts est déjà la bonne page, filtrée et triée côté serveur
+  const pageItems  = contacts;
+  const page       = contactsPage;
+  const totalItems = contactsTotal;
+  const totalPages = Math.max(1, Math.ceil(contactsTotal / CONTACTS_PAGE_SIZE));
+  const setPage    = (pg: number) => loadContactPage(pg, query, filterStatus, filterType, sortBy);
 
     const selectedActivities    = useMemo(() => activities.filter(a => a.contact_id === selected?.id), [activities, selected]);
   const selectedOpportunities = useMemo(() => opportunities.filter(o => o.contact_id === selected?.id), [opportunities, selected]);
@@ -2875,7 +2894,7 @@ export default function CRMPage() {
               <div>
                 <h1 className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>CRM</h1>
                 <p className={`text-[0.65rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                  {contacts.length} contact{contacts.length !== 1 ? "s" : ""} · {opportunities.filter(o => o.stage !== "perdu").length} opportunités actives
+                  {contactsTotal} contact{contactsTotal !== 1 ? "s" : ""} · {opportunities.filter(o => o.stage !== "perdu").length} opportunités actives
                 </p>
               </div>
             </div>
@@ -2920,8 +2939,8 @@ export default function CRMPage() {
           {/* KPI strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
             {[
-              { label: "Contacts",       value: contacts.length,                                                    color: "#c9a55a", icon: Users,       onClick: () => { setMainTab("contacts"); setFilterStatus("tous"); } },
-              { label: "Actifs",         value: contacts.filter(c => c.status === "actif").length,                 color: "#34d399", icon: UserCheck,    onClick: () => { setMainTab("contacts"); setFilterStatus("actif"); setPage(1); } },
+              { label: "Contacts",       value: contactsTotal,                                                       color: "#c9a55a", icon: Users,       onClick: () => { setMainTab("contacts"); setFilterStatus("tous"); } },
+              { label: "Actifs",         value: contacts.filter(c => c.status === "actif").length,                 color: "#34d399", icon: UserCheck,    onClick: () => { setMainTab("contacts"); setFilterStatus("actif"); } },
               { label: "Pipeline",       value: fmtEur(opportunities.filter(o=>o.stage!=="perdu").reduce((s,o)=>s+(o.amount??0),0)), color: "#38bdf8", icon: TrendingUp, onClick: () => setMainTab("pipeline") },
               { label: "Tâches en cours",value: tasks.filter(t => !t.done).length,                                 color: "#f59e0b", icon: CheckSquare,  onClick: () => setMainTab("taches") },
             ].map(k => (
@@ -3014,19 +3033,19 @@ export default function CRMPage() {
                         className={`w-full rounded-xl border pl-9 pr-4 py-2.5 text-[0.8rem] outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/15" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                      <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value as ContactStatus | "tous"); setPage(1); }}
+                      <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value as ContactStatus | "tous"); }}
                         className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
                         style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="tous">Tous statuts</option>
                         {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
-                      <select value={filterType} onChange={e => { setFilterType(e.target.value as ContactType | "tous"); setPage(1); }}
+                      <select value={filterType} onChange={e => { setFilterType(e.target.value as ContactType | "tous"); }}
                         className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
                         style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="tous">Tous types</option>
                         {Object.entries(CONTACT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
-                      <select value={sortBy} onChange={e => { setSortBy(e.target.value as "date" | "name" | "budget" | "relance" | "score"); setPage(1); }}
+                      <select value={sortBy} onChange={e => { setSortBy(e.target.value as "date" | "name" | "budget" | "relance" | "score"); }}
                         className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
                         style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="date">Plus récent</option>
@@ -3050,15 +3069,17 @@ export default function CRMPage() {
                         </button>
                       ) : null;
                     })}
-                    {filtered.length !== contacts.length && (
-                      <span className={`text-[0.6rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>{filtered.length} résultat{filtered.length > 1 ? "s" : ""}</span>
+                    {contactsLoading && (
+                      <span className={`flex items-center gap-1 text-[0.6rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>
+                        <Loader2 size={9} className="animate-spin"/> Chargement…
+                      </span>
                     )}
                   </div>
 
-                                    {filtered.length === 0 ? (
+                                    {contacts.length === 0 && !contactsLoading ? (
                     <div className={`text-center py-16 ${isDark ? "text-white/20" : "text-gray-400"}`}>
                       <Users size={36} className="mx-auto mb-4 opacity-20"/>
-                      <p className="text-sm">{contacts.length === 0 ? "Aucun contact — ajoutez votre premier !" : "Aucun résultat"}</p>
+                      <p className="text-sm">{contactsTotal === 0 ? "Aucun contact — ajoutez votre premier !" : "Aucun résultat"}</p>
                     </div>
                   ) : (
                     <div className="space-y-1.5">
@@ -3154,16 +3175,7 @@ export default function CRMPage() {
                       </AnimatePresence>
                       {totalPages > 1 && (
                         <div className="pt-2">
-                          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={totalItems} pageSize={20}/>
-                        </div>
-                      )}
-                      {hasMoreContacts && page === totalPages && (
-                        <div className="pt-3 flex justify-center">
-                          <button onClick={loadMoreContacts} disabled={loadingMore}
-                            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] font-semibold transition-all ${isDark ? "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.08]" : "bg-white border border-black/[0.08] text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
-                            {loadingMore ? <Loader2 size={11} className="animate-spin"/> : <Plus size={11}/>}
-                            Charger plus de contacts
-                          </button>
+                          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={totalItems} pageSize={CONTACTS_PAGE_SIZE}/>
                         </div>
                       )}
                     </div>
