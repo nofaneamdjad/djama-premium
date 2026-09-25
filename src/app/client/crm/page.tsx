@@ -13,6 +13,16 @@ import {
   Zap, Award, Flag, MoreVertical, Send, Link2, ChevronLeft,
   RefreshCw, PieChart, Layers, Bell, Hash, CheckCircle, XCircle, Sparkles,
 } from "lucide-react";
+import { Bar, Doughnut, Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale, LinearScale, BarElement, PointElement, LineElement,
+  ArcElement, Tooltip, Legend, Filler,
+} from "chart.js";
+ChartJS.register(
+  CategoryScale, LinearScale, BarElement, PointElement, LineElement,
+  ArcElement, Tooltip, Legend, Filler,
+);
 import { supabase } from "@/lib/supabase";
 import { useOrganization } from "@/lib/use-organization";
 import { useCrmPermissions } from "@/lib/use-crm-permissions";
@@ -894,12 +904,13 @@ type CrmRapport = {
 };
 
 function RapportView({
-  contacts, opportunities, tasks, tickets,
+  contacts, opportunities, tasks, tickets, activities,
 }: {
   contacts: Contact[];
   opportunities: Opportunity[];
   tasks: CrmTask[];
   tickets: SupportTicket[];
+  activities: Activity[];
 }) {
   const today = new Date().toISOString().split("T")[0];
   const { add: toast } = useToastStack();
@@ -931,12 +942,47 @@ function RapportView({
     const byType: Record<string, number> = {};
     contacts.forEach(c => { byType[c.type ?? "prospect"] = (byType[c.type ?? "prospect"] ?? 0) + 1; });
 
+    const byStatus: Record<string, number> = { prospect: 0, actif: 0, inactif: 0, perdu: 0 };
+    contacts.forEach(c => { if (c.status in byStatus) byStatus[c.status]++; });
+
     const bySector: Record<string, number> = {};
     contacts.forEach(c => { if (c.sector) bySector[c.sector] = (bySector[c.sector] ?? 0) + 1; });
     const topSectors = Object.entries(bySector).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-    return { actifs, prospects, totalOpp, caMtot, convRate, overdueTasks, openTickets, byStage, byType, topSectors, totalContacts: contacts.length };
-  }, [contacts, opportunities, tasks, tickets]);
+    // Weekly activity count — last 8 weeks
+    const weekLabels: string[] = [];
+    const weekCounts: number[] = [];
+    for (let w = 7; w >= 0; w--) {
+      const start = new Date(Date.now() - (w + 1) * 7 * 86_400_000);
+      const end   = new Date(Date.now() - w * 7 * 86_400_000);
+      const label = start.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+      weekLabels.push(label);
+      weekCounts.push(
+        activities.filter(a => {
+          const d = new Date(a.activity_date);
+          return d >= start && d < end;
+        }).length,
+      );
+    }
+
+    // Monthly pipeline amount — last 6 months (by close_date)
+    const monthLabels: string[] = [];
+    const monthPipeline: number[] = [];
+    const monthWon: number[] = [];
+    for (let m = 5; m >= 0; m--) {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() - m);
+      const label = d.toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthLabels.push(label);
+      const monthOpps = opportunities.filter(o => o.close_date?.startsWith(ym));
+      monthPipeline.push(monthOpps.filter(o => o.stage !== "perdu").reduce((s, o) => s + (o.amount ?? 0), 0));
+      monthWon.push(monthOpps.filter(o => o.stage === "gagné").reduce((s, o) => s + (o.amount ?? 0), 0));
+    }
+
+    return { actifs, prospects, totalOpp, caMtot, convRate, overdueTasks, openTickets, byStage, byType, byStatus, topSectors, totalContacts: contacts.length, weekLabels, weekCounts, monthLabels, monthPipeline, monthWon };
+  }, [contacts, opportunities, tasks, tickets, activities]);
 
   async function runRapportIA() {
     setRapportLoading(true);
@@ -1182,62 +1228,210 @@ function RapportView({
         ))}
       </div>
 
-      {/* ── Pipeline + répartition contacts ── */}
+      {/* ── Pipeline + Doughnut contacts ── */}
       <div className="grid sm:grid-cols-2 gap-4">
+        {/* Pipeline horizontal bar chart */}
         <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
           <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Pipeline commercial</h3>
-          <div className="space-y-2.5">
-            {(Object.keys(STAGES) as OppStage[]).map(stage => {
-              const { count, amount } = stats.byStage[stage];
-              const maxCount = Math.max(...Object.values(stats.byStage).map(v => v.count), 1);
-              return (
-                <div key={stage} className="flex items-center gap-3">
-                  <span className="text-[0.62rem] w-20 shrink-0" style={{ color: STAGES[stage].color }}>{STAGES[stage].label}</span>
-                  <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                    <div className="h-full rounded-full transition-all"
-                      style={{ width: `${(count / maxCount) * 100}%`, backgroundColor: STAGES[stage].color }}/>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className={`text-[0.6rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{count} opp.</span>
-                    {amount > 0 && <span className={`text-[0.6rem] ml-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>· {fmtEur(amount)}</span>}
-                  </div>
-                </div>
-              );
-            })}
+          <div style={{ height: 180 }}>
+            <Bar
+              data={{
+                labels: (Object.keys(STAGES) as OppStage[]).map(s => STAGES[s].label),
+                datasets: [
+                  {
+                    label: "Opportunités",
+                    data: (Object.keys(STAGES) as OppStage[]).map(s => stats.byStage[s].count),
+                    backgroundColor: (Object.keys(STAGES) as OppStage[]).map(s => STAGES[s].color + "cc"),
+                    borderColor:     (Object.keys(STAGES) as OppStage[]).map(s => STAGES[s].color),
+                    borderWidth: 1,
+                    borderRadius: 4,
+                  },
+                ],
+              }}
+              options={{
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      afterLabel: (ctx) => {
+                        const stage = (Object.keys(STAGES) as OppStage[])[ctx.dataIndex];
+                        const amt = stats.byStage[stage].amount;
+                        return amt > 0 ? fmtEur(amt) : "";
+                      },
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    ticks: { color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)", font: { size: 10 }, stepSize: 1 },
+                    grid:  { color: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)" },
+                  },
+                  y: {
+                    ticks: { color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.6)", font: { size: 10 } },
+                    grid:  { display: false },
+                  },
+                },
+              }}
+            />
           </div>
         </div>
 
+        {/* Contacts by status — Doughnut */}
         <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Répartition contacts</h3>
-          <div className="space-y-3">
-            {(Object.keys(CONTACT_TYPES) as ContactType[]).map(type => {
-              const count = stats.byType[type] ?? 0;
-              const pct = contacts.length > 0 ? Math.round(count / contacts.length * 100) : 0;
-              return (
-                <div key={type} className="flex items-center gap-3">
-                  <span className="text-[0.62rem] w-20 shrink-0" style={{ color: CONTACT_TYPES[type].color }}>{CONTACT_TYPES[type].label}</span>
-                  <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                    <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: CONTACT_TYPES[type].color }}/>
+          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Contacts par statut</h3>
+          <div className="flex items-center gap-4">
+            <div style={{ height: 140, width: 140, flexShrink: 0 }}>
+              <Doughnut
+                data={{
+                  labels: ["Prospect", "Actif", "Inactif", "Perdu"],
+                  datasets: [{
+                    data: [stats.byStatus.prospect, stats.byStatus.actif, stats.byStatus.inactif, stats.byStatus.perdu],
+                    backgroundColor: ["#a78bfa", "#34d399", "#94a3b8", "#f87171"],
+                    borderColor:     isDark ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.8)",
+                    borderWidth: 2,
+                    hoverOffset: 6,
+                  }],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: "60%",
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}` } },
+                  },
+                }}
+              />
+            </div>
+            <div className="space-y-2 flex-1">
+              {[
+                { label: "Prospect", color: "#a78bfa", val: stats.byStatus.prospect },
+                { label: "Actif",    color: "#34d399", val: stats.byStatus.actif },
+                { label: "Inactif",  color: "#94a3b8", val: stats.byStatus.inactif },
+                { label: "Perdu",    color: "#f87171", val: stats.byStatus.perdu },
+              ].map(s => (
+                <div key={s.label} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: s.color }}/>
+                    <span className={`text-[0.65rem] ${isDark ? "text-white/50" : "text-gray-600"}`}>{s.label}</span>
                   </div>
-                  <span className={`text-[0.62rem] shrink-0 w-8 text-right ${isDark ? "text-white/40" : "text-gray-500"}`}>{count}</span>
+                  <span className={`text-[0.65rem] font-bold ${isDark ? "text-white/40" : "text-gray-500"}`}>{s.val}</span>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
 
           {stats.topSectors.length > 0 && (
             <>
-              <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-3 mt-5 ${isDark ? "text-white/40" : "text-gray-400"}`}>Top secteurs</h3>
-              <div className="space-y-1.5">
+              <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-2 mt-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Top secteurs</h3>
+              <div className="space-y-1">
                 {stats.topSectors.map(([sector, count]) => (
                   <div key={sector} className="flex items-center justify-between">
-                    <span className={`text-[0.7rem] truncate ${isDark ? "text-white/50" : "text-gray-600"}`}>{sector}</span>
+                    <span className={`text-[0.68rem] truncate ${isDark ? "text-white/50" : "text-gray-600"}`}>{sector}</span>
                     <span className={`text-[0.65rem] font-bold shrink-0 ml-2 ${isDark ? "text-white/30" : "text-gray-400"}`}>{count}</span>
                   </div>
                 ))}
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      {/* ── Activités par semaine + Opportunités par mois ── */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        {/* Weekly activity line chart */}
+        <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Activités (8 semaines)</h3>
+          <div style={{ height: 150 }}>
+            <Line
+              data={{
+                labels: stats.weekLabels,
+                datasets: [{
+                  label: "Activités",
+                  data: stats.weekCounts,
+                  borderColor: "#60a5fa",
+                  backgroundColor: "rgba(96,165,250,0.12)",
+                  borderWidth: 2,
+                  pointRadius: 3,
+                  pointBackgroundColor: "#60a5fa",
+                  tension: 0.35,
+                  fill: true,
+                }],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: {
+                    ticks: { color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)", font: { size: 9 }, maxRotation: 0 },
+                    grid:  { display: false },
+                  },
+                  y: {
+                    ticks: { color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)", font: { size: 9 }, stepSize: 1 },
+                    grid:  { color: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)" },
+                    beginAtZero: true,
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Monthly pipeline + won bar chart */}
+        <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Pipeline / CA par mois</h3>
+          <div style={{ height: 150 }}>
+            <Bar
+              data={{
+                labels: stats.monthLabels,
+                datasets: [
+                  {
+                    label: "Pipeline",
+                    data: stats.monthPipeline,
+                    backgroundColor: "rgba(245,158,11,0.5)",
+                    borderColor: "#f59e0b",
+                    borderWidth: 1,
+                    borderRadius: 4,
+                  },
+                  {
+                    label: "CA gagné",
+                    data: stats.monthWon,
+                    backgroundColor: "rgba(52,211,153,0.5)",
+                    borderColor: "#34d399",
+                    borderWidth: 1,
+                    borderRadius: 4,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: true,
+                    position: "bottom",
+                    labels: { color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.5)", font: { size: 9 }, boxWidth: 10, padding: 8 },
+                  },
+                  tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmtEur(ctx.parsed.y ?? 0)}` } },
+                },
+                scales: {
+                  x: {
+                    ticks: { color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)", font: { size: 9 } },
+                    grid:  { display: false },
+                  },
+                  y: {
+                    ticks: { color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)", font: { size: 9 }, callback: (v) => fmtEur(Number(v)) },
+                    grid:  { color: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)" },
+                    beginAtZero: true,
+                  },
+                },
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -3319,7 +3513,7 @@ export default function CRMPage() {
               )}
 
                             {mainTab === "rapport" && (
-                <RapportView contacts={contacts} opportunities={opportunities} tasks={tasks} tickets={tickets}/>
+                <RapportView contacts={contacts} opportunities={opportunities} tasks={tasks} tickets={tickets} activities={activities}/>
               )}
             </>
           )}
