@@ -246,6 +246,30 @@ const EMAIL_TEMPLATES = [
   { id: "bienvenue",    label: "Bienvenue client",      subject: "Bienvenue !",                          body: "Bonjour {nom},\n\nNous sommes ravis de vous accueillir parmi nos clients.\n\nNous restons à votre disposition pour toute question.\n\nL'équipe" },
 ] as const;
 
+interface CustomEmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+}
+
+const TEMPLATE_VARIABLES = [
+  { token: "{nom}",      hint: "Prénom du contact" },
+  { token: "{société}",  hint: "Société du contact" },
+  { token: "{date}",     hint: "Date du jour" },
+  { token: "{budget}",   hint: "Budget du contact" },
+];
+
+function resolveVars(s: string, contact: Pick<Contact, "name" | "company" | "budget">): string {
+  const prenom = contact.name.split(" ")[0];
+  const today  = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  return s
+    .replace(/\{nom\}/g,     prenom)
+    .replace(/\{société\}/g, contact.company || "votre entreprise")
+    .replace(/\{date\}/g,    today)
+    .replace(/\{budget\}/g,  contact.budget ? `${Number(contact.budget).toLocaleString("fr-FR")} €` : "");
+}
+
 function Badge({ label, color, bg }: { label: string; color: string; bg?: string }) {
   return (
     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
@@ -1429,7 +1453,7 @@ function ContactDetail({
   onAddActivity, onDeleteActivity,
   onAddTask, onToggleTask, onDeleteTask,
   onAddTicket, onUpdateTicket, onDeleteTicket,
-  onAddOpportunity,
+  onAddOpportunity, onEmail,
   allContacts,
   perms,
 }: {
@@ -1450,6 +1474,7 @@ function ContactDetail({
   onUpdateTicket: (id: string, data: Partial<SupportTicket>) => Promise<void>;
   onDeleteTicket: (id: string) => Promise<void>;
   onAddOpportunity: (data: Partial<Opportunity>) => Promise<void>;
+  onEmail: () => void;
   allContacts: Contact[];
   perms: { can_create: boolean; can_edit: boolean; can_delete: boolean };
 }) {
@@ -1519,6 +1544,12 @@ function ContactDetail({
             </div>
           </div>
           <div className="flex gap-1.5 shrink-0">
+            {contact.email && (
+              <button onClick={onEmail} title={`Envoyer un email à ${contact.email}`}
+                className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${isDark ? "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300" : "bg-blue-50 text-blue-400 hover:bg-blue-100 hover:text-blue-600"}`}>
+                <Send size={13}/>
+              </button>
+            )}
             {perms.can_edit && (
               <button onClick={() => setEditing(!editing)}
                 className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${isDark ? "bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/[0.08]" : "bg-gray-100 text-gray-400 hover:text-gray-700 hover:bg-gray-200"}`}>
@@ -1828,6 +1859,7 @@ function ContactDetail({
                     {group.items.map(act => {
                       const Icon  = ACTIVITY_ICONS[act.type];
                       const color = ACTIVITY_COLORS[act.type];
+                      const isEmail = act.type === "email";
                       return (
                         <div key={act.id} className="flex gap-3 pb-5 group relative">
                           <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center z-10 border ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}
@@ -1846,7 +1878,11 @@ function ContactDetail({
                               )}
                             </div>
                             <p className={`text-[0.6rem] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(act.activity_date)}</p>
-                            {act.description && <p className={`text-[0.68rem] mt-1 leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>{act.description}</p>}
+                            {isEmail && act.description ? (
+                              <EmailActivityPreview body={act.description} isDark={isDark}/>
+                            ) : act.description ? (
+                              <p className={`text-[0.68rem] mt-1 leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>{act.description}</p>
+                            ) : null}
                           </div>
                         </div>
                       );
@@ -2060,22 +2096,52 @@ function ContactDetail({
   );
 }
 
-function EmailComposeModal({ contact, onClose, onSent }: {
+function EmailActivityPreview({ body, isDark }: { body: string; isDark: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const preview = body.split("\n").filter(Boolean).slice(0, 2).join(" · ");
+  return (
+    <div className="mt-1">
+      <button onClick={() => setExpanded(v => !v)}
+        className={`flex items-center gap-1 text-[0.62rem] transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
+        <ChevronDown size={9} className={`transition-transform ${expanded ? "rotate-180" : ""}`}/>
+        {expanded ? "Masquer" : preview || "Voir le corps"}
+      </button>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }} exit={{ height:0, opacity:0 }}>
+            <pre className={`mt-1.5 text-[0.65rem] leading-relaxed whitespace-pre-wrap rounded-lg p-2.5 ${isDark ? "bg-white/[0.04] text-white/50" : "bg-gray-50 text-gray-600"}`}>
+              {body}
+            </pre>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function EmailComposeModal({ contact, customTemplates, onClose, onSent, onSaveTemplate, onDeleteTemplate }: {
   contact: Contact;
+  customTemplates: CustomEmailTemplate[];
   onClose: () => void;
   onSent: (subject: string, body: string) => void;
+  onSaveTemplate: (t: Omit<CustomEmailTemplate, "id">) => Promise<void>;
+  onDeleteTemplate: (id: string) => Promise<void>;
 }) {
-  const [subject, setSubject] = useState("");
-  const [body,    setBody]    = useState("");
-  const [sending, setSending] = useState(false);
+  const [subject,      setSubject]      = useState("");
+  const [body,         setBody]         = useState("");
+  const [sending,      setSending]      = useState(false);
+  const [newTmplOpen,  setNewTmplOpen]  = useState(false);
+  const [newTmplName,  setNewTmplName]  = useState("");
+  const [newTmplSubj,  setNewTmplSubj]  = useState("");
+  const [newTmplBody,  setNewTmplBody]  = useState("");
+  const [savingTmpl,   setSavingTmpl]   = useState(false);
+  const [previewMode,  setPreviewMode]  = useState(false);
   const isDark = useDark();
 
-  const fill = (tmpl: typeof EMAIL_TEMPLATES[number]) => {
-    const r = (s: string) => s
-      .replace("{nom}",    contact.name.split(" ")[0])
-      .replace("{société}", contact.company || "votre entreprise");
-    setSubject(r(tmpl.subject));
-    setBody(r(tmpl.body));
+  const fill = (s: string, b: string) => {
+    setSubject(resolveVars(s, contact));
+    setBody(resolveVars(b, contact));
+    setPreviewMode(false);
   };
 
   const send = async () => {
@@ -2091,6 +2157,20 @@ function EmailComposeModal({ contact, onClose, onSent }: {
     setSending(false);
   };
 
+  const handleSaveTemplate = async () => {
+    if (!newTmplName.trim() || !newTmplSubj.trim() || !newTmplBody.trim()) return;
+    setSavingTmpl(true);
+    await onSaveTemplate({ name: newTmplName.trim(), subject: newTmplSubj.trim(), body: newTmplBody.trim() });
+    setNewTmplName(""); setNewTmplSubj(""); setNewTmplBody("");
+    setNewTmplOpen(false);
+    setSavingTmpl(false);
+  };
+
+  const allTemplates: { id: string; displayName: string; subject: string; body: string; custom: boolean }[] = [
+    ...EMAIL_TEMPLATES.map(t => ({ id: t.id, displayName: t.label, subject: t.subject, body: t.body, custom: false })),
+    ...customTemplates.map(t => ({ id: t.id, displayName: t.name, subject: t.subject, body: t.body, custom: true })),
+  ];
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
@@ -2101,6 +2181,7 @@ function EmailComposeModal({ contact, onClose, onSent }: {
         style={{ background: isDark ? "rgba(7,8,14,0.98)" : "rgba(255,255,255,0.98)" }}
         onClick={e => e.stopPropagation()}>
 
+        {/* ── Header ─────────────────────────────────────── */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: "#60a5fa18", border: "1px solid #60a5fa30" }}>
@@ -2114,24 +2195,109 @@ function EmailComposeModal({ contact, onClose, onSent }: {
           <button onClick={onClose} className={`transition-colors ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}><X size={16}/></button>
         </div>
 
+        {/* ── Templates ──────────────────────────────────── */}
         <div>
-          <p className={`text-[0.6rem] font-bold uppercase tracking-widest mb-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>Templates</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>Templates</p>
+            <button onClick={() => setNewTmplOpen(v => !v)}
+              className={`flex items-center gap-1 text-[0.6rem] font-semibold transition-colors ${isDark ? "text-white/25 hover:text-white/50" : "text-gray-400 hover:text-gray-600"}`}>
+              <Plus size={10}/> Nouveau
+            </button>
+          </div>
           <div className="flex flex-wrap gap-1.5">
-            {EMAIL_TEMPLATES.map(tmpl => (
-              <button key={tmpl.id} onClick={() => fill(tmpl)}
-                className={`px-2.5 py-1 rounded-lg text-[0.65rem] font-semibold border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-white/60 hover:text-white" : "border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300 text-gray-500 hover:text-gray-700"}`}>
-                {tmpl.label}
-              </button>
+            {allTemplates.map(tmpl => (
+              <div key={tmpl.id} className="relative group flex items-center gap-0.5">
+                <button onClick={() => fill(tmpl.subject, tmpl.body)}
+                  className={`px-2.5 py-1 rounded-lg text-[0.65rem] font-semibold border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-white/60 hover:text-white" : "border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300 text-gray-500 hover:text-gray-700"}`}>
+                  {tmpl.custom && <span className="text-[0.5rem] mr-1" style={{ color: "#c9a55a" }}>★</span>}
+                  {tmpl.displayName}
+                </button>
+                {tmpl.custom && (
+                  <button onClick={() => onDeleteTemplate(tmpl.id)}
+                    className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:text-red-400 ${isDark ? "text-white/30" : "text-gray-400"}`}
+                    title="Supprimer ce template">
+                    <X size={9}/>
+                  </button>
+                )}
+              </div>
             ))}
           </div>
+
+          {/* Nouveau template inline */}
+          <AnimatePresence>
+            {newTmplOpen && (
+              <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
+                className={`mt-3 rounded-2xl border p-3 space-y-2 overflow-hidden ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
+                <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Nouveau template</p>
+                <input value={newTmplName} onChange={e => setNewTmplName(e.target.value)} placeholder="Nom du template…"
+                  className={`w-full rounded-lg border px-2.5 py-1.5 text-[0.75rem] outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400"}`}/>
+                <input value={newTmplSubj} onChange={e => setNewTmplSubj(e.target.value)} placeholder="Objet (ex: Suivi {société})…"
+                  className={`w-full rounded-lg border px-2.5 py-1.5 text-[0.75rem] outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400"}`}/>
+                <textarea value={newTmplBody} onChange={e => setNewTmplBody(e.target.value)} rows={4} placeholder={"Corps du template…\nVariables : {nom}, {société}, {date}, {budget}"}
+                  className={`w-full rounded-lg border px-2.5 py-1.5 text-[0.75rem] outline-none resize-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400"}`}/>
+                {/* Variables helper */}
+                <div className="flex flex-wrap gap-1">
+                  {TEMPLATE_VARIABLES.map(v => (
+                    <button key={v.token} title={v.hint}
+                      onClick={() => setNewTmplBody(b => b + v.token)}
+                      className={`px-1.5 py-0.5 rounded text-[0.58rem] font-mono border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/70" : "border-gray-200 bg-gray-100 text-gray-500 hover:text-gray-700"}`}>
+                      {v.token}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setNewTmplOpen(false)}
+                    className={`flex-1 rounded-lg border py-1.5 text-[0.7rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
+                    Annuler
+                  </button>
+                  <button onClick={handleSaveTemplate} disabled={savingTmpl || !newTmplName.trim()}
+                    className="flex-1 rounded-lg py-1.5 text-[0.7rem] font-bold disabled:opacity-40"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                    {savingTmpl ? "Sauvegarde…" : "Sauvegarder"}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <Input label="Objet" placeholder="Objet de l'email…" value={subject} onChange={e => setSubject(e.target.value)}/>
+        {/* ── Champs email ───────────────────────────────── */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Objet</label>
+            {subject && (
+              <button onClick={() => setPreviewMode(v => !v)}
+                className={`text-[0.58rem] transition-colors ${isDark ? "text-white/25 hover:text-white/50" : "text-gray-400 hover:text-gray-600"}`}>
+                {previewMode ? "Masquer aperçu" : "Aperçu"}
+              </button>
+            )}
+          </div>
+          <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Objet de l'email…"
+            className={`w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
+        </div>
 
         <div className="space-y-1">
           <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Message</label>
-          <textarea value={body} onChange={e => setBody(e.target.value)} rows={8} placeholder="Votre message…"
-            className={`w-full rounded-xl border px-3 py-2.5 text-[0.8rem] outline-none resize-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
+          {previewMode ? (
+            <div className={`w-full rounded-xl border px-3 py-2.5 text-[0.8rem] min-h-[140px] whitespace-pre-wrap ${isDark ? "border-white/[0.08] bg-white/[0.02] text-white/80" : "border-gray-200 bg-gray-50 text-gray-700"}`}>
+              {resolveVars(body, contact) || <span className="opacity-30">Votre message…</span>}
+            </div>
+          ) : (
+            <textarea value={body} onChange={e => setBody(e.target.value)} rows={8} placeholder="Votre message…"
+              className={`w-full rounded-xl border px-3 py-2.5 text-[0.8rem] outline-none resize-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
+          )}
+        </div>
+
+        {/* ── Variables helper ───────────────────────────── */}
+        <div className="flex flex-wrap gap-1 items-center">
+          <span className={`text-[0.58rem] mr-1 ${isDark ? "text-white/20" : "text-gray-400"}`}>Variables :</span>
+          {TEMPLATE_VARIABLES.map(v => (
+            <button key={v.token} title={v.hint}
+              onClick={() => setBody(b => b + v.token)}
+              className={`px-1.5 py-0.5 rounded text-[0.58rem] font-mono border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/35 hover:text-white/60" : "border-gray-200 bg-gray-100 text-gray-500 hover:text-gray-700"}`}>
+              {v.token}
+            </button>
+          ))}
         </div>
 
         <div className="flex gap-2 pt-1">
@@ -2140,7 +2306,7 @@ function EmailComposeModal({ contact, onClose, onSent }: {
             className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)", color: "#fff" }}>
             {sending ? <Loader2 size={13} className="animate-spin"/> : <Send size={13}/>}
-            {sending ? "Envoi…" : contact.email ? "Envoyer" : "Pas d'email"}
+            {sending ? "Envoi…" : contact.email ? "Ouvrir client email" : "Pas d'email"}
           </button>
         </div>
       </motion.div>
@@ -2151,12 +2317,13 @@ function EmailComposeModal({ contact, onClose, onSent }: {
 export default function CRMPage() {
   const router = useRouter();
 
-  const [contacts,      setContacts]      = useState<Contact[]>([]);
-  const [activities,    setActivities]    = useState<Activity[]>([]);
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [tasks,         setTasks]         = useState<CrmTask[]>([]);
-  const [tickets,       setTickets]       = useState<SupportTicket[]>([]);
-  const [orgMembers,    setOrgMembers]    = useState<OrgMember[]>([]);
+  const [contacts,        setContacts]        = useState<Contact[]>([]);
+  const [activities,      setActivities]      = useState<Activity[]>([]);
+  const [opportunities,   setOpportunities]   = useState<Opportunity[]>([]);
+  const [tasks,           setTasks]           = useState<CrmTask[]>([]);
+  const [tickets,         setTickets]         = useState<SupportTicket[]>([]);
+  const [orgMembers,      setOrgMembers]      = useState<OrgMember[]>([]);
+  const [customTemplates, setCustomTemplates] = useState<CustomEmailTemplate[]>([]);
 
   const [loading,       setLoading]       = useState(true);
   const [mainTab,       setMainTab]       = useState<"contacts" | "pipeline" | "taches" | "tickets" | "rapport">("contacts");
@@ -2260,7 +2427,26 @@ export default function CRMPage() {
       .eq("organization_id", orgId)
       .is("suspended_at", null)
       .then(({ data }) => setOrgMembers((data as OrgMember[]) ?? []));
+    supabase.from("email_templates")
+      .select("id, name, subject, body")
+      .eq("org_id", orgId)
+      .order("created_at", { ascending: true })
+      .then(({ data }) => setCustomTemplates((data as CustomEmailTemplate[]) ?? []));
   }, [orgId]);
+
+  async function saveCustomTemplate(t: Omit<CustomEmailTemplate, "id">) {
+    if (!orgId || !userId) return;
+    const { data, error } = await supabase.from("email_templates")
+      .insert({ ...t, org_id: orgId, created_by: userId })
+      .select("id, name, subject, body")
+      .single();
+    if (!error && data) setCustomTemplates(ts => [...ts, data as CustomEmailTemplate]);
+  }
+
+  async function deleteCustomTemplate(id: string) {
+    await supabase.from("email_templates").delete().eq("id", id);
+    setCustomTemplates(ts => ts.filter(t => t.id !== id));
+  }
 
   async function doSaveContact() {
     if (!userId) return;
@@ -2958,6 +3144,7 @@ export default function CRMPage() {
                 onUpdateTicket={updateTicket}
                 onDeleteTicket={deleteTicket}
                 onAddOpportunity={addOpportunity}
+                onEmail={() => setEmailContact(selected)}
                 allContacts={contacts}
                 perms={perms}
               />
@@ -3068,6 +3255,9 @@ export default function CRMPage() {
         {emailContact && (
           <EmailComposeModal
             contact={emailContact}
+            customTemplates={customTemplates}
+            onSaveTemplate={saveCustomTemplate}
+            onDeleteTemplate={deleteCustomTemplate}
             onClose={() => setEmailContact(null)}
             onSent={async (subject, body) => {
               await addActivity(emailContact.id, {
@@ -3077,7 +3267,7 @@ export default function CRMPage() {
                 activity_date: new Date().toISOString().split("T")[0],
                 duration_min: 0,
               });
-              toast(`Activité enregistrée · votre client email s'est ouvert`, "success");
+              toast(`Email enregistré · client email ouvert`, "success");
               setEmailContact(null);
             }}
           />
