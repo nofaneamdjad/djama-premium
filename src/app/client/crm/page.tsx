@@ -167,6 +167,55 @@ function computeLeadScore(c: Contact, activitiesCount: number): number {
   return Math.min(s, 100);
 }
 
+function computeHeatScore(activities: Activity[], opportunities: Opportunity[], tasks: CrmTask[]): {
+  score: number; label: string; color: string;
+} {
+  const now  = new Date();
+  const today = now.toISOString().slice(0, 10);
+  let s = 0;
+
+  if (activities.length > 0) {
+    const lastMs  = Math.max(...activities.map(a => new Date(a.activity_date).getTime()));
+    const daysAgo = (now.getTime() - lastMs) / 86_400_000;
+    if      (daysAgo <  7) s += 40;
+    else if (daysAgo < 30) s += 25;
+    else if (daysAgo < 90) s += 10;
+    s += Math.min(activities.length * 2, 10);
+  }
+
+  const openOpps = opportunities.filter(o => !["perdu", "en_pause"].includes(o.stage));
+  s += Math.min(openOpps.length * 15, 30);
+
+  const overdue = tasks.filter(t => !t.done && t.due_date && t.due_date < today);
+  s -= Math.min(overdue.length * 5, 15);
+
+  s = Math.max(0, Math.min(100, s));
+  const label = s >= 70 ? "Brûlant" : s >= 40 ? "Chaud" : s >= 20 ? "Tiède" : "Froid";
+  const color = s >= 70 ? "#ef4444" : s >= 40 ? "#f97316" : s >= 20 ? "#f59e0b" : "#94a3b8";
+  return { score: s, label, color };
+}
+
+function groupActivitiesByPeriod(acts: Activity[]): { label: string; items: Activity[] }[] {
+  const now      = new Date();
+  const today    = now.toISOString().slice(0, 10);
+  const weekAgo  = new Date(now.getTime() - 7  * 86_400_000).toISOString().slice(0, 10);
+  const monthAgo = new Date(now.getTime() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const groups   = [
+    { label: "Aujourd'hui",   items: [] as Activity[] },
+    { label: "Cette semaine", items: [] as Activity[] },
+    { label: "Ce mois",       items: [] as Activity[] },
+    { label: "Plus ancien",   items: [] as Activity[] },
+  ];
+  for (const a of acts) {
+    const d = a.activity_date.slice(0, 10);
+    if      (d === today)    groups[0].items.push(a);
+    else if (d >= weekAgo)   groups[1].items.push(a);
+    else if (d >= monthAgo)  groups[2].items.push(a);
+    else                     groups[3].items.push(a);
+  }
+  return groups.filter(g => g.items.length > 0);
+}
+
 const EMAIL_TEMPLATES = [
   { id: "relance",      label: "Relance J+7",          subject: "Suite à notre échange",               body: "Bonjour {nom},\n\nJe me permets de revenir vers vous suite à notre dernier échange.\n\nAvez-vous eu l'occasion d'étudier notre proposition ? Je reste disponible pour répondre à vos questions.\n\nCordialement" },
   { id: "proposition",  label: "Envoi proposition",     subject: "Notre proposition — {société}",        body: "Bonjour {nom},\n\nComme convenu, veuillez trouver ci-joint notre proposition commerciale.\n\nN'hésitez pas à me contacter pour en discuter.\n\nCordialement" },
@@ -1142,9 +1191,11 @@ function ContactDetail({
       .limit(50)
       .then(({ data }) => setLinkedDocs((data as typeof linkedDocs) ?? []));
   }, [contact.id]);
-  const [editing, setEditing] = useState(false);
-  const [form, setForm]     = useState<Partial<Contact>>({ ...contact });
-  const [newAct, setNewAct] = useState<Partial<Activity> | null>(null);
+  const [editing, setEditing]         = useState(false);
+  const [form, setForm]               = useState<Partial<Contact>>({ ...contact });
+  const [quickNoteOpen, setQuickNoteOpen] = useState(false);
+  const [quickNote, setQuickNote]     = useState("");
+  const [newAct, setNewAct]           = useState<Partial<Activity> | null>(null);
   const [newOpp, setNewOpp] = useState<Partial<Opportunity> | null>(null);
   const [newTask, setNewTask] = useState<Partial<CrmTask> | null>(null);
   const [newTicket, setNewTicket] = useState<Partial<SupportTicket> | null>(null);
@@ -1219,6 +1270,72 @@ function ContactDetail({
             </div>
           ))}
         </div>
+
+        {/* ── Score de chaleur ─────────────────────────────── */}
+        {(() => {
+          const heat = computeHeatScore(activities, opportunities, tasks);
+          return (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">🔥</span>
+                  <span className={`text-[0.62rem] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Chaleur contact</span>
+                </div>
+                <span className={`text-[0.65rem] font-black`} style={{ color: heat.color }}>{heat.label} · {heat.score}</span>
+              </div>
+              <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${heat.score}%`, background: `linear-gradient(90deg, ${heat.color}99, ${heat.color})` }}/>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Note rapide ──────────────────────────────────── */}
+        {perms.can_create && (
+          <div className="mt-3">
+            {!quickNoteOpen ? (
+              <button onClick={() => setQuickNoteOpen(true)}
+                className={`flex items-center gap-1.5 text-[0.65rem] font-bold transition-colors ${isDark ? "text-white/20 hover:text-white/50" : "text-gray-300 hover:text-gray-500"}`}>
+                <MessageSquare size={11}/> Note rapide
+              </button>
+            ) : (
+              <div className={`rounded-xl border p-3 space-y-2 ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
+                <textarea
+                  autoFocus
+                  rows={3}
+                  placeholder="Résumé, action à suivre, point important…"
+                  value={quickNote}
+                  onChange={e => setQuickNote(e.target.value)}
+                  className={`w-full resize-none text-[0.72rem] rounded-lg p-2 outline-none ${isDark ? "bg-white/[0.04] text-white placeholder-white/20 border border-white/[0.08]" : "bg-white text-gray-900 placeholder-gray-300 border border-gray-200"}`}
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => { setQuickNoteOpen(false); setQuickNote(""); }}
+                    className={`flex-1 text-xs rounded-lg border py-1.5 transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
+                    Annuler
+                  </button>
+                  <button
+                    disabled={!quickNote.trim()}
+                    onClick={async () => {
+                      await onAddActivity({
+                        type: "note",
+                        title: "Note rapide",
+                        description: quickNote.trim(),
+                        activity_date: new Date().toISOString().split("T")[0],
+                        duration_min: 0,
+                      });
+                      setQuickNote("");
+                      setQuickNoteOpen(false);
+                    }}
+                    className="flex-1 text-xs rounded-lg py-1.5 font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
             <div className={`shrink-0 flex border-b overflow-x-auto ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
@@ -1423,34 +1540,46 @@ function ContactDetail({
               <p className={`text-center text-sm py-6 ${isDark ? "text-white/20" : "text-gray-300"}`}>Aucune activité enregistrée</p>
             )}
 
-                        <div className="relative space-y-0">
-              <div className={`absolute left-[14px] top-0 bottom-0 w-px ${isDark ? "bg-white/[0.05]" : "bg-gray-200"}`}/>
-              {activities.sort((a, b) => b.activity_date.localeCompare(a.activity_date)).map(act => {
-                const Icon = ACTIVITY_ICONS[act.type];
-                const color = ACTIVITY_COLORS[act.type];
-                return (
-                  <div key={act.id} className="flex gap-3 pb-5 group relative">
-                    <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center z-10 border ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}
-                      style={{ backgroundColor: `${color}22` }}>
-                      <Icon size={11} style={{ color }}/>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{act.title}</p>
-                        {perms.can_delete && (
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button onClick={() => onDeleteActivity(act.id)} className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400`}>
-                              <Trash2 size={10}/>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      <p className={`text-[0.6rem] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(act.activity_date)}</p>
-                      {act.description && <p className={`text-[0.68rem] mt-1 leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>{act.description}</p>}
-                    </div>
+                        <div className="space-y-5">
+              {groupActivitiesByPeriod(
+                [...activities].sort((a, b) => b.activity_date.localeCompare(a.activity_date))
+              ).map(group => (
+                <div key={group.label}>
+                  <div className={`flex items-center gap-2 mb-3`}>
+                    <span className={`text-[0.58rem] font-black uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>{group.label}</span>
+                    <div className={`flex-1 h-px ${isDark ? "bg-white/[0.04]" : "bg-gray-100"}`}/>
                   </div>
-                );
-              })}
+                  <div className="relative space-y-0">
+                    <div className={`absolute left-[14px] top-0 bottom-0 w-px ${isDark ? "bg-white/[0.05]" : "bg-gray-200"}`}/>
+                    {group.items.map(act => {
+                      const Icon  = ACTIVITY_ICONS[act.type];
+                      const color = ACTIVITY_COLORS[act.type];
+                      return (
+                        <div key={act.id} className="flex gap-3 pb-5 group relative">
+                          <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center z-10 border ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}
+                            style={{ backgroundColor: `${color}22` }}>
+                            <Icon size={11} style={{ color }}/>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{act.title}</p>
+                              {perms.can_delete && (
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                  <button onClick={() => onDeleteActivity(act.id)} className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400`}>
+                                    <Trash2 size={10}/>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <p className={`text-[0.6rem] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(act.activity_date)}</p>
+                            {act.description && <p className={`text-[0.68rem] mt-1 leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>{act.description}</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
