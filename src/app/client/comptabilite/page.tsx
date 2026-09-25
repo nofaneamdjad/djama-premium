@@ -343,12 +343,13 @@ export default function ComptabilitePage() {
     setAnalyseLoading(true);
     setAnalyse("");
     try {
+      const { start, end } = getPeriodRange(period);
       const res = await fetch("/api/comptabilite/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caHT, charges, resultat, tvaCollectee, tvaDeductible, period: periodLabel }),
+        body: JSON.stringify({ start, end }),
       });
-      const data = await res.json() as { analyse?: string };
+      const data = await res.json() as { analyse?: string; error?: string };
       if (data.analyse) setAnalyse(data.analyse);
     } catch {}
     setAnalyseLoading(false);
