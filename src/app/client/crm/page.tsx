@@ -1129,7 +1129,18 @@ function ContactDetail({
   allContacts: Contact[];
   perms: { can_create: boolean; can_edit: boolean; can_delete: boolean };
 }) {
-  const [tab, setTab]       = useState<"infos" | "activites" | "opps" | "taches" | "tickets">("infos");
+  const [tab, setTab]       = useState<"infos" | "activites" | "opps" | "taches" | "tickets" | "documents">("infos");
+  const [linkedDocs, setLinkedDocs] = useState<{ id: string; numero: string; type: string; statut: string; total_ttc: number; date_document: string }[]>([]);
+
+  useEffect(() => {
+    if (!contact.id) return;
+    supabase.from("documents")
+      .select("id,numero,type,statut,total_ttc,date_document")
+      .eq("contact_id", contact.id)
+      .order("date_document", { ascending: false })
+      .limit(50)
+      .then(({ data }) => setLinkedDocs((data as typeof linkedDocs) ?? []));
+  }, [contact.id]);
   const [editing, setEditing] = useState(false);
   const [form, setForm]     = useState<Partial<Contact>>({ ...contact });
   const [newAct, setNewAct] = useState<Partial<Activity> | null>(null);
@@ -1148,11 +1159,12 @@ function ContactDetail({
   }
 
   const TABS = [
-    { id: "infos",     label: "Infos",       icon: Briefcase },
-    { id: "activites", label: "Activités",   icon: Activity },
-    { id: "opps",      label: "Opportunités",icon: TrendingUp },
-    { id: "taches",    label: "Tâches",      icon: CheckSquare },
-    { id: "tickets",   label: "Tickets",     icon: Ticket },
+    { id: "infos",      label: "Infos",        icon: Briefcase },
+    { id: "activites",  label: "Activités",    icon: Activity },
+    { id: "opps",       label: "Opportunités", icon: TrendingUp },
+    { id: "taches",     label: "Tâches",       icon: CheckSquare },
+    { id: "tickets",    label: "Tickets",      icon: Ticket },
+    { id: "documents",  label: "Documents",    icon: FileText },
   ] as const;
 
   return (
@@ -1604,6 +1616,39 @@ function ContactDetail({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {tab === "documents" && (
+          <div className="space-y-2">
+            {linkedDocs.length === 0 ? (
+              <div className={`py-12 text-center text-sm ${isDark ? "text-white/20" : "text-gray-300"}`}>
+                <FileText size={32} className="mx-auto mb-3 opacity-20"/>
+                Aucun document lié à ce contact
+              </div>
+            ) : linkedDocs.map(doc => {
+              const isFacture = doc.type === "facture";
+              const isDevis   = doc.type === "devis";
+              const statusColor = doc.statut === "payé" ? "#22c55e" : doc.statut === "en_retard" ? "#ef4444" : doc.statut === "envoyé" ? "#38bdf8" : isDark ? "rgba(255,255,255,0.3)" : "#9ca3af";
+              return (
+                <a key={doc.id} href="/client/factures"
+                  className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition-colors cursor-pointer ${isDark ? "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]" : "border-gray-100 bg-white hover:bg-gray-50"}`}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${isFacture ? (isDark ? "bg-amber-400/10" : "bg-amber-50") : isDevis ? (isDark ? "bg-blue-400/10" : "bg-blue-50") : (isDark ? "bg-purple-400/10" : "bg-purple-50")}`}>
+                      <FileText size={13} style={{ color: isFacture ? "#f59e0b" : isDevis ? "#38bdf8" : "#a78bfa" }}/>
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-[0.72rem] font-semibold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{doc.numero || "(brouillon)"}</p>
+                      <p className={`text-[0.6rem] capitalize ${isDark ? "text-white/30" : "text-gray-400"}`}>{doc.type} · {fmtDate(doc.date_document)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={`text-[0.72rem] font-black ${isDark ? "text-white" : "text-gray-900"}`}>{fmtEur(doc.total_ttc)}</p>
+                    <p className="text-[0.6rem] font-semibold" style={{ color: statusColor }}>{doc.statut}</p>
+                  </div>
+                </a>
+              );
+            })}
           </div>
         )}
       </div>

@@ -9,7 +9,7 @@ import {
   AlertTriangle, ImagePlus, Palette, Landmark, Eye, Percent,
   Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
   TrendingUp, Clock, AlertCircle, DollarSign, Settings2, BarChart3,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, Maximize2,
   Repeat2, PenLine, Upload, BellRing, Share2, Sparkles, Lock, BookmarkPlus, FileCode2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -19,15 +19,25 @@ import Toast, { type ToastData } from "@/components/ui/Toast";
 import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
 import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
-import { TemplateSelector } from "@/components/invoice/TemplateSelector";
+import { TemplateSelector, ScaledA4 } from "@/components/invoice/TemplateSelector";
 import type { LogoTransform } from "@/components/invoice/LogoDragResize";
-import { fetchCompanySettings } from "@/lib/pdf/companySettings";
+import { fetchCompanySettings, fetchOrgSettings } from "@/lib/pdf/companySettings";
 import type { CompanySettings } from "@/lib/pdf/companySettings";
 import { usePagination } from "@/hooks/usePagination";
 import { useTheme } from "@/lib/theme-context";
 
 type DocType   = "facture" | "devis" | "avoir";
-type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard";
+type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard" | "partiellement_payé";
+
+interface DocumentPayment {
+  id:          string;
+  document_id: string;
+  amount:      number;
+  date:        string;
+  method:      string;
+  notes:       string;
+  created_at:  string;
+}
 
 interface DocItem {
   id?:             string;
@@ -91,6 +101,7 @@ interface Document {
   total_ht:         number;
   total_tva:        number;
   total_ttc:        number;
+  montant_paye?:    number;
   created_at:       string;
   updated_at:       string;
   share_token?:     string;
@@ -98,20 +109,22 @@ interface Document {
   signed_at?:       string;
   signed_by?:       string;
   signature_data?:  string | null;
-  recur_freq?:      string | null;
-  recur_next_date?: string | null;
+  recur_freq?:       string | null;
+  recur_next_date?:  string | null;
+  organization_id?:  string | null;
+  contact_id?:       string | null;
 }
 
 type DraftDoc = Omit<Document,
   "id"|"user_id"|"created_at"|"updated_at"|"total_ht"|"total_tva"|"total_ttc">;
 
 interface CrmClient {
-  id:        string;
-  nom:       string;
-  societe?:  string;
-  email?:    string;
-  telephone?:string;
-  adresse?:  string;
+  id:       string;
+  name:     string;
+  company?: string;
+  email?:   string;
+  phone?:   string;
+  address?: string;
 }
 
 interface AuditEntry {
@@ -140,9 +153,10 @@ function useInputTheme() {
 
 const STATUTS: Record<DocStatut,{label:string;color:string;bg:string;border:string;Icon:React.ElementType}> = {
   brouillon: { label:"Brouillon", color:"#94a3b8", bg:"rgba(148,163,184,0.1)", border:"rgba(148,163,184,0.25)", Icon:FileText     },
-  envoyé:    { label:"Envoyé",    color:"#60a5fa", bg:"rgba(59,130,246,0.1)",  border:"rgba(59,130,246,0.25)",  Icon:Send          },
+  envoyé:    { label:"Envoyé",    color:"#c9a55a", bg:"rgba(201,165,90,0.10)", border:"rgba(201,165,90,0.25)",  Icon:Send          },
   payé:      { label:"Payé",      color:"#4ade80", bg:"rgba(34,197,94,0.1)",   border:"rgba(34,197,94,0.25)",   Icon:BadgeCheck    },
-  en_retard: { label:"En retard", color:"#f87171", bg:"rgba(239,68,68,0.1)",   border:"rgba(239,68,68,0.25)",   Icon:AlertTriangle },
+  en_retard:          { label:"En retard",  color:"#f87171", bg:"rgba(239,68,68,0.1)",   border:"rgba(239,68,68,0.25)",   Icon:AlertTriangle },
+  partiellement_payé: { label:"Part. payé", color:"#fbbf24", bg:"rgba(251,191,36,0.1)",  border:"rgba(251,191,36,0.25)",  Icon:DollarSign    },
 };
 
 const DOC_TYPE_LABELS: Record<DocType, string> = {
@@ -160,6 +174,15 @@ const COLOR_PRESETS = [
   { hex:"#f97316", label:"Orange"   },
   { hex:"#f472b6", label:"Rose"     },
   { hex:"#e2e8f0", label:"Blanc"    },
+];
+
+const PAYMENT_METHODS = [
+  { val:"virement",  label:"Virement bancaire" },
+  { val:"cheque",    label:"Chèque"            },
+  { val:"especes",   label:"Espèces"           },
+  { val:"carte",     label:"Carte bancaire"    },
+  { val:"paypal",    label:"PayPal"            },
+  { val:"autre",     label:"Autre"             },
 ];
 
 const VAT_RATES = [0, 2.1, 5.5, 8.5, 10, 20];
@@ -446,13 +469,15 @@ function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnTyp
         total:       r2(gross * (1 - (it.remise_pct || 0) / 100)),
       };
     }),
-    subtotal:    totals.subtotal_ht,
-    tax_rate:    items[0]?.vat_rate ?? 20,
-    tax_amount:  totals.tva,
-    total:       totals.ttc,
-    notes:       draft.notes || null,
-    color:       draft.couleur || "#c9a55a",
-    valid_until: draft.type !== "facture" ? (draft.date_echeance || null) : null,
+    subtotal:      totals.subtotal_ht,
+    discount_rate: draft.remise_pct > 0 ? draft.remise_pct : null,
+    discount:      totals.remise > 0    ? totals.remise    : null,
+    tax_rate:      items[0]?.vat_rate ?? 20,
+    tax_amount:    totals.tva,
+    total:         totals.ttc,
+    notes:         draft.notes || null,
+    color:         draft.couleur || "#c9a55a",
+    valid_until:   draft.type !== "facture" ? (draft.date_echeance || null) : null,
     company: {
       name:     draft.emetteur_nom   || "DJAMA",
       email:    draft.emetteur_email,
@@ -505,7 +530,7 @@ function DInput({ label, value, onChange, placeholder, type="text", small, disab
 function DSelect({ label, value, onChange, options, small }:
   { label?:string; value:string; onChange:(v:string)=>void; options:{val:string;label:string}[]; small?:boolean }) {
   const { iB, iBH, txt, lbl, isDark } = useInputTheme();
-  const optBg = isDark ? "#0f1117" : "#ffffff";
+  const optBg = isDark ? "#181818" : "#ffffff";
   const cls = small
     ? `w-full rounded-lg ${iB} ${iBH} px-2 py-1.5 text-xs ${txt} outline-none transition appearance-none cursor-pointer`
     : `w-full rounded-xl ${iB} ${iBH} focus:border-[rgba(201,165,90,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition appearance-none cursor-pointer`;
@@ -693,7 +718,7 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
               placeholder="Description de la prestation"
             />
             {showSugg && suggestions.length > 0 && (
-              <div className={`absolute left-0 top-full z-50 mt-0.5 w-full overflow-hidden rounded-xl border shadow-xl ${isDark ? "border-white/10 bg-[#14142a]" : "border-gray-200 bg-white"}`}>
+              <div className={`absolute left-0 top-full z-50 mt-0.5 w-full overflow-hidden rounded-xl border shadow-xl ${isDark ? "border-white/[0.08] bg-[#1a1a1a]" : "border-gray-200 bg-white"}`}>
                 {suggestions.map(s => (
                   <button key={s.id}
                     onMouseDown={e => e.preventDefault()}
@@ -819,8 +844,8 @@ export default function FacturesPage() {
     : "bg-white border border-gray-200";
   const tiBH = isDark ? "hover:border-[rgba(255,255,255,0.18)]" : "hover:border-gray-300";
   const headerCls = isDark
-    ? "border-white/[0.07] bg-[rgba(10,11,16,0.95)]"
-    : "border-gray-200/80 bg-white/95";
+    ? "border-white/[0.07] bg-[rgba(17,17,17,0.97)]"
+    : "border-gray-200/80 bg-white/97";
   const [documents,    setDocuments]    = useState<Document[]>([]);
   const [selected,     setSelected]     = useState<Document|null>(null);
   const [draft,        setDraft]        = useState<DraftDoc|null>(null);
@@ -828,6 +853,8 @@ export default function FacturesPage() {
   const [dirty,        setDirty]        = useState(false);
   const [loadingAll,   setLoadingAll]   = useState(true);
   const [uid,          setUid]          = useState<string|null>(null);
+  const [activeOrgId,  setActiveOrgId]  = useState<string|null>(null);
+  const [activeOrgName,setActiveOrgName]= useState<string|null>(null);
   const [saving,       setSaving]       = useState(false);
   const [deleting,     setDeleting]     = useState(false);
   const [converting,   setConverting]   = useState(false);
@@ -837,7 +864,7 @@ export default function FacturesPage() {
   const [filterType,   setFilterType]   = useState<"tous"|DocType>("tous");
   const [filterStatut, setFilterStatut] = useState<"tous"|DocStatut>("tous");
   const [sortBy,       setSortBy]       = useState<"date"|"montant"|"echeance">("date");
-  const [mobileView,   setMobileView]   = useState<"list"|"editor">("list");
+  const [mobileView,   setMobileView]   = useState<"list"|"editor"|"preview">("list");
   const [sidebarOpen,  setSidebarOpen]  = useState(true);
   const [confirmDel,   setConfirmDel]   = useState(false);
   const [showPreview,  setShowPreview]  = useState(false);
@@ -861,8 +888,23 @@ export default function FacturesPage() {
   });
   const saveLt = (t: LogoTransform | null) => {
     setLogoTransform(t);
-    if (t) localStorage.setItem("pdf.logo_transform", JSON.stringify(t));
-    else   localStorage.removeItem("pdf.logo_transform");
+    if (t) {
+      localStorage.setItem("pdf.logo_transform", JSON.stringify(t));
+      // Persiste aussi en base pour tous les appareils
+      if (uid) {
+        supabase.from("user_settings").upsert(
+          { user_id: uid, key: "brand.logo_transform", value: JSON.stringify(t) },
+          { onConflict: "user_id,key" }
+        ).then(() => {});
+      }
+    } else {
+      localStorage.removeItem("pdf.logo_transform");
+      if (uid) {
+        supabase.from("user_settings")
+          .delete().eq("user_id", uid).eq("key", "brand.logo_transform")
+          .then(() => {});
+      }
+    }
   };
 
   const [emailModal,   setEmailModal]   = useState(false);
@@ -904,6 +946,15 @@ export default function FacturesPage() {
   const [csvImporting,  setCsvImporting]  = useState(false);
   const csvInputRef    = useRef<HTMLInputElement>(null);
 
+  // ── Paiements partiels ───────────────────────────────────────────────────────
+  const [payModal,     setPayModal]     = useState(false);
+  const [payments,     setPayments]     = useState<DocumentPayment[]>([]);
+  const [payAmount,    setPayAmount]    = useState("");
+  const [payDate,      setPayDate]      = useState(() => new Date().toISOString().slice(0, 10));
+  const [payMethod,    setPayMethod]    = useState("virement");
+  const [payNotes,     setPayNotes]     = useState("");
+  const [payLoading,   setPayLoading]   = useState(false);
+
   // ── Rappels groupés ─────────────────────────────────────────────────────────
   const [remindersModal, setRemindersModal] = useState(false);
   const [sendingBulk,    setSendingBulk]   = useState(false);
@@ -920,6 +971,11 @@ export default function FacturesPage() {
   // ── Journal d'audit ───────────────────────────────────────────────────────
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
 
+  // ── UI état éditeur tabulé ─────────────────────────────────────────────────
+  type EditorTab = "general"|"client"|"lignes"|"design"|"options"|"paiements"|"historique";
+  const [activeEditorTab, setActiveEditorTab] = useState<EditorTab>("general");
+  const [previewPanelOpen, setPreviewPanelOpen] = useState(true);
+
   const totals = useMemo(
     () => calcTotals(items, draft?.remise_pct ?? 0, draft?.acompte ?? 0),
     [items, draft?.remise_pct, draft?.acompte]
@@ -927,8 +983,15 @@ export default function FacturesPage() {
 
   const stats = useMemo(() => {
     const factures  = documents.filter(d => d.type === "facture");
-    const ca         = factures.filter(d => d.statut === "payé").reduce((s,d) => s + (d.total_ttc||0), 0);
-    const pendingAmt = factures.filter(d => d.statut === "envoyé").reduce((s,d) => s + (d.total_ttc||0), 0);
+    const ca = factures
+      .filter(d => d.statut === "payé")
+      .reduce((s,d) => s + (d.total_ttc||0), 0)
+      + factures
+      .filter(d => d.statut === "partiellement_payé")
+      .reduce((s,d) => s + (d.montant_paye||0), 0);
+    const pendingAmt = factures
+      .filter(d => d.statut === "envoyé" || d.statut === "partiellement_payé")
+      .reduce((s,d) => s + ((d.total_ttc||0) - (d.montant_paye||0)), 0);
     const overdueAmt = factures.filter(d => d.statut === "en_retard").reduce((s,d) => s + (d.total_ttc||0), 0);
     return { ca, pendingAmt, overdueAmt };
   }, [documents]);
@@ -974,7 +1037,29 @@ export default function FacturesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoadingAll(false); return; }
     setUid(user.id);
-    const { data, error } = await supabase.from("documents").select("*").eq("user_id", user.id).order("updated_at", { ascending:false }).limit(1000);
+
+    // Detect org context: user is owner or admin of an org
+    const { data: myOrgs } = await supabase
+      .from("organization_members")
+      .select("organization_id, role, organizations!inner(name)")
+      .eq("user_id", user.id)
+      .in("role", ["owner", "admin"])
+      .is("suspended_at", null)
+      .limit(1);
+    let orgId: string | null = null;
+    if (myOrgs?.length) {
+      orgId = myOrgs[0].organization_id as string;
+      const orgRow = myOrgs[0].organizations as { name: string } | { name: string }[] | null;
+      const orgName = Array.isArray(orgRow) ? orgRow[0]?.name : orgRow?.name ?? null;
+      setActiveOrgId(orgId);
+      setActiveOrgName(orgName ?? null);
+    }
+
+    // If in org context, RLS returns personal docs (docs_select_own) + org docs
+    // (org_select_documents). No client-side user_id filter needed.
+    let q = supabase.from("documents").select("*").order("updated_at", { ascending: false }).limit(1000);
+    if (!orgId) q = q.eq("user_id", user.id);
+    const { data, error } = await q;
     if (error) { showToast("error", `Chargement impossible : ${error.message}`); setLoadingAll(false); return; }
     const docs = (data as Document[]) ?? [];
     // Auto-passage en_retard pour les factures envoyées dont l'échéance est dépassée
@@ -993,8 +1078,53 @@ export default function FacturesPage() {
 
   useEffect(() => { fetchDocs(); }, [fetchDocs]);
 
-  // Charger les paramètres entreprise pour pré-remplissage
-  useEffect(() => { fetchCompanySettings().then(setCompanyDefaults); }, []);
+  // Charger les paramètres entreprise (org settings si contexte org, sinon user settings)
+  useEffect(() => {
+    if (activeOrgId) {
+      fetchOrgSettings(activeOrgId).then(org => {
+        // Fall back to user settings for any unset org keys
+        fetchCompanySettings().then(user => {
+          setCompanyDefaults({
+            logoUrl:         org.logoUrl         || user.logoUrl,
+            name:            org.name            || user.name,
+            email:           org.email           || user.email,
+            website:         org.website         || user.website,
+            phone:           org.phone           || user.phone,
+            address:         org.address         || user.address,
+            postal_code:     org.postal_code     || user.postal_code,
+            city:            org.city            || user.city,
+            country:         org.country         || user.country,
+            siret:           org.siret           || user.siret,
+            ape:             org.ape             || user.ape,
+            vat_number:      org.vat_number      || user.vat_number,
+            iban:            org.iban            || user.iban,
+            bic:             org.bic             || user.bic,
+            forme_juridique: org.forme_juridique || user.forme_juridique,
+            capital_social:  org.capital_social  || user.capital_social,
+            garantie:        org.garantie        || user.garantie,
+            mentions_legales:org.mentions_legales|| user.mentions_legales,
+            logoSize:        org.logoSize        !== "md" ? org.logoSize  : user.logoSize,
+            logoHideName:    org.logoHideName    || user.logoHideName,
+            template:        org.template        !== "modern" ? org.template : user.template,
+            color:           org.color           !== "#c9a55a" ? org.color  : user.color,
+            logoTransform:   org.logoTransform   ?? user.logoTransform,
+          });
+        });
+      });
+    } else {
+      fetchCompanySettings().then(setCompanyDefaults);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOrgId]);
+
+  // Appliquer logoTransform depuis la DB si localStorage n'en a pas
+  useEffect(() => {
+    if (companyDefaults?.logoTransform && logoTransform === null) {
+      setLogoTransform(companyDefaults.logoTransform);
+    }
+  // logoTransform intentionnellement absent des deps : on ne re-applique qu'au premier chargement
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyDefaults]);
 
   // Charger le catalogue d'articles
   useEffect(() => {
@@ -1008,6 +1138,16 @@ export default function FacturesPage() {
     supabase.from("user_settings").select("value").eq("key", "brand.regime_fiscal").maybeSingle()
       .then(({ data }) => { if (data?.value) setRegimeFiscal(data.value as RegimeFiscal); });
   }, []);
+
+  // Charger les paiements quand une facture est sélectionnée
+  useEffect(() => {
+    if (!selected || selected.type !== "facture") { setPayments([]); return; }
+    supabase.from("document_payments")
+      .select("*")
+      .eq("document_id", selected.id)
+      .order("date", { ascending: false })
+      .then(({ data }) => setPayments((data ?? []) as DocumentPayment[]));
+  }, [selected?.id]);
 
   // Avertir si l'utilisateur quitte la page avec des modifications non sauvegardées
   useEffect(() => {
@@ -1219,6 +1359,7 @@ export default function FacturesPage() {
       mentions_legales: doc.mentions_legales  ?? "",
       couleur:          doc.couleur           ?? "#c9a55a",
       template:         (doc.template as TemplateType) ?? "modern",
+      contact_id:       doc.contact_id        ?? null,
     });
     const { data } = await supabase.from("document_items").select("*").eq("document_id", doc.id).order("position");
     setItems((data as DocItem[])?.length
@@ -1347,6 +1488,7 @@ export default function FacturesPage() {
         total_ht:          sourceDoc.total_ht,
         total_tva:         sourceDoc.total_tva,
         total_ttc:         sourceDoc.total_ttc,
+        ...(activeOrgId ? { organization_id: activeOrgId } : {}),
       }).select().single();
       if (error || !avoirDoc) { showToast("error", "Erreur création avoir."); return; }
       if ((srcItems ?? []).length > 0) {
@@ -1495,6 +1637,7 @@ export default function FacturesPage() {
       total_ht:         totals.ht,
       total_tva:        totals.tva,
       total_ttc:        totals.ttc,
+      contact_id:       sd.contact_id ?? null,
     };
 
     let docId = selected?.id;
@@ -1506,7 +1649,9 @@ export default function FacturesPage() {
         setSaving(false); return;
       }
     } else {
-      const { data, error } = await supabase.from("documents").insert({ ...payload, user_id:user.id }).select().single();
+      const insertData: Record<string, unknown> = { ...payload, user_id: user.id };
+      if (activeOrgId) insertData.organization_id = activeOrgId;
+      const { data, error } = await supabase.from("documents").insert(insertData).select().single();
       if (error) {
         showToast("error", `Erreur : ${[error.message, error.details, error.hint].filter(Boolean).join(" | ")}`);
         setSaving(false); return;
@@ -1557,24 +1702,38 @@ export default function FacturesPage() {
   async function handleDelete() {
     if (!selected) return;
     setDeleting(true);
-    const { error } = await supabase.from("documents").delete().eq("id", selected.id);
+    const { error } = await supabase
+      .from("documents")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", selected.id);
     setDeleting(false); setConfirmDel(false);
     if (error) { showToast("error", error.message); return; }
     setDocuments(p => p.filter(d => d.id !== selected.id));
     setSelected(null); setDraft(null); setMobileView("list");
-    showToast("success", "Document supprimé.");
+    showToast("success", "Document archivé.");
   }
 
   async function handleStatut(statut: DocStatut) {
     if (!selected) return;
     const previous = selected.statut;
-    const { error } = await supabase.from("documents").update({ statut }).eq("id", selected.id);
-    if (error) { showToast("error", error.message); return; }
-    setSelected(s => s ? { ...s, statut } : s);
-    setDraft(d => d ? { ...d, statut } : d);
-    setDocuments(p => p.map(d => d.id === selected.id ? { ...d, statut } : d));
-    showToast("success", `Statut : ${STATUTS[statut].label}`);
-    void logAudit("statut_changé", undefined, { de: previous, vers: statut });
+    try {
+      const res = await fetch("/api/factures/statut", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ document_id: selected.id, statut }),
+      });
+      const data = await res.json() as { ok?: boolean; statut?: string; error?: string };
+      if (!res.ok) { showToast("error", data.error ?? "Erreur changement statut"); return; }
+      setSelected(s => s ? { ...s, statut } : s);
+      setDraft(d => d ? { ...d, statut } : d);
+      setDocuments(p => p.map(d => d.id === selected.id ? { ...d, statut } : d));
+      showToast("success", `Statut : ${STATUTS[statut].label}`);
+      // Log already inserted server-side; sync UI state
+      const entry = { id: crypto.randomUUID(), action: "statut_changé", details: { de: previous, vers: statut }, created_at: new Date().toISOString() };
+      setAuditLog(prev => [entry, ...prev]);
+    } catch {
+      showToast("error", "Erreur lors du changement de statut");
+    }
   }
 
   async function handleConvert() {
@@ -1610,6 +1769,7 @@ export default function FacturesPage() {
       mentions_legales:  selected.mentions_legales  ?? "",
       couleur:           selected.couleur ?? "#c9a55a", template: selected.template ?? "modern",
       total_ht:          selected.total_ht,  total_tva: selected.total_tva, total_ttc: selected.total_ttc,
+      ...(activeOrgId ? { organization_id: activeOrgId } : {}),
     }).select().single();
     if (error || !newDoc) { showToast("error", "Erreur lors de la conversion."); setConverting(false); return; }
     const { data: srcItems } = await supabase.from("document_items").select("*").eq("document_id", selected.id);
@@ -1670,6 +1830,7 @@ export default function FacturesPage() {
       couleur:           draft.couleur,             template:         draft.template ?? "modern",
       total_ht:          totals.ht,                 total_tva:        totals.tva,
       total_ttc:         totals.ttc,
+      ...(activeOrgId ? { organization_id: activeOrgId } : {}),
     }).select().single();
     if (error || !newDoc) { showToast("error", "Erreur duplication."); setDuplicating(false); return; }
     if (items.length) {
@@ -1760,8 +1921,21 @@ export default function FacturesPage() {
         body: JSON.stringify({ document_id:selected.id, to_email:emailTo, to_name:draft?.client_nom, subject:emailSubject, message:emailMsg }),
       });
       if (!res.ok) throw new Error("Erreur envoi");
+      const data = await res.json() as { ok?: boolean; statut?: string };
       showToast("success", "Email envoyé"); setEmailModal(false);
-      void logAudit("email_envoyé", undefined, { destinataire: emailTo });
+
+      // Auto-statut : si le serveur a passé brouillon → envoyé, sync l'état local
+      if (data.statut && data.statut !== selected.statut) {
+        const newStatut = data.statut as DocStatut;
+        setSelected(s => s ? { ...s, statut: newStatut } : s);
+        setDraft(d => d ? { ...d, statut: newStatut } : d);
+        setDocuments(p => p.map(d => d.id === selected.id ? { ...d, statut: newStatut } : d));
+        const emailEntry = { id: crypto.randomUUID(), action: "email_envoyé", details: { destinataire: emailTo }, created_at: new Date().toISOString() };
+        const statutEntry = { id: crypto.randomUUID(), action: "statut_changé", details: { de: selected.statut, vers: newStatut, source: "email_auto" }, created_at: new Date().toISOString() };
+        setAuditLog(prev => [statutEntry, emailEntry, ...prev]);
+      } else {
+        void logAudit("email_envoyé", undefined, { destinataire: emailTo });
+      }
     } catch { showToast("error", "Erreur lors de l'envoi de l'email"); }
     finally { setSendingEmail(false); }
   }
@@ -1818,7 +1992,11 @@ export default function FacturesPage() {
     setCrmModal(true); setCrmQuery(""); setCrmLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setCrmLoading(false); return; }
-    const { data } = await supabase.from("clients_crm").select("id,nom,societe,email,telephone,adresse").eq("user_id", user.id).order("nom").limit(50);
+    const { data } = await supabase.from("contacts")
+      .select("id,name,company,email,phone,address")
+      .eq("user_id", user.id)
+      .order("name")
+      .limit(50);
     setCrmClients((data as CrmClient[]) ?? []);
     setCrmLoading(false);
   }
@@ -1827,8 +2005,11 @@ export default function FacturesPage() {
     setCrmQuery(q); setCrmLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setCrmLoading(false); return; }
-    const { data } = await supabase.from("clients_crm").select("id,nom,societe,email,telephone,adresse")
-      .eq("user_id", user.id).or(`nom.ilike.%${q}%,societe.ilike.%${q}%,email.ilike.%${q}%`).limit(20);
+    const { data } = await supabase.from("contacts")
+      .select("id,name,company,email,phone,address")
+      .eq("user_id", user.id)
+      .or(`name.ilike.%${q}%,company.ilike.%${q}%,email.ilike.%${q}%`)
+      .limit(20);
     setCrmClients((data as CrmClient[]) ?? []);
     setCrmLoading(false);
   }
@@ -1854,11 +2035,12 @@ export default function FacturesPage() {
   function applyCrmClient(c: CrmClient) {
     setDraft(d => d ? {
       ...d,
-      client_nom:       c.nom        || "",
-      client_societe:   c.societe    || "",
-      client_email:     c.email      || "",
-      client_telephone: c.telephone  || "",
-      client_adresse:   c.adresse    || "",
+      client_nom:       c.name        || "",
+      client_societe:   c.company     || "",
+      client_email:     c.email       || "",
+      client_telephone: c.phone       || "",
+      client_adresse:   c.address     || "",
+      contact_id:       c.id,
     } : d);
     setDirty(true);
     setCrmModal(false);
@@ -1901,6 +2083,7 @@ export default function FacturesPage() {
       notes: draft.notes, conditions: draft.conditions, mentions_legales: draft.mentions_legales,
       couleur: draft.couleur, template: draft.template ?? "modern",
       total_ht: totals.ht, total_tva: totals.tva, total_ttc: totals.ttc,
+      ...(activeOrgId ? { organization_id: activeOrgId } : {}),
     }).select().single();
     if (error || !newDoc) { showToast("error", "Erreur création récurrence."); setDuplicating(false); return; }
     if (items.length) {
@@ -2003,22 +2186,83 @@ export default function FacturesPage() {
 
   // ── Lien de signature devis ─────────────────────────────────────────────────
   async function handleShareDevis(docId: string) {
-    const token = crypto.randomUUID();
-    // Génère un token si pas encore présent
-    const { data } = await supabase
+    // Lit le token existant AVANT d'en générer un nouveau
+    const { data: existing } = await supabase
       .from("documents")
-      .update({ share_token: token })
+      .select("share_token, share_token_expires_at")
       .eq("id", docId)
-      .select("share_token")
       .single();
-    const existingToken = (data as { share_token?: string } | null)?.share_token || token;
-    const link = `${window.location.origin}/devis/${existingToken}`;
+
+    const currentToken  = (existing as { share_token?: string | null } | null)?.share_token ?? null;
+    const expiresAt     = (existing as { share_token_expires_at?: string | null } | null)?.share_token_expires_at ?? null;
+    const isExpired     = expiresAt ? new Date(expiresAt) <= new Date() : false;
+
+    let token = currentToken;
+    if (!token || isExpired) {
+      // Génère uniquement si absent ou expiré — ne jamais casser un lien déjà envoyé
+      token = crypto.randomUUID();
+      await supabase
+        .from("documents")
+        .update({ share_token: token, share_token_expires_at: null })
+        .eq("id", docId);
+    }
+
+    const link = `${window.location.origin}/devis/${token}`;
     try {
       await navigator.clipboard.writeText(link);
       showToast("success", "Lien de signature copié dans le presse-papiers !");
     } catch {
       alert(`Lien de signature :\n${link}`);
     }
+  }
+
+  // ── Paiements partiels ───────────────────────────────────────────────────────
+  async function handleAddPayment() {
+    if (!selected || !uid) return;
+    const amount = parseFloat(payAmount.replace(",", "."));
+    if (isNaN(amount) || amount <= 0) { showToast("error", "Montant invalide."); return; }
+    setPayLoading(true);
+    const res = await fetch("/api/factures/paiement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        document_id: selected.id,
+        amount, date: payDate, method: payMethod, notes: payNotes,
+      }),
+    });
+    const json = await res.json();
+    setPayLoading(false);
+    if (!res.ok) { showToast("error", json.error ?? "Erreur lors de l'enregistrement."); return; }
+    const { payments, montant_paye: total, statut: newStatut } = json as {
+      payments: DocumentPayment[]; montant_paye: number; statut: DocStatut;
+    };
+    setPayments(payments);
+    setSelected(s => s ? { ...s, montant_paye: total, statut: newStatut } : s);
+    setDraft(d => d ? { ...d, statut: newStatut } : d);
+    setDocuments(p => p.map(d => d.id === selected.id ? { ...d, montant_paye: total, statut: newStatut } : d));
+    setPayAmount(""); setPayNotes("");
+    showToast("success", `Paiement de ${fmtEur(amount)} enregistré.`);
+    void logAudit("paiement_ajouté", undefined, { montant: String(amount), méthode: payMethod });
+  }
+
+  async function handleDeletePayment(paymentId: string) {
+    if (!selected) return;
+    const res = await fetch("/api/factures/paiement", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payment_id: paymentId }),
+    });
+    const json = await res.json();
+    if (!res.ok) { showToast("error", json.error ?? "Erreur lors de la suppression."); return; }
+    const { payments, montant_paye: total, statut: newStatut } = json as {
+      payments: DocumentPayment[]; montant_paye: number; statut: DocStatut;
+    };
+    setPayments(payments);
+    setSelected(s => s ? { ...s, montant_paye: total, statut: newStatut } : s);
+    setDraft(d => d ? { ...d, statut: newStatut } : d);
+    setDocuments(p => p.map(d => d.id === selected.id ? { ...d, montant_paye: total, statut: newStatut } : d));
+    showToast("success", "Paiement supprimé.");
+    void logAudit("paiement_supprimé", undefined, { montant_restant: String(total) });
   }
 
   // ── Rappels groupés ─────────────────────────────────────────────────────────
@@ -2097,31 +2341,25 @@ export default function FacturesPage() {
   const fmt         = (n: number) => fmtAmount(n, devise);
 
   return (
-    <div className={`flex h-[calc(100vh-56px)] flex-col overflow-hidden ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
+    <div className={`flex h-[calc(100vh-56px)] flex-col overflow-hidden ${isDark ? "bg-[#111111]" : "bg-[#f8f8f8]"}`}>
 
       {/* ── Header ── */}
-      <div className={`shrink-0 border-b px-5 py-4 backdrop-blur-xl sm:px-8 ${headerCls}`}>
+      <div className={`shrink-0 border-b px-5 py-3.5 backdrop-blur-xl sm:px-8 ${headerCls}`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={ReceiptText} color="#c9a55a" />
-            <div>
-              <h1 className={`text-base font-extrabold ${tw1}`}>Factures & Devis</h1>
+          <div>
+            <h1 className={`text-base font-extrabold ${tw1}`}>Factures & Devis</h1>
+            <div className="flex items-center gap-2">
               <p className={`text-[0.65rem] ${tw4}`}>{documents.length} document{documents.length !== 1 ? "s" : ""}</p>
+                {activeOrgName && (
+                  <span className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.6rem] font-semibold"
+                    style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.25)" }}>
+                    <Building2 size={9} />
+                    {activeOrgName}
+                  </span>
+                )}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Statistiques */}
-            <a href="/client/factures/stats" title="Statistiques avancées"
-              className={`flex items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-2.5 py-2 text-xs font-semibold ${tw3} transition hover:${tw1} sm:px-3`}>
-              <BarChart3 size={12}/>
-              <span className="hidden sm:inline">Stats</span>
-            </a>
-            {/* Paramètres */}
-            <a href="/client/factures/parametres" title="Paramètres"
-              className={`flex items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-2.5 py-2 text-xs font-semibold ${tw3} transition hover:${tw1} sm:px-3`}>
-              <Settings2 size={12}/>
-              <span className="hidden sm:inline">Paramètres</span>
-            </a>
             {documents.length > 0 && (
               <button onClick={exportCSV} title="Exporter CSV"
                 className={`hidden items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-3 py-2 text-xs font-semibold ${tw3} transition sm:flex`}>
@@ -2161,12 +2399,12 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Body ── */}
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 gap-5 overflow-hidden px-5 py-5 sm:px-5">
+      {/* ── 3-column body ── */}
+      <div className="flex w-full flex-1 overflow-hidden">
 
-        {/* ── Sidebar list ── */}
-        <aside className={`flex-col overflow-hidden transition-all duration-300 ${isDark ? "border-r border-white/[0.06] sm:border sm:border-white/[0.08]" : "border-r border-gray-200 sm:border sm:border-gray-200"} sm:rounded-xl ${mobileView === "editor" ? "hidden sm:flex" : "flex"} ${sidebarOpen ? "w-full sm:w-[300px] sm:flex-none" : "hidden sm:flex sm:w-0 sm:border-0"}`}
-          style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#ffffff" }}>
+        {/* ── LEFT: Document list ── */}
+        <aside className={`flex flex-col shrink-0 border-r ${tbd1} transition-[width] duration-200 overflow-hidden ${mobileView !== "list" ? "hidden sm:flex" : "flex"} ${draft ? "w-full sm:w-0 sm:overflow-hidden sm:border-0" : sidebarOpen ? "w-full sm:w-72" : "sm:w-0 hidden sm:hidden"}`}
+          style={{ background: isDark ? "rgba(17,17,17,0.98)" : "#ffffff" }}>
 
 
           {/* KPI strip */}
@@ -2174,7 +2412,7 @@ export default function FacturesPage() {
             <div className={`grid grid-cols-3 border-b ${tbd2}`} style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#fafafa" }}>
               {[
                 { label: "Encaissé",  val: fmtEur(stats.ca),          color: "#4ade80", bg: "rgba(74,222,128,0.08)",  Icon: TrendingUp,   click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
-                { label: "En attente",val: fmtEur(stats.pendingAmt),  color: "#60a5fa", bg: "rgba(96,165,250,0.08)",  Icon: Clock,        click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
+                { label: "En attente",val: fmtEur(stats.pendingAmt),  color: "#c9a55a", bg: "rgba(201,165,90,0.08)", Icon: Clock,        click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
                 { label: "En retard", val: fmtEur(stats.overdueAmt),  color: "#f87171", bg: "rgba(248,113,113,0.08)", Icon: AlertTriangle, click: () => { setFilterType("facture"); setFilterStatut("en_retard"); } },
               ].map((k, i) => (
                 <motion.button key={k.label} onClick={k.click}
@@ -2426,11 +2664,12 @@ export default function FacturesPage() {
           </div>
         </aside>
 
-        {/* ── Editor ── */}
-        <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
+        {/* ── CENTER: Éditeur tabulé ── */}
+        <main className={`flex flex-1 min-w-0 flex-col overflow-hidden ${mobileView === "editor" ? "flex" : "hidden sm:flex"}`}>
           {!draft ? (
             <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-              className={`flex h-full flex-col items-center justify-center gap-4 rounded-xl border ${tbd1} p-8 text-center ${tbg2}`}>
+              className={`flex h-full flex-col items-center justify-center gap-4 p-8 text-center`}
+              style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#fafafa" }}>
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)]">
                 <ReceiptText size={28} style={{ color:"#c9a55a" }}/>
               </div>
@@ -2451,21 +2690,30 @@ export default function FacturesPage() {
               </div>
             </motion.div>
           ) : (
-            <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
-              transition={{ duration:0.3, ease }}
-              className={`flex h-full flex-col overflow-hidden rounded-none sm:rounded-xl sm:border ${tbd1}`}
+            <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
+              transition={{ duration:0.25, ease }}
+              className="flex h-full flex-col overflow-hidden"
               style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#ffffff" }}>
 
               {/* ── Toolbar ── */}
               <div className={`flex flex-wrap items-center gap-2 border-b ${tbd2} px-5 py-3`}>
                 {/* Toggle sidebar (desktop) */}
-                <button onClick={() => setSidebarOpen(o => !o)}
-                  title={sidebarOpen ? "Masquer la liste" : "Afficher la liste"}
-                  className={`hidden sm:flex items-center justify-center h-7 w-7 rounded-lg border ${tbd1} ${tw4} transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"}`}>
-                  {sidebarOpen ? <PanelLeftClose size={13}/> : <PanelLeftOpen size={13}/>}
+                {/* ← Retour aux documents (desktop) */}
+                <button
+                  onClick={() => { setDraft(null); setSelected(null); setMobileView("list"); }}
+                  title="Retour aux documents"
+                  className={`hidden sm:flex items-center gap-1.5 h-7 rounded-lg border ${tbd1} px-2.5 ${tw4} text-[0.68rem] font-medium transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"}`}>
+                  <ChevronLeft size={11}/> Documents
                 </button>
-                <button onClick={() => setMobileView("list")} className={`flex items-center gap-1.5 text-xs ${tw3} hover:${tw1} transition sm:hidden`}>
+                {/* ← Retour à la liste (mobile) */}
+                <button onClick={() => setMobileView("list")} className={`flex items-center gap-1.5 text-xs ${tw3} transition sm:hidden`}>
                   <ArrowLeft size={13}/>
+                </button>
+                {/* Aperçu / Éditer toggle (mobile) */}
+                <button
+                  onClick={() => setMobileView(mv => mv === "preview" ? "editor" : "preview")}
+                  className={`flex items-center gap-1.5 text-[0.72rem] font-medium transition sm:hidden ${mobileView === "preview" ? tw2 : tw4}`}>
+                  <Eye size={13}/> {mobileView === "preview" ? "Éditer" : "Aperçu"}
                 </button>
                 {/* Type toggle */}
                 <div className={`flex rounded-xl ${tiB} p-0.5`}>
@@ -2484,7 +2732,7 @@ export default function FacturesPage() {
                     className="appearance-none rounded-xl border py-1.5 pl-3 pr-7 text-[0.65rem] font-bold uppercase tracking-wider outline-none cursor-pointer transition"
                     style={(() => { const s = STATUTS[draft.statut]; return { color:s.color, background:s.bg, borderColor:s.border }; })()}>
                     {(Object.keys(STATUTS) as DocStatut[]).map(s => (
-                      <option key={s} value={s} style={{ background:"#0f1117", color:"#fff" }}>{STATUTS[s].label}</option>
+                      <option key={s} value={s} style={{ background:"#181818", color:"#fff" }}>{STATUTS[s].label}</option>
                     ))}
                   </select>
                   <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-current opacity-60"/>
@@ -2502,7 +2750,7 @@ export default function FacturesPage() {
                       {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
                     </button>
                   )}
-                  {selected?.type === "facture" && (selected.statut === "envoyé" || selected.statut === "payé") && (
+                  {selected?.type === "facture" && (selected.statut === "envoyé" || selected.statut === "payé" || selected.statut === "partiellement_payé") && (
                     <button onClick={() => newAvoir(selected)} disabled={converting}
                       title="Créer un avoir (note de crédit) pour cette facture"
                       className="hidden items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition disabled:opacity-40 sm:flex"
@@ -2545,6 +2793,12 @@ export default function FacturesPage() {
                       {sendingRelance ? <Loader2 size={13} className="animate-spin"/> : <AlertCircle size={13}/>} Relancer
                     </button>
                   )}
+                  {selected && draft.type === "facture" && (draft.statut === "envoyé" || draft.statut === "en_retard" || draft.statut === "partiellement_payé") && (
+                    <button onClick={() => setPayModal(true)}
+                      className="hidden items-center gap-1.5 rounded-xl border border-green-400/25 px-3 py-2 text-xs font-semibold text-green-400/80 transition hover:border-green-400/50 hover:text-green-400 sm:flex">
+                      <DollarSign size={13}/> Encaisser
+                    </button>
+                  )}
                   {selected && draft.type === "facture" && (
                     <button onClick={handlePaymentLink} disabled={payLinkLoading}
                       className="hidden items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#a78bfa]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#a78bfa] disabled:opacity-40 sm:flex">
@@ -2582,10 +2836,33 @@ export default function FacturesPage() {
                 </div>
               </div>
 
-              {/* ── Form + Live Preview ── */}
-              <div className="flex flex-1 overflow-hidden">
-              <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-6">
-                <div className="space-y-7">
+              {/* ── Tab bar ── */}
+              <div className={`shrink-0 flex items-stretch border-b ${tbd2} overflow-x-auto`} style={{ minHeight:"40px" }}>
+                {([
+                  { id:"general",    label:"Général" },
+                  { id:"client",     label:"Client" },
+                  { id:"lignes",     label:"Lignes" },
+                  { id:"design",     label:"Design" },
+                  { id:"options",    label:"Options" },
+                  { id:"paiements",  label:"Paiements" },
+                  { id:"historique", label:"Historique" },
+                ] as { id: EditorTab; label: string }[]).map(tab => (
+                  <button key={tab.id} onClick={() => setActiveEditorTab(tab.id)}
+                    className={`flex items-center border-b-2 px-4 py-2.5 text-[0.68rem] font-bold whitespace-nowrap transition-all -mb-px
+                      ${activeEditorTab === tab.id
+                        ? "border-[#c9a55a] text-[#c9a55a]"
+                        : `border-transparent ${tw4} ${isDark ? "hover:text-white/60" : "hover:text-gray-600"}`
+                      }`}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* ── Tab content ── */}
+              <div className="flex-1 overflow-y-auto px-5 py-5">
+                {/* TAB: Général */}
+                {activeEditorTab === "general" && (
+                <div className="space-y-6">
 
                   {/* Document identity card */}
                   <div className={`overflow-hidden rounded-2xl border ${tbd2} ${tbg2}`}>
@@ -2676,6 +2953,41 @@ export default function FacturesPage() {
                     </div>
                   )}
 
+                  {/* ── Paiements reçus ── */}
+                  {selected?.type === "facture" && (selected.montant_paye ?? 0) > 0 && (
+                    <div className="rounded-2xl border p-4" style={{ borderColor:"rgba(251,191,36,0.2)", background:"rgba(251,191,36,0.04)" }}>
+                      <div className="mb-3 flex items-center justify-between">
+                        <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.5)" }}>
+                          Paiements reçus
+                        </p>
+                        <button onClick={() => setPayModal(true)}
+                          className="rounded-lg border border-[rgba(251,191,36,0.3)] px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
+                          style={{ color:"#fbbf24" }}>
+                          + Ajouter
+                        </button>
+                      </div>
+                      <div className="mb-1.5 flex items-center justify-between text-xs">
+                        <span style={{ color:"rgba(251,191,36,0.7)" }}>
+                          {fmtEur(selected.montant_paye ?? 0)} / {fmtEur(selected.total_ttc)}
+                        </span>
+                        <span className="font-bold" style={{ color:"#fbbf24" }}>
+                          {Math.min(100, Math.round(((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100))}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background:"rgba(251,191,36,0.12)" }}>
+                        <div className="h-full rounded-full transition-all duration-500" style={{
+                          background:"#fbbf24",
+                          width:`${Math.min(100, ((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100)}%`,
+                        }}/>
+                      </div>
+                      {(selected.total_ttc - (selected.montant_paye ?? 0)) > 0.01 && (
+                        <p className="mt-1.5 text-[0.62rem]" style={{ color:"rgba(251,191,36,0.45)" }}>
+                          Solde restant : {fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {/* ── Informations du document ── */}
                   <div className="space-y-3">
                     <SectionLabel icon={<FileText size={10}/>} label="Informations du document"/>
@@ -2699,6 +3011,12 @@ export default function FacturesPage() {
                       </button>
                     </div>
                   </div>
+
+                </div>)}
+
+                {/* TAB: Client */}
+                {activeEditorTab === "client" && (
+                <div className="space-y-6">
 
                   {/* ── Client ── */}
                   <div className="space-y-3">
@@ -2729,6 +3047,12 @@ export default function FacturesPage() {
                       <DInput value={draft.client_tva}      onChange={v => updDraft("client_tva", v)}      placeholder="N° TVA intracommunautaire"/>
                     </div>
                   </div>
+
+                </div>)}
+
+                {/* TAB: Lignes */}
+                {activeEditorTab === "lignes" && (
+                <div className="space-y-6">
 
                   {/* ── Lignes de prestation ── */}
                   <div className="space-y-3">
@@ -2892,6 +3216,12 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
+                </div>)}
+
+                {/* TAB: Options */}
+                {activeEditorTab === "options" && (
+                <div className="space-y-6">
+
                   {/* ── Notes & conditions ── */}
                   <div className="space-y-3">
                     <SectionLabel icon={<FileText size={10}/>} label="Notes & conditions"/>
@@ -2955,6 +3285,12 @@ export default function FacturesPage() {
                     </div>
                   </div>
 
+                </div>)}
+
+                {/* TAB: Design */}
+                {activeEditorTab === "design" && (
+                <div className="space-y-6">
+
                   {/* ── Apparence ── */}
                   <div className="space-y-3">
                     <SectionLabel icon={<Palette size={10}/>} label="Apparence"/>
@@ -2965,6 +3301,12 @@ export default function FacturesPage() {
                     />
                     <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
                   </div>
+
+                </div>)}
+
+                {/* TAB: Options (suite — récurrence + signature) */}
+                {activeEditorTab === "options" && (
+                <div className="space-y-6">
 
                   {/* ── Facturation récurrente ── */}
                   {selected && draft.type === "facture" && (
@@ -3041,6 +3383,52 @@ export default function FacturesPage() {
                     </div>
                   )}
 
+                </div>)}
+
+                {/* TAB: Paiements */}
+                {activeEditorTab === "paiements" && (
+                <div className="space-y-6">
+                  {selected?.type === "facture" ? (
+                    <>
+                      <div className="rounded-2xl border p-5" style={{ borderColor:"rgba(251,191,36,0.2)", background:"rgba(251,191,36,0.04)" }}>
+                        <div className="mb-4 flex items-center justify-between">
+                          <p className="text-[0.6rem] font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.6)" }}>Paiements reçus</p>
+                          <button onClick={() => setPayModal(true)}
+                            className="flex items-center gap-1.5 rounded-lg border border-[rgba(251,191,36,0.3)] px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
+                            style={{ color:"#fbbf24" }}>
+                            <Plus size={10}/> Ajouter
+                          </button>
+                        </div>
+                        <div className="mb-2 flex items-center justify-between text-sm">
+                          <span style={{ color:"rgba(251,191,36,0.7)" }}>{fmtEur(selected.montant_paye ?? 0)} / {fmtEur(selected.total_ttc)}</span>
+                          <span className="font-bold" style={{ color:"#fbbf24" }}>
+                            {Math.min(100, Math.round(((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100))}%
+                          </span>
+                        </div>
+                        <div className="mb-4 h-2 w-full overflow-hidden rounded-full" style={{ background:"rgba(251,191,36,0.12)" }}>
+                          <div className="h-full rounded-full transition-all duration-500" style={{
+                            background:"#fbbf24",
+                            width:`${Math.min(100, ((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100)}%`,
+                          }}/>
+                        </div>
+                        {(selected.total_ttc - (selected.montant_paye ?? 0)) > 0.01 ? (
+                          <p className={`text-sm font-semibold ${tw2}`}>
+                            Reste à encaisser : <span style={{ color:"#fbbf24" }}>{fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}</span>
+                          </p>
+                        ) : (
+                          <p className="text-sm font-semibold text-emerald-400">Facture intégralement payée</p>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <p className={`text-[0.75rem] ${tw4}`}>Le suivi des paiements est disponible pour les factures uniquement.</p>
+                  )}
+                </div>)}
+
+                {/* TAB: Historique */}
+                {activeEditorTab === "historique" && (
+                <div className="space-y-6">
+
                   {/* ── Historique / Journal d'audit ── */}
                   {selected && (
                     <div className="space-y-3">
@@ -3087,19 +3475,27 @@ export default function FacturesPage() {
                     </div>
                   )}
 
-                  {/* Mobile actions */}
-                  <div className="flex flex-wrap gap-3 sm:hidden">
+                </div>)}
+
+                {/* Mobile actions */}
+                <div className="flex flex-wrap gap-3 sm:hidden">
                     {selected?.type === "devis" && (
                       <button onClick={handleConvert} disabled={converting}
                         className="flex items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-400/10 disabled:opacity-40">
                         {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
                       </button>
                     )}
-                    {selected?.type === "facture" && (selected.statut === "envoyé" || selected.statut === "payé") && (
+                    {selected?.type === "facture" && (selected.statut === "envoyé" || selected.statut === "payé" || selected.statut === "partiellement_payé") && (
                       <button onClick={() => newAvoir(selected)} disabled={converting}
                         className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition disabled:opacity-40"
                         style={{ borderColor: AVOIR_BADGE.border, color: AVOIR_BADGE.color, background: AVOIR_BADGE.bg }}>
                         {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Avoir
+                      </button>
+                    )}
+                    {selected && draft.type === "facture" && (draft.statut === "envoyé" || draft.statut === "en_retard" || draft.statut === "partiellement_payé") && (
+                      <button onClick={() => setPayModal(true)}
+                        className="flex items-center gap-1.5 rounded-xl border border-green-400/25 px-3 py-2 text-xs font-semibold text-green-400/80 transition hover:border-green-400/50 hover:text-green-400">
+                        <DollarSign size={13}/> Encaisser
                       </button>
                     )}
                     {selected && (
@@ -3148,47 +3544,67 @@ export default function FacturesPage() {
                         <Share2 size={13}/> Copier le lien
                       </button>
                     )}
-                  </div>
-
                 </div>
-              </div>
-
-              {/* ── Live Preview panel (XL+) ── */}
-              <div className="hidden xl:flex w-[420px] shrink-0 flex-col border-l border-white/[0.07] overflow-y-auto"
-                style={{ background:"rgba(0,0,0,0.18)" }}>
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] px-4 py-3"
-                  style={{ background:"rgba(6,8,14,0.97)", backdropFilter:"blur(12px)" }}>
-                  <div className="flex items-center gap-2">
-                    <Eye size={11} style={{ color:activeColor }}/>
-                    <span className="text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Aperçu PDF</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.65rem] font-bold transition hover:opacity-90"
-                      style={{ background:`${activeColor}22`, color:activeColor, border:`1px solid ${activeColor}33` }}>
-                      <FileDown size={10}/> PDF
-                    </button>
-                    {draft.type !== "devis" && (
-                      <button onClick={downloadXml}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.65rem] font-bold transition hover:opacity-90"
-                        style={{ background:"rgba(100,200,120,0.12)", color:"#6abf7b", border:"1px solid rgba(100,200,120,0.25)" }}
-                        title="Télécharger XML Factur-X">
-                        <FileCode2 size={10}/> XML
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="p-5 pb-8">
-                  <div className="relative overflow-hidden rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-                    <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals, logoSize)}/>
-                  </div>
-                </div>
-              </div>
 
               </div>
             </motion.div>
           )}
         </main>
+
+        {/* ── RIGHT: Aperçu live ── */}
+        {draft && (
+        <div className={`flex-col border-l ${tbd1} overflow-hidden flex-[0_0_48%] ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}
+          style={{ background: isDark ? "#0e0e0e" : "#ebebeb" }}>
+
+          {/* Barre de contrôles */}
+          <div className={`shrink-0 flex items-center justify-between border-b ${tbd1} px-3 py-2`}
+            style={{ background: isDark ? "#181818" : "#ffffff" }}>
+            <div className="flex items-center gap-2">
+              <Eye size={11} style={{ color: activeColor }}/>
+              <span className={`text-[0.62rem] font-semibold uppercase tracking-widest ${tw4}`}>Aperçu live</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
+                className="flex items-center gap-1 rounded px-2 py-1 text-[0.6rem] font-semibold transition hover:opacity-90"
+                style={{ background: `${activeColor}1a`, color: activeColor, border: `1px solid ${activeColor}33` }}>
+                <FileDown size={9}/> PDF
+              </button>
+              {draft.type !== "devis" && (
+                <button
+                  onClick={downloadXml}
+                  className="flex items-center gap-1 rounded px-2 py-1 text-[0.6rem] font-semibold transition hover:opacity-90"
+                  style={{ background: "rgba(100,200,120,0.10)", color: "#6abf7b", border: "1px solid rgba(100,200,120,0.20)" }}
+                  title="Télécharger XML Factur-X">
+                  <FileCode2 size={9}/> XML
+                </button>
+              )}
+              <button
+                onClick={() => setShowPreview(true)}
+                title="Plein écran"
+                className={`flex items-center justify-center h-6 w-6 rounded border ${tbd1} ${tw4} transition hover:opacity-80`}>
+                <Maximize2 size={10}/>
+              </button>
+            </div>
+          </div>
+
+          {/* Feuille A4 scalée */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="flex min-h-full flex-col items-center py-6 px-4">
+              <div className="w-full" style={{ maxWidth: 595 }}>
+                <div className="overflow-hidden rounded-[2px] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.18),0_1px_4px_rgba(0,0,0,0.10)]">
+                  <ScaledA4>
+                    <InvoiceTemplate
+                      type={draft.template ?? "modern"}
+                      data={draftToPreviewData(draft, items, totals, logoSize)}
+                    />
+                  </ScaledA4>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
       </div>
 
       {/* ── Preview modal ── */}
@@ -3271,8 +3687,8 @@ export default function FacturesPage() {
                 ) : crmClients.map(c => (
                   <button key={c.id} onClick={() => applyCrmClient(c)}
                     className="w-full rounded-xl border border-transparent px-3 py-2.5 text-left transition hover:border-white/[0.09] hover:bg-white/[0.04]">
-                    <p className="text-sm font-semibold text-white">{c.nom}</p>
-                    {c.societe && <p className="text-xs text-white/40">{c.societe}</p>}
+                    <p className="text-sm font-semibold text-white">{c.name}</p>
+                    {c.company && <p className="text-xs text-white/40">{c.company}</p>}
                     {c.email   && <p className="text-xs text-white/30">{c.email}</p>}
                   </button>
                 ))}
@@ -3679,6 +4095,130 @@ export default function FacturesPage() {
                   {sendingBulk ? "Envoi…" : `Envoyer ${overdueWithEmail.length} relance${overdueWithEmail.length !== 1 ? "s" : ""}`}
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Modal Encaisser / Paiements partiels ── */}
+      <AnimatePresence>
+        {payModal && selected && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+            onClick={e => e.target === e.currentTarget && setPayModal(false)}>
+            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
+              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
+              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              {/* Header */}
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.08)]">
+                    <DollarSign size={15} className="text-[#fbbf24]"/>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Encaisser un paiement</h3>
+                    <p className="text-[0.62rem] text-white/30">{selected.numero} · Total {fmtEur(selected.total_ttc)}</p>
+                  </div>
+                </div>
+                <button onClick={() => setPayModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
+              </div>
+
+              {/* Progression */}
+              {(selected.montant_paye ?? 0) > 0 && (
+                <div className="mb-4 rounded-xl border border-[rgba(251,191,36,0.15)] bg-[rgba(251,191,36,0.06)] p-3">
+                  <div className="mb-1.5 flex items-center justify-between text-xs">
+                    <span style={{ color:"rgba(251,191,36,0.7)" }}>Déjà encaissé : {fmtEur(selected.montant_paye ?? 0)}</span>
+                    <span className="font-bold" style={{ color:"#fbbf24" }}>
+                      Reste : {fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}
+                    </span>
+                  </div>
+                  <div className="h-1 w-full overflow-hidden rounded-full" style={{ background:"rgba(251,191,36,0.12)" }}>
+                    <div className="h-full rounded-full" style={{
+                      background:"#fbbf24",
+                      width:`${Math.min(100, ((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100)}%`,
+                    }}/>
+                  </div>
+                </div>
+              )}
+
+              {/* Formulaire nouveau paiement */}
+              <div className="mb-5 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-[0.62rem] font-bold uppercase tracking-wider text-white/40">Montant (€)</label>
+                    <input
+                      type="number" step="0.01" min="0.01"
+                      placeholder={`Max ${fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}`}
+                      value={payAmount}
+                      onChange={e => setPayAmount(e.target.value)}
+                      className="w-full rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-white/20 outline-none focus:border-[rgba(251,191,36,0.4)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[0.62rem] font-bold uppercase tracking-wider text-white/40">Date</label>
+                    <input
+                      type="date" value={payDate}
+                      onChange={e => setPayDate(e.target.value)}
+                      className="w-full rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(251,191,36,0.4)]"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[0.62rem] font-bold uppercase tracking-wider text-white/40">Mode de paiement</label>
+                  <select value={payMethod} onChange={e => setPayMethod(e.target.value)}
+                    className="w-full rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(251,191,36,0.4)]"
+                    style={{ colorScheme:"dark" }}>
+                    {PAYMENT_METHODS.map(m => (
+                      <option key={m.val} value={m.val} style={{ background:"#181818" }}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[0.62rem] font-bold uppercase tracking-wider text-white/40">Notes (optionnel)</label>
+                  <input
+                    type="text" placeholder="Référence virement, commentaire…"
+                    value={payNotes}
+                    onChange={e => setPayNotes(e.target.value)}
+                    className="w-full rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-white/20 outline-none focus:border-[rgba(251,191,36,0.4)]"
+                  />
+                </div>
+              </div>
+              <div className="mb-5 flex gap-3">
+                <button onClick={() => setPayModal(false)}
+                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20">Annuler</button>
+                <button onClick={handleAddPayment} disabled={payLoading || !payAmount}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-[#0d1120] transition hover:opacity-90 disabled:opacity-40"
+                  style={{ background:"#fbbf24" }}>
+                  {payLoading ? <Loader2 size={13} className="animate-spin"/> : <DollarSign size={13}/>}
+                  {payLoading ? "Enregistrement…" : "Enregistrer"}
+                </button>
+              </div>
+
+              {/* Historique des paiements */}
+              {payments.length > 0 && (
+                <div>
+                  <p className="mb-2 text-[0.58rem] font-bold uppercase tracking-[0.15em] text-white/25">Historique</p>
+                  <div className="max-h-44 space-y-1.5 overflow-y-auto">
+                    {payments.map(p => (
+                      <div key={p.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white">{fmtEur(p.amount)}</span>
+                            <span className="rounded-full border border-[rgba(251,191,36,0.2)] px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-wider" style={{ color:"#fbbf24" }}>
+                              {PAYMENT_METHODS.find(m => m.val === p.method)?.label ?? p.method}
+                            </span>
+                          </div>
+                          <p className="text-[0.62rem] text-white/30">{fmtDate(p.date)}{p.notes ? ` · ${p.notes}` : ""}</p>
+                        </div>
+                        <button onClick={() => handleDeletePayment(p.id)}
+                          className="shrink-0 rounded-lg p-1.5 text-white/20 transition hover:bg-red-500/10 hover:text-red-400">
+                          <Trash2 size={12}/>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
