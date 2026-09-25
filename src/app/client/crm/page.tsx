@@ -14,6 +14,7 @@ import {
   RefreshCw, PieChart, Layers, Bell, Hash,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useOrganization } from "@/lib/use-organization";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import Pagination from "@/components/client/Pagination";
 import { usePagination } from "@/hooks/usePagination";
@@ -1703,6 +1704,8 @@ export default function CRMPage() {
   const [userId,        setUserId]        = useState<string | null>(null);
   const { toasts, add: toast, remove: removeToast } = useToastStack();
   const { isDark } = useTheme();
+  const orgState  = useOrganization();
+  const orgId     = orgState.status === "ready" ? orgState.org.id : null;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -1718,12 +1721,13 @@ export default function CRMPage() {
     try {
       // ⚠️ On évite les jointures FK (*, contacts(name,company)) qui dépendent
       // du cache schema PostgREST — on résout les noms de contacts localement.
+      // Pas de filtre user_id — RLS garantit l'isolation (user_id = auth.uid() OU org member)
       const [ctRes, acRes, opRes, tkRes, tiRes] = await Promise.all([
-        supabase.from("contacts").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(500),
-        supabase.from("contact_activities").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(500),
-        supabase.from("opportunities").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
-        supabase.from("crm_tasks").select("*").eq("user_id", userId).order("due_date", { ascending: true }).limit(200),
-        supabase.from("tickets").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
+        supabase.from("contacts").select("*").order("updated_at", { ascending: false }).limit(500),
+        supabase.from("contact_activities").select("*").order("created_at", { ascending: false }).limit(500),
+        supabase.from("opportunities").select("*").order("created_at", { ascending: false }).limit(200),
+        supabase.from("crm_tasks").select("*").order("due_date", { ascending: true }).limit(200),
+        supabase.from("tickets").select("*").order("created_at", { ascending: false }).limit(200),
       ]);
 
       const contactsList = (ctRes.data ?? []) as Contact[];
@@ -1780,7 +1784,7 @@ export default function CRMPage() {
       if (selected?.id === editContact.id) setSelected(s => s ? { ...s, ...form } as Contact : s);
       toast("Contact mis à jour", "success");
     } else {
-      const { data, error } = await supabase.from("contacts").insert({ ...form, user_id: userId }).select().single();
+      const { data, error } = await supabase.from("contacts").insert({ ...form, user_id: userId, organization_id: orgId ?? null }).select().single();
       if (error || !data) { setSaveError(error?.message ?? "Erreur de création"); return; }
       setContacts(cs => [data as Contact, ...cs]);
       toast("Contact créé", "success");
@@ -1807,7 +1811,7 @@ export default function CRMPage() {
     async function addActivity(contactId: string, data: Partial<Activity>) {
     if (!userId || !data.title) return;
     const { data: d, error } = await supabase.from("contact_activities").insert({
-      ...data, user_id: userId, contact_id: contactId,
+      ...data, user_id: userId, contact_id: contactId, organization_id: orgId ?? null,
     }).select().single();
     if (error) { toast("Erreur lors de l'ajout de l'activité", "error"); return; }
     if (d) { setActivities(a => [d as Activity, ...a]); toast("Activité ajoutée", "success"); }
@@ -1821,7 +1825,7 @@ export default function CRMPage() {
 
     async function addOpportunity(data: Partial<Opportunity>) {
     if (!userId || !data.title) return;
-    const { data: d, error } = await supabase.from("opportunities").insert({ ...data, user_id: userId }).select().single();
+    const { data: d, error } = await supabase.from("opportunities").insert({ ...data, user_id: userId, organization_id: orgId ?? null }).select().single();
     if (error) { toast("Erreur lors de la création de l'opportunité", "error"); return; }
     if (d) {
       const opp = d as Opportunity;
@@ -1849,7 +1853,7 @@ export default function CRMPage() {
 
     async function addTask(data: Partial<CrmTask>) {
     if (!userId || !data.title) return;
-    const { data: d, error } = await supabase.from("crm_tasks").insert({ ...data, user_id: userId }).select().single();
+    const { data: d, error } = await supabase.from("crm_tasks").insert({ ...data, user_id: userId, organization_id: orgId ?? null }).select().single();
     if (error) { toast("Erreur lors de la création de la tâche", "error"); return; }
     if (d) {
       const task = d as CrmTask;
@@ -1863,7 +1867,8 @@ export default function CRMPage() {
   }
 
   async function toggleTask(id: string, done: boolean) {
-    await supabase.from("crm_tasks").update({ done }).eq("id", id);
+    const { error } = await supabase.from("crm_tasks").update({ done }).eq("id", id);
+    if (error) { toast("Erreur lors de la mise à jour de la tâche", "error"); return; }
     setTasks(t => t.map(task => task.id === id ? { ...task, done } : task));
   }
 
@@ -1875,7 +1880,7 @@ export default function CRMPage() {
 
     async function addTicket(data: Partial<SupportTicket>) {
     if (!userId || !data.title) return;
-    const { data: d, error } = await supabase.from("tickets").insert({ ...data, user_id: userId }).select().single();
+    const { data: d, error } = await supabase.from("tickets").insert({ ...data, user_id: userId, organization_id: orgId ?? null }).select().single();
     if (error) { toast("Erreur lors de la création du ticket", "error"); return; }
     if (d) {
       const ticket = d as SupportTicket;
@@ -2003,6 +2008,7 @@ export default function CRMPage() {
         status: "prospect" as ContactStatus,
         type: "prospect" as ContactType,
         user_id: userId,
+        organization_id: orgId ?? null,
       };
     }).filter(r => r.name);
     if (!rows.length) { toast("Aucun contact valide trouvé", "error"); return; }

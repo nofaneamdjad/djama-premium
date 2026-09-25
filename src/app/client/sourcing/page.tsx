@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useOrganization } from "@/lib/use-organization";
 import type { GuideMessage, GuideSection, GuideItem } from "@/lib/sourcing/generateGuide";
 import { useTheme } from "@/lib/theme-context";
 import { APP_ICONS } from "@/components/AppIcons";
@@ -745,6 +746,8 @@ export default function SourcingPage() {
   const [crmLoading,   setCrmLoading]   = useState(false);
   const [crmDone,      setCrmDone]      = useState(false);
   const [authUserId,   setAuthUserId]   = useState<string | null>(null);
+  const orgState = useOrganization();
+  const orgId    = orgState.status === "ready" ? orgState.org.id : null;
 
   const bottomRef  = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLTextAreaElement>(null);
@@ -912,8 +915,10 @@ export default function SourcingPage() {
         type: "prospect" as const,
         source: "Sourcing IA",
         tags: ["fournisseur", ...(s.type ? [s.type] : [])],
+        organization_id: orgId ?? null,
       }));
-      await supabase.from("contacts").insert(rows);
+      const { error: insertErr } = await supabase.from("contacts").insert(rows);
+      if (insertErr) console.error("[Sourcing] CRM import error:", insertErr.message);
       setCrmDone(true);
     } finally {
       setCrmLoading(false);
