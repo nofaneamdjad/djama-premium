@@ -81,11 +81,16 @@ interface CrmTask {
   contact?: Pick<Contact, "name" | "company">;
 }
 
+type TicketCategory = "bug" | "question" | "facturation" | "accès" | "autre";
+
 interface SupportTicket {
   id: string; user_id: string; contact_id: string | null;
   title: string; description: string;
   status: TicketStatus; priority: TicketPriority;
-  satisfaction: number; created_at: string; updated_at: string;
+  category: TicketCategory | null;
+  satisfaction: number;
+  resolved_at: string | null;
+  created_at: string; updated_at: string;
   contact?: Pick<Contact, "name" | "company">;
 }
 
@@ -1161,6 +1166,38 @@ function RapportView({
   );
 }
 
+const SLA_HOURS: Record<TicketPriority, number> = {
+  urgente: 4, haute: 24, normale: 72, basse: 168,
+};
+
+const TICKET_CATEGORIES: Record<TicketCategory, { label: string; emoji: string }> = {
+  bug:         { label: "Bug",         emoji: "🐛" },
+  question:    { label: "Question",    emoji: "❓" },
+  facturation: { label: "Facturation", emoji: "💳" },
+  accès:       { label: "Accès",       emoji: "🔑" },
+  autre:       { label: "Autre",       emoji: "📋" },
+};
+
+function computeSla(ticket: SupportTicket): { elapsed: number; breached: boolean; label: string; color: string; deadlineStr: string } {
+  if (ticket.status === "résolu" || ticket.status === "fermé") {
+    const resMs = ticket.resolved_at ? new Date(ticket.resolved_at).getTime() : Date.now();
+    const mins  = Math.round((resMs - new Date(ticket.created_at).getTime()) / 60_000);
+    const label = mins < 60 ? `Résolu en ${mins} min` : mins < 1440 ? `Résolu en ${Math.round(mins/60)}h` : `Résolu en ${Math.round(mins/1440)}j`;
+    return { elapsed: 1, breached: false, label, color: "#34d399", deadlineStr: "" };
+  }
+  const slaMs   = SLA_HOURS[ticket.priority] * 3_600_000;
+  const created = new Date(ticket.created_at).getTime();
+  const elapsed = (Date.now() - created) / slaMs;
+  const deadline = new Date(created + slaMs);
+  const deadlineStr = deadline.toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const breached = elapsed >= 1;
+  const label = breached ? "SLA dépassé" : elapsed >= 0.8 ? "Bientôt dépassé" : "Dans les délais";
+  const color  = breached ? "#f87171"    : elapsed >= 0.8 ? "#fb923c"          : "#34d399";
+  return { elapsed: Math.min(elapsed, 1), breached, label, color, deadlineStr };
+}
+
+const PRIORITY_ORDER: Record<TicketPriority, number> = { urgente: 0, haute: 1, normale: 2, basse: 3 };
+
 function TicketsGlobalView({
   tickets, contacts, onAdd, onUpdate, onDelete, canDelete,
 }: {
@@ -1171,14 +1208,26 @@ function TicketsGlobalView({
   onDelete: (id: string) => Promise<void>;
   canDelete: boolean;
 }) {
-  const [filter, setFilter] = useState<TicketStatus | "tous">("tous");
+  const [filter, setFilter]   = useState<TicketStatus | "tous">("tous");
   const [addModal, setAddModal] = useState(false);
-  const [form, setForm] = useState<Partial<SupportTicket>>({ status: "ouvert", priority: "normale" });
-  const isDark = useDark();
+  const [form, setForm]       = useState<Partial<SupportTicket>>({ status: "ouvert", priority: "normale", category: null });
+  const isDark  = useDark();
+  const today   = new Date().toISOString().slice(0, 10);
+  const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+
+  const TICKET_PRIORITIES: Record<TicketPriority, string> = {
+    basse: "#94a3b8", normale: "#60a5fa", haute: "#fb923c", urgente: "#f87171",
+  };
+
+  const sorted = useMemo(() => [...tickets].sort((a, b) => {
+    const ao = PRIORITY_ORDER[a.priority], bo = PRIORITY_ORDER[b.priority];
+    if (ao !== bo) return ao - bo;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  }), [tickets]);
 
   const filtered = useMemo(() =>
-    filter === "tous" ? tickets : tickets.filter(t => t.status === filter),
-    [tickets, filter]);
+    filter === "tous" ? sorted : sorted.filter(t => t.status === filter),
+    [sorted, filter]);
 
   const counts = useMemo(() => ({
     tous:     tickets.length,
@@ -1188,19 +1237,39 @@ function TicketsGlobalView({
     fermé:    tickets.filter(t => t.status === "fermé").length,
   }), [tickets]);
 
+  const stats = useMemo(() => {
+    const open    = tickets.filter(t => t.status === "ouvert" || t.status === "en_cours");
+    const breached = open.filter(t => computeSla(t).breached).length;
+    const resolved = tickets.filter(t => t.resolved_at && t.resolved_at >= weekAgo).length;
+    const urgent   = tickets.filter(t => t.priority === "urgente" && (t.status === "ouvert" || t.status === "en_cours")).length;
+    return { open: open.length, breached, resolved, urgent };
+  }, [tickets, weekAgo]);
+
   async function save() {
     if (!form.title) return;
     await onAdd(form);
     setAddModal(false);
-    setForm({ status: "ouvert", priority: "normale" });
+    setForm({ status: "ouvert", priority: "normale", category: null });
   }
-
-  const TICKET_PRIORITIES: Record<TicketPriority, string> = {
-    basse: "#94a3b8", normale: "#60a5fa", haute: "#fb923c", urgente: "#f87171",
-  };
 
   return (
     <div className="space-y-4">
+      {/* ── Stats SLA ─────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {[
+          { label: "Ouverts",           value: stats.open,     color: "#60a5fa" },
+          { label: "Urgents",           value: stats.urgent,   color: "#f87171" },
+          { label: "SLA dépassé",       value: stats.breached, color: "#fb923c" },
+          { label: "Résolus (7 jours)", value: stats.resolved, color: "#34d399" },
+        ].map(s => (
+          <div key={s.label} className={`rounded-2xl border p-2.5 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-white"}`}>
+            <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+            <div className={`text-[0.58rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Filtres + bouton ──────────────────────────────── */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1.5 flex-wrap">
           {(["tous","ouvert","en_cours","résolu","fermé"] as const).map(f => (
@@ -1227,46 +1296,77 @@ function TicketsGlobalView({
       ) : (
         <div className="space-y-2">
           <AnimatePresence initial={false}>
-            {filtered.map(ticket => (
-              <motion.div key={ticket.id} layout initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, height:0 }}
-                className={`rounded-2xl border p-4 group ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}
-                style={{ background: isDark ? "rgba(7,8,14,0.8)" : "rgba(255,255,255,0.95)" }}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
-                    {ticket.contact && (
-                      <p className={`text-[0.62rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{ticket.contact.name}{ticket.contact.company ? ` · ${ticket.contact.company}` : ""}</p>
-                    )}
-                    {ticket.description && <p className={`text-[0.65rem] mt-1 leading-relaxed ${isDark ? "text-white/35" : "text-gray-400"}`}>{ticket.description}</p>}
+            {filtered.map(ticket => {
+              const sla = computeSla(ticket);
+              const isOpen = ticket.status === "ouvert" || ticket.status === "en_cours";
+              return (
+                <motion.div key={ticket.id} layout initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, height:0 }}
+                  className={`rounded-2xl border p-4 group ${isDark ? "border-white/[0.06]" : "border-gray-200"} ${sla.breached && isOpen ? (isDark ? "border-red-500/20" : "border-red-200") : ""}`}
+                  style={{ background: isDark ? "rgba(7,8,14,0.8)" : "rgba(255,255,255,0.95)" }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
+                        {ticket.category && (
+                          <span className={`text-[0.58rem] px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/[0.05] text-white/40" : "bg-gray-100 text-gray-500"}`}>
+                            {TICKET_CATEGORIES[ticket.category].emoji} {TICKET_CATEGORIES[ticket.category].label}
+                          </span>
+                        )}
+                      </div>
+                      {ticket.contact && (
+                        <p className={`text-[0.62rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{ticket.contact.name}{ticket.contact.company ? ` · ${ticket.contact.company}` : ""}</p>
+                      )}
+                      {ticket.description && <p className={`text-[0.65rem] mt-1 leading-relaxed ${isDark ? "text-white/35" : "text-gray-400"}`}>{ticket.description}</p>}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                      <Badge label={TICKET_STATUSES[ticket.status].label} color={TICKET_STATUSES[ticket.status].color}/>
+                      <span className="text-[0.58rem] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: `${TICKET_PRIORITIES[ticket.priority]}18`, color: TICKET_PRIORITIES[ticket.priority] }}>
+                        {ticket.priority}
+                      </span>
+                      {canDelete && (
+                        <button onClick={() => onDelete(ticket.id)}
+                          className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ${isDark ? "text-white/20" : "text-gray-300"}`}>
+                          <Trash2 size={11}/>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Badge label={TICKET_STATUSES[ticket.status].label} color={TICKET_STATUSES[ticket.status].color}/>
-                    <span className="text-[0.58rem] font-bold px-1.5 py-0.5 rounded-full"
-                      style={{ background: `${TICKET_PRIORITIES[ticket.priority]}18`, color: TICKET_PRIORITIES[ticket.priority] }}>
-                      {ticket.priority}
-                    </span>
-                    {canDelete && (
-                      <button onClick={() => onDelete(ticket.id)}
-                        className={`opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all ml-1 ${isDark ? "text-white/20" : "text-gray-300"}`}>
-                        <Trash2 size={11}/>
-                      </button>
-                    )}
+
+                  {/* ── SLA bar ──────────────────────────────── */}
+                  <div className="mt-2.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[0.58rem] font-semibold" style={{ color: sla.color }}>{sla.label}</span>
+                      {isOpen && <span className={`text-[0.55rem] ${isDark ? "text-white/20" : "text-gray-400"}`} title="Échéance SLA">⏱ {sla.deadlineStr}</span>}
+                    </div>
+                    <div className={`h-1 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${sla.elapsed * 100}%`, backgroundColor: sla.color }}/>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3 mt-3">
-                  <div className="relative">
-                    <select value={ticket.status}
-                      onChange={e => onUpdate(ticket.id, { status: e.target.value as TicketStatus })}
-                      className="rounded-lg border border-white/[0.08] bg-white/[0.05] pl-2 pr-6 py-1 text-[0.62rem] text-white/60 outline-none appearance-none [color-scheme:dark]">
-                      {(["ouvert","en_cours","résolu","fermé"] as TicketStatus[]).map(s =>
-                        <option key={s} value={s}>{TICKET_STATUSES[s].label}</option>)}
-                    </select>
-                    <ChevronDown size={8} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none"/>
+
+                  <div className="flex items-center gap-3 mt-2.5">
+                    <div className="relative">
+                      <select value={ticket.status}
+                        onChange={e => {
+                          const newStatus = e.target.value as TicketStatus;
+                          const update: Partial<SupportTicket> = { status: newStatus };
+                          if (newStatus === "résolu" && !ticket.resolved_at) {
+                            update.resolved_at = new Date().toISOString();
+                          }
+                          onUpdate(ticket.id, update);
+                        }}
+                        className={`rounded-lg border pl-2 pr-6 py-1 text-[0.62rem] outline-none appearance-none ${isDark ? "border-white/[0.08] bg-white/[0.05] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-600"}`}>
+                        {(["ouvert","en_cours","résolu","fermé"] as TicketStatus[]).map(s =>
+                          <option key={s} value={s}>{TICKET_STATUSES[s].label}</option>)}
+                      </select>
+                      <ChevronDown size={8} className={`absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? "text-white/30" : "text-gray-400"}`}/>
+                    </div>
+                    <p className={`text-[0.6rem] ml-auto ${isDark ? "text-white/25" : "text-gray-400"}`}>{fmtDate(ticket.created_at)}</p>
                   </div>
-                  <p className="text-[0.6rem] text-white/25 ml-auto">{fmtDate(ticket.created_at)}</p>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
       )}
@@ -1288,13 +1388,23 @@ function TicketsGlobalView({
               <Input label="Objet *" placeholder="Décrire le problème…" value={form.title ?? ""} onChange={e => setForm(f=>({...f, title: e.target.value}))}/>
               <div className="grid grid-cols-2 gap-3">
                 <Select label="Priorité" value={form.priority ?? "normale"} onChange={e => setForm(f=>({...f, priority: e.target.value as TicketPriority}))}>
-                  {(["basse","normale","haute","urgente"] as TicketPriority[]).map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase()+p.slice(1)}</option>)}
+                  {(["urgente","haute","normale","basse"] as TicketPriority[]).map(p => (
+                    <option key={p} value={p} style={{ color: TICKET_PRIORITIES[p] }}>
+                      {p.charAt(0).toUpperCase()+p.slice(1)} · SLA {SLA_HOURS[p]}h
+                    </option>
+                  ))}
                 </Select>
-                <Select label="Contact lié" value={form.contact_id ?? ""} onChange={e => setForm(f=>({...f, contact_id: e.target.value || null}))}>
-                  <option value="">— Aucun —</option>
-                  {contacts.map(c => <option key={c.id} value={c.id}>{c.name}{c.company ? ` (${c.company})` : ""}</option>)}
+                <Select label="Catégorie" value={form.category ?? ""} onChange={e => setForm(f=>({...f, category: (e.target.value as TicketCategory) || null}))}>
+                  <option value="">— Aucune —</option>
+                  {(Object.entries(TICKET_CATEGORIES) as [TicketCategory, { label: string; emoji: string }][]).map(([k, v]) => (
+                    <option key={k} value={k}>{v.emoji} {v.label}</option>
+                  ))}
                 </Select>
               </div>
+              <Select label="Contact lié" value={form.contact_id ?? ""} onChange={e => setForm(f=>({...f, contact_id: e.target.value || null}))}>
+                <option value="">— Aucun —</option>
+                {contacts.map(c => <option key={c.id} value={c.id}>{c.name}{c.company ? ` (${c.company})` : ""}</option>)}
+              </Select>
               <Textarea label="Description" placeholder="Détails du ticket…" value={form.description ?? ""} onChange={e => setForm(f=>({...f, description: e.target.value}))}/>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setAddModal(false)}
