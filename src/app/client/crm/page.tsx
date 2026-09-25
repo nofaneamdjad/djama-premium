@@ -11,7 +11,7 @@ import {
   CheckSquare, Square, AlertCircle, AlertTriangle, Ticket, BarChart2, Filter,
   ArrowUpRight, DollarSign, Target, Activity, Check, SlidersHorizontal,
   Zap, Award, Flag, MoreVertical, Send, Link2, ChevronLeft,
-  RefreshCw, PieChart, Layers, Bell, Hash,
+  RefreshCw, PieChart, Layers, Bell, Hash, CheckCircle, XCircle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useOrganization } from "@/lib/use-organization";
@@ -216,6 +216,15 @@ function groupActivitiesByPeriod(acts: Activity[]): { label: string; items: Acti
   return groups.filter(g => g.items.length > 0);
 }
 
+function getCloseDateUrgency(close_date: string | null | undefined): "overdue" | "this-week" | null {
+  if (!close_date) return null;
+  const today    = new Date().toISOString().slice(0, 10);
+  const weekEnd  = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+  if (close_date < today)    return "overdue";
+  if (close_date <= weekEnd) return "this-week";
+  return null;
+}
+
 const EMAIL_TEMPLATES = [
   { id: "relance",      label: "Relance J+7",          subject: "Suite à notre échange",               body: "Bonjour {nom},\n\nJe me permets de revenir vers vous suite à notre dernier échange.\n\nAvez-vous eu l'occasion d'étudier notre proposition ? Je reste disponible pour répondre à vos questions.\n\nCordialement" },
   { id: "proposition",  label: "Envoi proposition",     subject: "Notre proposition — {société}",        body: "Bonjour {nom},\n\nComme convenu, veuillez trouver ci-joint notre proposition commerciale.\n\nN'hésitez pas à me contacter pour en discuter.\n\nCordialement" },
@@ -308,6 +317,21 @@ function PipelineView({
   const totalByStage = (stage: OppStage) =>
     byStage[stage].reduce((s, o) => s + (o.amount ?? 0), 0);
 
+  const forecastByStage = useMemo(() => {
+    const m: Record<OppStage, number> = {} as Record<OppStage, number>;
+    stageKeys.forEach(s => {
+      m[s] = byStage[s].reduce((acc, o) => acc + (o.amount ?? 0) * ((o.probability ?? 0) / 100), 0);
+    });
+    return m;
+  }, [byStage]);
+
+  const activeStages  = stageKeys.filter(s => s !== "perdu");
+  const forecastTotal = activeStages.reduce((acc, s) => acc + forecastByStage[s], 0);
+  const wonTotal      = totalByStage("gagné");
+  const totalOpps     = opportunities.length;
+  const wonOpps       = byStage["gagné"].length;
+  const winRate       = totalOpps > 0 ? Math.round((wonOpps / totalOpps) * 100) : 0;
+
   function openAdd(stage: OppStage) {
     setForm({ stage, probability: STAGES[stage].prob });
     setAddModal(stage);
@@ -331,16 +355,41 @@ function PipelineView({
 
   return (
     <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+      {/* ── Résumé pipeline ──────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Pipeline actif",    value: fmtEur(activeStages.reduce((a, s) => a + totalByStage(s), 0)), color: "#f59e0b", icon: TrendingUp },
+          { label: "Prévisionnel",      value: fmtEur(forecastTotal), color: "#34d399", icon: Target,
+            hint: "Pondéré par probabilité" },
+          { label: "CA gagné",          value: fmtEur(wonTotal),      color: "#a78bfa", icon: CheckCircle },
+          { label: "Taux de conversion",value: `${winRate} %`,        color: "#60a5fa", icon: Award },
+        ].map(s => (
+          <div key={s.label} className={`rounded-2xl border p-3 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <s.icon size={11} style={{ color: s.color }}/>
+              <span className={`text-[0.58rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{s.label}</span>
+            </div>
+            <div className="text-base font-black" style={{ color: s.color }}>{s.value}</div>
+            {s.hint && <div className={`text-[0.55rem] mt-0.5 ${isDark ? "text-white/20" : "text-gray-400"}`}>{s.hint}</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Tiles par étape ───────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {stageKeys.filter(s => s !== "perdu").map(stage => {
-          const total = totalByStage(stage);
-          const count = byStage[stage].length;
+          const total    = totalByStage(stage);
+          const forecast = forecastByStage[stage];
+          const count    = byStage[stage].length;
           return (
-            <div key={stage} className={`rounded-2xl border p-3 text-center ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-              <div className="text-[0.58rem] font-bold uppercase tracking-widest mb-1"
+            <div key={stage} className={`rounded-2xl border p-2.5 text-center ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+              <div className="text-[0.55rem] font-bold uppercase tracking-widest mb-1"
                 style={{ color: STAGES[stage].color }}>{STAGES[stage].label}</div>
               <div className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"}`}>{count}</div>
-              {total > 0 && <div className={`text-[0.6rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{fmtEur(total)}</div>}
+              {total > 0 && <div className={`text-[0.58rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{fmtEur(total)}</div>}
+              {forecast > 0 && stage !== "gagné" && (
+                <div className="text-[0.52rem] mt-0.5 text-emerald-500">~{fmtEur(forecast)}</div>
+              )}
             </div>
           );
         })}
@@ -377,48 +426,82 @@ function PipelineView({
               )}
             </div>
                         <div className="flex flex-col gap-2 p-2 flex-1 min-h-[100px]">
-              {byStage[stage].map(opp => (
-                <motion.div key={opp.id} layout
-                  draggable
-                  onDragStart={e => { e.stopPropagation(); setDraggedId(opp.id); }}
-                  onDragEnd={() => setDraggedId(null)}
-                  className={`rounded-xl border p-3 cursor-grab active:cursor-grabbing transition-all group ${isDark ? "border-white/[0.06] bg-white/[0.03] hover:border-white/10" : "border-gray-200 bg-white hover:border-gray-300"}`}
-                  style={draggedId === opp.id ? { opacity: 0.45 } : {}}
-                  onClick={() => openEdit(opp)}>
-                  <div className="flex items-start justify-between gap-1">
-                    <p className={`text-[0.72rem] font-semibold leading-tight ${isDark ? "text-white" : "text-gray-900"}`}>{opp.title}</p>
-                    {canDelete && (
+              {byStage[stage].map(opp => {
+                const urgency = getCloseDateUrgency(opp.close_date);
+                const isActive = stage !== "gagné" && stage !== "perdu";
+                return (
+                  <motion.div key={opp.id} layout
+                    draggable
+                    onDragStart={e => { e.stopPropagation(); setDraggedId(opp.id); }}
+                    onDragEnd={() => setDraggedId(null)}
+                    className={`rounded-xl border p-3 cursor-grab active:cursor-grabbing transition-all group ${isDark ? "border-white/[0.06] bg-white/[0.03] hover:border-white/10" : "border-gray-200 bg-white hover:border-gray-300"}`}
+                    style={draggedId === opp.id ? { opacity: 0.45 } : {}}
+                    onClick={() => openEdit(opp)}>
+                    <div className="flex items-start justify-between gap-1">
+                      <p className={`text-[0.72rem] font-semibold leading-tight flex-1 min-w-0 ${isDark ? "text-white" : "text-gray-900"}`}>{opp.title}</p>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <button onClick={e => { e.stopPropagation(); onDelete(opp.id); }}
-                          className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400 transition-colors`}>
-                          <Trash2 size={10}/>
-                        </button>
+                        {isActive && (
+                          <>
+                            <button title="Marquer Gagné"
+                              onClick={e => { e.stopPropagation(); onUpdate(opp.id, { stage: "gagné", probability: 100 }); }}
+                              className="text-emerald-400/60 hover:text-emerald-400 transition-colors">
+                              <CheckCircle size={11}/>
+                            </button>
+                            <button title="Marquer Perdu"
+                              onClick={e => { e.stopPropagation(); onUpdate(opp.id, { stage: "perdu", probability: 0 }); }}
+                              className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400 transition-colors`}>
+                              <XCircle size={11}/>
+                            </button>
+                          </>
+                        )}
+                        {canDelete && (
+                          <button onClick={e => { e.stopPropagation(); onDelete(opp.id); }}
+                            className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-500 transition-colors`}>
+                            <Trash2 size={10}/>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {opp.contact && (
+                      <p className={`text-[0.62rem] mt-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                        {opp.contact.name}{opp.contact.company ? ` · ${opp.contact.company}` : ""}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between mt-2 gap-1 flex-wrap">
+                      {opp.amount > 0 && (
+                        <span className="text-[0.68rem] font-black" style={{ color: STAGES[stage].color }}>
+                          {fmtEur(opp.amount)}
+                        </span>
+                      )}
+                      {opp.close_date && (
+                        <span className={`text-[0.6rem] ml-auto flex items-center gap-0.5 rounded-full px-1.5 py-0.5 ${
+                          urgency === "overdue"   ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                          urgency === "this-week" ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
+                          isDark ? "text-white/30" : "text-gray-400"
+                        }`}>
+                          {urgency && <AlertCircle size={8}/>}
+                          {fmtDate(opp.close_date)}
+                        </span>
+                      )}
+                    </div>
+                    {opp.probability > 0 && opp.stage !== "gagné" && (
+                      <div className={`mt-2 h-1 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
+                        <div className="h-full rounded-full transition-all"
+                          style={{ width: `${opp.probability}%`, backgroundColor: STAGES[stage].color }}/>
                       </div>
                     )}
-                  </div>
-                  {opp.contact && (
-                    <p className={`text-[0.62rem] mt-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                      {opp.contact.name}{opp.contact.company ? ` · ${opp.contact.company}` : ""}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between mt-2">
-                    {opp.amount > 0 && (
-                      <span className="text-[0.68rem] font-black" style={{ color: STAGES[stage].color }}>
-                        {fmtEur(opp.amount)}
-                      </span>
-                    )}
-                    {opp.close_date && (
-                      <span className={`text-[0.6rem] ml-auto ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(opp.close_date)}</span>
-                    )}
-                  </div>
-                  {opp.probability > 0 && opp.stage !== "gagné" && (
-                    <div className={`mt-2 h-1 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                      <div className="h-full rounded-full transition-all"
-                        style={{ width: `${opp.probability}%`, backgroundColor: STAGES[stage].color }}/>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
+              {/* ── Slot de drop visuel ─── */}
+              {dragOver === stage && draggedId && (
+                <div className="h-12 rounded-xl border-2 border-dashed flex items-center justify-center shrink-0"
+                  style={{ borderColor: `${STAGES[stage].color}50` }}>
+                  <span className="text-[0.6rem] font-semibold" style={{ color: STAGES[stage].color }}>
+                    Déposer ici
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         ))}
