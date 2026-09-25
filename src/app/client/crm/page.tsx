@@ -46,6 +46,7 @@ interface Contact {
   tags?: string[];
   next_relance?: string;
   created_at: string; updated_at: string;
+  deleted_at?: string | null;
 }
 
 interface Activity {
@@ -1768,6 +1769,11 @@ export default function CRMPage() {
   const [form,          setForm]          = useState<Partial<Contact>>({ status: "prospect", type: "prospect" });
   const [formErrors,    setFormErrors]    = useState<Record<string, string>>({});
   const [saveError,     setSaveError]     = useState("");
+  const [hasMoreContacts, setHasMoreContacts] = useState(false);
+  const [loadingMore,   setLoadingMore]   = useState(false);
+  const [corbeilleOpen, setCorbeilleOpen] = useState(false);
+  const [deletedContacts, setDeletedContacts] = useState<Contact[]>([]);
+  const [dupWarning,    setDupWarning]    = useState<{ contact: Contact; onConfirm: () => void } | null>(null);
   const [userId,        setUserId]        = useState<string | null>(null);
   const { toasts, add: toast, remove: removeToast } = useToastStack();
   const { isDark } = useTheme();
@@ -1791,7 +1797,7 @@ export default function CRMPage() {
       // du cache schema PostgREST — on résout les noms de contacts localement.
       // Pas de filtre user_id — RLS garantit l'isolation (user_id = auth.uid() OU org member)
       const [ctRes, acRes, opRes, tkRes, tiRes] = await Promise.all([
-        supabase.from("contacts").select("*").order("updated_at", { ascending: false }).limit(500),
+        supabase.from("contacts").select("*").is("deleted_at", null).order("updated_at", { ascending: false }).limit(200),
         supabase.from("contact_activities").select("*").order("created_at", { ascending: false }).limit(500),
         supabase.from("opportunities").select("*").order("created_at", { ascending: false }).limit(200),
         supabase.from("crm_tasks").select("*").order("due_date", { ascending: true }).limit(200),
@@ -1805,7 +1811,10 @@ export default function CRMPage() {
       };
 
       if (ctRes.error) toast("Impossible de charger les contacts", "error");
-      else setContacts(contactsList);
+      else {
+        setContacts(contactsList);
+        setHasMoreContacts(contactsList.length === 200);
+      }
 
       if (acRes.error) {
         console.error("[CRM] activities error:", acRes.error);
@@ -1840,11 +1849,8 @@ export default function CRMPage() {
 
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
 
-    async function saveContact() {
+  async function doSaveContact() {
     if (!userId) return;
-    setSaveError("");
-    const errors = validate(ContactSchema, form);
-    if (errors !== null) { setFormErrors(errors); return; }
     if (editContact) {
       const { error } = await supabase.from("contacts").update({ ...form, updated_at: new Date().toISOString() }).eq("id", editContact.id);
       if (error) { setSaveError(error.message); return; }
@@ -1860,12 +1866,77 @@ export default function CRMPage() {
     setAddModal(false); setEditContact(null); setForm({ status: "prospect", type: "prospect" }); setFormErrors({}); setSaveError("");
   }
 
+  async function saveContact() {
+    if (!userId) return;
+    setSaveError("");
+    const errors = validate(ContactSchema, form);
+    if (errors !== null) { setFormErrors(errors); return; }
+    // Détection doublon email (uniquement à la création)
+    if (!editContact && form.email) {
+      const existing = contacts.find(c => c.email === form.email);
+      if (existing) {
+        setDupWarning({ contact: existing, onConfirm: doSaveContact });
+        return;
+      }
+    }
+    await doSaveContact();
+  }
+
   async function deleteContact(id: string) {
-    const { error } = await supabase.from("contacts").delete().eq("id", id);
+    const now = new Date().toISOString();
+    const { error } = await supabase.from("contacts").update({ deleted_at: now }).eq("id", id);
     if (error) { toast("Erreur lors de la suppression", "error"); return; }
+    const removed = contacts.find(c => c.id === id);
     setContacts(cs => cs.filter(c => c.id !== id));
+    if (removed) setDeletedContacts(ds => [{ ...removed, deleted_at: now }, ...ds]);
     setSelected(null);
-    toast("Contact supprimé", "success");
+    toast("Contact archivé — restaurable depuis la corbeille", "success");
+  }
+
+  async function restoreContact(id: string) {
+    const { error } = await supabase.from("contacts").update({ deleted_at: null }).eq("id", id);
+    if (error) { toast("Erreur lors de la restauration", "error"); return; }
+    const restored = deletedContacts.find(c => c.id === id);
+    setDeletedContacts(ds => ds.filter(c => c.id !== id));
+    if (restored) setContacts(cs => [{ ...restored, deleted_at: null }, ...cs]);
+    toast("Contact restauré", "success");
+  }
+
+  async function purgeContact(id: string) {
+    const { error } = await supabase.from("contacts").delete().eq("id", id);
+    if (error) { toast("Erreur lors de la suppression définitive", "error"); return; }
+    setDeletedContacts(ds => ds.filter(c => c.id !== id));
+    toast("Contact supprimé définitivement", "success");
+  }
+
+  async function loadDeletedContacts() {
+    const { data } = await supabase.from("contacts")
+      .select("id,name,company,email,deleted_at")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false })
+      .limit(50);
+    setDeletedContacts((data as Contact[]) ?? []);
+  }
+
+  async function loadMoreContacts() {
+    if (!userId || loadingMore) return;
+    setLoadingMore(true);
+    const { data } = await supabase.from("contacts")
+      .select("*")
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .range(contacts.length, contacts.length + 199);
+    if (data?.length) {
+      setContacts(cs => {
+        const ids = new Set(cs.map(c => c.id));
+        const fresh = (data as Contact[]).filter(c => !ids.has(c.id));
+        return [...cs, ...fresh];
+      });
+      setHasMoreContacts((data as Contact[]).length === 200);
+    } else {
+      setHasMoreContacts(false);
+    }
+    setLoadingMore(false);
   }
 
   async function updateContact(id: string, data: Partial<Contact>) {
@@ -2066,7 +2137,8 @@ export default function CRMPage() {
     const phoneIdx = headers.findIndex(h => h.includes("phone") || h.includes("tél") || h.includes("tel"));
     const compIdx  = headers.findIndex(h => h.includes("sociét") || h.includes("company") || h.includes("entreprise"));
     if (nameIdx < 0) { toast("Colonne 'nom' introuvable dans le CSV", "error"); return; }
-    const rows = lines.slice(1).map(l => {
+    const existingEmails = new Set(contacts.map(c => c.email?.toLowerCase()).filter(Boolean));
+    const allRows = lines.slice(1).map(l => {
       const cols = l.split(",").map(v => v.replace(/^"|"$/g,"").trim());
       return {
         name: cols[nameIdx] ?? "",
@@ -2079,11 +2151,17 @@ export default function CRMPage() {
         organization_id: orgId ?? null,
       };
     }).filter(r => r.name);
-    if (!rows.length) { toast("Aucun contact valide trouvé", "error"); return; }
+    if (!allRows.length) { toast("Aucun contact valide trouvé", "error"); return; }
+    const skipped = allRows.filter(r => r.email && existingEmails.has(r.email.toLowerCase()));
+    const rows    = allRows.filter(r => !r.email || !existingEmails.has(r.email.toLowerCase()));
+    if (!rows.length) { toast(`Tous les contacts existent déjà (${skipped.length} ignorés)`, "error"); e.target.value = ""; return; }
     const { data, error } = await supabase.from("contacts").insert(rows).select();
     if (error) { toast("Erreur import: " + error.message, "error"); return; }
     if (data) setContacts(cs => [...(data as Contact[]), ...cs]);
-    toast(`${rows.length} contact(s) importés`, "success");
+    const msg = skipped.length > 0
+      ? `${rows.length} importé(s), ${skipped.length} doublon(s) ignoré(s)`
+      : `${rows.length} contact(s) importés`;
+    toast(msg, "success");
     e.target.value = "";
   }
 
@@ -2126,6 +2204,17 @@ export default function CRMPage() {
                   <span className={`hidden sm:inline text-[0.72rem] font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Exporter</span>
                 </button>
               )}
+              <button
+                onClick={() => { setCorbeilleOpen(true); void loadDeletedContacts(); }}
+                title="Corbeille"
+                className={`h-9 w-9 rounded-xl flex items-center justify-center relative transition-all hover:brightness-110 ${isDark ? "bg-white/[0.04] border border-white/[0.08]" : "bg-white border border-black/[0.08]"}`}>
+                <Trash2 size={13} className={isDark ? "text-white/30" : "text-gray-400"}/>
+                {deletedContacts.length > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[0.55rem] font-black text-white flex items-center justify-center">
+                    {deletedContacts.length > 9 ? "9+" : deletedContacts.length}
+                  </span>
+                )}
+              </button>
               {perms.can_create && (
                 <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
                   className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
@@ -2375,6 +2464,15 @@ export default function CRMPage() {
                           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={totalItems} pageSize={20}/>
                         </div>
                       )}
+                      {hasMoreContacts && page === totalPages && (
+                        <div className="pt-3 flex justify-center">
+                          <button onClick={loadMoreContacts} disabled={loadingMore}
+                            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] font-semibold transition-all ${isDark ? "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.08]" : "bg-white border border-black/[0.08] text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
+                            {loadingMore ? <Loader2 size={11} className="animate-spin"/> : <Plus size={11}/>}
+                            Charger plus de contacts
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2569,6 +2667,117 @@ export default function CRMPage() {
               setEmailContact(null);
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* ── Corbeille (contacts soft-deletés) ───────────────────── */}
+      <AnimatePresence>
+        {corbeilleOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setCorbeilleOpen(false)}
+          >
+            <motion.div
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <Trash2 size={18} className="text-red-500" />
+                  <h2 className="font-semibold text-gray-900 dark:text-gray-100">Corbeille</h2>
+                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{deletedContacts.length}</span>
+                </div>
+                <button onClick={() => setCorbeilleOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="overflow-y-auto flex-1 p-4 space-y-2">
+                {deletedContacts.length === 0 ? (
+                  <p className="text-center text-gray-400 py-10 text-sm">La corbeille est vide</p>
+                ) : deletedContacts.map(c => (
+                  <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{c.name}</p>
+                      {c.company && <p className="text-xs text-gray-500 truncate">{c.company}</p>}
+                      {c.email && <p className="text-xs text-gray-400 truncate">{c.email}</p>}
+                    </div>
+                    <div className="flex gap-2 ml-3 shrink-0">
+                      <button
+                        onClick={() => restoreContact(c.id)}
+                        className="px-3 py-1.5 text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors"
+                      >
+                        Restaurer
+                      </button>
+                      {perms.can_delete && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Supprimer définitivement « ${c.name} » ? Cette action est irréversible.`)) {
+                              purgeContact(c.id);
+                            }
+                          }}
+                          className="px-3 py-1.5 text-xs bg-red-50 text-red-700 hover:bg-red-100 rounded-lg border border-red-200 transition-colors"
+                        >
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Avertissement doublon ───────────────────────────────── */}
+      <AnimatePresence>
+        {dupWarning && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+            >
+              <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                <AlertCircle size={18} className="text-amber-500" />
+                <h2 className="font-semibold text-gray-900 dark:text-gray-100">Doublon détecté</h2>
+              </div>
+              <div className="p-5 space-y-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Un contact avec cette adresse email existe déjà :
+                </p>
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                  <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{dupWarning.contact.name}</p>
+                  {dupWarning.contact.company && <p className="text-xs text-gray-500">{dupWarning.contact.company}</p>}
+                  <p className="text-xs text-gray-400 mt-0.5">{dupWarning.contact.email}</p>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Voulez-vous créer un second contact avec la même adresse email ?
+                </p>
+              </div>
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+                <button
+                  onClick={() => setDupWarning(null)}
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => {
+                    dupWarning.onConfirm();
+                    setDupWarning(null);
+                  }}
+                  className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors"
+                >
+                  Continuer quand même
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
