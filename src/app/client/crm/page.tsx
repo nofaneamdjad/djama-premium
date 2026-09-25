@@ -238,6 +238,53 @@ function getCloseDateUrgency(close_date: string | null | undefined): "overdue" |
   return null;
 }
 
+// ── RFC 4180 CSV parser / writer ───────────────────────────────────
+function parseRFC4180(text: string): string[][] {
+  const rows: string[][] = [];
+  let i = 0;
+  const n = text.length;
+  while (i < n) {
+    const row: string[] = [];
+    while (i < n) {
+      if (text[i] === '"') {
+        i++;
+        let field = "";
+        while (i < n) {
+          if (text[i] === '"') {
+            if (i + 1 < n && text[i + 1] === '"') { field += '"'; i += 2; }
+            else { i++; break; }
+          } else { field += text[i++]; }
+        }
+        row.push(field);
+      } else {
+        let field = "";
+        while (i < n && text[i] !== "," && text[i] !== "\n" && text[i] !== "\r") {
+          field += text[i++];
+        }
+        row.push(field.trim());
+      }
+      if (i < n && text[i] === ",") { i++; continue; }
+      break;
+    }
+    if (i < n && text[i] === "\r") i++;
+    if (i < n && text[i] === "\n") i++;
+    if (row.length > 0 && !(row.length === 1 && row[0] === "")) rows.push(row);
+  }
+  return rows;
+}
+
+function toRFC4180Row(values: (string | number | null | undefined)[]): string {
+  return values.map(v => {
+    const s = String(v ?? "");
+    if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  }).join(",") + "\r\n";
+}
+
+const CSV_EXPORT_HEADERS = ["Nom","Société","Email","Téléphone","Statut","Type","Secteur","Source","Ville","Budget","Notes","Prochaine relance","Créé le"];
+
 const EMAIL_TEMPLATES = [
   { id: "relance",      label: "Relance J+7",          subject: "Suite à notre échange",               body: "Bonjour {nom},\n\nJe me permets de revenir vers vous suite à notre dernier échange.\n\nAvez-vous eu l'occasion d'étudier notre proposition ? Je reste disponible pour répondre à vos questions.\n\nCordialement" },
   { id: "proposition",  label: "Envoi proposition",     subject: "Notre proposition — {société}",        body: "Bonjour {nom},\n\nComme convenu, veuillez trouver ci-joint notre proposition commerciale.\n\nN'hésitez pas à me contacter pour en discuter.\n\nCordialement" },
@@ -2345,6 +2392,13 @@ export default function CRMPage() {
   const [corbeilleOpen, setCorbeilleOpen] = useState(false);
   const [deletedContacts, setDeletedContacts] = useState<Contact[]>([]);
   const [dupWarning,    setDupWarning]    = useState<{ contact: Contact; onConfirm: () => void } | null>(null);
+  const [importPreview, setImportPreview] = useState<{
+    rows: Array<Partial<Contact>>;
+    skipped: number;
+    invalid: number;
+    fileName: string;
+  } | null>(null);
+  const [importing, setImporting] = useState(false);
   const [userId,        setUserId]        = useState<string | null>(null);
   const { toasts, add: toast, remove: removeToast } = useToastStack();
   const { isDark } = useTheme();
@@ -2644,15 +2698,18 @@ export default function CRMPage() {
   }
 
     function exportCSV() {
-    const rows = filtered.map(c => [
-      c.name, c.company ?? "", c.email ?? "", c.phone ?? "",
-      c.status, c.type ?? "prospect", c.sector ?? "", c.source ?? "",
-      c.city ?? "", c.budget ?? 0, fmtDate(c.created_at),
-    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
-    const csv = ["Nom,Société,Email,Téléphone,Statut,Type,Secteur,Source,Ville,Budget,Créé le", ...rows].join("\n");
+    let csv = "﻿" + toRFC4180Row(CSV_EXPORT_HEADERS);
+    for (const c of filtered) {
+      csv += toRFC4180Row([
+        c.name, c.company ?? "", c.email ?? "", c.phone ?? "",
+        c.status, c.type ?? "prospect", c.sector ?? "", c.source ?? "",
+        c.city ?? "", c.budget != null ? c.budget : "", c.notes ?? "",
+        c.next_relance ?? "", fmtDate(c.created_at),
+      ]);
+    }
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" }));
-    a.download = "contacts.csv";
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    a.download = `contacts_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
   }
 
@@ -2727,41 +2784,78 @@ export default function CRMPage() {
   async function handleImportCSV(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !userId) return;
-    const text = await file.text();
-    const lines = text.split("\n").filter(l => l.trim());
-    if (lines.length < 2) { toast("Fichier CSV vide ou invalide", "error"); return; }
-    const headers = lines[0].split(",").map(h => h.replace(/"/g,"").trim().toLowerCase());
-    const nameIdx  = headers.findIndex(h => h.includes("nom") || h === "name");
-    const emailIdx = headers.findIndex(h => h.includes("email") || h.includes("mail"));
-    const phoneIdx = headers.findIndex(h => h.includes("phone") || h.includes("tél") || h.includes("tel"));
-    const compIdx  = headers.findIndex(h => h.includes("sociét") || h.includes("company") || h.includes("entreprise"));
-    if (nameIdx < 0) { toast("Colonne 'nom' introuvable dans le CSV", "error"); return; }
-    const existingEmails = new Set(contacts.map(c => c.email?.toLowerCase()).filter(Boolean));
-    const allRows = lines.slice(1).map(l => {
-      const cols = l.split(",").map(v => v.replace(/^"|"$/g,"").trim());
-      return {
-        name: cols[nameIdx] ?? "",
-        email: emailIdx >= 0 ? (cols[emailIdx] ?? "") : "",
-        phone: phoneIdx >= 0 ? (cols[phoneIdx] ?? "") : "",
-        company: compIdx >= 0 ? (cols[compIdx] ?? "") : "",
-        status: "prospect" as ContactStatus,
-        type: "prospect" as ContactType,
-        user_id: userId,
-        organization_id: orgId ?? null,
-      };
-    }).filter(r => r.name);
-    if (!allRows.length) { toast("Aucun contact valide trouvé", "error"); return; }
-    const skipped = allRows.filter(r => r.email && existingEmails.has(r.email.toLowerCase()));
-    const rows    = allRows.filter(r => !r.email || !existingEmails.has(r.email.toLowerCase()));
-    if (!rows.length) { toast(`Tous les contacts existent déjà (${skipped.length} ignorés)`, "error"); e.target.value = ""; return; }
-    const { data, error } = await supabase.from("contacts").insert(rows).select();
-    if (error) { toast("Erreur import: " + error.message, "error"); return; }
-    if (data) setContacts(cs => [...(data as Contact[]), ...cs]);
-    const msg = skipped.length > 0
-      ? `${rows.length} importé(s), ${skipped.length} doublon(s) ignoré(s)`
-      : `${rows.length} contact(s) importés`;
-    toast(msg, "success");
     e.target.value = "";
+    const text = await file.text();
+    const parsed = parseRFC4180(text);
+    if (parsed.length < 2) { toast("Fichier CSV vide ou sans données", "error"); return; }
+
+    const rawHeaders = parsed[0].map(h => h.replace(/^﻿/, "").trim().toLowerCase());
+    const col = (keywords: string[]) =>
+      rawHeaders.findIndex(h => keywords.some(k => h.includes(k)));
+
+    const nameIdx    = col(["nom", "name", "prénom", "prenom", "contact"]);
+    const emailIdx   = col(["email", "mail", "courriel"]);
+    const phoneIdx   = col(["phone", "tél", "tel", "téléphone", "mobile"]);
+    const compIdx    = col(["sociét", "company", "entreprise", "société"]);
+    const sectorIdx  = col(["secteur", "sector", "industrie"]);
+    const sourceIdx  = col(["source", "origine"]);
+    const cityIdx    = col(["ville", "city"]);
+    const budgetIdx  = col(["budget"]);
+    const notesIdx   = col(["notes", "commentaire", "remarque"]);
+    const statusIdx  = col(["statut", "status"]);
+
+    if (nameIdx < 0) { toast("Colonne 'nom' introuvable dans le CSV", "error"); return; }
+
+    const existingEmails = new Set(contacts.map(c => c.email?.toLowerCase()).filter(Boolean));
+    let skipped = 0;
+    let invalid = 0;
+    const rows: Array<Partial<Contact>> = [];
+
+    for (const cols of parsed.slice(1)) {
+      const name = (nameIdx >= 0 ? cols[nameIdx] : "") ?? "";
+      if (!name.trim()) { invalid++; continue; }
+      const email  = emailIdx  >= 0 ? (cols[emailIdx]  ?? "").trim() : "";
+      const phone  = phoneIdx  >= 0 ? (cols[phoneIdx]  ?? "").trim() : "";
+      const company = compIdx  >= 0 ? (cols[compIdx]   ?? "").trim() : "";
+      const sector = sectorIdx >= 0 ? (cols[sectorIdx] ?? "").trim() : "";
+      const source = sourceIdx >= 0 ? (cols[sourceIdx] ?? "").trim() : "";
+      const city   = cityIdx   >= 0 ? (cols[cityIdx]   ?? "").trim() : "";
+      const notes  = notesIdx  >= 0 ? (cols[notesIdx]  ?? "").trim() : "";
+      const budgetRaw = budgetIdx >= 0 ? (cols[budgetIdx] ?? "").replace(/[^\d.]/g, "") : "";
+      const budget = budgetRaw ? Number(budgetRaw) : undefined;
+
+      if (email && existingEmails.has(email.toLowerCase())) { skipped++; continue; }
+
+      const validStatuses: ContactStatus[] = ["prospect","actif","inactif","perdu"];
+      const rawStatus = statusIdx >= 0 ? (cols[statusIdx] ?? "").trim().toLowerCase() as ContactStatus : "prospect";
+      const status: ContactStatus = validStatuses.includes(rawStatus) ? rawStatus : "prospect";
+
+      rows.push({ name: name.trim(), email: email || undefined, phone: phone || undefined,
+        company: company || undefined, sector: sector || undefined, source: source || undefined,
+        city: city || undefined, budget, notes: notes || undefined, status, type: "prospect" as ContactType });
+    }
+
+    if (!rows.length && skipped === 0) { toast("Aucun contact valide trouvé", "error"); return; }
+    setImportPreview({ rows, skipped, invalid, fileName: file.name });
+  }
+
+  async function confirmImport() {
+    if (!importPreview || !userId) return;
+    setImporting(true);
+    const toInsert = importPreview.rows.map(r => ({ ...r, user_id: userId, organization_id: orgId ?? null }));
+    const CHUNK = 50;
+    let inserted = 0;
+    for (let i = 0; i < toInsert.length; i += CHUNK) {
+      const { data, error } = await supabase.from("contacts").insert(toInsert.slice(i, i + CHUNK)).select();
+      if (error) { toast("Erreur import: " + error.message, "error"); break; }
+      if (data) { setContacts(cs => [...(data as Contact[]), ...cs]); inserted += data.length; }
+    }
+    setImporting(false);
+    setImportPreview(null);
+    const parts = [`${inserted} contact${inserted > 1 ? "s" : ""} importé${inserted > 1 ? "s" : ""}`];
+    if (importPreview.skipped > 0) parts.push(`${importPreview.skipped} doublon${importPreview.skipped > 1 ? "s" : ""} ignoré${importPreview.skipped > 1 ? "s" : ""}`);
+    if (importPreview.invalid > 0) parts.push(`${importPreview.invalid} ligne${importPreview.invalid > 1 ? "s" : ""} invalide${importPreview.invalid > 1 ? "s" : ""}`);
+    toast(parts.join(" · "), "success");
   }
 
     return (
@@ -3378,6 +3472,88 @@ export default function CRMPage() {
                   className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors"
                 >
                   Continuer quand même
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Modal prévisualisation import CSV ───────────────────── */}
+      <AnimatePresence>
+        {importPreview && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => { if (!importing) setImportPreview(null); }}>
+            <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className={`w-full max-w-lg rounded-3xl border p-6 space-y-4 max-h-[90vh] overflow-y-auto ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}
+              style={{ background: isDark ? "rgba(7,8,14,0.98)" : "rgba(255,255,255,0.98)" }}
+              onClick={e => e.stopPropagation()}>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>Prévisualisation import</h3>
+                  <p className={`text-[0.62rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{importPreview.fileName}</p>
+                </div>
+                <button onClick={() => setImportPreview(null)} disabled={importing}
+                  className={isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}><X size={16}/></button>
+              </div>
+
+              {/* Résumé */}
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "À importer",  value: importPreview.rows.length,   color: "#34d399" },
+                  { label: "Doublons",    value: importPreview.skipped,        color: "#fb923c" },
+                  { label: "Invalides",   value: importPreview.invalid,        color: "#f87171" },
+                ].map(s => (
+                  <div key={s.label} className={`rounded-xl border p-2.5 text-center ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
+                    <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+                    <div className={`text-[0.58rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Aperçu des 5 premières lignes */}
+              {importPreview.rows.length > 0 && (
+                <div>
+                  <p className={`text-[0.6rem] font-bold uppercase tracking-widest mb-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                    Aperçu ({Math.min(5, importPreview.rows.length)} sur {importPreview.rows.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {importPreview.rows.slice(0, 5).map((r, i) => (
+                      <div key={i} className={`rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
+                        <p className={`text-[0.75rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{r.name}</p>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                          {r.company && <span className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>{r.company}</span>}
+                          {r.email   && <span className={`text-[0.62rem] ${isDark ? "text-blue-400/60" : "text-blue-500"}`}>{r.email}</span>}
+                          {r.phone   && <span className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{r.phone}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {importPreview.rows.length === 0 && (
+                <p className={`text-sm text-center py-4 ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                  Aucun nouveau contact à importer (tous en doublon ou invalides).
+                </p>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setImportPreview(null)} disabled={importing}
+                  className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors disabled:opacity-40 ${isDark ? "border-white/[0.08] text-white/50 hover:text-white" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>
+                  Annuler
+                </button>
+                <button onClick={confirmImport}
+                  disabled={importing || importPreview.rows.length === 0}
+                  className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                  {importing
+                    ? <><Loader2 size={13} className="animate-spin"/> Import en cours…</>
+                    : `Importer ${importPreview.rows.length} contact${importPreview.rows.length > 1 ? "s" : ""}`
+                  }
                 </button>
               </div>
             </motion.div>
