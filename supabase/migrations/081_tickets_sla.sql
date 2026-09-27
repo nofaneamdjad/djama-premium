@@ -19,18 +19,18 @@
 BEGIN;
 
 -- ── 1. Colonnes ───────────────────────────────────────────────────
-ALTER TABLE support_tickets
+ALTER TABLE tickets
   ADD COLUMN IF NOT EXISTS resolved_at timestamptz DEFAULT NULL,
   ADD COLUMN IF NOT EXISTS category text DEFAULT NULL
     CHECK (category IS NULL OR category IN ('bug','question','facturation','accès','autre'));
 
 -- ── 2. Index ──────────────────────────────────────────────────────
-CREATE INDEX IF NOT EXISTS idx_support_tickets_resolved
-  ON support_tickets(resolved_at)
+CREATE INDEX IF NOT EXISTS idx_tickets_resolved
+  ON tickets(resolved_at)
   WHERE resolved_at IS NOT NULL;
 
-CREATE INDEX IF NOT EXISTS idx_support_tickets_category
-  ON support_tickets(category)
+CREATE INDEX IF NOT EXISTS idx_tickets_category
+  ON tickets(category)
   WHERE category IS NOT NULL;
 
 COMMIT;
