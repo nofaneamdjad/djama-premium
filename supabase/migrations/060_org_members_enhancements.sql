@@ -18,7 +18,24 @@ CREATE INDEX IF NOT EXISTS idx_org_members_suspended
 CREATE INDEX IF NOT EXISTS idx_org_members_last_seen
   ON organization_members (organization_id, last_seen_at DESC NULLS LAST);
 
--- ─── 3. Mettre à jour is_org_member pour exclure les suspendus ────────────────
+-- ─── 3. S'assurer que is_org_admin existe (définie dans 058, recréée ici pour sécurité) ──
+CREATE OR REPLACE FUNCTION is_org_admin(p_org_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM organization_members
+    WHERE organization_id = p_org_id
+      AND user_id         = auth.uid()
+      AND role            IN ('owner', 'admin')
+  );
+$$;
+
+-- ─── 5. Mettre à jour is_org_member pour exclure les suspendus ────────────────
 -- Remplace la fonction existante (migration 058)
 CREATE OR REPLACE FUNCTION is_org_member(p_org_id UUID)
 RETURNS BOOLEAN

@@ -105,12 +105,82 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── Client routes ─────────────────────────────────────────────────────────
-  const clientPrefixes = ["/client", "/membre", "/coaching-ia/espace", "/planning-agenda"];
-  const isMembreRoute  = (pathname === "/membre" || pathname.startsWith("/membre/")) && pathname !== "/membre/login";
+  // ── /membre/* — guard totalement séparé de /client ──────────────────────
+  // Ne jamais réutiliser une session /client pour ouvrir l'espace membre.
+  const isMembreRoute = (pathname === "/membre" || pathname.startsWith("/membre/"))
+    && pathname !== "/membre/login";
+
+  if (isMembreRoute) {
+    if (process.env.NODE_ENV === "development") return NextResponse.next();
+
+    let memResponse = NextResponse.next({ request });
+    const memSupabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            memResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) => memResponse.cookies.set(name, value, options));
+          },
+        },
+      }
+    );
+
+    const { data: { user: memUser } } = await memSupabase.auth.getUser();
+
+    // Pas connecté → login membre
+    if (!memUser) {
+      const url = new URL("/membre/login", request.url);
+      url.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(url);
+    }
+
+    const activeOrgId = memUser.user_metadata?.active_org_id as string | undefined;
+
+    if (activeOrgId) {
+      // Vérifier l'appartenance à cette org spécifique
+      const { data: membership } = await memSupabase
+        .from("organization_members")
+        .select("suspended_at")
+        .eq("organization_id", activeOrgId)
+        .eq("user_id", memUser.id)
+        .maybeSingle();
+
+      if (!membership) {
+        // Plus membre de cette org → retour login
+        return NextResponse.redirect(new URL("/membre/login", request.url));
+      }
+      if (membership.suspended_at) {
+        return NextResponse.redirect(new URL("/membre/login?suspended=1", request.url));
+      }
+      return memResponse;
+    }
+
+    // Pas d'org active définie : vérifier s'il est membre d'au moins une org active
+    const { data: anyActive } = await memSupabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", memUser.id)
+      .is("suspended_at", null)
+      .limit(1);
+
+    if (!anyActive || anyActive.length === 0) {
+      // Pas membre actif → login avec message
+      return NextResponse.redirect(new URL("/membre/login", request.url));
+    }
+
+    // Au moins une org active mais pas de sélection faite → layout gérera
+    return memResponse;
+  }
+
+  // ── Client routes (/client, /coaching-ia/espace, /planning-agenda) ───────
+  const clientPrefixes = ["/client", "/coaching-ia/espace", "/planning-agenda"];
   const isClientRoute  = clientPrefixes.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
-  ) && pathname !== "/membre/login";
+  );
 
   if (!isClientRoute) return NextResponse.next();
 
@@ -168,10 +238,8 @@ export async function middleware(request: NextRequest) {
 
   if (accessActive) return response;
 
-  // ── 3. Org membership — accès via entreprise abonnée ─────────────────────
-  // Un employé n'a pas sa propre subscription mais appartient à une org
-  // dont le propriétaire (owner) a un abonnement actif.
-  // organizations.plan est mis à "premium" par syncSubscriptionAccess().
+  // ── 3. Org membership — accès /client via entreprise abonnée ─────────────
+  // Un employé (admin ou avec permission) dont l'org est premium a accès.
   {
     const { data: memberships } = await supabase
       .from("organization_members")
@@ -184,12 +252,10 @@ export async function middleware(request: NextRequest) {
       if (org.owner_id === user.id) continue; // le propriétaire utilise son propre abonnement
       if (org.plan !== "premium") continue;   // org non abonnée
 
-      // Propriétaire abonné → l'employé a accès selon son rôle
       if (m.role === "admin") return response;
 
-      // Vérification granulaire par app pour les autres rôles
       const pageSlug = getSlugForClientPath(pathname);
-      if (!pageSlug) return response; // pages communes (dashboard, profil…)
+      if (!pageSlug) return response;
 
       const { data: perm } = await supabase
         .from("organization_permissions")
@@ -203,38 +269,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── Vérification suspension membre ────────────────────────────────────────
-  // Pour /membre/* : vérifier que le membre n'est pas suspendu dans son org active
-  if (isMembreRoute) {
-    const activeOrgId = user.user_metadata?.active_org_id as string | undefined;
-    if (activeOrgId) {
-      const { data: membership } = await supabase
-        .from("organization_members")
-        .select("suspended_at")
-        .eq("organization_id", activeOrgId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!membership) {
-        // Pas membre de cette org → rediriger vers login membre
-        return NextResponse.redirect(new URL("/membre/login", request.url));
-      }
-      if (membership.suspended_at) {
-        // Suspendu → 403
-        return NextResponse.redirect(new URL("/membre/login?suspended=1", request.url));
-      }
-    }
-    // Pas d'org active → laisser passer (layout gérera la redirection)
-    return response;
-  }
-
   // ── Contrôle du plan gratuit ──────────────────────────────────────────────
   if (!pathname.startsWith("/client")) {
-    // /coaching-ia/espace, /planning-agenda → accès refusé si pas abonné
     return NextResponse.redirect(new URL("/tarification", request.url));
   }
 
-  // 3. user_free_apps — apps sélectionnées (SELECT autorisé, write verrouillé)
+  // 3. user_free_apps — apps sélectionnées
   const { data: freeRow } = await supabase
     .from("user_free_apps")
     .select("selected_apps")
@@ -243,7 +283,6 @@ export async function middleware(request: NextRequest) {
 
   const freeApps: string[] = Array.isArray(freeRow?.selected_apps) ? freeRow.selected_apps : [];
 
-  // Pas encore choisi ses apps → sélection obligatoire
   if (freeApps.length === 0) {
     const alwaysOk = ["/client/profil", "/client/abonnements"];
     if (!alwaysOk.some(p => pathname === p || pathname.startsWith(p + "/"))) {
@@ -251,7 +290,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Apps choisies — vérifier l'accès au chemin demandé
   if (freeApps.length > 0 && !isPathAllowedForFreeUser(pathname, freeApps)) {
     const url = new URL("/client", request.url);
     url.searchParams.set("locked", "1");

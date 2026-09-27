@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, createContext, useCo
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  TrendingUp, TrendingDown, Wallet, AlertTriangle, CheckCircle2,
+  TrendingUp, TrendingDown, Wallet, AlertTriangle,
   X, Download, Upload, Search, Plus, Edit2, Trash2,
   ArrowUpRight, ArrowDownRight, CreditCard, Users, FileText,
   Monitor, Car, Megaphone, ShoppingBag, Package, MoreHorizontal,
@@ -38,6 +38,8 @@ interface Transaction {
   payment_method: string; status: TxStatus;
   client_supplier: string; invoice_ref: string;
   project: string; notes: string; created_at: string;
+  document_payment_id?: string | null;
+  expense_id?: string | null;
 }
 
 interface Recurring {
@@ -96,8 +98,7 @@ const FREQUENCIES = [
 
 const ACCOUNT_COLORS = ["#3b82f6","#10b981","#8b5cf6","#f59e0b","#ec4899","#06b6d4","#c9a55a"];
 
-type AlertThreshold = { accountId: string; min: number };
-type BankLink = { accountId: string; bank: string; lastSync: string };
+type AlertThreshold = { accountId: string; min: number };;
 const BANKS = [
   { id: "bnp",  name: "BNP Paribas",      color: "#009966" },
   { id: "ca",   name: "Crédit Agricole",   color: "#00853F" },
@@ -552,6 +553,7 @@ function DashboardView({
 }) {
   const isDark = useDark();
   const [thresholds, setThresholds] = useState<AlertThreshold[]>([]);
+  const [hovMonth,   setHovMonth]   = useState<number | null>(null);
   useEffect(() => {
     if (!userId) return;
     void supabase.from("user_preferences").select("value").eq("user_id", userId).eq("key", "treasury_thresholds").maybeSingle()
@@ -561,7 +563,13 @@ function DashboardView({
   const mk  = monthKey(now);
   const prevMk = monthKey(new Date(now.getFullYear(), now.getMonth() - 1));
 
-  const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
+  const eurAccounts      = accounts.filter(a => !a.currency || a.currency === "EUR");
+  const nonEurAccounts   = accounts.filter(a => a.currency && a.currency !== "EUR");
+  const totalBalance     = eurAccounts.reduce((s, a) => s + a.balance, 0);
+  const otherCurrencyTotals = nonEurAccounts.reduce((acc, a) => {
+    acc[a.currency] = (acc[a.currency] ?? 0) + a.balance;
+    return acc;
+  }, {} as Record<string, number>);
 
   const thisIncome  = transactions.filter(t => t.type === "income"   && t.status === "completed" && t.date.startsWith(mk)).reduce((a, t) => a + t.amount, 0);
   const thisExpense = transactions.filter(t => t.type === "expense"  && t.status === "completed" && t.date.startsWith(mk)).reduce((a, t) => a + t.amount, 0);
@@ -591,7 +599,7 @@ function DashboardView({
     if (!inv.date_echeance || inv.statut === "payé") return false;
     return new Date(inv.date_echeance) < now;
   });
-  const upcoming30 = recurring.filter(r => r.active && r.next_date && new Date(r.next_date) <= new Date(now.getFullYear(), now.getMonth() + 1, now.getDate())).sort((a, b) => a.amount - b.amount).slice(0, 3);
+  const upcoming30 = recurring.filter(r => r.active && r.next_date && new Date(r.next_date) <= new Date(now.getFullYear(), now.getMonth() + 1, now.getDate())).sort((a, b) => (a.next_date ?? "").localeCompare(b.next_date ?? "")).slice(0, 3);
 
   const recent5 = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
@@ -601,7 +609,7 @@ function DashboardView({
   });
 
   const KPI = [
-    { l: "Solde total",          v: totalBalance,      c: "#c9a55a", sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}`, I: Wallet,        delta: null,      subColor: null,   nav: null },
+    { l: "Solde total",          v: totalBalance,      c: "#c9a55a", sub: `${accounts.length} compte${accounts.length !== 1 ? "s" : ""}${Object.keys(otherCurrencyTotals).length > 0 ? " · " + Object.entries(otherCurrencyTotals).map(([cur, amt]) => `+ ${amt.toLocaleString("fr-FR", { style: "currency", currency: cur, maximumFractionDigits: 0 })}`).join(" ") : ""}`, I: Wallet,        delta: null,      subColor: null,   nav: null },
     { l: "Encaissements",        v: thisIncome,        c: "#10b981", sub: fmtPct(incomePct)  + " vs mois dernier", I: ArrowUpRight,  delta: incomePct,   subColor: incomePct  > 0 ? "#10b981" : incomePct  < 0 ? "#ef4444" : "#6b7280", nav: "transactions" as const },
     { l: "Dépenses",             v: thisExpense,       c: "#ef4444", sub: fmtPct(expensePct) + " vs mois dernier", I: ArrowDownRight,delta: -expensePct, subColor: expensePct > 0 ? "#ef4444" : expensePct < 0 ? "#10b981" : "#6b7280", nav: "transactions" as const },
     { l: "Résultat net",         v: netMonth,          c: netMonth >= 0 ? "#10b981" : "#ef4444", sub: "Ce mois", I: BarChart2,    delta: null,      subColor: null,   nav: "transactions" as const },
@@ -673,24 +681,101 @@ function DashboardView({
         <div className="flex items-center justify-between">
           <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Cashflow — 6 mois</h3>
           <div className={`flex items-center gap-3 text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
-            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-green-500/60" /> Entrées</span>
-            <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-red-500/60" /> Sorties</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: "rgba(16,185,129,0.7)" }} /> Entrées</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: "rgba(239,68,68,0.7)" }} /> Sorties</span>
           </div>
         </div>
-        <div className="flex items-end gap-3" style={{ height: "96px" }}>
-          {months6.map(({ label, key, inc, exp }) => (
-            <div key={key} className="flex flex-1 flex-col items-center gap-1.5">
-              <div className="flex w-full items-end gap-0.5" style={{ height: "72px" }}>
-                <motion.div className="flex-1 rounded-t-sm bg-green-500/50"
-                  initial={{ height: 0 }} animate={{ height: `${Math.max((inc / maxVal) * 72, inc > 0 ? 3 : 0)}px` }}
-                  transition={{ duration: 0.6, ease: "easeOut" }} />
-                <motion.div className="flex-1 rounded-t-sm bg-red-500/50"
-                  initial={{ height: 0 }} animate={{ height: `${Math.max((exp / maxVal) * 72, exp > 0 ? 3 : 0)}px` }}
-                  transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }} />
+        {/* SVG chart — axes + hover tooltip */}
+        <div className="relative">
+          <svg width="100%" viewBox="0 0 500 156" style={{ overflow: "visible" }}>
+            {/* Horizontal grid lines + Y labels */}
+            {([1, 0.67, 0.33, 0] as const).map((ratio, gi) => {
+              const y   = 8 + (1 - ratio) * 108;
+              const val = maxVal * ratio;
+              const lbl = val >= 1_000_000 ? `${(val/1_000_000).toFixed(1)}M`
+                        : val >= 1_000    ? `${Math.round(val/1_000)}k`
+                        : val > 0         ? `${Math.round(val)}`
+                        : "0";
+              return (
+                <g key={gi}>
+                  <line x1="42" y1={y} x2="494" y2={y}
+                    stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}
+                    strokeWidth="1" strokeDasharray={ratio === 0 ? undefined : "2,4"} />
+                  <text x="38" y={y + 3.5} textAnchor="end" fontSize="8"
+                    fill={isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.28)"}>{lbl}</text>
+                </g>
+              );
+            })}
+            {/* Month bars */}
+            {months6.map(({ label, key, inc, exp }, mi) => {
+              const slotW = (494 - 42) / 6;
+              const cx    = 42 + mi * slotW + slotW / 2;
+              const bw    = Math.max(10, Math.min(24, slotW * 0.32));
+              const incH  = maxVal > 0 ? Math.max((inc / maxVal) * 108, inc > 0 ? 3 : 0) : 0;
+              const expH  = maxVal > 0 ? Math.max((exp / maxVal) * 108, exp > 0 ? 3 : 0) : 0;
+              const isCur = key === mk;
+              const isHov = hovMonth === mi;
+              return (
+                <g key={key}
+                  onMouseEnter={() => setHovMonth(mi)}
+                  onMouseLeave={() => setHovMonth(null)}
+                  style={{ cursor: "default" }}>
+                  {/* Hover / current-month highlight */}
+                  {(isHov || isCur) && (
+                    <rect x={cx - slotW / 2 + 2} y="6" width={slotW - 4} height="112" rx="3"
+                      fill={isCur ? (isDark ? "rgba(201,165,90,0.06)" : "rgba(201,165,90,0.07)") : (isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)")}
+                      stroke={isCur ? "rgba(201,165,90,0.18)" : "none"} strokeWidth="1" />
+                  )}
+                  {/* Income bar */}
+                  <rect x={cx - bw - 2} y={116 - incH} width={bw} height={incH} rx="2.5"
+                    fill={isHov ? "rgba(16,185,129,0.85)" : isCur ? "rgba(16,185,129,0.72)" : "rgba(16,185,129,0.5)"} />
+                  {/* Expense bar */}
+                  <rect x={cx + 2} y={116 - expH} width={bw} height={expH} rx="2.5"
+                    fill={isHov ? "rgba(239,68,68,0.85)" : isCur ? "rgba(239,68,68,0.72)" : "rgba(239,68,68,0.5)"} />
+                  {/* Month label */}
+                  <text x={cx} y="134" textAnchor="middle" fontSize="8.5"
+                    fontWeight={isCur ? "700" : "400"}
+                    fill={isCur
+                      ? (isDark ? "rgba(201,165,90,0.9)" : "rgba(140,100,10,0.9)")
+                      : (isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)")}>
+                    {label}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+          {/* Tooltip */}
+          {hovMonth !== null && (() => {
+            const m   = months6[hovMonth];
+            const net = m.inc - m.exp;
+            const lp  = Math.min(Math.max((hovMonth + 0.5) / 6 * 100, 14), 86);
+            return (
+              <div className="pointer-events-none absolute z-20 rounded-xl border px-3 py-2 text-[0.68rem] shadow-xl"
+                style={{
+                  background: isDark ? "rgba(13,17,23,0.97)" : "rgba(255,255,255,0.97)",
+                  border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)",
+                  top: "4px",
+                  left: `calc(${lp}% - 66px)`,
+                  minWidth: "132px",
+                }}>
+                <p className={`text-[0.7rem] font-bold mb-1.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>{m.label}</p>
+                <div className="space-y-0.5">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-emerald-400">Entrées</span>
+                    <span className="font-semibold text-emerald-400">{fmtC(m.inc)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-red-400">Sorties</span>
+                    <span className="font-semibold text-red-400">{fmtC(m.exp)}</span>
+                  </div>
+                  <div className={`flex items-center justify-between gap-4 border-t pt-1 ${isDark ? "border-white/10" : "border-gray-100"}`}>
+                    <span className={isDark ? "text-white/45" : "text-gray-400"}>Net</span>
+                    <span className={`font-bold ${net >= 0 ? "text-emerald-400" : "text-red-400"}`}>{net >= 0 ? "+" : ""}{fmtC(net)}</span>
+                  </div>
+                </div>
               </div>
-              <span className={`text-[0.55rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{label}</span>
-            </div>
-          ))}
+            );
+          })()}
         </div>
       </div>
 
@@ -1060,22 +1145,55 @@ function PrevisionsView({
           }
         </div>
 
-                {forecastPoints.length > 0 && (
-          <div className="flex items-end gap-1.5" style={{ height: "60px" }}>
-            {forecastPoints.map(({ label, value }) => (
-              <div key={label} className="flex flex-1 flex-col items-center gap-1">
-                <motion.div className="w-full rounded-t-sm"
-                  style={{
-                    height: `${Math.max(((value - minV) / range) * 48, 2)}px`,
-                    backgroundColor: value < 0 ? "#ef444450" : sc.color + "50",
-                  }}
-                  initial={{ height: 0 }} animate={{ height: `${Math.max(((value - minV) / range) * 48, 2)}px` }}
-                  transition={{ duration: 0.5, ease: "easeOut" }} />
-                <span className={`text-[0.5rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{label}</span>
-              </div>
-            ))}
-          </div>
-        )}
+                {forecastPoints.length > 0 && (() => {
+          const svgW = 500, svgH = 90;
+          const pL = 6, pR = 6, pT = 8, pB = 22;
+          const cw = svgW - pL - pR, ch = svgH - pT - pB;
+          const n  = forecastPoints.length;
+          const pts = forecastPoints.map((p, i) => ({
+            ...p,
+            sx: pL + (n <= 1 ? cw / 2 : (i / (n - 1)) * cw),
+            sy: pT + ch * (1 - (p.value - minV) / range),
+          }));
+          const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.sx.toFixed(1)},${p.sy.toFixed(1)}`).join(" ");
+          const zeroY  = minV < 0 ? pT + ch * (1 - (0 - minV) / range) : pT + ch;
+          const zeroYC = Math.max(pT, Math.min(pT + ch, zeroY));
+          const fillPath = `${linePath} L${pts[n-1].sx.toFixed(1)},${zeroYC.toFixed(1)} L${pts[0].sx.toFixed(1)},${zeroYC.toFixed(1)} Z`;
+          return (
+            <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: "visible" }}>
+              {/* Zero reference line */}
+              {minV < 0 && (
+                <line x1={pL} y1={zeroYC} x2={svgW - pR} y2={zeroYC}
+                  stroke={isDark ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.13)"}
+                  strokeWidth="1" strokeDasharray="3,3" />
+              )}
+              {/* Area fill */}
+              <path d={fillPath} fill={`${sc.color}1a`} stroke="none" />
+              {/* Line */}
+              <path d={linePath} fill="none" stroke={sc.color} strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" />
+              {/* Data points + labels */}
+              {pts.map((p, i) => {
+                const show = n <= 8 || i === 0 || i === n - 1 || i % Math.ceil(n / 6) === 0;
+                return (
+                  <g key={p.label}>
+                    <circle cx={p.sx} cy={p.sy} r="2.5"
+                      fill={p.value < 0 ? "#ef4444" : sc.color}
+                      stroke={isDark ? "#07080e" : "#f4f5f9"} strokeWidth="1.5" />
+                    {show && (
+                      <text x={p.sx} y={svgH - 4}
+                        textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}
+                        fontSize="7.5"
+                        fill={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}>
+                        {p.label}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          );
+        })()}
 
         {openInvoices > 0 && horizon <= 90 && (
           <p className={`text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
@@ -1194,7 +1312,7 @@ function PrevisionsView({
 function ComptesView({
   accounts, userId, transactions,
   onAccountAdd, onAccountEdit, onAccountDelete,
-  onTxImported,
+  onTxImported, onToast,
 }: {
   accounts: TAccount[];
   userId: string;
@@ -1203,6 +1321,7 @@ function ComptesView({
   onAccountEdit: (a: TAccount) => void;
   onAccountDelete: (id: string) => void;
   onTxImported: (txs: Transaction[]) => void;
+  onToast: (msg: string) => void;
 }) {
   const isDark = useDark();
   const [showModal,          setShowModal]          = useState(false);
@@ -1217,18 +1336,11 @@ function ComptesView({
   const [thresholds,   setThresholdsState] = useState<AlertThreshold[]>([]);
   const [editThreshId, setEditThreshId]    = useState<string | null>(null);
   const [threshInput,  setThreshInput]     = useState("");
-  const [bankLinks,    setBankLinksState]  = useState<BankLink[]>([]);
   const [bankModalId,  setBankModalId]     = useState<string | null>(null);
-  const [connecting,   setConnecting]      = useState(false);
 
   useEffect(() => {
-    void Promise.all([
-      supabase.from("user_preferences").select("value").eq("user_id", userId).eq("key", "treasury_thresholds").maybeSingle(),
-      supabase.from("user_preferences").select("value").eq("user_id", userId).eq("key", "treasury_banklinks").maybeSingle(),
-    ]).then(([th, bl]) => {
-      if (th.data?.value) setThresholdsState(th.data.value as AlertThreshold[]);
-      if (bl.data?.value) setBankLinksState(bl.data.value as BankLink[]);
-    });
+    void supabase.from("user_preferences").select("value").eq("user_id", userId).eq("key", "treasury_thresholds").maybeSingle()
+      .then(({ data }) => { if (data?.value) setThresholdsState(data.value as AlertThreshold[]); });
   }, [userId]);
 
   function applyThreshold(accountId: string, val: string) {
@@ -1243,17 +1355,9 @@ function ComptesView({
     setEditThreshId(null);
   }
 
-  async function connectBank(accountId: string, bank: { id: string; name: string; color: string }) {
-    setConnecting(true);
-    await new Promise(r => setTimeout(r, 1200));
-    const next = [...bankLinks.filter(l => l.accountId !== accountId), { accountId, bank: bank.name, lastSync: new Date().toISOString() }];
-    setBankLinksState(next);
-    void supabase.from("user_preferences").upsert(
-      { user_id: userId, key: "treasury_banklinks", value: next, updated_at: new Date().toISOString() },
-      { onConflict: "user_id,key" }
-    );
+  function connectBank(_accountId: string, _bank: { id: string; name: string; color: string }) {
+    onToast("Connexion bancaire bientôt disponible — intégration Open Banking à venir.");
     setBankModalId(null);
-    setConnecting(false);
   }
 
   async function analyzePdf() {
@@ -1279,8 +1383,6 @@ function ComptesView({
       setPdfAnalyzing(false);
     }
   }
-
-  const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
 
   function parseCSV(text: string): Partial<Transaction>[] {
     const lines = text.trim().split("\n").filter(Boolean);
@@ -1312,6 +1414,8 @@ function ComptesView({
     setCsvImporting(false);
   }
 
+  const totalBalance = accounts.filter(a => !a.currency || a.currency === "EUR").reduce((s, a) => s + a.balance, 0);
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -1341,7 +1445,6 @@ function ComptesView({
           {accounts.map(a => {
             const txCount  = transactions.filter(t => t.account_id === a.id).length;
             const thresh   = thresholds.find(t => t.accountId === a.id);
-            const blink    = bankLinks.find(l => l.accountId === a.id);
             const belowMin = thresh && a.balance < thresh.min;
             return (
               <div key={a.id} className={`group rounded-2xl border p-4 space-y-3 transition-all ${isDark ? "bg-white/[0.03] hover:bg-white/[0.05]" : "bg-white hover:bg-gray-50"}`}
@@ -1355,15 +1458,9 @@ function ComptesView({
                     <div>
                       <div className="flex items-center gap-2">
                         <p className={`text-[0.82rem] font-bold ${isDark ? "text-white/90" : "text-gray-800"}`}>{a.name}</p>
-                        {blink && (
-                          <span className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.55rem] font-bold"
-                            style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
-                            <CheckCircle2 size={8}/> Sync
-                          </span>
-                        )}
                       </div>
                       <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
-                        {blink ? blink.bank : (a.bank || "—")} · {txCount} transactions
+                        {a.bank || "—"} · {txCount} transactions
                         {thresh && <span className="ml-1" style={{ color: belowMin ? "#fbbf24" : "inherit" }}>· seuil {fmtC(thresh.min)}</span>}
                       </p>
                     </div>
@@ -1457,31 +1554,13 @@ function ComptesView({
                 </div>
                 <button onClick={() => setBankModalId(null)} className={`h-7 w-7 flex items-center justify-center rounded-lg ${isDark ? "hover:bg-white/[0.06] text-white/40" : "hover:bg-gray-100 text-gray-400"}`}><X size={14}/></button>
               </div>
-              {connecting ? (
-                <div className="flex flex-col items-center gap-3 py-6">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#c9a55a]/20 border-t-[#c9a55a]"/>
-                  <p className={`text-[0.75rem] ${isDark ? "text-white/50" : "text-gray-400"}`}>Connexion en cours…</p>
+              <div className="flex flex-col items-center gap-3 py-6 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: "rgba(201,165,90,0.12)" }}>
+                  <Banknote size={18} style={{ color: "#c9a55a" }}/>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {BANKS.map(b => {
-                    const linked = bankLinks.find(l => l.accountId === bankModalId && l.bank === b.name);
-                    return (
-                      <button key={b.id} onClick={() => connectBank(bankModalId!, b)}
-                        className="flex items-center gap-2 rounded-xl border p-3 text-left transition-all hover:brightness-110"
-                        style={{ borderColor: linked ? b.color + "50" : isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.1)", background: linked ? b.color + "12" : isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
-                        <div className="h-6 w-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: b.color + "30" }}>
-                          <Building2 size={11} style={{ color: b.color }}/>
-                        </div>
-                        <div className="min-w-0">
-                          <p className={`text-[0.65rem] font-semibold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{b.name}</p>
-                          {linked && <p className="text-[0.55rem] text-emerald-400">Connecté</p>}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                <p className={`text-[0.78rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>Bientôt disponible</p>
+                <p className={`text-[0.68rem] max-w-[200px] leading-relaxed ${isDark ? "text-white/35" : "text-gray-400"}`}>La connexion Open Banking arrive prochainement.</p>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -1797,9 +1876,9 @@ export default function TresoreriePage() {
     if (!userId) return;
     setLoading(true);
     const [aRes, tRes, rRes, iRes] = await Promise.all([
-      supabase.from("treasury_accounts").select("*").eq("user_id", userId).order("is_default", { ascending: false }),
-      supabase.from("treasury_transactions").select("*").eq("user_id", userId).order("date", { ascending: false }),
-      supabase.from("treasury_recurring").select("*").eq("user_id", userId).order("label"),
+      supabase.from("treasury_accounts").select("*").order("is_default", { ascending: false }),
+      supabase.from("treasury_transactions").select("*").order("date", { ascending: false }),
+      supabase.from("treasury_recurring").select("*").order("label"),
       supabase.from("documents").select("id,numero,client_nom,total_ttc,statut,date_document,date_echeance").eq("user_id", userId).eq("type", "facture"),
     ]);
     if (aRes.data) setAccounts(aRes.data as TAccount[]);
@@ -1852,6 +1931,8 @@ export default function TresoreriePage() {
     URL.revokeObjectURL(url);
   }
 
+  const totalBalance = accounts.filter(a => !a.currency || a.currency === "EUR").reduce((s, a) => s + a.balance, 0);
+
   const TABS = [
     { id: "dashboard",    l: "Dashboard",    I: BarChart2,  badge: 0 },
     { id: "transactions", l: "Transactions", I: Receipt,    badge: transactions.filter(t => t.status === "pending").length },
@@ -1859,8 +1940,6 @@ export default function TresoreriePage() {
     { id: "comptes",      l: "Comptes",      I: Building2,  badge: accounts.length },
     { id: "rapport",      l: "Rapport",      I: PiggyBank,  badge: 0 },
   ] as const;
-
-  const totalBalance = accounts.reduce((a, acc) => a + acc.balance, 0);
 
   if (loading) return (
     <div className={`flex h-full items-center justify-center ${isDark ? "bg-[#07080e]" : "bg-[#f4f5f9]"}`}>
@@ -1886,7 +1965,6 @@ export default function TresoreriePage() {
         </div>
         <div className="relative z-10 flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={Wallet} color="#059669" />
             <div>
               <h1 className={`text-xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Trésorerie</h1>
               <p className={`mt-0.5 text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
@@ -1974,6 +2052,7 @@ export default function TresoreriePage() {
                   onAccountEdit={a => setAccounts(as => as.map(x => x.id === a.id ? a : x))}
                   onAccountDelete={deleteAccount}
                   onTxImported={txs => { setTransactions(ts => [...txs, ...ts]); toast$(`${txs.length} transactions importées`); }}
+                  onToast={msg => toast$(msg)}
                 />
               )}
             </motion.div>

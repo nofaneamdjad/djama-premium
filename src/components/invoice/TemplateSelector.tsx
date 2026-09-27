@@ -27,7 +27,7 @@ export interface TemplateSelectorProps {
 
 // ── ScaledA4 — adapte un rendu 595 × 842 px à la largeur du container ────────
 
-function ScaledA4({ children }: { children: React.ReactNode }) {
+export function ScaledA4({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.2);
 

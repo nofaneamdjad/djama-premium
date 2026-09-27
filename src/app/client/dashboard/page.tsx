@@ -255,31 +255,31 @@ function DailyQuoteCard({ isDark, heroBg, heroBorder, heroShadow }: {
 ───────────────────────────────────────────────── */
 export default function DashboardPage() {
   const { isDark } = useTheme();
-  /* ── Theme tokens ── */
-  const heroBg     = isDark ? "rgba(255,255,255,0.06)"  : "rgba(255,255,255,0.82)";
-  const heroBorder = isDark ? "rgba(255,255,255,0.10)"  : "rgba(0,0,0,0.06)";
-  const heroShadow = isDark ? "none"                    : "0 2px 10px rgba(0,0,0,0.07)";
-  const heroLabel  = isDark ? "rgba(255,255,255,0.30)"  : "rgba(0,0,0,0.50)";
-  const heroMuted  = isDark ? "rgba(255,255,255,0.20)"  : "rgba(0,0,0,0.40)";
-  const heroDate   = isDark ? "rgba(255,255,255,0.25)"  : "rgba(0,0,0,0.45)";
-  const heroWhite  = isDark ? "rgba(255,255,255,1)"     : "rgba(0,0,0,0.85)";
-  const cardBg     = isDark ? "rgba(255,255,255,0.04)"  : "rgba(255,255,255,0.92)";
-  const cardBorder = isDark ? "rgba(255,255,255,0.06)"  : "rgba(0,0,0,0.07)";
-  const cardShadow = isDark ? "0 4px 24px rgba(0,0,0,0.30)" : "0 2px 12px rgba(0,0,0,0.06)";
-  const textPrimary   = isDark ? "rgba(255,255,255,0.80)"  : "rgba(0,0,0,0.80)";
-  const textSecondary = isDark ? "rgba(255,255,255,0.40)"  : "rgba(0,0,0,0.45)";
-  const textLabel     = isDark ? "rgba(255,255,255,0.30)"  : "rgba(0,0,0,0.45)";
-  const textMuted     = isDark ? "rgba(255,255,255,0.20)"  : "rgba(0,0,0,0.35)";
-  const progressBg    = isDark ? "rgba(255,255,255,0.08)"  : "rgba(0,0,0,0.06)";
-  const inputBg       = isDark ? "rgba(255,255,255,0.04)"  : "rgba(0,0,0,0.03)";
-  const inputBorder   = isDark ? "rgba(255,255,255,0.08)"  : "rgba(0,0,0,0.08)";
-  const modalBg       = isDark ? "#0e1420"                 : "#ffffff";
-  const tooltipBg     = isDark ? "rgba(10,10,20,0.95)"     : "rgba(255,255,255,0.97)";
-  const tooltipBorder = isDark ? "rgba(255,255,255,0.10)"  : "rgba(0,0,0,0.10)";
-  const barEmpty      = isDark ? "rgba(255,255,255,0.04)"  : "rgba(0,0,0,0.04)";
-  const barPrev       = isDark ? "rgba(255,255,255,0.15)"  : "rgba(0,0,0,0.12)";
-  const barPrevEmpty  = isDark ? "rgba(255,255,255,0.03)"  : "rgba(0,0,0,0.03)";
-  const divideColor   = isDark ? "rgba(255,255,255,0.05)"  : "rgba(0,0,0,0.05)";
+  /* ── Theme tokens — aligned with home page tok(isDark) ── */
+  const heroBg     = isDark ? "#181818"                  : "#f8f8f8";
+  const heroBorder = isDark ? "rgba(255,255,255,0.08)"   : "#e5e5e5";
+  const heroShadow = isDark ? "none"                     : "0 2px 10px rgba(0,0,0,0.06)";
+  const heroLabel  = isDark ? "rgba(255,255,255,0.42)"   : "#707070";
+  const heroMuted  = isDark ? "rgba(255,255,255,0.35)"   : "#999999";
+  const heroDate   = isDark ? "rgba(255,255,255,0.35)"   : "#999999";
+  const heroWhite  = isDark ? "rgba(255,255,255,0.92)"   : "#111111";
+  const cardBg     = isDark ? "#181818"                  : "#f8f8f8";
+  const cardBorder = isDark ? "rgba(255,255,255,0.08)"   : "#e5e5e5";
+  const cardShadow = isDark ? "none"                     : "0 2px 12px rgba(0,0,0,0.06)";
+  const textPrimary   = isDark ? "rgba(255,255,255,0.92)"  : "#111111";
+  const textSecondary = isDark ? "rgba(255,255,255,0.65)"  : "#444444";
+  const textLabel     = isDark ? "rgba(255,255,255,0.42)"  : "#707070";
+  const textMuted     = isDark ? "rgba(255,255,255,0.35)"  : "#999999";
+  const progressBg    = isDark ? "rgba(255,255,255,0.08)"  : "#e5e5e5";
+  const inputBg       = isDark ? "#212121"                 : "#f0f0f0";
+  const inputBorder   = isDark ? "rgba(255,255,255,0.08)"  : "#e5e5e5";
+  const modalBg       = isDark ? "#111111"                 : "#ffffff";
+  const tooltipBg     = isDark ? "#181818"                 : "rgba(255,255,255,0.97)";
+  const tooltipBorder = isDark ? "rgba(255,255,255,0.08)"  : "#e5e5e5";
+  const barEmpty      = isDark ? "rgba(255,255,255,0.06)"  : "#ececec";
+  const barPrev       = isDark ? "rgba(255,255,255,0.18)"  : "rgba(0,0,0,0.12)";
+  const barPrevEmpty  = isDark ? "rgba(255,255,255,0.04)"  : "rgba(0,0,0,0.04)";
+  const divideColor   = isDark ? "rgba(255,255,255,0.05)"  : "#ececec";
   const { isPremium, isFree } = useSubscription();
   const [search,         setSearch]         = useState("");
   const [userName,      setUserName]      = useState("");
@@ -498,14 +498,14 @@ export default function DashboardPage() {
      RENDU
   ───────────────────────────────────────────────── */
   return (
-    <div className={`relative min-h-screen ${isDark ? "bg-[#07080e] text-white" : "bg-[#f4f5f9] text-gray-900"}`}>
+    <div className={`relative min-h-screen ${isDark ? "bg-[#111111] text-white" : "bg-[#f8f8f8] text-gray-900"}`}>
 
       {/* ══════════════════════════════════════════
           HERO SOMBRE
       ══════════════════════════════════════════ */}
       <div
         className="relative overflow-hidden"
-        style={{ background: isDark ? "linear-gradient(155deg,#07080e 0%,#0d1117 50%,#07080e 100%)" : "linear-gradient(155deg,#eef0f8 0%,#e6e9f5 50%,#eef0f8 100%)" }}
+        style={{ background: isDark ? "#111111" : "linear-gradient(155deg,#f4f5f7 0%,#ededef 50%,#f4f5f7 100%)" }}
       >
         {/* Shimmer gold */}
         <motion.div
@@ -619,9 +619,9 @@ export default function DashboardPage() {
                 label: "Heures · sem.", href: "/client/chrono",
                 sub: "Time tracking",
                 value: statsLoading ? null : (stats?.heuresSemaine ? fmtDuration(stats.heuresSemaine) : "0h"),
-                valueColor: stats?.heuresSemaine ? "#60a5fa" : heroMuted,
+                valueColor: stats?.heuresSemaine ? heroWhite : heroMuted,
                 sparkData: [] as number[],
-                sparkColor: "#60a5fa",
+                sparkColor: "rgba(255,255,255,0.45)",
                 trend: null as number | null,
               },
             ].map((card, i) => (
@@ -663,7 +663,7 @@ export default function DashboardPage() {
         {/* ── Wave ── */}
         <svg viewBox="0 0 1440 56" fill="none" preserveAspectRatio="none"
           className="w-full block" style={{ marginBottom:"-1px", height:"56px" }}>
-          <path d="M0,24 C180,56 420,6 720,28 C1020,50 1260,10 1440,32 L1440,56 L0,56 Z" fill={isDark ? "#07080e" : "#f4f5f9"}/>
+          <path d="M0,24 C180,56 420,6 720,28 C1020,50 1260,10 1440,32 L1440,56 L0,56 Z" fill={isDark ? "#111111" : "#f8f8f8"}/>
         </svg>
       </div>
 

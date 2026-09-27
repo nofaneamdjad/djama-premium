@@ -21,15 +21,27 @@ async function getUser() {
   return user;
 }
 
-/** Vérifie que le document appartient à l'utilisateur */
+/** Vérifie que l'utilisateur peut accéder à ce document (propriétaire personnel ou admin d'org). */
 async function ownsDocument(userId: string, documentId: string): Promise<boolean> {
-  const { data } = await supabaseAdmin
+  const { data: doc } = await supabaseAdmin
     .from("documents")
-    .select("id")
+    .select("user_id, organization_id")
     .eq("id", documentId)
-    .eq("user_id", userId)
     .maybeSingle();
-  return !!data;
+  if (!doc) return false;
+  if (doc.user_id === userId) return true;
+  if (doc.organization_id) {
+    const { data: member } = await supabaseAdmin
+      .from("organization_members")
+      .select("id")
+      .eq("organization_id", doc.organization_id)
+      .eq("user_id", userId)
+      .in("role", ["owner", "admin"])
+      .is("suspended_at", null)
+      .maybeSingle();
+    return !!member;
+  }
+  return false;
 }
 
 // ── GET /api/factures/audit?document_id=xxx ─────────────────────────────────

@@ -1,9 +1,7 @@
 "use client";
 /**
- * ClassicTemplate — Corporate Pro.
- * Inspiration cabinets comptables / ERP modernes / logiciels SaaS B2B :
- * structure rigoureuse, header split avec panel couleur, tableau quadrillé,
- * total en boîte structurée. Formel, lisible, institutionnel.
+ * ClassicTemplate — Classique Corporate.
+ * Header plein marine, tableau quadrillé, mise en page institutionnelle formelle.
  */
 
 import type { PreviewData } from "../shared";
@@ -31,52 +29,48 @@ export function ClassicTemplate({ data }: { data: PreviewData }) {
       flexDirection: "column",
     }}>
 
-      {/* ── HEADER split ───────────────────────────────────────────── */}
-      <div style={{ display: "flex", alignItems: "stretch", borderBottom: `2px solid ${C}` }}>
-
-        {/* Gauche : société sur fond blanc */}
-        <div style={{ flex: 1, padding: "13px 16px 11px", backgroundColor: "#ffffff" }}>
+      {/* ── HEADER plein marine ─────────────────────────────────────── */}
+      <div style={{
+        backgroundColor: C,
+        padding: "13px 16px 11px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}>
+        {/* Gauche : logo / nom société */}
+        <div>
           {co.logoUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={co.logoUrl} alt="logo" style={{ height: co.logoSize==="sm"?24:co.logoSize==="lg"?62:44, maxWidth: co.logoSize==="sm"?90:co.logoSize==="lg"?200:150, objectFit: "contain", display: "block", marginBottom: 3 }} />
+            <img src={co.logoUrl} alt="logo" style={{ height: co.logoSize==="sm"?20:co.logoSize==="lg"?42:32, maxWidth: co.logoSize==="sm"?80:co.logoSize==="lg"?160:120, objectFit: "contain", display: "block", marginBottom: 2, filter: "brightness(0) invert(1)" }} />
           ) : (
-            <div style={{ color: C, fontWeight: 900, fontSize: 12, letterSpacing: "-0.5px" }}>
+            <div style={{ color: CT, fontWeight: 900, fontSize: 13, letterSpacing: "-0.5px" }}>
               {co.name ?? "DJAMA"}
             </div>
           )}
-          {co.email   && <div style={{ color: "#64748b", fontSize: 5.5, marginTop: 2 }}>{co.email}</div>}
-          {co.website && <div style={{ color: "#64748b", fontSize: 5.5 }}>{co.website}</div>}
+          {co.email   && <div style={{ color: alphaHex("#ffffff", 0.6), fontSize: 5.5, marginTop: 2 }}>{co.email}</div>}
+          {co.website && <div style={{ color: alphaHex("#ffffff", 0.6), fontSize: 5.5 }}>{co.website}</div>}
         </div>
 
-        {/* Séparateur vertical */}
-        <div style={{ width: 1, backgroundColor: BORDER }} />
-
-        {/* Droite : type + référence + dates sur fond couleur */}
-        <div style={{
-          backgroundColor: C,
-          padding: "13px 16px 11px",
-          minWidth: 128,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          justifyContent: "center",
-        }}>
-          <div style={{ color: alphaHex("#ffffff", 0.6), fontSize: 4.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em" }}>
+        {/* Droite : type + référence + dates */}
+        <div style={{ textAlign: "right" }}>
+          <div style={{ color: alphaHex("#ffffff", 0.55), fontSize: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em" }}>
             {docLabel}
           </div>
-          <div style={{ color: CT, fontWeight: 900, fontSize: 12.5, marginTop: 2, letterSpacing: "-0.3px" }}>
+          <div style={{ color: CT, fontWeight: 900, fontSize: 13, marginTop: 2, letterSpacing: "-0.3px" }}>
             {data.reference}
           </div>
           <div style={{ color: alphaHex("#ffffff", 0.65), fontSize: 5.5, marginTop: 3 }}>
             Émis le {fmtDate(data.issue_date)}
           </div>
           {dateVal && (
-            <div style={{ color: alphaHex("#ffffff", 0.85), fontSize: 5.5, fontWeight: 600, marginTop: 1 }}>
+            <div style={{ color: CT, fontSize: 5.5, fontWeight: 700, marginTop: 1 }}>
               {dateLabel} : {fmtDate(dateVal)}
             </div>
           )}
         </div>
       </div>
+      {/* Bande accent bas header */}
+      <div style={{ height: 3, backgroundColor: alphaHex(C, 0.35) }} />
 
       {/* ── ADRESSES ───────────────────────────────────────────────── */}
       <div style={{ display: "flex", borderBottom: `1px solid ${BORDER}` }}>
@@ -152,6 +146,13 @@ export function ClassicTemplate({ data }: { data: PreviewData }) {
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#64748b", padding: "3px 9px", borderBottom: `1px solid ${BORDER}` }}>
                 <span>Sous-total HT</span>
                 <span>{fmtEur(data.subtotal)}</span>
+              </div>
+            )}
+
+            {(data.discount ?? 0) > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#64748b", padding: "3px 9px", borderBottom: `1px solid ${BORDER}` }}>
+                <span>{data.discount_rate ? `Remise (${data.discount_rate}%)` : "Remise"}</span>
+                <span style={{ color: "#c84141" }}>- {fmtEur(data.discount!)}</span>
               </div>
             )}
 

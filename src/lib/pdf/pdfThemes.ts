@@ -1,19 +1,23 @@
 /**
  * Thèmes visuels pour les 5 templates PDF.
  * Chaque thème définit une palette de couleurs complète.
- * Le renderer (pdfRenderer.ts) utilise ce thème pour générer le PDF.
+ *
+ * Variants :
+ *   accent-bar → Moderne    : barre dorée gauche, header épuré
+ *   minimal    → Minimaliste: lignes fines, sans fond
+ *   standard   → Classique  : header bleu marine plein
+ *   split      → Élégant    : header gauche/droite bipartite
+ *   band       → Coloré     : header deux bandes horizontales
  */
 
 import type { PdfTheme, TemplateType } from "./types";
 
-// ── Modern ────────────────────────────────────────────────────────────────────
-// Header blanc épuré, barre dorée à gauche — style Qonto/Stripe.
-// Nouveau rendu premium : header 42mm, boîte total accent, QR dans section paiement.
+// ── Moderne ───────────────────────────────────────────────────────────────────
 const modernTheme: PdfTheme = {
   id: "modern",
 
   headerBg:         [255, 255, 255],
-  headerH:          42,                // réduit pour moins d'espace mort
+  headerH:          42,
   headerNameColor:  [10, 10, 18],
   headerSubColor:   [148, 148, 162],
   headerRefColor:   [10, 10, 18],
@@ -23,37 +27,36 @@ const modernTheme: PdfTheme = {
   bodyText:         [10, 10, 18],
   mutedText:        [105, 105, 118],
 
-  labelColor:       [160, 148, 88],    // gold labels
+  labelColor:       [160, 148, 88],
   sectionNameColor: [10, 10, 18],
 
   subjectBg:        [246, 246, 251],
   subjectText:      [10, 10, 18],
 
-  tableHeaderBg:    [242, 242, 248],   // gris très clair
+  tableHeaderBg:    [242, 242, 248],
   tableHeaderText:  [34, 34, 48],
   tableRowAlt:      [250, 250, 254],
   tableBorder:      [218, 218, 230],
   tableText:        [18, 18, 28],
 
   totalLineBg:      null,
-  totalBoxBg:       [10, 10, 18],      // fallback (remplacé par accentBarColor)
+  totalBoxBg:       [10, 10, 18],
   totalBoxText:     [255, 255, 255],
 
   footerBg:         [246, 246, 250],
   footerText:       [135, 135, 148],
 
   variant:          "accent-bar",
-  accentBarColor:   [201, 165, 90],    // or DJAMA signature
+  accentBarColor:   [201, 165, 90],
   accentBarW:       5,
 };
 
-// ── Minimal ───────────────────────────────────────────────────────────────────
-// Fond blanc intégral, aucun remplissage, lignes fines. Ultra-épuré.
+// ── Minimaliste ───────────────────────────────────────────────────────────────
 const minimalTheme: PdfTheme = {
   id: "minimal",
 
-  headerBg:         [255, 255, 255], // pas utilisé (variant minimal)
-  headerH:          36,
+  headerBg:         [255, 255, 255],
+  headerH:          38,
   headerNameColor:  [15, 15, 18],
   headerSubColor:   [160, 160, 168],
   headerRefColor:   [15, 15, 18],
@@ -69,11 +72,11 @@ const minimalTheme: PdfTheme = {
   subjectBg:        [248, 248, 250],
   subjectText:      [15, 15, 18],
 
-  tableHeaderBg:    [240, 240, 244],
-  tableHeaderText:  [60, 60, 70],
+  tableHeaderBg:    [238, 238, 242],
+  tableHeaderText:  [50, 50, 60],
   tableRowAlt:      null,
-  tableBorder:      [220, 220, 226],
-  tableText:        [30, 30, 40],
+  tableBorder:      [215, 215, 222],
+  tableText:        [25, 25, 35],
 
   totalLineBg:      null,
   totalBoxBg:       [15, 15, 18],
@@ -85,13 +88,12 @@ const minimalTheme: PdfTheme = {
   variant: "minimal",
 };
 
-// ── Classic ───────────────────────────────────────────────────────────────────
-// Header bleu marine professionnel, style corporate traditionnel.
+// ── Classique ─────────────────────────────────────────────────────────────────
 const classicTheme: PdfTheme = {
   id: "classic",
 
-  headerBg:         [26, 46, 79],   // bleu marine profond
-  headerH:          48,
+  headerBg:         [26, 46, 79],
+  headerH:          52,
   headerNameColor:  [255, 255, 255],
   headerSubColor:   [160, 190, 230],
   headerRefColor:   [255, 255, 255],
@@ -123,17 +125,16 @@ const classicTheme: PdfTheme = {
   variant: "standard",
 };
 
-// ── Premium (Corporate Slate) ─────────────────────────────────────────────────
-// Header bleu ardoise professionnel, corps blanc. Style cabinet conseil / Big4.
+// ── Élégant (split — panel gauche blanc + panel droit ardoise) ────────────────
 const premiumTheme: PdfTheme = {
   id: "premium",
 
-  headerBg:         [30, 58, 95],   // slate #1e3a5f
-  headerH:          50,
+  headerBg:         [30, 58, 95],   // ardoise — couleur du panel droit
+  headerH:          54,
   headerNameColor:  [255, 255, 255],
-  headerSubColor:   [147, 197, 253], // blue-300
+  headerSubColor:   [147, 197, 253],
   headerRefColor:   [255, 255, 255],
-  headerDateColor:  [191, 219, 254], // blue-200
+  headerDateColor:  [191, 219, 254],
 
   bodyBg:           [255, 255, 255],
   bodyText:         [15, 23, 42],
@@ -142,7 +143,7 @@ const premiumTheme: PdfTheme = {
   labelColor:       [30, 58, 95],
   sectionNameColor: [15, 23, 42],
 
-  subjectBg:        [239, 246, 255], // blue-50
+  subjectBg:        [239, 246, 255],
   subjectText:      [15, 23, 42],
 
   tableHeaderBg:    [30, 58, 95],
@@ -158,20 +159,19 @@ const premiumTheme: PdfTheme = {
   footerBg:         [30, 58, 95],
   footerText:       [147, 197, 253],
 
-  variant: "standard",
+  variant: "split",
 };
 
-// ── Colorful (Vert Banque) ─────────────────────────────────────────────────────
-// Header vert profond style BNP/Crédit Agricole, corps blanc propre.
+// ── Coloré (band — deux bandes horizontales vertes) ────────────────────────────
 const colorfulTheme: PdfTheme = {
   id: "colorful",
 
-  headerBg:         [10, 79, 58],   // vert #0a4f3a
-  headerH:          50,
+  headerBg:         [10, 79, 58],   // bande supérieure vert foncé
+  headerH:          52,
   headerNameColor:  [255, 255, 255],
-  headerSubColor:   [110, 231, 183], // emerald-300
+  headerSubColor:   [110, 231, 183],
   headerRefColor:   [255, 255, 255],
-  headerDateColor:  [167, 243, 208], // emerald-200
+  headerDateColor:  [167, 243, 208],
 
   bodyBg:           [255, 255, 255],
   bodyText:         [15, 23, 42],
@@ -180,7 +180,7 @@ const colorfulTheme: PdfTheme = {
   labelColor:       [10, 79, 58],
   sectionNameColor: [15, 23, 42],
 
-  subjectBg:        [240, 253, 244], // green-50
+  subjectBg:        [240, 253, 244],
   subjectText:      [15, 23, 42],
 
   tableHeaderBg:    [10, 79, 58],
@@ -196,7 +196,7 @@ const colorfulTheme: PdfTheme = {
   footerBg:         [10, 79, 58],
   footerText:       [167, 243, 208],
 
-  variant: "standard",
+  variant: "band",
 };
 
 // ── Export ────────────────────────────────────────────────────────────────────
@@ -225,7 +225,6 @@ export interface TemplateInfo {
   id:           TemplateType;
   label:        string;
   description:  string;
-  /** Couleur dominante du header (pour le placeholder skeleton) */
   headerColor:  string;
   badge:        TemplateBadge;
 }
@@ -233,8 +232,8 @@ export interface TemplateInfo {
 export const TEMPLATE_INFO: TemplateInfo[] = [
   {
     id:          "modern",
-    label:       "Modern",
-    description: "Header épuré, barre dorée, style Qonto. Le design signature DJAMA.",
+    label:       "Moderne",
+    description: "Barre dorée signature, header épuré, QR SEPA. Le design DJAMA.",
     headerColor: "#ffffff",
     badge: {
       label:     "Populaire",
@@ -244,19 +243,19 @@ export const TEMPLATE_INFO: TemplateInfo[] = [
   },
   {
     id:          "minimal",
-    label:       "Minimal",
-    description: "Tout blanc, lignes fines. Épuré et intemporel.",
+    label:       "Minimaliste",
+    description: "Tout blanc, lignes fines uniquement. Ultra-épuré et intemporel.",
     headerColor: "#e8e8ec",
     badge: {
-      label:     "Clean",
+      label:     "Épuré",
       textColor: "#94a3b8",
       bgColor:   "rgba(148,163,184,0.12)",
     },
   },
   {
     id:          "classic",
-    label:       "Classic",
-    description: "Bleu marine professionnel. Idéal pour le B2B formel.",
+    label:       "Classique",
+    description: "Header bleu marine plein. Idéal pour le B2B formel et institutionnel.",
     headerColor: "#1a2e4f",
     badge: {
       label:     "Corporate",
@@ -266,22 +265,22 @@ export const TEMPLATE_INFO: TemplateInfo[] = [
   },
   {
     id:          "premium",
-    label:       "Corporate",
-    description: "Bleu ardoise professionnel. Style cabinet conseil, Big4, assurances.",
+    label:       "Élégant",
+    description: "Header bipartite blanc/ardoise. Style cabinet conseil, Big4, luxe.",
     headerColor: "#1e3a5f",
     badge: {
-      label:     "Pro",
-      textColor: "#60a5fa",
-      bgColor:   "rgba(96,165,250,0.14)",
+      label:     "Premium",
+      textColor: "#93c5fd",
+      bgColor:   "rgba(147,197,253,0.14)",
     },
   },
   {
     id:          "colorful",
-    label:       "Banque",
-    description: "Vert banque profond. Style BNP, Crédit Agricole, grandes institutions.",
+    label:       "Coloré",
+    description: "Double bande verte. Distinctif, moderne, idéal pour se démarquer.",
     headerColor: "#0a4f3a",
     badge: {
-      label:     "Banque",
+      label:     "Vif",
       textColor: "#10b981",
       bgColor:   "rgba(16,185,129,0.14)",
     },

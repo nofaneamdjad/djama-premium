@@ -1,31 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search,
-  Calendar, Bell, BarChart2,
-  ChevronRight, LogOut, LayoutGrid, ListTodo,
+  Search, ChevronRight,
   TrendingUp, TrendingDown,
-  Lock, Crown, AlertCircle, CheckCircle2, X,
-  Clock, Sparkles, Activity, Settings2, Check,
+  Crown, AlertCircle, CheckCircle2, X,
+  Sparkles, Check,
   FileText, CreditCard, Users,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
 import { useSubscription } from "@/lib/use-require-subscription";
-import OnboardingModal from "@/components/OnboardingModal";
-import { APP_ICONS } from "@/components/AppIcons";
 import { MODULE_GROUPS } from "@/lib/module-groups";
 import { ModuleCard, ModuleGroupSection } from "@/components/ModuleCard";
-import { getToolTier } from "@/lib/plans";
 import { useTheme } from "@/lib/theme-context";
 
-const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
 
-/* Éclaircit un hex vers le blanc */
 function lighten(hex: string, t = 0.32): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -34,34 +27,26 @@ function lighten(hex: string, t = 0.32): string {
   return `#${f(r)}${f(g)}${f(b)}`;
 }
 
-/* Table de lookup href → module (icon + color) */
 const MODULE_BY_HREF = Object.fromEntries(
   MODULE_GROUPS.flatMap(g => g.modules.map(m => [m.href, m]))
 );
 
-/* ── Quick Actions ── */
 interface QuickAction { href: string; iconKey: string; label: string }
 
-const ALL_QA_OPTIONS: QuickAction[] = MODULE_GROUPS.flatMap(g =>
-  g.modules.map(m => ({ href: m.href, iconKey: m.href, label: m.label }))
-);
-
 const DEFAULT_QA: QuickAction[] = [
-  { href: "/client/factures",  iconKey: "/client/factures",  label: "Factures"  },
-  { href: "/client/depenses",  iconKey: "/client/depenses",  label: "Dépenses"  },
-  { href: "/client/tresorerie",iconKey: "/client/tresorerie",label: "Tréso"     },
-  { href: "/client/crm",       iconKey: "/client/crm",       label: "CRM"       },
-  { href: "/client/bloc-notes",iconKey: "/client/bloc-notes",label: "Notes"     },
-  { href: "/client/chrono",    iconKey: "/client/chrono",    label: "Chrono"    },
+  { href: "/client/factures",   iconKey: "/client/factures",   label: "Factures"  },
+  { href: "/client/depenses",   iconKey: "/client/depenses",   label: "Dépenses"  },
+  { href: "/client/tresorerie", iconKey: "/client/tresorerie", label: "Tréso"     },
+  { href: "/client/crm",        iconKey: "/client/crm",        label: "CRM"       },
+  { href: "/client/bloc-notes", iconKey: "/client/bloc-notes", label: "Notes"     },
+  { href: "/client/chrono",     iconKey: "/client/chrono",     label: "Chrono"    },
 ];
 
-/* ── Types ── */
 interface TodayTask   { id: string; title: string; priority: string; due_date: string }
 interface NextEvent   { id: string; title: string; start_at: string; event_type: string }
 interface LastExpense { id: string; description: string; amount: number; date: string; category: string }
 interface LastContact { id: string; nom: string; created_at: string }
 
-/* ── Helpers ── */
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Bonjour";
@@ -71,21 +56,16 @@ function getGreeting() {
 function getDay() {
   return new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 }
-function todayStr() {
-  return new Date().toISOString().slice(0, 10);
-}
+function todayStr() { return new Date().toISOString().slice(0, 10); }
 function fmtEventTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 function fmtEventDate(iso: string) {
   const d = new Date(iso);
   const now = new Date();
-  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dMidnight     = new Date(d.getFullYear(),   d.getMonth(),   d.getDate());
-  const diffDays = Math.round((dMidnight.getTime() - todayMidnight.getTime()) / 86_400_000);
-  if (diffDays === 0) return "Aujourd'hui";
-  if (diffDays === 1) return "Demain";
+  const diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / 86_400_000);
+  if (diff === 0) return "Aujourd'hui";
+  if (diff === 1) return "Demain";
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 function priorityColor(p: string) {
@@ -95,34 +75,33 @@ function priorityColor(p: string) {
   return "#a78bfa";
 }
 
-
-function NotifBadge({ count }: { count: number }) {
-  if (count === 0) return null;
-  return (
-    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
-      {count > 9 ? "9+" : count}
-    </span>
-  );
+function tok(isDark: boolean) {
+  return {
+    bg:         isDark ? "#111111"                 : "#ffffff",
+    bgSoft:     isDark ? "#181818"                 : "#f8f8f8",
+    bgSubtle:   isDark ? "#212121"                 : "#f0f0f0",
+    border:     isDark ? "rgba(255,255,255,0.08)"  : "#e5e5e5",
+    borderSoft: isDark ? "rgba(255,255,255,0.05)"  : "#ececec",
+    text:       isDark ? "rgba(255,255,255,0.92)"  : "#111111",
+    text2:      isDark ? "rgba(255,255,255,0.65)"  : "#444444",
+    text3:      isDark ? "rgba(255,255,255,0.42)"  : "#707070",
+    text4:      isDark ? "rgba(255,255,255,0.35)"  : "#999999",
+  };
 }
 
-/* ─────────────────────────────────────────────────
-   PAGE PRINCIPALE
-───────────────────────────────────────────────── */
 export default function CockpitPage() {
   const { isPremium, isFree } = useSubscription();
   const { isDark, accent } = useTheme();
+  const t = tok(isDark);
 
-  /* ── État KPIs ── */
-  const [firstName,      setFirstName]      = useState("");
-  const [initial,        setInitial]        = useState("?");
-  const [kpiLoading,     setKpiLoading]     = useState(true);
-  const [caMonth,        setCaMonth]        = useState(0);
-  const [depensesMonth,  setDepensesMonth]  = useState(0);
-  const [nbContacts,     setNbContacts]     = useState(0);
-  const [nbFactures,     setNbFactures]     = useState(0);
-  const [caEvo,          setCaEvo]          = useState<number | null>(null);
+  const [firstName,     setFirstName]     = useState("");
+  const [kpiLoading,    setKpiLoading]    = useState(true);
+  const [caMonth,       setCaMonth]       = useState(0);
+  const [depensesMonth, setDepensesMonth] = useState(0);
+  const [nbContacts,    setNbContacts]    = useState(0);
+  const [nbFactures,    setNbFactures]    = useState(0);
+  const [caEvo,         setCaEvo]         = useState<number | null>(null);
 
-  /* ── État "Aujourd'hui" ── */
   const [todayTasks,   setTodayTasks]   = useState<TodayTask[]>([]);
   const [nextEvent,    setNextEvent]    = useState<NextEvent | null>(null);
   const [overdueCount, setOverdueCount] = useState(0);
@@ -132,66 +111,32 @@ export default function CockpitPage() {
   const [lastContact,  setLastContact]  = useState<LastContact | null>(null);
   const [todayLoading, setTodayLoading] = useState(true);
 
-  /* ── UI ── */
-  const [menuOpen,     setMenuOpen]     = useState(false);
-  const [search,       setSearch]       = useState("");
-  const [showAlert,    setShowAlert]    = useState(true);
-  const [quickActions, setQuickActions] = useState<QuickAction[]>(DEFAULT_QA);
-  const [editingQA,    setEditingQA]    = useState(false);
-  const [pickerDraft,  setPickerDraft]  = useState<QuickAction[]>(DEFAULT_QA);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [showAlert,   setShowAlert]   = useState(true);
+  const [search,      setSearch]      = useState("");
+  const [quickActions,setQuickActions]= useState<QuickAction[]>(DEFAULT_QA);
+  const [editingQA,   setEditingQA]   = useState(false);
+  const [pickerDraft, setPickerDraft] = useState<QuickAction[]>(DEFAULT_QA);
 
-  /* ── Chargement données ── */
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      /* ── Nom / Société ── */
-      const metaCompany = (
-        (user.user_metadata?.company_name as string | undefined)
-        || (user.user_metadata?.company as string | undefined)
-        || (user.user_metadata?.organization as string | undefined)
-        || ""
-      ).trim();
+      const metaCompany  = ((user.user_metadata?.company_name as string | undefined) || (user.user_metadata?.company as string | undefined) || (user.user_metadata?.organization as string | undefined) || "").trim();
+      const metaFullName = ((user.user_metadata?.full_name as string | undefined) || (user.user_metadata?.name as string | undefined) || "").trim();
 
-      const metaFullName = (
-        (user.user_metadata?.full_name as string | undefined)
-        || (user.user_metadata?.name as string | undefined)
-        || ""
-      ).trim();
-
-      /* ── Quick Actions préférées ── */
-      const { data: qaPref } = await supabase
-        .from("user_preferences")
-        .select("value")
-        .eq("user_id", user.id)
-        .eq("key", "quick_actions")
-        .maybeSingle();
+      const { data: qaPref } = await supabase.from("user_preferences").select("value").eq("user_id", user.id).eq("key", "quick_actions").maybeSingle();
       if (Array.isArray(qaPref?.value) && qaPref.value.length > 0) {
         const loaded = qaPref.value as QuickAction[];
         setQuickActions(loaded);
         setPickerDraft(loaded);
       }
 
-      const { data: uaRow } = await supabase
-        .from("user_access")
-        .select("name")
-        .eq("email", user.email!)
-        .maybeSingle();
+      const { data: uaRow } = await supabase.from("user_access").select("name").eq("email", user.email!).maybeSingle();
       const accessName = ((uaRow as { name?: string } | null)?.name ?? "").trim();
-
-      const emailSlug = user.email?.split("@")[0] ?? "";
-      const emailFormatted = emailSlug
-        .replace(/[._-]/g, " ")
-        .split(" ")
-        .map(p => p.charAt(0).toUpperCase() + p.slice(1))
-        .join(" ");
-
-      const displayName = metaCompany || accessName || metaFullName || emailFormatted;
-
-      setFirstName(displayName);
-      setInitial(displayName.charAt(0).toUpperCase());
+      const emailSlug  = user.email?.split("@")[0] ?? "";
+      const emailFmt   = emailSlug.replace(/[._-]/g, " ").split(" ").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+      setFirstName(metaCompany || accessName || metaFullName || emailFmt);
 
       const now   = new Date();
       const y     = now.getFullYear();
@@ -214,7 +159,7 @@ export default function CockpitPage() {
 
       const ca     = (facRes.data  ?? []).reduce((s, f) => s + (f.montant_ttc ?? 0), 0);
       const caPrev = (prevRes.data ?? []).reduce((s, f) => s + (f.montant_ttc ?? 0), 0);
-      const exp    = (expRes.data  ?? []).reduce((s, e) => s + (e.amount ?? 0), 0);
+      const exp    = (expRes.data  ?? []).reduce((s, e) => s + (e.amount    ?? 0), 0);
 
       setCaMonth(ca);
       setDepensesMonth(exp);
@@ -223,57 +168,14 @@ export default function CockpitPage() {
       if (caPrev > 0) setCaEvo(Math.round(((ca - caPrev) / caPrev) * 100));
       setKpiLoading(false);
 
-      /* ── Données "Aujourd'hui" ── */
       const [taskRes, eventRes, overdueRes, allTasksRes, lastFacRes, lastExpRes, lastContactRes] = await Promise.all([
-        supabase
-          .from("productivity_tasks")
-          .select("id, title, priority, due_date")
-          .eq("user_id", user.id)
-          .neq("status", "done")
-          .lte("due_date", today)
-          .order("due_date", { ascending: true })
-          .limit(3),
-        supabase
-          .from("planning_events")
-          .select("id, title, start_at, event_type")
-          .eq("user_id", user.id)
-          .gte("start_at", new Date().toISOString())
-          .order("start_at", { ascending: true })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("documents")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .eq("type", "facture")
-          .eq("statut", "envoyée")
-          .lt("due_date", today),
-        supabase
-          .from("productivity_tasks")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .neq("status", "done"),
-        supabase
-          .from("factures")
-          .select("numero, montant_ttc, date_emission, client_nom")
-          .eq("user_id", user.id)
-          .order("date_emission", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("expenses")
-          .select("id, description, amount, date, category")
-          .eq("user_id", user.id)
-          .order("date", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("clients_crm")
-          .select("id, nom, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
+        supabase.from("productivity_tasks").select("id, title, priority, due_date").eq("user_id", user.id).neq("status", "done").lte("due_date", today).order("due_date", { ascending: true }).limit(3),
+        supabase.from("planning_events").select("id, title, start_at, event_type").eq("user_id", user.id).gte("start_at", new Date().toISOString()).order("start_at", { ascending: true }).limit(1).maybeSingle(),
+        supabase.from("documents").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("type", "facture").eq("statut", "envoyée").lt("due_date", today),
+        supabase.from("productivity_tasks").select("id", { count: "exact", head: true }).eq("user_id", user.id).neq("status", "done"),
+        supabase.from("factures").select("numero, montant_ttc, date_emission, client_nom").eq("user_id", user.id).order("date_emission", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("expenses").select("id, description, amount, date, category").eq("user_id", user.id).order("date", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("clients_crm").select("id, nom, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
 
       setTodayTasks((taskRes.data ?? []) as TodayTask[]);
@@ -287,15 +189,6 @@ export default function CockpitPage() {
     })();
   }, []);
 
-  useEffect(() => {
-    function handle(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    }
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, []);
-
-  /* ── Sauvegarder quick actions ── */
   async function saveQuickActions(actions: QuickAction[]) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -305,11 +198,7 @@ export default function CockpitPage() {
     );
   }
 
-  /* ── Recherche modules ── */
-  const allModules = useMemo(
-    () => MODULE_GROUPS.flatMap(g => g.modules.map(m => ({ ...m, group: g.label }))),
-    []
-  );
+  const allModules = useMemo(() => MODULE_GROUPS.flatMap(g => g.modules.map(m => ({ ...m, group: g.label }))), []);
   const filteredGroups = useMemo(() => {
     if (!search.trim()) return MODULE_GROUPS;
     const q = search.toLowerCase();
@@ -319,917 +208,522 @@ export default function CockpitPage() {
   }, [search]);
 
   const totalModules = allModules.length;
-  const netMonth = caMonth - depensesMonth;
   const isNewUser = !kpiLoading && caMonth === 0 && nbContacts === 0;
 
-  /* ─────────────────────────────────────────────────
-     RENDU
-  ───────────────────────────────────────────────── */
+  const kpis = [
+    { label: "CA du mois",   value: kpiLoading ? "—" : fmtEurInt(caMonth),      sub: caEvo !== null ? `${caEvo >= 0 ? "+" : ""}${caEvo}% vs préc.` : "ce mois",    trend: caEvo,  href: "/client/factures",  color: "#22c55e" },
+    { label: "Dépenses",     value: kpiLoading ? "—" : fmtEurInt(depensesMonth), sub: "ce mois",                                                                      trend: null,   href: "/client/depenses",  color: "#ef4444" },
+    { label: "En attente",   value: kpiLoading ? "—" : String(nbFactures),       sub: nbFactures === 1 ? "facture" : "factures",                                       trend: null,   href: "/client/factures",  color: GOLD      },
+    { label: "Contacts CRM", value: kpiLoading ? "—" : String(nbContacts),       sub: "dans la base",                                                                  trend: null,   href: "/client/crm",       color: "#60a5fa" },
+  ] as const;
+
   return (
-    <div
-      className="min-h-full overflow-x-hidden"
-      style={{ background: isDark ? "#07080e" : "linear-gradient(180deg, #fefcff 0%, #f7f5fb 50%, #fefcff 100%)" }}
-    >
+    <div className="min-h-full" style={{ background: t.bgSoft }}>
 
-      <OnboardingModal name={firstName} />
+      <div className="mx-auto max-w-6xl px-5 pt-5 pb-12 lg:px-8">
 
-      {/* ══════════════════════════════════════════
-          HERO
-      ══════════════════════════════════════════ */}
-      <div
-        className="relative overflow-hidden"
-        style={{ background: isDark
-          ? "linear-gradient(155deg,#07080e 0%,#0e1020 40%,#07080e 100%)"
-          : "linear-gradient(155deg, #fffcf5 0%, #f3efff 35%, #eef7ff 68%, #fffdf0 100%)" }}
-      >
-        {/* Shimmer gold line */}
-        <motion.div
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 1.2, ease }}
-          className="absolute inset-x-0 top-0 h-[1.5px] origin-left"
-          style={{ background: "linear-gradient(90deg, transparent 0%, rgba(201,165,90,0.8) 35%, rgba(201,165,90,0.4) 65%, transparent 100%)" }}
-        />
-
-        {/* Orb ambiance */}
-        <motion.div
-          animate={{ scale: [1, 1.18, 1], opacity: isDark ? [0.07, 0.15, 0.07] : [0.38, 0.62, 0.38] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="pointer-events-none absolute -top-24 left-1/2 h-[400px] w-[620px] -translate-x-1/2 rounded-full blur-[110px]"
-          style={{ background: isDark ? "rgba(201,165,90,0.22)" : "rgba(201,165,90,0.18)" }}
-        />
-        <motion.div
-          animate={{ y: [0, 20, 0], opacity: isDark ? [0.04, 0.1, 0.04] : [0.22, 0.40, 0.22] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-          className="pointer-events-none absolute bottom-10 right-0 h-[260px] w-[360px] rounded-full blur-[90px]"
-          style={{ background: isDark ? "rgba(99,102,241,0.1)" : "rgba(139,92,246,0.11)" }}
-        />
-
-        <div className="relative mx-auto max-w-7xl px-4 pt-5 pb-8 lg:px-8">
-
-          {/* ── Top bar ── */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.38, ease }}
-            className="flex items-start justify-between mb-6"
-          >
-            <div>
-              <p className={`text-[9.5px] font-semibold uppercase tracking-[0.2em] capitalize ${isDark ? "text-white/25" : "text-gray-400"}`}>
-                {getDay()}
-              </p>
-              <p className={`mt-1 text-[22px] font-black leading-tight tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
-                {getGreeting()}
-                {firstName && (
-                  <span style={{ color: GOLD }}>{`, ${firstName.split(" ")[0]}`}</span>
-                )}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              {/* Bell */}
-              <Link href={overdueCount > 0 ? "/client/factures?statut=retard" : "/client/factures"}>
-                <motion.div whileTap={{ scale: 0.88 }}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-full"
-                  style={{
-                    background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
-                    border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.08)",
-                  }}>
-                  <Bell size={14} className={isDark ? "text-white/50" : "text-gray-500"} />
-                  {(nbFactures + overdueCount) > 0 && <NotifBadge count={nbFactures + overdueCount} />}
-                </motion.div>
-              </Link>
-              {/* Avatar menu */}
-              <div className="relative" ref={menuRef}>
-                <motion.button whileTap={{ scale: 0.9 }}
-                  onClick={() => setMenuOpen(o => !o)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-black text-black shadow-[0_0_18px_rgba(201,165,90,0.45)]"
-                  style={{ background: "linear-gradient(135deg,#d4aa5f,#b08d45)" }}
-                >{initial}</motion.button>
-
-                <AnimatePresence>
-                  {menuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.92, y: -6 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.92, y: -6 }}
-                      transition={{ duration: 0.16, ease }}
-                      className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.25)]"
-                      style={{
-                        background: isDark ? "#0e1420" : "#ffffff",
-                        border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.10)",
-                      }}
-                    >
-                      <div className={`px-4 py-3 ${isDark ? "border-b border-white/8" : "border-b border-gray-100"}`}>
-                        <p className={`text-[12px] font-bold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{firstName}</p>
-                        <div className="mt-1">
-                          {isPremium ? (
-                            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold w-fit"
-                              style={{ background: "rgba(201,165,90,0.12)", color: GOLD }}>
-                              <Crown size={7} /> DJAMA PRO
-                            </span>
-                          ) : (
-                            <span className="text-[10.5px] text-gray-400">Plan Gratuit</span>
-                          )}
-                        </div>
-                      </div>
-                      {[
-                        { icon: LayoutGrid, label: "Dashboard",  href: "/client" },
-                        { icon: Crown,      label: "Abonnement", href: "/client/abonnements" },
-                      ].map(item => {
-                        const Icon = item.icon;
-                        return (
-                          <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
-                            className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${isDark ? "hover:bg-white/5" : "hover:bg-gray-50"}`}>
-                            <Icon size={13} className={isDark ? "text-white/40" : "text-gray-400"} />
-                            <span className={`flex-1 text-[12.5px] font-medium ${isDark ? "text-white/70" : "text-gray-700"}`}>{item.label}</span>
-                            <ChevronRight size={11} className={isDark ? "text-white/30" : "text-gray-400"} />
-                          </Link>
-                        );
-                      })}
-                      <button
-                        onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
-                        className={`flex w-full items-center gap-3 px-4 py-2.5 transition-colors hover:bg-red-50 ${isDark ? "border-t border-white/8" : "border-t border-gray-100"}`}
-                      >
-                        <LogOut size={13} className="text-red-400" />
-                        <span className="text-[12.5px] font-medium text-red-400">Se déconnecter</span>
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ── KPI Hero card ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.07, ease }}
-            className="rounded-3xl p-5 mb-4"
-            style={{
-              background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.96)",
-              borderWidth: "1px", borderStyle: "solid",
-              borderTopColor: "rgba(201,165,90,0.40)",
-              borderRightColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-              borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-              borderLeftColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-              backdropFilter: "blur(20px)",
-              boxShadow: isDark
-                ? "0 0 40px rgba(201,165,90,0.06), inset 0 1px 0 rgba(255,255,255,0.05)"
-                : "0 8px 36px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.95)",
-            }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <BarChart2 size={12} style={{ color: GOLD }} />
-                <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                  CA · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-                </span>
-              </div>
-              {!kpiLoading && caEvo !== null && (
-                <div className="flex items-center gap-1 rounded-xl px-2.5 py-1"
-                  style={{
-                    background: caEvo >= 0 ? "rgba(74,222,128,0.1)" : "rgba(248,113,113,0.1)",
-                    border: `1px solid ${caEvo >= 0 ? "rgba(74,222,128,0.18)" : "rgba(248,113,113,0.18)"}`,
-                  }}>
-                  {caEvo >= 0
-                    ? <TrendingUp size={10} color="#4ade80" />
-                    : <TrendingDown size={10} color="#f87171" />}
-                  <span className="text-[11px] font-black ml-0.5" style={{ color: caEvo >= 0 ? "#4ade80" : "#f87171" }}>
-                    {caEvo >= 0 ? "+" : ""}{caEvo}%
-                  </span>
-                </div>
-              )}
-              {!kpiLoading && caEvo === null && (
-                <div className="flex items-center gap-1 rounded-xl px-2.5 py-1"
-                  style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.16)" }}>
-                  <Sparkles size={9} style={{ color: GOLD }} />
-                  <span className="text-[10px] font-bold" style={{ color: GOLD }}>Premier mois</span>
-                </div>
-              )}
-            </div>
-
-            {/* Grand nombre */}
-            <div className="mb-4">
-              {kpiLoading ? (
-                <div className="h-[52px] w-44 rounded-xl animate-pulse mt-2" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }} />
-              ) : (
-                <motion.p
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.32, delay: 0.2, ease }}
-                  className={`text-[3.4rem] font-black leading-none tracking-tight mt-1 ${isDark ? "text-white" : "text-gray-900"}`}
-                >
-                  {fmtEurInt(caMonth)}
-                </motion.p>
-              )}
-            </div>
-
-            {/* Barre dépenses */}
-            {!kpiLoading && (caMonth > 0 || depensesMonth > 0) && (
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-1.5">
-                  <span className={`text-[9px] font-medium ${isDark ? "text-white/25" : "text-gray-400"}`}>
-                    Dépenses {fmtEurInt(depensesMonth)}
-                  </span>
-                  <span className="text-[9px] font-semibold" style={{
-                    color: caMonth > 0 && depensesMonth / caMonth > 0.7 ? "#f87171" : isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.35)"
-                  }}>
-                    {caMonth > 0 ? Math.round((depensesMonth / caMonth) * 100) : 0}% du CA
-                  </span>
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)" }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${caMonth > 0 ? Math.min((depensesMonth / caMonth) * 100, 100) : 0}%` }}
-                    transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                    className="h-full rounded-full"
-                    style={{
-                      background: caMonth > 0 && depensesMonth / caMonth > 0.7
-                        ? "linear-gradient(90deg,#f87171,#ef4444)"
-                        : caMonth > 0 && depensesMonth / caMonth > 0.4
-                          ? "linear-gradient(90deg,#fbbf24,#f59e0b)"
-                          : "linear-gradient(90deg,#4ade80,#22c55e)",
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Mini stats KPI */}
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: "Contacts",   val: kpiLoading ? "—" : String(nbContacts), color: "#60a5fa" },
-                { label: "En attente", val: kpiLoading ? "—" : String(nbFactures), color: nbFactures > 0 ? "#f87171" : "#4ade80" },
-                { label: "Tâches",     val: kpiLoading ? "—" : String(nbTasks),    color: nbTasks > 0 ? "#fbbf24" : isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"   },
-              ].map(s => (
-                <div key={s.label}
-                  className="flex flex-col items-center justify-center rounded-xl py-2.5"
-                  style={{
-                    background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
-                    border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)",
-                  }}
-                >
-                  <span className="text-[15px] font-black tabular-nums" style={{ color: s.color }}>{s.val}</span>
-                  <span className={`mt-0.5 text-[8.5px] text-center ${isDark ? "text-white/25" : "text-gray-400"}`}>{s.label}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ── Net badge row ── */}
-          {!kpiLoading && caMonth > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.25, ease }}
-              className="flex items-center gap-2 mb-4"
-            >
-              <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5"
-                style={{
-                  background: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.85)",
-                  border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)",
-                }}>
-                <span className={`text-[9px] uppercase tracking-wide font-semibold ${isDark ? "text-white/30" : "text-gray-400"}`}>Net</span>
-                <span className="text-[13px] font-black" style={{ color: netMonth >= 0 ? "#16a34a" : "#f87171" }}>
-                  {netMonth >= 0 ? "+" : ""}{fmtEurInt(netMonth)}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5"
-                style={{
-                  background: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.85)",
-                  border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)",
-                }}>
-                <span className={`text-[9px] uppercase tracking-wide font-semibold ${isDark ? "text-white/30" : "text-gray-400"}`}>Dép.</span>
-                <span className="text-[13px] font-black text-red-500">{fmtEurInt(depensesMonth)}</span>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── Quick Actions ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.44, delay: 0.18, ease }}
-          >
-            {/* Header hors carte */}
-            <div className="flex items-center justify-between mb-3 px-0.5">
-              <div className="flex items-center gap-2">
-                <div className="h-[5px] w-[5px] rounded-full" style={{ background: GOLD }} />
-                <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                  Raccourcis
-                </span>
-              </div>
-              <button
-                onClick={() => { setPickerDraft(quickActions); setEditingQA(true); }}
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[9.5px] font-semibold transition ${isDark ? "text-white/35 hover:text-white/65" : "text-gray-400 hover:text-gray-700"}`}
-                style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.07)" }}
-              >
-                <Settings2 size={9} /> Modifier
-              </button>
-            </div>
-
-            {/* Carte blanche iOS */}
-            <div
-              className="rounded-2xl p-4"
-              style={{
-                background: isDark ? "rgba(255,255,255,0.05)" : "#ffffff",
-                border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
-                boxShadow: isDark ? "0 2px 16px rgba(0,0,0,0.25)" : "0 1px 6px rgba(0,0,0,0.07)",
-              }}
-            >
-              <div
-                className="grid gap-2"
-                style={{ gridTemplateColumns: `repeat(${Math.min(quickActions.length, 6)}, 1fr)` }}
-              >
-                {quickActions.map((a, i) => {
-                  const isLocked = getToolTier(a.href) === "premium" && isFree;
-                  const mod = MODULE_BY_HREF[a.href];
-                  const Icon = mod?.icon;
-                  const color = mod?.color ?? GOLD;
-                  const light = lighten(color, 0.35);
-                  return (
-                    <motion.div key={a.href + i}
-                      initial={{ opacity: 0, scale: 0.80 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 380, damping: 22, delay: 0.28 + i * 0.045 }}
-                    >
-                      <Link
-                        href={isLocked ? "/client/abonnements" : a.href}
-                        className="group flex flex-col items-center gap-2 rounded-xl p-1.5 text-center transition-all hover:bg-black/[0.04]"
-                        style={{ opacity: isLocked ? 0.45 : 1 }}
-                      >
-                        <div className="relative">
-                          <div
-                            className="relative flex items-center justify-center overflow-hidden transition-transform duration-200 group-hover:scale-105"
-                            style={{
-                              width: 64, height: 64,
-                              borderRadius: 18,
-                              background: `linear-gradient(145deg, ${light} 0%, ${color} 100%)`,
-                              boxShadow: isLocked ? "none" : `0 2px 8px rgba(0,0,0,0.12)`,
-                            }}
-                          >
-                            <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }} />
-                            {Icon && <Icon size={26} color="white" strokeWidth={1.8} />}
-                          </div>
-                          {isLocked && (
-                            <div className="absolute -bottom-1 -right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full"
-                              style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, border: "1.5px solid rgba(0,0,0,0.4)" }}>
-                              <Lock size={8} color="white" strokeWidth={2.5} />
-                            </div>
-                          )}
-                        </div>
-                        <span
-                          className="text-[0.7rem] font-bold leading-tight"
-                          style={{ color: isDark ? "rgba(255,255,255,0.75)" : "#1f2937" }}
-                        >
-                          {a.label}
-                        </span>
-                      </Link>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
-
+        {/* ── En-tête ── */}
+        <div className="mb-5">
+          <p className="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.14em] capitalize" style={{ color: t.text3 }}>
+            {getDay()}
+          </p>
+          <h1 className="text-[1.5rem] font-semibold leading-tight tracking-tight" style={{ color: t.text }}>
+            {getGreeting()}
+            {firstName && <span style={{ color: GOLD }}>{`, ${firstName.split(" ")[0]}`}</span>}
+          </h1>
         </div>
 
-        {/* ── Dégradé de transition ── */}
-        <div className="h-10 w-full" style={{ background: isDark ? "linear-gradient(to bottom, transparent, #07080e)" : "linear-gradient(to bottom, transparent, #f7f5fb)" }} />
-      </div>
-
-      {/* ══════════════════════════════════════════
-          CONTENU CLAIR
-      ══════════════════════════════════════════ */}
-      <div className="mx-auto max-w-7xl px-4 pb-14 pt-3 sm:px-6 lg:px-8">
-
-        {/* ── Alerte factures en retard ── */}
+        {/* ── Alerte retards ── */}
         <AnimatePresence>
           {overdueCount > 0 && showAlert && (
             <motion.div
-              initial={{ opacity: 0, y: -8, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: "auto" }}
-              exit={{ opacity: 0, y: -8, height: 0 }}
-              transition={{ duration: 0.28, ease }}
-              className="overflow-hidden mb-4"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden mb-3"
             >
-              <div className="flex items-center gap-3 rounded-2xl px-4 py-3"
-                style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.18)" }}>
-                <AlertCircle size={15} className="shrink-0 text-red-500" />
-                <p className="flex-1 text-[12px] font-semibold text-red-700">
+              <div className="flex items-center gap-2.5 rounded-lg px-3.5 py-2.5"
+                style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.18)" }}>
+                <AlertCircle size={13} className="shrink-0 text-red-500" />
+                <p className="flex-1 text-[0.72rem] font-semibold text-red-600">
                   {overdueCount} facture{overdueCount > 1 ? "s" : ""} en retard de paiement
                 </p>
                 <Link href="/client/factures?statut=retard"
-                  className="shrink-0 text-[11px] font-bold text-red-600 underline underline-offset-2">
-                  Voir
+                  className="shrink-0 text-[0.65rem] font-bold text-red-600 underline underline-offset-2">
+                  Voir →
                 </Link>
-                <button onClick={() => setShowAlert(false)} className="shrink-0 text-red-400 hover:text-red-600 transition-colors ml-1">
-                  <X size={13} />
+                <button onClick={() => setShowAlert(false)} className="shrink-0 text-red-400 hover:text-red-600 transition">
+                  <X size={11} />
                 </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── PRO banner (free) ── */}
-        <AnimatePresence>
-          {isFree && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.1, ease }}
-              className="mb-4"
-            >
-              <Link href="/client/abonnements">
-                <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition hover:opacity-95"
-                  style={{ background: "linear-gradient(135deg,rgba(201,165,90,0.12) 0%,rgba(180,143,69,0.08) 100%)", border: "1px solid rgba(201,165,90,0.22)" }}>
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
-                    <Crown size={14} color="white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12.5px] font-bold" style={{ color: isDark ? GOLD : "#92681e" }}>Passez à DJAMA PRO</p>
-                    <p className={`text-[10.5px] ${isDark ? "text-amber-400/60" : "text-amber-700/60"}`}>Débloquez tous les modules · 11,90€/mois</p>
-                  </div>
-                  <ChevronRight size={14} style={{ color: GOLD }} />
-                </div>
-              </Link>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* ── PRO banner ── */}
+        {isFree && (
+          <Link href="/client/abonnements" className="block mb-4">
+            <div className="flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition hover:opacity-92"
+              style={{ background: "rgba(201,165,90,0.06)", border: "1px solid rgba(201,165,90,0.20)" }}>
+              <Crown size={12} style={{ color: GOLD }} />
+              <span className="text-[0.72rem] font-semibold" style={{ color: GOLD }}>Passez à DJAMA PRO</span>
+              <span className="text-[0.65rem]" style={{ color: t.text4 }}>· Débloquez tous les modules · 11,90€/mois</span>
+              <ChevronRight size={11} className="ml-auto shrink-0" style={{ color: GOLD, opacity: 0.5 }} />
+            </div>
+          </Link>
+        )}
 
-        {/* ── Checklist démarrage (compte neuf) ── */}
-        <AnimatePresence>
-          {!kpiLoading && !todayLoading && caMonth === 0 && nbContacts === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.32, ease }}
-              className="mb-5 rounded-2xl overflow-hidden"
-              style={{ border: "1px solid rgba(201,165,90,0.18)", background: "rgba(201,165,90,0.04)" }}
-            >
-              {/* Header */}
-              <div className="flex items-center gap-2 px-4 pt-3.5 pb-2">
-                <Sparkles size={12} style={{ color: GOLD }} />
-                <span className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: GOLD }}>
-                  Démarrage rapide
-                </span>
+        {/* ── 4 KPI tiles ── */}
+        <div className="grid grid-cols-2 gap-3 mb-5 lg:grid-cols-4">
+          {kpis.map((kpi) => (
+            <Link key={kpi.label} href={kpi.href}>
+              <div
+                className="rounded p-3 transition hover:opacity-90"
+                style={{ background: t.bgSoft, border: `1px solid ${t.border}` }}
+              >
+                <p className="mb-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.1em]" style={{ color: t.text3 }}>
+                  {kpi.label}
+                </p>
+                <p className="mb-1 text-[1.35rem] font-semibold leading-none tabular-nums" style={{ color: t.text }}>
+                  {kpi.value}
+                </p>
+                <div className="flex items-center gap-1">
+                  {kpi.trend !== null && (
+                    kpi.trend >= 0
+                      ? <TrendingUp size={10} className="text-emerald-500" />
+                      : <TrendingDown size={10} className="text-red-400" />
+                  )}
+                  <p className="text-[0.58rem] font-medium"
+                    style={{ color: kpi.trend !== null ? (kpi.trend >= 0 ? "#22c55e" : "#ef4444") : t.text4 }}>
+                    {kpi.sub}
+                  </p>
+                </div>
               </div>
-              {/* Steps */}
-              {([
-                { done: true,                  label: "Créer votre compte DJAMA",          href: null,                    sub: "C'est fait !" },
-                { done: false,                 label: "Personnaliser votre profil",         href: "/client/profil",        sub: "Logo, SIRET, RIB" },
-                { done: nbContacts > 0,        label: "Ajouter votre premier client",       href: "/client/crm",           sub: "Base clients CRM" },
-                { done: (nbFactures ?? 0) > 0, label: "Envoyer votre 1ère facture",         href: "/client/factures",      sub: "Commencez à facturer" },
-              ] as { done: boolean; label: string; href: string | null; sub: string }[]).map((step, i) => (
-                <Link key={i} href={step.done || !step.href ? "#" : step.href}
-                  onClick={e => { if (step.done || !step.href) e.preventDefault(); }}>
-                  <div className={`flex items-center gap-3 px-4 py-2.5 transition ${isDark ? "hover:bg-white/[0.03]" : "hover:bg-black/[0.02]"}`}
-                    style={{ borderTop: i > 0 ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"}` : "none" }}>
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
-                      style={{ background: step.done ? "rgba(34,197,94,0.15)" : "rgba(201,165,90,0.1)" }}>
-                      {step.done
-                        ? <CheckCircle2 size={13} className="text-emerald-500" />
-                        : <span className="text-[9px] font-bold" style={{ color: GOLD }}>{i + 1}</span>}
+            </Link>
+          ))}
+        </div>
+
+        {/* ── Raccourcis ── */}
+        <div className="mb-5">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em]" style={{ color: t.text3 }}>Raccourcis</span>
+            <button
+              onClick={() => setEditingQA(true)}
+              className="text-[0.6rem] font-medium transition hover:opacity-70"
+              style={{ color: t.text3 }}
+            >
+              Modifier
+            </button>
+          </div>
+          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${quickActions.length}, 1fr)` }}>
+            {quickActions.map((qa) => {
+              const mod = MODULE_BY_HREF[qa.href];
+              if (!mod) return null;
+              const Icon = mod.icon;
+              const light = lighten(mod.color, 0.35);
+              return (
+                <Link key={qa.href} href={qa.href}>
+                  <div className="flex flex-col items-center gap-1 transition hover:opacity-80">
+                    <div
+                      className="flex items-center justify-center"
+                      style={{
+                        width: 48, height: 48, borderRadius: 13,
+                        background: `linear-gradient(145deg, ${light} 0%, ${mod.color} 100%)`,
+                        boxShadow: `0 2px 8px ${mod.color}38`,
+                      }}
+                    >
+                      <Icon size={20} color="white" strokeWidth={1.7} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[11.5px] font-semibold leading-tight ${step.done ? (isDark ? "line-through text-white/30" : "line-through text-gray-300") : (isDark ? "text-white/75" : "text-gray-700")}`}>
-                        {step.label}
-                      </p>
-                      <p className={`text-[9.5px] mt-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}>{step.sub}</p>
-                    </div>
-                    {!step.done && step.href && <ChevronRight size={11} className={`shrink-0 ${isDark ? "text-white/20" : "text-gray-300"}`} />}
+                    <span className="w-full truncate text-center text-[0.58rem] font-semibold" style={{ color: t.text3 }}>
+                      {qa.label}
+                    </span>
                   </div>
                 </Link>
-              ))}
-              {/* Barre de progression */}
-              <div className="px-4 pb-3.5 pt-1 flex items-center gap-2">
-                <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)" }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${([true, false, nbContacts > 0, (nbFactures ?? 0) > 0].filter(Boolean).length / 4) * 100}%` }}
-                    transition={{ duration: 0.9, delay: 0.3, ease }}
-                    className="h-full rounded-full"
-                    style={{ background: "linear-gradient(90deg,#c9a55a,#e8c87a)" }}
-                  />
-                </div>
-                <span className="text-[9px] font-bold" style={{ color: GOLD }}>
-                  {[true, false, nbContacts > 0, (nbFactures ?? 0) > 0].filter(Boolean).length}/4
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Section "Aujourd'hui" ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.12, ease }}
-          className="mb-5"
-        >
-          {/* Header avec date */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="h-1 w-1 rounded-full" style={{ background: accent }} />
-              <h2 className={`text-[12px] font-black uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                Aujourd&apos;hui
-              </h2>
-            </div>
-            <span className={`text-[10px] font-medium capitalize ${isDark ? "text-white/18" : "text-gray-300"}`}>
-              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "short" })}
-            </span>
+              );
+            })}
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
+        {/* ── 2 colonnes : Activité récente + Aujourd'hui ── */}
+        <div className="mb-5 grid gap-4 lg:grid-cols-12">
 
-            {/* ── Card Tâches ── */}
-            <Link href="/client/productivite">
-              <motion.div
-                whileTap={{ scale: 0.96 }}
-                className="relative overflow-hidden rounded-2xl p-4 transition-all"
-                style={{
-                  background: isDark
-                    ? "linear-gradient(145deg, rgba(190,24,93,0.14) 0%, rgba(12,8,18,0.97) 70%)"
-                    : "linear-gradient(145deg, #fff0f6 0%, #ffffff 70%)",
-                  border: isDark ? "1px solid rgba(190,24,93,0.22)" : "1px solid rgba(190,24,93,0.14)",
-                  boxShadow: isDark
-                    ? "0 4px 28px rgba(190,24,93,0.10)"
-                    : "0 4px 20px rgba(190,24,93,0.10), 0 1px 4px rgba(0,0,0,0.05)",
-                  minHeight: 170,
-                }}
-              >
-                {/* Orb ambiance */}
-                <div className="pointer-events-none absolute -top-6 -left-6 h-28 w-28 rounded-full blur-2xl opacity-60"
-                  style={{ background: "rgba(190,24,93,0.18)" }} />
+          {/* Colonne gauche — Activité récente */}
+          <div className="lg:col-span-7">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em]" style={{ color: t.text3 }}>Activité récente</span>
+              <Link href="/client/factures"
+                className="text-[0.6rem] font-medium transition hover:opacity-70"
+                style={{ color: t.text3 }}>
+                Voir tout →
+              </Link>
+            </div>
 
-                {/* Icône + compteur */}
-                <div className="relative mb-4 flex items-center justify-between">
-                  <div className="relative flex items-center justify-center overflow-hidden"
-                    style={{ width: 56, height: 56, borderRadius: 16,
-                      background: `linear-gradient(145deg, ${lighten("#be185d", 0.38)} 0%, #be185d 100%)`,
-                      boxShadow: "0 6px 18px rgba(190,24,93,0.38)" }}>
-                    <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }} />
-                    <ListTodo size={24} color="white" strokeWidth={1.7} />
-                  </div>
-                  {!todayLoading && (
-                    <div className="text-right">
-                      <span className="block text-[32px] font-black tabular-nums leading-none"
-                        style={{ color: nbTasks > 0 ? "#e879a0" : isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }}>
-                        {nbTasks}
-                      </span>
-                      <span className="text-[8.5px] font-semibold uppercase tracking-wide"
-                        style={{ color: isDark ? "rgba(255,255,255,0.20)" : "rgba(0,0,0,0.25)" }}>
-                        {nbTasks === 1 ? "tâche" : "tâches"}
-                      </span>
+            <div className="overflow-hidden rounded-lg" style={{ background: t.bg, border: `1px solid ${t.border}` }}>
+              {todayLoading ? (
+                <div className="space-y-3 p-4">
+                  {[0, 1, 2].map(i => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="h-7 w-7 rounded-md animate-pulse" style={{ background: t.bgSubtle }} />
+                      <div className="flex-1 space-y-1.5">
+                        <div className="h-2 rounded animate-pulse" style={{ background: t.bgSubtle, width: "55%" }} />
+                        <div className="h-1.5 rounded animate-pulse" style={{ background: t.bgSubtle, width: "35%" }} />
+                      </div>
+                      <div className="h-2 w-12 rounded animate-pulse" style={{ background: t.bgSubtle }} />
                     </div>
+                  ))}
+                </div>
+              ) : (lastFac || lastExpense || lastContact) ? (
+                <div>
+                  {lastFac && (
+                    <Link href="/client/factures">
+                      <div
+                        className="flex items-center gap-3 px-4 py-3 transition"
+                        style={{
+                          borderBottom: (lastExpense || lastContact) ? `1px solid ${t.borderSoft}` : "none",
+                        }}
+                      >
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+                          style={{ background: "rgba(34,197,94,0.08)" }}>
+                          <FileText size={12} style={{ color: "#22c55e" }} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[0.75rem] font-semibold" style={{ color: t.text }}>
+                            {lastFac.client_nom || "—"}
+                            <span className="ml-1.5 font-normal" style={{ color: t.text4, fontSize: "0.65rem" }}>{lastFac.numero}</span>
+                          </p>
+                          <p className="text-[0.6rem]" style={{ color: t.text4 }}>
+                            Facture · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-[0.78rem] font-bold tabular-nums" style={{ color: t.text }}>
+                          {fmtEurInt(lastFac.montant_ttc)}
+                        </span>
+                      </div>
+                    </Link>
+                  )}
+                  {lastExpense && (
+                    <Link href="/client/depenses">
+                      <div
+                        className="flex items-center gap-3 px-4 py-3 transition"
+                        style={{ borderBottom: lastContact ? `1px solid ${t.borderSoft}` : "none" }}
+                      >
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+                          style={{ background: "rgba(239,68,68,0.08)" }}>
+                          <CreditCard size={12} style={{ color: "#ef4444" }} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[0.75rem] font-semibold" style={{ color: t.text }}>
+                            {lastExpense.description || lastExpense.category || "Dépense"}
+                          </p>
+                          <p className="text-[0.6rem]" style={{ color: t.text4 }}>
+                            Dépense · {new Date(lastExpense.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-[0.78rem] font-bold tabular-nums text-red-400">
+                          −{fmtEurInt(lastExpense.amount)}
+                        </span>
+                      </div>
+                    </Link>
+                  )}
+                  {lastContact && (
+                    <Link href="/client/crm">
+                      <div className="flex items-center gap-3 px-4 py-3 transition">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+                          style={{ background: "rgba(96,165,250,0.08)" }}>
+                          <Users size={12} style={{ color: "#60a5fa" }} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[0.75rem] font-semibold" style={{ color: t.text }}>{lastContact.nom}</p>
+                          <p className="text-[0.6rem]" style={{ color: t.text4 }}>
+                            Contact · {new Date(lastContact.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                          </p>
+                        </div>
+                        <ChevronRight size={12} style={{ color: t.text4 }} />
+                      </div>
+                    </Link>
                   )}
                 </div>
+              ) : (
+                <div className="px-4 py-6 text-center">
+                  <p className="mb-3 text-[0.72rem] font-medium" style={{ color: t.text3 }}>Aucune activité récente</p>
+                  <Link href="/client/factures"
+                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[0.68rem] font-semibold transition hover:opacity-85"
+                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}28`, color: GOLD }}>
+                    + Créer une facture
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
 
-                <p className={`relative text-[13px] font-extrabold mb-2.5 ${isDark ? "text-white/90" : "text-gray-900"}`}>
-                  Tâches
-                </p>
+          {/* Colonne droite — Aujourd'hui */}
+          <div className="space-y-3 lg:col-span-5">
 
+            {/* Tâches du jour */}
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em]" style={{ color: t.text3 }}>Tâches du jour</span>
+                <Link href="/client/productivite"
+                  className="text-[0.6rem] font-medium transition hover:opacity-70"
+                  style={{ color: t.text3 }}>
+                  Voir tout {nbTasks > 0 && `(${nbTasks})`} →
+                </Link>
+              </div>
+              <div className="overflow-hidden rounded-lg" style={{ background: t.bg, border: `1px solid ${t.border}` }}>
                 {todayLoading ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2 p-3">
                     {[0, 1].map(i => (
-                      <div key={i} className="h-2 rounded-full animate-pulse"
-                        style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", width: i === 0 ? "80%" : "55%" }} />
+                      <div key={i} className="h-8 rounded-md animate-pulse" style={{ background: t.bgSubtle }} />
                     ))}
                   </div>
                 ) : todayTasks.length > 0 ? (
-                  <div className="relative space-y-1.5">
-                    {todayTasks.slice(0, 2).map(t => (
-                      <div key={t.id} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
-                        style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(190,24,93,0.06)" }}>
-                        <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: priorityColor(t.priority) }} />
-                        <p className={`text-[10.5px] font-medium truncate leading-tight ${isDark ? "text-white/60" : "text-gray-600"}`}>{t.title}</p>
-                      </div>
+                  <div>
+                    {todayTasks.map((task, i) => (
+                      <Link key={task.id} href="/client/productivite">
+                        <div
+                          className="flex items-center gap-3 px-3.5 py-2.5 transition"
+                          style={{ borderBottom: i < todayTasks.length - 1 ? `1px solid ${t.borderSoft}` : "none" }}
+                        >
+                          <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: priorityColor(task.priority) }} />
+                          <span className="flex-1 truncate text-[0.72rem] font-medium" style={{ color: t.text2 }}>
+                            {task.title}
+                          </span>
+                        </div>
+                      </Link>
                     ))}
-                    {todayTasks.length > 2 && (
-                      <p className={`text-[9px] px-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>+{todayTasks.length - 2} autres</p>
-                    )}
                   </div>
                 ) : (
-                  <div className="relative flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
-                      <span className="text-[10.5px] font-semibold text-emerald-500">Tout est bon !</span>
-                    </div>
-                    <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-bold"
-                      style={{ background: "rgba(190,24,93,0.08)", border: "1px solid rgba(190,24,93,0.18)", color: "#e879a0" }}>
-                      + Ajouter
-                    </span>
+                  <div className="flex items-center gap-2 px-3.5 py-3">
+                    <CheckCircle2 size={12} className="shrink-0 text-emerald-500" />
+                    <span className="text-[0.72rem] font-medium text-emerald-600">Aucune tâche en retard</span>
                   </div>
                 )}
-              </motion.div>
-            </Link>
-
-            {/* ── Card Agenda ── */}
-            <Link href="/client/planning">
-              <motion.div
-                whileTap={{ scale: 0.96 }}
-                className="relative overflow-hidden rounded-2xl p-4 transition-all"
-                style={{
-                  background: isDark
-                    ? "linear-gradient(145deg, rgba(79,70,229,0.14) 0%, rgba(8,10,20,0.97) 70%)"
-                    : "linear-gradient(145deg, #f0f0ff 0%, #ffffff 70%)",
-                  border: isDark ? "1px solid rgba(79,70,229,0.22)" : "1px solid rgba(79,70,229,0.14)",
-                  boxShadow: isDark
-                    ? "0 4px 28px rgba(79,70,229,0.10)"
-                    : "0 4px 20px rgba(79,70,229,0.10), 0 1px 4px rgba(0,0,0,0.05)",
-                  minHeight: 170,
-                }}
-              >
-                <div className="pointer-events-none absolute -top-6 -left-6 h-28 w-28 rounded-full blur-2xl opacity-60"
-                  style={{ background: "rgba(79,70,229,0.18)" }} />
-
-                {/* Icône calendrier avec le jour dedans */}
-                <div className="relative mb-4 flex items-center justify-between">
-                  <div className="relative flex flex-col items-center justify-center overflow-hidden"
-                    style={{ width: 56, height: 56, borderRadius: 16,
-                      background: `linear-gradient(145deg, ${lighten("#4f46e5", 0.38)} 0%, #4f46e5 100%)`,
-                      boxShadow: "0 6px 18px rgba(79,70,229,0.38)" }}>
-                    <div className="pointer-events-none absolute inset-0" style={{ borderRadius: "inherit", background: "linear-gradient(165deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }} />
-                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-white/60 leading-none">
-                      {new Date().toLocaleDateString("fr-FR", { month: "short" })}
-                    </span>
-                    <span className="text-[22px] font-black text-white leading-none tabular-nums">
-                      {new Date().getDate()}
-                    </span>
-                  </div>
-                  {!todayLoading && nextEvent && (
-                    <div className="text-right">
-                      <span className="block text-[11px] font-black uppercase tracking-wide"
-                        style={{ color: "#818cf8" }}>
-                        {fmtEventDate(nextEvent.start_at)}
-                      </span>
-                      <span className="text-[20px] font-black tabular-nums leading-none"
-                        style={{ color: "#818cf8" }}>
-                        {fmtEventTime(nextEvent.start_at)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <p className={`relative text-[13px] font-extrabold mb-2.5 ${isDark ? "text-white/90" : "text-gray-900"}`}>
-                  Agenda
-                </p>
-
-                {todayLoading ? (
-                  <div className="space-y-2">
-                    <div className="h-2 rounded-full animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", width: "70%" }} />
-                    <div className="h-2 rounded-full animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", width: "45%" }} />
-                  </div>
-                ) : nextEvent ? (
-                  <div className="relative space-y-1.5">
-                    <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
-                      style={{ background: isDark ? "rgba(79,70,229,0.08)" : "rgba(79,70,229,0.07)" }}>
-                      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                      <p className={`text-[10.5px] font-semibold truncate leading-tight ${isDark ? "text-white/70" : "text-gray-700"}`}>{nextEvent.title}</p>
-                    </div>
-                    <p className={`text-[9px] px-2.5 ${isDark ? "text-white/25" : "text-gray-400"}`}>
-                      <Clock size={8} className="inline mr-1 opacity-60" />
-                      {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="relative flex items-center justify-between">
-                    <span className={`text-[10.5px] font-medium ${isDark ? "text-white/28" : "text-gray-400"}`}>
-                      Journée libre
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-bold"
-                      style={{ background: "rgba(79,70,229,0.08)", border: "1px solid rgba(79,70,229,0.18)", color: "#818cf8" }}>
-                      + Planifier
-                    </span>
-                  </div>
-                )}
-              </motion.div>
-            </Link>
-
-          </div>
-        </motion.div>
-
-        {/* ── Activité récente ── */}
-        {!todayLoading && (!isNewUser || lastFac || lastExpense || lastContact) && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.18, ease }}
-            className="mb-5"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-1 w-1 rounded-full" style={{ background: accent }} />
-              <h2 className={`text-[12px] font-black uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-gray-400"}`}>Récent</h2>
+              </div>
             </div>
 
-            {(lastFac || lastExpense || lastContact) ? (
-              <div className="space-y-2">
-                {lastFac && (
-                  <Link href="/client/factures">
-                    <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all active:scale-[0.98]"
-                      style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.2)" : "0 2px 12px rgba(0,0,0,0.05)" }}>
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(74,222,128,0.08)" }}>
-                        <FileText size={15} style={{ color: "#4ade80" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-[12px] font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>Facture · <span className={isDark ? "text-white/40" : "text-gray-400"}>{lastFac.client_nom || "client"}</span></p>
-                        <p className={`text-[10.5px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{lastFac.numero} · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</p>
-                      </div>
-                      <span className={`shrink-0 text-[13px] font-black ${isDark ? "text-white" : "text-gray-900"}`}>{fmtEurInt(lastFac.montant_ttc)}</span>
-                      <ChevronRight size={13} className="shrink-0 text-gray-400" />
-                    </div>
-                  </Link>
-                )}
-                {lastExpense && (
-                  <Link href="/client/depenses">
-                    <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all active:scale-[0.98]"
-                      style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.2)" : "0 2px 12px rgba(0,0,0,0.05)" }}>
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(248,113,113,0.08)" }}>
-                        <CreditCard size={15} style={{ color: "#f87171" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-[12px] font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>Dépense · <span className={isDark ? "text-white/40" : "text-gray-400"}>{lastExpense.description || lastExpense.category}</span></p>
-                        <p className={`text-[10.5px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{new Date(lastExpense.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</p>
-                      </div>
-                      <span className="shrink-0 text-[13px] font-black text-red-400">−{fmtEurInt(lastExpense.amount)}</span>
-                      <ChevronRight size={13} className="shrink-0 text-gray-400" />
-                    </div>
-                  </Link>
-                )}
-                {lastContact && (
-                  <Link href="/client/crm">
-                    <div className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all active:scale-[0.98]"
-                      style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.2)" : "0 2px 12px rgba(0,0,0,0.05)" }}>
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(96,165,250,0.08)" }}>
-                        <Users size={15} style={{ color: "#60a5fa" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-[12px] font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>Contact · <span className={isDark ? "text-white/40" : "text-gray-400"}>{lastContact.nom}</span></p>
-                        <p className={`text-[10.5px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{new Date(lastContact.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</p>
-                      </div>
-                      <ChevronRight size={13} className="shrink-0 text-gray-400" />
-                    </div>
-                  </Link>
-                )}
+            {/* Prochain événement */}
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em]" style={{ color: t.text3 }}>Prochain événement</span>
+                <Link href="/client/planning"
+                  className="text-[0.6rem] font-medium transition hover:opacity-70"
+                  style={{ color: t.text3 }}>
+                  Agenda →
+                </Link>
               </div>
-            ) : (
-              <div className="rounded-2xl px-4 py-4"
-                style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.8)", border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
-                <p className={`text-[11px] font-semibold mb-3 ${isDark ? "text-white/35" : "text-gray-500"}`}>Par où commencer ?</p>
-                <div className="space-y-2">
-                  {([
-                    { href: "/client/factures", label: "Créer une facture",        color: "#4ade80", bg: "rgba(74,222,128,0.08)"  },
-                    { href: "/client/depenses",  label: "Enregistrer une dépense", color: "#f87171", bg: "rgba(248,113,113,0.08)" },
-                    { href: "/client/crm",       label: "Ajouter un client",       color: "#60a5fa", bg: "rgba(96,165,250,0.08)"  },
-                  ] as { href: string; label: string; color: string; bg: string }[]).map(s => (
-                    <Link key={s.href} href={s.href}>
-                      <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all active:scale-[0.98]" style={{ background: s.bg }}>
-                        <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: s.color }} />
-                        <span className="text-[12px] font-semibold" style={{ color: s.color }}>{s.label}</span>
-                        <ChevronRight size={12} className="ml-auto shrink-0" style={{ color: s.color, opacity: 0.5 }} />
+              <div className="rounded-lg" style={{ background: t.bg, border: `1px solid ${t.border}` }}>
+                {todayLoading ? (
+                  <div className="p-3">
+                    <div className="h-8 rounded-md animate-pulse" style={{ background: t.bgSubtle }} />
+                  </div>
+                ) : nextEvent ? (
+                  <Link href="/client/planning">
+                    <div className="flex items-center gap-3 px-3.5 py-3 transition">
+                      <div className="flex h-8 w-8 shrink-0 flex-col items-center justify-center rounded-md"
+                        style={{ background: "rgba(79,70,229,0.10)" }}>
+                        <span className="text-[0.42rem] font-bold uppercase leading-none" style={{ color: "#818cf8" }}>
+                          {new Date(nextEvent.start_at).toLocaleDateString("fr-FR", { month: "short" })}
+                        </span>
+                        <span className="text-[0.85rem] font-semibold leading-none tabular-nums" style={{ color: "#818cf8" }}>
+                          {new Date(nextEvent.start_at).getDate()}
+                        </span>
                       </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[0.72rem] font-semibold" style={{ color: t.text }}>{nextEvent.title}</p>
+                        <p className="text-[0.6rem]" style={{ color: t.text4 }}>
+                          {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center justify-between px-3.5 py-3">
+                    <span className="text-[0.72rem]" style={{ color: t.text3 }}>Journée libre</span>
+                    <Link href="/client/planning"
+                      className="text-[0.65rem] font-semibold transition hover:opacity-80"
+                      style={{ color: accent }}>
+                      + Planifier
                     </Link>
-                  ))}
-                </div>
+                  </div>
+                )}
               </div>
-            )}
-          </motion.div>
-        )}
+            </div>
+          </div>
+        </div>
 
-        {/* ── Barre de recherche ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.22, ease }}
-          className="relative mb-5"
-        >
-          <Search size={14} className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+        {/* ── Checklist démarrage ── */}
+        <AnimatePresence>
+          {!kpiLoading && !todayLoading && isNewUser && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="mb-5 overflow-hidden rounded-lg"
+              style={{ background: t.bg, border: "1px solid rgba(201,165,90,0.20)" }}
+            >
+              <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${t.borderSoft}` }}>
+                <Sparkles size={11} style={{ color: GOLD }} />
+                <span className="text-[0.58rem] font-bold uppercase tracking-[0.14em]" style={{ color: GOLD }}>Démarrage rapide</span>
+                <div className="ml-2 flex-1">
+                  <div className="h-1 overflow-hidden rounded-full" style={{ background: t.bgSubtle }}>
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${([true, false, nbContacts > 0, nbFactures > 0].filter(Boolean).length / 4) * 100}%`,
+                        background: GOLD,
+                        transition: "width 0.6s ease",
+                      }}
+                    />
+                  </div>
+                </div>
+                <span className="text-[0.58rem] font-bold" style={{ color: GOLD }}>
+                  {[true, false, nbContacts > 0, nbFactures > 0].filter(Boolean).length}/4
+                </span>
+              </div>
+              {([
+                { done: true,           label: "Créer votre compte DJAMA",    href: null,               sub: "C'est fait !" },
+                { done: false,          label: "Personnaliser votre profil",   href: "/client/profil",   sub: "Logo, SIRET, RIB" },
+                { done: nbContacts > 0, label: "Ajouter votre premier client", href: "/client/crm",      sub: "Base clients CRM" },
+                { done: nbFactures > 0, label: "Envoyer votre 1ère facture",   href: "/client/factures", sub: "Commencez à facturer" },
+              ] as { done: boolean; label: string; href: string | null; sub: string }[]).map((step, i) => (
+                <Link key={i} href={step.done || !step.href ? "#" : step.href}
+                  onClick={e => { if (step.done || !step.href) e.preventDefault(); }}>
+                  <div
+                    className="flex items-center gap-3 px-4 py-2.5 transition"
+                    style={{ borderTop: i > 0 ? `1px solid ${t.borderSoft}` : "none" }}
+                  >
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                      style={{ background: step.done ? "rgba(34,197,94,0.12)" : "rgba(201,165,90,0.10)" }}>
+                      {step.done
+                        ? <CheckCircle2 size={11} className="text-emerald-500" />
+                        : <span className="text-[0.5rem] font-bold" style={{ color: GOLD }}>{i + 1}</span>}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="text-[0.72rem] font-semibold leading-tight"
+                        style={{ color: step.done ? t.text4 : t.text, textDecoration: step.done ? "line-through" : "none" }}
+                      >
+                        {step.label}
+                      </p>
+                      <p className="text-[0.6rem]" style={{ color: t.text4 }}>{step.sub}</p>
+                    </div>
+                    {!step.done && step.href && <ChevronRight size={11} style={{ color: t.text4 }} />}
+                  </div>
+                </Link>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Séparateur Modules ── */}
+        <div className="mb-4 flex items-center gap-3">
+          <div className="h-px flex-1" style={{ background: t.border }} />
+          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Modules</span>
+          <div className="h-px flex-1" style={{ background: t.border }} />
+        </div>
+
+        {/* ── Recherche modules ── */}
+        <div className="relative mb-4">
+          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: t.text4 }} />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher un module…"
-            className={`w-full rounded-2xl py-3 pl-11 pr-10 text-[13px] outline-none transition ${isDark ? "text-white placeholder:text-white/30" : "text-gray-800 placeholder:text-gray-400"}`}
+            className="w-full rounded-lg py-2 pl-8 pr-8 text-[0.78rem] outline-none transition"
             style={{
-              background: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.9)",
-              border: search ? `1px solid rgba(201,165,90,0.4)` : isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)",
-              boxShadow: search
-                ? `0 0 0 3px rgba(201,165,90,0.08), 0 2px 12px rgba(0,0,0,0.15)`
-                : isDark ? "0 2px 10px rgba(0,0,0,0.15)" : "0 2px 8px rgba(0,0,0,0.06)",
+              background: t.bg,
+              border: search ? `1px solid ${GOLD}50` : `1px solid ${t.border}`,
+              color: t.text,
             }}
           />
           {search && (
             <button onClick={() => setSearch("")}
-              className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
-              <X size={14} />
+              className="absolute right-3 top-1/2 -translate-y-1/2 transition hover:opacity-70"
+              style={{ color: t.text4 }}>
+              <X size={12} />
             </button>
           )}
-        </motion.div>
+        </div>
 
         {/* ── Résultats recherche ── */}
         {search.trim() && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease }}
-            className="mb-5"
-          >
+          <div className="mb-4">
             {filteredGroups.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 rounded-2xl"
-                style={{
-                  background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.8)",
-                  border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)",
-                }}>
-                <Search size={22} className="text-gray-400" />
-                <p className="text-[12px] text-gray-400">Aucun module pour &ldquo;{search}&rdquo;</p>
+              <div className="rounded-lg py-8 text-center" style={{ background: t.bg, border: `1px solid ${t.border}` }}>
+                <Search size={18} style={{ color: t.text4, margin: "0 auto 8px" }} />
+                <p className="text-[0.72rem]" style={{ color: t.text3 }}>Aucun module pour &ldquo;{search}&rdquo;</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 {filteredGroups.flatMap(g => g.modules).map((mod, mi) => (
-                  <ModuleCard
-                    key={mod.href + mi}
-                    mod={mod}
-                    index={mi}
-                    isPremium={isPremium}
-                  />
+                  <ModuleCard key={mod.href + mi} mod={mod} index={mi} isPremium={isPremium} />
                 ))}
               </div>
             )}
-          </motion.div>
+          </div>
         )}
 
         {/* ── Module groups ── */}
         {!search.trim() && (
           <div>
             {MODULE_GROUPS.map((group, gi) => (
-              <ModuleGroupSection
-                key={group.label}
-                group={group}
-                groupIndex={gi}
-                isPremium={isPremium}
-                isFree={isFree}
-              />
+              <ModuleGroupSection key={group.label} group={group} groupIndex={gi} isPremium={isPremium} isFree={isFree} />
             ))}
           </div>
         )}
 
         {/* ── Footer ── */}
-        <div className="mt-10 flex flex-col items-center gap-3">
+        <div className="mt-8 flex flex-col items-center gap-3">
           {isFree && (
             <Link
               href="/client/abonnements"
-              className="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 shadow-[0_4px_14px_rgba(201,165,90,0.3)]"
-              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-[0.72rem] font-bold transition hover:opacity-90"
+              style={{ background: GOLD, color: "#0a0a0a" }}
             >
-              <Crown size={12} /> Passer à DJAMA PRO — 11,90€/mois
+              <Crown size={11} /> Passer à DJAMA PRO — 11,90€/mois
             </Link>
           )}
-          <p className={`text-[10px] ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-            DJAMA PRO · {totalModules} modules · Données en temps réel
+          <p className="text-[0.58rem]" style={{ color: t.text4 }}>
+            DJAMA · {totalModules} modules · Données en temps réel
           </p>
         </div>
       </div>
 
-      {/* ══ MODAL PICKER QUICK ACTIONS ══ */}
+      {/* ══ MODAL PICKER RACCOURCIS ══ */}
       <AnimatePresence>
         {editingQA && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-            style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(8px)" }}
+            className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+            style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)" }}
             onClick={(e) => { if (e.target === e.currentTarget) setEditingQA(false); }}
           >
             <motion.div
-              initial={{ y: 80, opacity: 0 }}
+              initial={{ y: 60, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
+              exit={{ y: 60, opacity: 0 }}
               transition={{ type: "spring", stiffness: 340, damping: 30 }}
-              className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 pb-8"
-              style={{ background: "#111318", border: "1px solid rgba(255,255,255,0.10)" }}
+              className="w-full rounded-t-2xl p-5 pb-8 sm:max-w-lg sm:rounded-2xl"
+              style={{ background: isDark ? "#181818" : "#ffffff", border: `1px solid ${t.border}` }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between mb-1">
-                <h3 style={{ fontFamily: "'Georgia','Times New Roman',serif", fontStyle: "italic", fontWeight: 700, fontSize: "1.2rem", color: "rgba(255,255,255,0.92)" }}>
-                  Mes raccourcis
-                </h3>
+              <div className="mb-1 flex items-center justify-between">
+                <h3 className="text-[1rem] font-bold" style={{ color: t.text }}>Mes raccourcis</h3>
                 <button onClick={() => setEditingQA(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full transition hover:bg-white/10"
-                  style={{ background: "rgba(255,255,255,0.07)" }}>
-                  <X size={13} className="text-white/50" />
+                  className="flex h-7 w-7 items-center justify-center rounded-full transition hover:opacity-70"
+                  style={{ background: t.bgSubtle }}>
+                  <X size={13} style={{ color: t.text3 }} />
                 </button>
               </div>
-              <p className="text-[10.5px] mb-4" style={{ color: "rgba(255,255,255,0.30)" }}>
-                Choisissez jusqu&apos;à <strong style={{ color: "rgba(255,255,255,0.50)" }}>6 modules</strong> à afficher en accès rapide
+              <p className="mb-4 text-[0.65rem]" style={{ color: t.text3 }}>
+                Choisissez jusqu&apos;à <strong>6 modules</strong> à afficher en accès rapide
               </p>
 
-              {/* Grille modules avec icônes gradient iOS */}
-              <div className="grid grid-cols-4 gap-2 max-h-[54vh] overflow-y-auto pr-1">
+              <div className="grid max-h-[52vh] grid-cols-4 gap-2 overflow-y-auto pr-1">
                 {MODULE_GROUPS.flatMap(g => g.modules).map((mod) => {
                   const selected = pickerDraft.some(a => a.href === mod.href);
                   const atMax    = pickerDraft.length >= 6;
@@ -1240,42 +734,36 @@ export default function CockpitPage() {
                       key={mod.href}
                       whileTap={{ scale: 0.88 }}
                       onClick={() => {
-                        if (selected) {
-                          setPickerDraft(d => d.filter(a => a.href !== mod.href));
-                        } else if (!atMax) {
-                          setPickerDraft(d => [...d, { href: mod.href, iconKey: mod.href, label: mod.label }]);
-                        }
+                        if (selected) setPickerDraft(d => d.filter(a => a.href !== mod.href));
+                        else if (!atMax) setPickerDraft(d => [...d, { href: mod.href, iconKey: mod.href, label: mod.label }]);
                       }}
-                      className="relative flex flex-col items-center gap-1.5 rounded-2xl py-2.5 px-1 transition"
+                      className="relative flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 transition"
                       style={{
                         opacity: !selected && atMax ? 0.28 : 1,
-                        background: selected ? "rgba(255,255,255,0.06)" : "transparent",
+                        background: selected ? t.bgSubtle : "transparent",
                         cursor: !selected && atMax ? "not-allowed" : "pointer",
                       }}
                     >
-                      {/* Icône gradient 56px */}
                       <div className="relative">
                         <div
                           className="relative flex items-center justify-center overflow-hidden"
                           style={{
-                            width: 56, height: 56, borderRadius: 16,
+                            width: 48, height: 48, borderRadius: 13,
                             background: `linear-gradient(145deg, ${light} 0%, ${mod.color} 100%)`,
-                            boxShadow: selected ? `0 0 0 2.5px #22c55e, 0 2px 10px rgba(0,0,0,0.30)` : "0 2px 8px rgba(0,0,0,0.30)",
+                            boxShadow: selected ? `0 0 0 2px #22c55e` : "0 2px 8px rgba(0,0,0,0.20)",
                           }}
                         >
-                          <div className="pointer-events-none absolute inset-0"
-                            style={{ borderRadius: "inherit", background: "linear-gradient(160deg,rgba(255,255,255,0.22) 0%,rgba(255,255,255,0.03) 45%,transparent 100%)" }} />
-                          <Icon size={24} color="white" strokeWidth={1.8} />
+                          <Icon size={20} color="white" strokeWidth={1.8} />
                         </div>
                         {selected && (
-                          <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full"
-                            style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", border: "1.5px solid #111318" }}>
-                            <Check size={10} color="white" strokeWidth={3} />
+                          <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full"
+                            style={{ background: "#22c55e", border: `1.5px solid ${isDark ? "#181818" : "#ffffff"}` }}>
+                            <Check size={8} color="white" strokeWidth={3} />
                           </div>
                         )}
                       </div>
-                      <span className="text-[9px] font-bold text-center leading-tight line-clamp-2 px-0.5"
-                        style={{ color: selected ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.45)" }}>
+                      <span className="line-clamp-2 px-0.5 text-center text-[0.58rem] font-semibold leading-tight"
+                        style={{ color: selected ? t.text : t.text3 }}>
                         {mod.label}
                       </span>
                     </motion.button>
@@ -1283,35 +771,29 @@ export default function CockpitPage() {
                 })}
               </div>
 
-              {/* Compteur */}
               <div className="mt-4 flex items-center gap-2">
-                <div className="flex gap-1.5">
+                <div className="flex gap-1">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="h-1.5 w-1.5 rounded-full transition-all"
-                      style={{ background: i < pickerDraft.length ? "#22c55e" : "rgba(255,255,255,0.10)", transform: i < pickerDraft.length ? "scale(1.2)" : "scale(1)" }} />
+                      style={{ background: i < pickerDraft.length ? "#22c55e" : t.bgSubtle }} />
                   ))}
                 </div>
-                <span className="text-[10px] font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>{pickerDraft.length}/6</span>
+                <span className="text-[0.6rem] font-bold" style={{ color: t.text4 }}>{pickerDraft.length}/6</span>
               </div>
 
-              {/* Boutons */}
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => setPickerDraft(DEFAULT_QA)}
-                  className="flex-1 rounded-2xl py-3 text-[12px] font-semibold transition"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.40)" }}
+                  className="flex-1 rounded-xl py-2.5 text-[0.72rem] font-semibold transition hover:opacity-80"
+                  style={{ background: t.bgSubtle, border: `1px solid ${t.border}`, color: t.text3 }}
                 >
                   Réinitialiser
                 </button>
                 <button
-                  onClick={async () => {
-                    setQuickActions(pickerDraft);
-                    setEditingQA(false);
-                    await saveQuickActions(pickerDraft);
-                  }}
+                  onClick={async () => { setQuickActions(pickerDraft); setEditingQA(false); await saveQuickActions(pickerDraft); }}
                   disabled={pickerDraft.length === 0}
-                  className="flex-[2] rounded-2xl py-3 text-[13px] font-bold text-white transition"
-                  style={{ background: pickerDraft.length === 0 ? "rgba(34,197,94,0.18)" : "linear-gradient(135deg,#22c55e,#16a34a)", boxShadow: pickerDraft.length > 0 ? "0 4px 16px rgba(34,197,94,0.30)" : "none" }}
+                  className="flex-[2] rounded-xl py-2.5 text-[0.78rem] font-bold text-white transition"
+                  style={{ background: pickerDraft.length === 0 ? "rgba(34,197,94,0.18)" : "#22c55e" }}
                 >
                   Enregistrer
                 </button>

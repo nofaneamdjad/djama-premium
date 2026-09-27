@@ -110,6 +110,7 @@ export async function generatePdf(data: PdfData, download = true): Promise<void>
     logoHideName:     data.company?.logoHideName     ?? false,
     template:         data.company?.template         ?? "modern",
     color:            data.company?.color            ?? "#c9a55a",
+    logoTransform:    data.company?.logoTransform    ?? null,
   };
 
   // ── Charger le logo ───────────────────────────────────────────────────────

@@ -181,9 +181,9 @@ export default function OnboardingModal({ name }: Props) {
   }, []);
 
   function dismiss() {
+    localStorage.setItem(STORAGE_KEY, "1"); // immédiat — avant toute navigation
     setLeaving(true);
     setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, "1");
       setVisible(false);
       setLeaving(false);
     }, 300);

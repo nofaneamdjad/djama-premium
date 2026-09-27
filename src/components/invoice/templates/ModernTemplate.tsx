@@ -10,8 +10,8 @@ import { fmtDate, fmtEur, alphaHex } from "../shared";
 export function ModernTemplate({ data }: { data: PreviewData }) {
   const co       = data.company ?? {};
   const C        = data.color ?? "#c9a55a";
-  const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  const dateLabel = data.type === "invoice" ? "Echéance" : "Valable jusqu'au";
+  const docLabel  = data.type === "invoice" ? "FACTURE" : "DEVIS";
+  const dateLabel = data.type === "invoice" ? "Échéance" : "Valable jusqu'au";
   const dateVal   = data.type === "invoice" ? data.due_date : data.valid_until;
 
   return (
@@ -69,7 +69,7 @@ export function ModernTemplate({ data }: { data: PreviewData }) {
               {data.reference}
             </div>
             <div style={{ color: "#9898a8", fontSize: 5.5, marginTop: 2 }}>
-              Emis le {fmtDate(data.issue_date)}
+              Émis le {fmtDate(data.issue_date)}
             </div>
             {dateVal && (
               <div style={{ color: C, fontWeight: 600, fontSize: 5.5, marginTop: 1 }}>
@@ -88,11 +88,16 @@ export function ModernTemplate({ data }: { data: PreviewData }) {
           {/* Émetteur */}
           <div style={{ flex: 1, paddingRight: 8 }}>
             <div style={{ color: C, fontWeight: 700, fontSize: 4.5, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 3, opacity: 0.8 }}>
-              Emetteur
+              Émetteur
             </div>
             <div style={{ color: "#0a0a12", fontWeight: 700, fontSize: 7 }}>{co.name ?? "—"}</div>
-            {co.email   && <div style={{ color: "#9090a6", fontSize: 5.5, marginTop: 1 }}>{co.email}</div>}
-            {co.website && <div style={{ color: "#9090a6", fontSize: 5.5 }}>{co.website}</div>}
+            {co.address && <div style={{ color: "#9090a6", fontSize: 5.5, marginTop: 1 }}>{co.address}</div>}
+            {(co.postal_code || co.city) && (
+              <div style={{ color: "#9090a6", fontSize: 5.5 }}>{[co.postal_code, co.city].filter(Boolean).join(" ")}</div>
+            )}
+            {co.phone   && <div style={{ color: "#9090a6", fontSize: 5.5 }}>{co.phone}</div>}
+            {co.email   && <div style={{ color: "#9090a6", fontSize: 5.5 }}>{co.email}</div>}
+            {co.siret   && <div style={{ color: "#b0b0bc", fontSize: 5, marginTop: 2 }}>SIRET : {co.siret}</div>}
           </div>
 
           {/* Séparateur vertical */}
@@ -101,7 +106,7 @@ export function ModernTemplate({ data }: { data: PreviewData }) {
           {/* Destinataire */}
           <div style={{ flex: 1 }}>
             <div style={{ color: C, fontWeight: 700, fontSize: 4.5, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 3, opacity: 0.8 }}>
-              {data.type === "invoice" ? "Facturer a" : "Devis pour"}
+              {data.type === "invoice" ? "Facturé à" : "Devis pour"}
             </div>
             <div style={{ color: "#0a0a12", fontWeight: 700, fontSize: 7 }}>{data.client_name}</div>
             {data.client_company && (
@@ -173,6 +178,14 @@ export function ModernTemplate({ data }: { data: PreviewData }) {
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#9090a6", padding: "2px 0" }}>
                   <span>Sous-total HT</span>
                   <span>{fmtEur(data.subtotal)}</span>
+                </div>
+              )}
+
+              {/* Remise globale */}
+              {(data.discount ?? 0) > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#9090a6", padding: "2px 0" }}>
+                  <span>{data.discount_rate ? `Remise (${data.discount_rate}%)` : "Remise"}</span>
+                  <span style={{ color: "#c84141" }}>- {fmtEur(data.discount!)}</span>
                 </div>
               )}
 

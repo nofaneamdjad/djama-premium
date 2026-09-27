@@ -78,8 +78,13 @@ export function MinimalTemplate({ data }: { data: PreviewData }) {
             De
           </div>
           <div style={{ color: "#111827", fontWeight: 700, fontSize: 7 }}>{co.name ?? "DJAMA"}</div>
-          {co.email   && <div style={{ color: "#9ca3af", fontSize: 5.5, marginTop: 1 }}>{co.email}</div>}
-          {co.website && <div style={{ color: "#9ca3af", fontSize: 5.5 }}>{co.website}</div>}
+          {co.address && <div style={{ color: "#9ca3af", fontSize: 5.5, marginTop: 1 }}>{co.address}</div>}
+          {(co.postal_code || co.city) && (
+            <div style={{ color: "#9ca3af", fontSize: 5.5 }}>{[co.postal_code, co.city].filter(Boolean).join(" ")}</div>
+          )}
+          {co.phone   && <div style={{ color: "#9ca3af", fontSize: 5.5 }}>{co.phone}</div>}
+          {co.email   && <div style={{ color: "#9ca3af", fontSize: 5.5 }}>{co.email}</div>}
+          {co.siret   && <div style={{ color: "#d1d5db", fontSize: 5, marginTop: 2 }}>SIRET : {co.siret}</div>}
         </div>
 
         {/* Séparateur */}
@@ -150,6 +155,13 @@ export function MinimalTemplate({ data }: { data: PreviewData }) {
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#9ca3af", padding: "2px 0", borderBottom: "1px solid #f3f4f6", paddingBottom: 3 }}>
                 <span>Sous-total HT</span>
                 <span>{fmtEur(data.subtotal)}</span>
+              </div>
+            )}
+
+            {(data.discount ?? 0) > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#9ca3af", padding: "2px 0", borderBottom: "1px solid #f3f4f6", paddingBottom: 3 }}>
+                <span>{data.discount_rate ? `Remise (${data.discount_rate}%)` : "Remise"}</span>
+                <span style={{ color: "#c84141" }}>- {fmtEur(data.discount!)}</span>
               </div>
             )}
 

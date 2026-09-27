@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "@/lib/supabase";
+import type { LogoTransform } from "@/components/invoice/LogoDragResize";
 
 export interface CompanySettings {
   logoUrl:          string | null;
@@ -34,6 +35,8 @@ export interface CompanySettings {
   template:         string;
   /** Couleur d'accent par défaut */
   color:            string;
+  /** Position/taille du logo dans le PDF (null = valeur par défaut) */
+  logoTransform:    LogoTransform | null;
 }
 
 const DEFAULTS: CompanySettings = {
@@ -59,22 +62,15 @@ const DEFAULTS: CompanySettings = {
   logoHideName:     false,
   template:         "modern",
   color:            "#c9a55a",
+  logoTransform:    null,
 };
 
-export async function fetchCompanySettings(): Promise<CompanySettings> {
-  const { data, error } = await supabase
-    .from("user_settings")
-    .select("key, value")
-    .like("key", "brand.%");
-
-  if (error) {
-    console.error("[companySettings] fetch error:", error);
-    return DEFAULTS;
-  }
-  if (!data || data.length === 0) return DEFAULTS;
-
+async function settingsFromRows(
+  rows: { key: string; value: string }[] | null,
+): Promise<CompanySettings> {
+  if (!rows || rows.length === 0) return DEFAULTS;
   const map: Record<string, string> = {};
-  data.forEach(row => { map[row.key as string] = row.value as string; });
+  rows.forEach(row => { map[row.key as string] = row.value as string; });
 
   return {
     logoUrl:    map["brand.logo_url"]      || null,
@@ -99,5 +95,35 @@ export async function fetchCompanySettings(): Promise<CompanySettings> {
     logoHideName:     map["brand.logo_hide_name"] === "true",
     template:         map["brand.template"] || DEFAULTS.template,
     color:            map["brand.color"]    || DEFAULTS.color,
+    logoTransform:    (() => {
+      try { const v = map["brand.logo_transform"]; return v ? (JSON.parse(v) as LogoTransform) : null; }
+      catch { return null; }
+    })(),
   };
+}
+
+/** Récupère les paramètres de marque de l'organisation (partagés entre membres). */
+export async function fetchOrgSettings(orgId: string): Promise<CompanySettings> {
+  const { data, error } = await supabase
+    .from("org_settings")
+    .select("key, value")
+    .eq("organization_id", orgId)
+    .like("key", "brand.%");
+  if (error) {
+    console.error("[companySettings] org fetch error:", error);
+    return DEFAULTS;
+  }
+  return settingsFromRows(data as { key: string; value: string }[]);
+}
+
+export async function fetchCompanySettings(): Promise<CompanySettings> {
+  const { data, error } = await supabase
+    .from("user_settings")
+    .select("key, value")
+    .like("key", "brand.%");
+  if (error) {
+    console.error("[companySettings] fetch error:", error);
+    return DEFAULTS;
+  }
+  return settingsFromRows(data as { key: string; value: string }[]);
 }

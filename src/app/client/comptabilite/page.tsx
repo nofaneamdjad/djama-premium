@@ -380,7 +380,6 @@ export default function ComptabilitePage() {
           className="flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={BookMarked} color="#0891b2" />
             <div>
               <h1 className={`text-[17px] font-black ${isDark ? "text-white" : "text-gray-900"}`}>Comptabilité</h1>
               <p className={`text-[10px] ${isDark ? "text-white/35" : "text-gray-400"}`}>{periodLabel}</p>

@@ -34,11 +34,9 @@ function nextOccurrence(freq: RecurFreq, from: string): string {
 
 export async function GET(req: NextRequest) {
   // ── Authentification cron ──────────────────────────────────────────────────
-  if (process.env.NODE_ENV === "production") {
-    const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (secret !== process.env.CRON_SECRET) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  const secret = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const today = new Date().toISOString().slice(0, 10);
@@ -72,6 +70,7 @@ export async function GET(req: NextRequest) {
     // 1. Créer la nouvelle occurrence (statut brouillon, pas récurrente)
     const { error: insErr } = await supabase.from("expenses").insert({
       user_id:           exp.user_id,
+      organization_id:   exp.organization_id,
       expense_report_id: exp.expense_report_id,
       date:              dueDate,
       amount:            exp.amount,

@@ -17,11 +17,9 @@ const log = createLogger("depenses/budget-alert/cron");
 
 export async function GET(req: NextRequest) {
   // ── Auth cron ──────────────────────────────────────────────────────────────
-  if (process.env.NODE_ENV === "production") {
-    const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (secret !== process.env.CRON_SECRET) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  const secret = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const period = new Date().toISOString().slice(0, 7); // "YYYY-MM"

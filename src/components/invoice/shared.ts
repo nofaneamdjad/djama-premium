@@ -22,6 +22,8 @@ export interface PreviewData {
   subject:         string;
   items:           PreviewLineItem[];
   subtotal:        number;
+  discount_rate?:  number | null;
+  discount?:       number | null;
   tax_rate:        number;
   tax_amount:      number;
   total:           number;
@@ -29,12 +31,18 @@ export interface PreviewData {
   /** Couleur d'accent choisie par l'utilisateur — appliquée à TOUS les templates */
   color?:          string;
   company?: {
-    name?:      string;
-    email?:     string;
-    website?:   string;
-    logoUrl?:   string | null;
+    name?:          string;
+    email?:         string;
+    website?:       string;
+    logoUrl?:       string | null;
     /** Taille d'affichage du logo : sm=30px, md=48px, lg=70px */
-    logoSize?:  "sm" | "md" | "lg";
+    logoSize?:      "sm" | "md" | "lg";
+    phone?:         string;
+    address?:       string;
+    postal_code?:   string;
+    city?:          string;
+    siret?:         string;
+    vat_number?:    string;
   };
 }
 

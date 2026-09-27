@@ -1,7 +1,10 @@
 /**
  * POST /api/factures/email
  * Envoie un email avec les détails d'une facture au client.
- * Body : { document_id, to_email, to_name?, subject?, message? }
+ * Body : { document_id, to_email, to_name?, subject?, message?, attach_pdf? }
+ *
+ * Phase 4 : auto-passage brouillon → envoyé après envoi réussi.
+ * Phase 5 : pièce jointe PDF, historique des emails, fix accès org.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { Resend }                    from "resend";
@@ -68,6 +71,7 @@ function invoiceEmailHtml(d: {
   iban:       string;
   ribTitulaire: string;
   bic:        string;
+  hasPdf:     boolean;
 }) {
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/></head>
 <body style="margin:0;padding:0;background:${BG};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
@@ -102,6 +106,8 @@ function invoiceEmailHtml(d: {
       <!-- Message personnalisé -->
       <div style="font-size:14px;line-height:1.8;color:rgba(255,255,255,0.65);margin-bottom:24px;">${d.message}</div>
 
+      ${d.hasPdf ? `<p style="margin:0 0 20px;font-size:12px;color:rgba(255,255,255,0.4);font-style:italic;">📎 La ${d.typeLabel.toLowerCase()} est jointe à cet email en pièce jointe PDF.</p>` : ""}
+
       <!-- RIB si disponible -->
       ${d.iban ? `
       <div style="background:rgba(201,165,90,0.06);border:1px solid rgba(201,165,90,0.14);border-radius:12px;padding:16px 18px;margin-bottom:20px;">
@@ -123,6 +129,29 @@ function invoiceEmailHtml(d: {
 </td></tr>
 </table>
 </body></html>`;
+}
+
+/** Vérifie que l'utilisateur peut accéder au document (propriétaire ou admin d'org). */
+async function canAccessDocument(userId: string, documentId: string): Promise<boolean> {
+  const { data: doc } = await supabaseAdmin
+    .from("documents")
+    .select("user_id, organization_id")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (!doc) return false;
+  if (doc.user_id === userId) return true;
+  if (doc.organization_id) {
+    const { data: member } = await supabaseAdmin
+      .from("organization_members")
+      .select("id")
+      .eq("organization_id", doc.organization_id)
+      .eq("user_id", userId)
+      .in("role", ["owner", "admin"])
+      .is("suspended_at", null)
+      .maybeSingle();
+    return !!member;
+  }
+  return false;
 }
 
 export async function POST(req: NextRequest) {
@@ -154,18 +183,23 @@ export async function POST(req: NextRequest) {
     to_name?:    string;
     subject?:    string;
     message?:    string;
+    attach_pdf?: boolean;
   };
 
   if (!body.document_id || !body.to_email) {
     return NextResponse.json({ error: "document_id et to_email requis" }, { status: 400 });
   }
 
-  /* ── Récupère le document (vérifie ownership) ── */
+  /* ── Vérifie ownership (personnel ou admin org) ── */
+  if (!(await canAccessDocument(user.id, body.document_id))) {
+    return NextResponse.json({ error: "Document introuvable" }, { status: 404 });
+  }
+
+  /* ── Récupère le document ── */
   const { data: doc, error: dbErr } = await supabaseAdmin
     .from("documents")
     .select("*")
     .eq("id", body.document_id)
-    .eq("user_id", user.id)
     .single();
 
   if (dbErr || !doc) {
@@ -187,6 +221,104 @@ export async function POST(req: NextRequest) {
     || `Bonjour ${toName},\n\nVeuillez trouver ci-dessous les détails de votre ${typeLabel.toLowerCase()}.\n\nNous restons à votre disposition pour toute question.`;
   const message = escapeHtml(rawMessage);
 
+  /* ── Génère le PDF en pièce jointe ── */
+  let pdfBuffer: Buffer | null = null;
+  const attachPdf = body.attach_pdf !== false; // true by default
+
+  if (attachPdf) {
+    try {
+      const { generatePdfBuffer } = await import("@/lib/pdf/generatePdfBuffer");
+
+      // Récupère les lignes du document
+      const { data: items } = await supabaseAdmin
+        .from("document_items")
+        .select("*")
+        .eq("document_id", body.document_id)
+        .order("position", { ascending: true });
+
+      const lineItems = (items ?? []).map((it: Record<string, unknown>) => {
+        const qty   = Number(it.quantity  ?? 1);
+        const price = Number(it.unit_price ?? 0);
+        const rem   = Number(it.remise_pct ?? 0);
+        const gross = Math.round(qty * price * 100) / 100;
+        const disc  = Math.round(gross * rem / 100 * 100) / 100;
+        const total = Math.round((gross - disc) * 100) / 100;
+        const desc  = [it.description, it.sub_description].filter(Boolean).join("\n") as string || "(description)";
+        return {
+          description: desc,
+          unit:        (it.unit as string) || "",
+          quantity:    qty,
+          unit_price:  price,
+          total,
+          tax_rate:    Number(it.vat_rate ?? 20),
+        };
+      });
+
+      const mainTaxRate = lineItems[0]?.tax_rate ?? 20;
+      const subtotal    = lineItems.reduce((s, it) => s + it.total, 0);
+      const tax         = Math.round(subtotal * mainTaxRate / 100 * 100) / 100;
+
+      const addrParts = [
+        doc.emetteur_adresse,
+        [doc.emetteur_code_postal, doc.emetteur_ville].filter(Boolean).join(" "),
+        doc.emetteur_pays,
+      ].filter(Boolean) as string[];
+
+      const clientAddrParts = [
+        doc.client_adresse,
+        [doc.client_code_postal, doc.client_ville].filter(Boolean).join(" "),
+        doc.client_pays,
+      ].filter(Boolean) as string[];
+
+      pdfBuffer = await generatePdfBuffer({
+        type:        (doc.type as string) === "facture" ? "invoice" : "quote",
+        template:    (doc.template as string ?? "modern") as import("@/lib/pdf/types").TemplateType,
+        accentColor: (doc.couleur as string) || "#c9a55a",
+        reference:   (doc.numero  as string) || typeLabel,
+        issue_date:  (doc.date_document as string) || new Date().toISOString().slice(0, 10),
+        due_date:    (doc.type as string) === "facture" ? (doc.date_echeance as string | null) : null,
+        valid_until: (doc.type as string) === "devis"   ? (doc.date_echeance as string | null) : null,
+        client_name:    (doc.client_nom     as string) || "(Client)",
+        client_company: (doc.client_societe as string) || null,
+        client_email:   (doc.client_email   as string) || "",
+        client_phone:   (doc.client_telephone as string) || null,
+        client_address: clientAddrParts.join("\n") || null,
+        client_vat:     (doc.client_tva     as string) || null,
+        subject:     (doc.sujet as string) || (doc.numero as string) || typeLabel,
+        items:       lineItems,
+        subtotal,
+        discount_rate: (doc.remise_pct as number) > 0 ? (doc.remise_pct as number) : null,
+        discount:      null,
+        tax_rate:      mainTaxRate,
+        tax_amount:    tax,
+        total:         (doc.total_ttc as number) ?? 0,
+        deposit:       (doc.acompte as number) > 0 ? (doc.acompte as number) : null,
+        deposit_label: (doc.acompte as number) > 0 ? "Acompte versé" : null,
+        rib_titulaire: (doc.rib_titulaire as string) || null,
+        rib_iban:      (doc.rib_iban      as string) || null,
+        rib_bic:       (doc.rib_bic       as string) || null,
+        rib_banque:    (doc.rib_banque    as string) || null,
+        notes:         (doc.notes     as string) || null,
+        footer_text:   (doc.conditions as string) || null,
+        currency:      (doc.devise    as string) || "EUR",
+        company: {
+          logoUrl:   (doc.emetteur_logo  as string) || null,
+          name:      (doc.emetteur_nom   as string) || "",
+          email:     (doc.emetteur_email as string) || "",
+          address:   addrParts.join(", ") || "",
+          siret:     (doc.emetteur_siret as string) || "",
+          vat_number:(doc.emetteur_tva   as string) || "",
+        },
+      });
+    } catch (pdfErr) {
+      log.error("PDF generation failed", pdfErr);
+      // Ne pas bloquer l'envoi si le PDF échoue
+      pdfBuffer = null;
+    }
+  }
+
+  const hasPdf = pdfBuffer !== null;
+
   const html = invoiceEmailHtml({
     typeLabel,
     numero:      (doc.numero as string) || "—",
@@ -200,23 +332,73 @@ export async function POST(req: NextRequest) {
     iban:        (doc.rib_iban        as string) || "",
     ribTitulaire:(doc.rib_titulaire   as string) || "",
     bic:         (doc.rib_bic         as string) || "",
+    hasPdf,
   });
 
   try {
-    const { error: mailErr } = await resend.emails.send({
+    const sendPayload: Parameters<typeof resend.emails.send>[0] = {
       from:    FROM_EMAIL(),
       to:      body.to_email,
       replyTo: fromEmail || undefined,
       subject,
       html,
-    });
+    };
+
+    if (hasPdf && pdfBuffer) {
+      sendPayload.attachments = [{
+        filename: `${(doc.numero as string) || "document"}.pdf`,
+        content:  pdfBuffer,
+      }];
+    }
+
+    const { data: mailData, error: mailErr } = await resend.emails.send(sendPayload);
 
     if (mailErr) {
       log.error("Email send error", mailErr);
       return NextResponse.json({ error: "Erreur d'envoi email" }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    // Auto-passage brouillon → envoyé après envoi réussi
+    let newStatut: string | null = null;
+    if ((doc.statut as string) === "brouillon") {
+      const { error: stErr } = await supabaseAdmin
+        .from("documents")
+        .update({ statut: "envoyé" })
+        .eq("id", body.document_id);
+      if (!stErr) newStatut = "envoyé";
+    }
+
+    // Historique des emails
+    await supabaseAdmin.from("document_email_history").insert({
+      document_id:  body.document_id,
+      user_id:      user.id,
+      to_email:     body.to_email,
+      to_name:      body.to_name || null,
+      subject,
+      type:         "initial",
+      pdf_attached: hasPdf,
+      resend_id:    mailData?.id ?? null,
+    }).then(() => {});
+
+    // Audit : email_envoyé
+    await supabaseAdmin.from("document_audit_log").insert({
+      document_id: body.document_id,
+      user_id:     user.id,
+      action:      "email_envoyé",
+      details:     { destinataire: body.to_email, pdf_joint: hasPdf, ...(newStatut ? { statut: newStatut } : {}) },
+    }).then(() => {});
+
+    // Audit : statut_changé (si auto-passage)
+    if (newStatut) {
+      await supabaseAdmin.from("document_audit_log").insert({
+        document_id: body.document_id,
+        user_id:     user.id,
+        action:      "statut_changé",
+        details:     { de: "brouillon", vers: "envoyé", source: "email_auto" },
+      }).then(() => {});
+    }
+
+    return NextResponse.json({ ok: true, statut: newStatut ?? (doc.statut as string), pdf_attached: hasPdf });
   } catch (err) {
     log.error("Exception", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

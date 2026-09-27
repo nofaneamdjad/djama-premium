@@ -1,9 +1,8 @@
 "use client";
 /**
- * PremiumTemplate — Business Luxe.
- * Inspiration Qonto / Revolut / Pennylane :
- * header dark avec badge, sections accent-border, total proéminent.
- * Style fintech moderne, premium et professionnel.
+ * PremiumTemplate — Élégant split-panel.
+ * Panel gauche blanc (logo + infos société) + panel droit ardoise (label + ref + dates).
+ * Style cabinet conseil, Big4, luxe.
  */
 
 import type { PreviewData } from "../shared";
@@ -17,11 +16,12 @@ export function PremiumTemplate({ data }: { data: PreviewData }) {
   const docLabel  = data.type === "invoice" ? "FACTURE" : "DEVIS";
   const dateLabel = data.type === "invoice" ? "Échéance" : "Valable jusqu'au";
   const dateVal   = data.type === "invoice" ? data.due_date : data.valid_until;
+  const BORDER    = "#e2e8f0";
 
   return (
     <div style={{
       width: "100%",
-      backgroundColor: "#f8fafc",
+      backgroundColor: "#ffffff",
       fontFamily: "'Inter', system-ui, sans-serif",
       fontSize: 7.5,
       lineHeight: 1.4,
@@ -30,81 +30,69 @@ export function PremiumTemplate({ data }: { data: PreviewData }) {
       flexDirection: "column",
     }}>
 
-      {/* ── HEADER ─────────────────────────────────────────────────── */}
-      <div style={{
-        backgroundColor: C,
-        padding: "14px 18px 13px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        position: "relative",
-        overflow: "hidden",
-      }}>
-        {/* Cercle décoratif subtil */}
-        <div style={{
-          position: "absolute", right: -25, top: -25,
-          width: 90, height: 90, borderRadius: "50%",
-          backgroundColor: alphaHex("#ffffff", 0.05),
-          pointerEvents: "none",
-        }} />
-        <div style={{
-          position: "absolute", right: 60, bottom: -30,
-          width: 60, height: 60, borderRadius: "50%",
-          backgroundColor: alphaHex("#ffffff", 0.04),
-          pointerEvents: "none",
-        }} />
+      {/* ── HEADER SPLIT ────────────────────────────────────────────── */}
+      <div style={{ display: "flex", alignItems: "stretch" }}>
 
-        {/* Logo / Nom entreprise */}
-        <div>
+        {/* Panel gauche — blanc, infos émetteur */}
+        <div style={{
+          flex: "0 0 50%",
+          backgroundColor: "#ffffff",
+          padding: "14px 16px 12px",
+          borderBottom: `3px solid ${C}`,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}>
           {co.logoUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={co.logoUrl} alt="logo" style={{ height: co.logoSize==="sm"?24:co.logoSize==="lg"?62:44, maxWidth: co.logoSize==="sm"?90:co.logoSize==="lg"?200:150, objectFit: "contain", display: "block", marginBottom: 3 }} />
+            <img src={co.logoUrl} alt="logo" style={{ height: co.logoSize==="sm"?20:co.logoSize==="lg"?42:32, maxWidth: co.logoSize==="sm"?80:co.logoSize==="lg"?160:120, objectFit: "contain", display: "block", marginBottom: 4 }} />
           ) : (
-            <div style={{ color: CT, fontWeight: 900, fontSize: 11.5, letterSpacing: "-0.4px" }}>
+            <div style={{ color: C, fontWeight: 900, fontSize: 12, letterSpacing: "-0.4px", marginBottom: 4 }}>
               {co.name ?? "DJAMA"}
             </div>
           )}
-          {(co.email || co.website) && (
-            <div style={{ color: CL, fontSize: 5.5, marginTop: 2 }}>{co.website || co.email}</div>
+          {co.name && co.logoUrl && (
+            <div style={{ color: "#0f172a", fontWeight: 700, fontSize: 7, marginBottom: 1 }}>{co.name}</div>
           )}
+          {co.address && <div style={{ color: "#64748b", fontSize: 5.5 }}>{co.address}</div>}
+          {(co.postal_code || co.city) && (
+            <div style={{ color: "#64748b", fontSize: 5.5 }}>{[co.postal_code, co.city].filter(Boolean).join(" ")}</div>
+          )}
+          {co.phone   && <div style={{ color: "#64748b", fontSize: 5.5 }}>{co.phone}</div>}
+          {co.email   && <div style={{ color: "#64748b", fontSize: 5.5 }}>{co.email}</div>}
+          {co.siret   && <div style={{ color: "#94a3b8", fontSize: 5, marginTop: 2 }}>SIRET : {co.siret}</div>}
         </div>
 
-        {/* Type + référence + dates */}
-        <div style={{ textAlign: "right" }}>
-          {/* Badge document */}
-          <div style={{
-            display: "inline-block",
-            backgroundColor: alphaHex("#ffffff", 0.15),
-            color: CT,
-            fontSize: 4.5, fontWeight: 700,
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-            padding: "2px 6px",
-            borderRadius: 2,
-            marginBottom: 4,
-          }}>
+        {/* Panel droit — ardoise, label + ref + dates */}
+        <div style={{
+          flex: "0 0 50%",
+          backgroundColor: C,
+          padding: "14px 16px 12px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "flex-end",
+        }}>
+          <div style={{ color: alphaHex("#ffffff", 0.55), fontSize: 4.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: 4 }}>
             {docLabel}
           </div>
-          <div style={{ color: CT, fontWeight: 900, fontSize: 12.5, letterSpacing: "-0.3px" }}>
+          <div style={{ color: CT, fontWeight: 900, fontSize: 13, letterSpacing: "-0.3px", marginBottom: 4 }}>
             {data.reference}
           </div>
-          <div style={{ color: CL, fontSize: 5.5, marginTop: 2 }}>
+          <div style={{ color: alphaHex("#ffffff", 0.6), fontSize: 5.5 }}>
             Émis le {fmtDate(data.issue_date)}
           </div>
           {dateVal && (
-            <div style={{ color: CL, fontSize: 5.5, fontWeight: 600, marginTop: 1 }}>
+            <div style={{ color: CT, fontSize: 5.5, fontWeight: 700, marginTop: 2 }}>
               {dateLabel} : {fmtDate(dateVal)}
             </div>
           )}
         </div>
       </div>
 
-      {/* Liseré d'accent */}
-      <div style={{ height: 2.5, backgroundColor: alphaHex(C, 0.2) }} />
-
       {/* ── ADRESSES ───────────────────────────────────────────────── */}
-      <div style={{ padding: "9px 18px 8px", display: "flex", gap: 10, backgroundColor: "#ffffff", borderBottom: "1px solid #e2e8f0" }}>
-        {/* Émetteur — bordure accent pleine */}
+      <div style={{ padding: "9px 16px 8px", display: "flex", gap: 10, backgroundColor: "#ffffff", borderBottom: `1px solid ${BORDER}` }}>
+        {/* Émetteur */}
         <div style={{ flex: 1, borderLeft: `2.5px solid ${C}`, paddingLeft: 8 }}>
           <div style={{ color: alphaHex(C, 0.7), fontWeight: 700, fontSize: 4.5, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 3 }}>
             Émetteur
@@ -114,8 +102,8 @@ export function PremiumTemplate({ data }: { data: PreviewData }) {
           {co.website && <div style={{ color: "#64748b", fontSize: 5.5 }}>{co.website}</div>}
         </div>
 
-        {/* Destinataire — bordure accent atténuée */}
-        <div style={{ flex: 1, borderLeft: `2.5px solid ${alphaHex(C, 0.35)}`, paddingLeft: 8 }}>
+        {/* Destinataire */}
+        <div style={{ flex: 1, borderLeft: `2.5px solid ${alphaHex(C, 0.3)}`, paddingLeft: 8 }}>
           <div style={{ color: alphaHex(C, 0.7), fontWeight: 700, fontSize: 4.5, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 3 }}>
             {data.type === "invoice" ? "Facturé à" : "Devis pour"}
           </div>
@@ -132,7 +120,7 @@ export function PremiumTemplate({ data }: { data: PreviewData }) {
 
       {/* ── OBJET ──────────────────────────────────────────────────── */}
       {data.subject && (
-        <div style={{ padding: "5px 18px 4px", backgroundColor: "#ffffff" }}>
+        <div style={{ padding: "5px 16px 4px", backgroundColor: "#ffffff" }}>
           <div style={{
             display: "flex", alignItems: "center", gap: 7,
             backgroundColor: "#f1f5f9",
@@ -145,7 +133,7 @@ export function PremiumTemplate({ data }: { data: PreviewData }) {
       )}
 
       {/* ── TABLEAU ────────────────────────────────────────────────── */}
-      <div style={{ padding: "5px 18px 0", backgroundColor: "#ffffff", flex: 1 }}>
+      <div style={{ padding: "5px 16px 0", backgroundColor: "#ffffff", flex: 1 }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ backgroundColor: C }}>
@@ -159,7 +147,7 @@ export function PremiumTemplate({ data }: { data: PreviewData }) {
             {data.items.map((item, i) => {
               const [mainDesc, ...subParts] = item.description.split("\n");
               return (
-                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#f8fafc" : "#ffffff", borderBottom: "1px solid #e2e8f0" }}>
+                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#f8fafc" : "#ffffff", borderBottom: `1px solid ${BORDER}` }}>
                   <td style={{ padding: "4.5px 5px" }}>
                     <div style={{ fontSize: 6.5, color: "#0f172a", fontWeight: 500 }}>{mainDesc}</div>
                     {subParts.map((s, j) => s.trim() && (
@@ -177,7 +165,7 @@ export function PremiumTemplate({ data }: { data: PreviewData }) {
 
         {/* ── TOTAUX ─────────────────────────────────────────────── */}
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8, marginBottom: 8 }}>
-          <div style={{ width: 160, borderTop: "1px solid #e2e8f0", paddingTop: 6 }}>
+          <div style={{ width: 160, borderTop: `1px solid ${BORDER}`, paddingTop: 6 }}>
 
             {(data.tax_amount > 0 || data.subtotal !== data.total) && (
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#64748b", padding: "2px 0" }}>
@@ -186,14 +174,20 @@ export function PremiumTemplate({ data }: { data: PreviewData }) {
               </div>
             )}
 
+            {(data.discount ?? 0) > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#64748b", padding: "2px 0" }}>
+                <span>{data.discount_rate ? `Remise (${data.discount_rate}%)` : "Remise"}</span>
+                <span style={{ color: "#c84141" }}>- {fmtEur(data.discount!)}</span>
+              </div>
+            )}
+
             {data.tax_amount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#64748b", padding: "2px 0", borderBottom: "1px solid #e2e8f0", marginBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 6, color: "#64748b", padding: "2px 0", borderBottom: `1px solid ${BORDER}`, marginBottom: 4 }}>
                 <span>TVA ({data.tax_rate}%)</span>
                 <span>{fmtEur(data.tax_amount)}</span>
               </div>
             )}
 
-            {/* Boîte total accent */}
             <div style={{
               display: "flex",
               justifyContent: "space-between",
@@ -215,7 +209,7 @@ export function PremiumTemplate({ data }: { data: PreviewData }) {
       {/* ── FOOTER ─────────────────────────────────────────────────── */}
       <div style={{
         marginTop: "auto",
-        padding: "5px 18px 4px",
+        padding: "5px 16px 4px",
         backgroundColor: C,
         textAlign: "center",
       }}>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=Caveat:wght@700;800&family=Nunito:wght@900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Baloo+2:wght@800&family=Caveat:wght@700;800&family=Nunito:wght@900&display=swap');
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════
@@ -144,7 +144,8 @@ html {
 }
 
 body {
-  background-color: #071525;
+  background-color: #111111;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   min-height: 100dvh;
   color: #111827;
   -webkit-font-smoothing: antialiased;
@@ -867,7 +868,7 @@ a:focus:not(:focus-visible)      { outline: none; }
 /* Anti-flash: appliqué dès le premier rendu via script <head> */
 html[data-theme="light"],
 html[data-theme="light"] body {
-  background-color: #f0f2fb !important;
+  background-color: #f8f8f8 !important;
   color-scheme: light !important;
 }
 html[data-theme="light"] .bg-\[\#07080e\],
@@ -888,7 +889,7 @@ html[data-theme="light"] .bg-\[\#0d1226\]\/95 { background-color: rgba(244,245,2
 /* Body background quand mode clair actif */
 body:has(.client-app[data-theme="light"]),
 html:has(.client-app[data-theme="light"]) {
-  background-color: #f0f2fb !important;
+  background-color: #f8f8f8 !important;
 }
 
 /* Native controls */

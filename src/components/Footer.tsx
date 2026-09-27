@@ -2,60 +2,71 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import DjamaLogo from "@/components/DjamaLogo";
-import { motion } from "framer-motion";
-import {
-  Instagram, Linkedin, Facebook, Youtube, Twitter, Globe,
-  Mail, Phone,
-} from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import type { Lang } from "@/lib/language-context";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import type { SocialPlatform } from "@/types/db";
+import {
+  Instagram, Linkedin, Facebook, Youtube, Twitter, Globe,
+  Mail, Phone, ChevronDown,
+} from "lucide-react";
 
-const GOLD   = "#C9A55A";
-const GOLDR  = "201,165,90";
-const NAV_BG = "#071525";
+const NAV_BG = "#171a1d";
 const ease   = [0.16, 1, 0.3, 1] as const;
 
-type NavItem = { label: string; labelEn: string; href: string };
-type Column  = { title: string; titleEn: string; items: NavItem[] };
+type NavItem = { label: string; labelEn: string; labelAr: string; href: string };
+type Section = { title: string; titleEn: string; titleAr: string; items: NavItem[] };
+type Column  = { sections: Section[] };
 
 const COLUMNS: Column[] = [
+  /* ── Colonne 1 — Produit + Ressources ── */
   {
-    title: "Services", titleEn: "Services",
-    items: [
-      { label: "Création de site web",      labelEn: "Website creation",       href: "/services/site-vitrine"              },
-      { label: "Applications mobiles",      labelEn: "Mobile apps",            href: "/services/application-mobile"        },
-      { label: "Coaching IA",               labelEn: "AI Coaching",            href: "/services/coaching-ia"               },
-      { label: "Recherche fournisseurs",    labelEn: "Supplier sourcing",      href: "/services/recherche-fournisseurs"    },
-      { label: "Marchés publics",           labelEn: "Public tenders",         href: "/services/marches-publics"           },
-      { label: "Montage vidéo",             labelEn: "Video editing",          href: "/services/montage-video"             },
-      { label: "Visuels publicitaires",     labelEn: "Ad creatives",           href: "/services/visuels-publicitaires"     },
-      { label: "Accompagnement entreprise", labelEn: "Business support",       href: "/services/assistance-administrative" },
+    sections: [
+      {
+        title: "Produit", titleEn: "Product", titleAr: "المنتج",
+        items: [
+          { label: "Facturation",        labelEn: "Invoicing",      labelAr: "الفوترة",          href: "/client/factures"      },
+          { label: "Devis & Avoirs",     labelEn: "Quotes",         labelAr: "العروض",            href: "/client/factures"      },
+          { label: "CRM & Clients",      labelEn: "CRM",            labelAr: "إدارة العملاء",     href: "/client/crm"           },
+          { label: "Dépenses",           labelEn: "Expenses",       labelAr: "المصاريف",          href: "/client/depenses"      },
+          { label: "Trésorerie",         labelEn: "Cash flow",      labelAr: "الخزينة",           href: "/client/tresorerie"    },
+          { label: "Comptabilité",       labelEn: "Accounting",     labelAr: "المحاسبة",          href: "/client/comptabilite"  },
+          { label: "IA & Automatisation",labelEn: "AI & Automation",labelAr: "الذكاء الاصطناعي", href: "/client/assistant"     },
+        ],
+      },
+      {
+        title: "Applications", titleEn: "Apps", titleAr: "التطبيقات",
+        items: [
+          { label: "Toutes les apps",    labelEn: "All apps",       labelAr: "جميع التطبيقات",   href: "/applications"         },
+          { label: "Tableau de bord",    labelEn: "Dashboard",      labelAr: "لوحة التحكم",      href: "/client/dashboard"     },
+        ],
+      },
     ],
   },
+
+  /* ── Colonne 2 — DJAMA ── */
   {
-    title: "Plateforme", titleEn: "Platform",
-    items: [
-      { label: "DJAMA Pro",         labelEn: "DJAMA Pro",      href: "/abonnement"             },
-      { label: "Tarifs",            labelEn: "Pricing",        href: "/abonnement"             },
-      { label: "Nos réalisations",  labelEn: "Portfolio",      href: "/realisations"           },
-      { label: "À propos",          labelEn: "About us",       href: "/a-propos"               },
-      { label: "Réserver un appel", labelEn: "Book a call",    href: "/reserver-appel"         },
-      { label: "Blog",              labelEn: "Blog",           href: "/blog"                   },
-      { label: "Contact",           labelEn: "Contact",        href: "/contact"                },
-    ],
-  },
-  {
-    title: "Légal", titleEn: "Legal",
-    items: [
-      { label: "Mentions légales",         labelEn: "Legal notice",     href: "/legal/mentions-legales" },
-      { label: "Confidentialité",          labelEn: "Privacy policy",   href: "/legal/confidentialite"  },
-      { label: "Conditions d'utilisation", labelEn: "Terms of service", href: "/legal/cgu"              },
-      { label: "Conditions de vente",      labelEn: "Sales terms",      href: "/legal/cgv"              },
-      { label: "Cookies",                  labelEn: "Cookies",          href: "/legal/cookies"          },
-      { label: "Sécurité",                 labelEn: "Security",         href: "/legal/securite"         },
+    sections: [
+      {
+        title: "DJAMA", titleEn: "DJAMA", titleAr: "دجاما",
+        items: [
+          { label: "DJAMA Pro",          labelEn: "DJAMA Pro",      labelAr: "دجاما برو",         href: "/abonnement"           },
+          { label: "Tarifs",             labelEn: "Pricing",        labelAr: "الأسعار",           href: "/abonnement"           },
+          { label: "À propos",           labelEn: "About",          labelAr: "من نحن",            href: "/a-propos"             },
+          { label: "Blog",               labelEn: "Blog",           labelAr: "المدونة",           href: "/blog"                 },
+          { label: "Réserver un appel",  labelEn: "Book a call",    labelAr: "حجز مكالمة",        href: "/reserver-appel"       },
+          { label: "Contact",            labelEn: "Contact",        labelAr: "اتصل بنا",          href: "/contact"              },
+        ],
+      },
+      {
+        title: "Légal", titleEn: "Legal", titleAr: "قانوني",
+        items: [
+          { label: "Mentions légales",         labelEn: "Legal notice",   labelAr: "الإشعار القانوني", href: "/legal/mentions-legales" },
+          { label: "Confidentialité",          labelEn: "Privacy",        labelAr: "الخصوصية",          href: "/legal/confidentialite"  },
+          { label: "Conditions d'utilisation", labelEn: "Terms",          labelAr: "الشروط",            href: "/legal/cgu"              },
+          { label: "Cookies",                  labelEn: "Cookies",        labelAr: "ملفات تعريف الارتباط", href: "/legal/cookies"       },
+        ],
+      },
     ],
   },
 ];
@@ -70,168 +81,134 @@ const PLATFORM_ICONS: Record<SocialPlatform, React.ElementType> = {
   snapchat:  Globe,
 };
 
+const LANG_LABELS: Record<Lang, { flag: string; label: string }> = {
+  fr: { flag: "🇫🇷", label: "Français" },
+  en: { flag: "🇬🇧", label: "English"  },
+  ar: { flag: "🇸🇦", label: "العربية"  },
+};
+
 export default function Footer() {
   const { lang, setLang, dict } = useLanguage();
   const { socials, get }        = useSiteSettings();
-  const f = dict.footer;
+  const ll = LANG_LABELS[lang];
 
   return (
-    <footer style={{ background: NAV_BG }} className="relative overflow-hidden">
+    <footer style={{ background: NAV_BG }} className="text-white">
 
-      {/* Glow ambiant */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[320px]"
-        style={{ background: `radial-gradient(ellipse 70% 50% at 50% -10%, rgba(${GOLDR},0.10) 0%, transparent 70%)` }} />
-
-      {/* ── Divider ─────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-6xl px-6">
-        <div style={{ height: "1px", background: `linear-gradient(90deg, transparent, rgba(${GOLDR},0.25), transparent)` }} />
-      </div>
-
-      {/* ── Logo ────────────────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, ease }}
-        className="flex justify-center pt-10 pb-8"
-      >
-        <Link href="/" aria-label="DJAMA — Accueil">
-          <motion.div
-            whileHover={{ filter: `drop-shadow(0 0 18px rgba(${GOLDR},0.50))` }}
-            transition={{ duration: 0.2 }}
-          >
-            <Image src="/logo-white.png" alt="Logo DJAMA" width={320} height={107} priority
-              className="h-[44px] w-auto object-contain" />
-          </motion.div>
+      {/* ── Logo centré ──────────────────────────────────── */}
+      <div className="flex justify-center pt-14 pb-10">
+        <Link href="/">
+          <Image
+            src="/logo-white.png" alt="DJAMA" width={320} height={107}
+            className="h-[40px] w-auto object-contain opacity-90 transition-opacity hover:opacity-100"
+            style={{ mixBlendMode: "screen" }}
+            priority
+          />
         </Link>
-      </motion.div>
-
-      {/* ── Divider ─────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-6xl px-6">
-        <div style={{ height: "1px", background: "rgba(255,255,255,0.06)" }} />
       </div>
 
-      {/* ── Grille liens ────────────────────────────────────────────── */}
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-40px" }}
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } } }}
-        className="relative mx-auto grid max-w-6xl grid-cols-2 gap-10 px-6 py-12 md:grid-cols-4"
-      >
-        {COLUMNS.map((col) => (
-          <motion.div
-            key={col.title}
-            variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
-          >
-            <p className="mb-4 text-[0.58rem] font-black uppercase tracking-[0.20em]" style={{ color: `rgba(${GOLDR},0.55)` }}>
-              {lang === "en" ? col.titleEn : col.title}
-            </p>
-            <ul className="flex flex-col gap-2.5">
-              {col.items.map((item, i) => (
-                <li key={i}>
-                  <Link
-                    href={item.href}
-                    className="text-[0.80rem] font-medium transition-colors duration-200"
-                    style={{ color: "rgba(255,255,255,0.48)" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.48)"; }}
-                  >
-                    {lang === "en" ? item.labelEn : item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
+      {/* ── Divider ───────────────────────────────────────── */}
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="h-px bg-white/10" />
+      </div>
+
+      {/* ── Grille colonnes ───────────────────────────────── */}
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 py-12 sm:grid-cols-3">
+
+        {/* Colonnes 1 & 2 */}
+        {COLUMNS.map((col, ci) => (
+          <div key={ci} className="flex flex-col gap-9">
+            {col.sections.map((sec) => (
+              <div key={sec.title}>
+                {/* Titre section — style Odoo : blanc, gras, taille lisible */}
+                <p className="mb-3 text-[0.95rem] font-bold text-white">
+                  {lang === "en" ? sec.titleEn : lang === "ar" ? sec.titleAr : sec.title}
+                </p>
+                <ul className="flex flex-col gap-2">
+                  {sec.items.map((item, i) => (
+                    <li key={i}>
+                      <Link
+                        href={item.href}
+                        className="text-[0.83rem] text-white/55 transition-colors duration-150 hover:text-white"
+                      >
+                        {lang === "en" ? item.labelEn : lang === "ar" ? item.labelAr : item.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         ))}
 
-        {/* ── Bloc brand style Odoo (4e colonne) ── */}
-        <motion.div
-          variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
-          className="col-span-2 md:col-span-1"
-        >
-          {/* Sélecteur langue — style Odoo */}
+        {/* Colonne 3 — Brand / langue / desc / socials */}
+        <div>
+          {/* Sélecteur langue — chip style Odoo */}
           <button
             onClick={() => setLang(lang === "fr" ? "en" : lang === "en" ? "ar" : "fr")}
-            className="mb-4 flex items-center gap-2 text-[0.82rem] font-medium transition-opacity hover:opacity-70"
-            style={{ color: "rgba(255,255,255,0.70)" }}
+            className="mb-8 flex items-center gap-2 rounded-md border border-white/20 bg-white/06 px-4 py-2 text-[0.82rem] font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+            style={{ background: "rgba(255,255,255,0.04)" }}
           >
-            <span>{lang === "fr" ? "🇫🇷" : lang === "en" ? "🇬🇧" : "🇸🇦"}</span>
-            <span>{lang === "fr" ? "Français" : lang === "en" ? "English" : "العربية"}</span>
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ opacity: 0.5 }}>
-              <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <span className="text-base leading-none">{ll.flag}</span>
+            <span>{ll.label}</span>
+            <ChevronDown size={13} className="ml-1 text-white/50" />
           </button>
 
-          {/* Ligne séparatrice */}
-          <div className="mb-4" style={{ height: "1px", background: "rgba(255,255,255,0.08)" }} />
+          {/* Ligne sépa */}
+          <div className="mb-6 h-px bg-white/10" />
 
-          {/* Description — 2 paragraphes */}
-          <p className="mb-3 text-[0.80rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.48)" }}>
+          {/* Description */}
+          <p className="mb-3 text-[0.82rem] leading-relaxed text-white/55">
             {lang === "en"
-              ? "DJAMA is an all-in-one platform covering all your business needs: invoicing, CRM, AI tools, eCommerce, project management, and more."
+              ? "DJAMA is an all-in-one business management software: invoicing, CRM, expenses, cash flow, accounting and AI — in a single platform."
               : lang === "ar"
-              ? "DJAMA منصة شاملة تغطي جميع احتياجات عملك: الفواتير، CRM، أدوات الذكاء الاصطناعي والمزيد."
-              : "DJAMA est une plateforme tout-en-un couvrant tous les besoins de votre entreprise : facturation, CRM, outils IA, eCommerce, gestion de projet, etc."}
+              ? "DJAMA برنامج إدارة الأعمال الشامل: الفواتير، CRM، المصاريف، المحاسبة والذكاء الاصطناعي — في منصة واحدة."
+              : "DJAMA est un logiciel de gestion tout-en-un : facturation, CRM, dépenses, trésorerie, comptabilité et IA — dans une seule plateforme."}
           </p>
-          <p className="mb-5 text-[0.80rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.48)" }}>
+          <p className="mb-8 text-[0.82rem] leading-relaxed text-white/55">
             {lang === "en"
-              ? "The unique strength of DJAMA is being both very easy to use and fully integrated."
+              ? "Built for freelancers and small businesses who want clarity, not complexity."
               : lang === "ar"
-              ? "ميزة DJAMA الفريدة هي أنه سهل الاستخدام ومتكامل بالكامل."
-              : "Le positionnement unique de DJAMA est d'être à la fois très facile à utiliser et totalement intégré."}
+              ? "مصمم للمستقلين والشركات الصغيرة التي تريد الوضوح لا التعقيد."
+              : "Conçu pour les indépendants et TPE qui veulent de la clarté, pas de la complexité."}
           </p>
 
-          {/* Icônes sociales — plates, style Odoo */}
-          <div className="flex items-center gap-4">
+          {/* Icônes sociales */}
+          <div className="flex items-center gap-5">
             {socials.map((s) => {
               const Icon = PLATFORM_ICONS[s.platform] ?? Globe;
               return (
-                <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.platform}
-                  className="transition-opacity hover:opacity-100"
-                  style={{ color: "rgba(255,255,255,0.45)" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.45)"; }}
+                <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"
+                  className="text-white/45 transition-colors hover:text-white"
                 >
-                  <Icon size={18} strokeWidth={1.5} />
+                  <Icon size={20} strokeWidth={1.5} />
                 </a>
               );
             })}
-            <a href={`mailto:${get("contact.email")}`} aria-label="Email"
-              className="transition-opacity"
-              style={{ color: "rgba(255,255,255,0.45)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.45)"; }}
+            <a href={`mailto:${get("contact.email")}`}
+              className="text-white/45 transition-colors hover:text-white"
             >
-              <Mail size={18} strokeWidth={1.5} />
+              <Mail size={20} strokeWidth={1.5} />
             </a>
-            <a href={`tel:${get("contact.phone").replace(/\s/g, "")}`} aria-label="Téléphone"
-              className="transition-opacity"
-              style={{ color: "rgba(255,255,255,0.45)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.45)"; }}
+            <a href={`tel:${get("contact.phone").replace(/\s/g, "")}`}
+              className="text-white/45 transition-colors hover:text-white"
             >
-              <Phone size={18} strokeWidth={1.5} />
+              <Phone size={20} strokeWidth={1.5} />
             </a>
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
-      {/* ── Bottom bar ──────────────────────────────────────────────── */}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-5 md:flex-row">
-          <p className="text-[0.68rem] font-medium" style={{ color: "rgba(255,255,255,0.20)" }}>
-            © {new Date().getFullYear()}{" "}
-            <span style={{ color: "rgba(255,255,255,0.38)" }}>DJAMA.space</span>
-            {" "}—{" "}
+      {/* ── Bottom bar — style "Website made with Odoo" ── */}
+      <div className="border-t border-white/08">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-5 sm:flex-row">
+          <p className="text-[0.70rem] text-white/30">
+            © {new Date().getFullYear()} DJAMA.space —{" "}
             {lang === "en" ? "All rights reserved" : lang === "ar" ? "جميع الحقوق محفوظة" : "Tous droits réservés"}
           </p>
-          <div className="flex items-center gap-4 text-[0.68rem]" style={{ color: "rgba(255,255,255,0.22)" }}>
-            <Link href="/legal/mentions-legales" className="transition hover:text-white/60">Mentions légales</Link>
-            <span style={{ color: "rgba(255,255,255,0.10)" }}>·</span>
-            <Link href="/legal/confidentialite" className="transition hover:text-white/60">Confidentialité</Link>
-            <span style={{ color: "rgba(255,255,255,0.10)" }}>·</span>
-            <Link href="/legal/cgu" className="transition hover:text-white/60">CGU</Link>
+          <div className="flex items-center gap-1 text-[0.70rem] text-white/30">
+            <span>Plateforme réalisée avec</span>
+            <Image src="/logo-white.png" alt="DJAMA" width={60} height={20} className="h-[14px] w-auto opacity-30" style={{ mixBlendMode: "screen" }} />
           </div>
         </div>
       </div>

@@ -12,6 +12,14 @@
     {
       "path": "/api/depenses/budget-alert/cron",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/relances",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/recurrences",
+      "schedule": "0 6 * * *"
     }
   ]
 }

@@ -28,7 +28,7 @@ type Currency  = "EUR" | "USD" | "GBP" | "CHF" | "CAD" | "MAD";
 type RecurFreq = "hebdo" | "mensuel" | "trimestriel" | "annuel";
 
 interface Expense {
-  id: string; user_id: string; expense_report_id: string | null;
+  id: string; user_id: string; organization_id: string | null; expense_report_id: string | null;
   date: string; amount: number; currency: Currency;
   category: ExpCat; description: string;
   payment_method: PayMethod; status: ExpStatus;
@@ -41,19 +41,21 @@ interface Expense {
   approved_at?:      string | null;
   exchange_rate?:    number;
   amount_eur?:       number | null;
+  deleted_at?:       string | null;
   created_at: string; updated_at: string;
 }
 
 interface ExpenseReport {
-  id: string; user_id: string; title: string;
+  id: string; user_id: string; organization_id: string | null; title: string;
   period_start: string | null; period_end: string | null;
   status: ExpStatus; total_amount: number; notes: string;
   submitted_at: string | null; approved_at: string | null;
+  deleted_at?: string | null;
   created_at: string; updated_at: string;
 }
 
 interface ExpenseBudget {
-  id: string; user_id: string;
+  id: string; user_id: string; organization_id: string | null;
   category: ExpCat; amount: number;
   period: "monthly" | "yearly";
   year: number; month: number | null;
@@ -276,17 +278,19 @@ function CsvImportModal({ userId, rules, onClose, onImported }: {
     const sel = rows.filter(r => r.selected);
     if (!sel.length) return;
     setSaving(true);
-    const { error } = await supabase.from("expenses").insert(sel.map(r => ({
-      user_id: userId, date: r.date, amount: r.amount, currency: "EUR",
-      category: r.cat, description: r.label,
-      payment_method: "carte_pro", status: "draft",
-      vat_amount: 0, vat_recoverable: false,
-      receipt_url: "", invoice_number: "", project: "", cost_center: "",
-      notes: "Importé depuis relevé bancaire", expense_report_id: null,
-    })));
+    const res = await fetch("/api/depenses/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rows: sel.map(r => ({ date: r.date, amount: r.amount, cat: r.cat, label: r.label })) }),
+    });
     setSaving(false);
-    if (error) { setErr(error.message); return; }
-    onImported(sel.length);
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({ error: "Erreur serveur" }));
+      setErr(e.error ?? "Erreur d'import");
+      return;
+    }
+    const result = await res.json();
+    onImported(result.inserted ?? sel.length);
   }
 
   const selCount = rows.filter(r => r.selected).length;
@@ -299,8 +303,8 @@ function CsvImportModal({ userId, rules, onClose, onImported }: {
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <motion.div
-        className={`relative z-10 w-full sm:max-w-2xl flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden ${isDark ? "bg-[#0d1117]" : "bg-white"}`}
-        style={{ maxHeight: "88vh", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}
+        className={`relative z-10 w-full sm:max-w-2xl flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden ${isDark ? "bg-[#181818]" : "bg-white"}`}
+        style={{ maxHeight: "88vh", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}>
 
         {/* Header */}
@@ -445,13 +449,11 @@ const BLANK_RULE: Omit<ExpenseRule, "id"|"user_id"|"created_at"> = {
   match_value: "", category: "autre", priority: 0, active: true,
 };
 
-function RulesView({ rules, setRules, userId }: {
+function RulesView({ rules, setRules }: {
   rules: ExpenseRule[];
   setRules: React.Dispatch<React.SetStateAction<ExpenseRule[]>>;
-  userId: string;
 }) {
-  const isDark   = useDark();
-  const supabase = supabaseClient;
+  const isDark = useDark();
   const [editing, setEditing] = useState<string | null>(null); // id or "new"
   const [draft,   setDraft]   = useState<Omit<ExpenseRule, "id"|"user_id"|"created_at">>(BLANK_RULE);
   const [saving,  setSaving]  = useState(false);
@@ -476,27 +478,41 @@ function RulesView({ rules, setRules, userId }: {
     if (!draft.match_value.trim()) return;
     setSaving(true);
     if (editing === "new") {
-      const { data, error } = await supabase.from("expense_rules")
-        .insert({ ...draft, user_id: userId }).select().single();
-      if (!error && data) setRules(rs => [data as ExpenseRule, ...rs]);
+      const res = await fetch("/api/depenses/rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draft),
+      });
+      if (res.ok) { const data = await res.json(); setRules(rs => [data as ExpenseRule, ...rs]); }
     } else {
-      const { error } = await supabase.from("expense_rules")
-        .update(draft).eq("id", editing!).eq("user_id", userId);
-      if (!error) setRules(rs => rs.map(r => r.id === editing ? { ...r, ...draft } : r));
+      const res = await fetch("/api/depenses/rules", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editing, ...draft }),
+      });
+      if (res.ok) setRules(rs => rs.map(r => r.id === editing ? { ...r, ...draft } : r));
     }
     setSaving(false);
     setEditing(null);
   }
 
   async function deleteRule(id: string) {
-    await supabase.from("expense_rules").delete().eq("id", id).eq("user_id", userId);
-    setRules(rs => rs.filter(r => r.id !== id));
+    const res = await fetch("/api/depenses/rules", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) setRules(rs => rs.filter(r => r.id !== id));
   }
 
   async function toggleActive(rule: ExpenseRule) {
     const next = !rule.active;
-    await supabase.from("expense_rules").update({ active: next }).eq("id", rule.id).eq("user_id", userId);
-    setRules(rs => rs.map(r => r.id === rule.id ? { ...r, active: next } : r));
+    const res = await fetch("/api/depenses/rules", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: rule.id, active: next }),
+    });
+    if (res.ok) setRules(rs => rs.map(r => r.id === rule.id ? { ...r, active: next } : r));
   }
 
   const sortedRules = [...rules].sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name));
@@ -532,7 +548,7 @@ function RulesView({ rules, setRules, userId }: {
             <div className="relative">
               <select value={draft.match_op}
                 onChange={e => setDraft(d => ({ ...d, match_op: e.target.value as MatchOp }))}
-                className={`${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/80" : "border-gray-200 bg-white text-gray-800"} appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none`}>
+                className={`${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#181818] text-white/80" : "border-gray-200 bg-white text-gray-800"} appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none`}>
                 {(Object.entries(OP_LABELS) as [MatchOp, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
               <ChevronDown size={10} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
@@ -544,7 +560,7 @@ function RulesView({ rules, setRules, userId }: {
             <span className={`text-[0.78rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>→ Catégorie</span>
             <div className="relative">
               <select value={draft.category} onChange={e => setDraft(d => ({ ...d, category: e.target.value }))}
-                className={`${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/80" : "border-gray-200 bg-white text-gray-800"} appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none`}>
+                className={`${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#181818] text-white/80" : "border-gray-200 bg-white text-gray-800"} appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none`}>
                 {CATS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
               </select>
               <ChevronDown size={10} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
@@ -552,7 +568,7 @@ function RulesView({ rules, setRules, userId }: {
             <span className={`text-[0.78rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>Priorité</span>
             <input type="number" min="0" max="100" value={draft.priority}
               onChange={e => setDraft(d => ({ ...d, priority: parseInt(e.target.value) || 0 }))}
-              className={`${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/80" : "border-gray-200 bg-white text-gray-800"} w-16 rounded-xl border px-2 py-2 text-[0.75rem] text-center outline-none`} />
+              className={`${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#181818] text-white/80" : "border-gray-200 bg-white text-gray-800"} w-16 rounded-xl border px-2 py-2 text-[0.75rem] text-center outline-none`} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button onClick={cancelEdit} className={`rounded-xl px-4 py-2 text-xs transition-colors ${isDark ? "text-white/40 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}>
@@ -687,7 +703,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 // Calculés localement dans chaque composant via useDark()
 const INP_DARK = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
 const INP_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[0.8rem] text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300 focus:bg-gray-50 transition-all";
-const SEL_DARK = "w-full rounded-xl border border-white/[0.08] bg-[#0e1420] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
+const SEL_DARK = "w-full rounded-xl border border-white/[0.08] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none focus:border-white/[0.15] transition-all";
 const SEL_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-[0.8rem] text-gray-900 outline-none appearance-none focus:border-gray-300 transition-all";
 
 function ExpenseModal({
@@ -706,12 +722,22 @@ function ExpenseModal({
   const sel      = isDark ? SEL_DARK : SEL_LITE;
   const supabase = supabaseClient;
   const fileRef  = useRef<HTMLInputElement>(null);
-  const [form,      setForm]      = useState<Partial<Expense>>(expense ?? { ...BLANK });
-  const [uploading, setUploading] = useState(false);
-  const [saving,    setSaving]    = useState(false);
-  const [ocring,    setOcring]    = useState(false);
-  const [ocrFields, setOcrFields] = useState<string[]>([]);
-  const [saveError, setSaveError] = useState("");
+  const [form,             setForm]          = useState<Partial<Expense>>(expense ?? { ...BLANK });
+  const [uploading,        setUploading]     = useState(false);
+  const [saving,           setSaving]        = useState(false);
+  const [ocring,           setOcring]        = useState(false);
+  const [ocrFields,        setOcrFields]     = useState<string[]>([]);
+  const [saveError,        setSaveError]     = useState("");
+  const [signedReceiptUrl, setSignedReceiptUrl] = useState<string>("");
+
+  useEffect(() => {
+    const path = form.receipt_url;
+    if (!path || path.startsWith("https://")) { setSignedReceiptUrl(path ?? ""); return; }
+    supabase.storage.from("receipts").createSignedUrl(path, 3600)
+      .then(({ data }) => setSignedReceiptUrl(data?.signedUrl ?? ""))
+      .catch(() => setSignedReceiptUrl(""));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.receipt_url]);
   const catManualRef = useRef(!!expense?.category && expense.category !== "autre");
 
   const set = (k: keyof Expense, v: unknown) => {
@@ -735,8 +761,7 @@ function ExpenseModal({
       const path = `${userId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       const { error } = await supabase.storage.from("receipts").upload(path, file, { upsert: true });
       if (error) throw error;
-      const { data } = supabase.storage.from("receipts").getPublicUrl(path);
-      set("receipt_url", data.publicUrl);
+      set("receipt_url", path); // stocker le chemin, pas l'URL publique
 
       // OCR via Claude vision (images uniquement)
       if (file.type.startsWith("image/")) {
@@ -781,14 +806,28 @@ function ExpenseModal({
       amount:     Number(form.amount),
       vat_amount: Number(form.vat_amount ?? 0),
     };
-    if (expense?.id) {
-      const { data, error } = await supabase.from("expenses").update(payload).eq("id", expense.id).eq("user_id", userId).select().single();
-      if (error) { setSaveError(error.message); setSaving(false); return; }
-      if (data) onSave(data as Expense);
-    } else {
-      const { data, error } = await supabase.from("expenses").insert(payload).select().single();
-      if (error) { setSaveError(error.message); setSaving(false); return; }
-      if (data) onSave(data as Expense);
+    try {
+      if (expense?.id) {
+        const res = await fetch("/api/depenses/expense", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: expense.id, ...payload }),
+        });
+        const json = await res.json();
+        if (!res.ok) { setSaveError(json.error ?? "Erreur"); setSaving(false); return; }
+        onSave(json as Expense);
+      } else {
+        const res = await fetch("/api/depenses/expense", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (!res.ok) { setSaveError(json.error ?? "Erreur"); setSaving(false); return; }
+        onSave(json as Expense);
+      }
+    } catch (e) {
+      setSaveError(String(e));
     }
     setSaving(false);
   }
@@ -1004,12 +1043,12 @@ function ExpenseModal({
             <div className="flex items-start gap-3">
               <div className="flex-1 min-w-0">
                 {/\.(jpe?g|png|webp)$/i.test(form.receipt_url) ? (
-                  <a href={form.receipt_url} target="_blank" rel="noreferrer"
+                  <a href={signedReceiptUrl || "#"} target="_blank" rel="noreferrer"
                     className={`block overflow-hidden rounded-xl border ${isDark ? "border-white/[0.08]" : "border-gray-200"}`}>
-                                        <img src={form.receipt_url} alt="Justificatif" className="w-full max-h-36 object-cover" />
+                    <img src={signedReceiptUrl || undefined} alt="Justificatif" className="w-full max-h-36 object-cover" />
                   </a>
                 ) : (
-                  <a href={form.receipt_url} target="_blank" rel="noreferrer"
+                  <a href={signedReceiptUrl || "#"} target="_blank" rel="noreferrer"
                     className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-[0.72rem] text-blue-400 hover:text-blue-500 transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
                     <FileCheck size={14} /> Voir le justificatif (PDF)
                   </a>
@@ -1184,20 +1223,38 @@ function BudgetView({
   async function saveBudget(cat: string, amount: number) {
     const existing = budgets.find(b => b.category === cat && b.period === "monthly" && b.year === year && b.month === mo);
     if (existing) {
-      const { data } = await supabase.from("expense_budgets").update({ amount }).eq("id", existing.id).eq("user_id", userId).select().single();
-      if (data) onBudgetsChange(budgets.map(b => b.id === existing.id ? data as ExpenseBudget : b));
+      const res = await fetch("/api/depenses/budget", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: existing.id, amount }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        onBudgetsChange(budgets.map(b => b.id === existing.id ? data as ExpenseBudget : b));
+      }
     } else {
-      const { data } = await supabase.from("expense_budgets").insert({
-        user_id: userId, category: cat, amount, period: "monthly", year, month: mo,
-        alert_threshold: 80, notify_push: true, notify_email: false,
-      }).select().single();
-      if (data) onBudgetsChange([...budgets, data as ExpenseBudget]);
+      const res = await fetch("/api/depenses/budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: cat, amount, period: "monthly", year, month: mo, alert_threshold: 80, notify_push: true, notify_email: false }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        onBudgetsChange([...budgets, data as ExpenseBudget]);
+      }
     }
   }
 
   async function saveAlertSettings(budgetId: string, patch: Partial<Pick<ExpenseBudget, "alert_threshold" | "notify_push" | "notify_email">>) {
-    const { data } = await supabase.from("expense_budgets").update(patch).eq("id", budgetId).select().single();
-    if (data) onBudgetsChange(budgets.map(b => b.id === budgetId ? data as ExpenseBudget : b));
+    const res = await fetch("/api/depenses/budget", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: budgetId, ...patch }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      onBudgetsChange(budgets.map(b => b.id === budgetId ? data as ExpenseBudget : b));
+    }
   }
 
   const totalBudget = CATS.reduce((a, { v }) => a + getBudget(v), 0);
@@ -1429,12 +1486,15 @@ function ExportPackModal({
     zip.file("index.csv", buildExpenseCsv(matching));
     setProgress({ done: 1, total: withReceipt.length + 1 });
 
-    // Receipts
+    // Receipts — utilise des URLs signées (bucket privé)
     const folder = zip.folder("justificatifs")!;
     let done = 1;
     for (const e of withReceipt) {
       try {
-        const res = await fetch(e.receipt_url);
+        const urlRes = await fetch(`/api/depenses/receipt-url?path=${encodeURIComponent(e.receipt_url)}`);
+        if (!urlRes.ok) throw new Error("URL signée indisponible");
+        const { url: signedUrl } = await urlRes.json();
+        const res = await fetch(signedUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
         const ext  = fileExtFromUrl(e.receipt_url);
@@ -1613,16 +1673,15 @@ function ApprobationView({
 
   async function doTransition(exp: Expense, next: ExpStatus, cmt: string) {
     setSaving(true);
-    const patch: Record<string, unknown> = { status: next, approval_comment: cmt };
-    if (next === "approved") patch.approved_at = new Date().toISOString();
-    if (next === "draft")    patch.approved_at = null;
-    const { error } = await supabase.from("expenses").update(patch).eq("id", exp.id);
+    const res = await fetch("/api/depenses/approbation", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: exp.id, next, comment: cmt }),
+    });
     setSaving(false);
-    if (!error) {
-      setExpenses(es => es.map(e => e.id === exp.id
-        ? { ...e, status: next, approval_comment: cmt, approved_at: next === "approved" ? new Date().toISOString() : e.approved_at }
-        : e
-      ));
+    if (res.ok) {
+      const data = await res.json();
+      setExpenses(es => es.map(e => e.id === exp.id ? { ...e, ...data } : e));
       setPending(null);
       setComment("");
     }
@@ -1632,14 +1691,17 @@ function ApprobationView({
     const targets = expenses.filter(e => e.status === curr);
     if (!targets.length) return;
     setSaving(true);
-    const patch: Record<string, unknown> = { status: next };
-    if (next === "approved") patch.approved_at = new Date().toISOString();
-    await Promise.all(targets.map(e => supabase.from("expenses").update(patch).eq("id", e.id)));
+    const res = await fetch("/api/depenses/approbation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from: curr, next }),
+    });
     setSaving(false);
-    setExpenses(es => es.map(e => e.status === curr
-      ? { ...e, status: next, approved_at: next === "approved" ? new Date().toISOString() : e.approved_at }
-      : e
-    ));
+    if (res.ok) {
+      const result = await res.json();
+      const updated = new Map((result.items as Expense[]).map((e: Expense) => [e.id, e]));
+      setExpenses(es => es.map(e => updated.has(e.id) ? { ...e, ...updated.get(e.id) } : e));
+    }
   }
 
   return (
@@ -2037,13 +2099,31 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
         </button>
       </div>
 
-      {/* ── KPI tiles ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {KPI.map(({ l, v, sub, c }) => (
-          <div key={l} className={`${card} space-y-1`}>
-            <p className={`text-[0.62rem] font-medium uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>{l}</p>
-            <p className={`text-[1.15rem] font-extrabold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
-            <p className="text-[0.6rem] leading-tight truncate" style={{ color: c }}>{sub}</p>
+      {/* ── KPI héros ── */}
+      <div className="grid grid-cols-2 gap-3">
+        {KPI.slice(0, 2).map(({ l, v, sub, c }) => (
+          <div key={l} className={`relative overflow-hidden rounded-2xl border p-5 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+            {/* Accent bar */}
+            <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${c}, transparent)` }} />
+            {/* Glow doré */}
+            {c === "#c9a55a" && (
+              <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-[0.08] blur-2xl" style={{ background: c }} />
+            )}
+            <p className={`text-[0.58rem] font-semibold uppercase tracking-[0.12em] ${isDark ? "text-white/28" : "text-gray-400"}`}>{l}</p>
+            <p className={`mt-2 text-[1.75rem] font-extrabold leading-none tabular-nums ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
+            <p className="mt-2 text-[0.63rem] leading-tight font-medium" style={{ color: c }}>{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── KPI secondaires ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {KPI.slice(2).map(({ l, v, sub, c }) => (
+          <div key={l} className={`relative overflow-hidden rounded-2xl border p-3.5 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-white"}`}>
+            <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${c}99, transparent)` }} />
+            <p className={`text-[0.55rem] font-semibold uppercase tracking-[0.1em] ${isDark ? "text-white/22" : "text-gray-400"}`}>{l}</p>
+            <p className={`mt-1.5 text-[1.05rem] font-extrabold leading-none tabular-nums ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
+            <p className="mt-1 text-[0.58rem] leading-tight truncate font-medium" style={{ color: c }}>{sub}</p>
           </div>
         ))}
       </div>
@@ -2051,47 +2131,71 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
       {/* ── 12-month trend ── */}
       <div className={card}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
-            Tendance {year} {focusMonth ? `· ${fmtMonthYear(focusMonth)}` : ""}
+          <h3 className={`text-[0.65rem] font-bold uppercase tracking-[0.12em] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+            Tendance mensuelle · {year} {focusMonth ? `— ${fmtMonthYear(focusMonth)}` : ""}
           </h3>
-          <span className={`text-[0.62rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Cliquer pour filtrer</span>
+          <span className={`text-[0.58rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>↑ Cliquer pour filtrer</span>
         </div>
-        <div className="flex items-end gap-1 overflow-x-auto pb-1" style={{ height: "100px" }}>
-          {trend.map(({ label, key, total, count }) => {
-            const isFocus = key === focusMonth;
-            const isCur   = key === thisMonthKey;
-            return (
-              <button key={key} onClick={() => setFocusMonth(isFocus ? null : key)}
-                className="flex flex-1 min-w-0 flex-col items-center gap-1 cursor-pointer group transition-all"
-                style={{ minWidth: "16px" }}>
-                {total > 0 && (
-                  <span className={`text-[0.48rem] leading-none transition-opacity ${isDark ? "text-white/30" : "text-gray-400"} ${isFocus ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                    {total >= 1000 ? `${(total / 1000).toFixed(0)}k` : `${Math.round(total)}`}
+        {/* Chart zone */}
+        <div className="relative" style={{ height: "130px" }}>
+          {/* Grid lines */}
+          {[0.25, 0.5, 0.75].map(pct => (
+            <div key={pct} className="absolute inset-x-0" style={{ bottom: `${22 + pct * 88}px`, borderTop: `1px dashed ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)"}` }} />
+          ))}
+          {/* Bars */}
+          <div className="absolute inset-x-0 bottom-[22px] flex items-end gap-[2px] overflow-x-auto" style={{ height: "88px" }}>
+            {trend.map(({ label, key, total, count }) => {
+              const isFocus = key === focusMonth;
+              const isCur   = key === thisMonthKey;
+              const barH    = Math.max((total / maxTrend) * 88, total > 0 ? 3 : 1);
+              return (
+                <button key={key} onClick={() => setFocusMonth(isFocus ? null : key)}
+                  className="flex flex-1 min-w-0 flex-col items-center justify-end gap-0.5 cursor-pointer group transition-all h-full"
+                  style={{ minWidth: "14px" }}>
+                  {total > 0 && (
+                    <span className={`text-[0.45rem] leading-none transition-opacity ${isDark ? "text-white/35" : "text-gray-400"} ${isFocus ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                      {total >= 1000 ? `${(total / 1000).toFixed(1)}k` : `${Math.round(total)}`}
+                    </span>
+                  )}
+                  <div className="w-full rounded-t-[3px] transition-all duration-300 group-hover:brightness-125"
+                    style={{
+                      height:     `${barH}px`,
+                      background: isFocus
+                        ? `linear-gradient(to bottom, #c9a55a, #c9a55a88)`
+                        : isCur
+                        ? `linear-gradient(to bottom, #c9a55a66, #c9a55a22)`
+                        : isDark ? "rgba(255,255,255,0.07)" : "#e5e7eb",
+                      boxShadow:  isFocus ? "0 0 8px rgba(201,165,90,0.3)" : "none",
+                      outline:    isFocus ? "1.5px solid rgba(201,165,90,0.5)" : "none",
+                      outlineOffset: "2px",
+                    }} />
+                </button>
+              );
+            })}
+          </div>
+          {/* Month labels */}
+          <div className="absolute inset-x-0 bottom-0 flex gap-[2px]" style={{ height: "18px" }}>
+            {trend.map(({ label, key, count }) => {
+              const isFocus = key === focusMonth;
+              return (
+                <div key={key} className="flex flex-1 min-w-0 flex-col items-center justify-end" style={{ minWidth: "14px" }}>
+                  <span className={`text-[0.48rem] leading-none transition-all ${isFocus ? "font-bold text-[#c9a55a]" : isDark ? "text-white/22" : "text-gray-400"}`}>
+                    {label}
                   </span>
-                )}
-                <div className="w-full rounded-t-sm transition-all duration-300"
-                  style={{
-                    height:           `${Math.max((total / maxTrend) * 68, total > 0 ? 3 : 1)}px`,
-                    backgroundColor:  isFocus ? "#c9a55a" : isCur ? "#c9a55a88" : isDark ? "rgba(255,255,255,0.07)" : "#e5e7eb",
-                    outline:          isFocus ? "2px solid #c9a55a" : "none",
-                    outlineOffset:    "2px",
-                  }} />
-                <span className={`text-[0.5rem] transition-all ${isFocus ? "font-bold text-[#c9a55a]" : isDark ? "text-white/25" : "text-gray-400"}`}>
-                  {label}
-                </span>
-                {count > 0 && (
-                  <span className={`text-[0.45rem] leading-none ${isDark ? "text-white/15" : "text-gray-300"}`}>{count}</span>
-                )}
-              </button>
-            );
-          })}
+                  {count > 0 && (
+                    <span className={`text-[0.4rem] leading-none ${isDark ? "text-white/12" : "text-gray-300"}`}>{count}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* ── Category donut + breakdown ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className={`${card} space-y-3`}>
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
+          <h3 className={`text-[0.62rem] font-bold uppercase tracking-[0.12em] ${isDark ? "text-white/30" : "text-gray-400"}`}>
             Catégories {focusMonth ? `· ${fmtMonthYear(focusMonth)}` : `· ${year}`}
           </h3>
           {byCat.length === 0
@@ -2121,7 +2225,7 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
 
         {/* ── Top 5 ── */}
         <div className={`${card} space-y-3`}>
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
+          <h3 className={`text-[0.62rem] font-bold uppercase tracking-[0.12em] ${isDark ? "text-white/30" : "text-gray-400"}`}>
             Top dépenses {focusMonth ? `· ${fmtMonthYear(focusMonth)}` : `· ${year}`}
           </h3>
           {top5.length === 0
@@ -2153,7 +2257,7 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
 
       {/* ── Payment method ── */}
       <div className={`${card} space-y-3`}>
-        <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
+        <h3 className={`text-[0.62rem] font-bold uppercase tracking-[0.12em] ${isDark ? "text-white/30" : "text-gray-400"}`}>
           Par moyen de paiement {focusMonth ? `· ${fmtMonthYear(focusMonth)}` : `· ${year}`}
         </h3>
         {byPay.length === 0
@@ -2382,7 +2486,10 @@ export default function DepensesPage() {
   const [loading, setLoading] = useState(true);
   const [toast,   setToast]   = useState<ToastData | null>(null);
 
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses,   setExpenses]   = useState<Expense[]>([]);
+  const [expPage,    setExpPage]    = useState(1);
+  const [expTotal,   setExpTotal]   = useState(0);
+  const [grandCount, setGrandCount] = useState(0);
   const [reports,  setReports]  = useState<ExpenseReport[]>([]);
   const [budgets,  setBudgets]  = useState<ExpenseBudget[]>([]);
   const [rules,    setRules]    = useState<ExpenseRule[]>([]);
@@ -2419,52 +2526,77 @@ export default function DepensesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const fetchExpenses = useCallback(async (page: number, opts?: { q?: string; cat?: string; st?: string; pay?: string; month?: string }) => {
+    const sp = new URLSearchParams({ page: String(page), perPage: "50" });
+    if (opts?.q)     sp.set("q",      opts.q);
+    if (opts?.cat)   sp.set("cat",    opts.cat);
+    if (opts?.st)    sp.set("status", opts.st);
+    if (opts?.pay)   sp.set("pay",    opts.pay);
+    if (opts?.month) sp.set("month",  opts.month);
+    const res = await fetch(`/api/depenses/list?${sp.toString()}`);
+    if (!res.ok) return;
+    const json = await res.json() as { expenses: Expense[]; total: number; grandCount: number; page: number };
+    setExpenses(json.expenses);
+    setExpTotal(json.total);
+    setGrandCount(json.grandCount);
+    setExpPage(json.page);
+  }, []);
+
   const loadAll = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const [eRes, rRes, bRes, rlRes] = await Promise.all([
-      supabase.from("expenses").select("*").eq("user_id", userId).order("date", { ascending: false }),
-      supabase.from("expense_reports").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-      supabase.from("expense_budgets").select("*").eq("user_id", userId),
-      supabase.from("expense_rules").select("*").eq("user_id", userId).order("priority", { ascending: false }),
+    await Promise.all([
+      fetchExpenses(1),
+      supabase.from("expense_reports").select("*").eq("user_id", userId).order("created_at", { ascending: false })
+        .then(r => { if (r.data) setReports(r.data as ExpenseReport[]); }),
+      supabase.from("expense_budgets").select("*").eq("user_id", userId)
+        .then(r => { if (r.data) setBudgets(r.data as ExpenseBudget[]); }),
+      supabase.from("expense_rules").select("*").eq("user_id", userId).order("priority", { ascending: false })
+        .then(r => { if (r.data) setRules(r.data as ExpenseRule[]); }),
     ]);
-    if (eRes.data)  setExpenses(eRes.data as Expense[]);
-    if (rRes.data)  setReports(rRes.data as ExpenseReport[]);
-    if (bRes.data)  setBudgets(bRes.data as ExpenseBudget[]);
-    if (rlRes.data) setRules(rlRes.data as ExpenseRule[]);
     setLoading(false);
-
-  }, [userId]);
+  }, [userId, fetchExpenses]);
 
   useEffect(() => { if (userId) loadAll(); }, [userId, loadAll]);
 
-    const filtered = useMemo(() => expenses.filter(e => {
-    if (search && !e.description.toLowerCase().includes(search.toLowerCase()) &&
-        !e.project.toLowerCase().includes(search.toLowerCase()) &&
-        !e.invoice_number.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterCat   && e.category       !== filterCat)  return false;
-    if (filterSt    && e.status         !== filterSt)   return false;
-    if (filterPay   && e.payment_method !== filterPay)  return false;
-    if (filterMonth && !e.date.startsWith(filterMonth)) return false;
-    return true;
-  }), [expenses, search, filterCat, filterSt, filterPay, filterMonth]);
+  // Debounced re-fetch when filters change (skip on initial mount — loadAll handles it)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!userId) return;
+    const id = setTimeout(() => {
+      fetchExpenses(1, { q: search, cat: filterCat, st: filterSt, pay: filterPay, month: filterMonth });
+    }, 300);
+    return () => clearTimeout(id);
+  }, [search, filterCat, filterSt, filterPay, filterMonth, userId, fetchExpenses]);
+
+  // Expenses are already filtered server-side
+  const filtered = useMemo(() => expenses, [expenses]);
 
   const filteredTotal = useMemo(() => filtered.filter(e => e.status !== "rejected").reduce((a, e) => a + amtEur(e, rates), 0), [filtered, rates]);
-  const filteredVAT   = useMemo(() => filtered.filter(e => e.vat_recoverable).reduce((a, e) => a + (e.currency === "EUR" ? e.vat_amount : e.vat_amount / (rates[e.currency] ?? 1)), 0), [filtered, rates]);
+  const filteredVAT   = useMemo(() => filtered.filter(e => e.vat_recoverable && e.status !== "rejected").reduce((a, e) => a + (e.currency === "EUR" ? e.vat_amount : e.vat_amount / (rates[e.currency] ?? 1)), 0), [filtered, rates]);
   const filteredReimb = useMemo(() => filtered.filter(e => e.payment_method === "carte_perso" && e.status !== "reimbursed" && e.status !== "rejected").reduce((a, e) => a + amtEur(e, rates), 0), [filtered, rates]);
   const hasFilters    = !!(search || filterCat || filterSt || filterMonth || filterPay);
 
     async function deleteExpense(id: string) {
-    const { error } = await supabase.from("expenses").delete().eq("id", id);
-    if (error) return toast$("Erreur de suppression", "error");
+    const res = await fetch("/api/depenses/expense", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) return toast$("Erreur d'archivage", "error");
     setExpenses(es => es.filter(e => e.id !== id));
     setConfirmDeleteExpenseId(null);
-    toast$("Dépense supprimée");
+    toast$("Dépense archivée");
   }
 
   async function updateStatus(id: string, status: ExpStatus) {
-    const { error } = await supabase.from("expenses").update({ status }).eq("id", id).eq("user_id", userId ?? "");
-    if (error) return toast$("Erreur", "error");
+    const res = await fetch("/api/depenses/status", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+    if (!res.ok) return toast$("Erreur", "error");
     setExpenses(es => es.map(e => e.id === id ? { ...e, status } : e));
     toast$("Statut mis à jour");
   }
@@ -2472,13 +2604,23 @@ export default function DepensesPage() {
     async function saveReport(form: Partial<ExpenseReport>) {
     if (!form.title?.trim() || !userId) return;
     if (editReport) {
-      const { data, error } = await supabase.from("expense_reports").update(form).eq("id", editReport.id).eq("user_id", userId ?? "").select().single();
-      if (error) return toast$("Erreur", "error");
+      const res = await fetch("/api/depenses/report", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editReport.id, ...form }),
+      });
+      if (!res.ok) return toast$("Erreur", "error");
+      const data = await res.json();
       setReports(rs => rs.map(r => r.id === editReport.id ? data as ExpenseReport : r));
       toast$("Note mise à jour");
     } else {
-      const { data, error } = await supabase.from("expense_reports").insert({ ...form, user_id: userId }).select().single();
-      if (error) return toast$("Erreur de création", "error");
+      const res = await fetch("/api/depenses/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) return toast$("Erreur de création", "error");
+      const data = await res.json();
       setReports(rs => [data as ExpenseReport, ...rs]);
       toast$("Note de frais créée");
     }
@@ -2487,8 +2629,12 @@ export default function DepensesPage() {
   }
 
   async function deleteReport(id: string) {
-    const { error } = await supabase.from("expense_reports").delete().eq("id", id);
-    if (error) return toast$("Erreur", "error");
+    const res = await fetch("/api/depenses/report", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) return toast$("Erreur", "error");
     setReports(rs => rs.filter(r => r.id !== id));
     setExpenses(es => es.map(e => e.expense_report_id === id ? { ...e, expense_report_id: null } : e));
     setConfirmDeleteReportId(null);
@@ -2593,21 +2739,21 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
   const grandTotal = expenses.filter(e => e.status !== "rejected").reduce((a, e) => a + amtEur(e, rates), 0);
 
   if (loading) return (
-    <div className="flex h-full items-center justify-center" style={{ background: isDark ? "#07080e" : "#f8f9fa" }}>
+    <div className="flex h-full items-center justify-center" style={{ background: isDark ? "#111111" : "#f8f8f8" }}>
       <div className={`h-8 w-8 animate-spin rounded-full border-2 border-t-[#c9a55a] ${isDark ? "border-white/10" : "border-gray-200"}`} />
     </div>
   );
 
   return (
     <DarkCtx.Provider value={isDark}>
-    <div className="flex h-full flex-col overflow-hidden" style={{ background: isDark ? "#07080e" : "#f0f2f5" }}>
+    <div className="flex h-full flex-col overflow-hidden" style={{ background: isDark ? "#111111" : "#f8f8f8" }}>
       <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </AnimatePresence>
 
       {/* ── Animated header ── */}
       <div className="relative shrink-0 overflow-hidden px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6"
-        style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#09080e)" : "linear-gradient(160deg,#ffffff,#f8f9fa,#f0f2f5)" }}>
+        style={{ background: isDark ? "#111111" : "#f8f8f8" }}>
 
         {/* Gold top line */}
         <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, ease: "easeOut" }}
@@ -2619,20 +2765,17 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
           <div className="absolute -top-12 -right-12 h-56 w-56 rounded-full opacity-[0.07]"
             style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }} />
           <div className="absolute top-4 left-1/4 h-32 w-32 rounded-full opacity-[0.04]"
-            style={{ background: "radial-gradient(circle,#6366f1,transparent 70%)" }} />
+            style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }} />
           <div className="absolute -bottom-4 left-1/2 h-28 w-28 rounded-full opacity-[0.03]"
             style={{ background: "radial-gradient(circle,#10b981,transparent 70%)" }} />
         </div>
 
         <div className="relative z-10 flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={Receipt} color="#ea580c" />
-            <div>
-              <h1 className={`text-xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Dépenses</h1>
-              <p className={`mt-0.5 text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                {expenses.length} dépense{expenses.length !== 1 ? "s" : ""} · {fmtCur(grandTotal)} total
-              </p>
-            </div>
+          <div>
+            <h1 className={`text-xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Dépenses</h1>
+            <p className={`mt-0.5 text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+              {expenses.length} dépense{expenses.length !== 1 ? "s" : ""} · {fmtCur(grandTotal)} total
+            </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -2678,11 +2821,11 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
         {/* KPI strip — 4 colonnes */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, type: "spring", stiffness: 260, damping: 24 }}
-          className="relative z-10 mt-5 grid grid-cols-4 overflow-hidden rounded-2xl border"
+          className="relative z-10 mt-5 grid grid-cols-2 sm:grid-cols-4 overflow-hidden rounded-2xl border"
           style={{ background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.88)", borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
           {([
             { l: "Total dépenses",  v: fmtCur(grandTotal),    c: "#c9a55a", I: Receipt,   sub: `${expenses.length} dep.` },
-            { l: "Total filtré",    v: fmtCur(filteredTotal),  c: "#6366f1", I: BarChart2, sub: `${filtered.length} résultats` },
+            { l: "Total filtré",    v: fmtCur(filteredTotal),  c: "rgba(255,255,255,0.85)", I: BarChart2, sub: `${filtered.length} résultats` },
             { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981", I: Zap,       sub: "Récupérable" },
             { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b", I: Wallet,    sub: "Carte perso" },
           ] as const).map(({ l, v, c, I: Icon, sub }, i) => (
@@ -2748,7 +2891,8 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                   </div>
                   <div className="relative">
                     <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-                      className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/50" : "border-gray-200 bg-white text-gray-500"}`}>
+                      className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none ${isDark ? "border-white/[0.08] text-white/50" : "border-gray-200 text-gray-500"}`}
+                      style={{ background: isDark ? "#1a1a1a" : "#ffffff" }}>
                       <option value="">Toutes catégories</option>
                       {CATS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
                     </select>
@@ -2756,7 +2900,8 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                   </div>
                   <div className="relative">
                     <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
-                      className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/50" : "border-gray-200 bg-white text-gray-500"}`}>
+                      className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none ${isDark ? "border-white/[0.08] text-white/50" : "border-gray-200 text-gray-500"}`}
+                      style={{ background: isDark ? "#1a1a1a" : "#ffffff" }}>
                       <option value="">Tous statuts</option>
                       {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                     </select>
@@ -2764,14 +2909,16 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                   </div>
                   <div className="relative">
                     <select value={filterPay} onChange={e => setFilterPay(e.target.value)}
-                      className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/50" : "border-gray-200 bg-white text-gray-500"}`}>
+                      className={`appearance-none rounded-xl border px-3 py-2 pr-7 text-[0.75rem] outline-none ${isDark ? "border-white/[0.08] text-white/50" : "border-gray-200 text-gray-500"}`}
+                      style={{ background: isDark ? "#1a1a1a" : "#ffffff" }}>
                       <option value="">Tous paiements</option>
                       {PAY_METHODS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
                     </select>
                     <ChevronDown size={11} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`} />
                   </div>
                   <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-                    className={`rounded-xl border px-3 py-2 text-[0.75rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-[#0e1420] text-white/50" : "border-gray-200 bg-white text-gray-500"}`} />
+                    className={`rounded-xl border px-3 py-2 text-[0.75rem] outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] text-white/50" : "border-gray-200 text-gray-500"}`}
+                    style={{ background: isDark ? "#1a1a1a" : "#ffffff" }} />
                   {hasFilters && (
                     <button onClick={() => { setSearch(""); setFilterCat(""); setFilterSt(""); setFilterMonth(""); setFilterPay(""); }}
                       className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-[0.72rem] transition-colors ${isDark ? "border-white/[0.08] text-white/30 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
@@ -2833,8 +2980,12 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                                   </span>
                                 )}
                                 {e.receipt_url && (
-                                  <a href={e.receipt_url} target="_blank" rel="noreferrer"
-                                    className="shrink-0 text-[0.65rem] leading-none text-blue-400/50 hover:text-blue-400 transition-colors" title="Justificatif">📎</a>
+                                  <button
+                                    onClick={async () => {
+                                      const r = await fetch(`/api/depenses/receipt-url?path=${encodeURIComponent(e.receipt_url)}`);
+                                      if (r.ok) { const { url } = await r.json(); window.open(url, "_blank", "noreferrer"); }
+                                    }}
+                                    className="shrink-0 text-[0.65rem] leading-none text-blue-400/50 hover:text-blue-400 transition-colors" title="Justificatif">📎</button>
                                 )}
                               </div>
                               {/* Ligne 2 : date + statut + projet */}
@@ -2856,8 +3007,8 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                               </div>
                             </div>
 
-                            {/* Actions au hover */}
-                            <div className="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* Actions — toujours visibles sur mobile, hover sur desktop */}
+                            <div className="shrink-0 flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                               {confirmDeleteExpenseId === e.id ? (
                                 <>
                                   <button onClick={() => deleteExpense(e.id)}
@@ -2884,7 +3035,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                             </div>
 
                             <select value={e.status} onChange={ev => updateStatus(e.id, ev.target.value as ExpStatus)}
-                              className={`shrink-0 cursor-pointer appearance-none rounded-lg border px-2 py-1 text-[0.6rem] outline-none opacity-0 group-hover:opacity-100 transition-all ${isDark ? "[color-scheme:dark] border-white/[0.05] bg-[#0e1420] text-white/30 hover:border-white/15" : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"}`}
+                              className={`shrink-0 cursor-pointer appearance-none rounded-lg border px-2 py-1 text-[0.6rem] outline-none md:opacity-0 md:group-hover:opacity-100 transition-all ${isDark ? "[color-scheme:dark] border-white/[0.05] bg-[#181818] text-white/30 hover:border-white/15" : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"}`}
                               style={{ minWidth: "90px" }}>
                               {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                             </select>
@@ -2893,11 +3044,27 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                       })}
                     </AnimatePresence>
 
-                    {/* Footer récap */}
-                    <div className={`flex flex-wrap items-center justify-end gap-4 border-t px-4 py-2.5 text-[0.72rem] ${isDark ? "border-white/[0.05] bg-white/[0.01]" : "border-gray-100 bg-gray-50/80"}`}>
-                      <span className={isDark ? "text-white/30" : "text-gray-400"}>{filtered.length} résultat{filtered.length !== 1 ? "s" : ""}</span>
-                      <span className={isDark ? "text-white/50" : "text-gray-500"}>TVA rép. : <span className="font-semibold text-green-500">{fmtCur(filteredVAT)}</span></span>
-                      <span className={`font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Total : {fmtCur(filteredTotal)}</span>
+                    {/* Footer récap + pagination */}
+                    <div className={`flex flex-wrap items-center justify-between gap-4 border-t px-4 py-2.5 text-[0.72rem] ${isDark ? "border-white/[0.05] bg-white/[0.01]" : "border-gray-100 bg-gray-50/80"}`}>
+                      <div className="flex items-center gap-2">
+                        <button disabled={expPage <= 1}
+                          onClick={() => fetchExpenses(expPage - 1, { q: search, cat: filterCat, st: filterSt, pay: filterPay, month: filterMonth })}
+                          className={`rounded-lg px-2.5 py-1 text-[0.68rem] transition-all disabled:opacity-30 ${isDark ? "bg-white/[0.05] text-white/60 hover:bg-white/[0.08] disabled:hover:bg-white/[0.05]" : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:hover:bg-gray-100"}`}>
+                          ‹ Préc.
+                        </button>
+                        <span className={isDark ? "text-white/30" : "text-gray-400"}>
+                          {expPage} / {Math.max(1, Math.ceil(expTotal / 50))} · {expTotal} résultat{expTotal !== 1 ? "s" : ""}
+                        </span>
+                        <button disabled={expPage >= Math.ceil(expTotal / 50)}
+                          onClick={() => fetchExpenses(expPage + 1, { q: search, cat: filterCat, st: filterSt, pay: filterPay, month: filterMonth })}
+                          className={`rounded-lg px-2.5 py-1 text-[0.68rem] transition-all disabled:opacity-30 ${isDark ? "bg-white/[0.05] text-white/60 hover:bg-white/[0.08] disabled:hover:bg-white/[0.05]" : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:hover:bg-gray-100"}`}>
+                          Suiv. ›
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <span className={isDark ? "text-white/50" : "text-gray-500"}>TVA rép. : <span className="font-semibold text-green-500">{fmtCur(filteredVAT)}</span></span>
+                        <span className={`font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Total : {fmtCur(filteredTotal)}</span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -3040,7 +3207,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
 
             {tab === "regles" && userId && (
               <motion.div key="regles" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <RulesView rules={rules} setRules={setRules} userId={userId} />
+                <RulesView rules={rules} setRules={setRules} />
               </motion.div>
             )}
 
@@ -3080,7 +3247,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                 setExpenses(prev => {
                   const linked = prev.filter(e => e.expense_report_id === saved.expense_report_id && e.id !== saved.id);
                   const total  = [...linked, saved].filter(e => e.status !== "rejected").reduce((a,e) => a+e.amount, 0);
-                  void supabaseClient.from("expense_reports").update({ total_amount: total }).eq("id", saved.expense_report_id!).eq("user_id", userId ?? "");
+                  void fetch("/api/depenses/report", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: saved.expense_report_id, total_amount: total }) });
                   setReports(rs => rs.map(r => r.id === saved.expense_report_id ? { ...r, total_amount: total } : r));
                   return prev;
                 });

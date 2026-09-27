@@ -54,12 +54,12 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               // Next.js inline scripts (anti-flash, JSON-LD) + Stripe.js
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' js.stripe.com",
-              // Styles Tailwind inline
-              "style-src 'self' 'unsafe-inline'",
+              // Styles Tailwind inline + Google Fonts
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               // Images Supabase Storage + data URIs (aperçus inline) + avatars social proof
               "img-src 'self' data: blob: *.supabase.co *.supabase.in randomuser.me",
-              // Fonts locales uniquement
-              "font-src 'self'",
+              // Fonts locales + Google Fonts fichiers
+              "font-src 'self' https://fonts.gstatic.com",
               // API calls autorisées
               "connect-src 'self' *.supabase.co *.supabase.in wss://*.supabase.co api.stripe.com api-m.paypal.com api-m.sandbox.paypal.com",
               // iframes Stripe (paiement sécurisé)

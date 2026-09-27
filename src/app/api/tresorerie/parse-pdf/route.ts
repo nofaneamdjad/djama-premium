@@ -30,19 +30,7 @@ const VALID_CATS = new Set([
   "transport","taxes","bancaires","autre",
 ]);
 
-// Rate limit : 5 imports PDF/user/heure (Opus est coûteux)
-const pdfLimits = new Map<string, { count: number; resetAt: number }>();
-function checkRateLimit(userId: string): boolean {
-  const now  = Date.now();
-  const slot = pdfLimits.get(userId);
-  if (!slot || now > slot.resetAt) {
-    pdfLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    return true;
-  }
-  if (slot.count >= 5) return false;
-  slot.count++;
-  return true;
-}
+import { checkRateLimitAsync } from "@/lib/rate-limit";
 
 const SYSTEM_PROMPT = `\
 Tu es un expert-comptable spécialisé en relevés bancaires français.
@@ -83,7 +71,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  if (!checkRateLimit(user.id)) {
+  const { allowed } = await checkRateLimitAsync(user.id, 5, 60 * 60 * 1000);
+  if (!allowed) {
     return NextResponse.json({ error: "Limite atteinte : 5 imports PDF par heure." }, { status: 429 });
   }
 

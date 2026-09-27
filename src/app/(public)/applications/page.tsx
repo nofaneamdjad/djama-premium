@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { APPS_DATA } from "@/lib/applications-data";
+import AppLogo from "@/components/AppLogos";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/* Regroupe les apps par catégorie */
 const categories = Array.from(new Set(APPS_DATA.map((a) => a.category)));
 const byCategory = Object.fromEntries(
   categories.map((cat) => [cat, APPS_DATA.filter((a) => a.category === cat)])
@@ -15,52 +15,73 @@ const byCategory = Object.fromEntries(
 export default function ApplicationsPage() {
   return (
     <main className="min-h-screen bg-white">
+      <section className="mx-auto max-w-3xl px-6 pb-24 pt-32 sm:pt-40">
 
-      {/* ── Grille style Odoo ── */}
-      <section className="mx-auto max-w-6xl px-6 py-16 pt-32 sm:py-24 sm:pt-40 sm:px-8">
+        {/* Titre style Odoo */}
+        <motion.h1
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease }}
+          className="mb-14 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl"
+        >
+          Un besoin,{" "}
+          <span className="italic" style={{ color: "#c9a55a" }}>une app.</span>
+        </motion.h1>
+
+        {/* Catégories */}
         <motion.div
-          initial="hidden" animate="visible"
-          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
-          className="grid grid-cols-1 gap-x-10 gap-y-14 sm:grid-cols-2 lg:grid-cols-4"
+          initial="hidden"
+          animate="visible"
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+          className="flex flex-col gap-12"
         >
           {categories.map((cat) => {
             const apps = byCategory[cat];
-            const catColor = apps.find((a) => a.color)?.color ?? "#6b7280";
-
             return (
               <motion.div
                 key={cat}
-                variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease } } }}
               >
                 {/* En-tête catégorie */}
-                <div className="mb-3 border-b-2 pb-2" style={{ borderColor: catColor }}>
-                  <h2
-                    className="text-[0.7rem] font-extrabold uppercase tracking-[0.14em]"
-                    style={{ color: catColor }}
-                  >
-                    {cat}
-                  </h2>
-                </div>
+                <h2 className="mb-4 text-xl font-bold text-gray-900">{cat}</h2>
 
-                {/* Liste d'apps — texte seul, style Odoo */}
-                <ul className="flex flex-col">
+                {/* Liste apps — style Odoo : 1 colonne, logo + nom + desc */}
+                <div className="flex flex-col gap-3">
                   {apps.map((app) => (
-                    <li key={app.slug}>
-                      <Link
-                        href={`/applications/${app.slug}`}
-                        className="block py-1 text-[0.88rem] text-gray-700 hover:text-gray-900 hover:underline hover:decoration-gray-300"
+                    <Link
+                      key={app.slug}
+                      href={`/applications/${app.slug}`}
+                      className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-3.5 transition-all duration-150 hover:border-gray-200 hover:bg-white hover:shadow-sm"
+                    >
+                      {/* Logo SVG illustré */}
+                      <AppLogo slug={app.slug} size={42} bg={app.bg} />
+
+                      {/* Nom + description */}
+                      <div className="min-w-0">
+                        <p className="text-[0.88rem] font-semibold leading-snug text-gray-800 group-hover:text-gray-900">
+                          {app.label}
+                        </p>
+                        <p className="mt-0.5 line-clamp-1 text-[0.75rem] text-gray-400">
+                          {app.valueProposition}
+                        </p>
+                      </div>
+
+                      {/* Flèche hover */}
+                      <svg
+                        className="ml-auto shrink-0 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100"
+                        width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                       >
-                        {app.label}
-                      </Link>
-                    </li>
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </Link>
                   ))}
-                </ul>
+                </div>
               </motion.div>
             );
           })}
         </motion.div>
       </section>
-
     </main>
   );
 }

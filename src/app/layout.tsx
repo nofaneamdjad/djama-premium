@@ -241,12 +241,12 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      style={{ colorScheme: "dark", backgroundColor: "#071525" }}
+      style={{ colorScheme: "dark", backgroundColor: "#111111" }}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
         {/* Anti-flash: lit le thème avant le premier rendu pour éviter le flash sombre */}
-        <script dangerouslySetInnerHTML={{ __html: `try{var _t=JSON.parse(localStorage.getItem('djama-theme')||'{}');if(_t.mode==='light'){document.documentElement.setAttribute('data-theme','light');document.documentElement.style.backgroundColor='#f0f2fb';document.documentElement.style.colorScheme='light';}}catch(e){}}` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try{var _t=JSON.parse(localStorage.getItem('djama-theme')||'{}');if(_t.mode==='light'){document.documentElement.setAttribute('data-theme','light');document.documentElement.style.backgroundColor='#f8f8f8';document.documentElement.style.colorScheme='light';}}catch(e){}` }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

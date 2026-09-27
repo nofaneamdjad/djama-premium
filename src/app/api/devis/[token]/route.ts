@@ -12,11 +12,21 @@ export async function GET(
   // Fetch document by token (service role bypasses RLS)
   const { data: doc, error } = await supabaseAdmin
     .from("documents")
-    .select("id, numero, type, statut, client_nom, client_email, client_adresse, emetteur_nom, emetteur_siret, emetteur_adresse, emetteur_email, total_ht, total_tva, total_ttc, tva_rate, created_at, date_echeance, notes, signed_at, signed_by, viewed_at")
+    .select("id, numero, type, statut, client_nom, client_email, client_adresse, emetteur_nom, emetteur_siret, emetteur_adresse, emetteur_email, total_ht, total_tva, total_ttc, tva_rate, created_at, date_echeance, notes, signed_at, signed_by, viewed_at, share_token_expires_at, deleted_at")
     .eq("share_token", token)
     .maybeSingle();
 
   if (error || !doc) {
+    return NextResponse.json({ error: "Devis introuvable" }, { status: 404 });
+  }
+
+  // Reject expired tokens (P0.3)
+  if (doc.share_token_expires_at && new Date(doc.share_token_expires_at) < new Date()) {
+    return NextResponse.json({ error: "Lien expiré" }, { status: 410 });
+  }
+
+  // Reject soft-deleted documents (P0.4)
+  if (doc.deleted_at) {
     return NextResponse.json({ error: "Devis introuvable" }, { status: 404 });
   }
 
@@ -54,11 +64,18 @@ export async function POST(
   // Check exists and not already signed
   const { data: doc } = await supabaseAdmin
     .from("documents")
-    .select("id, statut, signed_at")
+    .select("id, statut, signed_at, share_token_expires_at, deleted_at")
     .eq("share_token", token)
     .maybeSingle();
 
   if (!doc) return NextResponse.json({ error: "Devis introuvable" }, { status: 404 });
+
+  // Reject expired or deleted (P0.3 + P0.4)
+  if (doc.share_token_expires_at && new Date(doc.share_token_expires_at) < new Date()) {
+    return NextResponse.json({ error: "Lien expiré" }, { status: 410 });
+  }
+  if (doc.deleted_at) return NextResponse.json({ error: "Devis introuvable" }, { status: 404 });
+
   if (doc.signed_at) return NextResponse.json({ error: "Devis déjà signé" }, { status: 409 });
 
   const { error } = await supabaseAdmin

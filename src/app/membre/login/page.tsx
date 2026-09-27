@@ -68,17 +68,22 @@ function MembreLoginInner() {
   const [orgs, setOrgs]           = useState<OrgMembership[]>([]);
   const [selectingOrg, setSelectingOrg] = useState(false);
 
-  // Redirect already-authenticated active members
+  // Auto-redirect only if user already has an active_org_id in metadata
+  // AND is confirmed active member of that org. Never auto-redirect a
+  // plain client/responsable who happens to be connected.
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
+      const activeOrgId = user.user_metadata?.active_org_id as string | undefined;
+      if (!activeOrgId) return; // pas de sélection d'org → rester sur le login
       const { data } = await supabase
         .from("organization_members")
-        .select("organization_id, role, suspended_at")
+        .select("organization_id")
         .eq("user_id", user.id)
+        .eq("organization_id", activeOrgId)
         .is("suspended_at", null)
-        .limit(1);
-      if (data && data.length > 0) {
+        .maybeSingle();
+      if (data) {
         router.replace("/membre/dashboard");
       }
     });
@@ -229,10 +234,10 @@ function MembreLoginInner() {
           />
           <div className="text-center">
             <h1 className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>
-              Espace membre
+              Accès membre d&apos;équipe
             </h1>
-            <p className="mt-1 text-sm" style={{ color: "var(--ink-secondary)" }}>
-              Connectez-vous à votre espace de travail.
+            <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--ink-secondary)" }}>
+              Connectez-vous avec les identifiants associés à votre accès professionnel.
             </p>
           </div>
         </div>
@@ -291,9 +296,19 @@ function MembreLoginInner() {
             {loading ? (
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
             ) : (
-              <>Se connecter <ArrowRight size={15} /></>
+              <>Accéder à mon espace <ArrowRight size={15} /></>
             )}
           </button>
+
+          <div className="text-center">
+            <Link
+              href="/forgot-password"
+              className="text-[12px] font-medium hover:underline underline-offset-2 transition-colors"
+              style={{ color: "var(--ink-muted)" }}
+            >
+              Mot de passe oublié ?
+            </Link>
+          </div>
         </form>
 
         {/* Footer */}

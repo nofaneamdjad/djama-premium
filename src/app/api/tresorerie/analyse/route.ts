@@ -7,24 +7,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createLogger } from "@/lib/logger";
+import { checkRateLimitAsync } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 const log = createLogger("tresorerie/analyse");
-
-// Rate limit : 20 analyses IA/user/heure
-const analyseLimits = new Map<string, { count: number; resetAt: number }>();
-function checkRateLimit(userId: string): boolean {
-  const now  = Date.now();
-  const slot = analyseLimits.get(userId);
-  if (!slot || now > slot.resetAt) {
-    analyseLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    return true;
-  }
-  if (slot.count >= 20) return false;
-  slot.count++;
-  return true;
-}
 
 const SYSTEM = `\
 Tu es un expert-comptable et conseiller financier pour freelances et TPE françaises.
@@ -51,7 +38,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  if (!checkRateLimit(user.id)) {
+  const { allowed } = await checkRateLimitAsync(user.id, 20, 60 * 60 * 1000);
+  if (!allowed) {
     return NextResponse.json({ error: "Limite analyse atteinte : 20 par heure." }, { status: 429 });
   }
 

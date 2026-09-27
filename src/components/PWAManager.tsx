@@ -2,54 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, X, Smartphone, Share, Bell, BellOff } from "lucide-react";
+import { Download, X, Share } from "lucide-react";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
-/* ── Convertit une clé VAPID base64url en Uint8Array ── */
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64  = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw     = window.atob(base64);
-  const buf = new ArrayBuffer(raw.length);
-  const arr = new Uint8Array(buf);
-  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-  return arr;
-}
-
-/* ── Abonne au push et enregistre en base ── */
-async function subscribePush(registration: ServiceWorkerRegistration) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const existing = await registration.pushManager.getSubscription();
-  const sub = existing ?? await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  });
-
-  await fetch("/api/push/subscribe", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subscription: sub.toJSON(), userId: user.id }),
-  });
-}
-
-/* ── Désabonne et supprime de la base ── */
-async function unsubscribePush(registration: ServiceWorkerRegistration) {
-  const sub = await registration.pushManager.getSubscription();
-  if (!sub) return;
-  await fetch("/api/push/subscribe", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ endpoint: sub.endpoint }),
-  });
-  await sub.unsubscribe();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -58,29 +16,12 @@ async function unsubscribePush(registration: ServiceWorkerRegistration) {
 export default function PWAManager() {
   const [prompt,        setPrompt]        = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall,   setShowInstall]   = useState(false);
-  const [showNotifAsk,  setShowNotifAsk]  = useState(false);
-  const [notifGranted,  setNotifGranted]  = useState(false);
   const [isIOS,         setIsIOS]         = useState(false);
-  const [swReg,         setSwReg]         = useState<ServiceWorkerRegistration | null>(null);
 
   useEffect(() => {
     /* ── Enregistrement Service Worker ── */
     if (!("serviceWorker" in navigator)) return;
-
-    navigator.serviceWorker.register("/sw.js").then((reg) => {
-      setSwReg(reg);
-
-      /* ── Vérifier si déjà abonné aux notifications ── */
-      if ("Notification" in window) {
-        setNotifGranted(Notification.permission === "granted");
-
-        /* Demander les notifs après 8 s (si pas encore accordé ni refusé) */
-        if (Notification.permission === "default" &&
-            !sessionStorage.getItem("djama_notif_asked")) {
-          setTimeout(() => setShowNotifAsk(true), 8000);
-        }
-      }
-    }).catch(() => {});
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
 
     /* ── PWA déjà installée ── */
     if (window.matchMedia("(display-mode: standalone)").matches) return;
@@ -121,23 +62,6 @@ export default function PWAManager() {
   function dismissInstall() {
     setShowInstall(false);
     sessionStorage.setItem("djama_pwa_dismissed", "1");
-  }
-
-  /* ── Activer les notifications ── */
-  async function handleEnableNotifs() {
-    sessionStorage.setItem("djama_notif_asked", "1");
-    setShowNotifAsk(false);
-
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      setNotifGranted(true);
-      if (swReg) await subscribePush(swReg);
-    }
-  }
-
-  async function handleDisableNotifs() {
-    if (swReg) await unsubscribePush(swReg);
-    setNotifGranted(false);
   }
 
   return (
@@ -187,55 +111,6 @@ export default function PWAManager() {
         )}
       </AnimatePresence>
 
-      {/* ── Bannière demande de permission notifications ── */}
-      <AnimatePresence>
-        {showNotifAsk && (
-          <motion.div
-            initial={{ opacity: 0, y: -80 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -80 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed left-0 right-0 top-0 z-[200] p-3"
-          >
-            <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.10)]">
-              <div className="h-[2px] bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
-              <div className="flex items-center gap-4 px-5 py-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)]">
-                  <Bell size={16} style={{ color: "#c9a55a" }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-extrabold text-gray-800">Activer les notifications</p>
-                  <p className="mt-0.5 text-[0.68rem] text-gray-500">
-                    Recevez un rappel 30 min avant chaque événement planifié
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <button onClick={handleEnableNotifs}
-                    className="flex items-center gap-1.5 rounded-xl bg-[#c9a55a] px-3.5 py-2 text-[0.72rem] font-bold text-white transition hover:brightness-110 active:scale-95">
-                    <Bell size={12} /> Activer
-                  </button>
-                  <button onClick={() => { setShowNotifAsk(false); sessionStorage.setItem("djama_notif_asked", "1"); }}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
-                    <X size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Bouton toggle notifications (visible si déjà abonné) ── */}
-      {notifGranted && (
-        <button
-          onClick={handleDisableNotifs}
-          title="Désactiver les notifications"
-          className="hidden" /* accessible programmatiquement */
-          aria-label="Désactiver les notifications DJAMA"
-        >
-          <BellOff size={14} />
-        </button>
-      )}
     </>
   );
 }

@@ -132,7 +132,7 @@ export interface PdfTheme {
   footerText:        RGB;
 
   // Variante de rendu
-  variant: "standard" | "minimal" | "dark" | "accent-bar";
+  variant: "standard" | "minimal" | "dark" | "accent-bar" | "split" | "band";
 
   /** Couleur de la barre d'accent latérale (variant "accent-bar" uniquement) */
   accentBarColor?: RGB;

@@ -266,7 +266,7 @@ function LoginPageInner() {
                   transition={{ duration: 0.35, delay: 0.30, ease }}
                 >
                   <Link
-                    href="/client"
+                    href="/membre/login"
                     className="flex items-center gap-1.5 text-[0.81rem] font-medium transition-colors hover:underline underline-offset-2"
                     style={{ color: "var(--ink-muted)" }}
                   >
