@@ -17,6 +17,7 @@ import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { fmtDate, fmtEur } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
+import { useOrganization } from "@/lib/use-organization";
 import { calcVat } from "@/lib/fournisseurs-calc";
 
 type OrderStatus   = "draft"|"sent"|"confirmed"|"in_delivery"|"received"|"partial"|"cancelled";
@@ -1013,6 +1014,8 @@ export default function FournisseursPage() {
   const { isDark } = useTheme();
   const { toasts, add: toast, remove: removeToast } = useToastStack();
   const router = useRouter();
+  const orgState = useOrganization();
+  const orgId    = orgState.status === "ready" ? orgState.org.id : null;
 
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1064,14 +1067,14 @@ export default function FournisseursPage() {
       setFournisseurs((prev) => prev.map((f) => f.id === form.id ? data as Fournisseur : f));
       toast("Fournisseur mis à jour", "success");
     } else {
-      const { data, error } = await supabase.from("fournisseurs").insert({ ...form, user_id: userId }).select().single();
+      const { data, error } = await supabase.from("fournisseurs").insert({ ...form, user_id: userId, organization_id: orgId ?? null }).select().single();
       if (error) { toast(error.message, "error"); return; }
       setFournisseurs((prev) => [...prev, data as Fournisseur].sort((a, b) => a.company_name.localeCompare(b.company_name)));
       toast("Fournisseur créé", "success");
     }
     setShowFournModal(false);
     setEditFourn(EMPTY_FOURN());
-  }, [userId, toast]);
+  }, [userId, orgId, toast]);
 
   const saveOrder = useCallback(async (form: Partial<FOrder>) => {
     if (!userId) return;
@@ -1081,7 +1084,7 @@ export default function FournisseursPage() {
       setOrders((prev) => prev.map((o) => o.id === form.id ? data as FOrder : o));
       toast("Commande mise à jour", "success");
     } else {
-      const { data, error } = await supabase.from("fournisseur_orders").insert({ ...form, user_id: userId }).select().single();
+      const { data, error } = await supabase.from("fournisseur_orders").insert({ ...form, user_id: userId, organization_id: orgId ?? null }).select().single();
       if (error) { toast(error.message, "error"); return; }
       setOrders((prev) => [data as FOrder, ...prev]);
       toast("Commande créée", "success");
@@ -1093,7 +1096,7 @@ export default function FournisseursPage() {
     }
     setShowOrderModal(false);
     setEditOrder(EMPTY_ORDER());
-  }, [userId, toast, fournisseurs]);
+  }, [userId, orgId, toast, fournisseurs]);
 
   const saveInvoice = useCallback(async (form: Partial<FInvoice>) => {
     if (!userId) return;
@@ -1103,18 +1106,18 @@ export default function FournisseursPage() {
       setInvoices((prev) => prev.map((i) => i.id === form.id ? data as FInvoice : i));
       toast("Facture mise à jour", "success");
     } else {
-      const { data, error } = await supabase.from("fournisseur_invoices").insert({ ...form, user_id: userId }).select().single();
+      const { data, error } = await supabase.from("fournisseur_invoices").insert({ ...form, user_id: userId, organization_id: orgId ?? null }).select().single();
       if (error) { toast(error.message, "error"); return; }
       setInvoices((prev) => [data as FInvoice, ...prev]);
       toast("Facture créée", "success");
     }
     setShowInvModal(false);
     setEditInv(EMPTY_INVOICE());
-  }, [userId, toast]);
+  }, [userId, orgId, toast]);
 
   const saveRating = useCallback(async (r: { reliability: number; quality: number; price: number; delays: number; comment: string }) => {
     if (!userId || !ratingFourn) return;
-    const { error: insErr } = await supabase.from("fournisseur_ratings").insert({ ...r, user_id: userId, fournisseur_id: ratingFourn.id });
+    const { error: insErr } = await supabase.from("fournisseur_ratings").insert({ ...r, user_id: userId, fournisseur_id: ratingFourn.id, organization_id: orgId ?? null });
     if (insErr) { toast("Erreur enregistrement évaluation", "error"); return; }
     // Update average scores on fournisseur
     const { data: ratings } = await supabase.from("fournisseur_ratings").select("reliability,quality,price,delays").eq("fournisseur_id", ratingFourn.id);
@@ -1131,7 +1134,7 @@ export default function FournisseursPage() {
     }
     toast("Évaluation enregistrée", "success");
     setRatingFourn(null);
-  }, [userId, ratingFourn, toast]);
+  }, [userId, orgId, ratingFourn, toast]);
 
   const handleDelete = useCallback(async () => {
     if (!confirmDeleteId) return;
