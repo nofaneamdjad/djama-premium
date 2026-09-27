@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
   try {
     const message = await anthropic.messages.create({
       model:      MODEL,
-      max_tokens: 600,
+      max_tokens: 1200,
       system:     SYSTEM_PROMPT,
       messages:   [{ role: "user", content: userPrompt }],
     });
@@ -178,9 +178,11 @@ export async function POST(req: NextRequest) {
 
     let parsed: Partial<ContractAnalysisResult>;
     try {
-      // Nettoyer les éventuels ```json ... ``` du modèle
-      const clean = block.text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-      parsed = JSON.parse(clean) as Partial<ContractAnalysisResult>;
+      // Extraire le premier objet JSON de la réponse (robuste face aux préambules et suffixes du modèle)
+      const raw = block.text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("no JSON object found");
+      parsed = JSON.parse(jsonMatch[0]) as Partial<ContractAnalysisResult>;
     } catch {
       return NextResponse.json(
         { error: "Le service IA a retourné une réponse inattendue. Réessayez." },
