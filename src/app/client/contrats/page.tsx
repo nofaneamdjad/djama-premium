@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { fetchCompanySettings } from "@/lib/pdf/companySettings";
+import type { CompanySettings } from "@/lib/pdf/companySettings";
 import { downloadContractPDF, openContractPDF } from "@/lib/contract-pdf";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -1390,6 +1392,7 @@ export default function ContratsPage() {
   const [prevEditContent, setPrevEditContent] = useState<string | null>(null);
   const [templates, setTemplates] = useState<ContractTemplate[]>([]);
   const [tmplModal, setTmplModal] = useState(false);
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
 
   // Load contracts
   useEffect(() => {
@@ -1400,6 +1403,7 @@ export default function ContratsPage() {
       setUserEmail(user.email ?? undefined);
       const meta = user.user_metadata as Record<string, string> | undefined;
       setUserName(meta?.full_name ?? meta?.name ?? "");
+      fetchCompanySettings().then(s => setCompanySettings(s)).catch(() => {});
 
       const [contractsRes, tmplRes] = await Promise.all([
         supabase.from("contracts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
@@ -1519,15 +1523,23 @@ export default function ContratsPage() {
 
   const getPDFData = useCallback(() => {
     if (!selected) return null;
+    const cs = companySettings;
+    const addr = cs
+      ? [cs.address, cs.postal_code, cs.city].filter(Boolean).join(", ") || undefined
+      : undefined;
     return {
       title: selected.title, client_name: selected.client_name,
       type: selected.contract_type, content: editContent,
       amount: selected.amount, start_date: selected.start_date,
       end_date: selected.end_date, created_at: selected.created_at,
-      prestataire_nom: userName, prestataire_email: userEmail,
+      prestataire_nom:        cs?.name      || userName,
+      prestataire_email:      cs?.email     || userEmail,
+      prestataire_entreprise: cs?.name      || undefined,
+      prestataire_adresse:    addr,
+      prestataire_siret:      cs?.siret     || undefined,
       company_logo: selected.logo_url || undefined,
     };
-  }, [selected, editContent, userName, userEmail]);
+  }, [selected, editContent, userName, userEmail, companySettings]);
 
   const handleDownloadPDF = useCallback(() => {
     const data = getPDFData();
