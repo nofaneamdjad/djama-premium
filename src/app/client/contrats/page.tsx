@@ -1393,6 +1393,8 @@ export default function ContratsPage() {
   const [templates, setTemplates] = useState<ContractTemplate[]>([]);
   const [tmplModal, setTmplModal] = useState(false);
   const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
+  const [hasMoreContracts, setHasMoreContracts] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Load contracts
   useEffect(() => {
@@ -1406,10 +1408,14 @@ export default function ContratsPage() {
       fetchCompanySettings().then(s => setCompanySettings(s)).catch(() => {});
 
       const [contractsRes, tmplRes] = await Promise.all([
-        supabase.from("contracts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
+        supabase.from("contracts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(51),
         supabase.from("contract_templates").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
       ]);
-      if (!contractsRes.error && contractsRes.data) setContracts(contractsRes.data as Contract[]);
+      if (!contractsRes.error && contractsRes.data) {
+        const rows = contractsRes.data as Contract[];
+        if (rows.length > 50) { setHasMoreContracts(true); setContracts(rows.slice(0, 50)); }
+        else { setHasMoreContracts(false); setContracts(rows); }
+      }
       if (!tmplRes.error && tmplRes.data) setTemplates(tmplRes.data.map(r=>({id:r.id as string, name:r.name as string, type:r.type as ContractType, content:r.content as string})));
       setLoading(false);
     })();
@@ -1443,6 +1449,23 @@ export default function ContratsPage() {
     const { data } = await supabase.from("contract_activities").insert({ contract_id: contractId, user_id: userId, action, details }).select().single();
     if (data) setActivities((prev) => [data as CActivity, ...prev]);
   }, [userId]);
+
+  const loadMoreContracts = useCallback(async () => {
+    if (!userId || loadingMore || !hasMoreContracts || contracts.length === 0) return;
+    setLoadingMore(true);
+    const oldest = contracts[contracts.length - 1].created_at;
+    const { data, error } = await supabase
+      .from("contracts").select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .lt("created_at", oldest)
+      .limit(51);
+    setLoadingMore(false);
+    if (error || !data) return;
+    const more = data as Contract[];
+    if (more.length > 50) { setHasMoreContracts(true); setContracts(prev => [...prev, ...more.slice(0, 50)]); }
+    else { setHasMoreContracts(false); setContracts(prev => [...prev, ...more]); }
+  }, [userId, contracts, loadingMore, hasMoreContracts]);
 
   const selectContract = useCallback((c: Contract) => { setSelected(c); }, []);
 
@@ -1904,12 +1927,21 @@ export default function ContratsPage() {
                   </button>
                 </div>
               ) : (
-                <AnimatePresence>
-                  {filtered.map((c) => (
-                    <ContractCard key={c.id} contract={c} isSelected={selected?.id === c.id}
-                      onSelect={() => selectContract(c)} onDelete={handleDelete} isDark={isDark}/>
-                  ))}
-                </AnimatePresence>
+                <>
+                  <AnimatePresence>
+                    {filtered.map((c) => (
+                      <ContractCard key={c.id} contract={c} isSelected={selected?.id === c.id}
+                        onSelect={() => selectContract(c)} onDelete={handleDelete} isDark={isDark}/>
+                    ))}
+                  </AnimatePresence>
+                  {hasMoreContracts && !search && filterStatus === "all" && filterType === "all" && (
+                    <button onClick={loadMoreContracts} disabled={loadingMore}
+                      className="w-full mt-1 py-2 rounded-xl text-xs text-white/40 border border-white/[0.06] hover:bg-white/[0.04] transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+                      {loadingMore ? <RefreshCw size={12} className="animate-spin"/> : null}
+                      {loadingMore ? "Chargement…" : "Charger 50 de plus"}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
