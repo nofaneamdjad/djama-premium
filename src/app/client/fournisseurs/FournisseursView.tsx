@@ -10,10 +10,11 @@ import { CATEGORIES, violet } from "./constants";
 import { useDark, Stars, selStyle } from "./ui";
 import { fmtDate, fmtEur } from "@/lib/format";
 
-export function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDelete, onRate }: {
+export function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit, onDelete, onRate, onDetail }: {
   fournisseurs: Fournisseur[]; orders: FOrder[]; invoices: FInvoice[];
   onNew: () => void; onEdit: (f: Fournisseur) => void;
   onDelete: (id: string) => void; onRate: (f: Fournisseur) => void;
+  onDetail?: (f: Fournisseur) => void;
 }) {
   const isDark = useDark();
   const [search, setSearch] = useState("");
@@ -64,16 +65,16 @@ export function FournisseursView({ fournisseurs, orders, invoices, onNew, onEdit
               className={`group border rounded-2xl p-5 transition-all flex flex-col gap-3 ${isDark ? "bg-white/[0.025] border-white/[0.06] hover:border-white/[0.14]" : "bg-white border-gray-200 hover:border-gray-300"}`}>
               {/* Header */}
               <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
+                <button className="flex items-center gap-3 text-left flex-1 min-w-0" onClick={() => onDetail?.(f)}>
                   <div className="h-11 w-11 flex items-center justify-center rounded-xl text-sm font-semibold shrink-0"
                     style={{ background: violet + "18", color: violet, border: `1px solid ${violet}30` }}>
                     {f.company_name.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{f.company_name}</p>
+                  <div className="min-w-0">
+                    <p className={`text-sm font-semibold hover:underline ${isDark ? "text-white/90" : "text-gray-800"}`}>{f.company_name}</p>
                     <p className={`text-[10px] ${isDark ? "text-white/40" : "text-gray-400"}`}>{cat?.label}{f.city ? ` · ${f.city}` : ""}</p>
                   </div>
-                </div>
+                </button>
                 <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
                   <button onClick={() => onRate(f)} title="Évaluer"
                     className={`h-7 w-7 flex items-center justify-center rounded-lg hover:bg-amber-500/10 hover:text-amber-400 transition-all ${isDark ? "text-white/30" : "text-gray-400"}`}>

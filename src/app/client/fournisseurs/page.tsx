@@ -301,7 +301,8 @@ export default function FournisseursPage() {
                 onNew={() => { setEditFourn(EMPTY_FOURN()); setShowFournModal(true); }}
                 onEdit={(f) => { setEditFourn(f); setShowFournModal(true); }}
                 onDelete={(id) => { setDeleteType("fourn"); setConfirmDeleteId(id); }}
-                onRate={(f) => setRatingFourn(f)}/>
+                onRate={(f) => setRatingFourn(f)}
+                onDetail={(f) => router.push(`/client/fournisseurs/${f.id}`)}/>
             )}
             {tab === "orders" && (
               <OrdersView orders={orders} fournisseurs={fournisseurs}
