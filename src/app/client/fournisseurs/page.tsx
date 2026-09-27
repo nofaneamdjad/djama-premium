@@ -17,7 +17,7 @@ import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { fmtDate, fmtEur } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
-import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
+import { calcVat } from "@/lib/fournisseurs-calc";
 
 type OrderStatus   = "draft"|"sent"|"confirmed"|"in_delivery"|"received"|"partial"|"cancelled";
 type InvoiceStatus = "unpaid"|"partial"|"paid"|"overdue"|"disputed";
@@ -45,7 +45,7 @@ interface FOrder {
   id: string; user_id: string; fournisseur_id: string | null; fournisseur_name: string;
   order_number: string; status: OrderStatus; order_date: string; expected_date: string | null;
   received_date: string | null; tracking_number: string; shipped_at: string | null;
-  subtotal: number; vat_amount: number; total_amount: number; currency: string;
+  subtotal: number; vat_amount: number; total_amount: number; vat_rate: number; currency: string;
   payment_status: string; quality_issues: string; reception_notes: string; notes: string;
   created_at: string;
 }
@@ -53,7 +53,7 @@ interface FOrder {
 interface FInvoice {
   id: string; user_id: string; fournisseur_id: string | null; fournisseur_name: string;
   order_id: string | null; invoice_number: string; issue_date: string; due_date: string | null;
-  subtotal: number; vat_amount: number; total_amount: number; paid_amount: number; currency: string;
+  subtotal: number; vat_amount: number; total_amount: number; paid_amount: number; vat_rate: number; currency: string;
   status: InvoiceStatus; payment_date: string | null; payment_method: string; notes: string;
   created_at: string;
 }
@@ -136,12 +136,12 @@ const EMPTY_ORDER = (): Partial<FOrder> => ({
   order_number: `BC-${Date.now().toString().slice(-6)}`,
   status: "draft", order_date: new Date().toISOString().split("T")[0],
   expected_date: null, tracking_number: "", subtotal: 0, vat_amount: 0,
-  total_amount: 0, currency: "EUR", payment_status: "unpaid", notes: "",
+  total_amount: 0, vat_rate: 20, currency: "EUR", payment_status: "unpaid", notes: "",
 });
 
 const EMPTY_INVOICE = (): Partial<FInvoice> => ({
   invoice_number: "", issue_date: new Date().toISOString().split("T")[0],
-  due_date: null, subtotal: 0, vat_amount: 0, total_amount: 0, paid_amount: 0,
+  due_date: null, subtotal: 0, vat_amount: 0, total_amount: 0, paid_amount: 0, vat_rate: 20,
   currency: "EUR", status: "unpaid", payment_method: "", notes: "",
 });
 
@@ -397,12 +397,24 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
               <input type="date" value={form.expected_date ?? ""} onChange={(e) => set("expected_date", e.target.value || null)} className={inp()}/>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
+            <div><Lbl>Taux TVA</Lbl>
+              <select value={form.vat_rate ?? 20} onChange={(e) => {
+                const rate = parseFloat(e.target.value);
+                const { vatAmount, total } = calcVat(form.subtotal ?? 0, rate);
+                setForm((p) => ({ ...p, vat_rate: rate, vat_amount: vatAmount, total_amount: total }));
+              }} className={inp("appearance-none")} style={selStyle(isDark)}>
+                <option value={0}>0 %</option>
+                <option value={5.5}>5,5 %</option>
+                <option value={10}>10 %</option>
+                <option value={20}>20 %</option>
+              </select>
+            </div>
             <div><Lbl>HT (€)</Lbl>
               <input type="number" min={0} step={0.01} value={form.subtotal ?? 0} onChange={(e) => {
                 const ht = parseFloat(e.target.value) || 0;
-                const tva = ht * 0.2;
-                setForm((p) => ({ ...p, subtotal: ht, vat_amount: tva, total_amount: ht + tva }));
+                const { vatAmount, total } = calcVat(ht, form.vat_rate ?? 20);
+                setForm((p) => ({ ...p, subtotal: ht, vat_amount: vatAmount, total_amount: total }));
               }} className={inp()}/>
             </div>
             <div><Lbl>TVA (€)</Lbl>
@@ -495,12 +507,24 @@ function InvoiceModal({ fournisseurs, invoice, onSave, onClose }: {
               <input type="date" value={form.due_date ?? ""} onChange={(e) => set("due_date", e.target.value || null)} className={inp()}/>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
+            <div><Lbl>Taux TVA</Lbl>
+              <select value={form.vat_rate ?? 20} onChange={(e) => {
+                const rate = parseFloat(e.target.value);
+                const { vatAmount, total } = calcVat(form.subtotal ?? 0, rate);
+                setForm((p) => ({ ...p, vat_rate: rate, vat_amount: vatAmount, total_amount: total }));
+              }} className={inp("appearance-none")} style={selStyle(isDark)}>
+                <option value={0}>0 %</option>
+                <option value={5.5}>5,5 %</option>
+                <option value={10}>10 %</option>
+                <option value={20}>20 %</option>
+              </select>
+            </div>
             <div><Lbl>Montant HT</Lbl>
               <input type="number" min={0} step={0.01} value={form.subtotal ?? 0} onChange={(e) => {
                 const ht = parseFloat(e.target.value) || 0;
-                const tva = ht * 0.2;
-                setForm((p) => ({ ...p, subtotal: ht, vat_amount: tva, total_amount: ht + tva }));
+                const { vatAmount, total } = calcVat(ht, form.vat_rate ?? 20);
+                setForm((p) => ({ ...p, subtotal: ht, vat_amount: vatAmount, total_amount: total }));
               }} className={inp()}/>
             </div>
             <div><Lbl>TVA</Lbl>
@@ -1155,9 +1179,6 @@ export default function FournisseursPage() {
         <div className="relative px-5 pt-4 pb-3 sm:px-8">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
-                <ModuleHeaderIcon icon={Truck} color="#166534" />
-              </motion.div>
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Fournisseurs</h1>
                 <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Fiches · Commandes · Factures · Évaluation</p>
