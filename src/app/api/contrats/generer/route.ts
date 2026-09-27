@@ -2,29 +2,68 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { z } from "zod";
+import { checkRateLimitAsync } from "@/lib/rate-limit";
 
 export const runtime  = "nodejs";
 export const dynamic  = "force-dynamic";
 
 const MODEL = "claude-haiku-4-5-20251001";
 
-// Rate limit : 5 générations de contrat/user/heure
-const generateLimits = new Map<string, { count: number; resetAt: number }>();
-function checkRateLimit(userId: string): boolean {
-  const now  = Date.now();
-  const slot = generateLimits.get(userId);
-  if (!slot || now > slot.resetAt) {
-    generateLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    return true;
-  }
-  if (slot.count >= 5) return false;
-  slot.count++;
-  return true;
+/* ─────────────────────────────────────────────────────────
+   VALIDATION — Zod (P0.3)
+   Limites strictes pour éviter les payloads démesurés
+───────────────────────────────────────────────────────── */
+const GenerateSchema = z.object({
+  type:            z.string().min(1).max(50),
+  client_name:     z.string().min(1).max(150),
+  title:           z.string().min(1).max(250),
+  language:        z.enum(["fr", "en", "ar"]).optional().default("fr"),
+  amount:          z.number().positive().max(100_000_000).optional(),
+  start_date:      z.string().max(30).optional(),
+  end_date:        z.string().max(30).optional(),
+  specifics:       z.string().max(500).optional(),
+  prestataire_nom: z.string().max(150).optional(),
+});
+
+type GenerateBody = z.infer<typeof GenerateSchema>;
+
+/* ─────────────────────────────────────────────────────────
+   SANITISATION DES ENTRÉES (P0.4)
+   Supprime les patterns d'injection de prompt courants
+───────────────────────────────────────────────────────── */
+function sanitizeUserInput(text: string): string {
+  return text
+    .replace(/ignore\s+(all\s+)?(previous|prior|above|your)\s+instructions?/gi, "")
+    .replace(/oublie\s+(toutes?\s+)?(tes|vos)\s+(instructions?|règles?|consignes?)/gi, "")
+    .replace(/\b(system|assistant|human|user)\s*:/gi, "")
+    .replace(/<\/?(?:system|instruction|prompt|rule|override)[^>]{0,80}>/gi, "")
+    .replace(/jailbreak|DAN mode|act as|pretend you/gi, "")
+    .replace(/\[\s*INST\s*\]|\[\s*\/INST\s*\]/gi, "")
+    .substring(0, 500)
+    .trim();
 }
 
 /* ─────────────────────────────────────────────────────────
-   PROMPT SYSTÈME — contrat professionnel, ton juridique
-   Aucune mention d'IA, d'outil ou de marque
+   TYPES DE CONTRATS (tous 11 types)
+───────────────────────────────────────────────────────── */
+const TYPE_LABEL: Record<string, string> = {
+  prestation:  "Contrat de prestation de services",
+  freelance:   "Contrat de mission freelance / indépendant",
+  nda:         "Accord de confidentialité (NDA)",
+  partenariat: "Accord de partenariat commercial",
+  saas:        "Contrat d'abonnement SaaS / logiciel",
+  cdi:         "Contrat de travail à durée indéterminée (CDI)",
+  cdd:         "Contrat de travail à durée déterminée (CDD)",
+  vente:       "Contrat de vente de biens ou services",
+  location:    "Contrat de location / bail commercial",
+  devis:       "Devis contractuel accepté",
+  autre:       "Contrat",
+};
+
+/* ─────────────────────────────────────────────────────────
+   PROMPT SYSTÈME
+   Instructions système : jamais mélangées avec les données
 ───────────────────────────────────────────────────────── */
 const SYSTEM_PROMPT = `Tu es un rédacteur juridique spécialisé en droit des contrats français.
 Tu rédiges uniquement le corps du contrat (les articles), en français juridique formel.
@@ -84,28 +123,6 @@ Chaque article : 2 à 4 phrases complètes, précises, sans ambiguïté.
 Retourne UNIQUEMENT le texte des articles, sans aucun autre contenu.`;
 
 /* ─────────────────────────────────────────────────────────
-   TYPES
-───────────────────────────────────────────────────────── */
-interface GenerateBody {
-  type:            string;
-  client_name:     string;
-  title:           string;
-  amount?:         number;
-  start_date?:     string;
-  end_date?:       string;
-  specifics?:      string;
-  prestataire_nom?: string;
-}
-
-const TYPE_LABEL: Record<string, string> = {
-  prestation: "Prestation de services",
-  nda:        "Accord de confidentialité (NDA)",
-  cdi:        "Contrat de travail à durée indéterminée (CDI)",
-  cdd:        "Contrat de travail à durée déterminée (CDD)",
-  autre:      "Contrat",
-};
-
-/* ─────────────────────────────────────────────────────────
    HANDLER
 ───────────────────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
@@ -119,8 +136,13 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  if (!checkRateLimit(user.id)) {
-    return NextResponse.json({ error: "Limite atteinte : 5 générations par heure." }, { status: 429 });
+  /* ── Rate limit persistant (P0.5) — 5 générations/user/heure ── */
+  const { allowed } = await checkRateLimitAsync(`contrats-generer:${user.id}`, 5, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Limite atteinte : 5 générations par heure. Réessayez plus tard." },
+      { status: 429 }
+    );
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -128,9 +150,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Clé API Anthropic manquante." }, { status: 500 });
   }
 
+  /* ── Validation Zod (P0.3) ── */
   let body: GenerateBody;
   try {
-    body = (await req.json()) as GenerateBody;
+    const raw = await req.json();
+    const parsed = GenerateSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Données invalides.", details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+    body = parsed.data;
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
   }
@@ -141,15 +172,10 @@ export async function POST(req: NextRequest) {
     specifics, prestataire_nom,
   } = body;
 
-  if (!type || !client_name || !title) {
-    return NextResponse.json(
-      { error: "Les champs type, client_name et title sont requis." },
-      { status: 400 }
-    );
-  }
-
-  /* ── Prompt utilisateur ── */
-  const userPrompt = [
+  /* ── Prompt utilisateur — données isolées des instructions (P0.4) ── */
+  // Les données utilisateur sont encapsulées dans des balises XML pour les séparer
+  // clairement des instructions système. Claude ne peut pas les "déprioriser".
+  const metadataLines = [
     `Type de contrat : ${TYPE_LABEL[type] ?? type}.`,
     `Intitulé de la mission / contrat : "${title}".`,
     `Client / Commanditaire : ${client_name}.`,
@@ -159,12 +185,19 @@ export async function POST(req: NextRequest) {
     amount     != null ? `Montant de la prestation : ${amount} € HT.` : null,
     start_date          ? `Date de prise d'effet : ${start_date}.`      : null,
     end_date            ? `Date de fin prévue : ${end_date}.`           : null,
-    specifics           ? `Précisions complémentaires : ${specifics}.`  : null,
-    "",
-    "Rédige les 13 articles dans l'ordre exact indiqué dans tes instructions.",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ].filter(Boolean).join("\n");
+
+  const sanitizedSpecifics = specifics ? sanitizeUserInput(specifics) : null;
+
+  const userPrompt = [
+    "<contrat_metadata>",
+    metadataLines,
+    "</contrat_metadata>",
+    sanitizedSpecifics
+      ? `\n<clauses_specifiques>\n${sanitizedSpecifics}\n</clauses_specifiques>`
+      : "",
+    "\nRédige les 13 articles dans l'ordre exact indiqué dans tes instructions.",
+  ].filter(Boolean).join("\n");
 
   const client = new Anthropic({ apiKey, maxRetries: 0, timeout: 30_000 });
 
