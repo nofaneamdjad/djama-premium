@@ -59,6 +59,12 @@ interface FInvoice {
   created_at: string;
 }
 
+interface FOrderItem {
+  id?: string; order_id?: string; catalog_id?: string | null;
+  name: string; reference: string; quantity: number; received_quantity: number;
+  unit_price: number; discount_percent: number; vat_rate: number; total_price: number;
+}
+
 interface FRating {
   id: string; fournisseur_id: string; reliability: number; quality: number;
   price: number; delays: number; comment: string; created_at: string;
@@ -125,6 +131,15 @@ const COUNTRIES = [
   "Australie", "Nouvelle-Zélande", "Papouasie-Nouvelle-Guinée", "Fidji",
 ];
 const UNITS = ["pièce", "kg", "g", "litre", "ml", "m²", "m", "boîte", "palette", "heure", "jour"];
+
+const EMPTY_ITEM = (): FOrderItem => ({
+  name: "", reference: "", quantity: 1, received_quantity: 0,
+  unit_price: 0, discount_percent: 0, vat_rate: 20, total_price: 0,
+});
+
+function calcItemTotal(item: FOrderItem): number {
+  return Math.round(item.quantity * item.unit_price * (1 - item.discount_percent / 100) * 100) / 100;
+}
 
 const EMPTY_FOURN = (): Partial<Fournisseur> => ({
   company_name: "", contact_name: "", email: "", phone: "", address: "", city: "",
@@ -348,13 +363,52 @@ function FournModal({ data, onSave, onClose }: {
 
 function OrderModal({ fournisseurs, order, onSave, onClose }: {
   fournisseurs: Fournisseur[]; order: Partial<FOrder>;
-  onSave: (o: Partial<FOrder>) => Promise<void>; onClose: () => void;
+  onSave: (o: Partial<FOrder>, items: FOrderItem[]) => Promise<void>; onClose: () => void;
 }) {
   const isDark = useDark();
   const inp = useInp();
   const [form, setForm] = useState<Partial<FOrder>>(order);
+  const [items, setItems] = useState<FOrderItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof FOrder, v: string | number | null) => setForm((p) => ({ ...p, [k]: v }));
+
+  useEffect(() => {
+    if (!order.id) return;
+    setLoadingItems(true);
+    supabase.from("fournisseur_order_items")
+      .select("*").eq("order_id", order.id)
+      .then(({ data }) => {
+        if (data) setItems(data as FOrderItem[]);
+        setLoadingItems(false);
+      });
+  }, [order.id]);
+
+  const setItem = (i: number, k: keyof FOrderItem, v: string | number) => {
+    setItems((prev) => {
+      const next = [...prev];
+      const item = { ...next[i], [k]: v };
+      item.total_price = calcItemTotal(item);
+      next[i] = item;
+      // Recompute order totals from items
+      const subtotal = next.reduce((s, it) => s + it.total_price, 0);
+      const vatAmount = next.reduce((s, it) => s + calcVat(it.total_price, it.vat_rate).vatAmount, 0);
+      setForm((p) => ({ ...p, subtotal: Math.round(subtotal * 100) / 100, vat_amount: Math.round(vatAmount * 100) / 100, total_amount: Math.round((subtotal + vatAmount) * 100) / 100 }));
+      return next;
+    });
+  };
+
+  const addItem = () => setItems((p) => [...p, { ...EMPTY_ITEM(), vat_rate: form.vat_rate ?? 20 }]);
+  const removeItem = (i: number) => {
+    setItems((prev) => {
+      const next = prev.filter((_, idx) => idx !== i);
+      if (next.length === 0) return next;
+      const subtotal = next.reduce((s, it) => s + it.total_price, 0);
+      const vatAmount = next.reduce((s, it) => s + calcVat(it.total_price, it.vat_rate).vatAmount, 0);
+      setForm((p) => ({ ...p, subtotal: Math.round(subtotal * 100) / 100, vat_amount: Math.round(vatAmount * 100) / 100, total_amount: Math.round((subtotal + vatAmount) * 100) / 100 }));
+      return next;
+    });
+  };
 
   const selectedF = fournisseurs.find((f) => f.id === form.fournisseur_id);
 
@@ -433,6 +487,70 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
               <input type="date" value={form.received_date ?? ""} onChange={(e) => set("received_date", e.target.value || null)} className={inp()}/>
             </div>
           </div>
+          {/* Lignes de commande */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <Lbl>Lignes de commande</Lbl>
+              <button onClick={addItem} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-colors"
+                style={{ background: violet + "20", color: violet }}>
+                <Plus size={11}/> Ajouter
+              </button>
+            </div>
+            {loadingItems && <p className="text-xs text-white/30 py-2">Chargement…</p>}
+            {items.length > 0 && (
+              <div className={`rounded-xl border divide-y text-xs ${isDark ? "border-white/[0.08] divide-white/[0.06]" : "border-gray-200 divide-gray-100"}`}>
+                {items.map((item, i) => (
+                  <div key={i} className="p-2.5 space-y-2">
+                    <div className="flex gap-2 items-start">
+                      <input value={item.name} onChange={(e) => setItem(i, "name", e.target.value)}
+                        placeholder="Désignation *" className={inp("flex-1 !py-1.5 !text-xs")}/>
+                      <input value={item.reference} onChange={(e) => setItem(i, "reference", e.target.value)}
+                        placeholder="Réf." className={inp("w-24 !py-1.5 !text-xs")}/>
+                      <button onClick={() => removeItem(i)} className="h-7 w-7 flex items-center justify-center rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0">
+                        <X size={12}/>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                      <div>
+                        <span className={`block mb-0.5 text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>Qté</span>
+                        <input type="number" min={0} step={0.001} value={item.quantity}
+                          onChange={(e) => setItem(i, "quantity", parseFloat(e.target.value) || 0)}
+                          className={inp("!py-1.5 !text-xs")}/>
+                      </div>
+                      <div>
+                        <span className={`block mb-0.5 text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>P.U. HT</span>
+                        <input type="number" min={0} step={0.01} value={item.unit_price}
+                          onChange={(e) => setItem(i, "unit_price", parseFloat(e.target.value) || 0)}
+                          className={inp("!py-1.5 !text-xs")}/>
+                      </div>
+                      <div>
+                        <span className={`block mb-0.5 text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>Rem. %</span>
+                        <input type="number" min={0} max={100} step={0.1} value={item.discount_percent}
+                          onChange={(e) => setItem(i, "discount_percent", parseFloat(e.target.value) || 0)}
+                          className={inp("!py-1.5 !text-xs")}/>
+                      </div>
+                      <div>
+                        <span className={`block mb-0.5 text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>TVA %</span>
+                        <select value={item.vat_rate} onChange={(e) => setItem(i, "vat_rate", parseFloat(e.target.value))}
+                          className={inp("!py-1.5 !text-xs appearance-none")} style={selStyle(isDark)}>
+                          <option value={0}>0</option>
+                          <option value={5.5}>5,5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                        </select>
+                      </div>
+                      <div>
+                        <span className={`block mb-0.5 text-[10px] ${isDark ? "text-white/30" : "text-gray-400"}`}>Total HT</span>
+                        <input readOnly value={item.total_price.toFixed(2)}
+                          className={inp("!py-1.5 !text-xs opacity-50 cursor-not-allowed")}/>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div><Lbl>Notes / Problèmes qualité</Lbl>
             <textarea value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} rows={2} className={inp("resize-none")}/>
           </div>
@@ -444,7 +562,7 @@ function OrderModal({ fournisseurs, order, onSave, onClose }: {
         </div>
         <div className="flex gap-3 px-6 pb-6">
           <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}>Annuler</button>
-          <button onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.fournisseur_id}
+          <button onClick={async () => { setSaving(true); await onSave(form, items); setSaving(false); }} disabled={saving || !form.fournisseur_id}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {saving ? <RefreshCw size={13} className="animate-spin"/> : <Check size={13}/>}
@@ -1076,8 +1194,9 @@ export default function FournisseursPage() {
     setEditFourn(EMPTY_FOURN());
   }, [userId, orgId, toast]);
 
-  const saveOrder = useCallback(async (form: Partial<FOrder>) => {
+  const saveOrder = useCallback(async (form: Partial<FOrder>, items: FOrderItem[]) => {
     if (!userId) return;
+    let orderId = form.id;
     if (form.id) {
       const { data, error } = await supabase.from("fournisseur_orders").update({ ...form, updated_at: new Date().toISOString() }).eq("id", form.id).select().single();
       if (error) { toast(error.message, "error"); return; }
@@ -1086,6 +1205,7 @@ export default function FournisseursPage() {
     } else {
       const { data, error } = await supabase.from("fournisseur_orders").insert({ ...form, user_id: userId, organization_id: orgId ?? null }).select().single();
       if (error) { toast(error.message, "error"); return; }
+      orderId = (data as FOrder).id;
       setOrders((prev) => [data as FOrder, ...prev]);
       toast("Commande créée", "success");
       // Update total_orders on fournisseur
@@ -1093,6 +1213,15 @@ export default function FournisseursPage() {
         const f = fournisseurs.find((f) => f.id === form.fournisseur_id);
         if (f) await supabase.from("fournisseurs").update({ total_orders: (f.total_orders ?? 0) + 1 }).eq("id", f.id);
       }
+    }
+    // Persist line items (delete-then-insert for idempotence)
+    if (orderId && items.length > 0) {
+      await supabase.from("fournisseur_order_items").delete().eq("order_id", orderId);
+      const rows = items.filter((it) => it.name.trim()).map((it) => ({ ...it, order_id: orderId, id: undefined }));
+      if (rows.length > 0) await supabase.from("fournisseur_order_items").insert(rows);
+    } else if (orderId && items.length === 0 && form.id) {
+      // Editing existing order with items removed — clear them
+      await supabase.from("fournisseur_order_items").delete().eq("order_id", orderId);
     }
     setShowOrderModal(false);
     setEditOrder(EMPTY_ORDER());
