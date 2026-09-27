@@ -30,6 +30,6 @@ CREATE INDEX IF NOT EXISTS idx_crm_tasks_assigned
 
 CREATE INDEX IF NOT EXISTS idx_crm_tasks_reminder
   ON crm_tasks(reminder_at)
-  WHERE reminder_at IS NOT NULL AND done = false;
+  WHERE reminder_at IS NOT NULL;
 
 COMMIT;
