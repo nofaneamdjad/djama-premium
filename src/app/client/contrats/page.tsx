@@ -1693,8 +1693,13 @@ export default function ContratsPage() {
       setSigners((prev) => prev.map((s) => s.id === signerToSign.id ? { ...s, status: "signed", signed_at: now, signature_data: sigData, certificate: cert } : s));
       toast("Contrat signé", "success");
       await logActivity(selected.id, "signed", `Signé par ${signerToSign.signer_name}`);
-      const allSigned = signers.every((s) => s.id === signerToSign.id || s.status === "signed");
-      if (allSigned) await handleStatusChange("signé");
+      // Simuler l'état post-signature (évite la closure stale de setSigners)
+      const updatedSigners = signers.map((s) =>
+        s.id === signerToSign.id ? { ...s, status: "signed" as const } : s
+      );
+      const anyRefused = updatedSigners.some((s) => s.status === "refused");
+      const allSigned = updatedSigners.every((s) => s.status === "signed");
+      if (allSigned && !anyRefused) await handleStatusChange("signé");
     }
     setSignerToSign(null);
   }, [signerToSign, selected, signers, toast, logActivity, handleStatusChange]);
