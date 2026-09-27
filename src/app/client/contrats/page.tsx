@@ -15,7 +15,6 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import { fmtEur } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
-import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 import type { Contract, Signer, CActivity, CComment, ContractStatus, ContractType, ContractVersion, ContractTemplate, DraftForm } from "./types";
 import { gold, STATUS_CFG, TYPE_MAP, CONTRACT_TYPES } from "./constants";
@@ -467,10 +466,7 @@ export default function ContratsPage() {
         <div className="relative px-5 pt-4 pb-3 sm:px-8">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
-                <ModuleHeaderIcon icon={FileText} color="#b45309" />
-              </motion.div>
-              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }} className="min-w-0">
+              <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4 }} className="min-w-0">
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Contrats IA</h1>
                 <p className={`text-[0.62rem] truncate ${isDark ? "text-white/35" : "text-gray-500"}`}>Génération · Signature · Suivi juridique</p>
               </motion.div>
