@@ -1134,12 +1134,24 @@ function CreateModal({
   const logoInputRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof DraftForm, v: string | string[]) => setForm((p) => ({ ...p, [k]: v }));
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => set("logo", (ev.target?.result as string) ?? "");
-    reader.readAsDataURL(file);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `contracts/logos/${user.id}/${Date.now()}.${ext}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("djama-media").upload(path, file, { upsert: true });
+    if (!uploadError && uploadData) {
+      const { data: urlData } = supabase.storage.from("djama-media").getPublicUrl(uploadData.path);
+      set("logo", urlData.publicUrl);
+    } else {
+      // Fallback base64 si Storage indisponible
+      const reader = new FileReader();
+      reader.onload = (ev) => set("logo", (ev.target?.result as string) ?? "");
+      reader.readAsDataURL(file);
+    }
   };
 
   const toggleClause = (c: string) => {
@@ -1408,7 +1420,7 @@ export default function ContratsPage() {
       fetchCompanySettings().then(s => setCompanySettings(s)).catch(() => {});
 
       const [contractsRes, tmplRes] = await Promise.all([
-        supabase.from("contracts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(51),
+        supabase.from("contracts").select("id,user_id,title,client_name,client_email,client_company,contract_type,content,status,amount,currency,start_date,end_date,jurisdiction,language,duration_months,is_recurring,renewal_alert_days,specific_clauses,ai_summary,ai_risks,validation_manager,validation_legal,validation_finance,sent_at,viewed_at,expires_at,invoice_ref,project,created_at,updated_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(51),
         supabase.from("contract_templates").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
       ]);
       if (!contractsRes.error && contractsRes.data) {
@@ -1442,6 +1454,15 @@ export default function ContratsPage() {
     }).catch(() => {
       toast("Impossible de charger les détails du contrat (signataires/historique)", "error");
     });
+    // Fetch logo_url séparément (exclu du SELECT liste pour alléger les requêtes)
+    if (!selected.logo_url) {
+      void (async () => {
+        try {
+          const { data } = await supabase.from("contracts").select("logo_url").eq("id", selected.id).single();
+          if (data?.logo_url) setSelected(prev => prev ? { ...prev, logo_url: data.logo_url as string } : prev);
+        } catch {}
+      })();
+    }
   }, [selected?.id, userId]);
 
   const logActivity = useCallback(async (contractId: string, action: string, details = "") => {
@@ -1455,7 +1476,8 @@ export default function ContratsPage() {
     setLoadingMore(true);
     const oldest = contracts[contracts.length - 1].created_at;
     const { data, error } = await supabase
-      .from("contracts").select("*")
+      .from("contracts")
+      .select("id,user_id,title,client_name,client_email,client_company,contract_type,content,status,amount,currency,start_date,end_date,jurisdiction,language,duration_months,is_recurring,renewal_alert_days,specific_clauses,ai_summary,ai_risks,validation_manager,validation_legal,validation_finance,sent_at,viewed_at,expires_at,invoice_ref,project,created_at,updated_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .lt("created_at", oldest)
