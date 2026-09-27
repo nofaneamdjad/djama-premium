@@ -60,7 +60,7 @@ interface FInvoice {
 }
 
 interface FOrderItem {
-  id?: string; order_id?: string; catalog_id?: string | null;
+  id?: string; order_id?: string; catalog_id?: string | null; stock_product_id?: string | null;
   name: string; reference: string; quantity: number; received_quantity: number;
   unit_price: number; discount_percent: number; vat_rate: number; total_price: number;
 }
