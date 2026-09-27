@@ -32,7 +32,6 @@ import { GridSkeleton } from "@/components/client/Skeleton";
 import EmptyState from "@/components/client/EmptyState";
 import { validate, ContactSchema } from "@/lib/schemas/client";
 import { useTheme } from "@/lib/theme-context";
-import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 type ContactType    = "prospect" | "client" | "partenaire" | "fournisseur";
 type ContactStatus  = "prospect" | "actif" | "inactif" | "perdu";
@@ -3183,7 +3182,6 @@ export default function CRMPage() {
         <div className="relative px-4 sm:px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <ModuleHeaderIcon icon={Users} color="#7c3aed" />
               <div>
                 <h1 className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>CRM</h1>
                 <p className={`text-[0.65rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
