@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, AlertOctagon, TrendingUp, Download,
   Activity, DollarSign, RefreshCw, BarChart2, Truck, Users, ClipboardList,
+  ShoppingCart, Bell,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -25,6 +26,9 @@ import { SuppliersView }  from "./SuppliersView";
 import { ReportView }     from "./ReportView";
 import { ClientsView }    from "./ClientsView";
 import { InventoryView }  from "./InventoryView";
+import { VentesView }     from "./VentesView";
+import { AlertesView }    from "./AlertesView";
+import { LotsView }       from "./LotsView";
 import { ProductModal }   from "./ProductModal";
 import { MovementModal }  from "./MovementModal";
 import { SupplierModal }  from "./SupplierModal";
@@ -40,7 +44,8 @@ export default function StocksPage() {
 
   const [userId, setUserId]   = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"dashboard" | "products" | "movements" | "suppliers" | "report" | "clients" | "inventaire">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "products" | "movements" | "suppliers" | "report" | "clients" | "inventaire" | "ventes" | "alertes">("dashboard");
+  const [lotsProduct, setLotsProduct] = useState<Product | null>(null);
 
   const [products,          setProducts]          = useState<Product[]>([]);
   const [movements,         setMovements]         = useState<Movement[]>([]);
@@ -282,15 +287,26 @@ export default function StocksPage() {
   }, [userId, toast]);
 
   const exportCSV = useCallback(() => {
-    const rows = [
-      ["Nom","SKU","Catégorie","Stock actuel","Stock min","Prix achat","Prix vente","Fournisseur","Entrepôt"].join(";"),
-      ...products.map(p => [p.name, p.sku, p.category, p.stock_current, p.stock_minimum, p.purchase_price, p.sale_price, p.supplier_name, ""].join(";")),
-    ];
-    const blob = new Blob(["﻿" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a"); a.href = url; a.download = "stocks.csv"; a.click();
-    URL.revokeObjectURL(url);
-  }, [products]);
+    if (tab === "movements") {
+      const rows = [
+        ["Date","Référence","Produit","Type","Quantité","Avant","Après","Motif"].join(";"),
+        ...movements.map(m => [m.date, m.reference, m.product_name, m.type, m.quantity, m.before_qty, m.after_qty, m.reason].join(";")),
+      ];
+      const blob = new Blob(["﻿" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a"); a.href = url; a.download = "mouvements.csv"; a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const rows = [
+        ["Nom","SKU","Catégorie","Stock actuel","Stock min","Prix achat","Prix vente","Fournisseur"].join(";"),
+        ...products.map(p => [p.name, p.sku, p.category, p.stock_current, p.stock_minimum, p.purchase_price, p.sale_price, p.supplier_name].join(";")),
+      ];
+      const blob = new Blob(["﻿" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a"); a.href = url; a.download = "stocks.csv"; a.click();
+      URL.revokeObjectURL(url);
+    }
+  }, [products, movements, tab]);
 
   const TABS = [
     { key: "dashboard",  label: "Dashboard",   icon: BarChart2 },
@@ -299,6 +315,8 @@ export default function StocksPage() {
     { key: "suppliers",  label: "Fournisseurs", icon: Truck },
     { key: "clients",    label: "Clients",      icon: Users },
     { key: "inventaire", label: "Inventaire",   icon: ClipboardList },
+    { key: "ventes",     label: "Ventes",       icon: ShoppingCart },
+    { key: "alertes",    label: "Alertes",      icon: Bell },
     { key: "report",     label: "Rapport",      icon: TrendingUp },
   ] as const;
 
@@ -404,7 +422,9 @@ export default function StocksPage() {
                 setShowProductModal(true);
               }}
               onDelete={(id) => { setDeleteType("product"); setConfirmDeleteId(id); }}
-              onAddMovement={(p) => { setMovProductPreset(p); setShowMovModal(true); }}/>
+              onAddMovement={(p) => { setMovProductPreset(p); setShowMovModal(true); }}
+              onOpenLots={(p) => setLotsProduct(p)}
+              onOpenDetail={(p) => router.push(`/client/stocks/${p.id}`)}/>
           )}
           {tab === "movements" && (
             <MovementsView movements={movements} products={products} warehouses={warehouses}
@@ -435,11 +455,28 @@ export default function StocksPage() {
                 if (data) setProducts(data as unknown as Product[]);
               }}/>
           )}
+          {tab === "ventes" && userId && (
+            <VentesView products={products} userId={userId}
+              onStockChanged={async () => {
+                const { data } = await supabase.from("stock_products").select(PRODUCT_LIST_COLS).eq("user_id", userId).order("name");
+                if (data) setProducts(data as unknown as Product[]);
+              }}/>
+          )}
+          {tab === "alertes" && userId && (
+            <AlertesView products={products} userId={userId}/>
+          )}
           {tab === "report" && (
             <ReportView products={products} movements={movements}/>
           )}
         </div>
       )}
+
+      {/* Lots modal */}
+      <AnimatePresence>
+        {lotsProduct && userId && (
+          <LotsView product={lotsProduct} userId={userId} onClose={() => setLotsProduct(null)}/>
+        )}
+      </AnimatePresence>
 
       {/* Modals */}
       <AnimatePresence>

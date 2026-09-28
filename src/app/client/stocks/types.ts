@@ -63,6 +63,26 @@ export interface InventoryLine {
   justification: string; created_at: string; updated_at: string;
 }
 
+export interface StockLot {
+  id: string; user_id: string; product_id: string;
+  lot_number: string; expiry_date: string | null;
+  quantity: number; notes: string;
+  created_at: string; updated_at: string;
+}
+
+export interface StockProductLocation {
+  id: string; user_id: string;
+  product_id: string; warehouse_id: string;
+  quantity: number; updated_at: string;
+}
+
+export interface StockAlertConfig {
+  id: string; user_id: string; product_id: string;
+  enabled: boolean; threshold_qty: number;
+  email_enabled: boolean; last_alerted_at: string | null;
+  created_at: string;
+}
+
 export type StocksRapport = {
   score_sante:           number;
   resume_executif:       string;
