@@ -68,6 +68,7 @@ interface Task {
   is_recurring: boolean; recurrence: string;
   linked_module: string; dependencies: string[];
   sort_order: number; created_at: string;
+  recurrence_parent_id: string | null;
   // ERP links (Phase 5)
   linked_document_id: string | null;
   linked_contact_id: string | null;
@@ -75,6 +76,13 @@ interface Task {
   linked_contract_id: string | null;
   linked_supplier_id: string | null;
   linked_product_id: string | null;
+}
+
+interface DbTemplate {
+  id: string; name: string; description: string; icon: string; color: string;
+  priority: string; category: string; estimated_minutes: number;
+  tags: string[]; subtasks: Sub[]; recurrence: string; is_recurring: boolean;
+  is_shared: boolean; created_at: string;
 }
 
 type Form = Omit<Task, "id" | "created_at">;
@@ -85,6 +93,7 @@ const BLANK: Form = {
   subtasks: [], tags: [], estimated_minutes: 30, time_spent: 0,
   timer_started_at: null, is_recurring: false, recurrence: "none",
   linked_module: "", dependencies: [], sort_order: 0,
+  recurrence_parent_id: null,
   linked_document_id: null, linked_contact_id: null, linked_project_id: null,
   linked_contract_id: null, linked_supplier_id: null, linked_product_id: null,
 };
@@ -210,6 +219,7 @@ function parseTask(r: Record<string, unknown>): Task {
     dependencies: Array.isArray(r.dependencies) ? r.dependencies.map(String) : [],
     sort_order: Number(r.sort_order ?? 0),
     created_at: String(r.created_at ?? ""),
+    recurrence_parent_id: r.recurrence_parent_id ? String(r.recurrence_parent_id) : null,
     linked_document_id: r.linked_document_id ? String(r.linked_document_id) : null,
     linked_contact_id:  r.linked_contact_id  ? String(r.linked_contact_id)  : null,
     linked_project_id:  r.linked_project_id  ? String(r.linked_project_id)  : null,
@@ -563,6 +573,10 @@ export default function ProductivitePage() {
   const [erpContracts, setErpContracts] = useState<{ id: string; label: string }[]>([]);
   const [erpSuppliers, setErpSuppliers] = useState<{ id: string; label: string }[]>([]);
   const [erpProducts,  setErpProducts]  = useState<{ id: string; label: string }[]>([]);
+  // Templates persistants DB (Phase 6)
+  const [dbTemplates,    setDbTemplates]    = useState<DbTemplate[]>([]);
+  const [tplTab,         setTplTab]         = useState<"builtin" | "saved">("builtin");
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
@@ -649,6 +663,7 @@ export default function ProductivitePage() {
       linked_document_id: t.linked_document_id, linked_contact_id: t.linked_contact_id,
       linked_project_id: t.linked_project_id, linked_contract_id: t.linked_contract_id,
       linked_supplier_id: t.linked_supplier_id, linked_product_id: t.linked_product_id,
+      recurrence_parent_id: t.recurrence_parent_id,
     });
     setEditId(t.id); setShowModal(true);
     loadComments(t.id);
@@ -680,6 +695,61 @@ export default function ProductivitePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
+  const loadDbTemplates = useCallback(async () => {
+    if (!userId) return;
+    const { data } = await supabase
+      .from("productivity_templates").select("*").order("name");
+    if (data) setDbTemplates(data.map((r: Record<string, unknown>) => ({
+      id: String(r.id), name: String(r.name ?? ""), description: String(r.description ?? ""),
+      icon: String(r.icon ?? ""), color: String(r.color ?? "#8b5cf6"),
+      priority: String(r.priority ?? "normal"), category: String(r.category ?? ""),
+      estimated_minutes: Number(r.estimated_minutes ?? 30),
+      tags: Array.isArray(r.tags) ? r.tags.map(String) : [],
+      subtasks: Array.isArray(r.subtasks) ? r.subtasks as Sub[] : [],
+      recurrence: String(r.recurrence ?? "none"),
+      is_recurring: Boolean(r.is_recurring), is_shared: Boolean(r.is_shared),
+      created_at: String(r.created_at ?? ""),
+    })));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  const saveCurrentAsTemplate = async () => {
+    if (!form.title.trim() || !userId) return;
+    setSavingTemplate(true);
+    const { error } = await supabase.from("productivity_templates").insert({
+      user_id: userId,
+      name: form.title.trim(),
+      description: form.description || "",
+      priority: form.priority, category: form.category,
+      estimated_minutes: form.estimated_minutes,
+      tags: form.tags, subtasks: form.subtasks,
+      recurrence: form.recurrence, is_recurring: form.is_recurring,
+    });
+    setSavingTemplate(false);
+    if (error) { toast(error.message, "error"); return; }
+    toast("Template sauvegardé");
+    await loadDbTemplates();
+  };
+
+  const deleteDbTemplate = async (id: string) => {
+    const { error } = await supabase.from("productivity_templates").delete().eq("id", id).eq("user_id", userId!);
+    if (error) { toast(error.message, "error"); return; }
+    setDbTemplates(ts => ts.filter(t => t.id !== id));
+    toast("Template supprimé", "info");
+  };
+
+  const applyDbTemplate = (tpl: DbTemplate) => {
+    setForm(f => ({
+      ...f,
+      title: tpl.name, description: tpl.description,
+      priority: tpl.priority as Priority, category: tpl.category,
+      estimated_minutes: tpl.estimated_minutes, tags: [...tpl.tags],
+      subtasks: tpl.subtasks.map(s => ({ ...s, id: crypto.randomUUID(), done: false })),
+      recurrence: tpl.recurrence, is_recurring: tpl.is_recurring,
+    }));
+    setShowTemplates(false); setShowModal(true);
+  };
+
   const save = async () => {
     if (!form.title.trim()) { toast("Le titre est requis", "error"); return; }
     if (!userId) { toast("Session expirée — rechargez la page", "error"); return; }
@@ -700,6 +770,7 @@ export default function ProductivitePage() {
       linked_contract_id: form.linked_contract_id || null,
       linked_supplier_id: form.linked_supplier_id || null,
       linked_product_id:  form.linked_product_id  || null,
+      recurrence_parent_id: form.recurrence_parent_id || null,
     };
     if (editId) {
       const { error } = await supabase.from("productivity_tasks").update(payload).eq("id", editId).eq("user_id", userId!);
@@ -1665,6 +1736,11 @@ export default function ProductivitePage() {
                   )}
                 </div>
                 <div className="flex gap-2">
+                  <button onClick={saveCurrentAsTemplate} disabled={savingTemplate || !form.title.trim()}
+                    title="Sauvegarder comme template réutilisable"
+                    className={`rounded-xl border px-3 py-2 text-xs transition disabled:opacity-40 ${isDark ? "border-amber-500/30 text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10" : "border-amber-300 text-amber-600 hover:bg-amber-50"}`}>
+                    <LayoutTemplate size={12} className="inline mr-1" />{savingTemplate ? "…" : "Template"}
+                  </button>
                   <button onClick={() => setShowModal(false)}
                     className={`rounded-xl border px-4 py-2 text-sm transition ${isDark ? "border-white/8 text-white/50 hover:text-white/80" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>
                     Annuler
@@ -1708,6 +1784,21 @@ export default function ProductivitePage() {
                 <button onClick={() => setShowTemplates(false)}
                   className={`text-xl leading-none transition ${isDark ? "text-white/30 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}>×</button>
               </div>
+
+              {/* Onglets */}
+              <div className={`flex gap-1 px-5 pt-4 pb-0 border-b ${isDark ? "border-white/6" : "border-gray-200"}`}
+                ref={() => { if (showTemplates) loadDbTemplates(); }}>
+                {(["builtin", "saved"] as const).map(tab => (
+                  <button key={tab} onClick={() => setTplTab(tab)}
+                    className={`px-4 py-2 text-xs font-semibold rounded-t-lg transition ${tplTab === tab
+                      ? isDark ? "bg-amber-500/15 text-amber-300 border-b-2 border-amber-400" : "bg-amber-50 text-amber-700 border-b-2 border-amber-500"
+                      : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
+                    {tab === "builtin" ? "Templates intégrés" : `Mes templates (${dbTemplates.length})`}
+                  </button>
+                ))}
+              </div>
+
+              {tplTab === "builtin" && (
               <div className="grid grid-cols-2 gap-3 p-5">
                 {TASK_TEMPLATES.map(tpl => (
                   <motion.button key={tpl.label} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -1732,6 +1823,36 @@ export default function ProductivitePage() {
                   </motion.button>
                 ))}
               </div>
+              )}
+
+              {tplTab === "saved" && (
+              <div className="p-5 space-y-2 max-h-80 overflow-y-auto">
+                {dbTemplates.length === 0 ? (
+                  <div className="flex flex-col items-center py-12 text-center">
+                    <LayoutTemplate size={32} className={`mb-3 ${isDark ? "text-white/15" : "text-gray-300"}`} />
+                    <p className={`text-sm ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucun template sauvegardé</p>
+                    <p className={`text-[0.65rem] mt-1 ${isDark ? "text-white/15" : "text-gray-300"}`}>Ouvrez une tâche et cliquez « Template »</p>
+                  </div>
+                ) : dbTemplates.map(tpl => (
+                  <div key={tpl.id} className={`flex items-center gap-3 rounded-xl border p-3 ${isDark ? "border-white/8 bg-white/4" : "border-gray-200 bg-gray-50"}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold truncate ${isDark ? "text-white/85" : "text-gray-800"}`}>{tpl.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {tpl.category && <span className={`text-[0.6rem] ${isDark ? "text-violet-400/70" : "text-violet-500"}`}>{tpl.category}</span>}
+                        {tpl.tags.slice(0, 3).map(tag => <span key={tag} className={`text-[0.58rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>#{tag}</span>)}
+                        <span className={`text-[0.58rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{tpl.subtasks.length} sous-tâches</span>
+                      </div>
+                    </div>
+                    <button onClick={() => applyDbTemplate(tpl)}
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+                      style={{ background: "#c9a55a20", color: "#c9a55a" }}>Utiliser</button>
+                    <button onClick={() => deleteDbTemplate(tpl.id)}
+                      className={`rounded-lg px-2 py-1.5 text-xs transition ${isDark ? "text-red-400/60 hover:text-red-400 hover:bg-red-500/10" : "text-red-400 hover:bg-red-50"}`}>🗑</button>
+                  </div>
+                ))}
+              </div>
+              )}
+
             </motion.div>
           </motion.div>
         )}
