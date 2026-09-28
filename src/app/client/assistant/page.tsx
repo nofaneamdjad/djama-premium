@@ -169,13 +169,13 @@ async function buildContext(prompt: string, userId: string): Promise<{ ctx: stri
   }
 
   if (q.match(/stock|inventaire|produit|réappro|fourniss|marchand/)) {
-    const st = await get("stock_products", "name,quantity,min_quantity,category");
+    const st = await get("stock_products", "name,stock_current,stock_minimum,category");
     if (st.length) {
       used.push("Stocks");
-      const low  = st.filter(s => Number(s.quantity) <= Number(s.min_quantity));
-      const zero = st.filter(s => Number(s.quantity) === 0);
+      const low  = st.filter(s => Number(s.stock_current) <= Number(s.stock_minimum));
+      const zero = st.filter(s => Number(s.stock_current) === 0);
       parts.push(`STOCKS (${st.length} produits): ${low.length} stock faible · ${zero.length} rupture totale.`);
-      if (low.length) parts.push(`  ↳ À réapprovisionner: ${low.slice(0, 6).map(s => `${s.name} (${s.quantity}/${s.min_quantity})`).join(" · ")}`);
+      if (low.length) parts.push(`  ↳ À réapprovisionner: ${low.slice(0, 6).map(s => `${s.name} (${s.stock_current}/${s.stock_minimum})`).join(" · ")}`);
     }
   }
 
@@ -594,7 +594,7 @@ export default function AssistantPage() {
       const [tasks, inv, st, lv, ev, memRow] = await Promise.all([
         supabase.from("productivity_tasks").select("status,priority,due_date").eq("user_id", uid).limit(200),
         supabase.from("factures").select("statut,montant_ttc").eq("user_id", uid).limit(200),
-        supabase.from("stock_products").select("quantity,min_quantity").eq("user_id", uid).limit(200),
+        supabase.from("stock_products").select("stock_current,stock_minimum").eq("user_id", uid).limit(200),
         supabase.from("team_leaves").select("status").eq("user_id", uid).limit(50),
         supabase.from("planning_events").select("start_at").eq("user_id", uid).limit(50),
         supabase.from("ai_memories").select("memory_text").eq("user_id", uid).maybeSingle(),
@@ -612,7 +612,7 @@ export default function AssistantPage() {
       const late    = taskList.filter(t => t.due_date && new Date(String(t.due_date) + "T00:00:00") < new Date(todayStr) && t.status !== "done").length;
       const urgent  = taskList.filter(t => t.priority === "urgent").length;
       const unpaid  = invList.filter(i => ["en_attente", "envoyée", "retard"].includes(String(i.statut)));
-      const low     = stList.filter(s => Number(s.quantity) <= Number(s.min_quantity)).length;
+      const low     = stList.filter(s => Number(s.stock_current) <= Number(s.stock_minimum)).length;
       const pLeaves = lvList.filter(l => l.status === "pending").length;
       const todayEv = evList.filter(e => String(e.start_at ?? "").slice(0, 10) === todayIso).length;
 
