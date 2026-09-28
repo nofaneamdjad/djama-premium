@@ -285,7 +285,7 @@ function SubBar({ subs }: { subs: Sub[] }) {
   );
 }
 
-function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefore, isDragging }: {
+function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefore, isDragging, compact = false }: {
   task: Task; now: number;
   onEdit: () => void;
   onMove: (s: Status) => void;
@@ -293,6 +293,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
   onDragStart: () => void;
   onDropBefore: () => void;
   isDragging: boolean;
+  compact?: boolean;
 }) {
   const isDark = useDark();
   const [hov, setHov] = useState(false);
@@ -316,7 +317,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
       onDragLeave={() => setDropTarget(false)}
       onDrop={e => { e.preventDefault(); e.stopPropagation(); setDropTarget(false); onDropBefore(); }}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      className={`relative rounded-xl border p-3 cursor-grab active:cursor-grabbing transition-all ${isDragging ? "opacity-40 scale-95" : ""} ${dropTarget ? isDark ? "border-violet-500/60 bg-violet-500/10" : "border-violet-400 bg-violet-50" : isDark
+      className={`relative rounded-xl border cursor-grab active:cursor-grabbing transition-all ${compact ? "p-2" : "p-3"} ${isDragging ? "opacity-40 scale-95" : ""} ${dropTarget ? isDark ? "border-violet-500/60 bg-violet-500/10" : "border-violet-400 bg-violet-50" : isDark
         ? "border-white/6 bg-white/4 hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/30"
         : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-md"}`}
       style={{ borderLeft: `3px solid ${pc.color}` }}
@@ -326,58 +327,71 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
         <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-green-400 animate-pulse" />
       )}
 
-      <p className={`text-[0.82rem] font-medium leading-snug line-clamp-2 pr-4 mb-2 ${isDark ? "text-white/88" : "text-gray-800"}`}>
-        {task.title}
-      </p>
-
-      <div className="flex flex-wrap gap-1 mb-2">
-        {task.category && (
-          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.58rem] ${isDark ? "bg-violet-500/10 text-violet-300/80" : "bg-violet-50 text-violet-600"}`}>
-            {task.category}
-          </span>
-        )}
-        {task.tags.slice(0, 3).map(tag => (
-          <span key={tag} className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[0.55rem] border ${isDark ? "bg-white/6 text-white/40 border-white/8" : "bg-gray-50 text-gray-500 border-gray-200"}`}>
-            #{tag}
-          </span>
-        ))}
-        {task.tags.length > 3 && (
-          <span className={`text-[0.55rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>+{task.tags.length - 3}</span>
-        )}
-      </div>
-
-      <div className="mb-2">
-        <PBadge p={task.priority} />
-      </div>
-
-      {task.dependencies.length > 0 && (
-        <div className="mb-1.5 flex items-center gap-1 text-[0.58rem] text-amber-400/70">
-          <Link2 size={9} /> Bloqué par {task.dependencies.length} tâche{task.dependencies.length > 1 ? "s" : ""}
+      {compact ? (
+        /* Mode compact : titre + badge priorité sur une seule ligne */
+        <div className="flex items-center gap-2 pr-4">
+          <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: pc.color }} />
+          <p className={`text-[0.78rem] font-medium truncate flex-1 ${isDark ? "text-white/88" : "text-gray-800"}`}>{task.title}</p>
+          {task.due_date && <span className={`text-[0.58rem] shrink-0 ${late ? "text-red-400" : isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(task.due_date)}</span>}
         </div>
+      ) : (
+        <>
+          <p className={`text-[0.82rem] font-medium leading-snug line-clamp-2 pr-4 mb-2 ${isDark ? "text-white/88" : "text-gray-800"}`}>
+            {task.title}
+          </p>
+
+          <div className="flex flex-wrap gap-1 mb-2">
+            {task.category && (
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.58rem] ${isDark ? "bg-violet-500/10 text-violet-300/80" : "bg-violet-50 text-violet-600"}`}>
+                {task.category}
+              </span>
+            )}
+            {task.tags.slice(0, 3).map(tag => (
+              <span key={tag} className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[0.55rem] border ${isDark ? "bg-white/6 text-white/40 border-white/8" : "bg-gray-50 text-gray-500 border-gray-200"}`}>
+                #{tag}
+              </span>
+            ))}
+            {task.tags.length > 3 && (
+              <span className={`text-[0.55rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>+{task.tags.length - 3}</span>
+            )}
+          </div>
+
+          <div className="mb-2">
+            <PBadge p={task.priority} />
+          </div>
+
+          {task.dependencies.length > 0 && (
+            <div className="mb-1.5 flex items-center gap-1 text-[0.58rem] text-amber-400/70">
+              <Link2 size={9} /> Bloqué par {task.dependencies.length} tâche{task.dependencies.length > 1 ? "s" : ""}
+            </div>
+          )}
+
+          <SubBar subs={task.subtasks} />
+        </>
       )}
 
-      <SubBar subs={task.subtasks} />
-
-      <div className={`flex items-center justify-between mt-2 pt-2 border-t ${isDark ? "border-white/5" : "border-gray-100"}`}>
-        <div className="flex items-center gap-2">
-          {task.due_date && (
-            <span className={`text-[0.62rem] font-medium ${late ? "text-red-400" : isDark ? "text-white/35" : "text-gray-400"}`}>
-              {late && <AlertTriangle size={10} className="inline mr-0.5" />}{fmtDate(task.due_date)}
-            </span>
-          )}
-          {elapsed > 0 && (
-            <span className={`text-[0.58rem] ${running ? "text-green-400" : isDark ? "text-white/25" : "text-gray-400"}`}>
-              {fmtSec(elapsed)}
-            </span>
-          )}
+      {!compact && (
+        <div className={`flex items-center justify-between mt-2 pt-2 border-t ${isDark ? "border-white/5" : "border-gray-100"}`}>
+          <div className="flex items-center gap-2">
+            {task.due_date && (
+              <span className={`text-[0.62rem] font-medium ${late ? "text-red-400" : isDark ? "text-white/35" : "text-gray-400"}`}>
+                {late && <AlertTriangle size={10} className="inline mr-0.5" />}{fmtDate(task.due_date)}
+              </span>
+            )}
+            {elapsed > 0 && (
+              <span className={`text-[0.58rem] ${running ? "text-green-400" : isDark ? "text-white/25" : "text-gray-400"}`}>
+                {fmtSec(elapsed)}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {task.assignees.slice(0, 3).map(a => <Av key={a} name={a} size={18} />)}
+            {task.assignees.length > 3 && (
+              <span className={`text-[0.58rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>+{task.assignees.length - 3}</span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          {task.assignees.slice(0, 3).map(a => <Av key={a} name={a} size={18} />)}
-          {task.assignees.length > 3 && (
-            <span className={`text-[0.58rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>+{task.assignees.length - 3}</span>
-          )}
-        </div>
-      </div>
+      )}
 
       <AnimatePresence>
         {hov && (
@@ -523,6 +537,10 @@ export default function ProductivitePage() {
   const [deleting,        setDeleting]        = useState(false);
   const [showTemplates,   setShowTemplates]   = useState(false);
   const [depSearch,       setDepSearch]       = useState("");
+  const [kanbanCompact,   setKanbanCompact]   = useState(false);
+  const [selectedIds,     setSelectedIds]     = useState<Set<string>>(new Set());
+  const [ftag,            setFtag]            = useState("");
+  const [fassignee,       setFassignee]       = useState("");
 
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
@@ -787,10 +805,12 @@ export default function ProductivitePage() {
   };
 
   const filtered = tasks.filter(t => {
-    if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !t.title.toLowerCase().includes(search.toLowerCase()) && !t.description.toLowerCase().includes(search.toLowerCase())) return false;
     if (fprio  && t.priority !== fprio) return false;
     if (fcat   && t.category !== fcat)  return false;
     if (fstat  && t.status   !== fstat) return false;
+    if (ftag   && !t.tags.includes(ftag)) return false;
+    if (fassignee && !t.assignees.includes(fassignee)) return false;
     return true;
   });
 
@@ -847,6 +867,15 @@ export default function ProductivitePage() {
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
+              {view === "kanban" && (
+                <button onClick={() => setKanbanCompact(c => !c)} title="Mode compact"
+                  className={`h-8 flex items-center gap-1.5 px-3 rounded-xl border transition-all ${kanbanCompact
+                    ? "border-violet-500/40 bg-violet-500/15 text-violet-300"
+                    : isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}>
+                  <BarChart3 size={13}/>
+                  <span className="hidden sm:inline text-xs font-semibold">Compact</span>
+                </button>
+              )}
               <button onClick={exportCSV} title="Exporter CSV"
                 className={`h-8 flex items-center gap-1.5 px-3 rounded-xl border transition-all ${isDark ? "border-white/10 text-white/40 hover:text-white/70 hover:bg-white/[0.04]" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}>
                 <Download size={13}/>
@@ -970,8 +999,34 @@ export default function ProductivitePage() {
               ))}
             </select>
 
-            {(search || fprio || fcat || fstat) && (
-              <button onClick={() => { setSearch(""); setFprio(""); setFcat(""); setFstat(""); }}
+            {/* Filtre tag */}
+            {(() => {
+              const allTags = [...new Set(tasks.flatMap(t => t.tags))].sort();
+              return allTags.length > 0 ? (
+                <select value={ftag} onChange={e => setFtag(e.target.value)}
+                  className="rounded-lg py-1.5 pl-3 pr-8 text-sm outline-none appearance-none transition"
+                  style={selStyle(isDark)}>
+                  <option value="">Tous tags</option>
+                  {allTags.map(tag => <option key={tag} value={tag}>#{tag}</option>)}
+                </select>
+              ) : null;
+            })()}
+
+            {/* Filtre assignee (texte libre) */}
+            {(() => {
+              const allAssignees = [...new Set(tasks.flatMap(t => t.assignees))].sort();
+              return allAssignees.length > 0 ? (
+                <select value={fassignee} onChange={e => setFassignee(e.target.value)}
+                  className="rounded-lg py-1.5 pl-3 pr-8 text-sm outline-none appearance-none transition"
+                  style={selStyle(isDark)}>
+                  <option value="">Tous assignés</option>
+                  {allAssignees.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              ) : null;
+            })()}
+
+            {(search || fprio || fcat || fstat || ftag || fassignee) && (
+              <button onClick={() => { setSearch(""); setFprio(""); setFcat(""); setFstat(""); setFtag(""); setFassignee(""); }}
                 className={`rounded-xl border px-3 py-2 text-xs transition ${isDark
                   ? "border-white/8 text-white/40 hover:text-white/70"
                   : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
@@ -987,6 +1042,38 @@ export default function ProductivitePage() {
               </button>
             )}
           </div>
+
+          {/* Barre d'actions groupées (uniquement en vue liste) */}
+          {view === "list" && selectedIds.size > 0 && (
+            <div className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 ${isDark ? "border-violet-500/30 bg-violet-500/10" : "border-violet-300 bg-violet-50"}`}>
+              <span className={`text-xs font-semibold ${isDark ? "text-violet-300" : "text-violet-700"}`}>{selectedIds.size} sélectionnée{selectedIds.size > 1 ? "s" : ""}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {(Object.keys(STAT) as Status[]).map(s => (
+                  <button key={s} onClick={async () => {
+                    const ids = [...selectedIds];
+                    setTasks(ts => ts.map(t => selectedIds.has(t.id) ? { ...t, status: s } : t));
+                    await Promise.all(ids.map(id => supabase.from("productivity_tasks").update({ status: s }).eq("id", id).eq("user_id", userId!)));
+                    setSelectedIds(new Set());
+                  }}
+                  className="rounded-lg px-2 py-1 text-[0.68rem] border transition"
+                  style={{ color: STAT[s].col, borderColor: STAT[s].col + "40", background: STAT[s].col + "15" }}>
+                    → {STAT[s].label}
+                  </button>
+                ))}
+                <button onClick={async () => {
+                  const ids = [...selectedIds];
+                  if (!confirm(`Supprimer ${ids.length} tâche(s) ?`)) return;
+                  setTasks(ts => ts.filter(t => !selectedIds.has(t.id)));
+                  await Promise.all(ids.map(id => supabase.from("productivity_tasks").delete().eq("id", id).eq("user_id", userId!)));
+                  setSelectedIds(new Set());
+                }}
+                className={`rounded-lg px-2 py-1 text-[0.68rem] border transition ${isDark ? "border-red-500/30 text-red-400 hover:bg-red-500/15" : "border-red-300 text-red-600 hover:bg-red-50"}`}>
+                  🗑 Supprimer
+                </button>
+                <button onClick={() => setSelectedIds(new Set())} className={`text-[0.68rem] ${isDark ? "text-white/40" : "text-gray-400"}`}>✕ Désélectionner</button>
+              </div>
+            </div>
+          )}
 
                 {view === "kanban" && (
           <div className="overflow-x-auto pb-2">
@@ -1037,7 +1124,8 @@ export default function ProductivitePage() {
                             onTimer={() => toggleTimer(t.id)}
                             onDragStart={() => setDragId(t.id)}
                             onDropBefore={() => dropBeforeTask(t.id)}
-                            isDragging={dragId === t.id} />
+                            isDragging={dragId === t.id}
+                            compact={kanbanCompact} />
                         ))}
                       </AnimatePresence>
                     )}
@@ -1102,10 +1190,21 @@ export default function ProductivitePage() {
                   <motion.div key={t.id}
                     initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                     onClick={() => openEdit(t)}
-                    className={`flex items-center gap-4 rounded-xl border px-4 py-3 cursor-pointer transition ${isDark
+                    className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 cursor-pointer transition ${selectedIds.has(t.id) ? isDark ? "border-violet-500/50 bg-violet-500/8" : "border-violet-300 bg-violet-50" : isDark
                       ? "border-white/6 bg-white/4 hover:border-white/15 hover:bg-white/6"
                       : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"}`}
                     style={{ borderLeft: `3px solid ${PRIO[t.priority].color}` }}>
+                    {/* Checkbox sélection groupée */}
+                    <input type="checkbox" checked={selectedIds.has(t.id)}
+                      onClick={e => e.stopPropagation()}
+                      onChange={e => {
+                        setSelectedIds(prev => {
+                          const next = new Set(prev);
+                          e.target.checked ? next.add(t.id) : next.delete(t.id);
+                          return next;
+                        });
+                      }}
+                      className="h-3.5 w-3.5 rounded accent-violet-500 shrink-0 cursor-pointer" />
 
                     <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: STAT[t.status].col }} />
 
