@@ -970,6 +970,12 @@ function MovementsView({ movements, products, warehouses, onNew }: {
           <Plus size={13}/> Mouvement
         </button>
       </div>
+      {movements.length >= 200 && (
+        <div className="mx-4 mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs border border-amber-500/20 bg-amber-500/8 text-amber-400">
+          <AlertTriangle size={12}/>
+          <span>Historique limité aux 200 derniers mouvements. Les données plus anciennes sont en base mais ne s'affichent pas ici.</span>
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto p-4">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center"><Activity size={28} className={isDark ? "text-white/20" : "text-gray-300"}/><p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucun mouvement</p></div>
@@ -1220,6 +1226,14 @@ function ValuationSubView({ products, movements }: { products: Product[]; moveme
           <p className="text-lg font-bold" style={{ color: gold }}>{fmtEur(totalSel)}</p>
         </div>
       </div>
+
+      {/* Alerte LIFO illégal en France */}
+      {method === "lifo" && (
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs border border-red-500/20 bg-red-500/8 text-red-400">
+          <AlertTriangle size={12}/>
+          <span>LIFO interdit en comptabilité française (PCG Art. 214-23). Valeur affichée à titre indicatif uniquement — ne pas utiliser dans vos bilans.</span>
+        </div>
+      )}
 
       {/* Delta vs prix achat */}
       <div className="flex items-center gap-3 rounded-xl px-4 py-2.5"
@@ -2088,7 +2102,15 @@ export default function StocksPage() {
     const { error } = await supabase.from(table).delete().eq("id", confirmDeleteId);
     setDeleting(false);
     setConfirmDeleteId(null);
-    if (error) { toast(error.message, "error"); return; }
+    if (error) {
+      // FK violation : fournisseur encore référencé par des produits (ON DELETE RESTRICT)
+      if (error.code === "23503") {
+        toast("Ce fournisseur est lié à des produits. Réaffectez-les d'abord.", "error");
+      } else {
+        toast(error.message, "error");
+      }
+      return;
+    }
     if (deleteType === "product") setProducts((prev) => prev.filter((p) => p.id !== confirmDeleteId));
     else setSuppliers((prev) => prev.filter((s) => s.id !== confirmDeleteId));
     toast("Supprimé", "info");
@@ -2119,12 +2141,39 @@ export default function StocksPage() {
   }, [toast]);
 
   const handleSaveDelivery = useCallback(async (form: Partial<ClientDelivery>) => {
-    if (!userId || !form.client_id || !form.product_id) return;
+    if (!userId || !form.client_id || !form.product_id || !form.quantity) return;
+
+    // Créer le mouvement de sortie d'abord (valide la disponibilité du stock)
+    const { data: movId, error: movErr } = await supabase.rpc("atomic_stock_movement", {
+      p_product_id:      form.product_id,
+      p_type:            "sortie",
+      p_quantity:        form.quantity,
+      p_reason:          `Livraison ${form.client_name ?? "client"}`,
+      p_reference:       "",
+      p_unit_cost:       0,
+      p_warehouse_id:    null,
+      p_to_warehouse_id: null,
+    });
+    if (movErr) {
+      toast(movErr.message.includes("insuffisant") ? "Stock insuffisant pour cette livraison" : movErr.message, "error");
+      return;
+    }
+
+    // Créer la livraison
     const { data, error } = await supabase.from("stock_client_deliveries")
       .insert({ ...form, user_id: userId }).select().single();
     if (error) { toast(error.message, "error"); return; }
+
+    // Rafraîchir mouvement + stock produit
+    const [movRes, prodRes] = await Promise.all([
+      supabase.from("stock_movements").select("*").eq("id", movId as string).single(),
+      supabase.from("stock_products").select("*").eq("id", form.product_id).single(),
+    ]);
+    if (movRes.data)  setMovements(prev => [movRes.data as Movement, ...prev]);
+    if (prodRes.data) setProducts(prev => prev.map(p => p.id === form.product_id ? prodRes.data as Product : p));
+
     setDeliveries(p => [data as ClientDelivery, ...p]);
-    toast("Livraison enregistrée", "success");
+    toast("Livraison enregistrée · Stock mis à jour", "success");
     setShowDeliveryModal(false);
     setDeliveryPresetClient(null);
   }, [userId, toast]);
