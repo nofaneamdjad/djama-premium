@@ -68,6 +68,13 @@ interface Task {
   is_recurring: boolean; recurrence: string;
   linked_module: string; dependencies: string[];
   sort_order: number; created_at: string;
+  // ERP links (Phase 5)
+  linked_document_id: string | null;
+  linked_contact_id: string | null;
+  linked_project_id: string | null;
+  linked_contract_id: string | null;
+  linked_supplier_id: string | null;
+  linked_product_id: string | null;
 }
 
 type Form = Omit<Task, "id" | "created_at">;
@@ -78,6 +85,8 @@ const BLANK: Form = {
   subtasks: [], tags: [], estimated_minutes: 30, time_spent: 0,
   timer_started_at: null, is_recurring: false, recurrence: "none",
   linked_module: "", dependencies: [], sort_order: 0,
+  linked_document_id: null, linked_contact_id: null, linked_project_id: null,
+  linked_contract_id: null, linked_supplier_id: null, linked_product_id: null,
 };
 
 const TASK_TEMPLATES: { Icon: LucideIcon; color: string; label: string; desc: string; form: Partial<Form> }[] = [
@@ -201,6 +210,12 @@ function parseTask(r: Record<string, unknown>): Task {
     dependencies: Array.isArray(r.dependencies) ? r.dependencies.map(String) : [],
     sort_order: Number(r.sort_order ?? 0),
     created_at: String(r.created_at ?? ""),
+    linked_document_id: r.linked_document_id ? String(r.linked_document_id) : null,
+    linked_contact_id:  r.linked_contact_id  ? String(r.linked_contact_id)  : null,
+    linked_project_id:  r.linked_project_id  ? String(r.linked_project_id)  : null,
+    linked_contract_id: r.linked_contract_id ? String(r.linked_contract_id) : null,
+    linked_supplier_id: r.linked_supplier_id ? String(r.linked_supplier_id) : null,
+    linked_product_id:  r.linked_product_id  ? String(r.linked_product_id)  : null,
   };
 }
 
@@ -541,6 +556,13 @@ export default function ProductivitePage() {
   const [selectedIds,     setSelectedIds]     = useState<Set<string>>(new Set());
   const [ftag,            setFtag]            = useState("");
   const [fassignee,       setFassignee]       = useState("");
+  // ERP link entities (Phase 5)
+  const [erpDocs,      setErpDocs]      = useState<{ id: string; label: string }[]>([]);
+  const [erpContacts,  setErpContacts]  = useState<{ id: string; label: string }[]>([]);
+  const [erpProjects,  setErpProjects]  = useState<{ id: string; label: string }[]>([]);
+  const [erpContracts, setErpContracts] = useState<{ id: string; label: string }[]>([]);
+  const [erpSuppliers, setErpSuppliers] = useState<{ id: string; label: string }[]>([]);
+  const [erpProducts,  setErpProducts]  = useState<{ id: string; label: string }[]>([]);
 
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
@@ -611,6 +633,7 @@ export default function ProductivitePage() {
   const openNew = (defaultStatus?: Status) => {
     setForm({ ...BLANK, status: defaultStatus ?? "todo" });
     setEditId(null); setComments([]); setShowModal(true);
+    loadErpEntities();
   };
 
   const openEdit = (t: Task) => {
@@ -623,9 +646,13 @@ export default function ProductivitePage() {
       timer_started_at: t.timer_started_at, is_recurring: t.is_recurring,
       recurrence: t.recurrence, linked_module: t.linked_module,
       dependencies: [...t.dependencies], sort_order: t.sort_order,
+      linked_document_id: t.linked_document_id, linked_contact_id: t.linked_contact_id,
+      linked_project_id: t.linked_project_id, linked_contract_id: t.linked_contract_id,
+      linked_supplier_id: t.linked_supplier_id, linked_product_id: t.linked_product_id,
     });
     setEditId(t.id); setShowModal(true);
     loadComments(t.id);
+    loadErpEntities();
   };
 
   const loadComments = async (taskId: string) => {
@@ -633,6 +660,25 @@ export default function ProductivitePage() {
       .from("task_comments").select("*").eq("task_id", taskId).order("created_at");
     setComments((data ?? []) as Cmt[]);
   };
+
+  const loadErpEntities = useCallback(async () => {
+    if (!userId) return;
+    const [docs, contacts, projects, contracts, suppliers, products] = await Promise.all([
+      supabase.from("documents").select("id, number, type").eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
+      supabase.from("crm_contacts").select("id, name, company").eq("user_id", userId).order("name").limit(50),
+      supabase.from("projects").select("id, title").eq("user_id", userId).order("title").limit(50),
+      supabase.from("contracts").select("id, title").eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
+      supabase.from("stock_suppliers").select("id, name").eq("user_id", userId).order("name").limit(50),
+      supabase.from("stock_products").select("id, name").eq("user_id", userId).order("name").limit(50),
+    ]);
+    setErpDocs((docs.data ?? []).map((d: Record<string, unknown>) => ({ id: String(d.id), label: `${d.type ?? ""} ${d.number ?? ""}`.trim() || String(d.id) })));
+    setErpContacts((contacts.data ?? []).map((c: Record<string, unknown>) => ({ id: String(c.id), label: c.company ? `${c.name} (${c.company})` : String(c.name ?? c.id) })));
+    setErpProjects((projects.data ?? []).map((p: Record<string, unknown>) => ({ id: String(p.id), label: String(p.title ?? p.id) })));
+    setErpContracts((contracts.data ?? []).map((c: Record<string, unknown>) => ({ id: String(c.id), label: String(c.title ?? c.id) })));
+    setErpSuppliers((suppliers.data ?? []).map((s: Record<string, unknown>) => ({ id: String(s.id), label: String(s.name ?? s.id) })));
+    setErpProducts((products.data ?? []).map((p: Record<string, unknown>) => ({ id: String(p.id), label: String(p.name ?? p.id) })));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const save = async () => {
     if (!form.title.trim()) { toast("Le titre est requis", "error"); return; }
@@ -648,6 +694,12 @@ export default function ProductivitePage() {
       timer_started_at: form.timer_started_at,
       is_recurring: form.is_recurring, recurrence: form.recurrence,
       linked_module: form.linked_module, dependencies: form.dependencies,
+      linked_document_id: form.linked_document_id || null,
+      linked_contact_id:  form.linked_contact_id  || null,
+      linked_project_id:  form.linked_project_id  || null,
+      linked_contract_id: form.linked_contract_id || null,
+      linked_supplier_id: form.linked_supplier_id || null,
+      linked_product_id:  form.linked_product_id  || null,
     };
     if (editId) {
       const { error } = await supabase.from("productivity_tasks").update(payload).eq("id", editId).eq("user_id", userId!);
@@ -1487,6 +1539,81 @@ export default function ProductivitePage() {
                       {tasks.filter(t => t.id !== editId).length === 0 && (
                         <p className={`text-center text-[0.62rem] py-3 ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune autre tâche</p>
                       )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Liens ERP (Phase 5) ── */}
+                <div className={`border-t pt-5 ${isDark ? "border-white/6" : "border-gray-200"}`}>
+                  <label className={`text-[0.68rem] mb-3 flex items-center gap-1.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                    <Link2 size={11} className="text-blue-400" /> Liens ERP
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Document */}
+                    <div>
+                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Facture / Devis</label>
+                      <select value={form.linked_document_id ?? ""}
+                        onChange={e => setForm(f => ({ ...f, linked_document_id: e.target.value || null }))}
+                        className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
+                        style={selStyle(isDark)}>
+                        <option value="">— Aucun —</option>
+                        {erpDocs.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
+                      </select>
+                    </div>
+                    {/* Contact CRM */}
+                    <div>
+                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Contact CRM</label>
+                      <select value={form.linked_contact_id ?? ""}
+                        onChange={e => setForm(f => ({ ...f, linked_contact_id: e.target.value || null }))}
+                        className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
+                        style={selStyle(isDark)}>
+                        <option value="">— Aucun —</option>
+                        {erpContacts.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                      </select>
+                    </div>
+                    {/* Projet */}
+                    <div>
+                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Projet</label>
+                      <select value={form.linked_project_id ?? ""}
+                        onChange={e => setForm(f => ({ ...f, linked_project_id: e.target.value || null }))}
+                        className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
+                        style={selStyle(isDark)}>
+                        <option value="">— Aucun —</option>
+                        {erpProjects.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                      </select>
+                    </div>
+                    {/* Contrat */}
+                    <div>
+                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Contrat</label>
+                      <select value={form.linked_contract_id ?? ""}
+                        onChange={e => setForm(f => ({ ...f, linked_contract_id: e.target.value || null }))}
+                        className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
+                        style={selStyle(isDark)}>
+                        <option value="">— Aucun —</option>
+                        {erpContracts.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                      </select>
+                    </div>
+                    {/* Fournisseur */}
+                    <div>
+                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Fournisseur</label>
+                      <select value={form.linked_supplier_id ?? ""}
+                        onChange={e => setForm(f => ({ ...f, linked_supplier_id: e.target.value || null }))}
+                        className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
+                        style={selStyle(isDark)}>
+                        <option value="">— Aucun —</option>
+                        {erpSuppliers.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                      </select>
+                    </div>
+                    {/* Produit */}
+                    <div>
+                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Produit stock</label>
+                      <select value={form.linked_product_id ?? ""}
+                        onChange={e => setForm(f => ({ ...f, linked_product_id: e.target.value || null }))}
+                        className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
+                        style={selStyle(isDark)}>
+                        <option value="">— Aucun —</option>
+                        {erpProducts.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                      </select>
                     </div>
                   </div>
                 </div>
