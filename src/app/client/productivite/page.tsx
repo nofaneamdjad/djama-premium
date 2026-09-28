@@ -261,6 +261,17 @@ const ini = (n: string) =>
 const AV_COLS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
 const avCol = (n: string) => AV_COLS[(n.charCodeAt(0) || 0) % AV_COLS.length];
 
+const TASK_PROJECTION = [
+  "id", "title", "description", "priority", "status", "category",
+  "due_date", "due_time", "responsible", "assignees", "subtasks", "tags",
+  "estimated_minutes", "time_spent", "timer_started_at",
+  "is_recurring", "recurrence", "linked_module", "dependencies",
+  "sort_order", "created_at", "organization_id", "assigned_to",
+  "recurrence_parent_id",
+  "linked_document_id", "linked_contact_id", "linked_project_id",
+  "linked_contract_id", "linked_supplier_id", "linked_product_id",
+].join(",");
+
 const DarkCtx = createContext(true);
 const useDark = () => useContext(DarkCtx);
 function selStyle(isDark: boolean): React.CSSProperties {
@@ -651,7 +662,7 @@ export default function ProductivitePage() {
     const resolvedOid = oid ?? orgId;
     if (!resolvedUid) return;
     setLoading(true);
-    let q = supabase.from("productivity_tasks").select("*");
+    let q = supabase.from("productivity_tasks").select(TASK_PROJECTION);
     if (resolvedOid && orgMode) {
       q = q.eq("organization_id", resolvedOid);
     } else {
@@ -660,9 +671,9 @@ export default function ProductivitePage() {
     const { data, error } = await q
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
-      .limit(500);
+      .limit(300);
     if (error) toast(error.message, "error");
-    else setTasks((data ?? []).map((r: Record<string, unknown>) => parseTask(r)));
+    else setTasks(((data ?? []) as unknown as Record<string, unknown>[]).map(r => parseTask(r)));
     setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, orgId, orgMode]);
@@ -734,7 +745,11 @@ export default function ProductivitePage() {
 
   const loadComments = async (taskId: string) => {
     const { data } = await supabase
-      .from("task_comments").select("*").eq("task_id", taskId).order("created_at");
+      .from("task_comments")
+      .select("id, author_name, content, created_at")
+      .eq("task_id", taskId)
+      .order("created_at", { ascending: true })
+      .limit(50);
     setComments((data ?? []) as Cmt[]);
   };
 
