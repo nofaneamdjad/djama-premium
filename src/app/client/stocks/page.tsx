@@ -33,6 +33,11 @@ interface Warehouse {
 interface Supplier {
   id: string; user_id: string; name: string; contact: string; email: string; phone: string;
   address: string; payment_terms: string; lead_time_days: number; notes: string; created_at: string;
+  fournisseur_id?: string | null;
+}
+
+interface FournisseurImport {
+  id: string; company_name: string; contact_name: string; email: string; phone: string; payment_terms: string;
 }
 
 interface Product {
@@ -1016,11 +1021,21 @@ function MovementsView({ movements, products, warehouses, onNew }: {
 
 // ─────────────────────────── SUPPLIERS VIEW ───────────────────────────
 
-function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }: {
+function SuppliersView({ suppliers, products, orders, fournisseursImport, onNew, onEdit, onDelete, onImport }: {
   suppliers: Supplier[]; products: Product[]; orders: SupplierOrder[];
+  fournisseursImport: FournisseurImport[];
   onNew: () => void; onEdit: (s: Supplier) => void; onDelete: (id: string) => void;
+  onImport: (id: string) => void;
 }) {
+  const [importing, setImporting] = useState<string | null>(null);
   const isDark = useDark();
+
+  async function doImport(id: string) {
+    setImporting(id);
+    await onImport(id);
+    setImporting(null);
+  }
+
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-5">
       <div className="flex items-center justify-between">
@@ -1053,7 +1068,12 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
                     <button onClick={() => onDelete(s.id)} className={`h-7 w-7 flex items-center justify-center rounded-lg transition-all hover:text-red-400 ${isDark ? "hover:bg-red-500/10 text-white/30" : "hover:bg-red-50 text-gray-400"}`}><Trash2 size={12}/></button>
                   </div>
                 </div>
-                <h4 className={`text-sm font-semibold mb-1 ${isDark ? "text-white/90" : "text-gray-800"}`}>{s.name}</h4>
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{s.name}</h4>
+                  {s.fournisseur_id && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(139,92,246,0.12)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.2)" }}>Lié</span>
+                  )}
+                </div>
                 {s.contact && <p className={`text-xs mb-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>{s.contact}</p>}
                 {s.email && <p className={`text-xs mb-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{s.email}</p>}
                 {s.phone && <p className={`text-xs mb-3 ${isDark ? "text-white/35" : "text-gray-400"}`}>{s.phone}</p>}
@@ -1065,6 +1085,41 @@ function SuppliersView({ suppliers, products, orders, onNew, onEdit, onDelete }:
               </motion.div>
             );
           })}
+        </div>
+      )}
+
+      {/* Section import depuis module Fournisseurs */}
+      {fournisseursImport.length > 0 && (
+        <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-gray-50 border-gray-200"}`}>
+          <div className="flex items-center gap-2">
+            <Truck size={13} style={{ color: "#8b5cf6" }}/>
+            <h4 className={`text-xs font-semibold ${isDark ? "text-white/60" : "text-gray-500"}`}>
+              Importer depuis le module Fournisseurs ({fournisseursImport.length})
+            </h4>
+          </div>
+          <div className="space-y-2">
+            {fournisseursImport.slice(0, 8).map(f => (
+              <div key={f.id} className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 border ${isDark ? "bg-white/[0.025] border-white/[0.05]" : "bg-white border-gray-200"}`}>
+                <div className="min-w-0">
+                  <p className={`text-xs font-semibold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{f.company_name}</p>
+                  {f.email && <p className={`text-[10px] truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>{f.email}</p>}
+                </div>
+                <button
+                  onClick={() => doImport(f.id)}
+                  disabled={importing === f.id}
+                  className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all disabled:opacity-50"
+                  style={{ background: "rgba(139,92,246,0.12)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.2)" }}>
+                  {importing === f.id ? <RefreshCw size={10} className="animate-spin"/> : <Plus size={10}/>}
+                  {importing === f.id ? "…" : "Lier"}
+                </button>
+              </div>
+            ))}
+            {fournisseursImport.length > 8 && (
+              <p className={`text-[10px] text-center ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                +{fournisseursImport.length - 8} autres fournisseurs disponibles
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -1954,6 +2009,7 @@ export default function StocksPage() {
   const [orders, setOrders] = useState<SupplierOrder[]>([]);
   const [clients, setClients] = useState<LoyalClient[]>([]);
   const [deliveries, setDeliveries] = useState<ClientDelivery[]>([]);
+  const [fournisseursImport, setFournisseursImport] = useState<FournisseurImport[]>([]);
 
   const [showClientModal, setShowClientModal] = useState(false);
   const [editClientForm, setEditClientForm] = useState<Partial<LoyalClient>>(EMPTY_CLIENT());
@@ -1978,7 +2034,7 @@ export default function StocksPage() {
         if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
         setUserId(user.id);
 
-        const [prodRes, movRes, supRes, whRes, ordRes, cliRes, delRes] = await Promise.all([
+        const [prodRes, movRes, supRes, whRes, ordRes, cliRes, delRes, fournRes] = await Promise.all([
           supabase.from("stock_products").select("*").eq("user_id", user.id).order("name"),
           supabase.from("stock_movements").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
           supabase.from("stock_suppliers").select("*").eq("user_id", user.id).order("name"),
@@ -1986,15 +2042,22 @@ export default function StocksPage() {
           supabase.from("stock_supplier_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
           supabase.from("stock_loyal_clients").select("*").eq("user_id", user.id).order("name"),
           supabase.from("stock_client_deliveries").select("*").eq("user_id", user.id).order("delivery_date", { ascending: false }).limit(500),
+          supabase.from("fournisseurs").select("id,company_name,contact_name,email,phone,payment_terms").eq("user_id", user.id).eq("is_active", true).order("company_name").limit(200),
         ]);
 
         if (!prodRes.error && prodRes.data) setProducts(prodRes.data as Product[]);
         if (!movRes.error && movRes.data) setMovements(movRes.data as Movement[]);
-        if (!supRes.error && supRes.data) setSuppliers(supRes.data as Supplier[]);
+        const loadedSuppliers = (!supRes.error && supRes.data) ? supRes.data as Supplier[] : [];
+        setSuppliers(loadedSuppliers);
         if (!whRes.error && whRes.data) setWarehouses(whRes.data as Warehouse[]);
         if (!ordRes.error && ordRes.data) setOrders(ordRes.data as SupplierOrder[]);
         if (!cliRes.error && cliRes.data) setClients(cliRes.data as LoyalClient[]);
         if (!delRes.error && delRes.data) setDeliveries(delRes.data as ClientDelivery[]);
+        // Filtrer les fournisseurs non encore importés dans stocks
+        if (!fournRes.error && fournRes.data) {
+          const linkedIds = new Set(loadedSuppliers.map(s => s.fournisseur_id).filter(Boolean));
+          setFournisseursImport((fournRes.data as FournisseurImport[]).filter(f => !linkedIds.has(f.id)));
+        }
       } catch {
         toast("Erreur réseau — impossible de charger les stocks", "error");
       } finally {
@@ -2094,6 +2157,17 @@ export default function StocksPage() {
     setShowSupplierModal(false);
     setEditSupplier(EMPTY_SUPPLIER());
   }, [userId, toast]);
+
+  const handleImportFournisseur = useCallback(async (fournisseurId: string) => {
+    const { data: supId, error } = await supabase.rpc("import_fournisseur_as_stock_supplier", {
+      p_fournisseur_id: fournisseurId,
+    });
+    if (error) { toast(error.message, "error"); return; }
+    const { data: newSup } = await supabase.from("stock_suppliers").select("*").eq("id", supId as string).single();
+    if (newSup) setSuppliers(prev => [...prev, newSup as Supplier]);
+    setFournisseursImport(prev => prev.filter(f => f.id !== fournisseurId));
+    toast("Fournisseur importé dans le module Stocks", "success");
+  }, [toast]);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!confirmDeleteId) return;
@@ -2292,7 +2366,7 @@ export default function StocksPage() {
           {tab === "dashboard" && <DashboardView products={products} movements={movements} onNewProduct={() => { setEditProduct(EMPTY_PRODUCT()); setShowProductModal(true); }} onNewMovement={() => setShowMovModal(true)}/>}
           {tab === "products" && <ProductsView products={products} onNew={() => { setEditProduct(EMPTY_PRODUCT()); setShowProductModal(true); }} onEdit={(p) => { setEditProduct(p); setShowProductModal(true); }} onDelete={(id) => { setDeleteType("product"); setConfirmDeleteId(id); }} onAddMovement={(p) => { setMovProductPreset(p); setShowMovModal(true); }}/>}
           {tab === "movements" && <MovementsView movements={movements} products={products} warehouses={warehouses} onNew={() => setShowMovModal(true)}/>}
-          {tab === "suppliers" && <SuppliersView suppliers={suppliers} products={products} orders={orders} onNew={() => { setEditSupplier(EMPTY_SUPPLIER()); setShowSupplierModal(true); }} onEdit={(s) => { setEditSupplier(s); setShowSupplierModal(true); }} onDelete={(id) => { setDeleteType("supplier"); setConfirmDeleteId(id); }}/>}
+          {tab === "suppliers" && <SuppliersView suppliers={suppliers} products={products} orders={orders} fournisseursImport={fournisseursImport} onNew={() => { setEditSupplier(EMPTY_SUPPLIER()); setShowSupplierModal(true); }} onEdit={(s) => { setEditSupplier(s); setShowSupplierModal(true); }} onDelete={(id) => { setDeleteType("supplier"); setConfirmDeleteId(id); }} onImport={handleImportFournisseur}/>}
           {tab === "clients" && <ClientsView clients={clients} deliveries={deliveries} products={products}
             onNewClient={() => { setEditClientForm(EMPTY_CLIENT()); setShowClientModal(true); }}
             onEditClient={(c) => { setEditClientForm(c); setShowClientModal(true); }}
