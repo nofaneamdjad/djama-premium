@@ -588,7 +588,7 @@ export default function ProductivitePage() {
       linked_module: form.linked_module, dependencies: form.dependencies,
     };
     if (editId) {
-      const { error } = await supabase.from("productivity_tasks").update(payload).eq("id", editId);
+      const { error } = await supabase.from("productivity_tasks").update(payload).eq("id", editId).eq("user_id", userId!);
       if (error) toast(error.message, "error");
       else { toast("Tâche mise à jour"); await load(); }
     } else {
@@ -621,7 +621,7 @@ export default function ProductivitePage() {
   const confirmDel = useCallback(async () => {
     if (!confirmDeleteId) return;
     setDeleting(true);
-    const { error } = await supabase.from("productivity_tasks").delete().eq("id", confirmDeleteId);
+    const { error } = await supabase.from("productivity_tasks").delete().eq("id", confirmDeleteId).eq("user_id", userId!);
     setDeleting(false);
     setConfirmDeleteId(null);
     if (error) { toast(error.message, "error"); return; }
@@ -633,7 +633,7 @@ export default function ProductivitePage() {
 
   const changeStatus = async (id: string, status: Status) => {
     setTasks(ts => ts.map(t => t.id === id ? { ...t, status } : t));
-    const { error } = await supabase.from("productivity_tasks").update({ status }).eq("id", id);
+    const { error } = await supabase.from("productivity_tasks").update({ status }).eq("id", id).eq("user_id", userId!);
     if (error) {
       setTasks(ts => ts.map(t => t.id === id ? { ...t } : t));
       toast("Erreur mise à jour statut", "error");
@@ -647,7 +647,7 @@ export default function ProductivitePage() {
       ? { timer_started_at: null, time_spent: t.time_spent + Math.floor((Date.now() - new Date(t.timer_started_at).getTime()) / 1000) }
       : { timer_started_at: new Date().toISOString(), time_spent: t.time_spent };
     setTasks(ts => ts.map(x => x.id === id ? { ...x, ...update } : x));
-    const { error } = await supabase.from("productivity_tasks").update(update).eq("id", id);
+    const { error } = await supabase.from("productivity_tasks").update(update).eq("id", id).eq("user_id", userId!);
     if (error) toast("Erreur timer", "error");
   };
 
@@ -667,7 +667,7 @@ export default function ProductivitePage() {
     if (!cmt.trim() || !editId) return;
     const { data, error } = await supabase
       .from("task_comments")
-      .insert({ task_id: editId, author_name: cmtAuthor, content: cmt.trim() })
+      .insert({ task_id: editId, user_id: userId, author_name: cmtAuthor, content: cmt.trim() })
       .select().single();
     if (error) toast(error.message, "error");
     else if (data) { setComments(cs => [...cs, data as Cmt]); setCmt(""); }
