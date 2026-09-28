@@ -445,27 +445,58 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
   );
 }
 
-function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
+function AiPanel({ tasks, onClose, onAddTasks }: {
+  tasks: Task[];
+  onClose: () => void;
+  onAddTasks: (generated: Array<{ title: string; priority: string; category: string; estimated_minutes: number; tags: string[]; subtasks: { title: string }[] }>) => void;
+}) {
   const isDark = useDark();
-  const [msg, setMsg]       = useState("");
-  const [resp, setResp]     = useState("");
+  const [msg, setMsg]         = useState("");
+  const [resp, setResp]       = useState("");
   const [loading, setLoading] = useState(false);
+  const [genGoal, setGenGoal] = useState("");
+  const [genLoading, setGenLoading] = useState(false);
+  const [genResult, setGenResult]   = useState<Array<{ title: string; priority: string; category: string; estimated_minutes: number; tags: string[]; subtasks: { title: string }[] }>>([]);
 
-  const ctx =`Productivité SaaS: ${tasks.length} tâches au total. Urgentes: ${tasks.filter(t => t.priority === "urgent").length}. En retard: ${tasks.filter(isLate).length}. En cours: ${tasks.filter(t => t.status === "in_progress").length}. En validation: ${tasks.filter(t => t.status === "validation").length}. Terminées: ${tasks.filter(t => t.status === "done").length}.`;
+  const ctx = `Productivité SaaS: ${tasks.length} tâches au total. Urgentes: ${tasks.filter(t => t.priority === "urgent").length}. En retard: ${tasks.filter(isLate).length}. En cours: ${tasks.filter(t => t.status === "in_progress").length}. En validation: ${tasks.filter(t => t.status === "validation").length}. Terminées: ${tasks.filter(t => t.status === "done").length}.`;
 
-  async function ask(prompt: string) {
+  async function ask(question: string) {
     setLoading(true); setResp("");
     try {
-      const r = await fetch("/api/notes/ai", {
+      const r = await fetch("/api/productivite/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "chat", content: ctx, prompt }),
+        body: JSON.stringify({
+          tasks: tasks.map(t => ({
+            title: t.title, status: t.status, priority: t.priority,
+            category: t.category, due_date: t.due_date,
+            is_recurring: t.is_recurring, time_spent: t.time_spent,
+            estimated_minutes: t.estimated_minutes,
+          })),
+          question,
+        }),
       });
       const d = await r.json();
       if (!r.ok) { setResp(d.error ?? `Erreur ${r.status}`); return; }
-      setResp(d.result ?? "Erreur");
+      setResp(d.result ?? "");
     } catch { setResp("Erreur réseau"); }
     setLoading(false);
+  }
+
+  async function generateTasks() {
+    if (!genGoal.trim()) return;
+    setGenLoading(true); setGenResult([]);
+    try {
+      const r = await fetch("/api/productivite/generer-taches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: genGoal.trim(), count: 4 }),
+      });
+      const d = await r.json();
+      if (!r.ok) { setResp(d.error ?? `Erreur ${r.status}`); return; }
+      setGenResult(d.tasks ?? []);
+    } catch { setResp("Erreur réseau"); }
+    setGenLoading(false);
   }
 
   const QUICK = [
@@ -509,6 +540,37 @@ function AiPanel({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
         {resp && (
           <div className={`rounded-xl border border-violet-500/20 bg-violet-500/10 p-3 text-xs leading-relaxed whitespace-pre-wrap ${isDark ? "text-white/78" : "text-gray-700"}`}>
             {resp}
+          </div>
+        )}
+      </div>
+
+      {/* Générateur de tâches IA */}
+      <div className={`border-t p-3 space-y-2 ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
+        <p className={`text-[0.62rem] font-semibold uppercase tracking-wide ${isDark ? "text-white/25" : "text-gray-400"}`}>Générer des tâches</p>
+        <div className="flex gap-1.5">
+          <input value={genGoal} onChange={e => setGenGoal(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") generateTasks(); }}
+            placeholder="Objectif à décomposer…"
+            className={`flex-1 rounded-lg border px-2.5 py-1.5 text-xs outline-none ${isDark ? "border-white/[0.08] bg-white/[0.06] text-white/75 placeholder:text-white/25" : "border-gray-200 bg-white text-gray-700 placeholder:text-gray-300"}`} />
+          <button onClick={generateTasks} disabled={genLoading || !genGoal.trim()}
+            className="rounded-lg px-2.5 py-1.5 text-xs text-white disabled:opacity-40 transition hover:opacity-90"
+            style={{ background: VIOLET }}>
+            {genLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+          </button>
+        </div>
+        {genResult.length > 0 && (
+          <div className="space-y-1">
+            {genResult.map((t, i) => (
+              <div key={i} className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-gray-50"}`}>
+                <span className={`text-xs truncate flex-1 ${isDark ? "text-white/70" : "text-gray-700"}`}>{t.title}</span>
+                <span className={`text-[0.55rem] mr-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>{t.estimated_minutes}min</span>
+              </div>
+            ))}
+            <button onClick={() => { onAddTasks(genResult); setGenResult([]); setGenGoal(""); }}
+              className="w-full rounded-lg py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+              + Ajouter {genResult.length} tâche{genResult.length > 1 ? "s" : ""}
+            </button>
           </div>
         )}
       </div>
@@ -736,6 +798,21 @@ export default function ProductivitePage() {
     if (error) { toast(error.message, "error"); return; }
     setDbTemplates(ts => ts.filter(t => t.id !== id));
     toast("Template supprimé", "info");
+  };
+
+  const addGeneratedTasks = async (generated: Array<{ title: string; priority: string; category: string; estimated_minutes: number; tags: string[]; subtasks: { title: string }[] }>) => {
+    if (!userId) return;
+    const insertions = generated.map(t => ({
+      user_id: userId,
+      title: t.title, priority: t.priority, category: t.category,
+      estimated_minutes: t.estimated_minutes, tags: t.tags,
+      subtasks: JSON.stringify(t.subtasks.map(s => ({ id: crypto.randomUUID(), title: s.title, done: false }))),
+      status: "todo", dependencies: [], sort_order: 0,
+    }));
+    const { error } = await supabase.from("productivity_tasks").insert(insertions);
+    if (error) { toast(error.message, "error"); return; }
+    toast(`${insertions.length} tâche${insertions.length > 1 ? "s" : ""} ajoutée${insertions.length > 1 ? "s" : ""}`);
+    await load();
   };
 
   const applyDbTemplate = (tpl: DbTemplate) => {
@@ -1758,7 +1835,7 @@ export default function ProductivitePage() {
       </AnimatePresence>
 
             <AnimatePresence>
-        {showAI && <AiPanel tasks={tasks} onClose={() => setShowAI(false)} />}
+        {showAI && <AiPanel tasks={tasks} onClose={() => setShowAI(false)} onAddTasks={addGeneratedTasks} />}
       </AnimatePresence>
 
       {/* ── Templates panel ── */}
