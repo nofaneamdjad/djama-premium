@@ -15,6 +15,7 @@ import { useTheme } from "@/lib/theme-context";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
 const VIOLET = "#8b5cf6";
+const GOLD   = "#C9A55A";
 
 const PRIO = {
   low:    { label: "Faible",  color: "#6b7280", bg: "bg-gray-500/15",  txt: "text-gray-400"  },
@@ -1078,7 +1079,13 @@ export default function ProductivitePage() {
               </motion.div>
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Productivité</h1>
-                <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{completionRate}% de complétion · {tasks.filter(isLate).length} en retard</p>
+                <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
+                {completionRate}% de complétion
+                {tasks.filter(isLate).length > 0 && <span className="ml-1.5 text-red-400">· {tasks.filter(isLate).length} en retard</span>}
+                {tasks.filter(t => t.priority === "urgent" && t.status !== "done").length > 0 && (
+                  <span className="ml-1.5 text-amber-400">· {tasks.filter(t => t.priority === "urgent" && t.status !== "done").length} urgente{tasks.filter(t => t.priority === "urgent" && t.status !== "done").length > 1 ? "s" : ""}</span>
+                )}
+              </p>
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
@@ -1708,9 +1715,12 @@ export default function ProductivitePage() {
 
                 {/* ── Liens ERP (Phase 5) ── */}
                 <div className={`border-t pt-5 ${isDark ? "border-white/6" : "border-gray-200"}`}>
-                  <label className={`text-[0.68rem] mb-3 flex items-center gap-1.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                    <Link2 size={11} className="text-blue-400" /> Liens ERP
-                  </label>
+                  <div className={`flex items-center gap-2 mb-3 pb-2 border-b ${isDark ? "border-white/4" : "border-gray-100"}`}>
+                    <div className="h-5 w-5 rounded-md flex items-center justify-center" style={{ background: GOLD + "20", border: `1px solid ${GOLD}40` }}>
+                      <Link2 size={10} style={{ color: GOLD }} />
+                    </div>
+                    <span className={`text-[0.68rem] font-semibold uppercase tracking-wide ${isDark ? "text-white/45" : "text-gray-500"}`}>Connexions ERP</span>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     {/* Document */}
                     <div>
@@ -1838,8 +1848,8 @@ export default function ProductivitePage() {
                     Annuler
                   </button>
                   <button onClick={save} disabled={saving}
-                    className="rounded-xl px-5 py-2 text-sm font-semibold text-white transition disabled:opacity-50 hover:opacity-90"
-                    style={{ background: `linear-gradient(135deg, ${VIOLET}, #6d28d9)` }}>
+                    className="rounded-xl px-5 py-2 text-sm font-semibold transition disabled:opacity-50 hover:opacity-90"
+                    style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a", boxShadow: `0 4px 16px ${GOLD}35` }}>
                     {saving ? "Sauvegarde…" : editId ? "Mettre à jour" : "Créer la tâche"}
                   </button>
                 </div>
