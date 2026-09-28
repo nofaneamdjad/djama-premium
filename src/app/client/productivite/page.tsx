@@ -514,6 +514,9 @@ export default function ProductivitePage() {
   const [newTag,          setNewTag]          = useState("");
   const [newAssignee,     setNewAssignee]     = useState("");
   const [userId,          setUserId]          = useState<string | null>(null);
+  const [orgId,           setOrgId]           = useState<string | null>(null);
+  const [orgMembers,      setOrgMembers]      = useState<{ id: string; user_id: string; display: string }[]>([]);
+  const [orgMode,         setOrgMode]         = useState(false);
   const [dragId,          setDragId]          = useState<string | null>(null);
   const [dragOverCol,     setDragOverCol]     = useState<Status | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -527,14 +530,18 @@ export default function ProductivitePage() {
   }, []);
 
 
-  const load = useCallback(async (uid?: string | null) => {
+  const load = useCallback(async (uid?: string | null, oid?: string | null) => {
     const resolvedUid = uid ?? userId;
+    const resolvedOid = oid ?? orgId;
     if (!resolvedUid) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from("productivity_tasks")
-      .select("*")
-      .eq("user_id", resolvedUid)
+    let q = supabase.from("productivity_tasks").select("*");
+    if (resolvedOid && orgMode) {
+      q = q.eq("organization_id", resolvedOid);
+    } else {
+      q = q.eq("user_id", resolvedUid);
+    }
+    const { data, error } = await q
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
       .limit(500);
@@ -542,7 +549,7 @@ export default function ProductivitePage() {
     else setTasks((data ?? []).map((r: Record<string, unknown>) => parseTask(r)));
     setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, orgId, orgMode]);
 
   useEffect(() => {
     (async () => {
@@ -550,6 +557,29 @@ export default function ProductivitePage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
         setUserId(user.id);
+        // Charger l'organisation primaire de l'utilisateur (si elle existe)
+        const { data: memData } = await supabase
+          .from("organization_members")
+          .select("organization_id, role, organizations(name)")
+          .eq("user_id", user.id)
+          .order("joined_at", { ascending: true })
+          .limit(5);
+        if (memData && memData.length > 0) {
+          const primaryOrg = memData[0];
+          setOrgId(primaryOrg.organization_id as string);
+          // Charger les membres de l'organisation pour les sélecteurs d'assignation
+          const { data: membersData } = await supabase
+            .from("organization_members")
+            .select("id, user_id, role")
+            .eq("organization_id", primaryOrg.organization_id);
+          if (membersData) {
+            setOrgMembers(membersData.map(m => ({
+              id: m.id as string,
+              user_id: m.user_id as string,
+              display: (m.user_id as string) === user.id ? "Moi" : `Membre (${(m.role as string)})`,
+            })));
+          }
+        }
         await load(user.id);
       } catch {
         toast("Erreur réseau — impossible de charger les tâches", "error");
@@ -946,6 +976,14 @@ export default function ProductivitePage() {
                   ? "border-white/8 text-white/40 hover:text-white/70"
                   : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
                 ✕ Réinitialiser
+              </button>
+            )}
+            {orgId && (
+              <button onClick={() => { setOrgMode(m => !m); load(userId, orgId); }}
+                className={`ml-auto rounded-xl border px-3 py-2 text-xs font-medium transition ${orgMode
+                  ? "border-violet-500/50 bg-violet-500/15 text-violet-300"
+                  : isDark ? "border-white/8 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>
+                {orgMode ? "👥 Organisation" : "👤 Personnel"}
               </button>
             )}
           </div>
