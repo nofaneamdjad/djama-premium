@@ -66,7 +66,8 @@ interface Task {
   estimated_minutes: number; time_spent: number;
   timer_started_at: string | null;
   is_recurring: boolean; recurrence: string;
-  linked_module: string; dependencies: string[]; created_at: string;
+  linked_module: string; dependencies: string[];
+  sort_order: number; created_at: string;
 }
 
 type Form = Omit<Task, "id" | "created_at">;
@@ -76,7 +77,7 @@ const BLANK: Form = {
   category: "", due_date: "", due_time: "", responsible: "", assignees: [],
   subtasks: [], tags: [], estimated_minutes: 30, time_spent: 0,
   timer_started_at: null, is_recurring: false, recurrence: "none",
-  linked_module: "", dependencies: [],
+  linked_module: "", dependencies: [], sort_order: 0,
 };
 
 const TASK_TEMPLATES: { Icon: LucideIcon; color: string; label: string; desc: string; form: Partial<Form> }[] = [
@@ -198,6 +199,7 @@ function parseTask(r: Record<string, unknown>): Task {
     recurrence: String(r.recurrence ?? "none"),
     linked_module: String(r.linked_module ?? ""),
     dependencies: Array.isArray(r.dependencies) ? r.dependencies.map(String) : [],
+    sort_order: Number(r.sort_order ?? 0),
     created_at: String(r.created_at ?? ""),
   };
 }
@@ -283,14 +285,18 @@ function SubBar({ subs }: { subs: Sub[] }) {
   );
 }
 
-function TaskCard({ task, now, onEdit, onMove, onTimer }: {
+function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefore, isDragging }: {
   task: Task; now: number;
   onEdit: () => void;
   onMove: (s: Status) => void;
   onTimer: () => void;
+  onDragStart: () => void;
+  onDropBefore: () => void;
+  isDragging: boolean;
 }) {
   const isDark = useDark();
   const [hov, setHov] = useState(false);
+  const [dropTarget, setDropTarget] = useState(false);
   const late    = isLate(task);
   const running = !!task.timer_started_at;
   const elapsed = totalSec(task, now);
@@ -304,12 +310,17 @@ function TaskCard({ task, now, onEdit, onMove, onTimer }: {
   return (
     <motion.div layout
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
+      draggable
+      onDragStart={e => { e.stopPropagation(); onDragStart(); }}
+      onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDropTarget(true); }}
+      onDragLeave={() => setDropTarget(false)}
+      onDrop={e => { e.preventDefault(); e.stopPropagation(); setDropTarget(false); onDropBefore(); }}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      className={`relative rounded-xl border p-3 cursor-pointer transition-all ${isDark
+      className={`relative rounded-xl border p-3 cursor-grab active:cursor-grabbing transition-all ${isDragging ? "opacity-40 scale-95" : ""} ${dropTarget ? isDark ? "border-violet-500/60 bg-violet-500/10" : "border-violet-400 bg-violet-50" : isDark
         ? "border-white/6 bg-white/4 hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/30"
         : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-md"}`}
       style={{ borderLeft: `3px solid ${pc.color}` }}
-      onClick={onEdit}>
+      onClick={e => { if (!isDragging) onEdit(); e.stopPropagation(); }}>
 
       {running && (
         <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-green-400 animate-pulse" />
@@ -503,6 +514,8 @@ export default function ProductivitePage() {
   const [newTag,          setNewTag]          = useState("");
   const [newAssignee,     setNewAssignee]     = useState("");
   const [userId,          setUserId]          = useState<string | null>(null);
+  const [dragId,          setDragId]          = useState<string | null>(null);
+  const [dragOverCol,     setDragOverCol]     = useState<Status | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting,        setDeleting]        = useState(false);
   const [showTemplates,   setShowTemplates]   = useState(false);
@@ -522,6 +535,7 @@ export default function ProductivitePage() {
       .from("productivity_tasks")
       .select("*")
       .eq("user_id", resolvedUid)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) toast(error.message, "error");
@@ -560,7 +574,7 @@ export default function ProductivitePage() {
       estimated_minutes: t.estimated_minutes, time_spent: t.time_spent,
       timer_started_at: t.timer_started_at, is_recurring: t.is_recurring,
       recurrence: t.recurrence, linked_module: t.linked_module,
-      dependencies: [...t.dependencies],
+      dependencies: [...t.dependencies], sort_order: t.sort_order,
     });
     setEditId(t.id); setShowModal(true);
     loadComments(t.id);
@@ -638,6 +652,39 @@ export default function ProductivitePage() {
       setTasks(ts => ts.map(t => t.id === id ? { ...t } : t));
       toast("Erreur mise à jour statut", "error");
     }
+  };
+
+  const dropOnCol = async (colStatus: Status) => {
+    if (!dragId) return;
+    setDragOverCol(null);
+    const task = tasks.find(t => t.id === dragId);
+    if (!task || task.status === colStatus) { setDragId(null); return; }
+    const colTasks = tasks.filter(t => t.status === colStatus);
+    const newOrder = colTasks.length > 0 ? Math.max(...colTasks.map(t => t.sort_order)) + 1 : 0;
+    setTasks(ts => ts.map(t => t.id === dragId ? { ...t, status: colStatus, sort_order: newOrder } : t));
+    await supabase.from("productivity_tasks")
+      .update({ status: colStatus, sort_order: newOrder })
+      .eq("id", dragId).eq("user_id", userId!);
+    setDragId(null);
+  };
+
+  const dropBeforeTask = async (targetId: string) => {
+    if (!dragId || dragId === targetId) return;
+    setDragOverCol(null);
+    const target = tasks.find(t => t.id === targetId);
+    if (!target) { setDragId(null); return; }
+    const colStatus = target.status;
+    const colTasks = tasks.filter(t => t.status === colStatus && t.id !== dragId)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const idx = colTasks.findIndex(t => t.id === targetId);
+    const newOrder = idx === 0
+      ? (colTasks[0]?.sort_order ?? 0) - 1
+      : ((colTasks[idx - 1]?.sort_order ?? 0) + (colTasks[idx]?.sort_order ?? 0)) / 2;
+    setTasks(ts => ts.map(t => t.id === dragId ? { ...t, status: colStatus, sort_order: newOrder } : t));
+    await supabase.from("productivity_tasks")
+      .update({ status: colStatus, sort_order: newOrder })
+      .eq("id", dragId).eq("user_id", userId!);
+    setDragId(null);
   };
 
   const toggleTimer = async (id: string) => {
@@ -907,10 +954,16 @@ export default function ProductivitePage() {
           <div className="overflow-x-auto pb-2">
           <div className="grid grid-cols-4 gap-4" style={{ minHeight: "60vh", minWidth: "640px" }}>
             {KANBAN_COLS.map(col => {
-              const colTasks = filtered.filter(t => t.status === col.key);
+              const colTasks = filtered
+                .filter(t => t.status === col.key)
+                .sort((a, b) => a.sort_order - b.sort_order || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+              const isDropTarget = dragId && dragOverCol === col.key;
               return (
                 <div key={col.key}
-                  className={`flex flex-col rounded-2xl border overflow-hidden ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+                  onDragOver={e => { e.preventDefault(); setDragOverCol(col.key); }}
+                  onDragLeave={() => setDragOverCol(null)}
+                  onDrop={e => { e.preventDefault(); dropOnCol(col.key); }}
+                  className={`flex flex-col rounded-2xl border overflow-hidden transition-colors ${isDropTarget ? isDark ? "border-violet-500/50 bg-violet-500/5" : "border-violet-300 bg-violet-50/40" : isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
 
                   <div className={`px-4 py-3 border-b ${isDark ? "border-white/6" : "border-gray-200"}`}
                     style={{ borderTop: `3px solid ${col.col}` }}>
@@ -943,7 +996,10 @@ export default function ProductivitePage() {
                           <TaskCard key={t.id} task={t} now={now}
                             onEdit={() => openEdit(t)}
                             onMove={s => changeStatus(t.id, s)}
-                            onTimer={() => toggleTimer(t.id)} />
+                            onTimer={() => toggleTimer(t.id)}
+                            onDragStart={() => setDragId(t.id)}
+                            onDropBefore={() => dropBeforeTask(t.id)}
+                            isDragging={dragId === t.id} />
                         ))}
                       </AnimatePresence>
                     )}
