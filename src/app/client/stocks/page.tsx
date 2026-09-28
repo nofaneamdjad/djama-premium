@@ -21,6 +21,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import { fmtDate, fmtEur } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
+import { useOrganization } from "@/lib/use-organization";
 
 type MovementType = "entree" | "sortie" | "retour" | "perte" | "casse" | "transfert" | "ajustement";
 type OrderStatus  = "draft" | "sent" | "confirmed" | "received" | "cancelled";
@@ -1925,6 +1926,9 @@ export default function StocksPage() {
   const { isDark } = useTheme();
   const router = useRouter();
 
+  const orgState = useOrganization();
+  const orgId = orgState.status === "ready" ? orgState.org.id : null;
+
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"dashboard" | "products" | "movements" | "suppliers" | "report" | "clients">("dashboard");
@@ -1994,7 +1998,7 @@ export default function StocksPage() {
       setProducts((prev) => prev.map((p) => p.id === form.id ? data as Product : p));
       toast("Produit mis à jour", "success");
     } else {
-      const { data, error } = await supabase.from("stock_products").insert({ ...form, user_id: userId }).select().single();
+      const { data, error } = await supabase.from("stock_products").insert({ ...form, user_id: userId, organization_id: orgId }).select().single();
       if (error) { toast(error.message, "error"); return; }
       setProducts((prev) => [data as Product, ...prev]);
       toast("Produit créé", "success");
@@ -2008,29 +2012,53 @@ export default function StocksPage() {
     const product = products.find((p) => p.id === form.product_id);
     if (!product) return;
 
-    const mt = MOV_TYPES.find((m) => m.value === form.type) ?? MOV_TYPES[0];
-    const before = product.stock_current;
-    const delta = mt.sign * (form.quantity ?? 0);
-    const after = form.type === "ajustement" ? (form.quantity ?? before) : Math.max(0, before + delta);
+    // Ajustement : la quantité saisie EST le stock cible (pas un delta)
+    // Cas spécial conservé côté client jusqu'à la refonte du god component
+    if (form.type === "ajustement") {
+      const before = product.stock_current;
+      const after  = form.quantity;
+      const delta  = Math.abs(after - before);
+      if (delta === 0) {
+        toast("Stock déjà à ce niveau", "info");
+        setShowMovModal(false);
+        return;
+      }
+      const movPayload = { ...form, user_id: userId, product_name: product.name, before_qty: before, after_qty: after, quantity: delta };
+      const { data: movData, error: movErr } = await supabase.from("stock_movements").insert(movPayload).select().single();
+      if (movErr) { toast(movErr.message, "error"); return; }
+      const { data: prodData, error: prodErr } = await supabase.from("stock_products")
+        .update({ stock_current: after, updated_at: new Date().toISOString() })
+        .eq("id", product.id).select().single();
+      if (prodErr) { toast(prodErr.message, "error"); return; }
+      setMovements((prev) => [movData as Movement, ...prev]);
+      setProducts((prev) => prev.map((p) => p.id === product.id ? prodData as Product : p));
+      toast("Ajustement enregistré", "success");
+      setShowMovModal(false);
+      setMovProductPreset(null);
+      return;
+    }
 
-    const movPayload = {
-      ...form, user_id: userId,
-      product_name: product.name,
-      before_qty: before, after_qty: after,
-      quantity: form.type === "ajustement" ? Math.abs((form.quantity ?? before) - before) : form.quantity,
-    };
+    // Tous les autres types : appel RPC atomique (P0-01)
+    const { data: movId, error } = await supabase.rpc("atomic_stock_movement", {
+      p_product_id:       form.product_id,
+      p_type:             form.type ?? "entree",
+      p_quantity:         form.quantity,
+      p_reason:           form.reason          ?? "",
+      p_reference:        form.reference       ?? "",
+      p_unit_cost:        form.unit_cost        ?? 0,
+      p_warehouse_id:     form.warehouse_id     ?? null,
+      p_to_warehouse_id:  form.to_warehouse_id  ?? null,
+    });
+    if (error) { toast(error.message, "error"); return; }
 
-    const { data: movData, error: movErr } = await supabase.from("stock_movements").insert(movPayload).select().single();
-    if (movErr) { toast(movErr.message, "error"); return; }
+    // Rafraîchir le mouvement créé et le stock mis à jour depuis la DB
+    const [movRes, prodRes] = await Promise.all([
+      supabase.from("stock_movements").select("*").eq("id", movId as string).single(),
+      supabase.from("stock_products").select("*").eq("id", form.product_id).single(),
+    ]);
+    if (movRes.data)  setMovements((prev) => [movRes.data as Movement, ...prev]);
+    if (prodRes.data) setProducts((prev) => prev.map((p) => p.id === form.product_id ? prodRes.data as Product : p));
 
-    // Update product stock
-    const { data: prodData, error: prodErr } = await supabase.from("stock_products")
-      .update({ stock_current: after, updated_at: new Date().toISOString() })
-      .eq("id", product.id).select().single();
-    if (prodErr) { toast(prodErr.message, "error"); return; }
-
-    setMovements((prev) => [movData as Movement, ...prev]);
-    setProducts((prev) => prev.map((p) => p.id === product.id ? prodData as Product : p));
     toast("Mouvement enregistré", "success");
     setShowMovModal(false);
     setMovProductPreset(null);
