@@ -49,6 +49,20 @@ export interface ClientDelivery {
   quantity: number; unit: string; delivery_date: string; notes: string; created_at: string;
 }
 
+export interface InventorySession {
+  id: string; user_id: string; name: string;
+  status: "ouvert" | "valide" | "annule";
+  warehouse_id: string | null; notes: string;
+  validated_at: string | null; created_at: string;
+}
+
+export interface InventoryLine {
+  id: string; session_id: string;
+  product_id: string; product_name: string; sku: string; unit: string;
+  expected_qty: number; counted_qty: number | null;
+  justification: string; created_at: string; updated_at: string;
+}
+
 export type StocksRapport = {
   score_sante:           number;
   resume_executif:       string;

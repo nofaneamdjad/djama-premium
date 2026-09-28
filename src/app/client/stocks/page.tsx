@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plus, AlertOctagon, TrendingUp, Download,
-  Activity, DollarSign, RefreshCw, BarChart2, Truck, Users,
+  Activity, DollarSign, RefreshCw, BarChart2, Truck, Users, ClipboardList,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -24,6 +24,7 @@ import { MovementsView }  from "./MovementsView";
 import { SuppliersView }  from "./SuppliersView";
 import { ReportView }     from "./ReportView";
 import { ClientsView }    from "./ClientsView";
+import { InventoryView }  from "./InventoryView";
 import { ProductModal }   from "./ProductModal";
 import { MovementModal }  from "./MovementModal";
 import { SupplierModal }  from "./SupplierModal";
@@ -39,7 +40,7 @@ export default function StocksPage() {
 
   const [userId, setUserId]   = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"dashboard" | "products" | "movements" | "suppliers" | "report" | "clients">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "products" | "movements" | "suppliers" | "report" | "clients" | "inventaire">("dashboard");
 
   const [products,          setProducts]          = useState<Product[]>([]);
   const [movements,         setMovements]         = useState<Movement[]>([]);
@@ -297,6 +298,7 @@ export default function StocksPage() {
     { key: "movements",  label: "Mouvements",   icon: Activity },
     { key: "suppliers",  label: "Fournisseurs", icon: Truck },
     { key: "clients",    label: "Clients",      icon: Users },
+    { key: "inventaire", label: "Inventaire",   icon: ClipboardList },
     { key: "report",     label: "Rapport",      icon: TrendingUp },
   ] as const;
 
@@ -422,6 +424,16 @@ export default function StocksPage() {
               onEditClient={(c) => { setEditClientForm(c); setShowClientModal(true); }}
               onDeleteClient={handleDeleteClient}
               onNewDelivery={(c) => { setDeliveryPresetClient(c ?? null); setShowDeliveryModal(true); }}/>
+          )}
+          {tab === "inventaire" && userId && (
+            <InventoryView
+              products={products}
+              warehouses={warehouses}
+              userId={userId}
+              onSessionValidated={async () => {
+                const { data } = await supabase.from("stock_products").select(PRODUCT_LIST_COLS).eq("user_id", userId).order("name");
+                if (data) setProducts(data as unknown as Product[]);
+              }}/>
           )}
           {tab === "report" && (
             <ReportView products={products} movements={movements}/>
