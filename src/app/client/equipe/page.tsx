@@ -559,13 +559,13 @@ export default function EquipePage() {
       `Demandes congés en attente : ${stats.pending}`,
     ].join("\n");
     try {
-      const r = await fetch("/api/notes/ai",{
+      const r = await fetch("/api/equipe/ai",{
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({action:"chat",content:ctx,prompt}),
+        body:JSON.stringify({ org_id: chefOrgId, question: prompt }),
       });
-      const j = await r.json() as {result?:string;error?:string};
+      const j = await r.json() as {answer?:string;error?:string};
       if (!r.ok) { setAiResult(j.error ?? `Erreur ${r.status}`); return; }
-      setAiResult(j.result ?? j.error ?? "Erreur");
+      setAiResult(j.answer ?? j.error ?? "Erreur");
     } catch { setAiResult("Erreur réseau"); }
     finally { setAiLoad(false); }
   }
