@@ -291,6 +291,9 @@ export default function PlanningPage() {
   const [bkSaving,   setBkSaving]   = useState(false);
   const [bkCopied,   setBkCopied]   = useState(false);
 
+  // Org members for attendee selector
+  const [orgMembers,  setOrgMembers]  = useState<{ user_id: string; display: string }[]>([]);
+
   // Drag-drop
   const [dragEvId,    setDragEvId]    = useState<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
@@ -376,10 +379,27 @@ export default function PlanningPage() {
     });
   }, [events]);
 
-    function openCreate(date?: Date, hour?: number) {
+    async function loadOrgMembers() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("organization_members")
+      .select("user_id, invite_email")
+      .neq("user_id", user.id)
+      .limit(50);
+    if (data) {
+      setOrgMembers(data.map(m => ({
+        user_id: m.user_id as string,
+        display: (m.invite_email as string) ?? m.user_id as string,
+      })));
+    }
+  }
+
+  function openCreate(date?: Date, hour?: number) {
     setEditEvent(null);
     setForm(newEventForm(date, hour));
     setShowColPal(false);
+    void loadOrgMembers();
     setShowModal(true);
   }
 
@@ -391,6 +411,7 @@ export default function PlanningPage() {
       end_at:   toLocalDT(new Date(ev.end_at)),
     });
     setShowColPal(false);
+    void loadOrgMembers();
     setShowModal(true);
   }
 
@@ -1470,13 +1491,37 @@ export default function PlanningPage() {
                     className={`flex-1 bg-transparent text-sm focus:outline-none resize-none leading-relaxed ${isDark ? "text-white/70 placeholder:text-white/20" : "text-gray-700 placeholder:text-gray-400"}`}/>
                 </div>
 
-                <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 ${isDark ? "bg-white/4 border-white/6" : "bg-gray-50 border-gray-200"}`}>
-                  <Tag size={13} className={`shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
-                  <input
-                    value={(form.participants ?? []).join(", ")}
-                    onChange={e => setForm(p => ({...p, participants:e.target.value.split(",").map(s=>s.trim()).filter(Boolean)}))}
-                    placeholder="Participants (séparés par virgule)"
-                    className={`flex-1 bg-transparent text-sm focus:outline-none ${isDark ? "text-white/70 placeholder:text-white/20" : "text-gray-700 placeholder:text-gray-400"}`}/>
+                <div className={`border rounded-xl px-3 py-2 ${isDark ? "bg-white/4 border-white/6" : "bg-gray-50 border-gray-200"}`}>
+                  <div className="flex items-center gap-2">
+                    <Users size={13} className={`shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
+                    <input
+                      value={(form.participants ?? []).join(", ")}
+                      onChange={e => setForm(p => ({...p, participants:e.target.value.split(",").map(s=>s.trim()).filter(Boolean)}))}
+                      placeholder="Participants (email, séparés par virgule)"
+                      className={`flex-1 bg-transparent text-sm focus:outline-none ${isDark ? "text-white/70 placeholder:text-white/20" : "text-gray-700 placeholder:text-gray-400"}`}/>
+                  </div>
+                  {orgMembers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {orgMembers.map(m => {
+                        const isSelected = (form.participants ?? []).includes(m.display);
+                        return (
+                          <button key={m.user_id} type="button"
+                            onClick={() => setForm(p => {
+                              const cur = p.participants ?? [];
+                              return { ...p, participants: isSelected ? cur.filter(x => x !== m.display) : [...cur, m.display] };
+                            })}
+                            className="px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all border"
+                            style={isSelected
+                              ? { background:`${GOLD}20`, color:GOLD, borderColor:`${GOLD}40` }
+                              : isDark
+                                ? { background:"rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.35)", borderColor:"rgba(255,255,255,0.08)" }
+                                : { background:"rgba(0,0,0,0.03)", color:"rgba(0,0,0,0.45)", borderColor:"rgba(0,0,0,0.10)" }}>
+                            {m.display.split("@")[0]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
