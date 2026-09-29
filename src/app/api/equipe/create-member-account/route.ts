@@ -34,11 +34,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { memberId, name, email, password, chefId } = await req.json();
-    if (!memberId || !name || !email || !password || !chefId)
+    // chefId ignoré — caller.id est toujours utilisé côté serveur
+    const { memberId, name, email, password } = await req.json();
+    if (!memberId || !name || !email || !password)
       return NextResponse.json({ error: "Champs manquants." }, { status: 400 });
-    if (caller.id !== chefId)
-      return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
 
     const url     = process.env.NEXT_PUBLIC_SUPABASE_URL      ?? "";
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -46,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     const metadata = {
       role: "member",
-      team_id: chefId,
+      team_id: caller.id,
       member_id: memberId,
       name: name.trim(),
     };
@@ -182,11 +181,10 @@ export async function DELETE(req: NextRequest) {
   if (!caller2) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
 
   try {
-    const { authUserId, memberId, chefId } = await req.json();
-    if (!authUserId || !memberId || !chefId)
+    // chefId ignoré — caller2.id est toujours utilisé côté serveur
+    const { authUserId, memberId } = await req.json();
+    if (!authUserId || !memberId)
       return NextResponse.json({ error: "Champs manquants." }, { status: 400 });
-    if (caller2.id !== chefId)
-      return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
 
     const svcKey  = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
     const url     = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? "";
@@ -197,7 +195,7 @@ export async function DELETE(req: NextRequest) {
     await adminClient.auth.admin.deleteUser(authUserId);
 
     const admin = createSupabaseAdmin();
-    const { error: unlinkErr } = await admin.from("team_members").update({ auth_user_id: null }).eq("id", memberId).eq("user_id", chefId);
+    const { error: unlinkErr } = await admin.from("team_members").update({ auth_user_id: null }).eq("id", memberId).eq("user_id", caller2.id);
     if (unlinkErr) return NextResponse.json({ error: "Compte supprimé mais déliage échoué : " + unlinkErr.message }, { status: 500 });
 
     return NextResponse.json({ success: true });
