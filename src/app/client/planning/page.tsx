@@ -308,6 +308,10 @@ export default function PlanningPage() {
   const [erpProjects,  setErpProjects]  = useState<{ id: string; name: string }[]>([]);
   const [erpContracts, setErpContracts] = useState<{ id: string; name: string }[]>([]);
 
+  // ERP overlay layers
+  const [showTaskOverlay, setShowTaskOverlay] = useState(true);
+  const [prodTasks, setProdTasks] = useState<{ id: string; title: string; due_date: string; priority: string; status: string }[]>([]);
+
   // Drag-drop
   const [dragEvId,    setDragEvId]    = useState<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
@@ -328,14 +332,16 @@ export default function PlanningPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
-      const [evR, tkR, goR] = await Promise.all([
+      const [evR, tkR, goR, ptR] = await Promise.all([
         supabase.from("planning_events").select("*").eq("user_id", user.id).order("start_at").limit(500),
         supabase.from("planning_tasks").select("*").eq("user_id", user.id).order("due_date").order("created_at").limit(500),
         supabase.from("planning_goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
+        supabase.from("productivity_tasks").select("id, title, due_date, priority, status").eq("user_id", user.id).not("due_date", "is", null).neq("status", "done").limit(300),
       ]);
       setEvents((evR.data ?? []).map(r => parseEvent(r as Record<string,unknown>)));
       setTasks((tkR.data ?? []).map(r => parseTask(r as Record<string,unknown>)));
       setGoals((goR.data ?? []) as PlanGoal[]);
+      setProdTasks((ptR.data ?? []) as typeof prodTasks);
     } catch {
       addToast("Erreur réseau — impossible de charger le planning", "error");
     } finally {
@@ -383,6 +389,12 @@ export default function PlanningPage() {
       return `${DAYS_FR[(current.getDay()+6)%7]} ${current.getDate()} ${MONTHS_FR[current.getMonth()]} ${current.getFullYear()}`;
     return `Agenda — ${MONTHS_FR[current.getMonth()]} ${current.getFullYear()}`;
   }, [view, current]);
+
+  const prodTasksOnDate = useCallback((date: Date) => {
+    if (!showTaskOverlay) return [];
+    const ds = fmtDate(date);
+    return prodTasks.filter(t => t.due_date === ds);
+  }, [prodTasks, showTaskOverlay]);
 
     const eventsOnDate = useCallback((date: Date) => {
     const ds = fmtDate(date);
@@ -919,8 +931,11 @@ export default function PlanningPage() {
             <div key={wi} className={`grid grid-cols-7 border-b ${isDark ? "border-white/4" : "border-gray-100"}`}>
               {week.map((day, di) => {
                 const isCurrentMonth = day.getMonth() === current.getMonth();
-                const dayEvs = eventsOnDate(day).slice(0, 3);
-                const overflow = eventsOnDate(day).length - 3;
+                const allDayEvs = eventsOnDate(day);
+                const dayProdTasks = prodTasksOnDate(day);
+                const totalSlots = allDayEvs.length + dayProdTasks.length;
+                const dayEvs = allDayEvs.slice(0, 3);
+                const overflow = totalSlots - 3;
                 const cellKey = fmtDate(day);
                 return (
                   <div key={di}
@@ -966,6 +981,12 @@ export default function PlanningPage() {
                           onDragEnd={() => { setDragEvId(null); setDragOverKey(null); }}
                           style={{ opacity: dragEvId === ev.id ? 0.4 : 1 }}>
                           <EventChip ev={ev} small onClick={() => openEdit(ev)} />
+                        </div>
+                      ))}
+                      {dayEvs.length < 3 && dayProdTasks.slice(0, 3 - dayEvs.length).map(t => (
+                        <div key={`pt-${t.id}`} className="w-full text-left truncate text-[9px] px-1 py-0.5 rounded font-medium leading-none"
+                          style={{ background:"#10b98118", color:"#10b981", border:"1px solid #10b98130" }}>
+                          ✓ {t.title}
                         </div>
                       ))}
                       {overflow > 0 && (
@@ -1028,7 +1049,7 @@ export default function PlanningPage() {
 
     function renderAgenda() {
     const days: Date[] = Array.from({ length: 30 }, (_, i) => addDays(current, i));
-    const withEvents  = days.filter(d => eventsOnDate(d).length > 0);
+    const withEvents  = days.filter(d => eventsOnDate(d).length > 0 || prodTasksOnDate(d).length > 0);
     if (withEvents.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 gap-4 py-20">
@@ -1092,6 +1113,22 @@ export default function PlanningPage() {
                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
                       style={{ background: ev.color }} />
                   </button>
+                );
+              })}
+              {prodTasksOnDate(day).map(t => {
+                const prioColor = t.priority === "urgent" ? "#f87171" : t.priority === "high" ? "#f59e0b" : "#10b981";
+                return (
+                  <div key={`pt-${t.id}`}
+                    className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border ${isDark ? "border-emerald-500/15" : "border-emerald-200"}`}
+                    style={{ background:"#10b98108" }}>
+                    <CheckCircle2 size={14} style={{ color: prioColor }} className="mt-0.5 shrink-0"/>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>{t.title}</p>
+                      <p className={`text-[11px] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                        Tâche productivité · {t.priority}
+                      </p>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -1270,6 +1307,10 @@ export default function PlanningPage() {
               </button>
             </div>
             <h2 className={`text-[10px] sm:text-sm font-bold mr-auto whitespace-nowrap overflow-hidden text-ellipsis min-w-0 ${isDark ? "text-white" : "text-gray-900"}`}>{headerLabel}</h2>
+            <button onClick={() => setShowTaskOverlay(p => !p)} title="Afficher/masquer les tâches productivité"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all ${showTaskOverlay ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" : isDark ? "border-white/8 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>
+              <CheckCircle2 size={12}/><span className="hidden sm:inline"> Tâches</span>
+            </button>
             <button onClick={exportICS} title="Exporter ICS (Google Calendar / Outlook)"
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all ${isDark ? "border-white/8 text-white/40 hover:text-white/70 hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
               <Download size={12}/><span className="hidden sm:inline"> ICS</span>
