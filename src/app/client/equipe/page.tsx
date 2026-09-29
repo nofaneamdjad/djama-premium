@@ -235,41 +235,33 @@ export default function EquipePage() {
 
     const [credTarget,  setCredTarget]  = useState<TeamMember|null>(null);
   const [credEmail,   setCredEmail]   = useState("");
-  const [credPwd,     setCredPwd]     = useState("");
   const [creatingCred,setCreatingCred]= useState(false);
-  const [credResult,  setCredResult]  = useState<{email:string;password:string;needsConfirmation:boolean}|null>(null);
-
-  function genPassword() {
-    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#!";
-    return "Djama-" + Array.from({length:7}, ()=>chars[Math.floor(Math.random()*chars.length)]).join("");
-  }
+  const [credResult,  setCredResult]  = useState<{email:string;already_exists?:boolean}|null>(null);
 
   function openCredModal(m: TeamMember) {
     setCredTarget(m);
     setCredEmail(m.email ?? "");
-    setCredPwd(genPassword());
     setCredResult(null);
   }
 
-  async function createMemberAccount() {
-    if (!credTarget || !credEmail.trim() || !credPwd.trim()) return;
+  async function inviteMember() {
+    if (!credTarget || !credEmail.trim()) return;
     setCreatingCred(true);
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const chefId = currentUser?.id ?? "";
-      const res = await fetch("/api/equipe/create-member-account", {
+      const res = await fetch("/api/equipe/invite-member", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ memberId:credTarget.id, name:credTarget.name, email:credEmail.trim(), password:credPwd.trim(), chefId }),
+        body:JSON.stringify({ memberId:credTarget.id, name:credTarget.name, email:credEmail.trim() }),
       });
+      const data = await res.json() as { auth_user_id?: string; already_exists?: boolean; error?: string };
       if (!res.ok) {
-        const err = await res.json().catch(() => ({})) as { error?: string };
-        toast(err.error ?? "Erreur création compte", "error");
+        toast(data.error ?? "Erreur lors de l'invitation", "error");
       } else {
-        const data = await res.json() as { auth_user_id?: string; needs_confirmation?: boolean };
-        setCredResult({ email:credEmail.trim(), password:credPwd.trim(), needsConfirmation:!!data.needs_confirmation });
-        setMembers(p=>p.map(m=>m.id===credTarget.id ? {...m,auth_user_id:data.auth_user_id} : m));
-        toast("Compte créé avec succès !", "success");
+        setCredResult({ email:credEmail.trim(), already_exists:!!data.already_exists });
+        if (data.auth_user_id) {
+          setMembers(p=>p.map(m=>m.id===credTarget!.id ? {...m,auth_user_id:data.auth_user_id} : m));
+        }
+        toast(data.already_exists ? "Ce membre a déjà un compte." : "Invitation envoyée !", "success");
       }
     } catch { toast("Erreur réseau", "error"); }
     finally { setCreatingCred(false); }
@@ -1902,80 +1894,51 @@ export default function EquipePage() {
               <div className="px-5 py-5 space-y-4">
                 {!credResult ? (
                   <>
-                    <p className={`text-xs leading-relaxed ${isDark ? "text-white/45" : "text-gray-500"}`}>
-                      Créez un compte pour <strong className={isDark ? "text-white/70" : "text-gray-700"}>{credTarget.name}</strong>.
-                      Il pourra se connecter sur <span className="text-[#c9a55a]">/membre/login</span> avec ces identifiants.
-                    </p>
+                    <div className="flex items-start gap-2.5 p-3 rounded-2xl" style={{background:"rgba(201,165,90,0.07)",border:"1px solid rgba(201,165,90,0.15)"}}>
+                      <Mail size={13} style={{color:"#c9a55a"}} className="shrink-0 mt-0.5"/>
+                      <p className={`text-xs leading-relaxed ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                        <strong className={isDark ? "text-white/75" : "text-gray-700"}>{credTarget.name}</strong> recevra un email avec un lien pour définir son mot de passe et rejoindre l&apos;espace membre.
+                      </p>
+                    </div>
                     <div className="space-y-1">
                       <label className={`text-[10px] uppercase tracking-wide ${isDark ? "text-white/35" : "text-gray-400"}`}>Email</label>
                       <input value={credEmail} onChange={e=>setCredEmail(e.target.value)} type="email"
                         placeholder="email@exemple.com"
                         className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#c9a55a]/40 ${isDark ? "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/20" : "bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"}`}/>
                     </div>
-                    <div className="space-y-1">
-                      <label className={`text-[10px] uppercase tracking-wide ${isDark ? "text-white/35" : "text-gray-400"}`}>Mot de passe</label>
-                      <div className="flex gap-2">
-                        <input value={credPwd} onChange={e=>setCredPwd(e.target.value)}
-                          className={`flex-1 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#c9a55a]/40 font-mono tracking-wider ${isDark ? "bg-white/[0.04] border-white/[0.08] text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`}/>
-                        <button onClick={()=>setCredPwd(genPassword())} title="Regénérer"
-                          className={`px-3 rounded-xl border transition-all ${isDark ? "border-white/[0.08] text-white/30 hover:text-white hover:bg-white/8" : "border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}>
-                          <RefreshCw size={13}/>
-                        </button>
-                      </div>
-                    </div>
                     <div className="flex justify-end gap-2 pt-1">
                       <button onClick={()=>{setCredTarget(null);setCredResult(null);}}
                         className={`px-4 py-2 rounded-xl text-xs transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>Annuler</button>
-                      <button onClick={createMemberAccount} disabled={creatingCred||!credEmail.trim()||!credPwd.trim()}
+                      <button onClick={inviteMember} disabled={creatingCred||!credEmail.trim()}
                         className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold disabled:opacity-50 transition-all"
                         style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
-                        {creatingCred ? <Loader2 size={12} className="animate-spin"/> : <ShieldCheck size={12}/>}
-                        {creatingCred ? "Création…" : "Créer le compte"}
+                        {creatingCred ? <Loader2 size={12} className="animate-spin"/> : <Send size={12}/>}
+                        {creatingCred ? "Envoi…" : "Envoyer l'invitation"}
                       </button>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 p-3 rounded-2xl" style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)"}}>
-                      <ShieldCheck size={16} className="text-emerald-400 shrink-0"/>
-                      <p className="text-xs text-emerald-300 font-medium">Compte créé avec succès !</p>
-                    </div>
-                    {credResult?.needsConfirmation ? (
-                      <div className="flex items-start gap-2 p-3 rounded-2xl" style={{background:"rgba(251,191,36,0.08)",border:"1px solid rgba(251,191,36,0.2)"}}>
-                        <Mail size={14} className="text-amber-400 shrink-0 mt-0.5"/>
-                        <p className="text-xs text-amber-300 leading-relaxed">
-                          Le membre doit confirmer son email avant de se connecter.<br/>
-                          Vérifiez aussi les spams.
-                        </p>
+                    {credResult.already_exists ? (
+                      <div className="flex items-center gap-2 p-3 rounded-2xl" style={{background:"rgba(201,165,90,0.08)",border:"1px solid rgba(201,165,90,0.2)"}}>
+                        <ShieldCheck size={16} style={{color:"#c9a55a"}} className="shrink-0"/>
+                        <p className="text-xs font-medium" style={{color:"#c9a55a"}}>Ce membre a déjà un compte DJAMA.</p>
                       </div>
                     ) : (
-                      <div className="flex items-start gap-2 p-3 rounded-2xl" style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)"}}>
-                        <Check size={14} className="text-emerald-400 shrink-0 mt-0.5"/>
-                        <p className="text-xs text-emerald-300 leading-relaxed">
-                          Le membre peut se connecter <strong>immédiatement</strong> avec ces identifiants.
-                        </p>
+                      <div className="flex items-center gap-2 p-3 rounded-2xl" style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)"}}>
+                        <Check size={16} className="text-emerald-400 shrink-0"/>
+                        <p className="text-xs text-emerald-300 font-medium">Invitation envoyée !</p>
                       </div>
                     )}
-                    <p className={`text-[11px] ${isDark ? "text-white/40" : "text-gray-400"}`}>Transmettez ces identifiants à <strong className={isDark ? "text-white/60" : "text-gray-700"}>{credTarget.name}</strong> :</p>
-                    {[
-                      {l:"URL de connexion", v:typeof window !== "undefined" ? (window.location.hostname==="localhost"?"https://djama.space":window.location.origin)+"/membre/login" : "https://djama.space/membre/login"},
-                      {l:"Email", v:credResult.email},
-                      {l:"Mot de passe", v:credResult.password},
-                    ].map(row=>(
-                      <div key={row.l} className="space-y-1">
-                        <label className={`text-[10px] uppercase tracking-wide ${isDark ? "text-white/30" : "text-gray-400"}`}>{row.l}</label>
-                        <div className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 ${isDark ? "bg-white/[0.04] border-white/[0.07]" : "bg-gray-50 border-gray-200"}`}>
-                          <span className={`flex-1 text-sm font-mono truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{row.v}</span>
-                          <button onClick={()=>{
-                            try { navigator.clipboard.writeText(row.v); }
-                            catch { const el=document.createElement("textarea"); el.value=row.v; document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el); }
-                            toast("Copié !", "success");
-                          }} className="text-gray-400 hover:text-[#c9a55a] transition-all shrink-0">
-                            <Copy size={13}/>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="flex items-start gap-2 p-3 rounded-2xl" style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)"}}>
+                      <Mail size={13} className={`shrink-0 mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}/>
+                      <p className={`text-xs leading-relaxed ${isDark ? "text-white/45" : "text-gray-500"}`}>
+                        {credResult.already_exists
+                          ? <>Un email de connexion a été envoyé à <strong className={isDark ? "text-white/70" : "text-gray-700"}>{credResult.email}</strong>.</>
+                          : <><strong className={isDark ? "text-white/70" : "text-gray-700"}>{credTarget.name}</strong> a reçu un lien à <strong className={isDark ? "text-white/70" : "text-gray-700"}>{credResult.email}</strong> pour définir son mot de passe et rejoindre <span className="text-[#c9a55a]">/membre</span>.</>
+                        }
+                      </p>
+                    </div>
                     <button onClick={()=>{setCredTarget(null);setCredResult(null);}}
                       className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
                       style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
