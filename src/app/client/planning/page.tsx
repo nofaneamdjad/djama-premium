@@ -478,12 +478,23 @@ export default function PlanningPage() {
       user_id:  user.id,
     };
 
+    const upsertReminder = async (eventId: string, startAt: string, minutes: number) => {
+      if (!minutes || !startAt) return;
+      const remindAt = new Date(new Date(startAt).getTime() - minutes * 60_000).toISOString();
+      if (new Date(remindAt) <= new Date()) return;
+      await supabase.from("planning_reminders").upsert({
+        event_id: eventId, user_id: user.id,
+        remind_at: remindAt, channel: "email",
+      }, { onConflict: "event_id,user_id" });
+    };
+
     if (editEvent) {
       const { data, error } = await supabase
         .from("planning_events").update(payload).eq("id", editEvent.id).select().single();
       if (error) { addToast("Erreur lors de la mise à jour", "error"); }
       else if (data) {
         setEvents(p => p.map(e => e.id === editEvent.id ? parseEvent(data as Record<string,unknown>) : e));
+        void upsertReminder(editEvent.id, payload.start_at as string, payload.reminder_minutes as number);
         addToast("Événement mis à jour", "success");
       }
     } else {
@@ -492,6 +503,7 @@ export default function PlanningPage() {
       if (error) { addToast("Erreur de sauvegarde", "error"); }
       else if (data) {
         setEvents(p => [parseEvent(data as Record<string,unknown>), ...p]);
+        void upsertReminder((data as Record<string,unknown>).id as string, payload.start_at as string, payload.reminder_minutes as number);
         addToast("Événement créé", "success");
       }
     }
