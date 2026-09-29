@@ -264,6 +264,7 @@ export default function PlanningPage() {
   const { isDark } = useTheme();
   const [view,          setView]          = useState<CalView>("week");
   const [current,       setCurrent]       = useState(new Date());
+  const [showSidebar,   setShowSidebar]   = useState(false);
   const [events,        setEvents]        = useState<PlanEvent[]>([]);
   const [tasks,         setTasks]         = useState<PlanTask[]>([]);
   const [goals,         setGoals]         = useState<PlanGoal[]>([]);
@@ -368,6 +369,15 @@ export default function PlanningPage() {
       scrollRef.current.scrollTop = Math.max(0, top);
     }
   }, [view]);
+
+  // Default to day view on small screens
+  useEffect(() => {
+    const check = () => { if (window.innerWidth < 768 && view === "week") setView("day"); };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
     function navigate(dir: -1 | 1) {
     setCurrent(prev => {
@@ -1196,8 +1206,17 @@ export default function PlanningPage() {
     <div className={`flex h-[calc(100vh-56px)] overflow-hidden ${isDark ? "bg-[#07080e] text-white" : "bg-gray-50 text-gray-900"}`}>
       <ToastStack toasts={toasts} remove={removeToast} />
 
-      {/* ── Sidebar ── */}
-      <div className={`hidden lg:flex w-64 xl:w-72 flex-col shrink-0 border-r overflow-y-auto ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-white"}`}>
+      {/* ── Sidebar — desktop inline, mobile drawer ── */}
+      {/* Mobile overlay backdrop */}
+      {showSidebar && (
+        <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setShowSidebar(false)} />
+      )}
+      <div className={`
+        ${showSidebar ? "flex" : "hidden"} lg:flex
+        fixed lg:relative inset-y-0 left-0 z-40 lg:z-auto
+        w-72 lg:w-64 xl:w-72 flex-col shrink-0 border-r overflow-y-auto
+        ${isDark ? "border-white/6 bg-[#07080e] lg:bg-white/4" : "border-gray-200 bg-white"}
+      `}>
 
         {/* Mini calendar */}
         <div className={`p-4 border-b ${isDark ? "border-white/6" : "border-gray-200"}`}>
@@ -1348,6 +1367,12 @@ export default function PlanningPage() {
 
           {/* Main row */}
           <div className="relative flex items-center gap-2 px-4 pt-3 pb-2">
+            {/* Mobile sidebar toggle */}
+            <button onClick={() => setShowSidebar(p => !p)}
+              className={`lg:hidden p-1.5 rounded-lg transition-all mr-0.5 ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
+              aria-label="Menu">
+              <AlignLeft size={15}/>
+            </button>
             <div className="flex items-center gap-0.5">
               <button onClick={() => navigate(-1)} className={`p-1.5 rounded-lg transition-all ${isDark ? "text-white/40 hover:text-white hover:bg-white/8" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}>
                 <ChevronLeft size={15}/>
@@ -1455,10 +1480,10 @@ export default function PlanningPage() {
                   </div>
                 )}
                 {aiResult && (
-                  <div className={`rounded-xl border p-3 text-xs whitespace-pre-line leading-relaxed max-h-40 overflow-y-auto ${isDark ? "border-white/10 text-white/65" : "border-indigo-200 text-gray-700"}`}
-                    style={{ background:`${INDIGO}08` }}>
+                  <div className={`rounded-xl border p-3 text-xs whitespace-pre-line leading-relaxed max-h-40 overflow-y-auto ${isDark ? "border-yellow-700/30 text-white/65" : "border-yellow-300 text-gray-700"}`}
+                    style={{ background:`${GOLD}08` }}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-semibold text-xs flex items-center gap-1" style={{ color:INDIGO }}>
+                      <span className="font-semibold text-xs flex items-center gap-1" style={{ color:GOLD }}>
                         <Zap size={11}/>Suggestion IA
                       </span>
                       <button onClick={() => setAiResult("")} className={isDark ? "text-white/25 hover:text-white" : "text-gray-400 hover:text-gray-700"}>
