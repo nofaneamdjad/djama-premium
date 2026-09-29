@@ -41,14 +41,24 @@ export default function MembreTaches() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
-      const meta = user.user_metadata;
-      const teamId   = meta?.team_id ?? user.id;
-      const memberId = meta?.member_id ?? null;
-      const spaceId  = meta?.space_id ?? null;
-      let q = supabase.from("team_tasks").select("*").eq("user_id", teamId);
-      if (memberId) q = q.eq("assigned_to", memberId);
-      if (spaceId)  q = q.eq("space_id", spaceId);
-      const { data } = await q.order("due_date", { ascending: true });
+
+      // Chercher le team_members lié à ce compte auth
+      const { data: memberRow } = await supabase
+        .from("team_members")
+        .select("id, organization_id")
+        .eq("auth_user_id", user.id)
+        .limit(1)
+        .single();
+
+      if (!memberRow?.organization_id) { setLoading(false); return; }
+
+      const { data } = await supabase
+        .from("team_tasks")
+        .select("*")
+        .eq("assigned_to", memberRow.id)
+        .eq("organization_id", memberRow.organization_id)
+        .order("due_date", { ascending: true });
+
       setTasks((data ?? []) as Task[]);
       setLoading(false);
     })();
@@ -57,6 +67,7 @@ export default function MembreTaches() {
   async function toggleStatus(t: Task) {
     const next = STATUS[t.status]?.next ?? "todo";
     setUpdating(t.id);
+    // RLS "tt_member_update" autorise la mise à jour si assigned_to = ce membre
     await supabase.from("team_tasks").update({ status: next }).eq("id", t.id);
     setTasks(p => p.map(x => x.id === t.id ? { ...x, status: next } : x));
     setUpdating(null);
