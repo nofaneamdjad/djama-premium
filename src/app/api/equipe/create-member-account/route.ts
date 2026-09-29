@@ -105,10 +105,59 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Lier auth_user_id dans team_members
+    // Lier auth_user_id dans team_members (utilise caller.id — jamais chefId du body)
     const admin = createSupabaseAdmin();
-    const { error: linkErr } = await admin.from("team_members").update({ auth_user_id: authUserId }).eq("id", memberId).eq("user_id", chefId);
+    const { error: linkErr } = await admin
+      .from("team_members")
+      .update({ auth_user_id: authUserId })
+      .eq("id", memberId)
+      .eq("user_id", caller.id);
     if (linkErr) return NextResponse.json({ error: "Compte créé mais lien échoué : " + linkErr.message }, { status: 500 });
+
+    // Trouver l'organisation du chef (owner_id = caller.id)
+    const { data: org } = await admin
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", caller.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (org) {
+      // Rattacher le membre à l'organisation dans team_members
+      await admin
+        .from("team_members")
+        .update({ organization_id: org.id })
+        .eq("id", memberId)
+        .eq("user_id", caller.id);
+
+      // Inscrire dans organization_members — ON CONFLICT pour idempotence
+      await admin.from("organization_members").upsert({
+        organization_id: org.id,
+        user_id: authUserId,
+        role: "member",
+        invite_email: email.trim().toLowerCase(),
+      }, { onConflict: "organization_id,user_id", ignoreDuplicates: true });
+
+      // Ajouter aux canaux par défaut (général, annonces, projets, ressources)
+      const { data: channels } = await admin
+        .from("org_message_groups")
+        .select("id")
+        .eq("organization_id", org.id)
+        .eq("is_direct", false)
+        .in("name", ["général", "annonces", "projets", "ressources"]);
+
+      if (channels && channels.length > 0) {
+        const memberships = channels.map((ch: { id: string }) => ({
+          group_id: ch.id,
+          organization_id: org.id,
+          user_id: authUserId as string,
+        }));
+        await admin
+          .from("org_message_group_members")
+          .upsert(memberships, { onConflict: "group_id,user_id", ignoreDuplicates: true });
+      }
+    }
 
     return NextResponse.json({
       success: true,
