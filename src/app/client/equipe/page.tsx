@@ -226,6 +226,7 @@ export default function EquipePage() {
   const [chatChannel, setChatChannel]= useState("général");
   const [mySenderName,setMySenderName]= useState("");
   const [sendingMsg,  setSendingMsg]  = useState(false);
+  const [chefOrgId,   setChefOrgId]  = useState<string|null>(null);
   const msgEndRef = useRef<HTMLDivElement>(null);
 
     const [showAI,   setShowAI]   = useState(false);
@@ -280,18 +281,21 @@ export default function EquipePage() {
       if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
       const uid = user.id;
       setUid(uid);
-      const [mR,tkR,msgR,lR,mrR,evR,tsR] = await Promise.all([
+      setMySenderName(user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Chef");
+      const [mR,tkR,lR,mrR,evR,tsR,orgR] = await Promise.all([
         supabase.from("team_members").select("*").eq("user_id",uid).order("name").limit(200),
         supabase.from("team_tasks").select("*").eq("user_id",uid).order("created_at",{ascending:false}).limit(500),
-        supabase.from("team_messages").select("*").eq("user_id",uid).order("created_at").limit(200),
         supabase.from("team_leaves").select("*").eq("user_id",uid).order("start_date",{ascending:false}).limit(200),
         supabase.from("team_meetings").select("*").eq("user_id",uid).order("date_at").limit(200),
         supabase.from("employe_evaluations").select("*").eq("user_id",uid).order("date",{ascending:false}),
         supabase.from("timesheets").select("*").eq("user_id",uid),
+        supabase.from("organizations").select("id").eq("owner_id",uid).order("created_at",{ascending:false}).limit(1),
       ]);
       setMembers((mR.data??[]).map(r=>parseMember(r as Record<string,unknown>)));
       setTasks((tkR.data??[]).map(r=>parseTask(r as Record<string,unknown>)));
-      setMessages((msgR.data??[]) as TeamMessage[]);
+      setMessages([]);
+      const firstOrg = (orgR.data??[])[0] as {id:string}|undefined;
+      if (firstOrg) setChefOrgId(firstOrg.id);
       setLeaves((lR.data??[]) as TeamLeave[]);
       setMeetings((mrR.data??[]) as TeamMeeting[]);
       setEvals((evR.data??[]).map(r=>({
@@ -312,6 +316,18 @@ export default function EquipePage() {
   }, []);
 
   useEffect(()=>{ load(); },[load]);
+
+  // ── Charger les messages du canal sélectionné (chef, via API unifiée) ────────
+  useEffect(()=>{
+    if (!chefOrgId) return;
+    fetch(`/api/equipe/chat?org_id=${chefOrgId}&channel=${encodeURIComponent(chatChannel)}&limit=100`)
+      .then(r=>r.ok ? r.json() : null)
+      .then((json: { messages?: TeamMessage[] } | null)=>{
+        if (!json) return;
+        setMessages((json.messages ?? []).map(m=>({...m, channel: chatChannel})));
+      })
+      .catch(()=>{});
+  },[chefOrgId, chatChannel]);
 
   useEffect(()=>{
     if (tab==="chat") setTimeout(()=>msgEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
@@ -449,16 +465,26 @@ export default function EquipePage() {
   }
 
     async function sendMessage() {
-    if (!chatMsg.trim() || !mySenderName.trim()) return;
+    if (!chatMsg.trim() || !chefOrgId) return;
     setSendingMsg(true);
-    const { data:{ user } } = await supabase.auth.getUser();
-    if (!user) { setSendingMsg(false); return; }
-    const { data, error } = await supabase.from("team_messages").insert({
-      user_id:user.id, sender_name:mySenderName.trim(),
-      content:chatMsg.trim(), channel:chatChannel,
-    }).select().single();
-    if (error) { toast("Erreur lors de l'envoi", "error"); setSendingMsg(false); return; }
-    if (data) setMessages(p=>[...p, data as TeamMessage]);
+    const res = await fetch("/api/equipe/chat", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ org_id:chefOrgId, channel:chatChannel, content:chatMsg.trim() }),
+    });
+    if (!res.ok) { toast("Erreur lors de l'envoi", "error"); setSendingMsg(false); return; }
+    const json = await res.json() as { message?: {id:string; content:string; created_at:string; sender_id:string} };
+    if (json.message) {
+      const newMsg: TeamMessage = {
+        id: json.message.id,
+        sender_name: mySenderName || "Chef",
+        content: json.message.content,
+        channel: chatChannel,
+        mentions: [],
+        created_at: json.message.created_at,
+      };
+      setMessages(p=>[...p, newMsg]);
+    }
     setChatMsg(""); setSendingMsg(false);
   }
 
@@ -821,7 +847,7 @@ export default function EquipePage() {
                 onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();} }}
                 placeholder={`Message #${chatChannel}…`}
                 className={`flex-1 bg-transparent text-sm focus:outline-none ${isDark ? "text-white placeholder:text-white/25" : "text-gray-900 placeholder:text-gray-400"}`}/>
-              <button onClick={sendMessage} disabled={sendingMsg||!chatMsg.trim()||!mySenderName.trim()}
+              <button onClick={sendMessage} disabled={sendingMsg||!chatMsg.trim()||!chefOrgId}
                 className="p-1.5 rounded-xl transition-all disabled:opacity-30"
                 style={{background:`${SKY}25`,color:SKY}}>
                 {sendingMsg ? <Loader2 size={14} className="animate-spin"/> : <Send size={14}/>}

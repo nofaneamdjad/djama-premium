@@ -10,7 +10,7 @@ const CHANNELS = ["général", "annonces", "projets", "ressources"];
 
 interface Message {
   id: string; sender_name: string; content: string;
-  channel: string; created_at: string;
+  created_at: string;
 }
 
 const relTime = (iso: string) => {
@@ -37,8 +37,7 @@ function colorFor(name: string) {
 }
 
 export default function MembreChat() {
-  const [teamId, setTeamId]     = useState("");
-  const [spaceId, setSpaceId]   = useState<string | null>(null);
+  const [orgId, setOrgId]       = useState<string | null>(null);
   const [myName, setMyName]     = useState("");
   const [channel, setChannel]   = useState("général");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -46,50 +45,58 @@ export default function MembreChat() {
   const [sending, setSending]   = useState(false);
   const [loading, setLoading]   = useState(true);
   const [unread, setUnread]     = useState<Record<string, number>>({});
-  const endRef  = useRef<HTMLDivElement>(null);
+  const endRef   = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Charge les messages depuis /api/equipe/chat
+  const loadMessages = useCallback(async (org: string, ch: string) => {
+    const res = await fetch(`/api/equipe/chat?org_id=${org}&channel=${encodeURIComponent(ch)}&limit=100`);
+    if (!res.ok) return;
+    const json = await res.json() as { messages?: Message[] };
+    setMessages(json.messages ?? []);
+  }, []);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
       const meta = user.user_metadata;
-      const tid  = meta?.team_id ?? user.id;
-      const sid  = meta?.space_id ?? null;
-      setTeamId(tid);
-      setSpaceId(sid);
       setMyName(meta?.name ?? user.email ?? "Membre");
 
-      let q = supabase.from("team_messages").select("*").eq("user_id", tid);
-      if (sid) q = q.eq("space_id", sid);
-      const { data } = await q.order("created_at").limit(400);
-      setMessages((data ?? []) as Message[]);
+      // Trouver l'org via team_members.auth_user_id
+      const { data: memberRow } = await supabase
+        .from("team_members")
+        .select("organization_id")
+        .eq("auth_user_id", user.id)
+        .limit(1)
+        .single();
+
+      const oid = memberRow?.organization_id ?? null;
+      setOrgId(oid);
+
+      if (oid) await loadMessages(oid, "général");
       setLoading(false);
     })();
-  }, []);
+  }, [loadMessages]);
 
-  /* ── Realtime subscription ── */
   useEffect(() => {
-    if (!teamId) return;
+    if (orgId) void loadMessages(orgId, channel);
+  }, [orgId, channel, loadMessages]);
+
+  /* ── Realtime subscription sur org_messages ── */
+  useEffect(() => {
+    if (!orgId) return;
     const sub = supabase
-      .channel(`membre-chat-${teamId}${spaceId ? `-${spaceId}` : ""}`)
+      .channel(`membre-chat-${orgId}`)
       .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "team_messages",
-        filter: `user_id=eq.${teamId}`,
-      }, payload => {
-        const msg = payload.new as (Message & { space_id?: string | null });
-        if (spaceId && msg.space_id !== spaceId) return;
-        setMessages(p => {
-          if (p.some(m => m.id === msg.id)) return p;
-          return [...p, msg];
-        });
-        if (msg.channel !== channel && msg.sender_name !== myName) {
-          setUnread(u => ({ ...u, [msg.channel]: (u[msg.channel] ?? 0) + 1 }));
-        }
+        event: "INSERT", schema: "public", table: "org_messages",
+        filter: `organization_id=eq.${orgId}`,
+      }, () => {
+        void loadMessages(orgId, channel);
       })
       .subscribe();
     return () => { void supabase.removeChannel(sub); };
-  }, [teamId, spaceId, channel, myName]);
+  }, [orgId, channel, loadMessages]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
@@ -103,12 +110,9 @@ export default function MembreChat() {
     inputRef.current?.focus();
   };
 
-  const channelMsgs = useMemo(() =>
-    messages.filter(m => m.channel === channel), [messages, channel]);
-
   const grouped = useMemo(() => {
     const g: { date: string; msgs: Message[] }[] = [];
-    channelMsgs.forEach(m => {
+    messages.forEach(m => {
       const d = m.created_at.slice(0, 10);
       const last = g[g.length - 1];
       if (last?.date === d) last.msgs.push(m);
@@ -118,12 +122,20 @@ export default function MembreChat() {
   }, [channelMsgs]);
 
   async function send() {
-    if (!input.trim() || !teamId) return;
+    if (!input.trim() || !orgId) return;
     setSending(true);
-    const payload: Record<string, unknown> = { user_id: teamId, sender_name: myName, content: input.trim(), channel, mentions: [] };
-    if (spaceId) payload.space_id = spaceId;
-    const { data } = await supabase.from("team_messages").insert(payload).select().single();
-    if (data) setMessages(p => p.some(m => m.id === (data as Message).id) ? p : [...p, data as Message]);
+    const res = await fetch("/api/equipe/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ org_id: orgId, channel, content: input.trim() }),
+    });
+    if (res.ok) {
+      const json = await res.json() as { message?: Message & { sender_name?: string } };
+      if (json.message) {
+        const msg: Message = { ...json.message, sender_name: myName };
+        setMessages(p => p.some(m => m.id === msg.id) ? p : [...p, msg]);
+      }
+    }
     setInput("");
     setSending(false);
   }
