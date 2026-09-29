@@ -31,6 +31,8 @@ interface PlanEvent {
   meet_link: string; linked_module: string; linked_id: string;
   status: string; created_at: string; updated_at: string;
   recurrence_rule: string; recurrence_parent_id: string | null; recurrence_end_date: string;
+  linked_client_id: string | null; linked_document_id: string | null;
+  linked_contract_id: string | null; linked_supplier_id: string | null; linked_project_id: string | null;
 }
 
 interface PlanTask {
@@ -133,6 +135,11 @@ function parseEvent(r: Record<string, unknown>): PlanEvent {
     recurrence_rule:       (r.recurrence_rule as string) ?? "",
     recurrence_parent_id:  (r.recurrence_parent_id as string | null) ?? null,
     recurrence_end_date:   (r.recurrence_end_date as string) ?? "",
+    linked_client_id:      (r.linked_client_id as string | null) ?? null,
+    linked_document_id:    (r.linked_document_id as string | null) ?? null,
+    linked_contract_id:    (r.linked_contract_id as string | null) ?? null,
+    linked_supplier_id:    (r.linked_supplier_id as string | null) ?? null,
+    linked_project_id:     (r.linked_project_id as string | null) ?? null,
   };
 }
 
@@ -161,6 +168,8 @@ function newEventForm(date?: Date, hour?: number): Partial<PlanEvent> {
     participants:[], reminder_minutes:30, meet_link:"",
     linked_module:"", linked_id:"", status:"confirmed",
     recurrence_rule:"", recurrence_parent_id:null, recurrence_end_date:"",
+    linked_client_id:null, linked_document_id:null,
+    linked_contract_id:null, linked_supplier_id:null, linked_project_id:null,
   };
 }
 
@@ -294,6 +303,11 @@ export default function PlanningPage() {
   // Org members for attendee selector
   const [orgMembers,  setOrgMembers]  = useState<{ user_id: string; display: string }[]>([]);
 
+  // ERP data for link selectors
+  const [erpClients,   setErpClients]   = useState<{ id: string; name: string }[]>([]);
+  const [erpProjects,  setErpProjects]  = useState<{ id: string; name: string }[]>([]);
+  const [erpContracts, setErpContracts] = useState<{ id: string; name: string }[]>([]);
+
   // Drag-drop
   const [dragEvId,    setDragEvId]    = useState<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
@@ -379,7 +393,18 @@ export default function PlanningPage() {
     });
   }, [events]);
 
-    async function loadOrgMembers() {
+    async function loadErpData() {
+    const [clR, prR, coR] = await Promise.all([
+      supabase.from("clients").select("id, nom").limit(100),
+      supabase.from("projects").select("id, name").limit(100),
+      supabase.from("contracts").select("id, title").limit(100),
+    ]);
+    setErpClients((clR.data ?? []).map(r => ({ id: r.id as string, name: (r.nom as string) ?? r.id })));
+    setErpProjects((prR.data ?? []).map(r => ({ id: r.id as string, name: (r.name as string) ?? r.id })));
+    setErpContracts((coR.data ?? []).map(r => ({ id: r.id as string, name: (r.title as string) ?? r.id })));
+  }
+
+  async function loadOrgMembers() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data } = await supabase
@@ -400,6 +425,7 @@ export default function PlanningPage() {
     setForm(newEventForm(date, hour));
     setShowColPal(false);
     void loadOrgMembers();
+    void loadErpData();
     setShowModal(true);
   }
 
@@ -412,6 +438,7 @@ export default function PlanningPage() {
     });
     setShowColPal(false);
     void loadOrgMembers();
+    void loadErpData();
     setShowModal(true);
   }
 
@@ -1523,6 +1550,45 @@ export default function PlanningPage() {
                     </div>
                   )}
                 </div>
+
+                {(erpClients.length > 0 || erpProjects.length > 0 || erpContracts.length > 0) && (
+                  <div className={`border rounded-xl px-3 py-2 space-y-2 ${isDark ? "bg-white/4 border-white/6" : "bg-gray-50 border-gray-200"}`}>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>Lien ERP</p>
+                    {erpClients.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs shrink-0 ${isDark ? "text-white/35" : "text-gray-500"}`}>Client</span>
+                        <select value={form.linked_client_id ?? ""}
+                          onChange={e => setForm(p => ({...p, linked_client_id: e.target.value || null}))}
+                          className={`flex-1 cursor-pointer rounded-xl border px-2 py-1 text-xs outline-none appearance-none ${isDark ? "border-white/8 bg-[#0e1420] text-white/55" : "border-gray-200 bg-white text-gray-600"}`}>
+                          <option value="">— aucun —</option>
+                          {erpClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    {erpProjects.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs shrink-0 ${isDark ? "text-white/35" : "text-gray-500"}`}>Projet</span>
+                        <select value={form.linked_project_id ?? ""}
+                          onChange={e => setForm(p => ({...p, linked_project_id: e.target.value || null}))}
+                          className={`flex-1 cursor-pointer rounded-xl border px-2 py-1 text-xs outline-none appearance-none ${isDark ? "border-white/8 bg-[#0e1420] text-white/55" : "border-gray-200 bg-white text-gray-600"}`}>
+                          <option value="">— aucun —</option>
+                          {erpProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    {erpContracts.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs shrink-0 ${isDark ? "text-white/35" : "text-gray-500"}`}>Contrat</span>
+                        <select value={form.linked_contract_id ?? ""}
+                          onChange={e => setForm(p => ({...p, linked_contract_id: e.target.value || null}))}
+                          className={`flex-1 cursor-pointer rounded-xl border px-2 py-1 text-xs outline-none appearance-none ${isDark ? "border-white/8 bg-[#0e1420] text-white/55" : "border-gray-200 bg-white text-gray-600"}`}>
+                          <option value="">— aucun —</option>
+                          {erpContracts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 flex-wrap">
                   <Clock size={13} className={isDark ? "text-white/25" : "text-gray-400"}/>
