@@ -30,6 +30,7 @@ interface PlanEvent {
   participants: string[]; reminder_minutes: number;
   meet_link: string; linked_module: string; linked_id: string;
   status: string; created_at: string; updated_at: string;
+  recurrence_rule: string; recurrence_parent_id: string | null; recurrence_end_date: string;
 }
 
 interface PlanTask {
@@ -126,9 +127,12 @@ function parseEvent(r: Record<string, unknown>): PlanEvent {
     meet_link:        (r.meet_link as string) ?? "",
     linked_module:    (r.linked_module as string) ?? "",
     linked_id:        (r.linked_id as string) ?? "",
-    status:           (r.status as string) ?? "confirmed",
-    created_at:       (r.created_at as string) ?? "",
-    updated_at:       (r.updated_at as string) ?? "",
+    status:                (r.status as string) ?? "confirmed",
+    created_at:            (r.created_at as string) ?? "",
+    updated_at:            (r.updated_at as string) ?? "",
+    recurrence_rule:       (r.recurrence_rule as string) ?? "",
+    recurrence_parent_id:  (r.recurrence_parent_id as string | null) ?? null,
+    recurrence_end_date:   (r.recurrence_end_date as string) ?? "",
   };
 }
 
@@ -156,6 +160,7 @@ function newEventForm(date?: Date, hour?: number): Partial<PlanEvent> {
     is_all_day: false, location:"", color: INDIGO,
     participants:[], reminder_minutes:30, meet_link:"",
     linked_module:"", linked_id:"", status:"confirmed",
+    recurrence_rule:"", recurrence_parent_id:null, recurrence_end_date:"",
   };
 }
 
@@ -1472,6 +1477,29 @@ export default function PlanningPage() {
                     onChange={e => setForm(p => ({...p, participants:e.target.value.split(",").map(s=>s.trim()).filter(Boolean)}))}
                     placeholder="Participants (séparés par virgule)"
                     className={`flex-1 bg-transparent text-sm focus:outline-none ${isDark ? "text-white/70 placeholder:text-white/20" : "text-gray-700 placeholder:text-gray-400"}`}/>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Clock size={13} className={isDark ? "text-white/25" : "text-gray-400"}/>
+                  <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>Récurrence</span>
+                  <select value={form.recurrence_rule ?? ""}
+                    onChange={e => setForm(p => ({...p, recurrence_rule:e.target.value}))}
+                    className={`ml-auto cursor-pointer rounded-xl border px-3 py-1.5 text-xs outline-none appearance-none ${isDark ? "border-white/8 bg-[#0e1420] text-white/55" : "border-gray-200 bg-white text-gray-600"}`}>
+                    <option value="">Aucune</option>
+                    <option value="FREQ=DAILY">Tous les jours</option>
+                    <option value="FREQ=WEEKLY">Toutes les semaines</option>
+                    <option value="FREQ=MONTHLY">Tous les mois</option>
+                    <option value="FREQ=YEARLY">Tous les ans</option>
+                    <option value="FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR">Jours ouvrés</option>
+                  </select>
+                  {form.recurrence_rule && (
+                    <div className="w-full flex items-center gap-2 mt-1">
+                      <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>Fin le</span>
+                      <input type="date" value={form.recurrence_end_date ?? ""}
+                        onChange={e => setForm(p => ({...p, recurrence_end_date:e.target.value}))}
+                        className={`rounded-xl border px-3 py-1.5 text-xs outline-none appearance-none ${isDark ? "border-white/8 bg-[#0e1420] text-white/55 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600 [color-scheme:light]"}`}/>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
