@@ -21,7 +21,7 @@ import { validate, EventSchema } from "@/lib/schemas/client";
 type EventType    = "event" | "meeting" | "task" | "reminder";
 type TaskStatus   = "todo" | "in_progress" | "done" | "late";
 type TaskPriority = "low" | "normal" | "high" | "urgent";
-type CalView      = "month" | "week" | "agenda" | "booking";
+type CalView      = "month" | "week" | "day" | "agenda" | "booking";
 
 interface PlanEvent {
   id: string; title: string; description: string;
@@ -45,6 +45,7 @@ interface PlanGoal {
 }
 
 const INDIGO = "#6366f1";
+const GOLD  = "#c9a55a";
 
 const EV_COLORS = [
   "#6366f1","#f59e0b","#10b981","#f87171",
@@ -288,7 +289,9 @@ export default function PlanningPage() {
   // Drag-drop
   const [dragEvId,    setDragEvId]    = useState<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
-  const dragDurRef = useRef<number>(0);
+  const dragDurRef  = useRef<number>(0);
+  const [timeNow,    setTimeNow]    = useState(new Date());
+  const scrollRef   = useRef<HTMLDivElement>(null);
 
   // Conflict detection
   const conflictIds = useMemo(() => getConflicts(events), [events]);
@@ -321,12 +324,26 @@ export default function PlanningPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    const id = setInterval(() => setTimeNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if ((view === "week" || view === "day") && scrollRef.current) {
+      const now = new Date();
+      const top = (now.getHours() + now.getMinutes() / 60 - START_H) * CELL_H - 100;
+      scrollRef.current.scrollTop = Math.max(0, top);
+    }
+  }, [view]);
+
     function navigate(dir: -1 | 1) {
     setCurrent(prev => {
       const d = new Date(prev);
       if (view === "month") { d.setMonth(d.getMonth() + dir); d.setDate(1); }
       else if (view === "week") { d.setDate(d.getDate() + dir * 7); }
-      else { d.setDate(d.getDate() + dir * 14); }
+      else if (view === "day")  { d.setDate(d.getDate() + dir); }
+      else { d.setDate(d.getDate() + dir * 30); }
       return d;
     });
   }
@@ -340,6 +357,8 @@ export default function PlanningPage() {
         return `${ws.getDate()}–${we.getDate()} ${MONTHS_FR[ws.getMonth()]} ${ws.getFullYear()}`;
       return `${ws.getDate()} ${MONTHS_FR[ws.getMonth()].slice(0,3)} – ${we.getDate()} ${MONTHS_FR[we.getMonth()].slice(0,3)} ${we.getFullYear()}`;
     }
+    if (view === "day")
+      return `${DAYS_FR[(current.getDay()+6)%7]} ${current.getDate()} ${MONTHS_FR[current.getMonth()]} ${current.getFullYear()}`;
     return `Agenda — ${MONTHS_FR[current.getMonth()]} ${current.getFullYear()}`;
   }, [view, current]);
 
@@ -483,7 +502,7 @@ export default function PlanningPage() {
       `Objectifs semaine : ${goals.filter(g=>g.period==="week").map(g=>g.title).join(", ") || "Aucun"}`,
     ].join("\n");
     try {
-      const r = await fetch("/api/notes/ai", {
+      const r = await fetch("/api/planning/ai", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ action:"chat", content:context, prompt }),
       });
@@ -575,8 +594,157 @@ export default function PlanningPage() {
     addToast("Page de réservation sauvegardée", "success");
   }
 
+  function computeOverlapLayout(evs: PlanEvent[]): Map<string, { col: number; cols: number }> {
+    const result = new Map<string, { col: number; cols: number }>();
+    if (!evs.length) return result;
+    const sorted = [...evs].sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+    const groups: PlanEvent[][] = [];
+    for (const ev of sorted) {
+      const eS = new Date(ev.start_at).getTime();
+      const eE = new Date(ev.end_at).getTime();
+      let added = false;
+      for (const grp of groups) {
+        const overlaps = grp.some(g => eS < new Date(g.end_at).getTime() && eE > new Date(g.start_at).getTime());
+        if (overlaps) { grp.push(ev); added = true; break; }
+      }
+      if (!added) groups.push([ev]);
+    }
+    for (const grp of groups) {
+      const cols = grp.length;
+      grp.forEach((ev, i) => result.set(ev.id, { col: i, cols }));
+    }
+    return result;
+  }
+
+  function renderDayColumn(d: Date, single = false) {
+    const dayEvs = eventsOnDate(d).filter(e => !e.is_all_day);
+    const overlap = computeOverlapLayout(dayEvs);
+    const nowH   = timeNow.getHours() + timeNow.getMinutes() / 60;
+    const nowTop = (nowH - START_H) * CELL_H;
+    const showNow = isToday(d) && nowH >= START_H && nowH <= START_H + HOURS.length;
+    return (
+      <div className={`relative ${single ? "flex-1" : ""} border-l ${isDark ? "border-white/4" : "border-gray-100"}`}
+        style={single ? { height: HOURS.length * CELL_H } : { height: HOURS.length * CELL_H }}>
+        {HOURS.map(h => {
+          const slotKey = `${fmtDate(d)}-${h}`;
+          return (
+            <div key={h}
+              style={{ top: (h - START_H) * CELL_H, height: CELL_H }}
+              className={`absolute inset-x-0 border-b transition-colors ${
+                dragOverKey === slotKey
+                  ? "bg-yellow-500/10 border-yellow-500/30"
+                  : dragEvId
+                    ? `cursor-copy ${isDark ? "border-white/4 hover:bg-white/6" : "border-gray-100 hover:bg-gray-50"}`
+                    : `cursor-pointer ${isDark ? "border-white/4 hover:bg-white/4" : "border-gray-100 hover:bg-gray-50"}`
+              }`}
+              onDragOver={(e) => { e.preventDefault(); setDragOverKey(slotKey); }}
+              onDragLeave={() => setDragOverKey(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (!dragEvId) return;
+                const newStart = new Date(d); newStart.setHours(h, 0, 0, 0);
+                const newEnd   = new Date(newStart.getTime() + dragDurRef.current);
+                void updateEventTime(dragEvId, newStart, newEnd);
+                setDragEvId(null); setDragOverKey(null);
+              }}
+              onClick={() => { if (!dragEvId) openCreate(d, h); }}
+            />
+          );
+        })}
+        {isToday(d) && (
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: isDark ? `${GOLD}05` : `${GOLD}08` }} />
+        )}
+        {showNow && (
+          <div className="absolute inset-x-0 pointer-events-none z-20 flex items-center" style={{ top: nowTop - 1 }}>
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: GOLD }}/>
+            <div className="flex-1 h-px" style={{ background: GOLD, opacity: 0.7 }}/>
+          </div>
+        )}
+        {dayEvs.map(ev => {
+          const s  = new Date(ev.start_at);
+          const e  = new Date(ev.end_at);
+          const sh = s.getHours() + s.getMinutes() / 60;
+          const eh = e.getHours() + e.getMinutes() / 60;
+          const top    = Math.max((sh - START_H) * CELL_H, 0);
+          const height = Math.max((eh - sh) * CELL_H, 20);
+          const hhmm   = `${String(s.getHours()).padStart(2,"0")}:${String(s.getMinutes()).padStart(2,"0")}`;
+          const hasConflict = conflictIds.has(ev.id);
+          const layout = overlap.get(ev.id) ?? { col: 0, cols: 1 };
+          const pct    = 100 / layout.cols;
+          return (
+            <button key={ev.id}
+              draggable
+              onDragStart={(e2) => {
+                e2.stopPropagation();
+                setDragEvId(ev.id);
+                dragDurRef.current = new Date(ev.end_at).getTime() - new Date(ev.start_at).getTime();
+                e2.dataTransfer.effectAllowed = "move";
+              }}
+              onDragEnd={() => { setDragEvId(null); setDragOverKey(null); }}
+              onClick={e2 => { e2.stopPropagation(); if (!dragEvId) openEdit(ev); }}
+              className="absolute rounded-lg px-1.5 overflow-hidden text-left hover:opacity-90 transition-all z-10 select-none"
+              style={{
+                top, height,
+                left:  `calc(${layout.col * pct}% + 2px)`,
+                width: `calc(${pct}% - 4px)`,
+                background: `${ev.color}22`,
+                borderLeft: `3px solid ${hasConflict ? "#f87171" : ev.color}`,
+                cursor: dragEvId ? "grabbing" : "grab",
+                opacity: dragEvId === ev.id ? 0.4 : 1,
+                boxShadow: hasConflict ? "0 0 0 1px rgba(248,113,113,0.3)" : undefined,
+              }}>
+              {hasConflict && (
+                <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-red-400" title="Conflit horaire" />
+              )}
+              <p className="text-[10px] font-semibold truncate leading-tight" style={{ color: ev.color }}>
+                {ev.title}
+              </p>
+              {height > 28 && (
+                <p className={`text-[9px] leading-none ${isDark ? "text-white/40" : "text-gray-600"}`}>{hhmm}</p>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function renderDay() {
+    return (
+      <div className="flex-1 overflow-x-auto">
+      <div className="flex flex-col" style={{ minWidth: "320px", height: "100%" }}>
+        <div className={`flex border-b ${isDark ? "border-white/6" : "border-gray-200"}`} style={{ paddingLeft: "50px" }}>
+          <div className={`flex-1 py-1.5 text-center border-l ${isDark ? "border-white/4" : "border-gray-100"}`}>
+            <p className={`text-[10px] uppercase tracking-wide ${isDark ? "text-white/30" : "text-gray-400"}`}>{DAYS_FR[(current.getDay()+6)%7]}</p>
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold mx-auto mt-0.5 ${isToday(current) ? "text-white" : isDark ? "text-white/60" : "text-gray-700"}`}
+              style={isToday(current) ? { background: GOLD } : {}}>
+              {current.getDate()}
+            </div>
+            {holidays[fmtDate(current)] && (
+              <div className="text-[7px] text-amber-400/60 truncate px-1 mt-0.5">✦ {holidays[fmtDate(current)]}</div>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-1 overflow-y-auto" ref={scrollRef}>
+          <div className="w-[50px] shrink-0 relative" style={{ height: HOURS.length * CELL_H }}>
+            {HOURS.map(h => (
+              <div key={h} className={`absolute w-full flex items-start justify-end pr-2 text-[9px] ${isDark ? "text-white/20" : "text-gray-400"}`}
+                style={{ top: (h - START_H) * CELL_H - 7, height: CELL_H }}>
+                {h}:00
+              </div>
+            ))}
+          </div>
+          <div className="flex-1" style={{ height: HOURS.length * CELL_H }}>
+            {renderDayColumn(current, true)}
+          </div>
+        </div>
+      </div>
+      </div>
+    );
+  }
+
   function renderBooking() {
-    const GOLD = "#c9a55a";
     const bookingUrl = bkToken ? `${typeof window !== "undefined" ? window.location.origin : ""}/booking/${bkToken}` : null;
     const DAY_NAMES = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
     const inputCls = isDark
@@ -700,13 +868,32 @@ export default function PlanningPage() {
                 const isCurrentMonth = day.getMonth() === current.getMonth();
                 const dayEvs = eventsOnDate(day).slice(0, 3);
                 const overflow = eventsOnDate(day).length - 3;
+                const cellKey = fmtDate(day);
                 return (
                   <div key={di}
-                    onClick={() => openCreate(day)}
-                    className={`border-r p-1.5 min-h-[90px] cursor-pointer transition-colors ${isDark ? "border-white/4 hover:bg-white/4" : "border-gray-100 hover:bg-gray-50"} ${!isCurrentMonth ? "opacity-35" : ""}`}>
+                    onClick={() => { if (!dragEvId) openCreate(day); }}
+                    onDragOver={(e) => { e.preventDefault(); setDragOverKey(cellKey); }}
+                    onDragLeave={() => setDragOverKey(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (!dragEvId) return;
+                      const ev = events.find(x => x.id === dragEvId);
+                      if (!ev) return;
+                      const origS = new Date(ev.start_at);
+                      const dur   = new Date(ev.end_at).getTime() - origS.getTime();
+                      const newS  = new Date(day);
+                      newS.setHours(origS.getHours(), origS.getMinutes(), 0, 0);
+                      void updateEventTime(dragEvId, newS, new Date(newS.getTime() + dur));
+                      setDragEvId(null); setDragOverKey(null);
+                    }}
+                    className={`border-r p-1.5 min-h-[90px] cursor-pointer transition-colors ${
+                      dragOverKey === cellKey
+                        ? isDark ? "bg-yellow-500/10 border-yellow-500/20" : "bg-yellow-50 border-yellow-200"
+                        : isDark ? "border-white/4 hover:bg-white/4" : "border-gray-100 hover:bg-gray-50"
+                    } ${!isCurrentMonth ? "opacity-35" : ""}`}>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-0.5 text-[11px] font-bold mx-auto transition-colors
                       ${isToday(day) ? "text-white" : isDark ? "text-white/55 hover:text-white" : "text-gray-600 hover:text-gray-900"}`}
-                      style={isToday(day) ? { background: INDIGO } : {}}>
+                      style={isToday(day) ? { background: GOLD } : {}}>
                       {day.getDate()}
                     </div>
                     {holidays[fmtDate(day)] && (
@@ -716,7 +903,17 @@ export default function PlanningPage() {
                     )}
                     <div className="space-y-0.5">
                       {dayEvs.map(ev => (
-                        <EventChip key={ev.id} ev={ev} small onClick={() => openEdit(ev)} />
+                        <div key={ev.id} draggable
+                          onDragStart={(e2) => {
+                            e2.stopPropagation();
+                            setDragEvId(ev.id);
+                            dragDurRef.current = new Date(ev.end_at).getTime() - new Date(ev.start_at).getTime();
+                            e2.dataTransfer.effectAllowed = "move";
+                          }}
+                          onDragEnd={() => { setDragEvId(null); setDragOverKey(null); }}
+                          style={{ opacity: dragEvId === ev.id ? 0.4 : 1 }}>
+                          <EventChip ev={ev} small onClick={() => openEdit(ev)} />
+                        </div>
                       ))}
                       {overflow > 0 && (
                         <p className={`text-[9px] pl-1 ${isDark ? "text-white/30" : "text-gray-400"}`}>+{overflow} autres</p>
@@ -745,7 +942,7 @@ export default function PlanningPage() {
             <div key={d.toString()} className={`py-1.5 text-center border-l ${isDark ? "border-white/4" : "border-gray-100"}`}>
               <p className={`text-[10px] uppercase tracking-wide ${isDark ? "text-white/30" : "text-gray-400"}`}>{DAYS_FR[(d.getDay()+6)%7]}</p>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold mx-auto mt-0.5 ${isToday(d) ? "text-white" : isDark ? "text-white/60" : "text-gray-700"}`}
-                style={isToday(d) ? { background: INDIGO } : {}}>
+                style={isToday(d) ? { background: GOLD } : {}}>
                 {d.getDate()}
               </div>
               {holidays[fmtDate(d)] && (
@@ -757,7 +954,7 @@ export default function PlanningPage() {
           ))}
         </div>
 
-        <div className="flex flex-1 overflow-y-auto">
+        <div className="flex flex-1 overflow-y-auto" ref={scrollRef}>
           <div className="w-[50px] shrink-0 relative" style={{ height: HOURS.length * CELL_H }}>
             {HOURS.map(h => (
               <div key={h} className={`absolute w-full flex items-start justify-end pr-2 text-[9px] ${isDark ? "text-white/20" : "text-gray-400"}`}
@@ -768,84 +965,7 @@ export default function PlanningPage() {
           </div>
 
           <div className="flex-1 grid" style={{ gridTemplateColumns:"repeat(7,1fr)", height: HOURS.length * CELL_H }}>
-            {days.map(d => {
-              const dayEvs = eventsOnDate(d).filter(e => !e.is_all_day);
-              return (
-                <div key={d.toString()} className={`relative border-l ${isDark ? "border-white/4" : "border-gray-100"}`}>
-                  {HOURS.map(h => {
-                    const slotKey = `${fmtDate(d)}-${h}`;
-                    return (
-                      <div key={h}
-                        style={{ top: (h - START_H) * CELL_H, height: CELL_H }}
-                        className={`absolute inset-x-0 border-b transition-colors ${
-                          dragOverKey === slotKey
-                            ? "bg-indigo-500/20 border-indigo-500/40"
-                            : dragEvId
-                              ? `cursor-copy ${isDark ? "border-white/4 hover:bg-white/6" : "border-gray-100 hover:bg-gray-50"}`
-                              : `cursor-pointer ${isDark ? "border-white/4 hover:bg-white/4" : "border-gray-100 hover:bg-gray-50"}`
-                        }`}
-                        onDragOver={(e) => { e.preventDefault(); setDragOverKey(slotKey); }}
-                        onDragLeave={() => setDragOverKey(null)}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (!dragEvId) return;
-                          const newStart = new Date(d); newStart.setHours(h, 0, 0, 0);
-                          const newEnd   = new Date(newStart.getTime() + dragDurRef.current);
-                          void updateEventTime(dragEvId, newStart, newEnd);
-                          setDragEvId(null); setDragOverKey(null);
-                        }}
-                        onClick={() => { if (!dragEvId) openCreate(d, h); }}
-                      />
-                    );
-                  })}
-                  {isToday(d) && (
-                    <div className="absolute inset-0 pointer-events-none"
-                      style={{ background: isDark ? `${INDIGO}06` : `${INDIGO}08` }} />
-                  )}
-                  {dayEvs.map(ev => {
-                    const s  = new Date(ev.start_at);
-                    const e  = new Date(ev.end_at);
-                    const sh = s.getHours() + s.getMinutes() / 60;
-                    const eh = e.getHours() + e.getMinutes() / 60;
-                    const top    = Math.max((sh - START_H) * CELL_H, 0);
-                    const height = Math.max((eh - sh) * CELL_H, 20);
-                    const hhmm   = `${String(s.getHours()).padStart(2,"0")}:${String(s.getMinutes()).padStart(2,"0")}`;
-                    const hasConflict = conflictIds.has(ev.id);
-                    return (
-                      <button key={ev.id}
-                        draggable
-                        onDragStart={(e2) => {
-                          e2.stopPropagation();
-                          setDragEvId(ev.id);
-                          dragDurRef.current = new Date(ev.end_at).getTime() - new Date(ev.start_at).getTime();
-                          e2.dataTransfer.effectAllowed = "move";
-                        }}
-                        onDragEnd={() => { setDragEvId(null); setDragOverKey(null); }}
-                        onClick={e2 => { e2.stopPropagation(); if (!dragEvId) openEdit(ev); }}
-                        className="absolute left-0.5 right-0.5 rounded-lg px-1.5 overflow-hidden text-left hover:opacity-90 transition-all z-10 select-none"
-                        style={{
-                          top, height,
-                          background: `${ev.color}22`,
-                          borderLeft: `3px solid ${hasConflict ? "#f87171" : ev.color}`,
-                          cursor: dragEvId ? "grabbing" : "grab",
-                          opacity: dragEvId === ev.id ? 0.4 : 1,
-                          boxShadow: hasConflict ? "0 0 0 1px rgba(248,113,113,0.3)" : undefined,
-                        }}>
-                        {hasConflict && (
-                          <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-red-400" title="Conflit horaire" />
-                        )}
-                        <p className="text-[10px] font-semibold truncate leading-tight" style={{ color: ev.color }}>
-                          {ev.title}
-                        </p>
-                        {height > 28 && (
-                          <p className={`text-[9px] leading-none ${isDark ? "text-white/40" : "text-gray-600"}`}>{hhmm}</p>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })}
+            {days.map(d => renderDayColumn(d))}
           </div>
         </div>
       </div>
@@ -862,7 +982,7 @@ export default function PlanningPage() {
           <Calendar size={32} className={isDark ? "text-white/15" : "text-gray-300"} />
           <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-500"}`}>Aucun événement dans les 30 prochains jours</p>
           <button onClick={() => openCreate()} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-            style={{ background:`${INDIGO}18`, border:`1px solid ${INDIGO}35`, color:INDIGO }}>
+            style={{ background:`${GOLD}18`, border:`1px solid ${GOLD}35`, color:GOLD }}>
             <Plus size={15}/>Créer un événement
           </button>
         </div>
@@ -874,13 +994,13 @@ export default function PlanningPage() {
           <div key={fmtDate(day)}>
             <div className="flex items-center gap-3 mb-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${isToday(day) ? "text-white" : isDark ? "text-white/60" : "text-gray-600"}`}
-                style={isToday(day) ? { background: INDIGO } : { background: isDark ? "rgba(255,255,255,.06)" : "rgba(0,0,0,.06)" }}>
+                style={isToday(day) ? { background: GOLD } : { background: isDark ? "rgba(255,255,255,.06)" : "rgba(0,0,0,.06)" }}>
                 {day.getDate()}
               </div>
               <div>
                 <p className={`text-sm font-semibold ${isToday(day) ? isDark ? "text-white" : "text-gray-900" : isDark ? "text-white/50" : "text-gray-600"}`}>
                   {DAYS_FR[(day.getDay()+6)%7]} {day.getDate()} {MONTHS_FR[day.getMonth()]}
-                  {isToday(day) && <span className="ml-2 text-xs px-2 py-0.5 rounded-full" style={{ background:`${INDIGO}20`, color:INDIGO }}>Aujourd&apos;hui</span>}
+                  {isToday(day) && <span className="ml-2 text-xs px-2 py-0.5 rounded-full" style={{ background:`${GOLD}20`, color:GOLD }}>Aujourd&apos;hui</span>}
                 </p>
               </div>
             </div>
@@ -967,8 +1087,8 @@ export default function PlanningPage() {
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium transition-all mx-auto my-0.5
                       ${isCur ? "text-white" : isToday(day) ? "font-bold" : day.getMonth()===current.getMonth() ? isDark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100" : isDark ? "text-white/15" : "text-gray-300"}`}
                     style={{
-                      background: isCur ? INDIGO : isToday(day) && !isCur ? `${INDIGO}30` : undefined,
-                      color: isToday(day) && !isCur ? INDIGO : undefined,
+                      background: isCur ? GOLD : isToday(day) && !isCur ? `${GOLD}30` : undefined,
+                      color: isToday(day) && !isCur ? GOLD : undefined,
                     }}>
                     {day.getDate()}
                     {hasEv && !isCur && (
@@ -1145,10 +1265,10 @@ export default function PlanningPage() {
 
           {/* View tabs */}
           <div className="relative px-4 flex gap-0.5">
-            {(["month", "week", "agenda", "booking"] as CalView[]).map((v) => (
+            {(["month", "week", "day", "agenda", "booking"] as CalView[]).map((v) => (
               <button key={v} onClick={() => { setView(v); if (v === "booking" && !bkLoading) void loadBookingConfig(); }}
                 className={`relative px-3 py-2 text-xs font-semibold transition-all ${view === v ? isDark ? "text-white" : "text-gray-900" : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
-                {v === "month" ? "Mois" : v === "week" ? "Semaine" : v === "agenda" ? "Agenda" : "Réservation"}
+                {v === "month" ? "Mois" : v === "week" ? "Semaine" : v === "day" ? "Jour" : v === "agenda" ? "Agenda" : "Réservation"}
                 {view === v && (
                   <motion.div layoutId="plan-tab-indicator"
                     className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
@@ -1214,6 +1334,7 @@ export default function PlanningPage() {
           <div className="flex flex-col flex-1 overflow-hidden">
             {view === "month"   && renderMonth()}
             {view === "week"    && renderWeek()}
+            {view === "day"     && renderDay()}
             {view === "agenda"  && renderAgenda()}
             {view === "booking" && renderBooking()}
           </div>
