@@ -64,7 +64,8 @@ interface TeamMeeting {
   participants:string[]; notes:string; status:string; created_at:string;
 }
 
-const SKY = "#0ea5e9";
+const GOLD = "#c9a55a";
+const SKY  = GOLD; // Phase 4.1 — accent unifié GOLD
 
 const STATUSES: { v:MemberStatus; l:string; c:string }[] = [
   { v:"active",   l:"Actif",    c:"#10b981" },
@@ -224,6 +225,7 @@ export default function EquipePage() {
 
     const [chatMsg,     setChatMsg]    = useState("");
   const [chatChannel, setChatChannel]= useState("général");
+  const [chatChannels,setChatChannels]= useState<string[]>(CHANNELS);
   const [mySenderName,setMySenderName]= useState("");
   const [sendingMsg,  setSendingMsg]  = useState(false);
   const [chefOrgId,   setChefOrgId]  = useState<string|null>(null);
@@ -310,16 +312,48 @@ export default function EquipePage() {
   useEffect(()=>{ load(); },[load]);
 
   // ── Charger les messages du canal sélectionné (chef, via API unifiée) ────────
+  const loadChatMessages = useCallback(async (orgId: string, ch: string) => {
+    try {
+      const res = await fetch(`/api/equipe/chat?org_id=${orgId}&channel=${encodeURIComponent(ch)}&limit=100`);
+      if (!res.ok) return;
+      const json = await res.json() as { messages?: TeamMessage[] };
+      setMessages((json.messages ?? []).map(m=>({...m, channel: ch})));
+    } catch { /* réseau */ }
+  }, []);
+
   useEffect(()=>{
     if (!chefOrgId) return;
-    fetch(`/api/equipe/chat?org_id=${chefOrgId}&channel=${encodeURIComponent(chatChannel)}&limit=100`)
-      .then(r=>r.ok ? r.json() : null)
-      .then((json: { messages?: TeamMessage[] } | null)=>{
-        if (!json) return;
-        setMessages((json.messages ?? []).map(m=>({...m, channel: chatChannel})));
-      })
-      .catch(()=>{});
-  },[chefOrgId, chatChannel]);
+    void loadChatMessages(chefOrgId, chatChannel);
+  },[chefOrgId, chatChannel, loadChatMessages]);
+
+  /* ── Canaux configurables depuis org_message_groups ── */
+  useEffect(()=>{
+    if (!chefOrgId) return;
+    supabase.from("org_message_groups")
+      .select("name")
+      .eq("organization_id", chefOrgId)
+      .eq("is_direct", false)
+      .order("created_at")
+      .limit(20)
+      .then(({ data })=>{
+        if (data && data.length > 0) {
+          setChatChannels(data.map((g: { name: string })=>g.name));
+        }
+      });
+  },[chefOrgId]);
+
+  /* ── Realtime chef — org_messages ── */
+  useEffect(()=>{
+    if (!chefOrgId) return;
+    const sub = supabase
+      .channel(`chef-chat-${chefOrgId}`)
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "org_messages",
+        filter: `organization_id=eq.${chefOrgId}`,
+      }, ()=>{ void loadChatMessages(chefOrgId, chatChannel); })
+      .subscribe();
+    return ()=>{ void supabase.removeChannel(sub); };
+  },[chefOrgId, chatChannel, loadChatMessages]);
 
   useEffect(()=>{
     if (tab==="chat") setTimeout(()=>msgEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
@@ -687,6 +721,16 @@ export default function EquipePage() {
               </div>
 
                             <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                {colTasks.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-8 gap-2 opacity-50">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{background:`${col.c}12`}}>
+                      <div className="w-2 h-2 rounded-full" style={{background:col.c}}/>
+                    </div>
+                    <p className={`text-[11px] text-center ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                      {col.k==="todo" ? "Aucune tâche à faire" : col.k==="in_progress" ? "Aucune tâche en cours" : "Aucune tâche terminée"}
+                    </p>
+                  </div>
+                )}
                 <AnimatePresence>
                   {colTasks.map(t=>{
                     const prio   = PRIOS.find(p=>p.v===t.priority);
@@ -768,12 +812,12 @@ export default function EquipePage() {
       <div className="flex flex-1 overflow-hidden">
                 <div className={`w-48 shrink-0 border-r p-3 space-y-1 ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-gray-200 bg-gray-50"}`}>
           <p className={`text-[10px] font-bold uppercase tracking-wider px-2 mb-3 ${isDark ? "text-white/25" : "text-gray-400"}`}>Canaux</p>
-          {CHANNELS.map(ch=>(
+          {chatChannels.map(ch=>(
             <button key={ch} onClick={()=>setChatChannel(ch)}
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-all"
               style={{
-                background: chatChannel===ch ? `${SKY}18` : "transparent",
-                color:      chatChannel===ch ? SKY : isDark ? "rgba(255,255,255,.4)" : "rgba(0,0,0,.5)",
+                background: chatChannel===ch ? `${GOLD}18` : "transparent",
+                color:      chatChannel===ch ? GOLD : isDark ? "rgba(255,255,255,.4)" : "rgba(0,0,0,.5)",
               }}>
               <Hash size={12}/>{ch}
             </button>
@@ -999,7 +1043,17 @@ export default function EquipePage() {
                 );
               })}
               {upcomingMeetings.length===0 && (
-                <p className={`text-sm py-4 text-center ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune réunion prévue</p>
+                <div className="flex flex-col items-center py-8 gap-3">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? "bg-white/[0.04]" : "bg-gray-100"}`}>
+                    <Video size={20} style={{color:GOLD, opacity:0.5}}/>
+                  </div>
+                  <p className={`text-sm ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune réunion prévue</p>
+                  <button onClick={()=>{ setShowMeetModal(true); setMeetForm({}); }}
+                    className="text-xs px-4 py-1.5 rounded-xl transition-all"
+                    style={{background:`${GOLD}15`,color:GOLD,border:`1px solid ${GOLD}30`}}>
+                    + Planifier
+                  </button>
+                </div>
               )}
             </div>
           </section>
@@ -1267,12 +1321,13 @@ export default function EquipePage() {
       if (!evalForm.memberId || !uid) return;
       const mem  = members.find(m=>m.id===evalForm.memberId);
       const payload = {
-        user_id:     uid,
-        member_id:   evalForm.memberId,
-        member_name: mem?.name ?? "",
-        date:        new Date().toISOString().slice(0,10),
-        score:       evalForm.score ?? 3,
-        notes:       evalForm.notes ?? "",
+        user_id:         uid,
+        organization_id: chefOrgId ?? undefined,
+        member_id:       evalForm.memberId,
+        member_name:     mem?.name ?? "",
+        date:            new Date().toISOString().slice(0,10),
+        score:           evalForm.score ?? 3,
+        notes:           evalForm.notes ?? "",
       };
       const {data,error} = await supabase.from("employe_evaluations").insert(payload).select().single();
       if (error) { toast("Erreur sauvegarde évaluation","error"); return; }
@@ -1375,8 +1430,18 @@ export default function EquipePage() {
         {/* Evaluations list */}
         {evals.length === 0 && !showEvalForm ? (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <Award size={32} className={isDark ? "text-white/15" : "text-gray-300"}/>
-            <p className={`text-sm ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucune évaluation enregistrée</p>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${isDark ? "bg-white/[0.04] border border-white/[0.08]" : "bg-gray-100 border border-gray-200"}`}>
+              <Award size={26} style={{color:GOLD, opacity:0.6}}/>
+            </div>
+            <div className="text-center">
+              <p className={`text-sm font-semibold ${isDark ? "text-white/40" : "text-gray-500"}`}>Aucune évaluation enregistrée</p>
+              <p className={`text-xs mt-1 ${isDark ? "text-white/20" : "text-gray-400"}`}>Évaluez régulièrement les performances de vos membres</p>
+            </div>
+            <button onClick={()=>setShowEvalForm(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
+              style={{background:`${GOLD}18`,border:`1px solid ${GOLD}35`,color:GOLD}}>
+              <Plus size={14}/>Première évaluation
+            </button>
           </div>
         ) : (
           <div className="space-y-2">
@@ -1480,11 +1545,11 @@ export default function EquipePage() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="relative px-5 flex gap-0.5">
+        {/* Tabs — scrollables sur mobile */}
+        <div className="relative px-2 flex gap-0.5 overflow-x-auto scrollbar-none">
           {TABS.map(t => (
             <button key={t.k} onClick={()=>setTab(t.k)}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${tab===t.k ? isDark ? "text-white" : "text-gray-900" : isDark ? "text-white/35 hover:text-white/60" : "text-gray-500 hover:text-gray-700"}`}>
+              className={`relative flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs font-semibold transition-all shrink-0 whitespace-nowrap ${tab===t.k ? isDark ? "text-white" : "text-gray-900" : isDark ? "text-white/35 hover:text-white/60" : "text-gray-500 hover:text-gray-700"}`}>
               <t.icon size={12}/>{t.l}
               {t.k==="tasks" && stats.late > 0 && (
                 <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{stats.late}</span>

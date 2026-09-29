@@ -119,7 +119,7 @@ export default function MembreChat() {
       else g.push({ date: d, msgs: [m] });
     });
     return g;
-  }, [channelMsgs]);
+  }, [messages]);
 
   async function send() {
     if (!input.trim() || !orgId) return;
