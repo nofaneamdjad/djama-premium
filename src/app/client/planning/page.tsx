@@ -289,6 +289,10 @@ export default function PlanningPage() {
   const [showAI,     setShowAI]     = useState(false);
 
   // Booking page config
+  const [bkAppts,    setBkAppts]    = useState<{
+    id: string; date: string; start_time: string; end_time: string;
+    client_name: string; client_email: string; client_message: string; status: string;
+  }[]>([]);
   const [bkToken,    setBkToken]    = useState<string | null>(null);
   const [bkTitle,    setBkTitle]    = useState("Prendre un rendez-vous");
   const [bkDesc,     setBkDesc]     = useState("");
@@ -631,6 +635,14 @@ export default function PlanningPage() {
       setBkDays(data.available_days as number[]);
       setBkStart(data.start_hour as number);
       setBkEnd(data.end_hour as number);
+      const { data: appts } = await supabase
+        .from("booking_appointments")
+        .select("id, date, start_time, end_time, client_name, client_email, client_message, status")
+        .eq("booking_page_id", data.id as string)
+        .order("date", { ascending: false })
+        .order("start_time", { ascending: false })
+        .limit(50);
+      setBkAppts((appts ?? []) as typeof bkAppts);
     }
     setBkLoading(false);
   }
@@ -909,6 +921,35 @@ export default function PlanningPage() {
               className={`flex items-center gap-1.5 text-xs transition ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
               <ExternalLink size={11}/> Aperçu de la page publique
             </a>
+          </div>
+        )}
+
+        {/* Received appointments */}
+        {bkAppts.length > 0 && (
+          <div className="space-y-2">
+            <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Rendez-vous reçus</p>
+            {bkAppts.map(a => {
+              const dateLabel = new Date(a.date + "T12:00:00Z").toLocaleDateString("fr-FR", { weekday:"short", day:"numeric", month:"short" });
+              const isUpcoming = a.date >= fmtDate(new Date());
+              return (
+                <div key={a.id} className={`rounded-xl border p-3 ${isDark ? "border-white/8 bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-xs font-semibold ${isDark ? "text-white/80" : "text-gray-800"}`}>{a.client_name}</p>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      a.status === "confirmed"
+                        ? isUpcoming ? "text-emerald-400 bg-emerald-500/10" : isDark ? "text-white/30 bg-white/5" : "text-gray-400 bg-gray-100"
+                        : "text-red-400 bg-red-500/10"
+                    }`}>{a.status === "confirmed" ? (isUpcoming ? "Confirmé" : "Passé") : "Annulé"}</span>
+                  </div>
+                  <div className={`flex items-center gap-3 text-[11px] ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                    <span className="flex items-center gap-1"><Calendar size={9}/>{dateLabel}</span>
+                    <span className="flex items-center gap-1"><Clock size={9}/>{a.start_time.slice(0,5)} – {a.end_time.slice(0,5)}</span>
+                  </div>
+                  {a.client_email && <p className={`text-[10px] mt-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>{a.client_email}</p>}
+                  {a.client_message && <p className={`text-[10px] mt-1 italic ${isDark ? "text-white/35" : "text-gray-500"}`}>{a.client_message.slice(0, 120)}</p>}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
