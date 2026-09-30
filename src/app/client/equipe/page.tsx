@@ -20,8 +20,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import { useTheme } from "@/lib/theme-context";
-import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
-
 type MemberRole   = "admin"|"manager"|"employee"|"accountant"|"extern";
 type MemberStatus = "active"|"away"|"leave"|"inactive";
 type TaskStatus   = "todo"|"in_progress"|"done"|"late";
@@ -1484,12 +1482,9 @@ export default function EquipePage() {
 
         {/* Main row */}
         <div className="relative flex items-center gap-3 px-5 pt-4 pb-3 flex-wrap gap-y-2">
-          <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4 }} className="mr-auto flex items-center gap-3">
-            <ModuleHeaderIcon icon={Users} color="#0ea5e9" />
-            <div>
-              <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Équipe</h1>
-              <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>{members.length} membre{members.length!==1?"s":""} · {stats.active} actif{stats.active!==1?"s":""}</p>
-            </div>
+          <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4 }} className="mr-auto">
+            <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Équipe</h1>
+            <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>{members.length} membre{members.length!==1?"s":""} · {stats.active} actif{stats.active!==1?"s":""}</p>
           </motion.div>
           <div className="relative">
             <Search size={12} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`}/>
