@@ -364,14 +364,9 @@ export default function EspacesPrives() {
       {/* ── Header ── */}
       <div className={`relative shrink-0 border-b ${isDark ? "border-white/[0.06] bg-[#07080e]" : "border-black/[0.06] bg-white"}`}>
         <div className="flex items-center justify-between px-6 pt-5 pb-3 max-w-6xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${GOLD}15`, border: `1px solid ${GOLD}25` }}>
-              <Lock size={16} style={{ color: GOLD }} />
-            </div>
-            <div>
-              <h1 className={`text-base font-extrabold ${pri}`}>Espaces Privés</h1>
-              <p className={`text-xs ${sec}`}>{spaces.length} espace{spaces.length !== 1 ? "s" : ""}</p>
-            </div>
+          <div>
+            <h1 className={`text-base font-extrabold ${pri}`}>Espaces Privés</h1>
+            <p className={`text-xs ${sec}`}>{spaces.length} espace{spaces.length !== 1 ? "s" : ""}</p>
           </div>
           <button onClick={() => setShowCreate(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:brightness-110"
