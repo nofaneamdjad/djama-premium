@@ -37,13 +37,16 @@ const FontSize = Extension.create({
       },
     }}];
   },
-  addCommands() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  addCommands(): any {
     return {
-      setFontSize: (size: string) => ({ chain }) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setFontSize: (size: string) => ({ chain }: any) =>
         chain().setMark("textStyle", { fontSize: size }).run(),
-      unsetFontSize: () => ({ chain }) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      unsetFontSize: () => ({ chain }: any) =>
         chain().setMark("textStyle", { fontSize: null }).removeEmptyTextStyle().run(),
-    } as ReturnType<typeof this.addCommands>;
+    };
   },
 });
 
@@ -59,11 +62,13 @@ const LineHeight = Extension.create({
       },
     }}];
   },
-  addCommands() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  addCommands(): any {
     return {
-      setLineHeight: (h: string) => ({ commands }) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setLineHeight: (h: string) => ({ commands }: any) =>
         commands.updateAttributes("paragraph", { lineHeight: h }),
-    } as ReturnType<typeof this.addCommands>;
+    };
   },
 });
 

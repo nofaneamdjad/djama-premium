@@ -698,8 +698,8 @@ export default function DocumentEditor() {
                       const html = tiptapRef.current.getHTML();
                       if (replaceText!==undefined) {
                         const updated = html.replaceAll(findText, replaceText);
-                        tiptapRef.current.setContent({ type:"doc", content: [] });
-                        setTimeout(()=>{ tiptapRef.current?.setContent(updated as unknown as object); }, 0);
+                        tiptapRef.current.commands.setContent({ type:"doc", content: [] });
+                        setTimeout(()=>{ tiptapRef.current?.commands.setContent(updated); }, 0);
                         showToast("success","Remplacement effectué");
                       }
                     }}
