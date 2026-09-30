@@ -43,6 +43,44 @@ export async function GET(req: NextRequest) {
     .select("id, title, content, content_json, thumbnail_text, note_type, doc_type, folder_id, tags, is_archived, is_favorite, is_pinned, linked_entity, word_count, page_format, page_orientation, created_at, updated_at")
     .eq("user_id", user.id);
 
+  // Section "shared" — documents partagés avec l'utilisateur via note_shares
+  if (section === "shared") {
+    const { data: shares } = await admin
+      .from("note_shares")
+      .select("note_id")
+      .eq("shared_with_user_id", user.id);
+
+    const noteIds = (shares ?? []).map((s: { note_id: string }) => s.note_id);
+    if (noteIds.length === 0) {
+      const { data: folders } = await admin
+        .from("note_folders")
+        .select("id, name, color")
+        .eq("user_id", user.id)
+        .order("name");
+      return NextResponse.json({ documents: [], folders: folders ?? [] });
+    }
+
+    let sharedQuery = admin
+      .from("notes")
+      .select("id, title, content, content_json, thumbnail_text, note_type, doc_type, folder_id, tags, is_archived, is_favorite, is_pinned, linked_entity, word_count, page_format, page_orientation, created_at, updated_at")
+      .in("id", noteIds)
+      .eq("is_archived", false);
+
+    if (search) sharedQuery = sharedQuery.ilike("title", `%${search}%`);
+    sharedQuery = sharedQuery.order("updated_at", { ascending: false }).limit(limit);
+
+    const { data: sharedDocs, error: sharedError } = await sharedQuery;
+    if (sharedError) return err(sharedError.message, 500);
+
+    const { data: folders } = await admin
+      .from("note_folders")
+      .select("id, name, color")
+      .eq("user_id", user.id)
+      .order("name");
+
+    return NextResponse.json({ documents: sharedDocs ?? [], folders: folders ?? [] });
+  }
+
   // Filtres selon la section
   if (section === "favorites") {
     query = query.eq("is_favorite", true).eq("is_archived", false);
