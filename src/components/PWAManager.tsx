@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, X, Share } from "lucide-react";
-import Image from "next/image";
+import { Download, X, Share, Sparkles } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -79,8 +78,8 @@ export default function PWAManager() {
             <div className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_-4px_40px_rgba(0,0,0,0.12)]">
               <div className="h-[2px] bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
               <div className="flex items-center gap-4 px-5 py-4">
-                <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-gray-200 bg-gray-50">
-                  <Image src="/icons/icon-192.png" alt="DJAMA" fill className="object-contain p-1.5" sizes="52px" />
+                <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+                  <Sparkles size={22} color="#fff" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-extrabold text-gray-800">Installer l&apos;app DJAMA</p>
