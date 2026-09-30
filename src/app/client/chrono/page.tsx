@@ -1176,7 +1176,7 @@ export default function ChronoPage() {
                                 <span className="text-sm font-extrabold" style={{color:violet}}>{fmtMin(e.duration_minutes)}</span>
                                 {earn!==null&&<p className="text-[0.65rem] font-semibold" style={{color:"rgba(201,165,90,0.8)"}}>{fmtEur(earn)}</p>}
                               </div>
-                              <button onClick={()=>setEditEntry(e)} disabled={e.is_billed} title={e.is_billed?"Entrée facturée — non modifiable":"Modifier"} className={`ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border opacity-0 transition hover:border-[rgba(167,139,250,0.3)] hover:text-violet-400 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-0 ${isDark ? "border-white/8 text-white/20" : "border-gray-200 text-gray-300"}`}>
+                              <button onClick={()=>setEditEntry(e)} disabled={e.is_billed ?? false} title={e.is_billed?"Entrée facturée — non modifiable":"Modifier"} className={`ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border opacity-0 transition hover:border-[rgba(167,139,250,0.3)] hover:text-violet-400 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-0 ${isDark ? "border-white/8 text-white/20" : "border-gray-200 text-gray-300"}`}>
                                 <Pencil size={11}/>
                               </button>
                               <button onClick={()=>setConfirmDel(e.id)} className={`ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border opacity-0 transition hover:border-red-500/30 hover:text-red-400 group-hover:opacity-100 ${isDark ? "border-white/8 text-white/20" : "border-gray-200 text-gray-300"}`}>

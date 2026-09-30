@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       prR.data?.length ? `Projets actifs : ${(prR.data as Record<string,unknown>[]).map(p => p.name).join(", ")}` : "",
     ].filter(Boolean).join("\n\n");
   } catch (err) {
-    log.warn("ERP context fetch failed", err);
+    log.warn("ERP context fetch failed: " + String(err));
   }
 
   const fullContext = [context, erpContext].filter(Boolean).join("\n\n");
