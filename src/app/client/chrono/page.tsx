@@ -7,7 +7,7 @@ import {
   Timer, Play, Pause, Square, Plus, Trash2, X, Clock, Euro,
   CalendarDays, Briefcase, User, BarChart2, Target, Settings,
   Coffee, Loader2, TrendingUp, Brain, Tag, CheckCircle,
-  FileText, Zap, RefreshCw, Flame, Circle,
+  FileText, Zap, RefreshCw, Flame, Circle, Pencil,
   Download, Users, CalendarPlus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -264,6 +264,8 @@ export default function ChronoPage() {
   const [confirmDel,    setConfirmDel]    = useState<string|null>(null);
   const [deleting,      setDeleting]      = useState<string|null>(null);
   const [creatingInv,   setCreatingInv]   = useState<string|null>(null);
+  const [editEntry,     setEditEntry]     = useState<TimeEntry|null>(null);
+  const [editSaving,    setEditSaving]    = useState(false);
 
     const intervalRef    = useRef<ReturnType<typeof setInterval>|null>(null);
   const modeRef        = useRef<TimerMode>("classic");
@@ -290,18 +292,49 @@ export default function ChronoPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
     const uid = user.id;
-    const [eRes, pRes, gRes] = await Promise.all([
+    const [eRes, pRes, gRes, sessionRes] = await Promise.all([
       supabase.from("time_entries").select("*").eq("user_id",uid).order("date",{ascending:false}).order("created_at",{ascending:false}).limit(500),
       supabase.from("chrono_projects").select("*").eq("user_id",uid).eq("is_active",true).order("name").limit(100),
       supabase.from("chrono_goals").select("*").eq("user_id",uid).limit(1),
+      fetch("/api/chrono/session").then(r => r.json()).catch(() => ({ session: null })),
     ]);
     if (eRes.error) showToast("error", "Erreur réseau — impossible de charger les sessions");
     else if (eRes.data) setEntries(eRes.data as TimeEntry[]);
     if (pRes.error) showToast("error", "Erreur réseau — impossible de charger les projets");
     else if (pRes.data) setProjects(pRes.data as ChronoProject[]);
     if (gRes.data?.length) setGoal(gRes.data[0] as ChronoGoal);
+    // Restaurer le timer actif après refresh / navigation
+    const activeSession = sessionRes?.session;
+    if (activeSession && !running) {
+      const startedMs = new Date(activeSession.started_at).getTime();
+      const pausedSec = activeSession.total_paused_seconds ?? 0;
+      const resumeMs  = activeSession.paused_at
+        ? startedMs // paused — elapsed = paused_at - started_at - pausedSec
+        : startedMs + pausedSec * 1000; // running
+      const currentElapsed = activeSession.paused_at
+        ? Math.floor((new Date(activeSession.paused_at).getTime() - startedMs) / 1000 - pausedSec)
+        : Math.floor((Date.now() - startedMs) / 1000 - pausedSec);
+      setSProject(activeSession.project ?? "");
+      setSClient(activeSession.client_name ?? "");
+      setSTitle(activeSession.task_title ?? "");
+      setSCat(activeSession.category ?? "autre");
+      setSRate(activeSession.hourly_rate ? String(activeSession.hourly_rate) : "");
+      setSBillable(activeSession.is_billable ?? true);
+      setSNotes(activeSession.notes ?? "");
+      setMode(activeSession.timer_mode as TimerMode ?? "classic");
+      setElapsed(Math.max(0, currentElapsed));
+      setStartMs(resumeMs);
+      if (activeSession.paused_at) {
+        setRunning(false);
+        setPaused(true);
+      } else {
+        setRunning(true);
+        setPaused(false);
+        startTimerInterval(resumeMs);
+      }
+    }
     setLoading(false);
-  }, []);
+  }, [running]);
 
   useEffect(() => { void fetchAll() }, [fetchAll]);
 
@@ -320,7 +353,28 @@ export default function ChronoPage() {
     }, 1000);
   }
 
-  function handleStart() {
+  async function handleStart() {
+    const body = {
+      project: sProject || "Sans projet",
+      client_name: sClient,
+      task_title: sTitle,
+      hourly_rate: sRate ? parseFloat(sRate) : 0,
+      is_billable: sBillable,
+      timer_mode: mode,
+      category: sCat,
+      notes: sNotes,
+      countdown_target_s: mode === "countdown" ? cdTarget : undefined,
+    };
+    // Appel API serveur (persistance DB)
+    const res = await fetch("/api/chrono/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(() => null);
+    if (!res?.ok) {
+      showToast("error", "Impossible de démarrer le timer");
+      return;
+    }
     const now = Date.now();
     setStartMs(now);
     setElapsed(0);
@@ -333,18 +387,41 @@ export default function ChronoPage() {
     startTimerInterval(now);
   }
 
-  function handlePause() {
+  async function handlePause() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setRunning(false);
     setPaused(true);
+    await fetch("/api/chrono/session", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "pause" }),
+    }).catch(() => null);
   }
 
-  function handleResume() {
-    const resumeMs = Date.now() - elapsed * 1000;
-    setStartMs(resumeMs);
-    setRunning(true);
-    setPaused(false);
-    startTimerInterval(resumeMs);
+  async function handleResume() {
+    const res = await fetch("/api/chrono/session", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "resume" }),
+    }).catch(() => null);
+    if (res?.ok) {
+      // Recalculer startMs depuis la session mise à jour
+      const { session } = await res.json().catch(() => ({}));
+      const resumeMs = session
+        ? new Date(session.started_at).getTime() + (session.total_paused_seconds ?? 0) * 1000
+        : Date.now() - elapsed * 1000;
+      setStartMs(resumeMs);
+      setRunning(true);
+      setPaused(false);
+      startTimerInterval(resumeMs);
+    } else {
+      // Fallback local si l'API échoue
+      const resumeMs = Date.now() - elapsed * 1000;
+      setStartMs(resumeMs);
+      setRunning(true);
+      setPaused(false);
+      startTimerInterval(resumeMs);
+    }
   }
 
   async function handleStop() {
@@ -352,8 +429,8 @@ export default function ChronoPage() {
     setRunning(false);
     setPaused(false);
     setFocusMode(false);
-    const mins = Math.max(1, Math.round(elapsed / 60));
-    await saveSession(mins, modeRef.current);
+    // La durée est calculée côté serveur dans saveSession(stop_timer=true)
+    await saveSession(0, modeRef.current);
     setElapsed(0);
     setStartMs(null);
   }
@@ -364,6 +441,12 @@ export default function ChronoPage() {
     const cycle   = pomCycleRef.current;
     if (phase === "work") {
       void saveSession(Math.round(POM_WORK/60), "pomodoro", cycle+1);
+      // Incrémenter le cycle dans la session DB
+      void fetch("/api/chrono/session", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "increment_cycle" }),
+      }).catch(() => null);
       pomCycleRef.current = cycle+1; setPomCycle(cycle+1);
       pomPhaseRef.current = "break"; setPomPhase("break");
       showToast("success", `Pomodoro #${cycle+1} terminé — Pause 5 min.`);
@@ -387,57 +470,116 @@ export default function ChronoPage() {
 
     async function saveSession(mins: number, timerMode: string, pomodoroNum?: number) {
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setSaving(false); return; }
     const s = sessionRef.current;
-    const title = pomodoroNum ? (s.title ? `${s.title} (Pomodoro #${pomodoroNum})` : `Pomodoro #${pomodoroNum}`) : (s.title || "");
-    const { error } = await supabase.from("time_entries").insert({
-      user_id:          user.id,
-      task_title:       title,
+    const isPomodoro = pomodoroNum !== undefined;
+    // Pour Pomodoro : on fournit la durée fixe (25 min), pour les autres modes : stop_timer=true
+    const payload = {
+      stop_timer:       !isPomodoro,
       project:          s.project || "Sans projet",
       client_name:      s.client || null,
-      description:      s.title || null,
+      task_title:       s.title || "",
       category:         s.cat,
-      date:             todayISO(),
-      duration_minutes: mins,
-      hourly_rate:      s.rate ? parseFloat(s.rate) : null,
+      hourly_rate:      s.rate ? parseFloat(s.rate) : 0,
       is_billable:      s.billable,
-      is_billed:        false,
       timer_mode:       timerMode,
       notes:            s.notes || "",
+      ...(isPomodoro ? { duration_minutes: mins, pomodoro_num: pomodoroNum } : {}),
+    };
+    const res = await fetch("/api/chrono/entry", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
     setSaving(false);
-    if (error) { showToast("error", `Erreur : ${error.message}`); }
-    else       { showToast("success", `Session enregistrée — ${fmtMin(mins)}`); void fetchAll(); }
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({}));
+      showToast("error", error ?? "Erreur sauvegarde");
+    } else {
+      const { entry } = await res.json();
+      showToast("success", `Session enregistrée — ${fmtMin(entry?.duration_minutes ?? mins)}`);
+      void fetchAll();
+    }
   }
 
     async function handleManualSave() {
     if (!manualDraft.project.trim()) { showToast("error","Projet requis."); return; }
     const mins = parseInt(manualDraft.duration_minutes,10);
     if (!mins||mins<=0) { showToast("error","Durée invalide."); return; }
+    if (mins > 1440) { showToast("error","Durée max : 1440 minutes (24h)."); return; }
     setManualSaving(true);
-    const { data:{user} } = await supabase.auth.getUser();
-    if (!user) { setManualSaving(false); return; }
-    const { error } = await supabase.from("time_entries").insert({
-      user_id:user.id, task_title:manualDraft.task_title||"",
-      project:manualDraft.project.trim(), client_name:manualDraft.client_name||null,
-      description:manualDraft.task_title||null, category:manualDraft.category,
-      date:manualDraft.date||todayISO(), duration_minutes:mins,
-      hourly_rate:manualDraft.hourly_rate?parseFloat(manualDraft.hourly_rate):null,
-      is_billable:manualDraft.is_billable, is_billed:false,
-      timer_mode:"manual", notes:manualDraft.notes||"",
+    const res = await fetch("/api/chrono/entry", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stop_timer:       false,
+        task_title:       manualDraft.task_title || "",
+        project:          manualDraft.project.trim(),
+        client_name:      manualDraft.client_name || null,
+        description:      manualDraft.task_title || null,
+        category:         manualDraft.category,
+        date:             manualDraft.date || todayISO(),
+        duration_minutes: mins,
+        hourly_rate:      manualDraft.hourly_rate ? parseFloat(manualDraft.hourly_rate) : 0,
+        is_billable:      manualDraft.is_billable,
+        timer_mode:       "manual",
+        notes:            manualDraft.notes || "",
+      }),
     });
     setManualSaving(false);
-    if (error) showToast("error",error.message);
-    else { showToast("success","Entrée ajoutée."); setManualOpen(false); setManualDraft(emptyManual()); void fetchAll(); }
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({}));
+      showToast("error", error ?? "Erreur ajout");
+    } else {
+      showToast("success","Entrée ajoutée.");
+      setManualOpen(false);
+      setManualDraft(emptyManual());
+      void fetchAll();
+    }
   }
 
     async function handleDelete(id: string) {
     setDeleting(id);
-    const { error } = await supabase.from("time_entries").delete().eq("id",id);
+    const res = await fetch(`/api/chrono/entry/${id}`, { method: "DELETE" });
     setDeleting(null); setConfirmDel(null);
-    if (error) showToast("error",error.message);
-    else { setEntries(p=>p.filter(e=>e.id!==id)); showToast("success","Supprimé."); }
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({}));
+      showToast("error", error ?? "Erreur suppression");
+    } else {
+      setEntries(p=>p.filter(e=>e.id!==id));
+      showToast("success","Supprimé.");
+    }
+  }
+
+  async function handleEditSave() {
+    if (!editEntry) return;
+    const mins = editEntry.duration_minutes;
+    if (!mins || mins <= 0 || mins > 1440) { showToast("error","Durée invalide (1–1440 min)"); return; }
+    setEditSaving(true);
+    const res = await fetch(`/api/chrono/entry/${editEntry.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project:          editEntry.project,
+        client_name:      editEntry.client_name,
+        task_title:       editEntry.task_title,
+        category:         editEntry.category,
+        date:             editEntry.date,
+        duration_minutes: mins,
+        hourly_rate:      editEntry.hourly_rate,
+        is_billable:      editEntry.is_billable,
+        notes:            editEntry.notes,
+      }),
+    });
+    setEditSaving(false);
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({}));
+      showToast("error", error ?? "Erreur modification");
+    } else {
+      const { entry: updated } = await res.json();
+      setEntries(p => p.map(e => e.id === updated.id ? updated : e));
+      setEditEntry(null);
+      showToast("success","Entrée modifiée.");
+    }
   }
 
     async function handleSaveProject() {
@@ -490,59 +632,18 @@ export default function ChronoPage() {
     if (creatingInv) return;
     setCreatingInv(proj);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { showToast("error", "Non connecté."); return; }
-
-      const year = new Date().getFullYear();
-      const clientNom = ents[0]?.client_name ?? "";
-      const totalHt = ents.reduce((a, e) => e.hourly_rate ? a + (e.duration_minutes / 60) * e.hourly_rate : a, 0);
-      const tva20 = Math.round(totalHt * 0.2 * 100) / 100;
-
-      // Numéro unique : timestamp-based pour éviter les conflits
-      const suffix = Date.now().toString().slice(-5);
-      const numero = `FAC-${year}-C${suffix}`;
-
-      const today = new Date().toISOString().slice(0, 10);
-
-      const { data: doc, error: docErr } = await supabase.from("documents").insert({
-        user_id: user.id,
-        type: "facture",
-        numero,
-        statut: "brouillon",
-        sujet: `Prestations ${proj}`,
-        client_nom: clientNom,
-        client_societe: "",
-        date_document: today,
-        devise: "EUR",
-        total_ht: totalHt,
-        total_tva: tva20,
-        total_ttc: Math.round((totalHt + tva20) * 100) / 100,
-        emetteur_nom: "", emetteur_email: "", emetteur_adresse: "", emetteur_ville: "",
-        emetteur_code_postal: "", emetteur_pays: "", emetteur_siret: "", emetteur_tva: "",
-        emetteur_logo: "", rib_titulaire: "", rib_iban: "", rib_bic: "", rib_banque: "",
-        client_email: "", client_telephone: "", client_adresse: "", client_ville: "",
-        client_code_postal: "", client_pays: "", client_tva: "",
-        remise_pct: 0, acompte: 0, notes: "", conditions: "", mentions_legales: "",
-        couleur: "#c9a55a", template: "modern",
-      }).select("id").single();
-
-      if (docErr || !doc) { showToast("error", docErr?.message ?? "Erreur création"); return; }
-
-      const rows = ents.map((e, i) => ({
-        document_id: doc.id,
-        position: i,
-        description: e.task_title || e.description || "Prestation",
-        unit: "h",
-        quantity: Math.round((e.duration_minutes / 60) * 100) / 100,
-        unit_price: e.hourly_rate ?? 0,
-        vat_rate: 20,
-        remise_pct: 0,
-      }));
-
-      await supabase.from("document_items").insert(rows);
-      await supabase.from("time_entries").update({ is_billed: true, invoice_ref: numero }).in("id", ents.map(e => e.id));
+      const res = await fetch("/api/chrono/create-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entry_ids: ents.map(e => e.id) }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast("error", json.error ?? "Erreur création facture");
+        return;
+      }
+      const { numero } = json;
       setEntries(p => p.map(e => ents.find(x => x.id === e.id) ? { ...e, is_billed: true, invoice_ref: numero } : e));
-
       showToast("success", `Facture ${numero} créée — redirection…`);
       setTimeout(() => router.push("/client/factures"), 1200);
     } finally {
@@ -1075,6 +1176,9 @@ export default function ChronoPage() {
                                 <span className="text-sm font-extrabold" style={{color:violet}}>{fmtMin(e.duration_minutes)}</span>
                                 {earn!==null&&<p className="text-[0.65rem] font-semibold" style={{color:"rgba(201,165,90,0.8)"}}>{fmtEur(earn)}</p>}
                               </div>
+                              <button onClick={()=>setEditEntry(e)} disabled={e.is_billed} title={e.is_billed?"Entrée facturée — non modifiable":"Modifier"} className={`ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border opacity-0 transition hover:border-[rgba(167,139,250,0.3)] hover:text-violet-400 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-0 ${isDark ? "border-white/8 text-white/20" : "border-gray-200 text-gray-300"}`}>
+                                <Pencil size={11}/>
+                              </button>
                               <button onClick={()=>setConfirmDel(e.id)} className={`ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border opacity-0 transition hover:border-red-500/30 hover:text-red-400 group-hover:opacity-100 ${isDark ? "border-white/8 text-white/20" : "border-gray-200 text-gray-300"}`}>
                                 <Trash2 size={11}/>
                               </button>
@@ -1678,6 +1782,97 @@ export default function ChronoPage() {
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white"
                     style={{background:`linear-gradient(135deg, ${violet}, #7c3aed)`}}>
                     {goalSaving&&<Loader2 size={13} className="animate-spin"/>}Enregistrer
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+            <AnimatePresence>
+        {editEntry&&(
+          <>
+            <motion.div key="eb" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.2}}
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md" onClick={()=>setEditEntry(null)}/>
+            <motion.div key="es" initial={{y:"100%",opacity:0}} animate={{y:0,opacity:1}} exit={{y:"100%",opacity:0}}
+              transition={{type:"spring",damping:30,stiffness:260}}
+              className={`fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-t border-x shadow-[0_-24px_80px_rgba(0,0,0,0.35)] ${isDark ? "border-white/8 bg-[#0e1420]" : "border-gray-200 bg-white"}`}>
+              <div className="flex justify-center pt-3 pb-1"><div className={`h-1 w-10 rounded-full ${isDark ? "bg-white/15" : "bg-gray-200"}`}/></div>
+              <div className={`flex items-center justify-between border-b px-6 py-4 ${isDark ? "border-white/8" : "border-gray-100"}`}>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.2)] bg-[rgba(139,92,246,0.1)]">
+                    <Pencil size={14} style={{color:violet}}/>
+                  </div>
+                  <h2 className={`text-sm font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>Modifier l&apos;entrée</h2>
+                </div>
+                <button onClick={()=>setEditEntry(null)} className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${isDark ? "text-white/30 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}><X size={15}/></button>
+              </div>
+              <div className="max-h-[72vh] overflow-y-auto px-6 py-5 space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Titre de la tâche</label>
+                    <input value={editEntry.task_title??""} onChange={e=>setEditEntry(d=>d?{...d,task_title:e.target.value}:d)} placeholder="Ex: Revue de code…"
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
+                  </div>
+                  <div>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Projet <span style={{color:violet}}>*</span></label>
+                    <input list="eproj-list" value={editEntry.project??""} onChange={e=>setEditEntry(d=>d?{...d,project:e.target.value}:d)} placeholder="Nom du projet"
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
+                    <datalist id="eproj-list">{projects.map(p=><option key={p.id} value={p.name}/>)}</datalist>
+                  </div>
+                  <div>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Client</label>
+                    <input value={editEntry.client_name??""} onChange={e=>setEditEntry(d=>d?{...d,client_name:e.target.value}:d)} placeholder="Nom du client"
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
+                  </div>
+                  <div>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Catégorie</label>
+                    <select value={editEntry.category??""} onChange={e=>setEditEntry(d=>d?{...d,category:e.target.value}:d)}
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-900"}`}>
+                      {CATEGORIES.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Date</label>
+                    <input type="date" value={editEntry.date??""} onChange={e=>setEditEntry(d=>d?{...d,date:e.target.value}:d)}
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-900"}`}/>
+                  </div>
+                  <div>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Durée (min) <span style={{color:violet}}>*</span></label>
+                    <input type="number" min="1" max="1440" value={editEntry.duration_minutes??""} onChange={e=>setEditEntry(d=>d?{...d,duration_minutes:parseInt(e.target.value,10)||0}:d)}
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900"}`}/>
+                  </div>
+                  <div>
+                    <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Taux horaire (€)</label>
+                    <input type="number" min="0" step="5" value={editEntry.hourly_rate??""} onChange={e=>setEditEntry(d=>d?{...d,hourly_rate:e.target.value===""?null:parseFloat(e.target.value)}:d)}
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.4)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
+                  </div>
+                  <div className="flex items-end">
+                    <button onClick={()=>setEditEntry(d=>d?{...d,is_billable:!d.is_billable}:d)}
+                      className={`flex w-full items-center justify-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition ${(editEntry.is_billable??true) ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : isDark ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
+                      <CheckCircle size={13}/>{(editEntry.is_billable??true)?"Facturable":"Non facturable"}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className={`mb-1 block text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Notes</label>
+                  <textarea value={editEntry.notes??""} onChange={e=>setEditEntry(d=>d?{...d,notes:e.target.value}:d)} placeholder="Notes optionnelles…" rows={2}
+                    className={`w-full resize-none rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-[rgba(167,139,250,0.35)] ${isDark ? "border-white/8 bg-white/6 text-white placeholder:text-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400"}`}/>
+                </div>
+                {editEntry.hourly_rate&&editEntry.duration_minutes&&(editEntry.is_billable??true)&&(
+                  <div className="flex items-center justify-between rounded-xl border border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.06)] px-4 py-3">
+                    <span className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>Revenus estimés</span>
+                    <span className="text-sm font-extrabold" style={{color:"#c9a55a"}}>{fmtEur((editEntry.duration_minutes/60)*editEntry.hourly_rate)}</span>
+                  </div>
+                )}
+                <div className="flex gap-3 pb-2">
+                  <button onClick={()=>setEditEntry(null)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>Annuler</button>
+                  <button onClick={handleEditSave} disabled={editSaving||!editEntry.project?.trim()||!editEntry.duration_minutes}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white transition hover:opacity-90 disabled:opacity-40"
+                    style={{background:`linear-gradient(135deg, ${violet}, #7c3aed)`,boxShadow:`0 4px 16px ${violet}30`}}>
+                    {editSaving&&<Loader2 size={13} className="animate-spin"/>}
+                    {editSaving?"Enregistrement…":"Enregistrer"}
                   </button>
                 </div>
               </div>
