@@ -1300,16 +1300,16 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
           className="absolute left-1/2 top-1/2 h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
           style={{ background: GOLD }}
         />
-        {/* Logo */}
-        <motion.div
+        {/* DJAMA */}
+        <motion.span
           initial={{ opacity: 0, scale: 0.82, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.06 }}
-          className="relative mb-10"
+          className="relative mb-10 text-[3rem] font-black text-white"
+          style={{ letterSpacing: "-0.02em" }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="DJAMA" className="h-16 w-auto object-contain" />
-        </motion.div>
+          DJAMA
+        </motion.span>
         {/* Spinner gold */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -1368,11 +1368,10 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
         >
           <Link href="/client" className="flex items-center gap-2.5 min-w-0">
             <div
-              className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md overflow-hidden"
+              className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md"
               style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="DJAMA" className="h-[20px] w-[20px] object-contain" />
+              <Sparkles size={12} style={{ color: accent }} />
             </div>
             {!sidebarCollapsed && (
               <div className="min-w-0 leading-none">
