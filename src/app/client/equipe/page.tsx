@@ -5,7 +5,6 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Plus, X, Check, Loader2, MessageSquare,
@@ -1484,10 +1483,7 @@ export default function EquipePage() {
 
         {/* Main row */}
         <div className="relative flex items-center gap-3 px-5 pt-4 pb-3 flex-wrap gap-y-2">
-          <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
-            <ModuleHeaderIcon icon={Users} color="#0891b2" />
-          </motion.div>
-          <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }} className="mr-auto">
+          <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4 }} className="mr-auto">
             <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Équipe</h1>
             <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>{members.length} membre{members.length!==1?"s":""} · {stats.active} actif{stats.active!==1?"s":""}</p>
           </motion.div>

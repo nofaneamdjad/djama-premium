@@ -123,13 +123,15 @@ CREATE POLICY "sm_manage" ON space_members
 DROP POLICY IF EXISTS "ps_own" ON private_spaces;
 
 -- Owner : accès complet (INSERT/UPDATE/DELETE)
-CREATE POLICY IF NOT EXISTS "ps_owner_all" ON private_spaces
+DROP POLICY IF EXISTS "ps_owner_all"    ON private_spaces;
+CREATE POLICY "ps_owner_all" ON private_spaces
   FOR ALL
   USING  (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
 -- Membres autorisés : lecture seulement
-CREATE POLICY IF NOT EXISTS "ps_member_select" ON private_spaces
+DROP POLICY IF EXISTS "ps_member_select" ON private_spaces;
+CREATE POLICY "ps_member_select" ON private_spaces
   FOR SELECT
   USING (is_space_member(id));
 
