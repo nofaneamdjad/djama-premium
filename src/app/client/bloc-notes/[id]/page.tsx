@@ -822,8 +822,8 @@ export default function DocumentEditor() {
             <ArrowLeft size={13}/>
           </button>
 
-          {/* Logo DJAMA Notes */}
-          <span className="shrink-0 text-[11px] font-bold tracking-tight" style={{color:GOLD}}>DJAMA Notes</span>
+          {/* Logo DJAMA Doc */}
+          <span className="shrink-0 text-[11px] font-bold tracking-tight" style={{color:GOLD}}>DJAMA Doc</span>
           <span className={`shrink-0 text-[11px] ${isDark?"text-white/15":"text-gray-300"}`}>›</span>
 
           {/* Titre éditable */}
@@ -840,24 +840,32 @@ export default function DocumentEditor() {
 
           {/* Actions rapides */}
           <div className="flex shrink-0 items-center gap-0.5">
-            <TitleBtn onClick={()=>void save({version:true})} title="Enregistrer (Ctrl+S)" isDark={isDark}><Save size={12}/></TitleBtn>
+            {editorMode === "tiptap" && (
+              <TitleBtn onClick={()=>void save({version:true})} title="Enregistrer (Ctrl+S)" isDark={isDark}><Save size={12}/></TitleBtn>
+            )}
             <TitleBtn onClick={()=>void toggleFavorite()} title="Favori" isDark={isDark} active={!!doc?.is_favorite}>
               <Star size={12} fill={doc?.is_favorite?"currentColor":"none"}/>
             </TitleBtn>
-            <TitleBtn onClick={()=>togglePanel("ai")} title="Assistant IA" isDark={isDark} active={activePanel==="ai"}><Sparkles size={12}/></TitleBtn>
+            {editorMode === "tiptap" && (
+              <TitleBtn onClick={()=>togglePanel("ai")} title="Assistant IA" isDark={isDark} active={activePanel==="ai"}><Sparkles size={12}/></TitleBtn>
+            )}
             <TitleBtn onClick={()=>togglePanel("share")} title="Partager" isDark={isDark} active={activePanel==="share"}><Share2 size={12}/></TitleBtn>
-            <TitleBtn onClick={()=>exportDoc("pdf")} title="Exporter PDF" isDark={isDark}><Download size={12}/></TitleBtn>
-            {/* Zoom */}
-            <div className={`flex items-center gap-0.5 rounded border px-1.5 py-0.5 ml-1 ${isDark?"border-white/8":"border-gray-200"}`}>
-              <button onMouseDown={e=>{e.preventDefault();setZoom(z=>Math.max(50,z-25));}} className={isDark?"text-white/30 hover:text-white":"text-gray-400 hover:text-gray-700"}><ZoomOut size={9}/></button>
-              <span className={`w-7 text-center text-[9px] tabular-nums ${isDark?"text-white/40":"text-gray-500"}`}>{zoom}%</span>
-              <button onMouseDown={e=>{e.preventDefault();setZoom(z=>Math.min(200,z+25));}} className={isDark?"text-white/30 hover:text-white":"text-gray-400 hover:text-gray-700"}><ZoomIn size={9}/></button>
-            </div>
+            {editorMode === "tiptap" && (
+              <>
+                <TitleBtn onClick={()=>exportDoc("pdf")} title="Exporter PDF" isDark={isDark}><Download size={12}/></TitleBtn>
+                {/* Zoom */}
+                <div className={`flex items-center gap-0.5 rounded border px-1.5 py-0.5 ml-1 ${isDark?"border-white/8":"border-gray-200"}`}>
+                  <button onMouseDown={e=>{e.preventDefault();setZoom(z=>Math.max(50,z-25));}} className={isDark?"text-white/30 hover:text-white":"text-gray-400 hover:text-gray-700"}><ZoomOut size={9}/></button>
+                  <span className={`w-7 text-center text-[9px] tabular-nums ${isDark?"text-white/40":"text-gray-500"}`}>{zoom}%</span>
+                  <button onMouseDown={e=>{e.preventDefault();setZoom(z=>Math.min(200,z+25));}} className={isDark?"text-white/30 hover:text-white":"text-gray-400 hover:text-gray-700"}><ZoomIn size={9}/></button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* ── BARRE 2 : Menus ─────────────────────────────────────────────── */}
-        <div className={`no-print flex shrink-0 items-center border-b px-1 ${bar2}`} style={{height:26}}>
+        {/* ── BARRE 2 : Menus (Tiptap uniquement) ─────────────────────────── */}
+        {editorMode === "tiptap" && <div className={`no-print flex shrink-0 items-center border-b px-1 ${bar2}`} style={{height:26}}>
           {Object.entries(MENUS).map(([name, items]) => (
             <div key={name} className="relative">
               <button onMouseDown={e=>{e.preventDefault();setOpenMenu(o=>o===name?null:name);}}
@@ -878,7 +886,7 @@ export default function DocumentEditor() {
               )}
             </div>
           ))}
-        </div>
+        </div>}
 
         {/* ── BARRE 3 : Toolbar formatage (Tiptap uniquement) ──────────────── */}
         {editorMode === "tiptap" && (
@@ -1151,21 +1159,36 @@ export default function DocumentEditor() {
 
         {/* ── BARRE INFÉRIEURE : statut ────────────────────────────────────── */}
         <div className={`no-print flex shrink-0 items-center justify-between border-t px-4 py-1 text-[10px] tabular-nums ${statusCls}`}>
-          <div className="flex items-center gap-4">
-            <span>Page {currentPage}/{totalPages}</span>
-            <span>{wordCount} mot{wordCount!==1?"s":""}</span>
-            <span>{charCount} car.</span>
-            <span title="La pagination dans l'éditeur est un aperçu visuel. PDF et DOCX ont une vraie pagination." className={`${isDark?"text-white/20":"text-gray-300"} cursor-default`}>Aperçu</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span>{pageFormat} {pageOrient==="landscape"?"Paysage":"Portrait"}</span>
-            <span>Français</span>
-            <div className="flex items-center gap-1">
-              <button onMouseDown={e=>{e.preventDefault();setZoom(z=>Math.max(50,z-25));}} className="hover:opacity-80"><ZoomOut size={9}/></button>
-              <span className="w-7 text-center">{zoom}%</span>
-              <button onMouseDown={e=>{e.preventDefault();setZoom(z=>Math.min(200,z+25));}} className="hover:opacity-80"><ZoomIn size={9}/></button>
-            </div>
-          </div>
+          {editorMode === "collabora" ? (
+            <>
+              <div className="flex items-center gap-3">
+                <span className="font-semibold" style={{color:GOLD}}>DJAMA Doc</span>
+                <span className={isDark?"text-white/25":"text-gray-400"}>Collabora Online</span>
+                {saveStatus === "saving" && <span className={isDark?"text-white/40":"text-gray-400"}>Sauvegarde…</span>}
+                {saveStatus === "saved"  && <span style={{color:GOLD}}>✓ Sauvegardé</span>}
+                {saveStatus === "error"  && <span className="text-red-400">Erreur de sauvegarde</span>}
+              </div>
+              <span className={isDark?"text-white/20":"text-gray-300"}>Sauvegarde automatique</span>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-4">
+                <span>Page {currentPage}/{totalPages}</span>
+                <span>{wordCount} mot{wordCount!==1?"s":""}</span>
+                <span>{charCount} car.</span>
+                <span title="La pagination dans l'éditeur est un aperçu visuel. PDF et DOCX ont une vraie pagination." className={`${isDark?"text-white/20":"text-gray-300"} cursor-default`}>Aperçu</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span>{pageFormat} {pageOrient==="landscape"?"Paysage":"Portrait"}</span>
+                <span>Français</span>
+                <div className="flex items-center gap-1">
+                  <button onMouseDown={e=>{e.preventDefault();setZoom(z=>Math.max(50,z-25));}} className="hover:opacity-80"><ZoomOut size={9}/></button>
+                  <span className="w-7 text-center">{zoom}%</span>
+                  <button onMouseDown={e=>{e.preventDefault();setZoom(z=>Math.min(200,z+25));}} className="hover:opacity-80"><ZoomIn size={9}/></button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
       </div>

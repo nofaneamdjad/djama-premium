@@ -346,11 +346,11 @@ export const APPS_DATA: AppDetail[] = [
     crossSell: { slug: "factures", label: "Factures & Devis", teaser: "Vous cherchez à facturer vos heures directement ?" },
   },
 
-  /* ─── NOTES ───────────────────────────────────────────── */
+  /* ─── DJAMA DOC ──────────────────────────────────────── */
   {
     slug: "bloc-notes",
-    label: "Notes",
-    category: "Notes",
+    label: "DJAMA Doc",
+    category: "Documents",
     color: "#92400e",
     bg: "#fef9c3",
     icon: StickyNote,

@@ -68,11 +68,11 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     ],
   },
   {
-    label: "Notes",
+    label: "Documents",
     icon:  StickyNote,
     color: "#92400e",
     modules: [
-      { href: "/client/bloc-notes",  label: "Notes",       sub: "Notes, cahiers, IA, vocal & canvas", icon: StickyNote,   color: "#92400e", bg: "#fef9c3" },
+      { href: "/client/bloc-notes",  label: "DJAMA Doc",   sub: "Éditeur bureautique — DOCX, XLSX, PPTX", icon: StickyNote,   color: "#92400e", bg: "#fef9c3" },
       { href: "/client/checklists",  label: "Checklists",  sub: "Listes de vérification rapides",      icon: CheckSquare,  color: "#10b981", bg: "#d1fae5" },
       { href: "/client/scanner",     label: "Scanner",     sub: "Scanner et archiver vos documents",   icon: ScanLine,     color: "#0ea5e9", bg: "#e0f2fe" },
       { href: "/client/mindmap",     label: "Mind Map",    sub: "Cartes mentales et brainstorm",        icon: Network,      color: "#8b5cf6", bg: "#ede9fe" },

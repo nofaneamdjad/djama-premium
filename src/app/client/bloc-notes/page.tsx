@@ -124,11 +124,16 @@ export default function BlocNotesHome() {
   useEffect(() => { void load(); }, [load]);
 
   // ── Créer un document ──────────────────────────────────────────────────────
-  async function createDoc(templateKey?: string) {
+  // engine: 'collabora' = nouveau DOCX bureautique | 'tiptap' = ancien format (templates)
+  async function createDoc(templateKey?: string, engine: "collabora" | "tiptap" = "collabora") {
     setCreating(true);
     const body: Record<string, unknown> = { title: "Document sans titre", doc_type: "document" };
     if (section.startsWith("folder:")) body.folder_id = section.replace("folder:","");
-    if (templateKey && templateKey!=="blank") body.template_id = templateKey;
+    if (engine === "collabora") {
+      body.editor_engine = "collabora";
+    } else if (templateKey && templateKey !== "blank") {
+      body.template_id = templateKey;
+    }
     const res = await fetch("/api/notes/document", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -250,7 +255,7 @@ export default function BlocNotesHome() {
           <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{background:`linear-gradient(135deg,${GOLD},#a8821f)`}}>
             <FileText size={14} className="text-white"/>
           </div>
-          <span className={`text-sm font-bold ${txt}`}>Documents</span>
+          <span className={`text-sm font-bold ${txt}`}>DJAMA Doc</span>
         </div>
 
         {/* Créer */}
@@ -462,17 +467,33 @@ export default function BlocNotesHome() {
                 <h2 className={`text-sm font-bold ${txt}`}>Nouveau document</h2>
                 <button onClick={()=>setShowTemplates(false)} className={isDark?"text-white/30":"text-gray-400"}><X size={14}/></button>
               </div>
-              <div className="p-4">
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {BUILT_IN_TEMPLATES.map(t=>(
-                    <button key={t.id} onClick={()=>void createDoc(t.id)} disabled={creating}
-                      className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition ${isDark?"border-white/8 hover:border-[#c9a55a]/30 hover:bg-[rgba(201,165,90,0.06)]":"border-gray-200 hover:border-[#c9a55a]/40 hover:bg-[rgba(201,165,90,0.04)]"}`}>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{background:`${GOLD}12`}}>
-                        <FileText size={18} style={{color:GOLD}}/>
-                      </div>
-                      <p className={`text-[11px] font-medium leading-tight ${txt}`}>{t.title}</p>
-                    </button>
-                  ))}
+              <div className="p-4 space-y-4">
+                {/* Option principale : nouveau document bureautique Collabora */}
+                <button onClick={()=>void createDoc(undefined, "collabora")} disabled={creating}
+                  className="flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition"
+                  style={{borderColor:`${GOLD}50`,background:`${GOLD}08`}}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white text-lg font-bold"
+                    style={{background:`linear-gradient(135deg,${GOLD},#a8821f)`}}>W</div>
+                  <div>
+                    <p className={`text-sm font-bold ${txt}`}>Document bureautique (DOCX)</p>
+                    <p className={`text-[10px] ${isDark?"text-white/40":"text-gray-400"}`}>Ouvre dans DJAMA Doc — compatible Word, LibreOffice</p>
+                  </div>
+                </button>
+
+                {/* Modèles Tiptap existants */}
+                <div>
+                  <p className={`mb-2 text-[9px] font-bold uppercase tracking-widest ${isDark?"text-white/25":"text-gray-400"}`}>Modèles (éditeur texte)</p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {BUILT_IN_TEMPLATES.map(t=>(
+                      <button key={t.id} onClick={()=>void createDoc(t.id, "tiptap")} disabled={creating}
+                        className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition ${isDark?"border-white/8 hover:border-[#c9a55a]/30 hover:bg-[rgba(201,165,90,0.06)]":"border-gray-200 hover:border-[#c9a55a]/40 hover:bg-[rgba(201,165,90,0.04)]"}`}>
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{background:`${GOLD}12`}}>
+                          <FileText size={18} style={{color:GOLD}}/>
+                        </div>
+                        <p className={`text-[11px] font-medium leading-tight ${txt}`}>{t.title}</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>

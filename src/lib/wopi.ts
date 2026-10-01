@@ -134,8 +134,11 @@ export function buildCollaboraUrl(params: {
   return `${base}/browser/dist/cool.html?${qs.toString()}`;
 }
 
-/** URL de base WOPI pour un note_id donné. */
+/** URL de base WOPI pour un note_id donné.
+ *  NEXT_PUBLIC_APP_URL doit être défini dans .env.local (ex: http://localhost:3000)
+ *  sinon Collabora ne peut pas rappeler le WOPI host DJAMA. */
 export function buildWopiSrc(noteId: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://djama.space";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) throw new Error("[WOPI] NEXT_PUBLIC_APP_URL non défini — ajouter dans .env.local");
   return `${appUrl}/api/wopi/files/${noteId}`;
 }

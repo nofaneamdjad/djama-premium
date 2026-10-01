@@ -63,8 +63,17 @@ export async function POST(req: NextRequest) {
     role:   perms.role,
   });
 
-  const wopiSrc   = buildWopiSrc(noteId);
-  const editorUrl = buildCollaboraUrl({ wopiSrc, accessToken: token });
+  let wopiSrc: string;
+  let editorUrl: string;
+  try {
+    wopiSrc   = buildWopiSrc(noteId);
+    editorUrl = buildCollaboraUrl({ wopiSrc, accessToken: token });
+  } catch (e) {
+    return NextResponse.json(
+      { error: (e as Error).message },
+      { status: 503 },
+    );
+  }
 
   return NextResponse.json({
     editorUrl,

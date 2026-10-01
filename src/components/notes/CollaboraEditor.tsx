@@ -91,14 +91,36 @@ export function CollaboraEditor({
     }
 
     fetchEditorToken();
-    return () => { cancelled = true; };
+
+    // Timeout 45s — Collabora non disponible
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setStatus(s => {
+          if (s === "loading") {
+            const msg = "Collabora Online ne répond pas (timeout 45s). Vérifiez que l'instance est démarrée.";
+            setErrorMsg(msg);
+            onError?.(msg);
+            return "error";
+          }
+          return s;
+        });
+      }
+    }, 45_000);
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, [noteId, onError]);
 
   // ── 2. Écouter les PostMessage Collabora ─────────────────────────────────
   const handleMessage = useCallback(
     (e: MessageEvent) => {
       // Filtrer les messages d'origines inconnues
-      if (collaboraOrigin && !e.origin.startsWith(collaboraOrigin)) return;
+      // En dev (localhost) on accepte les deux origins possibles de Collabora
+      if (collaboraOrigin && e.origin !== collaboraOrigin) {
+        // Accepter aussi les variations http/https en développement local
+        const isLocalhost = e.origin.includes("localhost") || e.origin.includes("127.0.0.1");
+        const isAllowedOrigin = collaboraOrigin.includes("localhost") || collaboraOrigin.includes("127.0.0.1");
+        if (!(isLocalhost && isAllowedOrigin)) return;
+      }
 
       const msg = e.data as CollaboraMessage | null;
       if (!msg?.MessageId) return;
@@ -209,7 +231,7 @@ export function CollaboraEditor({
             <circle cx="12" cy="12" r="10" stroke="var(--border,#ddd)" strokeWidth="3" fill="none" />
             <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent,#2150c2)" strokeWidth="3" fill="none" strokeLinecap="round" />
           </svg>
-          <span>Chargement de l&apos;éditeur…</span>
+          <span>Chargement de DJAMA Doc…</span>
         </div>
       )}
 

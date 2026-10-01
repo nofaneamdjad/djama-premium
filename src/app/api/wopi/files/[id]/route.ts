@@ -77,7 +77,7 @@ export async function GET(
 
     // Branding
     BreadcrumbDocName:   perms.fileName,
-    BreadcrumbBrandName: "DJAMA",
+    BreadcrumbBrandName: "DJAMA Doc",
     BreadcrumbFolderUrl: process.env.NEXT_PUBLIC_APP_URL
       ? `${process.env.NEXT_PUBLIC_APP_URL}/client/bloc-notes`
       : undefined,
