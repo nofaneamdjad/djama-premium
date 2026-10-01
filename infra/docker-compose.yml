@@ -1,0 +1,70 @@
+version: "3.8"
+
+# ── Collabora Online pour DJAMA Documents ─────────────────────────────────────
+# Déploiement sur VPS Ubuntu 22.04 — editor.djama.space
+#
+# Usage :
+#   docker compose up -d
+#
+# Variables d'environnement requises dans /etc/djama/.env ou en CLI :
+#   DJAMA_DOMAIN      ex: djama.space
+#   COLLABORA_ADMIN   ex: admin
+#   COLLABORA_PASS    mot de passe admin Collabora
+#
+# Prérequis :
+#   - Docker 24+ et Docker Compose v2
+#   - Port 80 et 443 ouverts
+#   - Certbot installé (Let's Encrypt)
+#   - DNS editor.djama.space → IP du VPS
+
+services:
+
+  # ── Collabora Online ──────────────────────────────────────────────────────
+  collabora:
+    image: collabora/code:24.04.10.1.1
+    container_name: djama-collabora
+    restart: unless-stopped
+    cap_add:
+      - MKNOD
+    environment:
+      # Domaine autorisé à ouvrir des documents via WOPI
+      # Format regex — échapper les points
+      - aliasgroup1=https://djama\\.space
+      - aliasgroup2=https://www\\.djama\\.space
+      # Admin UI (accessible via /browser/dist/admin/admin.html)
+      - username=${COLLABORA_ADMIN:-admin}
+      - password=${COLLABORA_PASS}
+      # SSL géré par nginx en reverse proxy — Collabora écoute en HTTP
+      - ssl.enable=false
+      - ssl.termination=true
+      # Langue interface
+      - lang=fr_FR
+      # Mémoire et limites
+      - num_prespawn_children=2
+    ports:
+      - "127.0.0.1:9980:9980"   # Exposé uniquement en local → nginx proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # ── Nginx reverse proxy + SSL ─────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: djama-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/editor.conf:/etc/nginx/conf.d/editor.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      - collabora
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
