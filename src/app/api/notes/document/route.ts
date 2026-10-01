@@ -1,11 +1,12 @@
 /**
  * GET  /api/notes/document  — liste des documents de l'utilisateur
- * POST /api/notes/document  — créer un nouveau document
+ * POST /api/notes/document  — créer un nouveau document (Tiptap ou Collabora)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { buildStoragePath, FILE_TYPE_META, type FileType } from "@/lib/wopi";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +25,17 @@ async function getUser() {
 function err(msg: string, status = 400) {
   return NextResponse.json({ error: msg }, { status });
 }
+
+// Génère un DOCX vide mais valide (compatible Collabora/LibreOffice)
+async function buildEmptyDocx(): Promise<Buffer> {
+  const { Document, Packer, Paragraph } = await import("docx");
+  const doc = new Document({
+    sections: [{ children: [new Paragraph("")] }],
+  });
+  return Buffer.from(await Packer.toBuffer(doc));
+}
+
+const OFFICE_BUCKET = "office-files";
 
 // ── GET : liste ───────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -111,7 +123,7 @@ export async function GET(req: NextRequest) {
   query = query.limit(limit);
 
   const { data, error } = await query;
-  if (error) return err(error.message, 500);
+  if (error) { console.error("[notes/document GET]", error); return err(error.message, 500); }
 
   // Dossiers
   const { data: folders } = await admin
@@ -139,6 +151,8 @@ export async function POST(req: NextRequest) {
     template_id?:    string | null;
     page_format?:    string;
     page_orientation?: string;
+    editor_engine?:  "tiptap" | "collabora";
+    file_type?:      "document" | "spreadsheet" | "presentation";
   };
 
   // Valider doc_type
@@ -154,15 +168,6 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createSupabaseAdmin();
-
-  // Récupérer l'organisation
-  const { data: orgMember } = await admin
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
 
   // Si créé depuis un template, copier son contenu
   let templateContent: string | null = null;
@@ -180,15 +185,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const useCollabora = body.editor_engine === "collabora";
+  const fileType     = (body.file_type ?? "document") as FileType;
+
   const content     = body.content      ?? templateContent ?? "";
   const contentJson = body.content_json ?? templateJson    ?? null;
   const thumbnailText = content.slice(0, 300).replace(/[#*`_~>\[\]]/g, "").trim();
+
+  // ── Créer l'enregistrement DB ──────────────────────────────────────────────
+  const fileMeta = useCollabora ? FILE_TYPE_META[fileType] : null;
 
   const { data: doc, error } = await admin
     .from("notes")
     .insert({
       user_id:          user.id,
-      organization_id:  orgMember?.organization_id ?? null,
       title:            (body.title ?? "Document sans titre").slice(0, 255),
       content,
       content_json:     contentJson,
@@ -206,10 +216,48 @@ export async function POST(req: NextRequest) {
       page_margin_bottom: 25,
       page_margin_left:   25,
       page_margin_right:  25,
+      ...(useCollabora && fileMeta ? {
+        editor_mode:  "collabora",
+        file_type:    fileType,
+        mime_type:    fileMeta.mimeType,
+        file_size:    0,
+      } : {}),
     })
     .select()
     .single();
 
   if (error) return err(error.message, 500);
+
+  // ── Si mode Collabora : créer + uploader le DOCX initial ──────────────────
+  if (useCollabora && fileMeta && doc) {
+    try {
+      const docxBuffer  = await buildEmptyDocx();
+      const storagePath = buildStoragePath(user.id, doc.id, fileType);
+
+      const { error: uploadErr } = await admin.storage
+        .from(OFFICE_BUCKET)
+        .upload(storagePath, docxBuffer, {
+          contentType: fileMeta.mimeType,
+          upsert: false,
+        });
+
+      if (uploadErr) {
+        console.error("[document/POST] Storage upload error:", uploadErr.message);
+        // Document DB créé mais fichier absent : on retourne quand même le doc
+        // La route WOPI PutFile créera le fichier au premier enregistrement
+      } else {
+        // Mettre à jour le storage_path maintenant qu'on connaît le doc.id
+        await admin
+          .from("notes")
+          .update({ storage_path: storagePath, file_size: docxBuffer.length })
+          .eq("id", doc.id);
+        doc.storage_path = storagePath;
+        doc.file_size    = docxBuffer.length;
+      }
+    } catch (e) {
+      console.error("[document/POST] DOCX creation error:", (e as Error).message);
+    }
+  }
+
   return NextResponse.json({ document: doc }, { status: 201 });
 }

@@ -6,7 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
+import { Image } from "@tiptap/extension-image";
 import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
@@ -24,6 +24,93 @@ import CharacterCount from "@tiptap/extension-character-count";
 import Typography from "@tiptap/extension-typography";
 import { Extension } from "@tiptap/core";
 import { useEffect, useRef } from "react";
+
+// ── Extension ResizableImage (Image + poignées de resize) ────────────────────
+const ResizableImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        parseHTML: (el: HTMLElement) => el.getAttribute("width") ?? el.style.width?.replace("px","") ?? null,
+        renderHTML: (attrs: Record<string, unknown>) => {
+          if (!attrs.width) return {};
+          return { width: String(attrs.width), style: `width:${attrs.width}px;max-width:100%` };
+        },
+      },
+    };
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  addNodeView(): any {
+    return ({ node, updateAttributes }: {
+      node: { attrs: Record<string, unknown>; type: { name: string } };
+      updateAttributes: (a: Record<string, unknown>) => void;
+    }) => {
+      const dom = document.createElement("span");
+      dom.style.cssText = "display:inline-block;position:relative;max-width:100%;line-height:0;vertical-align:middle";
+
+      const img = document.createElement("img");
+      img.src = node.attrs.src as string;
+      img.alt = (node.attrs.alt as string) ?? "";
+      img.style.cssText = `display:block;max-width:100%;border-radius:4px;cursor:default;${node.attrs.width ? `width:${node.attrs.width}px` : ""}`;
+      dom.appendChild(img);
+
+      // Étiquette de largeur pendant le resize
+      const label = document.createElement("div");
+      label.style.cssText = "position:absolute;bottom:22px;left:4px;font-size:9px;background:rgba(0,0,0,0.6);color:#fff;padding:1px 5px;border-radius:3px;opacity:0;pointer-events:none;white-space:nowrap;font-family:monospace";
+      dom.appendChild(label);
+
+      // Poignée resize (coin bas-droite)
+      const handle = document.createElement("div");
+      handle.title = "Redimensionner";
+      handle.style.cssText = "position:absolute;bottom:3px;right:3px;width:14px;height:14px;background:#c9a55a;cursor:se-resize;border-radius:2px;opacity:0;transition:opacity 0.15s;z-index:10";
+      // Triangle SVG dans la poignée
+      handle.innerHTML = `<svg width="8" height="8" viewBox="0 0 8 8" style="position:absolute;bottom:2px;right:2px;fill:rgba(0,0,0,0.5)"><polygon points="8,0 8,8 0,8"/></svg>`;
+      dom.appendChild(handle);
+
+      dom.addEventListener("mouseenter", () => { handle.style.opacity = "0.9"; });
+      dom.addEventListener("mouseleave", () => { handle.style.opacity = "0"; });
+
+      let startX = 0, startW = 0;
+      handle.addEventListener("mousedown", (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        startX = e.clientX;
+        startW = img.offsetWidth || 300;
+        label.style.opacity = "1";
+
+        const onMove = (ev: MouseEvent) => {
+          const newW = Math.max(50, Math.min(startW + ev.clientX - startX, 790));
+          img.style.width = `${newW}px`;
+          label.textContent = `${newW}px`;
+        };
+        const onUp = (ev: MouseEvent) => {
+          const newW = Math.max(50, Math.min(startW + ev.clientX - startX, 790));
+          updateAttributes({ width: newW });
+          label.style.opacity = "0";
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      });
+
+      return {
+        dom,
+        update(newNode: { type: { name: string }; attrs: Record<string, unknown> }) {
+          if (newNode.type.name !== "image") return false;
+          img.src = newNode.attrs.src as string;
+          if (newNode.attrs.width) img.style.width = `${newNode.attrs.width}px`;
+          else img.style.width = "";
+          return true;
+        },
+        selectNode() { img.style.outline = "2px solid #c9a55a"; img.style.borderRadius = "4px"; },
+        deselectNode() { img.style.outline = ""; },
+        stopEvent(event: Event) { return (event.target as HTMLElement) === handle; },
+      };
+    };
+  },
+});
 
 // ── Extension FontSize (via TextStyle) ────────────────────────────────────────
 const FontSize = Extension.create({
@@ -74,6 +161,8 @@ const LineHeight = Extension.create({
 
 // ── CSS éditeur ───────────────────────────────────────────────────────────────
 const EDITOR_CSS = `
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 .ProseMirror { outline: none; min-height: 100%; caret-color: #c9a55a; }
 .ProseMirror p  { margin: 0 0 0.35em; line-height: 1.6; }
 .ProseMirror h1 { font-size: 2rem;   font-weight: 700; margin: 1.2em 0 0.5em; line-height: 1.2; }
@@ -171,7 +260,7 @@ export function TiptapEditor({
       Underline,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Link.configure({ openOnClick: false, autolink: true, defaultProtocol: "https" }),
-      Image.configure({ allowBase64: true }),
+      ResizableImage.configure({ allowBase64: true, inline: true }),
       Table.configure({ resizable: true }),
       TableRow, TableCell, TableHeader,
       TaskList,

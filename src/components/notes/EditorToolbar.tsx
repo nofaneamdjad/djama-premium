@@ -10,7 +10,7 @@ import {
   IndentDecrease, IndentIncrease, RotateCcw,
   Subscript, Superscript,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState } from "react";
 
 const GOLD = "#c9a55a";
 
@@ -68,7 +68,7 @@ function FontSelect({ editor, isDark }: { editor: Editor; isDark?: boolean }) {
       </button>
       {open && <>
         <div className="fixed inset-0 z-40" onClick={()=>setOpen(false)}/>
-        <div className={`absolute left-0 top-8 z-50 w-44 rounded-xl border py-1 shadow-xl max-h-60 overflow-y-auto ${isDark?"border-white/10 bg-[#16213e]":"border-gray-200 bg-white"}`}>
+        <div className={`absolute left-0 top-8 z-50 w-44 rounded-xl border py-1 shadow-xl max-h-60 overflow-y-auto ${isDark?"border-white/10 bg-[#1a1a1a]":"border-gray-200 bg-white"}`}>
           {FONTS.map(f=>(
             <button key={f.value} onMouseDown={e=>{e.preventDefault();
               f.value ? editor.chain().focus().setFontFamily(f.value).run()
@@ -105,7 +105,7 @@ function SizeSelect({ editor, isDark }: { editor: Editor; isDark?: boolean }) {
       </button>
       {open && <>
         <div className="fixed inset-0 z-40" onClick={()=>setOpen(false)}/>
-        <div className={`absolute left-0 top-8 z-50 w-20 rounded-xl border py-1 shadow-xl max-h-60 overflow-y-auto ${isDark?"border-white/10 bg-[#16213e]":"border-gray-200 bg-white"}`}>
+        <div className={`absolute left-0 top-8 z-50 w-20 rounded-xl border py-1 shadow-xl max-h-60 overflow-y-auto ${isDark?"border-white/10 bg-[#1a1a1a]":"border-gray-200 bg-white"}`}>
           <div className="px-2 pb-1">
             <input value={custom} onChange={e=>setCustom(e.target.value)}
               onKeyDown={e=>{if(e.key==="Enter"){setSize(custom);setCustom("");}}}
@@ -143,7 +143,7 @@ function HeadingMenu({ editor, isDark }: { editor: Editor; isDark?: boolean }) {
       </button>
       {open && <>
         <div className="fixed inset-0 z-40" onClick={()=>setOpen(false)}/>
-        <div className={`absolute left-0 top-8 z-50 w-36 rounded-xl border py-1 shadow-xl ${isDark?"border-white/10 bg-[#16213e]":"border-gray-200 bg-white"}`}>
+        <div className={`absolute left-0 top-8 z-50 w-36 rounded-xl border py-1 shadow-xl ${isDark?"border-white/10 bg-[#1a1a1a]":"border-gray-200 bg-white"}`}>
           {styles.map(s=>(
             <button key={s.label} onMouseDown={e=>{e.preventDefault();s.fn();setOpen(false);}}
               className={`w-full px-3 py-1.5 text-left text-[11px] transition ${s.active?`text-[${GOLD}] font-semibold`:isDark?"text-white/70 hover:bg-white/6":"text-gray-700 hover:bg-gray-50"}`}>
@@ -167,7 +167,7 @@ function ColorPicker({ editor, isDark, type }: { editor: Editor; isDark?: boolea
       </button>
       {open && <>
         <div className="fixed inset-0 z-40" onClick={()=>setOpen(false)}/>
-        <div className={`absolute left-0 top-8 z-50 rounded-xl border p-2 shadow-xl ${isDark?"border-white/10 bg-[#16213e]":"border-gray-200 bg-white"}`}>
+        <div className={`absolute left-0 top-8 z-50 rounded-xl border p-2 shadow-xl ${isDark?"border-white/10 bg-[#1a1a1a]":"border-gray-200 bg-white"}`}>
           <div className="grid grid-cols-7 gap-1">
             {COLORS.map(c=>(
               <button key={c} onMouseDown={e=>{e.preventDefault();
@@ -202,7 +202,7 @@ function LineHeightMenu({ editor, isDark }: { editor: Editor; isDark?: boolean }
       </button>
       {open && <>
         <div className="fixed inset-0 z-40" onClick={()=>setOpen(false)}/>
-        <div className={`absolute left-0 top-8 z-50 w-28 rounded-xl border py-1 shadow-xl ${isDark?"border-white/10 bg-[#16213e]":"border-gray-200 bg-white"}`}>
+        <div className={`absolute left-0 top-8 z-50 w-28 rounded-xl border py-1 shadow-xl ${isDark?"border-white/10 bg-[#1a1a1a]":"border-gray-200 bg-white"}`}>
           {opts.map(([v,l])=>(
             <button key={v} onMouseDown={e=>{e.preventDefault();
               editor.chain().focus().updateAttributes("paragraph",{lineHeight:v}).run();
@@ -219,7 +219,7 @@ function LineHeightMenu({ editor, isDark }: { editor: Editor; isDark?: boolean }
 
 export function EditorToolbar({ editor, isDark = false, onInsertImage, onInsertLink }: Props) {
   if (!editor) return (
-    <div className={`flex h-9 shrink-0 items-center px-3 border-b ${isDark?"border-white/8 bg-[#0c1525]":"border-gray-200 bg-white"}`}/>
+    <div className={`flex h-9 shrink-0 items-center px-3 border-b ${isDark?"border-white/8 bg-[#141414]":"border-gray-200 bg-white"}`}/>
   );
 
   const insertTable = () => editor.chain().focus().insertTable({rows:3,cols:3,withHeaderRow:true}).run();
@@ -235,7 +235,7 @@ export function EditorToolbar({ editor, isDark = false, onInsertImage, onInsertL
   };
 
   return (
-    <div className={`flex shrink-0 flex-wrap items-center gap-0.5 px-2 py-1 ${isDark?"border-b border-white/8 bg-[#0c1525]":"border-b border-gray-200 bg-white"}`}>
+    <div className={`flex shrink-0 items-center gap-0.5 px-2 py-1 overflow-x-auto scrollbar-none ${isDark?"border-b border-white/8 bg-[#141414]":"border-b border-gray-200 bg-white"}`} style={{minHeight:36}}>
       {/* Undo/Redo */}
       <Btn onClick={()=>editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Annuler Ctrl+Z" isDark={isDark}><Undo2 size={12}/></Btn>
       <Btn onClick={()=>editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Rétablir Ctrl+Y" isDark={isDark}><Redo2 size={12}/></Btn>
