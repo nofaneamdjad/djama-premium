@@ -17,11 +17,11 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { allowed } = await checkRateLimit(`checklists:${user.id}`, 15, 60 * 60 * 1000);
-  if (!allowed) return NextResponse.json({ error: "Trop de requêtes." }, { status: 429 });
+  const { allowed } = await checkRateLimit(`checklists:generate:${user.id}`, 15, 60 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une heure." }, { status: 429 });
 
-  const { topic } = await req.json() as { topic: string };
-  if (!topic?.trim()) return NextResponse.json({ error: "Sujet requis." }, { status: 400 });
+  const body = await req.json() as { topic: string; context?: string };
+  if (!body.topic?.trim()) return NextResponse.json({ error: "Sujet requis." }, { status: 400 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "IA non configurée." }, { status: 503 });
@@ -29,25 +29,46 @@ export async function POST(req: NextRequest) {
   const client = new Anthropic({ apiKey });
   const msg = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 300,
+    max_tokens: 800,
     messages: [{
       role: "user",
-      content: `Génère une checklist de 6 à 8 points pratiques pour : "${topic}"
+      content: `Génère une checklist professionnelle et détaillée pour : "${body.topic}"${body.context ? `\nContexte : ${body.context}` : ""}
 
-Réponds UNIQUEMENT avec un tableau JSON valide, sans markdown, sans explication.
-Format exact : ["Point 1", "Point 2", "Point 3"]
-Chaque point : max 40 caractères, actionnable, en français.`,
+Réponds UNIQUEMENT avec un objet JSON valide sans markdown, format exact :
+{
+  "title": "Titre court et percutant (max 50 chars)",
+  "color": "#hexcode (une couleur adaptée au thème)",
+  "items": [
+    { "text": "Tâche actionnable (max 60 chars)", "priority": "normal|high|urgent" }
+  ]
+}
+
+Règles :
+- 6 à 10 items pratiques et actionnables
+- Chaque item commence par un verbe à l'infinitif
+- Priorités variées selon l'importance
+- Couleur cohérente avec le thème (ex: #ef4444 pour urgence, #10b981 pour santé, #6366f1 pour tech)`,
     }],
   });
 
   const raw = (msg.content[0] as { text: string }).text.trim();
-  let items: string[];
   try {
-    const match = raw.match(/\[[\s\S]*\]/);
-    items = JSON.parse(match ? match[0] : raw) as string[];
-    if (!Array.isArray(items)) throw new Error("not array");
+    const match = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : raw) as {
+      title: string;
+      color: string;
+      items: { text: string; priority: string }[];
+    };
+    if (!parsed.title || !Array.isArray(parsed.items)) throw new Error("format invalide");
+    return NextResponse.json({
+      title: parsed.title,
+      color: parsed.color ?? "#6366f1",
+      items: parsed.items.slice(0, 10).map(it => ({
+        text: String(it.text ?? "").trim(),
+        priority: ["low","normal","high","urgent"].includes(it.priority) ? it.priority : "normal",
+      })),
+    });
   } catch {
-    return NextResponse.json({ error: "Erreur de génération." }, { status: 500 });
+    return NextResponse.json({ error: "Erreur de génération IA." }, { status: 500 });
   }
-  return NextResponse.json({ items: items.slice(0, 8) });
 }
