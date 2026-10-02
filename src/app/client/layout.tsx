@@ -165,7 +165,8 @@ function DarkNavItem({
           : active ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
       }`}
       style={active ? {
-        background: dark ? `${accent}18` : `${accent}12`,
+        background: dark ? `${accent}1c` : `${accent}13`,
+        boxShadow: dark ? `inset 0 0 0 1px ${accent}22` : `inset 0 0 0 1px ${accent}1c`,
       } : {}}
     >
       <div
@@ -1144,10 +1145,12 @@ function BottomNav({ pathname, dark = false, accent = GOLD }: { pathname: string
     <nav
       className="fixed bottom-0 inset-x-0 z-30 lg:hidden"
       style={{
-        background: dark ? "#111318" : "#ffffff",
-        borderTop: dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.07)",
+        background: dark ? "rgba(9,9,14,0.97)" : "rgba(252,253,255,0.97)",
+        borderTop: dark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        boxShadow: dark ? "0 -4px 20px rgba(0,0,0,0.24)" : "0 -4px 20px rgba(0,0,0,0.06)",
+        boxShadow: dark ? "0 -4px 24px rgba(0,0,0,0.28)" : "0 -4px 16px rgba(0,0,0,0.05)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
       }}
     >
       <div className="flex">
@@ -1334,10 +1337,9 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="client-app flex h-screen overflow-hidden"
+      className="client-app djama-app-shell flex h-screen overflow-hidden"
       data-theme={mode}
       style={{
-        background: isDark ? (isDarkPage ? "#07090e" : "#f6f7f9") : "#f4f5f9",
         transition: "background 0.3s ease",
         colorScheme: mode,
       }}
@@ -1354,8 +1356,8 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
         transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
         className="hidden lg:flex flex-shrink-0 flex-col overflow-hidden"
         style={{
-          background: isDark ? "#111111" : "#ffffff",
-          borderRight: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #e5e5e5",
+          background: isDark ? "rgba(11,12,18,0.99)" : "rgba(255,255,255,0.98)",
+          borderRight: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)",
         }}
       >
         {/* Logo */}
@@ -1363,7 +1365,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
           className="flex h-[48px] shrink-0 items-center"
           style={{
             padding: sidebarCollapsed ? "0 11px" : "0 14px",
-            borderBottom: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #eaeaef",
+            borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)",
           }}
         >
           <Link href="/client" className="flex items-center gap-2.5 min-w-0">
@@ -1402,7 +1404,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
               </div>
               {!sidebarCollapsed && (
                 <>
-                  <div className="mx-2 my-3" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #eaeaef" }} />
+                  <div className="mx-2 my-3" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
                   <button
                     onClick={() => setProModalOpen(true)}
                     className="group w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-[0.75rem] font-semibold transition-all"
@@ -1425,7 +1427,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
                   </p>
                 )}
                 {group.label && sidebarCollapsed && gi > 0 && (
-                  <div className="mx-2 my-1" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #eaeaef" }} />
+                  <div className="mx-2 my-1" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
                 )}
                 <div className="space-y-px">
                   {group.items.map(item => (
@@ -1438,7 +1440,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Footer */}
-        <div className="shrink-0" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #eaeaef" }}>
+        <div className="shrink-0" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
           {!sidebarCollapsed ? (
             <div className="flex items-center gap-2 p-2.5">
               <Link href="/client/profil"
@@ -1495,13 +1497,13 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
               transition={{ duration: 0.25, ease: "easeOut" }}
               className="fixed inset-y-0 left-0 z-40 flex w-[13.625rem] flex-col"
               style={{
-                background: isDark ? "#111318" : "#ffffff",
-                borderRight: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)",
+                background: isDark ? "rgba(11,12,18,0.99)" : "rgba(255,255,255,0.99)",
+                borderRight: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)",
               }}
             >
               {/* Logo + bouton fermer */}
               <div className="flex h-[52px] shrink-0 items-center justify-between px-4"
-                style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }}>
+                style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
                 <Link href="/client" className="flex items-center gap-2.5">
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
                     style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}>
@@ -1535,7 +1537,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
                           onClick={() => setSidebarOpen(false)} dark={isDark} accent={accent} />
                       ))}
                     </div>
-                    <div className="mx-2 my-4" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }} />
+                    <div className="mx-2 my-4" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
                     <button
                       onClick={() => { setProModalOpen(true); setSidebarOpen(false); }}
                       className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-medium transition-all"
@@ -1615,8 +1617,8 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
           className="flex h-[48px] shrink-0 items-center gap-2 px-3"
           style={
             isDark
-              ? { background: "#111111", borderBottom: "1px solid rgba(255,255,255,0.07)" }
-              : { background: "#ffffff", borderBottom: "1px solid #e5e5e5" }
+              ? { background: "rgba(9,9,14,0.97)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }
+              : { background: "rgba(252,253,255,0.96)", borderBottom: "1px solid rgba(0,0,0,0.07)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }
           }
         >
           {/* Mobile hamburger */}
