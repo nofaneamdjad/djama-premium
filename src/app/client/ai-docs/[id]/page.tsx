@@ -66,7 +66,10 @@ export default function ArtifactWorkspace() {
   // ── Charger l'artifact ──────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
-      const res = await fetch(`/api/ai-docs/artifact/${params.id}`);
+      const url = params.id === "demo"
+        ? "/api/ai-docs/mock-artifact"
+        : `/api/ai-docs/artifact/${params.id}`;
+      const res = await fetch(url);
       if (!res.ok) { setLoadErr("Document introuvable"); return; }
       const data = await res.json() as { artifact: Artifact; threadId: string | null };
       setArtifact(data.artifact);
