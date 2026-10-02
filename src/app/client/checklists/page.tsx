@@ -581,7 +581,7 @@ export default function ChecklistsPage() {
                     style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.18)" }}
                   >
                     <CheckCircle2 size={28} className="text-emerald-400" />
-                    <p className="text-[12.5px] font-bold text-emerald-400">Tout est terminé ! 🎉</p>
+                    <p className="text-[12.5px] font-bold text-emerald-400">Tout est terminé !</p>
                   </motion.div>
                 )}
               </AnimatePresence>

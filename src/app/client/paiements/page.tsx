@@ -180,7 +180,7 @@ export default function PaiementsPage() {
                 </div>
                 <div className={`rounded-xl p-3 text-[11px] ${isDark ? "bg-violet-500/08 text-violet-300/70" : "bg-violet-50 text-violet-600"}`}
                   style={{ border: "1px solid rgba(124,58,237,0.18)" }}>
-                  🔗 Le lien sera accessible sur djama.pro/pay/…
+                  <span className="flex items-center gap-1"><Link2 size={11} className="shrink-0" />Le lien sera accessible sur djama.pro/pay/…</span>
                 </div>
               </div>
               <button onClick={createLink} disabled={!label.trim() || !amount}

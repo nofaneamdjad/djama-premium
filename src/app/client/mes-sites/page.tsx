@@ -246,8 +246,8 @@ function EmptyState({ onNew }: { onNew: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
       <div className="w-20 h-20 rounded-2xl bg-violet-500/10 border border-violet-500/20
-        flex items-center justify-center text-4xl mb-5">
-        🌐
+        flex items-center justify-center mb-5">
+        <Globe size={36} className="text-violet-400/60" />
       </div>
       <h2 className="text-xl font-bold mb-2">Aucun site créé</h2>
       <p className="text-sm text-white/40 mb-6 max-w-xs leading-relaxed">

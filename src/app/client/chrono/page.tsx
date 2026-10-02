@@ -752,11 +752,11 @@ export default function ChronoPage() {
     if (ratio<60)    insights.push(`${ratio}% d'heures facturables — objectif : dépasser 70%.`);
     else if (ratio>=80) insights.push(`Excellent ratio facturable : ${ratio}% — continuez ainsi !`);
     const avg7 = dailyData.reduce((a,d)=>a+d.minutes,0)/7;
-    if (todayStats.minutes>avg7*1.2&&avg7>30) insights.push(`🔥 +${Math.round(((todayStats.minutes/avg7)-1)*100)}% au-dessus de votre moyenne quotidienne.`);
-    else if (todayStats.minutes<avg7*0.5&&avg7>60) insights.push(`💤 Journée en dessous de votre moyenne (${fmtMin(Math.round(avg7))}/j).`);
+    if (todayStats.minutes>avg7*1.2&&avg7>30) insights.push(`+${Math.round(((todayStats.minutes/avg7)-1)*100)}% au-dessus de votre moyenne quotidienne.`);
+    else if (todayStats.minutes<avg7*0.5&&avg7>60) insights.push(`Journée en dessous de votre moyenne (${fmtMin(Math.round(avg7))}/j).`);
     if (catBreakdown.length>0) insights.push(`Cette semaine : ${getCategoryLabel(catBreakdown[0].cat)} = ${catBreakdown[0].pct}% de votre temps.`);
     if (unbilledAmt>0) insights.push(`${fmtEur(unbilledAmt)} d'heures non facturées — à facturer dans l'onglet Facturable.`);
-    if (pomCycle>0) insights.push(`🍅 ${pomCycle} Pomodoro${pomCycle>1?"s":""} terminé${pomCycle>1?"s":""} aujourd'hui !`);
+    if (pomCycle>0) insights.push(`${pomCycle} Pomodoro${pomCycle>1?"s":""} terminé${pomCycle>1?"s":""} aujourd'hui.`);
     return insights.slice(0,4);
   },[entries,todayStats,dailyData,catBreakdown,unbilledAmt,pomCycle]);
 
@@ -976,7 +976,7 @@ export default function ChronoPage() {
                       className="flex items-center justify-center gap-2 border-b border-emerald-500/20 bg-emerald-500/[0.07] px-6 py-2">
                       <Coffee size={14} style={{color:"#34d399"}} className="animate-pulse"/>
                       <span className="text-[11px] font-black tracking-widest uppercase" style={{color:"#34d399"}}>
-                        ☕ Pause Pomodoro — Repose-toi !
+                        Pause Pomodoro — Repose-toi !
                       </span>
                     </motion.div>
                   )}
@@ -1533,7 +1533,7 @@ export default function ChronoPage() {
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/8">
                   <CheckCircle size={24} className="text-emerald-400"/>
                 </div>
-                <p className={`text-sm font-bold ${isDark ? "text-white/60" : "text-gray-500"}`}>Aucune heure non facturée 🎉</p>
+                <p className={`text-sm font-bold ${isDark ? "text-white/60" : "text-gray-500"}`}>Aucune heure non facturée</p>
                 <p className={`text-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>Tout est à jour !</p>
               </div>
             ):(

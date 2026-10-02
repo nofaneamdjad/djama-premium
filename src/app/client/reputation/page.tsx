@@ -6,8 +6,9 @@ import {
   Star, Plus, X, Check, Trash2, MessageCircle,
   ChevronDown, ChevronUp, TrendingUp, Award, Download,
   Link2, Copy, AlertTriangle, MessageSquare, Eye, EyeOff, Bookmark,
-  Sparkles, Loader2,
+  Sparkles, Loader2, Smile, Meh, Frown,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
@@ -439,11 +440,11 @@ export default function ReputationPage() {
                     const cls = tab === "positif" ? "border-emerald-500/30 bg-emerald-500/12 text-emerald-400"
                       : tab === "negatif" ? "border-red-500/30 bg-red-500/12 text-red-400"
                       : "border-amber-500/30 bg-amber-500/12 text-amber-400";
-                    const icon = tab === "positif" ? "😊" : tab === "negatif" ? "😞" : "😐";
+                    const SentIcon: LucideIcon = tab === "positif" ? Smile : tab === "negatif" ? Frown : Meh;
                     return (
                       <button key={tab} onClick={() => setTemplateTab(tab)}
-                        className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition-all ${active ? cls : isDark ? "border-white/10 text-white/35 hover:border-white/20 hover:text-white/55" : "border-black/[0.08] text-[#0e1420]/35 hover:text-[#0e1420]/60"}`}>
-                        {icon} {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        className={`flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold transition-all ${active ? cls : isDark ? "border-white/10 text-white/35 hover:border-white/20 hover:text-white/55" : "border-black/[0.08] text-[#0e1420]/35 hover:text-[#0e1420]/60"}`}>
+                        <SentIcon size={12} />{tab.charAt(0).toUpperCase() + tab.slice(1)}
                       </button>
                     );
                   })}

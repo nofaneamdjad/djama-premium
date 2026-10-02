@@ -162,15 +162,22 @@ function PostPreview({platform,content,hashtags,mediaUrls}:{platform:Platform;co
         </div>
         <div>
           <p className="text-[12px] font-bold text-gray-900">Votre Nom</p>
-          <p className="text-[10px] text-gray-500">Entrepreneur · 1er · Maintenant · 🌐</p>
+          <p className="text-[10px] text-gray-500 flex items-center gap-1">Entrepreneur · 1er · Maintenant · <Globe size={10} /></p>
         </div>
       </div>
       <p className="px-3 pb-3 text-[12px] text-gray-800 whitespace-pre-wrap leading-relaxed">{cap}</p>
       {tags && <p className="px-3 pb-3 text-[11px]" style={{color:"#0a66c2"}}>{tags}</p>}
       {mediaUrls[0] && <img src={mediaUrls[0]} alt="" className="w-full object-cover"/>}
       <div className="flex border-t border-gray-100">
-        {["👍 J'aime","💬 Commenter","🔁 Partager","📤 Envoyer"].map(a=>(
-          <div key={a} className="flex-1 text-center py-2 text-[10px] text-gray-500">{a}</div>
+        {[
+          { icon: ThumbsUp,      label: "J'aime" },
+          { icon: MessageCircle, label: "Commenter" },
+          { icon: Repeat2,       label: "Partager" },
+          { icon: Send,          label: "Envoyer" },
+        ].map(a=>(
+          <div key={a.label} className="flex flex-1 items-center justify-center gap-1 py-2 text-[10px] text-gray-500">
+            <a.icon size={10} />{a.label}
+          </div>
         ))}
       </div>
     </div>
@@ -207,15 +214,21 @@ function PostPreview({platform,content,hashtags,mediaUrls}:{platform:Platform;co
         <div className="w-9 h-9 rounded-full shrink-0" style={{background:"#1877f2"}}/>
         <div>
           <p className="text-[12px] font-bold text-gray-900">Votre Page</p>
-          <p className="text-[10px] text-gray-400">Maintenant · 🌐</p>
+          <p className="text-[10px] text-gray-400 flex items-center gap-1">Maintenant · <Globe size={9} /></p>
         </div>
       </div>
       <p className="px-3 pb-3 text-[13px] text-gray-900 whitespace-pre-wrap leading-relaxed">{cap}</p>
       {tags && <p className="px-3 pb-2 text-[11px]" style={{color:"#1877f2"}}>{tags}</p>}
       {mediaUrls[0] && <img src={mediaUrls[0]} alt="" className="w-full object-cover"/>}
       <div className="flex border-t border-gray-100">
-        {["👍 J'aime","💬 Commenter","↗ Partager"].map(a=>(
-          <div key={a} className="flex-1 text-center py-2 text-[11px] text-gray-500">{a}</div>
+        {[
+          { icon: ThumbsUp,      label: "J'aime" },
+          { icon: MessageCircle, label: "Commenter" },
+          { icon: Share2,        label: "Partager" },
+        ].map(a=>(
+          <div key={a.label} className="flex flex-1 items-center justify-center gap-1 py-2 text-[11px] text-gray-500">
+            <a.icon size={11} />{a.label}
+          </div>
         ))}
       </div>
     </div>
@@ -358,7 +371,7 @@ export default function ReseauxSociauxPage() {
         Object.entries(statsUp).forEach(([pid, s]) => { if (s) void saveStatDB(uid, pid, s); });
       }
       setPosts(prev=>prev.map(p=>toPublish.some(x=>x.id===p.id)?{...p,status:"publié" as PostStatus,published_at:now}:p));
-      toast(`${toPublish.length} post${toPublish.length>1?"s":""} auto-publié${toPublish.length>1?"s":""}  🚀`,"success");
+      toast(`${toPublish.length} post${toPublish.length>1?"s":""} auto-publié${toPublish.length>1?"s":""}`, "success");
     };
     void check();
     const id = setInterval(check, 60000);

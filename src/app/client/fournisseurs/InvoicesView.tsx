@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { FileText, Plus, Edit2, Trash2, AlertTriangle, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { FileText, Plus, Edit2, Trash2, AlertTriangle, ChevronUp, ChevronDown, ChevronsUpDown, Check } from "lucide-react";
 import type { FInvoice, Fournisseur, InvoiceStatus } from "./types";
 import { INV_STATUS } from "./constants";
 import { useDark, selStyle } from "./ui";
@@ -128,7 +128,7 @@ export function InvoicesView({ invoices, fournisseurs, onNew, onEdit, onDelete }
                         ? <span className="font-semibold tabular-nums text-orange-400">{fmtEur(remaining)}</span>
                         : remaining > 0
                           ? <span className={`tabular-nums ${isDark ? "text-white/40" : "text-gray-400"}`}>{fmtEur(remaining)}</span>
-                          : <span className="text-emerald-400">✓ Soldé</span>}
+                          : <span className="flex items-center gap-0.5 text-emerald-400"><Check size={11} />Soldé</span>}
                     </td>
                     <td className={td}>
                       <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all justify-end">

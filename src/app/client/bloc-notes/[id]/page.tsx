@@ -6,7 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Loader2, Check, AlertCircle, Sparkles, RefreshCw,
   Star, Download, Share2, Link2, ZoomIn, ZoomOut, Save, X,
+  FileText, ArrowLeftRight, Languages, Scissors, MessageSquare,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import Toast, { type ToastData, type ToastType } from "@/components/ui/Toast";
 import { TiptapEditor, type TiptapEditorRef, type Editor } from "@/components/notes/TiptapEditor";
@@ -209,15 +211,15 @@ interface NoteDoc {
 }
 interface Version { id: string; title: string; saved_at: string; }
 
-const AI_ACTIONS = [
-  { id: "correct",   label: "Corriger",         icon: "✓" },
-  { id: "rephrase",  label: "Reformuler",        icon: "↺" },
-  { id: "improve",   label: "Améliorer",         icon: "✦" },
-  { id: "summarize", label: "Résumer",           icon: "∑" },
-  { id: "expand",    label: "Développer",        icon: "↔" },
-  { id: "translate", label: "Traduire (EN→FR)",  icon: "⇄" },
-  { id: "simplify",  label: "Simplifier",        icon: "✂" },
-  { id: "chat",      label: "Instruction libre", icon: "✎" },
+const AI_ACTIONS: { id: string; label: string; icon: LucideIcon }[] = [
+  { id: "correct",   label: "Corriger",         icon: Check },
+  { id: "rephrase",  label: "Reformuler",        icon: RefreshCw },
+  { id: "improve",   label: "Améliorer",         icon: Sparkles },
+  { id: "summarize", label: "Résumer",           icon: FileText },
+  { id: "expand",    label: "Développer",        icon: ArrowLeftRight },
+  { id: "translate", label: "Traduire (EN→FR)",  icon: Languages },
+  { id: "simplify",  label: "Simplifier",        icon: Scissors },
+  { id: "chat",      label: "Instruction libre", icon: MessageSquare },
 ];
 
 // ── Composant Règle ───────────────────────────────────────────────────────────
@@ -1008,7 +1010,7 @@ export default function DocumentEditor() {
                   {AI_ACTIONS.map(a=>(
                     <button key={a.id} onClick={()=>setAiAction(a.id)}
                       className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition ${aiAction===a.id?`bg-[rgba(201,165,90,0.1)] text-[${GOLD}] font-medium`:isDark?"text-white/55 hover:bg-white/5":"text-gray-600 hover:bg-gray-50"}`}>
-                      <span className="text-base">{a.icon}</span>{a.label}
+                      <a.icon size={14} className="shrink-0" />{a.label}
                     </button>
                   ))}
                   {aiAction==="chat" && (
@@ -1165,7 +1167,7 @@ export default function DocumentEditor() {
                 <span className="font-semibold" style={{color:GOLD}}>DJAMA Doc</span>
                 <span className={isDark?"text-white/25":"text-gray-400"}>Collabora Online</span>
                 {saveStatus === "saving" && <span className={isDark?"text-white/40":"text-gray-400"}>Sauvegarde…</span>}
-                {saveStatus === "saved"  && <span style={{color:GOLD}}>✓ Sauvegardé</span>}
+                {saveStatus === "saved"  && <span className="flex items-center gap-0.5" style={{color:GOLD}}><Check size={12} />Sauvegardé</span>}
                 {saveStatus === "error"  && <span className="text-red-400">Erreur de sauvegarde</span>}
               </div>
               <span className={isDark?"text-white/20":"text-gray-300"}>Sauvegarde automatique</span>

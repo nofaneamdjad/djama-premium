@@ -524,7 +524,7 @@ export default function SiteWebPage() {
                       className="flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-lg
                         bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 disabled:opacity-40 transition-all">
                       {publishing ? <Loader2 size={20} className="animate-spin"/> : <Globe size={20}/>}
-                      {publishing ? "Publication…" : "🚀 Publier mon site"}
+                      {publishing ? "Publication…" : "Publier mon site"}
                     </button>
                   </div>
                 </>

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PenLine, Plus, X, Check, Clock, Trash2, Send, FileText, Mail } from "lucide-react";
+import { PenLine, Plus, X, Check, Clock, Trash2, Send, FileText, Mail, AlertCircle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
@@ -12,11 +13,11 @@ function uid() { return Math.random().toString(36).slice(2, 10); }
 type SigStatus = "en_attente" | "signe" | "refuse" | "expire";
 interface Doc { id: string; name: string; signataire: string; email: string; sentAt: string; signedAt?: string; status: SigStatus }
 
-const STATUS_CFG: Record<SigStatus, { label: string; color: string; icon: string }> = {
-  en_attente: { label: "En attente",  color: "#f59e0b", icon: "⏳" },
-  signe:      { label: "Signé",       color: "#10b981", icon: "✅" },
-  refuse:     { label: "Refusé",      color: "#ef4444", icon: "❌" },
-  expire:     { label: "Expiré",      color: "#6b7280", icon: "⏰" },
+const STATUS_CFG: Record<SigStatus, { label: string; color: string; icon: LucideIcon }> = {
+  en_attente: { label: "En attente",  color: "#f59e0b", icon: Clock },
+  signe:      { label: "Signé",       color: "#10b981", icon: Check },
+  refuse:     { label: "Refusé",      color: "#ef4444", icon: X },
+  expire:     { label: "Expiré",      color: "#6b7280", icon: AlertCircle },
 };
 
 const DEMO: Doc[] = [
@@ -101,7 +102,7 @@ export default function SignaturePage() {
                       <p className={`text-[13px] font-bold truncate ${s.text}`}>{doc.name}</p>
                       <span className="text-[9.5px] font-bold rounded-full px-2 py-0.5 shrink-0"
                         style={{ background: cfg.color + "18", color: cfg.color, border: `1px solid ${cfg.color}30` }}>
-                        {cfg.icon} {cfg.label}
+                        <cfg.icon size={9} className="inline mr-0.5" />{cfg.label}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 mt-1">

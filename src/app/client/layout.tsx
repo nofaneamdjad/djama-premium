@@ -378,7 +378,7 @@ function NotifBell({ ready }: { ready: boolean }) {
               {overdue.length > 0 && (
                 <div>
                   <p className="px-4 pb-1 pt-3 text-[0.6rem] font-bold uppercase tracking-wider text-red-400/70">
-                    ⚠ Factures en retard
+                    <AlertTriangle size={9} className="inline mr-1" />Factures en retard
                   </p>
                   {overdue.map(inv => (
                     <Link href="/client/factures" key={inv.id} onClick={() => setOpen(false)}

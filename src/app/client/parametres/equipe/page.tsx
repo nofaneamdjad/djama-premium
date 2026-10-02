@@ -264,7 +264,7 @@ export default function EquipePage() {
               </div>
             </div>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${org.plan === "premium" ? "bg-green-500/10 text-green-500" : "bg-gray-100 text-gray-500 dark:bg-white/8"}`}>
-              {org.plan === "premium" ? "✓ Abonnement actif" : "Plan gratuit"}
+              {org.plan === "premium" ? <><Check size={11} className="inline mr-0.5" />Abonnement actif</> : "Plan gratuit"}
             </span>
           </div>
 

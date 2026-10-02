@@ -182,7 +182,7 @@ export default function EmailMarketingPage() {
               <div className="space-y-3">
                 <div>
                   <label className={`block text-[10.5px] font-semibold mb-1 ${s.muted}`}>Objet de l'email *</label>
-                  <input className={s.input} placeholder="Ex: Offres spéciales été 2026 🌞" value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} />
+                  <input className={s.input} placeholder="Ex: Offres spéciales été 2026" value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} />
                 </div>
                 <div>
                   <label className={`block text-[10.5px] font-semibold mb-1 ${s.muted}`}>Texte de prévisualisation</label>

@@ -62,11 +62,11 @@ export function ProductsView({ products, onNew, onEdit, onDelete, onAddMovement,
           className={`rounded-xl px-3 py-2 text-xs focus:outline-none appearance-none border ${isDark ? "bg-white/[0.05] border-white/[0.08] text-white/70" : "bg-white border-gray-200 text-gray-600"}`}
           style={selStyle(isDark)}>
           <option value="all">Tous états</option>
-          <option value="rupture">🔴 Rupture</option>
-          <option value="critique">🟠 Critique</option>
-          <option value="faible">🟡 Faible</option>
-          <option value="normal">🟢 Normal</option>
-          <option value="surstock">🔵 Surstock</option>
+          <option value="rupture">Rupture</option>
+          <option value="critique">Critique</option>
+          <option value="faible">Faible</option>
+          <option value="normal">Normal</option>
+          <option value="surstock">Surstock</option>
         </select>
 
         {/* View toggle */}

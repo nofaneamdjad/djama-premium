@@ -615,12 +615,12 @@ export default function FournisseursPage() {
         />
         {request.pays_utilisateur && (
           <p className="mt-2 text-[0.68rem] text-white/40">
-            {request.pays_utilisateur === "Mayotte" && "⚠️ Mayotte : hors UE douanière — réglementation import spécifique (OCT)"}
-            {(request.pays_utilisateur === "La Réunion" || request.pays_utilisateur === "Guadeloupe" || request.pays_utilisateur === "Martinique") && "ℹ️ DROM : Octroi de mer à la place de la TVA, droits douane spécifiques"}
-            {request.pays_utilisateur === "Guyane" && "ℹ️ Guyane : pas de TVA, Octroi de mer, fret depuis Europe ou Brésil"}
-            {request.pays_utilisateur === "Nouvelle-Calédonie" && "ℹ️ Nouvelle-Calédonie : hors UE, TGC locale, fret Pacifique"}
-            {request.pays_utilisateur === "Polynésie française" && "ℹ️ Polynésie : hors UE, TVA propre (13%), fret Pacifique long"}
-            {request.pays_utilisateur === "France métropolitaine" && "✓ France métro : règles EU standard, TVA 20%, fret direct"}
+            {request.pays_utilisateur === "Mayotte" && <span className="flex items-center gap-1"><AlertTriangle size={11} className="shrink-0 text-amber-400" />Mayotte : hors UE douanière — réglementation import spécifique (OCT)</span>}
+            {(request.pays_utilisateur === "La Réunion" || request.pays_utilisateur === "Guadeloupe" || request.pays_utilisateur === "Martinique") && <span className="flex items-center gap-1"><Info size={11} className="shrink-0" />DROM : Octroi de mer à la place de la TVA, droits douane spécifiques</span>}
+            {request.pays_utilisateur === "Guyane" && <span className="flex items-center gap-1"><Info size={11} className="shrink-0" />Guyane : pas de TVA, Octroi de mer, fret depuis Europe ou Brésil</span>}
+            {request.pays_utilisateur === "Nouvelle-Calédonie" && <span className="flex items-center gap-1"><Info size={11} className="shrink-0" />Nouvelle-Calédonie : hors UE, TGC locale, fret Pacifique</span>}
+            {request.pays_utilisateur === "Polynésie française" && <span className="flex items-center gap-1"><Info size={11} className="shrink-0" />Polynésie : hors UE, TVA propre (13%), fret Pacifique long</span>}
+            {request.pays_utilisateur === "France métropolitaine" && <span className="flex items-center gap-1"><Check size={11} className="shrink-0 text-emerald-400" />France métro : règles EU standard, TVA 20%, fret direct</span>}
           </p>
         )}
       </div>
@@ -829,7 +829,7 @@ export default function FournisseursPage() {
                 const suppId = s.id || String(suppliers.indexOf(s));
                 const isSelected = selectedSupplierId === suppId;
                 const score = s.niveau_confiance;
-                const rank = ["🥇","🥈","🥉","4e","5e"][i] ?? `${i+1}e`;
+                const rank = ["1er","2e","3e","4e","5e"][i] ?? `${i+1}e`;
                 return (
                   <div key={suppId} className="flex items-center gap-3 cursor-pointer"
                     onClick={() => setSelectedSupplierId(prev => prev === suppId ? null : suppId)}>

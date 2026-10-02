@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, FileText, Plus, Clock, Star, Trash2, Loader2, ArrowRight, Zap } from "lucide-react";
+import { Sparkles, FileText, Plus, Clock, Star, Trash2, Loader2, ArrowRight, Zap, BarChart3, Briefcase, ClipboardList, PenLine } from "lucide-react";
 import Link from "next/link";
 
 interface ArtifactSummary {
@@ -21,10 +21,10 @@ const PLACEHOLDERS = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: "Rapport d'activité", prompt: "Crée un rapport d'activité mensuel professionnel avec indicateurs clés, résumé exécutif et points d'action", icon: "📊" },
-  { label: "Proposition commerciale", prompt: "Rédige une proposition commerciale de 6 pages pour une prestation de conseil digital à 8 500 €, avec planning, livrables et conditions", icon: "💼" },
-  { label: "Cahier des charges", prompt: "Génère un cahier des charges complet pour le développement d'une application mobile, avec contexte, fonctionnalités, contraintes techniques et planning", icon: "📋" },
-  { label: "Compte rendu", prompt: "Crée un template de compte rendu de réunion professionnelle avec ordre du jour, décisions prises, actions à mener et prochaines étapes", icon: "✏️" },
+  { label: "Rapport d'activité",     prompt: "Crée un rapport d'activité mensuel professionnel avec indicateurs clés, résumé exécutif et points d'action", icon: BarChart3 },
+  { label: "Proposition commerciale", prompt: "Rédige une proposition commerciale de 6 pages pour une prestation de conseil digital à 8 500 €, avec planning, livrables et conditions", icon: Briefcase },
+  { label: "Cahier des charges",     prompt: "Génère un cahier des charges complet pour le développement d'une application mobile, avec contexte, fonctionnalités, contraintes techniques et planning", icon: ClipboardList },
+  { label: "Compte rendu",           prompt: "Crée un template de compte rendu de réunion professionnelle avec ordre du jour, décisions prises, actions à mener et prochaines étapes", icon: PenLine },
 ];
 
 export default function AIDocsPage() {
@@ -151,7 +151,9 @@ export default function AIDocsPage() {
               onMouseEnter={e => (e.currentTarget.style.background = "rgba(124,99,250,0.12)")}
               onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
             >
-              <span className="text-2xl flex-shrink-0">{a.icon}</span>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(124,99,250,0.18)" }}>
+                <a.icon size={16} style={{ color: "#a78bfa" }} />
+              </div>
               <div>
                 <p className="text-sm font-medium text-white">{a.label}</p>
                 <p className="text-xs mt-0.5 line-clamp-2" style={{ color: "rgba(255,255,255,0.4)" }}>

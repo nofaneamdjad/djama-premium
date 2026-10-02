@@ -106,7 +106,7 @@ export default function BoutiquePage() {
                       style={p.active
                         ? { background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.25)" }
                         : { background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}` }}>
-                      {p.active ? "✓ Actif" : "Inactif"}
+                      {p.active ? <><Check size={10} className="inline mr-0.5" />Actif</> : "Inactif"}
                     </button>
                   </div>
                 </motion.div>

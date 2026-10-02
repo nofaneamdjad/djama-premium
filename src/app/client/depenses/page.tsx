@@ -10,7 +10,7 @@ import {
   Phone, BookOpen, Megaphone, ShoppingBag, HelpCircle, CreditCard,
   Banknote, Wallet, DollarSign, CheckCircle2, XCircle,
   Droplets, Calendar, FileCheck, Landmark, ArrowLeftRight, Table2,
-  AlertTriangle, Zap, ChevronDown, Repeat2, FileUp,
+  AlertTriangle, Zap, ChevronDown, Repeat2, FileUp, Paperclip,
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/lib/supabase";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -2985,7 +2985,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                                       const r = await fetch(`/api/depenses/receipt-url?path=${encodeURIComponent(e.receipt_url)}`);
                                       if (r.ok) { const { url } = await r.json(); window.open(url, "_blank", "noreferrer"); }
                                     }}
-                                    className="shrink-0 text-[0.65rem] leading-none text-blue-400/50 hover:text-blue-400 transition-colors" title="Justificatif">📎</button>
+                                    className="shrink-0 leading-none text-blue-400/50 hover:text-blue-400 transition-colors" title="Justificatif"><Paperclip size={12} /></button>
                                 )}
                               </div>
                               {/* Ligne 2 : date + statut + projet */}
@@ -3232,7 +3232,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                     const bud   = budgets.find(b => b.category===cat && b.period==="monthly" && b.year===now.getFullYear() && b.month===now.getMonth()+1);
                     if (bud && bud.amount > 0) {
                       const spent = next.filter(e => e.category===cat && e.date.startsWith(ym) && e.status!=="rejected").reduce((a,e) => a+e.amount, 0);
-                      if (spent > bud.amount) toast$(`⚠️ Budget ${getCat(cat).l} dépassé (${fmtCur(spent)} / ${fmtCur(bud.amount)})`, "error");
+                      if (spent > bud.amount) toast$(`Budget ${getCat(cat).l} dépassé (${fmtCur(spent)} / ${fmtCur(bud.amount)})`, "error");
                     }
                   }
                   return next;

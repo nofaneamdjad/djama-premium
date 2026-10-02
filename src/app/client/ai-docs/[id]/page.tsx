@@ -6,7 +6,9 @@ import {
   Send, Loader2, Sparkles, ArrowLeft, Download, Star, RotateCcw,
   History, ChevronDown, ChevronRight, Clock, Check, X, FileDown,
   Maximize2, Minimize2,
+  Search, BookOpen, Settings2, PenLine, Wrench, Layers, Save, CheckCircle2, Timer,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { Artifact, OrchestratorEvent, DocumentContent, ArtifactOperation } from "@/lib/artifacts/types";
 import { isDocumentContent } from "@/lib/artifacts/types";
@@ -15,22 +17,22 @@ import DocumentRenderer from "@/components/ai-docs/DocumentRenderer";
 interface ChatMsg  { id: string; role: "user"|"assistant"|"status"; content: string; }
 interface Version  { id: string; version_num: number; description: string; created_at: string; }
 
-const STATUS_ICONS: Record<string, string> = {
-  "Compréhension": "🔍",
-  "Analyse": "📖",
-  "Préparation": "⚙️",
-  "Rédaction": "✍️",
-  "Application": "🔧",
-  "Création": "🏗️",
-  "Sauvegarde": "💾",
-  "Finalisation": "✅",
+const STATUS_ICONS: Record<string, LucideIcon> = {
+  "Compréhension": Search,
+  "Analyse":       BookOpen,
+  "Préparation":   Settings2,
+  "Rédaction":     PenLine,
+  "Application":   Wrench,
+  "Création":      Layers,
+  "Sauvegarde":    Save,
+  "Finalisation":  CheckCircle2,
 };
 
-function statusIcon(text: string) {
-  for (const [k, v] of Object.entries(STATUS_ICONS)) {
-    if (text.includes(k)) return v;
+function StatusIcon({ text }: { text: string }) {
+  for (const [k, Icon] of Object.entries(STATUS_ICONS)) {
+    if (text.includes(k)) return <Icon size={13} className="flex-shrink-0" />;
   }
-  return "⏳";
+  return <Timer size={13} className="flex-shrink-0" />;
 }
 
 export default function ArtifactWorkspace() {
@@ -218,14 +220,14 @@ export default function ArtifactWorkspace() {
               });
               break;
             case "error":
-              setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "assistant", content: `❌ ${event.message}` }]);
+              setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "assistant", content: `[err] ${event.message}` }]);
               break;
           }
         }
       }
     } catch (e) {
       if ((e as Error).name !== "AbortError") {
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "assistant", content: "❌ Erreur de connexion. Réessayez." }]);
+        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "assistant", content: "[err] Erreur de connexion. Réessayez." }]);
       }
     } finally {
       setStreaming(false); setStatusText(null);
@@ -273,7 +275,7 @@ export default function ArtifactWorkspace() {
           </Link>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-800 truncate">{artifact.title}</p>
-            <p className="text-xs text-gray-400">DJAMA AI Docs</p>
+            <p className="text-xs text-gray-400">DOC IA</p>
           </div>
           {/* Undo button — immédiatement accessible */}
           {lastVersion && lastVersion > 1 && (
@@ -326,16 +328,21 @@ export default function ArtifactWorkspace() {
                 <div className={`max-w-[88%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                   msg.role === "user"
                     ? "bg-violet-600 text-white rounded-br-sm"
-                    : msg.content.startsWith("❌")
+                    : msg.content.startsWith("[err]")
                       ? "bg-red-50 text-red-700 rounded-bl-sm"
                       : "bg-gray-100 text-gray-800 rounded-bl-sm"
                 }`}>
-                  {msg.role === "assistant" && !msg.content.startsWith("❌") && (
-                    <span className="flex items-center gap-1 text-xs text-violet-500 font-medium mb-1">
-                      <Check className="w-3 h-3" /> {msg.content.startsWith("Document") ? "IA" : "IA"}
+                  {msg.role === "assistant" && msg.content.startsWith("[err]") && (
+                    <span className="flex items-center gap-1 text-xs text-red-500 font-medium mb-1">
+                      <X className="w-3 h-3" /> Erreur
                     </span>
                   )}
-                  {msg.content}
+                  {msg.role === "assistant" && !msg.content.startsWith("[err]") && (
+                    <span className="flex items-center gap-1 text-xs text-violet-500 font-medium mb-1">
+                      <Check className="w-3 h-3" /> IA
+                    </span>
+                  )}
+                  {msg.content.startsWith("[err]") ? msg.content.slice(6) : msg.content}
                 </div>
               </div>
             )
@@ -347,7 +354,7 @@ export default function ArtifactWorkspace() {
               <div className="bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-100 px-4 py-3 rounded-2xl rounded-bl-sm text-sm max-w-[88%]">
                 <div className="flex items-center gap-2.5 text-violet-700">
                   <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
-                  <span>{statusIcon(statusText)} {statusText}</span>
+                  <StatusIcon text={statusText} /><span>{statusText}</span>
                 </div>
               </div>
             </div>

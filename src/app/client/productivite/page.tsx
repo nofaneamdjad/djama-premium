@@ -7,6 +7,8 @@ import {
   Play, Square, CornerDownLeft, AlertTriangle, Sparkles, FileText,
   Link2, LayoutTemplate, Network, Download,
   Rocket, Phone, Bug, PenLine, Palette, BarChart3, type LucideIcon,
+  LayoutGrid, List as ListIcon,
+  Users, User, Trash2, MessageSquare, X, Check,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
@@ -1165,7 +1167,7 @@ export default function ProductivitePage() {
               className={`relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all ${view === v
                 ? isDark ? "text-white" : "text-gray-900"
                 : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
-              {v === "kanban" ? "⊞ Kanban" : "☰ Liste"}
+              {v === "kanban" ? <><LayoutGrid size={12} className="mr-1.5" />Kanban</> : <><ListIcon size={12} className="mr-1.5" />Liste</>}
               {view === v && (
                 <motion.div layoutId="prod-tab-indicator"
                   className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
@@ -1186,7 +1188,7 @@ export default function ProductivitePage() {
           {/* Filter bar */}
           <div className="flex flex-wrap items-center gap-2">
             <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="🔍 Rechercher une tâche…"
+              placeholder="Rechercher une tâche…"
               className={`rounded-xl border px-3 py-2 text-sm outline-none w-52 transition ${isDark
                 ? "border-white/8 bg-white/6 text-white/70 placeholder:text-white/25 hover:border-white/15 focus:border-violet-500/40 [color-scheme:dark]"
                 : "border-gray-200 bg-white text-gray-700 placeholder:text-gray-400 hover:border-gray-300 focus:border-violet-300"}`} />
@@ -1247,7 +1249,7 @@ export default function ProductivitePage() {
                 className={`rounded-xl border px-3 py-2 text-xs transition ${isDark
                   ? "border-white/8 text-white/40 hover:text-white/70"
                   : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
-                ✕ Réinitialiser
+                <X size={11} className="inline mr-0.5" />Réinitialiser
               </button>
             )}
             {orgId && (
@@ -1255,7 +1257,7 @@ export default function ProductivitePage() {
                 className={`ml-auto rounded-xl border px-3 py-2 text-xs font-medium transition ${orgMode
                   ? "border-violet-500/50 bg-violet-500/15 text-violet-300"
                   : isDark ? "border-white/8 text-white/40 hover:text-white/70" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>
-                {orgMode ? "👥 Organisation" : "👤 Personnel"}
+                {orgMode ? <><Users size={12} className="inline mr-1" />Organisation</> : <><User size={12} className="inline mr-1" />Personnel</>}
               </button>
             )}
           </div>
@@ -1285,9 +1287,9 @@ export default function ProductivitePage() {
                   setSelectedIds(new Set());
                 }}
                 className={`rounded-lg px-2 py-1 text-[0.68rem] border transition ${isDark ? "border-red-500/30 text-red-400 hover:bg-red-500/15" : "border-red-300 text-red-600 hover:bg-red-50"}`}>
-                  🗑 Supprimer
+                  <Trash2 size={11} className="inline mr-0.5" />Supprimer
                 </button>
-                <button onClick={() => setSelectedIds(new Set())} className={`text-[0.68rem] ${isDark ? "text-white/40" : "text-gray-400"}`}>✕ Désélectionner</button>
+                <button onClick={() => setSelectedIds(new Set())} className={`text-[0.68rem] ${isDark ? "text-white/40" : "text-gray-400"}`}><X size={11} className="inline mr-0.5" />Désélectionner</button>
               </div>
             </div>
           )}
@@ -1431,7 +1433,7 @@ export default function ProductivitePage() {
                         {t.category && <span className={`text-[0.6rem] ${isDark ? "text-violet-400/70" : "text-violet-500"}`}>{t.category}</span>}
                         {t.due_date && (
                           <span className={`text-[0.6rem] ${isLate(t) ? "text-red-400" : isDark ? "text-white/30" : "text-gray-400"}`}>
-                            {isLate(t) && "⚠ "}{fmtDate(t.due_date)}
+                            {isLate(t) && <AlertTriangle size={9} className="inline mr-0.5" />}{fmtDate(t.due_date)}
                           </span>
                         )}
                         {t.subtasks.length > 0 && <SubBar subs={t.subtasks} />}
@@ -1665,7 +1667,7 @@ export default function ProductivitePage() {
                       {RECURS.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
                     </select>
                     {form.linked_module && (
-                      <p className={`mt-2 text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>🔗 Lié à : {form.linked_module}</p>
+                      <p className={`mt-2 flex items-center gap-1 text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}><Link2 size={9} />Lié à : {form.linked_module}</p>
                     )}
                   </div>
                 </div>
@@ -1690,7 +1692,7 @@ export default function ProductivitePage() {
                   )}
                   <div className={`rounded-xl border overflow-hidden ${isDark ? "border-white/8 bg-white/4" : "border-gray-200 bg-gray-50"}`}>
                     <input value={depSearch} onChange={e => setDepSearch(e.target.value)}
-                      placeholder="🔍 Rechercher une tâche à lier…"
+                      placeholder="Rechercher une tâche à lier…"
                       className={`w-full bg-transparent px-3 py-2 text-xs outline-none border-b ${isDark ? "text-white/60 placeholder:text-white/25 border-white/6" : "text-gray-600 placeholder:text-gray-400 border-gray-200"}`} />
                     <div className="max-h-28 overflow-y-auto p-1">
                       {tasks.filter(t => t.id !== editId && (depSearch === "" || t.title.toLowerCase().includes(depSearch.toLowerCase()))).slice(0, 6).map(t => (
@@ -1698,7 +1700,7 @@ export default function ProductivitePage() {
                           className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition ${form.dependencies.includes(t.id) ? "bg-amber-500/15 text-amber-300" : isDark ? "text-white/55 hover:bg-white/5" : "text-gray-600 hover:bg-gray-100"}`}>
                           <span className="h-2 w-2 rounded-full shrink-0" style={{ background: STAT[t.status].col }} />
                           <span className="flex-1 truncate">{t.title}</span>
-                          {form.dependencies.includes(t.id) && <span className="text-amber-400 text-[0.6rem]">✓ Liée</span>}
+                          {form.dependencies.includes(t.id) && <span className="flex items-center gap-0.5 text-amber-400 text-[0.6rem]"><Check size={9} />Liée</span>}
                         </button>
                       ))}
                       {tasks.filter(t => t.id !== editId).length === 0 && (
@@ -1789,7 +1791,7 @@ export default function ProductivitePage() {
                 {editId && (
                   <div className={`border-t pt-5 ${isDark ? "border-white/6" : "border-gray-200"}`}>
                     <label className={`text-[0.68rem] mb-3 block ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                      💬 Commentaires ({comments.length})
+                      <MessageSquare size={11} className="inline mr-1" />Commentaires ({comments.length})
                     </label>
                     {comments.length > 0 && (
                       <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-1">
@@ -1944,7 +1946,7 @@ export default function ProductivitePage() {
                       className="rounded-lg px-3 py-1.5 text-xs font-medium transition"
                       style={{ background: "#c9a55a20", color: "#c9a55a" }}>Utiliser</button>
                     <button onClick={() => deleteDbTemplate(tpl.id)}
-                      className={`rounded-lg px-2 py-1.5 text-xs transition ${isDark ? "text-red-400/60 hover:text-red-400 hover:bg-red-500/10" : "text-red-400 hover:bg-red-50"}`}>🗑</button>
+                      className={`rounded-lg px-2 py-1.5 text-xs transition ${isDark ? "text-red-400/60 hover:text-red-400 hover:bg-red-500/10" : "text-red-400 hover:bg-red-50"}`}><Trash2 size={13} /></button>
                   </div>
                 ))}
               </div>

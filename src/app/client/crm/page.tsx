@@ -12,7 +12,9 @@ import {
   ArrowUpRight, DollarSign, Target, Activity, Check, SlidersHorizontal,
   Zap, Award, Flag, MoreVertical, Send, Link2, ChevronLeft,
   RefreshCw, PieChart, Layers, Bell, Hash, CheckCircle, XCircle, Sparkles,
+  Bug, HelpCircle, CreditCard, Key, Flame,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -743,7 +745,7 @@ function TachesView({
 
             {filtered.length === 0 ? (
         <div className="text-center py-12 text-white/20 text-sm">
-          {filter === "done" ? "Aucune tâche terminée" : "Aucune tâche en cours 🎉"}
+          {filter === "done" ? "Aucune tâche terminée" : "Aucune tâche en cours"}
         </div>
       ) : (
         <div className="space-y-2">
@@ -1441,12 +1443,12 @@ const SLA_HOURS: Record<TicketPriority, number> = {
   urgente: 4, haute: 24, normale: 72, basse: 168,
 };
 
-const TICKET_CATEGORIES: Record<TicketCategory, { label: string; emoji: string }> = {
-  bug:         { label: "Bug",         emoji: "🐛" },
-  question:    { label: "Question",    emoji: "❓" },
-  facturation: { label: "Facturation", emoji: "💳" },
-  accès:       { label: "Accès",       emoji: "🔑" },
-  autre:       { label: "Autre",       emoji: "📋" },
+const TICKET_CATEGORIES: Record<TicketCategory, { label: string; icon: LucideIcon }> = {
+  bug:         { label: "Bug",         icon: Bug },
+  question:    { label: "Question",    icon: HelpCircle },
+  facturation: { label: "Facturation", icon: CreditCard },
+  accès:       { label: "Accès",       icon: Key },
+  autre:       { label: "Autre",       icon: FileText },
 };
 
 function computeSla(ticket: SupportTicket): { elapsed: number; breached: boolean; label: string; color: string; deadlineStr: string } {
@@ -1579,8 +1581,9 @@ function TicketsGlobalView({
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
                         {ticket.category && (
-                          <span className={`text-[0.58rem] px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/[0.05] text-white/40" : "bg-gray-100 text-gray-500"}`}>
-                            {TICKET_CATEGORIES[ticket.category].emoji} {TICKET_CATEGORIES[ticket.category].label}
+                          <span className={`flex items-center gap-0.5 text-[0.58rem] px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/[0.05] text-white/40" : "bg-gray-100 text-gray-500"}`}>
+                            {(() => { const Icon = TICKET_CATEGORIES[ticket.category].icon; return <Icon size={9} className="flex-shrink-0" />; })()}
+                            {TICKET_CATEGORIES[ticket.category].label}
                           </span>
                         )}
                       </div>
@@ -1667,8 +1670,8 @@ function TicketsGlobalView({
                 </Select>
                 <Select label="Catégorie" value={form.category ?? ""} onChange={e => setForm(f=>({...f, category: (e.target.value as TicketCategory) || null}))}>
                   <option value="">— Aucune —</option>
-                  {(Object.entries(TICKET_CATEGORIES) as [TicketCategory, { label: string; emoji: string }][]).map(([k, v]) => (
-                    <option key={k} value={k}>{v.emoji} {v.label}</option>
+                  {(Object.entries(TICKET_CATEGORIES) as [TicketCategory, { label: string; icon: LucideIcon }][]).map(([k, v]) => (
+                    <option key={k} value={k}>{v.label}</option>
                   ))}
                 </Select>
               </div>
@@ -1866,7 +1869,7 @@ function ContactDetail({
             <div className="mt-3">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm">🔥</span>
+                  <Flame size={13} className={isDark ? "text-white/30" : "text-gray-400"} />
                   <span className={`text-[0.62rem] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Chaleur contact</span>
                 </div>
                 <span className={`text-[0.65rem] font-black`} style={{ color: heat.color }}>{heat.label} · {heat.score}</span>

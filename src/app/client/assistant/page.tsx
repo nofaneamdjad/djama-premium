@@ -6,7 +6,7 @@ import {
   AlertTriangle, PenLine, Loader2, RefreshCw,
   Copy, Sparkles, Clock, CreditCard, Receipt, ListTodo,
   UserCheck, ChevronRight, Menu, X, Send,
-  Download, Volume2, VolumeX, BookMarked, FileText,
+  Download, Volume2, VolumeX, BookMarked, FileText, Check,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -427,7 +427,7 @@ function SidebarInner({
         />
         {memNote.trim() && (
           <p className="mt-1 text-[0.56rem] px-0.5" style={{ color: CYAN + "90" }}>
-            ✓ Inclus dans chaque conversation
+            <Check size={10} className="inline mr-0.5" />Inclus dans chaque conversation
           </p>
         )}
       </div>

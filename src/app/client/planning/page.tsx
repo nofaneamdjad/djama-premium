@@ -821,7 +821,8 @@ export default function PlanningPage() {
               {current.getDate()}
             </div>
             {holidays[fmtDate(current)] && (
-              <div className="text-[7px] text-amber-400/60 truncate px-1 mt-0.5">✦ {holidays[fmtDate(current)]}</div>
+              <div className="text-[7px] text-amber-400/60 truncate px-1 mt-0.5">{holidays[fmtDate(current)]}</div>
+
             )}
           </div>
         </div>
@@ -1029,7 +1030,7 @@ export default function PlanningPage() {
                     </div>
                     {holidays[fmtDate(day)] && (
                       <div className="text-[7px] text-amber-400/70 truncate leading-tight px-0.5 mb-0.5" title={holidays[fmtDate(day)]}>
-                        ✦ {holidays[fmtDate(day)]}
+                        {holidays[fmtDate(day)]}
                       </div>
                     )}
                     <div className="space-y-0.5">
@@ -1047,9 +1048,9 @@ export default function PlanningPage() {
                         </div>
                       ))}
                       {dayEvs.length < 3 && dayProdTasks.slice(0, 3 - dayEvs.length).map(t => (
-                        <div key={`pt-${t.id}`} className="w-full text-left truncate text-[9px] px-1 py-0.5 rounded font-medium leading-none"
+                        <div key={`pt-${t.id}`} className="w-full flex items-center gap-0.5 text-left truncate text-[9px] px-1 py-0.5 rounded font-medium leading-none"
                           style={{ background:"#10b98118", color:"#10b981", border:"1px solid #10b98130" }}>
-                          ✓ {t.title}
+                          <Check size={7} className="shrink-0" /><span className="truncate">{t.title}</span>
                         </div>
                       ))}
                       {overflow > 0 && (
@@ -1084,7 +1085,7 @@ export default function PlanningPage() {
               </div>
               {holidays[fmtDate(d)] && (
                 <div className="text-[7px] text-amber-400/60 truncate px-1 mt-0.5" title={holidays[fmtDate(d)]}>
-                  ✦ {holidays[fmtDate(d)].length > 9 ? holidays[fmtDate(d)].slice(0,8)+"…" : holidays[fmtDate(d)]}
+                  {holidays[fmtDate(d)].length > 9 ? holidays[fmtDate(d)].slice(0,8)+"…" : holidays[fmtDate(d)]}
                 </div>
               )}
             </div>

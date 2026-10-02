@@ -125,7 +125,7 @@ function generateBulletin(e: Employe) {
   <tr class="brut"><td colspan="3">Coût total employeur</td><td class="r">${(brut + cotPatTotal).toFixed(2)} €</td></tr>
 </table>
 <div class="no-print">
-  <button class="btn-print" onclick="window.print()">📄 Imprimer / Exporter PDF</button>
+  <button class="btn-print" onclick="window.print()">Imprimer / Exporter PDF</button>
   <button class="btn-close" onclick="window.close()">Fermer</button>
 </div>
 </body></html>`;
@@ -432,7 +432,7 @@ export default function PaieRHPage() {
                       : isDark ? "border-white/10 bg-white/4 text-white/40 hover:text-white/70" : "border-black/10 bg-black/[0.03] text-[#0e1420]/40 hover:text-[#0e1420]/70"
                   }`}>
                   <ClipboardCheck size={12} />
-                  {urssafDone.includes(currentMonthKey) ? "Déclarée ✓" : "Marquer déclarée"}
+                  {urssafDone.includes(currentMonthKey) ? "Déclarée" : "Marquer déclarée"}
                 </button>
               </div>
             </div>
