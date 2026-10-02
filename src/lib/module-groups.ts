@@ -12,6 +12,7 @@ import {
   Building2, Banknote, BookOpen, MessageSquare, Target, Globe,
   CalendarPlus, QrCode, PenLine, ShoppingBag, ShoppingCart,
   Landmark, FileCheck2, Mail, Bot, BarChart2, Store, Contact2, Briefcase,
+  Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -72,6 +73,7 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
     icon:  StickyNote,
     color: "#92400e",
     modules: [
+      { href: "/client/ai-docs",     label: "DJAMA AI Docs", sub: "Créez des documents avec l'IA en langage naturel", icon: Sparkles, color: "#7c3aed", bg: "#f5f3ff" },
       { href: "/client/bloc-notes",  label: "DJAMA Doc",   sub: "Éditeur bureautique — DOCX, XLSX, PPTX", icon: StickyNote,   color: "#92400e", bg: "#fef9c3" },
       { href: "/client/checklists",  label: "Checklists",  sub: "Listes de vérification rapides",      icon: CheckSquare,  color: "#10b981", bg: "#d1fae5" },
       { href: "/client/scanner",     label: "Scanner",     sub: "Scanner et archiver vos documents",   icon: ScanLine,     color: "#0ea5e9", bg: "#e0f2fe" },
