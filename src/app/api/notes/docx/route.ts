@@ -252,9 +252,9 @@ export async function POST(req: NextRequest) {
   });
 
   const doc = new Document({
-    creator:     "DJAMA Notes",
+    creator:     "DJAMA Doc",
     title:       note.title ?? "Document",
-    description: "Exporté depuis DJAMA Notes",
+    description: "Exporté depuis DJAMA Doc",
     sections: [{
       headers: docHeader ? { default: docHeader } : undefined,
       footers: { default: docFooter },
