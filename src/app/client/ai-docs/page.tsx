@@ -97,7 +97,7 @@ export default function AIDocsPage() {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium"
             style={{ background: "rgba(124,99,250,0.2)", border: "1px solid rgba(124,99,250,0.4)", color: "#c4b5fd" }}>
             <Sparkles className="w-3.5 h-3.5" />
-            DJAMA AI Docs
+            DOC IA
           </div>
         </div>
 

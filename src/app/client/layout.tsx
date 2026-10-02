@@ -28,7 +28,7 @@ const FREE_NAV = [
   { href: "/client",           label: "Accueil",          icon: Home,        exact: true  },
   { href: "/client/factures",  label: "Factures & Devis", icon: ReceiptText, exact: false },
   { href: "/client/planning",  label: "Planning",         icon: Calendar,    exact: false },
-  { href: "/client/bloc-notes", label: "DJAMA Doc",        icon: StickyNote,  exact: false },
+  { href: "/client/ai-docs",    label: "DOC IA",            icon: Sparkles,    exact: false },
 ] as const;
 
 /* ─────────── ALL PRO TOOLS (for popup) ─────────── */
@@ -45,7 +45,7 @@ const PRO_TOOLS = [
   { href: "/client/productivite",    label: "Tâches",            icon: ListTodo     },
   { href: "/client/equipe",          label: "Équipe",            icon: CalendarRange},
   { href: "/client/chrono",          label: "Chrono",            icon: Timer        },
-  { href: "/client/bloc-notes",      label: "DJAMA Doc",         icon: StickyNote   },
+  { href: "/client/ai-docs",          label: "DOC IA",            icon: Sparkles     },
   { href: "/client/checklists",      label: "Checklists",        icon: CheckSquare  },
   { href: "/client/scanner",         label: "Scanner",           icon: ScanLine     },
   { href: "/client/mindmap",         label: "Mind Map",          icon: Network      },
@@ -101,7 +101,7 @@ const PREMIUM_GROUPS = [
   {
     label: "Documents",
     items: [
-      { href: "/client/bloc-notes",  label: "DJAMA Doc",  icon: StickyNote,  exact: false },
+      { href: "/client/ai-docs",      label: "DOC IA",     icon: Sparkles,    exact: false },
       { href: "/client/checklists",  label: "Checklists", icon: CheckSquare, exact: false },
       { href: "/client/scanner",     label: "Scanner",    icon: ScanLine,    exact: false },
       { href: "/client/mindmap",     label: "Mind Map",   icon: Network,     exact: false },
