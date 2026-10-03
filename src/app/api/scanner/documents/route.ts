@@ -61,12 +61,12 @@ export async function POST(req: NextRequest) {
 
   // Résoudre organization_id
   const { data: orgData } = await supabase
-    .from("org_members")
-    .select("org_id")
+    .from("organization_members")
+    .select("organization_id")
     .eq("user_id", user.id)
     .limit(1)
     .single();
-  const organization_id = orgData?.org_id ?? null;
+  const organization_id = orgData?.organization_id ?? null;
 
   // Générer un chemin de stockage : {user_id}/{docId}/{filename}
   const docId = crypto.randomUUID();

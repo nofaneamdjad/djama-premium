@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   // Résoudre org_id côté serveur — jamais depuis le client
   const { data: orgMember } = await supabase
-    .from("org_members")
+    .from("organization_members")
     .select("organization_id")
     .eq("user_id", user.id)
     .limit(1)

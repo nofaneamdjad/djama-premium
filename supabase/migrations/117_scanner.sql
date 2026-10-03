@@ -54,8 +54,8 @@ ALTER TABLE scanned_documents ENABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION scanner_is_org_member(p_org_id uuid)
 RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
   SELECT EXISTS (
-    SELECT 1 FROM org_members
-    WHERE org_id = p_org_id AND user_id = auth.uid()
+    SELECT 1 FROM organization_members
+    WHERE organization_id = p_org_id AND user_id = auth.uid()
   );
 $$;
 
