@@ -1,422 +1,509 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { use } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  MessageSquare, FileText, LayoutDashboard, Send, Upload,
-  Download, CheckCircle2, Clock, Loader2, X,
+  FileText, Folder, MessageSquare, Download, Send,
+  CheckCircle2, Clock, AlertCircle, Loader2, X,
+  ChevronRight, Building2, Mail, ExternalLink, Lock,
 } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
-
+const GOLD = "#c9a55a";
 const ease = [0.16, 1, 0.3, 1] as const;
 
-interface PortailMsg { id: string; from: "admin" | "client"; text: string; date: string; }
-interface PortailDoc { id: string; name: string; size: number; type: string; url: string; uploadedAt: string; uploadedBy: "admin" | "client"; }
+/* ── Types ──────────────────────────────────────────────────────────────── */
+type NavTab = "accueil" | "factures" | "projets" | "documents" | "messages";
 
-const MSGS_KEY = (id: string) => `pm_v1_${id}`;
-const DOCS_KEY = (id: string) => `pd_v1_${id}`;
-function loadLs<T>(key: string): T[] {
-  try { return JSON.parse(localStorage.getItem(key) || "[]") as T[]; } catch { return []; }
-}
-function saveLs<T>(key: string, data: T[]) { localStorage.setItem(key, JSON.stringify(data)); }
-function fmtSize(b: number) {
-  if (b < 1024) return `${b} o`;
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} Ko`;
-  return `${(b / (1024 * 1024)).toFixed(1)} Mo`;
-}
-
-type Tab = "dashboard" | "messages" | "documents";
-
-interface ClientData {
-  id: string; nom: string; email: string; entreprise?: string;
-  statut: string; acces_actif: boolean; created_at: string;
+interface PortalAccess {
+  id:                  string;
+  nom:                 string;
+  email:               string;
+  entreprise?:         string;
+  portal_status:       "invited"|"active"|"suspended"|"expired";
+  portal_user_id?:     string;
+  portal_activated_at?:string;
+  permissions:         { factures:boolean; projets:boolean; documents:boolean; messages:boolean; contrats:boolean };
+  welcome_message?:    string;
+  user_id:             string;
 }
 
-export default function ClientPortalPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const [tab,           setTab]          = useState<Tab>("dashboard");
-  const [client,        setClient]       = useState<ClientData | null>(null);
-  const [loading,       setLoading]      = useState(true);
-  const [blocked,       setBlocked]      = useState(false);
-  const [msgs,          setMsgs]         = useState<PortailMsg[]>([]);
-  const [msgInput,      setMsgInput]     = useState("");
-  const [docs,          setDocs]         = useState<PortailDoc[]>([]);
-  const [uploadingDoc,  setUploadingDoc] = useState(false);
-  const [uploadErr,     setUploadErr]    = useState("");
-  const msgEndRef  = useRef<HTMLDivElement>(null);
-  const docFileRef = useRef<HTMLInputElement>(null);
+interface LinkedDoc  { id:string; type:string; numero:string; sujet:string; total_ttc:number; statut:string; date_document:string; }
+interface PortailMsg { id:string; from:"admin"|"client"; text:string; date:string; }
+interface PortailDoc { id:string; name:string; type:string; size:number; url:string; uploadedAt:string; }
 
-  useEffect(() => {
-    async function load() {
-      const { data, error } = await supabase
+interface LinkedProj { id:string; nom:string; status:string; progress:number; color:string; end_date?:string; }
+
+function fmtDate(s?:string) {
+  if (!s) return "—";
+  return new Date(s).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+}
+function fmtCur(v:number) { return v.toLocaleString("fr-FR",{style:"currency",currency:"EUR"}); }
+function fmtSize(b:number) {
+  if (b<1024) return `${b} o`;
+  if (b<1048576) return `${(b/1024).toFixed(0)} Ko`;
+  return `${(b/1048576).toFixed(1)} Mo`;
+}
+
+const STATUT_DOC: Record<string,{label:string;color:string;icon:typeof CheckCircle2}> = {
+  payé:      {label:"Payé",     color:"#10b981",icon:CheckCircle2},
+  en_attente:{label:"À payer",  color:"#f59e0b",icon:Clock},
+  refusé:    {label:"Refusé",   color:"#ef4444",icon:AlertCircle},
+  brouillon: {label:"Brouillon",color:"#6b7280",icon:FileText},
+};
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+export default function PortailClientDashboard() {
+  const params       = useParams();
+  const searchParams = useSearchParams();
+  const id           = params.id as string;
+  const token        = searchParams.get("token") ?? "";
+
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState<string|null>(null);
+  const [access,    setAccess]    = useState<PortalAccess|null>(null);
+  const [tab,       setTab]       = useState<NavTab>("accueil");
+
+  const [factures,  setFactures]  = useState<LinkedDoc[]>([]);
+  const [projets,   setProjets]   = useState<LinkedProj[]>([]);
+  const [docs,      setDocs]      = useState<PortailDoc[]>([]);
+  const [msgs,      setMsgs]      = useState<PortailMsg[]>([]);
+  const [dataLoaded,setDataLoaded]= useState(false);
+  const [msgInput,  setMsgInput]  = useState("");
+  const [sending,   setSending]   = useState(false);
+  const msgEndRef = useRef<HTMLDivElement>(null);
+
+  /* ── Vérification token + chargement accès ── */
+  useEffect(()=>{
+    if (!id) return;
+    (async()=>{
+      // Récupère l'accès portail via token (lecture publique limitée par la politique RLS)
+      const { data, error: e } = await supabase
         .from("portail_clients")
-        .select("id, nom, email, entreprise, statut, acces_actif, created_at")
+        .select("id,nom,email,entreprise,portal_status,portal_user_id,portal_activated_at,permissions,welcome_message,user_id")
         .eq("id", id)
-        .single();
+        .eq("invitation_token", token)
+        .maybeSingle();
 
-      if (error || !data) {
-        // Show demo mode with empty data instead of blocking
-        setClient({ id, nom: "Client", email: "", statut: "actif", acces_actif: true, created_at: new Date().toISOString() });
-      } else {
-        const c = data as ClientData;
-        if (!c.acces_actif) { setBlocked(true); setLoading(false); return; }
-        setClient(c);
+      if (e || !data) { setError("Lien invalide ou expiré."); setLoading(false); return; }
+      if (data.portal_status === "suspended") { setError("Votre accès a été suspendu. Contactez votre prestataire."); setLoading(false); return; }
+      if (data.portal_status === "expired")   { setError("Ce lien d'accès a expiré."); setLoading(false); return; }
+
+      setAccess(data as PortalAccess);
+
+      // Marque le portail comme actif si c'est la première visite
+      if (data.portal_status === "invited") {
+        await supabase.from("portail_clients")
+          .update({ portal_status:"active", portal_activated_at: new Date().toISOString() })
+          .eq("id", id).eq("invitation_token", token);
+        setAccess(prev => prev ? {...prev, portal_status:"active"} : prev);
+
+        await supabase.from("portal_audit_log").insert({
+          portal_client_id: id,
+          action: "activation_compte",
+          metadata: { first_visit: true },
+        });
       }
-      setMsgs(loadLs<PortailMsg>(MSGS_KEY(id)));
-      setDocs(loadLs<PortailDoc>(DOCS_KEY(id)));
+
+      // Audit log — connexion
+      await supabase.from("portal_audit_log").insert({
+        portal_client_id: id,
+        action: "connexion",
+        metadata: { via: "token_link" },
+      });
+
       setLoading(false);
-    }
-    load();
-  }, [id]);
+    })();
+  },[id,token]);
 
-  useEffect(() => {
-    if (tab === "messages") setTimeout(() => msgEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-  }, [msgs, tab]);
+  /* ── Chargement des données (lazy, une seule fois) ── */
+  useEffect(()=>{
+    if (!access || dataLoaded) return;
+    setDataLoaded(true);
+    void loadData(access);
+  },[access, dataLoaded]);
 
-  function sendMsg() {
-    if (!msgInput.trim()) return;
-    const msg: PortailMsg = { id: Math.random().toString(36).slice(2), from: "client", text: msgInput.trim(), date: new Date().toISOString() };
-    const updated = [...msgs, msg];
-    setMsgs(updated);
-    saveLs(MSGS_KEY(id), updated);
+  async function loadData(pc: PortalAccess) {
+    await Promise.all([
+      // Factures (si permission)
+      pc.permissions?.factures
+        ? supabase.from("documents").select("id,type,numero,sujet,total_ttc,statut,date_document")
+            .eq("user_id", pc.user_id).in("type",["facture","devis","avoir"])
+            .order("date_document",{ascending:false}).limit(20)
+            .then(({data})=>setFactures((data??[]) as LinkedDoc[]))
+        : Promise.resolve(),
+      // Projets (si permission)
+      pc.permissions?.projets
+        ? supabase.from("portal_project_access").select("project_id,projects(id,nom,status,progress,color,end_date)")
+            .eq("portal_client_id", pc.id)
+            .then(({data})=>{
+              const p = (data??[])
+                .map((r:{ project_id:string; projects: LinkedProj | LinkedProj[] | null }) => {
+                  const pr = Array.isArray(r.projects) ? r.projects[0] : r.projects;
+                  return pr ?? null;
+                })
+                .filter((x): x is LinkedProj => x !== null);
+              setProjets(p);
+            })
+        : Promise.resolve(),
+      // Documents partagés (si permission)
+      pc.permissions?.documents
+        ? supabase.from("portail_docs").select("id,name,file_type,size,url,created_at")
+            .eq("portail_client_id", pc.id).order("created_at",{ascending:false})
+            .then(({data})=>setDocs((data??[]).map((r:{id:string;name:string;file_type:string;size:number;url:string;created_at:string})=>({id:r.id,name:r.name,type:r.file_type,size:r.size,url:r.url,uploadedAt:r.created_at}))))
+        : Promise.resolve(),
+      // Messages (si permission)
+      pc.permissions?.messages
+        ? supabase.from("portail_messages").select("id,from_role,text,created_at")
+            .eq("portail_client_id", pc.id).order("created_at",{ascending:true})
+            .then(({data})=>setMsgs((data??[]).map((r:{id:string;from_role:string;text:string;created_at:string})=>({id:r.id,from:r.from_role as "admin"|"client",text:r.text,date:r.created_at}))))
+        : Promise.resolve(),
+    ]);
+  }
+
+  useEffect(()=>{
+    if (tab==="messages") setTimeout(()=>msgEndRef.current?.scrollIntoView({behavior:"smooth"}),50);
+  },[msgs,tab]);
+
+  async function sendMsg() {
+    if (!msgInput.trim() || !access) return;
+    setSending(true);
+    const text = msgInput.trim();
     setMsgInput("");
-  }
-
-  async function handleUpload(files: FileList | null) {
-    if (!files) return;
-    setUploadingDoc(true);
-    setUploadErr("");
-    const newDocs: PortailDoc[] = [];
-    for (const file of Array.from(files)) {
-      const path = `client/${id}/${Date.now()}_${file.name}`;
-      const { error: upErr } = await supabase.storage.from("portail-docs").upload(path, file, { upsert: true });
-      let url = "";
-      if (!upErr) {
-        const { data: { publicUrl } } = supabase.storage.from("portail-docs").getPublicUrl(path);
-        url = publicUrl;
-      } else {
-        setUploadErr("Le stockage n'est pas encore configuré. Votre fichier a été enregistré localement.");
-      }
-      newDocs.push({ id: Math.random().toString(36).slice(2, 10), name: file.name, type: file.type, size: file.size, url, uploadedAt: new Date().toISOString(), uploadedBy: "client" });
+    const { data, error } = await supabase.from("portail_messages")
+      .insert({ portail_client_id: access.id, user_id: access.user_id, from_role:"client", text })
+      .select("id,from_role,text,created_at").single();
+    if (!error && data) {
+      setMsgs(prev=>[...prev,{id:data.id,from:"client",text:data.text,date:data.created_at}]);
     }
-    const updated = [...docs, ...newDocs];
-    setDocs(updated);
-    saveLs(DOCS_KEY(id), updated);
-    setUploadingDoc(false);
+    setSending(false);
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#07080e]">
-        <Loader2 size={24} className="animate-spin text-white/20" />
+  /* ── Gestion des états d'erreur/chargement ── */
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center bg-[#07080e]">
+      <Loader2 size={32} className="animate-spin" style={{color:GOLD}}/>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#07080e] px-6 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-3xl" style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)"}}>
+        <Lock size={28} className="text-red-400"/>
       </div>
-    );
-  }
-
-  if (blocked) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#07080e] px-5">
-        <div className="max-w-sm text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/8 bg-white/4">
-            <X size={22} className="text-white/30" />
-          </div>
-          <h1 className="text-xl font-black text-white">Accès désactivé</h1>
-          <p className="mt-2 text-sm text-white/40">Votre portail est temporairement inaccessible. Contactez votre prestataire.</p>
-        </div>
+      <div>
+        <h1 className="text-xl font-black text-white">Accès impossible</h1>
+        <p className="mt-2 text-white/40">{error}</p>
       </div>
-    );
-  }
+      <p className="text-xs text-white/20">Si vous pensez qu'il s'agit d'une erreur, contactez votre prestataire.</p>
+    </div>
+  );
 
-  const firstName = client?.nom?.split(" ")[0] ?? "Client";
-  const adminMsgs = msgs.filter(m => m.from === "admin").length;
+  if (!access) return null;
 
+  const firstName = access.nom.split(" ")[0] ?? access.nom;
+  const perm = access.permissions ?? {};
+
+  const navItems: {id:NavTab;label:string;icon:typeof FileText;count?:number;show:boolean}[] = [
+    {id:"accueil",   label:"Accueil",    icon:Building2,      show:true},
+    {id:"factures",  label:"Factures",   icon:FileText,       count:factures.length,  show:!!perm.factures},
+    {id:"projets",   label:"Projets",    icon:Folder,         count:projets.length,   show:!!perm.projets},
+    {id:"documents", label:"Documents",  icon:FileText,       count:docs.length,      show:!!perm.documents},
+    {id:"messages",  label:"Messages",   icon:MessageSquare,  count:msgs.filter(m=>m.from==="admin").length, show:!!perm.messages},
+  ].filter(n=>n.show);
+
+  /* ══════════════════════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#07080e] text-white">
-      {/* Ambient glow */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full bg-violet-600/4 blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-sky-600/4 blur-[120px]" />
-      </div>
+    <div className="flex min-h-screen flex-col bg-[#07080e]">
 
-      <div className="relative z-10">
-        {/* Header */}
-        <header className="border-b border-white/6 bg-[#07080e]/80 px-5 py-4 backdrop-blur-md sm:px-8">
-          <div className="mx-auto flex max-w-3xl items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 text-sm font-black">D</div>
+      {/* ── TOP BAR ── */}
+      <header className="sticky top-0 z-30 border-b border-white/6 bg-[#07080e]/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-3.5">
+          <div>
+            <p className="text-sm font-black text-white">Espace Client</p>
+            {access.entreprise && (
+              <p className="flex items-center gap-1 text-[0.62rem] text-white/30"><Building2 size={9}/>{access.entreprise}</p>
+            )}
+          </div>
+          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-sm font-black text-[#0a0a0a] shadow-lg"
+            style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)"}}>
+            {firstName[0].toUpperCase()}
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto w-full max-w-3xl flex-1 px-5 pb-24">
+
+        {/* ── ACCUEIL ── */}
+        {tab==="accueil" && (
+          <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="pt-6 space-y-6">
+            {/* Salutation */}
+            <div className="relative overflow-hidden rounded-3xl border border-white/6 bg-white/4 px-6 py-7">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-20 blur-3xl" style={{background:GOLD}}/>
+              <p className="text-[0.65rem] font-bold uppercase tracking-widest mb-2" style={{color:GOLD}}>Bienvenue</p>
+              <h1 className="text-2xl font-black text-white">Bonjour, {firstName}</h1>
+              {access.welcome_message && (
+                <p className="mt-3 text-sm leading-relaxed text-white/50">{access.welcome_message}</p>
+              )}
+              <p className="mt-3 text-xs text-white/25">
+                {access.portal_activated_at ? `Compte activé le ${fmtDate(access.portal_activated_at)}` : "Compte actif"}
+              </p>
+            </div>
+
+            {/* Résumé rapide */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                perm.factures  && {label:"Factures",  value:factures.length,  color:"#10b981", sub:`${factures.filter(f=>f.statut==="en_attente").length} à payer`},
+                perm.projets   && {label:"Projets",   value:projets.length,   color:GOLD,      sub:"en cours"},
+                perm.documents && {label:"Documents", value:docs.length,      color:"#3b82f6", sub:"partagés"},
+                perm.messages  && {label:"Messages",  value:msgs.length,      color:"#8b5cf6", sub:`${msgs.filter(m=>m.from==="admin").length} nouveaux`},
+              ].filter(Boolean).map((item,i)=>{
+                if (!item) return null;
+                return (
+                  <div key={i} className="relative overflow-hidden rounded-2xl border border-white/6 bg-white/4 p-4">
+                    <div className="pointer-events-none absolute -right-3 -top-3 h-12 w-12 rounded-full opacity-15 blur-xl" style={{background:item.color}}/>
+                    <p className="text-xl font-black" style={{color:item.color}}>{item.value}</p>
+                    <p className="text-[0.62rem] font-semibold text-white/40">{item.label}</p>
+                    <p className="text-[0.58rem] text-white/20">{item.sub}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Factures récentes */}
+            {perm.factures && factures.filter(f=>f.statut==="en_attente").length>0 && (
               <div>
-                <p className="text-[0.58rem] font-bold uppercase tracking-widest text-white/25">Portail client</p>
-                <p className="text-sm font-bold text-white leading-tight">{client?.nom ?? "—"}</p>
+                <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-widest text-white/30">À régler</p>
+                <div className="space-y-2">
+                  {factures.filter(f=>f.statut==="en_attente").slice(0,3).map(f=>(
+                    <div key={f.id} className="flex items-center justify-between rounded-2xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-white/80">{f.sujet||f.numero}</p>
+                        <p className="text-[0.6rem] text-white/30">{f.numero} · {fmtDate(f.date_document)}</p>
+                      </div>
+                      <p className="text-sm font-black" style={{color:GOLD}}>{fmtCur(f.total_ttc)}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-3 py-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[0.65rem] font-bold text-emerald-400">Connecté</span>
-            </div>
-          </div>
-        </header>
+            )}
 
-        {/* Welcome banner */}
-        <div className="border-b border-white/4 bg-white/2 px-5 py-5 sm:px-8">
-          <div className="mx-auto max-w-3xl">
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}>
-              <p className="text-[0.62rem] font-bold uppercase tracking-widest text-white/25">Bonjour,</p>
-              <h1 className="text-xl font-black text-white sm:text-2xl">{firstName} 👋</h1>
-              {client?.entreprise && <p className="mt-0.5 text-xs text-white/40">{client.entreprise}</p>}
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Tab bar */}
-        <div className="border-b border-white/6 px-5 sm:px-8">
-          <div className="mx-auto max-w-3xl">
-            <div className="flex gap-1">
-              {([
-                { k: "dashboard",  label: "Mon espace",  Icon: LayoutDashboard },
-                { k: "messages",   label: "Messages",    Icon: MessageSquare,  badge: adminMsgs },
-                { k: "documents",  label: "Documents",   Icon: FileText,       badge: docs.filter(d => d.uploadedBy === "admin").length },
-              ] as { k: Tab; label: string; Icon: React.ElementType; badge?: number }[]).map(({ k, label, Icon, badge }) => (
-                <button key={k} onClick={() => setTab(k)}
-                  className={`flex items-center gap-2 border-b-2 px-4 py-3.5 text-sm font-semibold transition-all ${
-                    tab === k ? "border-violet-500 text-white" : "border-transparent text-white/35 hover:text-white/60"
-                  }`}>
-                  <Icon size={14} />
-                  {label}
-                  {badge !== undefined && badge > 0 && (
-                    <span className="rounded-full bg-violet-500 px-1.5 py-0.5 text-[0.55rem] text-white leading-none">{badge}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="mx-auto max-w-3xl px-5 py-8 sm:px-8">
-          <AnimatePresence mode="wait">
-            <motion.div key={tab}
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease }}>
-
-              {/* ── DASHBOARD ── */}
-              {tab === "dashboard" && (
-                <div className="space-y-5">
-                  {/* Status cards */}
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {[
-                      { label: "Messages reçus",   value: adminMsgs,                        color: "#8b5cf6", Icon: MessageSquare },
-                      { label: "Documents partagés", value: docs.filter(d=>d.uploadedBy==="admin").length, color: "#0ea5e9", Icon: FileText },
-                      { label: "Statut",             value: client?.statut === "actif" ? "Actif" : client?.statut ?? "—", color: "#10b981", Icon: CheckCircle2 },
-                    ].map(({ label, value, color, Icon }) => (
-                      <div key={label} className="relative overflow-hidden rounded-2xl border border-white/6 bg-white/4 p-4">
-                        <div className="pointer-events-none absolute -right-4 -top-4 h-16 w-16 rounded-full opacity-15 blur-xl" style={{ background: color }} />
-                        <Icon size={16} className="mb-2" style={{ color }} />
-                        <p className="text-xl font-black text-white">{value}</p>
-                        <p className="text-[0.6rem] font-semibold text-white/30">{label}</p>
+            {/* Projets actifs */}
+            {perm.projets && projets.filter(p=>p.status==="en_cours"||p.status==="actif").length>0 && (
+              <div>
+                <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-widest text-white/30">Projets en cours</p>
+                <div className="space-y-2">
+                  {projets.filter(p=>p.status==="en_cours"||p.status==="actif").slice(0,2).map(p=>(
+                    <div key={p.id} className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-bold text-white/80">{p.nom}</p>
+                        <p className="text-[0.6rem] text-white/30">{p.end_date?fmtDate(p.end_date):"—"}</p>
                       </div>
-                    ))}
+                      <div className="h-1.5 rounded-full bg-white/8">
+                        <div className="h-full rounded-full transition-all" style={{width:`${p.progress??0}%`,background:p.color??GOLD}}/>
+                      </div>
+                      <p className="mt-1.5 text-[0.6rem] text-white/30">{p.progress??0}% complété</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Contact */}
+            {access.email && (
+              <div className="rounded-2xl border border-white/6 bg-white/4 px-5 py-4">
+                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25 mb-3">Votre accès</p>
+                <div className="flex items-center gap-2 text-sm text-white/50">
+                  <Mail size={13}/> {access.email}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── FACTURES ── */}
+        {tab==="factures" && (
+          <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="pt-6 space-y-3">
+            <h2 className="text-lg font-black text-white">Factures & Devis</h2>
+            {factures.length===0 ? (
+              <div className="flex flex-col items-center gap-4 py-16 text-center">
+                <FileText size={32} className="text-white/10"/>
+                <p className="text-white/30">Aucun document disponible</p>
+              </div>
+            ) : (
+              factures.map(f=>{
+                const s = STATUT_DOC[f.statut] ?? STATUT_DOC.brouillon;
+                const Icon = s.icon;
+                return (
+                  <div key={f.id} className="rounded-2xl border border-white/6 bg-white/4 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-white/85 truncate">{f.sujet||f.numero}</p>
+                        <p className="text-xs text-white/35 mt-0.5">{f.numero} · {fmtDate(f.date_document)}</p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1.5 rounded-xl border px-2.5 py-1.5"
+                        style={{background:`${s.color}12`,borderColor:`${s.color}25`,color:s.color}}>
+                        <Icon size={10}/>
+                        <span className="text-[0.62rem] font-bold">{s.label}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-[0.62rem] px-2 py-0.5 rounded-full font-semibold capitalize"
+                        style={{background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.4)"}}>
+                        {f.type}
+                      </span>
+                      <span className="text-base font-black" style={{color:GOLD}}>{fmtCur(f.total_ttc)}</span>
+                    </div>
                   </div>
+                );
+              })
+            )}
+          </motion.div>
+        )}
 
-                  {/* Recent messages preview */}
-                  {msgs.length > 0 && (
-                    <div className="rounded-2xl border border-white/6 bg-white/4 p-5">
-                      <div className="mb-3 flex items-center justify-between">
-                        <p className="text-xs font-bold text-white/50">Derniers messages</p>
-                        <button onClick={() => setTab("messages")} className="text-[0.65rem] font-bold text-violet-400 hover:text-violet-300 transition">Voir tout →</button>
-                      </div>
-                      <div className="space-y-2">
-                        {msgs.slice(-3).map(m => (
-                          <div key={m.id} className="flex items-start gap-2.5">
-                            <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${m.from === "admin" ? "bg-violet-400" : "bg-sky-400"}`} />
-                            <p className="flex-1 truncate text-sm text-white/60">{m.text}</p>
-                            <p className="shrink-0 text-[0.58rem] text-white/25">{m.from === "admin" ? "Équipe" : "Vous"}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Recent docs preview */}
-                  {docs.length > 0 && (
-                    <div className="rounded-2xl border border-white/6 bg-white/4 p-5">
-                      <div className="mb-3 flex items-center justify-between">
-                        <p className="text-xs font-bold text-white/50">Derniers documents</p>
-                        <button onClick={() => setTab("documents")} className="text-[0.65rem] font-bold text-sky-400 hover:text-sky-300 transition">Voir tout →</button>
-                      </div>
-                      <div className="space-y-2">
-                        {docs.slice(-3).map(d => (
-                          <div key={d.id} className="flex items-center gap-2.5">
-                            <FileText size={12} className="shrink-0 text-white/30" />
-                            <p className="flex-1 truncate text-sm text-white/60">{d.name}</p>
-                            <p className="shrink-0 text-[0.58rem] text-white/25">{fmtSize(d.size)}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Empty state */}
-                  {msgs.length === 0 && docs.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-white/8 p-10 text-center">
-                      <Clock size={28} className="mx-auto mb-3 text-white/15" />
-                      <p className="text-sm font-semibold text-white/40">Votre espace est prêt</p>
-                      <p className="mt-1 text-xs text-white/25">Les messages et documents de votre prestataire apparaîtront ici</p>
-                    </div>
-                  )}
-
-                  {/* Info card */}
-                  <div className="rounded-2xl border border-white/6 bg-white/2 px-5 py-4">
-                    <div className="space-y-1.5 text-xs">
-                      {client?.email && (
-                        <div className="flex justify-between">
-                          <span className="text-white/30">Email</span>
-                          <span className="font-semibold text-white/60">{client.email}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-white/30">Client depuis</span>
-                        <span className="font-semibold text-white/60">{new Date(client?.created_at ?? "").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</span>
-                      </div>
-                    </div>
+        {/* ── PROJETS ── */}
+        {tab==="projets" && (
+          <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="pt-6 space-y-3">
+            <h2 className="text-lg font-black text-white">Mes Projets</h2>
+            {projets.length===0 ? (
+              <div className="flex flex-col items-center gap-4 py-16 text-center">
+                <Folder size={32} className="text-white/10"/>
+                <p className="text-white/30">Aucun projet partagé</p>
+              </div>
+            ) : (
+              projets.map(p=>(
+                <div key={p.id} className="rounded-2xl border border-white/6 bg-white/4 p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-bold text-white/85">{p.nom}</p>
+                    <span className="text-[0.62rem] text-white/30">{p.end_date?`Échéance ${fmtDate(p.end_date)}`:"—"}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/8 mb-2">
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{width:`${p.progress??0}%`,background:p.color??GOLD}}/>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-white/30">{p.progress??0}% complété</p>
+                    <span className="text-[0.62rem] px-2 py-0.5 rounded-full capitalize"
+                      style={{background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.4)"}}>
+                      {p.status?.replace(/_/g," ")}
+                    </span>
                   </div>
                 </div>
-              )}
+              ))
+            )}
+          </motion.div>
+        )}
 
-              {/* ── MESSAGES ── */}
-              {tab === "messages" && (
-                <div className="flex flex-col" style={{ minHeight: "60vh" }}>
-                  <div className="mb-4 flex-1 space-y-3">
-                    {msgs.length === 0 ? (
-                      <div className="flex flex-col items-center gap-3 py-20 text-center">
-                        <MessageSquare size={32} className="text-white/12" />
-                        <p className="text-sm font-semibold text-white/40">Aucun message pour l'instant</p>
-                        <p className="text-xs text-white/25">Envoyez un message à votre prestataire</p>
-                      </div>
-                    ) : (
-                      msgs.map(m => (
-                        <motion.div key={m.id}
-                          initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                          className={`flex ${m.from === "client" ? "justify-end" : "justify-start"}`}>
-                          <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                            m.from === "client"
-                              ? "rounded-br-sm border border-sky-500/20 bg-sky-500/15"
-                              : "rounded-bl-sm border border-white/8 bg-white/6"
-                          }`}>
-                            <p className="text-sm leading-snug text-white/85">{m.text}</p>
-                            <p className="mt-1.5 text-[0.58rem] text-white/25">
-                              {m.from === "client" ? "Vous" : "Votre prestataire"} · {new Date(m.date).toLocaleString("fr-FR", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}
-                            </p>
-                          </div>
-                        </motion.div>
-                      ))
-                    )}
-                    <div ref={msgEndRef} />
+        {/* ── DOCUMENTS ── */}
+        {tab==="documents" && (
+          <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="pt-6 space-y-3">
+            <h2 className="text-lg font-black text-white">Documents partagés</h2>
+            {docs.length===0 ? (
+              <div className="flex flex-col items-center gap-4 py-16 text-center">
+                <FileText size={32} className="text-white/10"/>
+                <p className="text-white/30">Aucun document partagé</p>
+              </div>
+            ) : (
+              docs.map(doc=>(
+                <div key={doc.id} className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/4 p-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/8">
+                    <FileText size={16} className="text-white/40"/>
                   </div>
-
-                  <div className="sticky bottom-0 bg-[#07080e] pt-4">
-                    <div className="flex gap-3">
-                      <input
-                        value={msgInput}
-                        onChange={e => setMsgInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(); } }}
-                        placeholder="Votre message…"
-                        className="flex-1 rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition focus:border-white/20 focus:bg-white/8"
-                      />
-                      <button onClick={sendMsg} disabled={!msgInput.trim()}
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-sky-500/30 bg-sky-500/20 text-sky-300 transition hover:bg-sky-500/35 disabled:opacity-30">
-                        <Send size={16} />
-                      </button>
-                    </div>
-                    <p className="mt-2 text-center text-[0.6rem] text-white/20">Vos messages sont partagés avec votre prestataire</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-white/80 truncate">{doc.name}</p>
+                    <p className="text-[0.6rem] text-white/30">{fmtSize(doc.size)} · {fmtDate(doc.uploadedAt)}</p>
                   </div>
-                </div>
-              )}
-
-              {/* ── DOCUMENTS ── */}
-              {tab === "documents" && (
-                <div className="space-y-4">
-                  {/* Upload */}
-                  <input ref={docFileRef} type="file" className="hidden" multiple onChange={e => { void handleUpload(e.target.files); e.target.value = ""; }} />
-                  <button onClick={() => docFileRef.current?.click()} disabled={uploadingDoc}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/12 py-5 text-sm font-semibold text-white/35 transition hover:border-sky-500/30 hover:text-sky-400 disabled:opacity-50">
-                    {uploadingDoc ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                    {uploadingDoc ? "Envoi en cours…" : "Envoyer un document à votre prestataire"}
-                  </button>
-
-                  {uploadErr && (
-                    <p className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-2.5 text-xs text-amber-400">{uploadErr}</p>
-                  )}
-
-                  {docs.length === 0 ? (
-                    <div className="flex flex-col items-center gap-3 py-16 text-center">
-                      <FileText size={32} className="text-white/12" />
-                      <p className="text-sm font-semibold text-white/40">Aucun document</p>
-                      <p className="text-xs text-white/25">Les documents partagés par votre prestataire apparaîtront ici</p>
-                    </div>
-                  ) : (
-                    <>
-                      {docs.filter(d => d.uploadedBy === "admin").length > 0 && (
-                        <div>
-                          <p className="mb-2 text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Partagés par votre prestataire</p>
-                          <div className="space-y-2">
-                            {docs.filter(d => d.uploadedBy === "admin").map(doc => (
-                              <div key={doc.id} className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/4 p-4">
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/15">
-                                  <FileText size={14} className="text-violet-400" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-semibold text-white">{doc.name}</p>
-                                  <p className="text-[0.6rem] text-white/30">{fmtSize(doc.size)} · {new Date(doc.uploadedAt).toLocaleDateString("fr-FR")}</p>
-                                </div>
-                                {doc.url && (
-                                  <a href={doc.url} target="_blank" rel="noopener noreferrer"
-                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/8 text-white/30 transition hover:border-sky-500/30 hover:text-sky-400">
-                                    <Download size={13} />
-                                  </a>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {docs.filter(d => d.uploadedBy === "client").length > 0 && (
-                        <div>
-                          <p className="mb-2 text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Vos envois</p>
-                          <div className="space-y-2">
-                            {docs.filter(d => d.uploadedBy === "client").map(doc => (
-                              <div key={doc.id} className="flex items-center gap-3 rounded-2xl border border-sky-500/12 bg-sky-500/5 p-4">
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/12">
-                                  <FileText size={14} className="text-sky-400" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-semibold text-white">{doc.name}</p>
-                                  <p className="text-[0.6rem] text-white/30">{fmtSize(doc.size)} · {new Date(doc.uploadedAt).toLocaleDateString("fr-FR")}</p>
-                                </div>
-                                <CheckCircle2 size={14} className="shrink-0 text-sky-400" />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
+                  {doc.url && (
+                    <a href={doc.url} target="_blank" rel="noopener noreferrer"
+                      onClick={async()=>{
+                        await supabase.from("portal_audit_log").insert({
+                          portal_client_id: access.id,
+                          action:"telechargement",
+                          resource_type:"portail_doc",
+                          metadata:{name:doc.name},
+                        });
+                      }}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/8 text-white/30 transition hover:bg-white/8 hover:text-white/70">
+                      <Download size={14}/>
+                    </a>
                   )}
                 </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+              ))
+            )}
+          </motion.div>
+        )}
 
-        <footer className="pb-8 text-center">
-          <p className="text-[0.6rem] text-white/15">Portail sécurisé · DJAMA PRO · Accès privé et confidentiel</p>
-        </footer>
+        {/* ── MESSAGES ── */}
+        {tab==="messages" && (
+          <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="flex flex-col pt-6" style={{height:"calc(100vh - 180px)"}}>
+            <h2 className="mb-4 text-lg font-black text-white shrink-0">Messagerie</h2>
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {msgs.length===0 ? (
+                <div className="flex flex-col items-center gap-4 py-16 text-center">
+                  <MessageSquare size={32} className="text-white/10"/>
+                  <p className="text-white/30">Aucun message</p>
+                  <p className="text-xs text-white/20">Envoyez un message à votre prestataire</p>
+                </div>
+              ) : (
+                msgs.map(m=>(
+                  <div key={m.id} className={`flex ${m.from==="client"?"justify-end":"justify-start"}`}>
+                    <div className={`max-w-[82%] rounded-2xl px-4 py-3 ${
+                      m.from==="client"
+                        ? "rounded-br-sm bg-white/12 border border-white/15"
+                        : "rounded-bl-sm bg-white/5 border border-white/8"
+                    }`}>
+                      <p className="text-sm leading-relaxed text-white/85">{m.text}</p>
+                      <p className="mt-1.5 text-[0.58rem] text-white/25">
+                        {m.from==="admin"?"Votre prestataire":"Vous"} · {new Date(m.date).toLocaleString("fr-FR",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"})}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={msgEndRef}/>
+            </div>
+            <div className="mt-3 flex shrink-0 gap-2">
+              <input value={msgInput} onChange={e=>setMsgInput(e.target.value)}
+                onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void sendMsg();}}}
+                placeholder="Votre message…"
+                className="flex-1 rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition focus:border-white/20"/>
+              <button onClick={()=>void sendMsg()} disabled={!msgInput.trim()||sending}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/12 bg-white/8 text-white/50 transition hover:bg-white/15 hover:text-white disabled:opacity-30">
+                {sending ? <Loader2 size={14} className="animate-spin"/> : <Send size={14}/>}
+              </button>
+            </div>
+          </motion.div>
+        )}
       </div>
+
+      {/* ── BOTTOM NAV ── */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/6 bg-[#07080e]/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-3xl items-center justify-around px-4 py-2">
+          {navItems.map(item=>{
+            const Icon = item.icon;
+            const active = tab===item.id;
+            return (
+              <button key={item.id} onClick={()=>setTab(item.id)}
+                className="relative flex flex-col items-center gap-1 px-4 py-2 transition-all">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${active?"scale-110":""}`}
+                  style={active?{background:`${GOLD}18`,color:GOLD}:{color:"rgba(255,255,255,0.3)"}}>
+                  <Icon size={16}/>
+                </div>
+                <span className="text-[0.58rem] font-semibold transition-all"
+                  style={{color:active?GOLD:"rgba(255,255,255,0.25)"}}>
+                  {item.label}
+                </span>
+                {item.count && item.count>0 && !active && (
+                  <span className="absolute -right-0.5 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-[0.5rem] font-bold text-white">
+                    {item.count>9?"9+":item.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
