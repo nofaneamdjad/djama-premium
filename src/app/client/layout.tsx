@@ -317,6 +317,7 @@ const DARK_PAGES = [
   "/client/checklists",
   "/client/scanner",
   "/client/mindmap",
+  "/client/apps",
 ];
 
 /* ─────────── LAYOUT ROOT ─────────── */

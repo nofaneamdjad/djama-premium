@@ -14,7 +14,7 @@ interface Props {
   onSearchOpen: () => void;
 }
 
-export default function BottomNavMobile({ pathname, dark = false, accent = GOLD, onLauncherOpen, onSearchOpen }: Props) {
+export default function BottomNavMobile({ pathname, dark = false, accent = GOLD, onLauncherOpen: _onLauncherOpen, onSearchOpen }: Props) {
   const items = [
     {
       key: "accueil",
@@ -28,9 +28,9 @@ export default function BottomNavMobile({ pathname, dark = false, accent = GOLD,
       key: "apps",
       label: "Applications",
       icon: Grid2x2,
-      href: undefined,
+      href: "/client/apps",
       exact: false,
-      onClick: onLauncherOpen,
+      onClick: undefined as (() => void) | undefined,
     },
     {
       key: "creer",
