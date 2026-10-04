@@ -207,6 +207,105 @@ async function markDocumentPaid(documentId: string) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   handlePaymentLinkSuccess
+   Appelé quand checkout.session.completed a un payment_link_id.
+   Crée payment_transactions (idempotent) + met à jour compteurs.
+───────────────────────────────────────────────────────────── */
+async function handlePaymentLinkSuccess(session: Stripe.Checkout.Session) {
+  const supabase   = getSupabaseAdmin();
+  const meta       = session.metadata ?? {};
+  const linkId     = meta.payment_link_id;
+  const documentId = meta.document_id ?? null;
+  const piId       = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+
+  if (!linkId) return;
+
+  // Récupérer le lien pour obtenir user_id
+  const { data: link } = await supabase
+    .from("payment_links")
+    .select("id,user_id,amount,currency,document_id")
+    .eq("id", linkId)
+    .single();
+  if (!link) { log.warn(`payment_link ${linkId} introuvable`); return; }
+
+  // Montant validé depuis Stripe (jamais depuis le client)
+  const amountTotal = (session.amount_total ?? 0) / 100;
+  const currency    = session.currency ?? (link.currency as string) ?? "eur";
+
+  // Extraire les champs personnalisés collectés par Stripe
+  const customFields  = (session.custom_fields ?? []) as Array<{ key: string; text?: { value?: string } }>;
+  const customerName  = session.customer_details?.name
+    ?? customFields.find(f => f.key === "customer_name")?.text?.value
+    ?? null;
+  const customerEmail = session.customer_details?.email ?? null;
+
+  // Charge ID depuis Stripe (pour les remboursements ultérieurs)
+  let chargeId: string | null = null;
+  try {
+    if (piId) {
+      const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
+      const pi = await stripeInstance.paymentIntents.retrieve(piId, { expand: ["latest_charge"] });
+      const charge = pi.latest_charge;
+      if (typeof charge === "object" && charge !== null && "id" in charge) chargeId = charge.id;
+    }
+  } catch { /* pas bloquant */ }
+
+  // Idempotence : on utilise stripe_payment_intent_id UNIQUE
+  const { error: txErr } = await supabase.from("payment_transactions").upsert(
+    {
+      payment_link_id:          linkId,
+      user_id:                  link.user_id as string,
+      document_id:              (link.document_id as string | null) ?? documentId,
+      stripe_payment_intent_id: piId,
+      stripe_charge_id:         chargeId,
+      amount:                   amountTotal,
+      currency,
+      status:                   "succeeded",
+      customer_name:            customerName,
+      customer_email:           customerEmail,
+      metadata:                 { session_id: session.id },
+      updated_at:               new Date().toISOString(),
+    },
+    { onConflict: "stripe_payment_intent_id", ignoreDuplicates: false },
+  );
+  if (txErr) { log.error("payment_transactions upsert", txErr.message); return; }
+
+  // Mettre à jour les compteurs du lien
+  const { data: agg } = await supabase
+    .from("payment_transactions")
+    .select("amount")
+    .eq("payment_link_id", linkId)
+    .eq("status", "succeeded");
+  const totalCollected = (agg ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0);
+  const paymentCount   = (agg ?? []).length;
+
+  await supabase.from("payment_links").update({
+    total_collected: totalCollected,
+    payment_count:   paymentCount,
+    status:          "paid",
+    paid_at:         new Date().toISOString(),
+    updated_at:      new Date().toISOString(),
+  }).eq("id", linkId);
+
+  // Si facture liée → marquer payée
+  const docId = (link.document_id as string | null) ?? documentId;
+  if (docId) {
+    await markDocumentPaid(docId);
+    // Enregistrer dans document_payments pour la trésorerie
+    await supabase.from("document_payments").insert({
+      user_id:     link.user_id as string,
+      document_id: docId,
+      amount:      amountTotal,
+      date:        new Date().toISOString().slice(0, 10),
+      method:      "stripe_payment_link",
+      notes:       `Stripe checkout session ${session.id}`,
+    }).select("id").maybeSingle();
+  }
+
+  log.info(`payment_link ${linkId} → success — ${amountTotal} ${currency}`);
+}
+
+/* ─────────────────────────────────────────────────────────────
    checkout.session.completed
    → Flux principal : créer compte + activer + envoyer email
 ───────────────────────────────────────────────────────────── */
@@ -518,7 +617,9 @@ export async function POST(req: Request) {
   /* ── checkout.session.completed ─────────────────────────── */
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    if (session.metadata?.document_id) {
+    if (session.metadata?.payment_link_id) {
+      /* Lien de paiement DJAMA — géré dans le bloc dédié ci-dessous */
+    } else if (session.metadata?.document_id) {
       /* Paiement lien de paiement (facture/devis) */
       await markDocumentPaid(session.metadata.document_id);
     } else if (session.metadata?.product === "coaching_ia") {
@@ -581,11 +682,22 @@ export async function POST(req: Request) {
     }
   }
 
+  /* ── checkout.session.completed (lien de paiement personnalisé) ── */
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const meta    = session.metadata ?? {};
+    if (meta.payment_link_id) {
+      await handlePaymentLinkSuccess(session);
+    }
+  }
+
   /* ── payment_intent.succeeded — paiement direct (lien de paiement) ── */
   if (event.type === "payment_intent.succeeded") {
     const pi   = event.data.object as Stripe.PaymentIntent;
     const meta = pi.metadata ?? {};
-    if (meta.document_id) {
+    if (meta.payment_link_id) {
+      // Géré via checkout.session.completed — skip pour éviter double enregistrement
+    } else if (meta.document_id) {
       await markDocumentPaid(meta.document_id);
     } else if (meta.reference) {
       const supabase = getSupabaseAdmin();
@@ -598,7 +710,11 @@ export async function POST(req: Request) {
   if (event.type === "payment_intent.payment_failed") {
     const pi   = event.data.object as Stripe.PaymentIntent;
     const meta = pi.metadata ?? {};
-    if (meta.document_id) {
+    if (meta.payment_link_id) {
+      await getSupabaseAdmin().from("payment_transactions").update({
+        status: "failed", updated_at: new Date().toISOString(),
+      }).eq("stripe_payment_intent_id", pi.id);
+    } else if (meta.document_id) {
       const supabase = getSupabaseAdmin();
       await supabase.from("documents").update({ statut: "en_retard" }).eq("id", meta.document_id);
       log.info(`payment_intent.payment_failed → document ${meta.document_id} → en_retard`);
