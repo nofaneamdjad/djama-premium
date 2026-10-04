@@ -134,10 +134,16 @@ CREATE POLICY "social_campaigns_own" ON social_campaigns
 
 CREATE INDEX IF NOT EXISTS idx_social_campaigns_user ON social_campaigns (user_id);
 
--- FK campagne → posts
-ALTER TABLE social_posts
-  ADD CONSTRAINT IF NOT EXISTS fk_social_posts_campaign
-  FOREIGN KEY (campaign_id) REFERENCES social_campaigns(id) ON DELETE SET NULL;
+-- FK campagne → posts (idempotent — IF NOT EXISTS non supporté pour ADD CONSTRAINT)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_social_posts_campaign'
+  ) THEN
+    ALTER TABLE social_posts
+      ADD CONSTRAINT fk_social_posts_campaign
+      FOREIGN KEY (campaign_id) REFERENCES social_campaigns(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 /* ─────────────────────────────────────────────────
    5. Idées de contenu IA
