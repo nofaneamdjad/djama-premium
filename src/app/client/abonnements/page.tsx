@@ -478,7 +478,7 @@ export default function AbonnementsPage() {
                 label: "Factures total",
                 value: usage ? String(usage.facturesTotal) : "—",
                 sub: "créées",
-                color: "#6366f1",
+                color: "#c9a55a",
               },
               {
                 icon: TrendingUp,

@@ -30,7 +30,7 @@ function CoachingIALayoutInner({ children }: { children: React.ReactNode }) {
     return (
       <div className={`flex min-h-screen flex-col items-center justify-center gap-5 ${wrap}`}>
         <div className="relative">
-          <div className={`h-10 w-10 animate-spin rounded-full border-2 border-t-[#a78bfa] ${isDark ? "border-white/[0.08]" : "border-gray-100"}`} />
+          <div className={`h-10 w-10 animate-spin rounded-full border-2 border-t-[#c9a55a] ${isDark ? "border-white/[0.08]" : "border-gray-100"}`} />
         </div>
         <div className="text-center">
           <p className={`text-xs font-semibold ${txtMut}`}>Vérification de l&apos;accès…</p>

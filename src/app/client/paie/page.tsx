@@ -33,7 +33,7 @@ const CONTRAT: Record<string, { color: string; glow: string; bg: string; border:
 };
 
 const AVATAR_GRADIENTS = [
-  "linear-gradient(135deg,#6366f1,#c9a55a)",
+  "linear-gradient(135deg,#c9a55a,#b08d45)",
   "linear-gradient(135deg,#10b981,#059669)",
   "linear-gradient(135deg,#f59e0b,#d97706)",
   "linear-gradient(135deg,#3b82f6,#2563eb)",

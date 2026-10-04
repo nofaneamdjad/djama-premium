@@ -675,7 +675,7 @@ function NegotiationsPanel() {
             <div className="flex gap-2">
               <button onClick={() => { void saveNeg(); }} disabled={!form.supplier?.trim()}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-[12px] font-semibold transition-all disabled:opacity-40"
-                style={{ background: isDark ? "#6366f1" : "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
                 <Check size={12}/> {editId ? "Mettre à jour" : "Créer"}
               </button>
               <button onClick={() => { setShowForm(false); setEditId(null); setForm({ status: "En cours" }); }}
