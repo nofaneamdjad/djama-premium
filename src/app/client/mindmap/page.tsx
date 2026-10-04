@@ -1,510 +1,721 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Network, Plus, Trash2, Save, ArrowLeft,
-  Edit2, Check, X, ChevronRight, Sparkles, Loader2,
+  ReactFlow, Background, Controls, MiniMap,
+  useNodesState, useEdgesState,
+  type Node, type Edge, type NodeTypes,
+  BackgroundVariant, Handle, Position,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import {
+  Network, Plus, Trash2, ArrowLeft, Sparkles, Loader2,
+  X, Check, Wand2, GitBranch, PlusCircle, Map,
+  Clock, AlertCircle,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
-import { APP_ICONS } from "@/components/AppIcons";
 
-const ease = [0.22, 1, 0.36, 1] as const;
+const GOLD = "#c9a55a";
 
-const NODE_COLORS = [
-  "#6366f1", "#ec4899", "#f59e0b", "#10b981",
-  "#0ea5e9", "#8b5cf6", "#ef4444", "#14b8a6",
-];
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface MapNode { id: string; text: string; color: string }
-interface MindMap  { id: string; title: string; center: string; nodes: MapNode[]; created_at: string }
+interface MindMapMeta {
+  id: string; title: string; description: string | null;
+  visibility: string; node_count?: number; pinned: boolean;
+  created_at: string; updated_at: string;
+}
 
-function uid() { return Math.random().toString(36).slice(2, 10); }
+interface NodeData extends Record<string, unknown> {
+  label: string; color: string; is_root?: boolean;
+  description?: string; priority?: string;
+  _onAddChild: (id: string) => void;
+  _onDelete: (id: string) => void;
+  _onSelect: (id: string) => void;
+}
 
-const RADIUS_SM = 115;
-const RADIUS_LG = 155;
+interface MindMapOp {
+  op: string;
+  [key: string]: unknown;
+}
 
-export default function MindMapPage() {
-  const { isDark } = useTheme();
-  const [maps,    setMaps]    = useState<MindMap[]>([]);
-  const [active,  setActive]  = useState<MindMap | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userId,  setUserId]  = useState<string | null>(null);
-  const [editingNode, setEditingNode] = useState<string | null>(null);
-  const [nodeDraft,   setNodeDraft]   = useState("");
-  const [editingCenter, setEditingCenter] = useState(false);
-  const [centerDraft,   setCenterDraft]   = useState("");
-  const [creating,       setCreating]       = useState(false);
-  const [mapDraft,       setMapDraft]       = useState("");
-  const [renamingTitle,  setRenamingTitle]  = useState(false);
-  const [titleDraft,     setTitleDraft]     = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mapInputRef = useRef<HTMLInputElement>(null);
+// ─── Custom node ──────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
-      const { data } = await supabase
-        .from("notes")
-        .select("id, title, content, created_at")
-        .eq("user_id", user.id)
-        .eq("note_type", "mindmap")
-        .order("created_at", { ascending: false });
-      const parsed: MindMap[] = (data ?? []).map((n: { id: string; title: string; content: string; created_at: string }) => {
-        let c: { center?: string; nodes?: MapNode[] } = {};
-        try { c = JSON.parse(n.content ?? "{}"); } catch {}
-        return { id: n.id, title: n.title ?? "Mind Map", center: c.center ?? n.title ?? "Idée centrale", nodes: c.nodes ?? [], created_at: n.created_at };
-      });
-      setMaps(parsed);
-      setLoading(false);
-    })();
-  }, []);
-
-  const saveMap = useCallback(async (map: MindMap) => {
-    if (!userId) return;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      await supabase.from("notes").upsert({
-        id: map.id, user_id: userId, title: map.title,
-        content: JSON.stringify({ center: map.center, nodes: map.nodes }),
-        note_type: "mindmap", updated_at: new Date().toISOString(),
-      }, { onConflict: "id" });
-    }, 800);
-  }, [userId]);
-
-  async function createMap() {
-    if (!mapDraft.trim() || !userId) return;
-    const m: MindMap = { id: uid(), title: mapDraft.trim(), center: mapDraft.trim(), nodes: [], created_at: new Date().toISOString() };
-    setMaps(prev => [m, ...prev]);
-    setActive(m);
-    setCreating(false);
-    setMapDraft("");
-    await saveMap(m);
-  }
-
-  function addNode() {
-    if (!active) return;
-    const node: MapNode = { id: uid(), text: "Nouvelle idée", color: NODE_COLORS[active.nodes.length % NODE_COLORS.length] };
-    const updated = { ...active, nodes: [...active.nodes, node] };
-    setActive(updated);
-    setMaps(prev => prev.map(m => m.id === updated.id ? updated : m));
-    setEditingNode(node.id);
-    setNodeDraft(node.text);
-    saveMap(updated);
-  }
-
-  async function suggestAiNodes() {
-    if (!active) return;
-    setAiLoading(true);
-    try {
-      const res = await fetch("/api/mindmap/suggest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ center: active.center, nodes: active.nodes }),
-      });
-      const data = await res.json() as { suggestions?: string[]; error?: string };
-      if (data.suggestions?.length) {
-        const newNodes: MapNode[] = data.suggestions.map((text, i) => ({
-          id: uid(),
-          text,
-          color: NODE_COLORS[(active.nodes.length + i) % NODE_COLORS.length],
-        }));
-        const updated = { ...active, nodes: [...active.nodes, ...newNodes] };
-        setActive(updated);
-        setMaps(prev => prev.map(m => m.id === updated.id ? updated : m));
-        saveMap(updated);
-      }
-    } catch {}
-    setAiLoading(false);
-  }
-
-  function deleteNode(nodeId: string) {
-    if (!active) return;
-    const updated = { ...active, nodes: active.nodes.filter(n => n.id !== nodeId) };
-    setActive(updated);
-    setMaps(prev => prev.map(m => m.id === updated.id ? updated : m));
-    saveMap(updated);
-  }
-
-  function commitNodeEdit() {
-    if (!active || !editingNode) return;
-    const updated = { ...active, nodes: active.nodes.map(n => n.id === editingNode ? { ...n, text: nodeDraft || n.text } : n) };
-    setActive(updated);
-    setMaps(prev => prev.map(m => m.id === updated.id ? updated : m));
-    setEditingNode(null);
-    saveMap(updated);
-  }
-
-  function commitCenterEdit() {
-    if (!active) return;
-    const updated = { ...active, center: centerDraft || active.center };
-    setActive(updated);
-    setMaps(prev => prev.map(m => m.id === updated.id ? updated : m));
-    setEditingCenter(false);
-    saveMap(updated);
-  }
-
-  async function deleteMap(id: string) {
-    setMaps(prev => prev.filter(m => m.id !== id));
-    if (active?.id === id) setActive(null);
-    await supabase.from("notes").delete().eq("id", id);
-  }
-
-  function commitTitleEdit() {
-    if (!active) { setRenamingTitle(false); return; }
-    const newTitle = titleDraft.trim() || active.title;
-    const updated = { ...active, title: newTitle };
-    setActive(updated);
-    setMaps(prev => prev.map(m => m.id === updated.id ? updated : m));
-    setRenamingTitle(false);
-    saveMap(updated);
-  }
-
-  /* Calcul positions en cercle */
-  function nodePosition(i: number, total: number, isSmall: boolean) {
-    const angle = (2 * Math.PI * i) / total - Math.PI / 2;
-    const r = isSmall ? RADIUS_SM : RADIUS_LG;
-    return { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
-  }
-
-  const SVG_W = 380;
-  const SVG_H = 360;
-  const CX = SVG_W / 2;
-  const CY = SVG_H / 2;
-  const isSmall = active ? active.nodes.length <= 5 : false;
+function MindMapNodeComponent({ id, data, selected }: { id: string; data: NodeData; selected?: boolean }) {
+  const isRoot = !!data.is_root;
+  const color = (data.color as string) || GOLD;
 
   return (
-    <div className={`flex h-[calc(100vh-56px)] ${isDark ? "bg-[#07080e]" : "bg-[#f0f2fb] mm-light"}`}>
-      {!isDark && (
-        <style>{`
-          .mm-light [class*="border-white/"] { border-color: rgba(12,24,100,0.09) !important; }
-          .mm-light [class*="bg-white/"] { background-color: rgba(12,24,100,0.04) !important; }
-          .mm-light [class*="hover:bg-white/"]:hover { background-color: rgba(12,24,100,0.06) !important; }
-          .mm-light .text-white { color: #111827 !important; }
-          .mm-light .text-white\\/80 { color: rgba(12,18,50,0.82) !important; }
-          .mm-light .text-white\\/70 { color: rgba(12,18,50,0.70) !important; }
-          .mm-light .text-white\\/60 { color: rgba(12,18,50,0.60) !important; }
-          .mm-light .text-white\\/30,.mm-light .text-white\\/25 { color: rgba(12,18,50,0.36) !important; }
-          .mm-light .text-white\\/20,.mm-light .text-white\\/15 { color: rgba(12,18,50,0.25) !important; }
-          .mm-light .text-white\\/10,.mm-light .text-white\\/8 { color: rgba(12,18,50,0.15) !important; }
-        `}</style>
-      )}
+    <div className="relative group" onClick={() => data._onSelect(id)}>
+      <Handle type="target" position={Position.Left} style={{ opacity: 0, width: 8, height: 8 }} />
+      <Handle type="source" position={Position.Right} style={{ opacity: 0, width: 8, height: 8 }} />
 
-      {/* ── Sidebar cartes ── */}
-      <div className={`flex flex-col w-full md:w-72 md:border-r border-white/[0.06] shrink-0 ${active ? "hidden md:flex" : "flex"}`}>
-        <div className="relative px-4 pt-5 pb-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl">
-                {APP_ICONS["/client/mindmap"]}
-              </div>
-              <h1 className="text-[16px] font-black text-white">Mind Maps</h1>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => { setCreating(true); setTimeout(() => mapInputRef.current?.focus(), 50); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white"
-              style={{ background: isDark ? "linear-gradient(135deg,#8b5cf6,#6d28d9)" : "linear-gradient(135deg,#c9a55a,#b08d45)", boxShadow: isDark ? "none" : "0 4px 12px rgba(176,141,69,0.28)" }}
-            >
-              <Plus size={13} /><span className="hidden sm:inline"> Nouvelle</span>
-            </motion.button>
+      <div style={{
+        background: isRoot ? `linear-gradient(135deg, ${color}22, ${color}44)` : "rgba(18,18,28,0.88)",
+        border: `${selected ? 2 : 1.5}px solid ${selected ? color : color + "55"}`,
+        borderRadius: isRoot ? 20 : 12,
+        padding: isRoot ? "12px 20px" : "8px 14px",
+        minWidth: isRoot ? 140 : 100,
+        maxWidth: 220,
+        backdropFilter: "blur(12px)",
+        boxShadow: selected
+          ? `0 0 0 3px ${color}33, 0 8px 24px rgba(0,0,0,0.4)`
+          : "0 4px 16px rgba(0,0,0,0.3)",
+        transition: "all 0.15s ease",
+        position: "relative",
+        cursor: "pointer",
+        userSelect: "none",
+      }}>
+        <div style={{ position: "absolute", top: 6, right: 6, width: 6, height: 6, borderRadius: "50%", background: color, opacity: 0.8 }} />
+        <div style={{ fontSize: isRoot ? 13 : 12, fontWeight: isRoot ? 700 : 500, color: isRoot ? color : "#e8e8f0", lineHeight: 1.3, wordBreak: "break-word" }}>
+          {data.label as string}
+        </div>
+        {data.description && (
+          <div style={{ fontSize: 10, color: "#888", marginTop: 3, lineHeight: 1.3 }}>
+            {(data.description as string).slice(0, 60)}
           </div>
-          {!loading && maps.length > 0 && (
-            <div className="flex gap-1.5">
-              {[
-                { label: "Cartes",    value: maps.length,                                          color: "#8b5cf6", onClick: () => setActive(null) },
-                { label: "Branches",  value: maps.reduce((s, m) => s + m.nodes.length, 0),         color: "#a78bfa", onClick: () => { if (maps[0]) setActive(maps[0]); } },
-              ].map((kpi, i) => (
-                <motion.div key={kpi.label}
-                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                  onClick={kpi.onClick}
-                  className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-violet-400/25"
-                  style={{ background: isDark ? "rgba(255,255,255,0.035)" : "rgba(12,24,100,0.04)" }}>
-                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: kpi.color }}/>
-                  <div>
-                    <p className="text-xs font-bold leading-none text-white">{kpi.value}</p>
-                    <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">{kpi.label}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+        )}
+        {data.priority && data.priority !== "normal" && (
+          <div style={{
+            display: "inline-block", marginTop: 4, fontSize: 9, padding: "1px 5px", borderRadius: 4,
+            background: data.priority === "urgent" ? "#ef444433" : "#f59e0b33",
+            color: data.priority === "urgent" ? "#ef4444" : "#f59e0b",
+            fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em",
+          }}>
+            {data.priority as string}
+          </div>
+        )}
+      </div>
+
+      {/* Add child button */}
+      <button
+        onClick={e => { e.stopPropagation(); data._onAddChild(id); }}
+        className="group-hover:!opacity-100"
+        style={{
+          position: "absolute", right: -10, top: "50%", transform: "translateY(-50%)",
+          width: 20, height: 20, borderRadius: "50%", background: color,
+          border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          opacity: 0, transition: "opacity 0.15s", color: "#111",
+        }}
+        title="Ajouter un nœud enfant"
+      >
+        <Plus size={10} strokeWidth={3} />
+      </button>
+
+      {/* Delete button (hidden for root) */}
+      {!isRoot && (
+        <button
+          onClick={e => { e.stopPropagation(); data._onDelete(id); }}
+          className="group-hover:!opacity-70"
+          style={{
+            position: "absolute", top: -8, left: -8,
+            width: 16, height: 16, borderRadius: "50%", background: "#ef4444",
+            border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            opacity: 0, transition: "opacity 0.15s",
+          }}
+          title="Supprimer"
+        >
+          <X size={8} strokeWidth={3} color="white" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+const nodeTypes: NodeTypes = { mindmap: MindMapNodeComponent as NodeTypes["mindmap"] };
+
+// ─── Canvas ───────────────────────────────────────────────────────────────────
+
+function MindMapCanvas({ mapId, mapTitle, onBack }: { mapId: string; mapTitle: string; onBack: () => void }) {
+  const { isDark } = useTheme();
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [loadingMap, setLoadingMap] = useState(true);
+  const [title, setTitle] = useState(mapTitle);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [editPanel, setEditPanel] = useState<{ id: string; label: string; color: string; description: string } | null>(null);
+  const [addingChild, setAddingChild] = useState<string | null>(null);
+  const [newNodeLabel, setNewNodeLabel] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiInstruction, setAiInstruction] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [pendingOps, setPendingOps] = useState<MindMapOp[] | null>(null);
+  const [applyLoading, setApplyLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Stable handler refs — updated every render, so node callbacks are never stale
+  const handlersRef = useRef({
+    onAddChild: (_id: string) => {},
+    onDelete: (_id: string) => {},
+    onSelect: (_id: string) => {},
+  });
+
+  // Stable proxies that always delegate to the ref (never change identity)
+  const stableAddChild = useRef((id: string) => handlersRef.current.onAddChild(id)).current;
+  const stableDelete  = useRef((id: string) => handlersRef.current.onDelete(id)).current;
+  const stableSelect  = useRef((id: string) => handlersRef.current.onSelect(id)).current;
+
+  function toRFNodes(raw: Record<string, unknown>[]): Node<NodeData>[] {
+    return raw.map(n => ({
+      id: n.id as string,
+      type: "mindmap",
+      position: { x: (n.position_x as number) ?? 0, y: (n.position_y as number) ?? 0 },
+      data: {
+        label: n.label as string,
+        color: (n.color as string) ?? GOLD,
+        is_root: n.is_root as boolean,
+        description: (n.description as string) ?? "",
+        priority: n.priority as string,
+        _onAddChild: stableAddChild,
+        _onDelete: stableDelete,
+        _onSelect: stableSelect,
+      },
+    }));
+  }
+
+  function toRFEdges(raw: Record<string, unknown>[]): Edge[] {
+    return raw.map(e => ({
+      id: e.id as string,
+      source: e.source_id as string,
+      target: e.target_id as string,
+      style: { stroke: "#c9a55a44", strokeWidth: 1.5 },
+    }));
+  }
+
+  // Update handlers ref every render
+  handlersRef.current = {
+    onAddChild: (id: string) => {
+      setAddingChild(id);
+      setNewNodeLabel("");
+    },
+    onDelete: (id: string) => {
+      fetch(`/api/mindmaps/${mapId}/nodes/${id}`, { method: "DELETE" }).then(() => {
+        setNodes(nds => nds.filter(n => n.id !== id));
+        setEdges(eds => eds.filter(e => e.source !== id && e.target !== id));
+        setSelectedNodeId(cur => (cur === id ? null : cur));
+        setEditPanel(cur => (cur?.id === id ? null : cur));
+      });
+    },
+    onSelect: (id: string) => {
+      setSelectedNodeId(prev => {
+        const next = prev === id ? null : id;
+        if (next) {
+          setNodes(nds => {
+            const n = nds.find(x => x.id === id);
+            if (n) {
+              setEditPanel({
+                id,
+                label: n.data.label as string,
+                color: n.data.color as string,
+                description: (n.data.description as string) ?? "",
+              });
+            }
+            return nds;
+          });
+        } else {
+          setEditPanel(null);
+        }
+        return next;
+      });
+    },
+  };
+
+  // Load map
+  useEffect(() => {
+    (async () => {
+      setLoadingMap(true);
+      const res = await fetch(`/api/mindmaps/${mapId}`);
+      if (!res.ok) { setError("Erreur de chargement."); setLoadingMap(false); return; }
+      const { map, nodes: rawNodes, edges: rawEdges } = await res.json();
+      setTitle(map.title);
+      setNodes(toRFNodes(rawNodes));
+      setEdges(toRFEdges(rawEdges));
+      setLoadingMap(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapId]);
+
+  async function handleConfirmAddChild() {
+    if (!addingChild || !newNodeLabel.trim()) return;
+    const parentNode = nodes.find(n => n.id === addingChild);
+    const px = parentNode?.position.x ?? 0;
+    const py = parentNode?.position.y ?? 0;
+    const childCount = edges.filter(e => e.source === addingChild).length;
+    const angle = (childCount * 45 * Math.PI) / 180;
+    const nx = Math.round(px + Math.cos(angle) * 200);
+    const ny = Math.round(py + Math.sin(angle) * 200);
+
+    const res = await fetch(`/api/mindmaps/${mapId}/nodes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parent_id: addingChild, label: newNodeLabel.trim(), position_x: nx, position_y: ny }),
+    });
+    if (!res.ok) { setError("Erreur lors de l'ajout."); return; }
+    const { node } = await res.json();
+    setNodes(nds => [
+      ...nds,
+      {
+        id: node.id, type: "mindmap",
+        position: { x: nx, y: ny },
+        data: { label: node.label, color: node.color ?? GOLD, _onAddChild: stableAddChild, _onDelete: stableDelete, _onSelect: stableSelect },
+      },
+    ]);
+    setEdges(eds => [
+      ...eds,
+      { id: `e-${addingChild}-${node.id}`, source: addingChild, target: node.id, style: { stroke: "#c9a55a44", strokeWidth: 1.5 } },
+    ]);
+    setAddingChild(null);
+  }
+
+  async function handleSaveNode() {
+    if (!editPanel) return;
+    await fetch(`/api/mindmaps/${mapId}/nodes/${editPanel.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label: editPanel.label, color: editPanel.color, description: editPanel.description }),
+    });
+    setNodes(nds =>
+      nds.map(n =>
+        n.id === editPanel.id
+          ? { ...n, data: { ...n.data, label: editPanel.label, color: editPanel.color, description: editPanel.description } }
+          : n,
+      ),
+    );
+    setEditPanel(null); setSelectedNodeId(null);
+  }
+
+  function onNodeDragStop(_: unknown, node: Node<NodeData>) {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      fetch(`/api/mindmaps/${mapId}/nodes`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ positions: [{ id: node.id, x: Math.round(node.position.x), y: Math.round(node.position.y) }] }),
+      });
+    }, 800);
+  }
+
+  async function handleAiSuggest() {
+    if (!aiInstruction.trim()) return;
+    setAiLoading(true); setError(null);
+    try {
+      const res = await fetch(`/api/mindmaps/${mapId}/ai-suggest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction: aiInstruction, node_id: selectedNodeId ?? undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Erreur IA."); return; }
+      setPendingOps(data.ops ?? []);
+    } finally { setAiLoading(false); }
+  }
+
+  async function handleAiApply() {
+    if (!pendingOps?.length) return;
+    setApplyLoading(true);
+    try {
+      const res = await fetch(`/api/mindmaps/${mapId}/ai-apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ops: pendingOps, ai_session_id: crypto.randomUUID() }),
+      });
+      if (!res.ok) { setError("Erreur lors de l'application."); return; }
+      const mapRes = await fetch(`/api/mindmaps/${mapId}`);
+      const { map, nodes: rawNodes, edges: rawEdges } = await mapRes.json();
+      setTitle(map.title);
+      setNodes(toRFNodes(rawNodes));
+      setEdges(toRFEdges(rawEdges));
+      setPendingOps(null); setAiInstruction(""); setAiOpen(false);
+    } finally { setApplyLoading(false); }
+  }
+
+  const surfaceBg = isDark ? "rgba(15,15,22,0.96)" : "rgba(250,248,244,0.97)";
+  const panelBg = isDark ? "rgba(18,18,28,0.94)" : "rgba(255,253,248,0.96)";
+  const textMain = isDark ? "#e8e8f0" : "#1a1a2e";
+  const textSub = isDark ? "#888" : "#666";
+  const borderColor = isDark ? "rgba(201,165,90,0.18)" : "rgba(201,165,90,0.28)";
+
+  if (loadingMap) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: isDark ? "#0a0a12" : "#f5f3ee" }}>
+      <Loader2 size={28} color={GOLD} className="animate-spin" />
+    </div>
+  );
+
+  return (
+    <div style={{ width: "100%", height: "100vh", background: isDark ? "#0a0a12" : "#f5f3ee", display: "flex", flexDirection: "column" }}>
+      {/* Top bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", background: surfaceBg, borderBottom: `1px solid ${borderColor}`, zIndex: 10, flexShrink: 0 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: textSub, display: "flex" }}>
+          <ArrowLeft size={18} />
+        </button>
+        <Network size={15} color={GOLD} />
+        <span style={{ fontSize: 14, fontWeight: 600, color: textMain, flex: 1 }}>{title}</span>
+        <button
+          onClick={() => setAiOpen(v => !v)}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: aiOpen ? `${GOLD}22` : "transparent", border: `1px solid ${aiOpen ? GOLD : borderColor}`, color: aiOpen ? GOLD : textSub, cursor: "pointer", fontSize: 12, fontWeight: 500 }}
+        >
+          <Sparkles size={13} />
+          Assistant IA
+        </button>
+        <button
+          onClick={() => { const root = nodes.find(n => n.data.is_root); if (root) stableAddChild(root.id); }}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "transparent", border: `1px solid ${borderColor}`, color: textSub, cursor: "pointer", fontSize: 12, fontWeight: 500 }}
+        >
+          <Plus size={13} />
+          Ajouter
+        </button>
+      </div>
+
+      {/* Canvas */}
+      <div style={{ flex: 1, position: "relative" }}>
+        <ReactFlow
+          nodes={nodes} edges={edges}
+          onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+          nodeTypes={nodeTypes}
+          onNodeDragStop={onNodeDragStop}
+          onPaneClick={() => { setSelectedNodeId(null); setEditPanel(null); }}
+          fitView fitViewOptions={{ padding: 0.15 }}
+          minZoom={0.2} maxZoom={2.5}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background color={isDark ? "#c9a55a18" : "#c9a55a22"} variant={BackgroundVariant.Dots} gap={24} />
+          <Controls style={{ background: panelBg, border: `1px solid ${borderColor}`, borderRadius: 10 }} />
+          <MiniMap
+            style={{ background: panelBg, border: `1px solid ${borderColor}` }}
+            nodeColor={n => ((n.data as NodeData).color as string) ?? GOLD}
+            maskColor={isDark ? "rgba(10,10,18,0.7)" : "rgba(245,243,238,0.7)"}
+          />
+        </ReactFlow>
+
+        {/* Error */}
+        <AnimatePresence>
+          {error && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              style={{ position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", background: "#ef444422", border: "1px solid #ef444444", borderRadius: 8, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, color: "#ef4444", fontSize: 13, zIndex: 20 }}
+            >
+              <AlertCircle size={14} />
+              {error}
+              <button onClick={() => setError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444" }}><X size={12} /></button>
+            </motion.div>
           )}
-          <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
+        </AnimatePresence>
+      </div>
+
+      {/* Node edit panel */}
+      <AnimatePresence>
+        {editPanel && (
+          <motion.div key="edit" initial={{ x: 320, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 320, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 35 }}
+            style={{ position: "absolute", right: 0, top: 52, bottom: 0, width: 280, background: panelBg, borderLeft: `1px solid ${borderColor}`, padding: 20, display: "flex", flexDirection: "column", gap: 14, overflowY: "auto", zIndex: 15 }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, textTransform: "uppercase", letterSpacing: "0.08em" }}>Modifier le nœud</span>
+              <button onClick={() => { setEditPanel(null); setSelectedNodeId(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: textSub }}><X size={14} /></button>
+            </div>
+            {(["label", "description"] as const).map(field => (
+              <div key={field} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <label style={{ fontSize: 11, color: textSub, fontWeight: 500 }}>{field === "label" ? "Label" : "Description"}</label>
+                {field === "label" ? (
+                  <input value={editPanel.label} onChange={e => setEditPanel(p => p ? { ...p, label: e.target.value } : p)}
+                    style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: `1px solid ${borderColor}`, borderRadius: 8, padding: "8px 10px", fontSize: 13, color: textMain, outline: "none" }} />
+                ) : (
+                  <textarea value={editPanel.description} onChange={e => setEditPanel(p => p ? { ...p, description: e.target.value } : p)}
+                    rows={3} style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: `1px solid ${borderColor}`, borderRadius: 8, padding: "8px 10px", fontSize: 12, color: textMain, outline: "none", resize: "vertical" }} />
+                )}
+              </div>
+            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <label style={{ fontSize: 11, color: textSub, fontWeight: 500 }}>Couleur</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {["#c9a55a","#6366f1","#10b981","#f59e0b","#ec4899","#0ea5e9","#8b5cf6","#ef4444"].map(c => (
+                  <button key={c} onClick={() => setEditPanel(p => p ? { ...p, color: c } : p)}
+                    style={{ width: 24, height: 24, borderRadius: "50%", background: c, border: "none", cursor: "pointer", outline: editPanel.color === c ? "2px solid white" : "none", outlineOffset: 2 }} />
+                ))}
+              </div>
+            </div>
+            <button onClick={handleSaveNode}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 0", borderRadius: 8, background: GOLD, border: "none", cursor: "pointer", color: "#111", fontWeight: 600, fontSize: 13, marginTop: "auto" }}
+            >
+              <Check size={14} />Enregistrer
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add child modal */}
+      <AnimatePresence>
+        {addingChild && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 40 }}
+            onClick={() => setAddingChild(null)}
+          >
+            <motion.div initial={{ scale: 0.92 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}
+              style={{ background: panelBg, borderRadius: 16, padding: 24, width: 320, border: `1px solid ${borderColor}`, display: "flex", flexDirection: "column", gap: 14 }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 600, color: GOLD }}>Nouveau nœud enfant</span>
+              <input autoFocus value={newNodeLabel} onChange={e => setNewNodeLabel(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleConfirmAddChild(); if (e.key === "Escape") setAddingChild(null); }}
+                placeholder="Label du nœud…"
+                style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", border: `1px solid ${borderColor}`, borderRadius: 8, padding: "10px 12px", fontSize: 14, color: textMain, outline: "none" }}
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setAddingChild(null)}
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 8, border: `1px solid ${borderColor}`, background: "transparent", color: textSub, cursor: "pointer", fontSize: 13 }}>
+                  Annuler
+                </button>
+                <button onClick={handleConfirmAddChild} disabled={!newNodeLabel.trim()}
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 8, border: "none", background: GOLD, color: "#111", cursor: "pointer", fontWeight: 600, fontSize: 13, opacity: newNodeLabel.trim() ? 1 : 0.5 }}>
+                  Créer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI panel */}
+      <AnimatePresence>
+        {aiOpen && (
+          <motion.div key="ai" initial={{ y: 120, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 120, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 380, damping: 32 }}
+            style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: panelBg, borderTop: `1px solid ${borderColor}`, padding: "16px 20px", zIndex: 20, maxHeight: pendingOps ? "55vh" : "auto", overflowY: pendingOps ? "auto" : "visible" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <Sparkles size={14} color={GOLD} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: GOLD }}>Assistant IA</span>
+              {selectedNodeId && <span style={{ fontSize: 11, color: textSub, padding: "2px 6px", borderRadius: 4, background: `${GOLD}18` }}>Nœud sélectionné</span>}
+              <button onClick={() => { setAiOpen(false); setPendingOps(null); }} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: textSub }}><X size={14} /></button>
+            </div>
+
+            {!pendingOps ? (
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={aiInstruction} onChange={e => setAiInstruction(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleAiSuggest(); }}
+                  placeholder="Ex : Ajoute des sous-branches sur le financement, développe la stratégie…"
+                  style={{ flex: 1, background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", border: `1px solid ${borderColor}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: textMain, outline: "none" }}
+                />
+                <button onClick={handleAiSuggest} disabled={aiLoading || !aiInstruction.trim()}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", borderRadius: 8, border: "none", background: GOLD, color: "#111", cursor: "pointer", fontWeight: 600, fontSize: 13, opacity: aiLoading || !aiInstruction.trim() ? 0.6 : 1, flexShrink: 0 }}
+                >
+                  {aiLoading ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
+                  Générer
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: textSub }}>
+                  {pendingOps.length} opération(s) proposée(s) — confirmez avant d'appliquer :
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: "28vh", overflowY: "auto" }}>
+                  {pendingOps.map((op, i) => (
+                    <div key={i} style={{ padding: "8px 12px", borderRadius: 8, background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", border: `1px solid ${borderColor}`, fontSize: 12 }}>
+                      <span style={{ color: GOLD, fontWeight: 600, marginRight: 8 }}>{op.op}</span>
+                      <span style={{ color: textMain }}>
+                        {op.op === "create_node" && `"${op.label as string}"`}
+                        {op.op === "update_node" && `Modifier nœud ${(op.id as string).slice(0, 8)}…`}
+                        {op.op === "delete_node" && `Supprimer nœud ${(op.id as string).slice(0, 8)}…`}
+                        {op.op === "expand_branch" && `Ajouter ${(op.nodes as unknown[])?.length ?? 0} nœud(s) enfants`}
+                        {op.op === "update_map" && `Renommer : "${op.title as string}"`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setPendingOps(null)}
+                    style={{ flex: 1, padding: "9px 0", borderRadius: 8, border: `1px solid ${borderColor}`, background: "transparent", color: textSub, cursor: "pointer", fontSize: 13 }}>
+                    Annuler
+                  </button>
+                  <button onClick={handleAiApply} disabled={applyLoading}
+                    style={{ flex: 2, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "9px 0", borderRadius: 8, border: "none", background: GOLD, color: "#111", cursor: "pointer", fontWeight: 600, fontSize: 13 }}
+                  >
+                    {applyLoading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                    Appliquer les modifications
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── List view ────────────────────────────────────────────────────────────────
+
+function MindMapListView({ onSelect }: { onSelect: (id: string, title: string) => void }) {
+  const { isDark } = useTheme();
+  const [maps, setMaps] = useState<MindMapMeta[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [newMapTitle, setNewMapTitle] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [genPrompt, setGenPrompt] = useState("");
+  const [genOpen, setGenOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const surfaceBg = isDark ? "rgba(15,15,22,0.96)" : "rgba(250,248,244,0.97)";
+  const cardBg = isDark ? "rgba(20,20,30,0.85)" : "rgba(255,253,248,0.92)";
+  const borderColor = isDark ? "rgba(201,165,90,0.18)" : "rgba(201,165,90,0.28)";
+  const textMain = isDark ? "#e8e8f0" : "#1a1a2e";
+  const textSub = isDark ? "#888" : "#666";
+
+  useEffect(() => {
+    fetch("/api/mindmaps").then(r => r.json()).then(d => {
+      setMaps(d.maps ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  async function handleCreate() {
+    if (!newMapTitle.trim()) return;
+    setCreating(true);
+    const res = await fetch("/api/mindmaps", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newMapTitle.trim() }),
+    });
+    if (res.ok) {
+      const { map } = await res.json();
+      onSelect(map.id, map.title);
+    }
+    setCreating(false);
+  }
+
+  async function handleGenerate() {
+    if (!genPrompt.trim()) return;
+    setGenerating(true); setError(null);
+    try {
+      const res = await fetch("/api/mindmaps/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: genPrompt.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Erreur IA."); return; }
+      onSelect(data.map_id, data.title ?? genPrompt);
+    } finally { setGenerating(false); }
+  }
+
+  async function handleDelete(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setDeletingId(id);
+    await fetch(`/api/mindmaps/${id}`, { method: "DELETE" });
+    setMaps(m => m.filter(x => x.id !== id));
+    setDeletingId(null);
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: isDark ? "#0a0a12" : "#f5f3ee", paddingBottom: 60 }}>
+      {/* Header */}
+      <div style={{ padding: "28px 28px 0", background: surfaceBg, borderBottom: `1px solid ${borderColor}`, marginBottom: 28 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+          <div style={{ padding: 8, borderRadius: 12, background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}>
+            <Network size={18} color={GOLD} />
+          </div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: textMain }}>Mind Maps</div>
+            <div style={{ fontSize: 12, color: textSub }}>{maps.length} carte{maps.length !== 1 ? "s" : ""}</div>
+          </div>
+          <div style={{ marginLeft: "auto" }}>
+            <button onClick={() => setGenOpen(v => !v)}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9, cursor: "pointer", background: genOpen ? `${GOLD}22` : "transparent", border: `1px solid ${genOpen ? GOLD : borderColor}`, color: genOpen ? GOLD : textSub, fontSize: 13, fontWeight: 500 }}
+            >
+              <Sparkles size={13} />Générer par IA
+            </button>
+          </div>
         </div>
 
         <AnimatePresence>
-          {creating && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="px-4 pb-3 overflow-hidden"
-            >
-              <div className="flex gap-2">
-                <input
-                  ref={mapInputRef}
-                  value={mapDraft}
-                  onChange={e => setMapDraft(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") createMap(); if (e.key === "Escape") setCreating(false); }}
-                  placeholder="Idée centrale…"
-                  className={`flex-1 rounded-xl px-3 py-2 text-[12.5px] outline-none ${isDark ? "text-white placeholder:text-white/30" : "text-gray-800 placeholder:text-gray-400"}`}
-                  style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.04)", border: "1px solid rgba(139,92,246,0.40)" }}
+          {genOpen && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden", marginBottom: 8 }}>
+              <div style={{ display: "flex", gap: 8, paddingBottom: 8 }}>
+                <input value={genPrompt} onChange={e => setGenPrompt(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleGenerate(); }}
+                  placeholder="Décris la mind map… ex : Plan de lancement produit SaaS B2B"
+                  style={{ flex: 1, background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", border: `1px solid ${borderColor}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: textMain, outline: "none" }}
                 />
-                <button onClick={createMap}
-                  className={`px-3 rounded-xl text-[11px] font-bold ${isDark ? "text-white" : "text-violet-700"}`}
-                  style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.35)" }}>
-                  OK
+                <button onClick={handleGenerate} disabled={generating || !genPrompt.trim()}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", borderRadius: 8, border: "none", background: GOLD, color: "#111", cursor: "pointer", fontWeight: 600, fontSize: 13, opacity: generating || !genPrompt.trim() ? 0.6 : 1, flexShrink: 0 }}
+                >
+                  {generating ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
+                  {generating ? "Génération…" : "Créer"}
                 </button>
               </div>
+              {error && <div style={{ padding: "8px 12px", borderRadius: 8, background: "#ef444420", border: "1px solid #ef444440", color: "#ef4444", fontSize: 12 }}>{error}</div>}
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="flex-1 overflow-y-auto px-3 space-y-1.5 pb-6">
-          {loading ? (
-            [...Array(3)].map((_, i) => (
-              <div key={i} className="h-14 rounded-2xl animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.05)" }} />
-            ))
-          ) : maps.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 pt-16 text-center">
-              <Network size={36} className="text-white/[0.08]" />
-              <p className="text-[11px] text-white/20">Aucune mind map</p>
-            </div>
-          ) : (
-            maps.map(map => (
-              <motion.button
-                key={map.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={() => setActive(map)}
-                className="group w-full rounded-2xl p-3.5 text-left transition-all"
-                style={{
-                  background: active?.id === map.id ? "rgba(139,92,246,0.10)" : isDark ? "rgba(255,255,255,0.03)" : "rgba(12,24,100,0.025)",
-                  border: active?.id === map.id ? "1px solid rgba(139,92,246,0.35)" : `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.07)"}`,
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Network size={13} style={{ color: "#8b5cf6" }} className="shrink-0" />
-                    <p className="text-[12.5px] font-semibold text-white/80 truncate">{map.title}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] text-white/25">{map.nodes.length} branches</span>
-                    <ChevronRight size={11} className="text-white/20" />
-                  </div>
-                </div>
-              </motion.button>
-            ))
-          )}
+        <div style={{ display: "flex", gap: 8, paddingBottom: 20 }}>
+          <input value={newMapTitle} onChange={e => setNewMapTitle(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
+            placeholder="Nouvelle mind map vide…"
+            style={{ flex: 1, background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", border: `1px solid ${borderColor}`, borderRadius: 8, padding: "9px 14px", fontSize: 13, color: textMain, outline: "none" }}
+          />
+          <button onClick={handleCreate} disabled={creating || !newMapTitle.trim()}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "9px 14px", borderRadius: 8, border: `1px solid ${borderColor}`, background: "transparent", color: textSub, cursor: "pointer", fontSize: 13, fontWeight: 500, opacity: creating || !newMapTitle.trim() ? 0.5 : 1 }}
+          >
+            <Plus size={14} />Créer
+          </button>
         </div>
       </div>
 
-      {/* ── Canvas mind map ── */}
-      <div className={`flex-1 flex flex-col ${active ? "flex" : "hidden md:flex"}`}>
-        {!active ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3">
-            <Network size={44} className="text-white/[0.08]" />
-            <p className="text-[12px] text-white/20">Sélectionne ou crée une mind map</p>
+      {/* Cards */}
+      <div style={{ padding: "0 28px" }}>
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", paddingTop: 60 }}>
+            <Loader2 size={24} color={GOLD} className="animate-spin" />
+          </div>
+        ) : maps.length === 0 ? (
+          <div style={{ textAlign: "center", paddingTop: 80, color: textSub }}>
+            <Map size={40} color={`${GOLD}40`} style={{ marginBottom: 12 }} />
+            <div style={{ fontSize: 15, fontWeight: 500, color: textMain, marginBottom: 6 }}>Aucune mind map</div>
+            <div style={{ fontSize: 13 }}>Crée une carte vide ou génère-en une par IA</div>
           </div>
         ) : (
-          <>
-            {/* Header */}
-            <div className="relative flex items-center gap-3 px-4 pt-5 pb-3 border-b border-white/[0.06]">
-              <button onClick={() => { setActive(null); setRenamingTitle(false); }} className="flex md:hidden h-8 w-8 items-center justify-center rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.06)" }}>
-                <ArrowLeft size={14} className="text-white/60" />
-              </button>
-
-              {renamingTitle ? (
-                <div className="flex flex-1 items-center gap-2">
-                  <input
-                    autoFocus
-                    value={titleDraft}
-                    onChange={e => setTitleDraft(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") commitTitleEdit(); if (e.key === "Escape") setRenamingTitle(false); }}
-                    onBlur={commitTitleEdit}
-                    className="flex-1 rounded-xl px-3 py-1.5 text-[14px] font-black outline-none"
-                    style={{
-                      background: isDark ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.08)",
-                      border: "1.5px solid rgba(139,92,246,0.55)",
-                      color: isDark ? "white" : "#4c1d95",
-                    }}
-                  />
-                  <button onClick={commitTitleEdit}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                    style={{ background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.35)", color: "#a78bfa" }}>
-                    <Check size={13} />
-                  </button>
-                  <button onClick={() => setRenamingTitle(false)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/30 hover:text-white/60 transition"
-                    style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.05)" }}>
-                    <X size={13} />
-                  </button>
-                </div>
-              ) : (
-                <h2
-                  className="flex-1 text-[15px] font-black text-white truncate cursor-pointer hover:opacity-70 transition-opacity"
-                  onClick={() => { setTitleDraft(active.title); setRenamingTitle(true); }}
-                  title="Cliquer pour renommer"
-                >
-                  {active.title}
-                </h2>
-              )}
-
-              {!renamingTitle && (
-                <button onClick={() => deleteMap(active.id)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-red-400/60 transition hover:text-red-400 hover:bg-red-500/10 border border-white/[0.08]"
-                  style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(12,24,100,0.06)" }}>
-                  <Trash2 size={12} /><span className="hidden sm:inline"> Supprimer</span>
-                </button>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
-            </div>
-
-            {/* Zone SVG mind map */}
-            <div className="flex-1 flex flex-col items-center justify-center overflow-hidden relative">
-              <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full max-w-sm" style={{ maxHeight: "360px" }}>
-                {/* Lignes vers branches */}
-                {active.nodes.map((node, i) => {
-                  const { x, y } = nodePosition(i, active.nodes.length || 1, isSmall);
-                  return (
-                    <motion.line
-                      key={node.id + "-line"}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      x1={CX} y1={CY}
-                      x2={CX + x} y2={CY + y}
-                      stroke={node.color}
-                      strokeWidth="2"
-                      strokeOpacity="0.4"
-                      strokeDasharray="4 3"
-                    />
-                  );
-                })}
-
-                {/* Nœud central */}
-                <motion.g initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.3, ease }}>
-                  <circle cx={CX} cy={CY} r="38" fill="url(#centerGrad)" />
-                  <defs>
-                    <radialGradient id="centerGrad" cx="40%" cy="35%">
-                      <stop stopColor="#8b5cf6" />
-                      <stop offset="1" stopColor="#4c1d95" />
-                    </radialGradient>
-                  </defs>
-                  <circle cx={CX} cy={CY} r="38" fill="none" stroke="rgba(139,92,246,0.4)" strokeWidth="1.5" />
-                  <circle cx={CX} cy={CY} r="38" fill="transparent" stroke="none"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => { setCenterDraft(active.center); setEditingCenter(true); }} />
-                  {editingCenter ? null : (
-                    <text x={CX} y={CY} textAnchor="middle" dominantBaseline="central"
-                      style={{ cursor: "pointer" }}
-                      onClick={() => { setCenterDraft(active.center); setEditingCenter(true); }}
-                      fontSize="9" fontWeight="700" fill="white" opacity="0.9">
-                      {active.center.length > 16 ? active.center.slice(0, 15) + "…" : active.center}
-                    </text>
-                  )}
-                </motion.g>
-
-                {/* Nœuds branches */}
-                {active.nodes.map((node, i) => {
-                  const { x, y } = nodePosition(i, active.nodes.length, isSmall);
-                  const nx = CX + x;
-                  const ny = CY + y;
-                  const isEditing = editingNode === node.id;
-                  return (
-                    <motion.g key={node.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}
-                      style={{ cursor: "pointer" }}
-                      onClick={() => { if (!isEditing) { setEditingNode(node.id); setNodeDraft(node.text); } }}>
-                      <ellipse cx={nx} cy={ny} rx="48" ry="21" fill={node.color} fillOpacity="0.18" />
-                      <ellipse cx={nx} cy={ny} rx="48" ry="21" fill="none" stroke={node.color} strokeWidth="1.5" strokeOpacity="0.55" />
-                      {!isEditing && (
-                        <text x={nx} y={ny} textAnchor="middle" dominantBaseline="central"
-                          fontSize="8.5" fontWeight="600" fill={isDark ? "white" : "#1a1040"} opacity="0.88">
-                          {node.text.length > 15 ? node.text.slice(0, 14) + "…" : node.text}
-                        </text>
-                      )}
-                    </motion.g>
-                  );
-                })}
-              </svg>
-
-              {/* Edit nœud central */}
-              {editingCenter && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex gap-2 items-center">
-                  <input
-                    autoFocus
-                    value={centerDraft}
-                    onChange={e => setCenterDraft(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") commitCenterEdit(); if (e.key === "Escape") setEditingCenter(false); }}
-                    className={`w-32 rounded-lg px-2.5 py-1.5 text-[12px] text-center outline-none ${isDark ? "text-white" : "text-violet-900"}`}
-                    style={{ background: isDark ? "#1a0f3a" : "rgba(139,92,246,0.08)", border: "1.5px solid rgba(139,92,246,0.6)" }}
-                  />
-                  <button onClick={commitCenterEdit} className="text-violet-400"><Check size={14} /></button>
-                </div>
-              )}
-            </div>
-
-            {/* Panneau branches */}
-            <div className="border-t border-white/[0.05] px-4 py-3 space-y-2 max-h-[220px] overflow-y-auto">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-white/30">Branches ({active.nodes.length})</p>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={suggestAiNodes}
-                    disabled={aiLoading}
-                    title="Suggestions IA"
-                    className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold text-violet-400 transition hover:bg-violet-500/10 disabled:opacity-50"
-                    style={{ border: "1px solid rgba(139,92,246,0.20)" }}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+            {maps.map(map => (
+              <motion.div key={map.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -2 }}
+                onClick={() => onSelect(map.id, map.title)}
+                style={{ background: cardBg, borderRadius: 14, padding: 18, border: `1px solid ${borderColor}`, cursor: "pointer", backdropFilter: "blur(10px)", position: "relative" }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ padding: 8, borderRadius: 10, background: `${GOLD}18`, border: `1px solid ${GOLD}33` }}>
+                    <GitBranch size={15} color={GOLD} />
+                  </div>
+                  <button onClick={e => handleDelete(map.id, e)} disabled={deletingId === map.id}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: textSub, opacity: 0.5, padding: 4, borderRadius: 6 }}
                   >
-                    {aiLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                    {!aiLoading && "IA"}
-                  </button>
-                  <button
-                    onClick={addNode}
-                    className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold text-violet-400 transition hover:bg-violet-500/10"
-                    style={{ border: "1px solid rgba(139,92,246,0.25)" }}
-                  >
-                    <Plus size={10} /> Ajouter
+                    {deletingId === map.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   </button>
                 </div>
-              </div>
-
-              {active.nodes.map(node => (
-                <div key={node.id} className="flex items-center gap-2 rounded-xl px-3 py-2"
-                  style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(12,24,100,0.025)", border: `1px solid ${node.color}30` }}>
-                  <div className="h-2 w-2 rounded-full shrink-0" style={{ background: node.color }} />
-                  {editingNode === node.id ? (
-                    <input
-                      autoFocus
-                      value={nodeDraft}
-                      onChange={e => setNodeDraft(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") commitNodeEdit(); if (e.key === "Escape") setEditingNode(null); }}
-                      onBlur={commitNodeEdit}
-                      className="flex-1 bg-transparent text-[12px] text-white outline-none border-b border-white/20"
-                    />
-                  ) : (
-                    <span className="flex-1 text-[12px] text-white/70">{node.text}</span>
+                <div style={{ fontSize: 14, fontWeight: 600, color: textMain, marginBottom: 4, lineHeight: 1.3 }}>{map.title}</div>
+                {map.description && <div style={{ fontSize: 12, color: textSub, marginBottom: 8, lineHeight: 1.4 }}>{map.description.slice(0, 80)}{map.description.length > 80 ? "…" : ""}</div>}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+                  {typeof map.node_count === "number" && (
+                    <span style={{ fontSize: 11, color: textSub, display: "flex", alignItems: "center", gap: 4 }}>
+                      <PlusCircle size={10} />{map.node_count} nœud{map.node_count !== 1 ? "s" : ""}
+                    </span>
                   )}
-                  <button onClick={() => { setEditingNode(node.id); setNodeDraft(node.text); }}
-                    className="text-white/20 hover:text-white/50 transition">
-                    <Edit2 size={11} />
-                  </button>
-                  <button onClick={() => deleteNode(node.id)} className="text-white/15 hover:text-red-400 transition">
-                    <X size={11} />
-                  </button>
+                  <span style={{ fontSize: 11, color: textSub, display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+                    <Clock size={10} />{new Date(map.updated_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                  </span>
                 </div>
-              ))}
-
-              {active.nodes.length === 0 && (
-                <p className="text-[10.5px] text-white/20 text-center py-2">Ajoute des branches pour commencer</p>
-              )}
-            </div>
-          </>
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, borderRadius: "0 0 14px 14px", background: `linear-gradient(90deg, ${GOLD}44, ${GOLD}88)` }} />
+              </motion.div>
+            ))}
+          </div>
         )}
       </div>
     </div>
   );
+}
+
+// ─── Page root ────────────────────────────────────────────────────────────────
+
+export default function MindMapPage() {
+  const [activeMap, setActiveMap] = useState<{ id: string; title: string } | null>(null);
+  return activeMap
+    ? <MindMapCanvas mapId={activeMap.id} mapTitle={activeMap.title} onBack={() => setActiveMap(null)} />
+    : <MindMapListView onSelect={(id, title) => setActiveMap({ id, title })} />;
 }

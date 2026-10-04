@@ -10,7 +10,6 @@ import {
   Lock, Users, Globe, Pin, Archive,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
-import { APP_ICONS } from "@/components/AppIcons";
 
 const GOLD = "#c9a55a";
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -746,10 +745,7 @@ export default function ChecklistsPage() {
         {/* Header sidebar */}
         <div className="relative px-4 pt-5 pb-3">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl">
-                {APP_ICONS["/client/checklists"]}
-              </div>
+            <div className="flex items-center gap-2">
               <div>
                 <h1 className="text-[15px] font-black text-white">Checklists</h1>
                 <p className="text-[9px] text-white/30">{lists.length} liste{lists.length !== 1 ? "s" : ""}</p>

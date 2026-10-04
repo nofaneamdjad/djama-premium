@@ -60,7 +60,7 @@ const COLORS     = ["#8b5cf6","#3b82f6","#10b981","#f59e0b","#ef4444","#ec4899",
 const CATEGORIES = ["Design","Développement","Marketing","Conseil","Rédaction","Comptabilité","Juridique","Autre"];
 
 function emptyDraft(): Draft {
-  return { title:"", client:"", status:"en_cours", category:"Autre", start_date:"", end_date:"", budget:0, spent:0, description:"", color:VIOLET };
+  return { title:"", client:"", status:"en_cours", category:"Autre", start_date:"", end_date:"", budget:0, spent:0, description:"", color:"#3b82f6" };
 }
 function fmtEur(n:number) { return n.toLocaleString("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}); }
 function fmtDate(d:string|null) {
@@ -433,7 +433,7 @@ function ProjectModal({
             className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${cancelCls}`}>Annuler</button>
           <button onClick={onSave} disabled={saving||!draft.title?.trim()}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-50 shadow-lg"
-            style={{background:VIOLET}}>
+            style={{background:GOLD}}>
             {saving && <Loader2 size={14} className="animate-spin"/>}
             {isEdit?"Enregistrer":"Créer le projet"}
           </button>
@@ -621,7 +621,7 @@ function CahierDesChargesModal({ onClose, isDark, initialName, initialDesc }: {
               </button>
               <button onClick={()=>void generate()} disabled={!desc.trim()}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-50 shadow-lg"
-                style={{background:VIOLET}}>
+                style={{background:GOLD}}>
                 <Sparkles size={14}/>Générer le cahier des charges
               </button>
             </>
@@ -638,7 +638,7 @@ function CahierDesChargesModal({ onClose, isDark, initialName, initialDesc }: {
               </button>
               <button onClick={()=>void handleDownloadPdf()} disabled={dlPdf}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-50 shadow-lg"
-                style={{background:VIOLET}}>
+                style={{background:GOLD}}>
                 {dlPdf ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
                 Télécharger PDF
               </button>
@@ -948,9 +948,10 @@ export default function ProjetsPage() {
   const [saving,       setSaving]       = useState(false);
   const [confirmDel,   setConfirmDel]   = useState<string|null>(null);
 
-  const [tab,       setTab]       = useState<"projets"|"gantt"|"dossiers">("projets");
+  const [tab,       setTab]       = useState<"grille"|"liste"|"kanban"|"gantt"|"dossiers">("grille");
+  const [search,    setSearch]    = useState("");
   const [detailProj, setDetailProj] = useState<Project|null>(null);
-  const [detailTab,  setDetailTab]  = useState<"tasks"|"milestones"|"team">("tasks");
+  const [detailTab,  setDetailTab]  = useState<"apercu"|"tasks"|"milestones"|"team"|"ia">("tasks");
 
   const [projTasks,  setProjTasks]  = useState<ProjTask[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -1012,10 +1013,14 @@ export default function ProjetsPage() {
 
   useEffect(()=>{ void load(); }, [load]);
 
-  const filtered = useMemo(()=>
-    filter==="tous" ? projects : projects.filter(p=>p.status===filter),
-    [projects,filter]
-  );
+  const filtered = useMemo(()=>{
+    let list = filter==="tous" ? projects : projects.filter(p=>p.status===filter);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(p=>p.title.toLowerCase().includes(q)||p.client.toLowerCase().includes(q)||p.category.toLowerCase().includes(q));
+    }
+    return list;
+  },[projects,filter,search]);
 
   const kpis = useMemo(()=>({
     enCours:  projects.filter(p=>p.status==="en_cours").length,
@@ -1057,7 +1062,7 @@ export default function ProjetsPage() {
     setProjTasks(prev=>[...tasks,...prev]);
     setMilestones(prev=>[...miles,...prev]);
     toast(`Projet "${p.title}" créé avec ${tasks.length} tâches et ${miles.length} jalons`,"success");
-    setTab("gantt");
+    setTab("gantt"); // gantt est encore valide
   }
   function toggleFolder(cat:string) {
     setExpandedFolders(prev=>{
@@ -1076,7 +1081,7 @@ export default function ProjetsPage() {
       title:draft.title.trim(), client:draft.client?.trim()??"", status:draft.status??"en_cours",
       category:draft.category??"Autre", start_date:draft.start_date||null, end_date:draft.end_date||null,
       budget:draft.budget??0, spent:draft.spent??0, description:draft.description??"",
-      color:draft.color??VIOLET, updated_at:new Date().toISOString(),
+      color:draft.color??"#3b82f6", updated_at:new Date().toISOString(),
     };
     if (editProject) {
       const {data,error} = await supabase.from("projects").update(payload).eq("id",editProject.id).select().single();
@@ -1200,7 +1205,8 @@ export default function ProjetsPage() {
           <p className={`font-bold ${isDark ? "text-white/40" : "text-black/40"}`}>Aucun projet pour le moment</p>
           <p className={`text-sm ${isDark ? "text-white/25" : "text-black/25"}`}>Créez votre premier projet pour l&apos;organiser en dossiers</p>
           <button onClick={openNew}
-            className={`mt-2 rounded-2xl border px-6 py-2.5 text-sm font-bold transition ${isDark ? "border-white/10 bg-white/[0.08] text-white hover:bg-white/[0.12]" : "border-black/10 bg-black/5 text-[#0e1420] hover:bg-black/[0.08]"}`}>
+            className="flex items-center gap-1.5 rounded-2xl px-6 py-2.5 text-sm font-bold text-white transition shadow-lg hover:opacity-90"
+            style={{background:GOLD}}>
             Nouveau projet
           </button>
         </div>
@@ -1414,9 +1420,11 @@ export default function ProjetsPage() {
     const rowBase  = isDark ? "border-white/[0.06] bg-white/[0.025] hover:border-white/10" : "border-black/[0.06] bg-slate-50 hover:border-black/10";
     const iconBtn  = isDark ? "text-white/40 hover:text-white hover:bg-white/[0.08]" : "text-black/40 hover:text-[#0e1420] hover:bg-black/5";
     const DTABS = [
+      {k:"apercu",     l:"Aperçu",    badge:0             },
       {k:"tasks",      l:"Tâches",    badge:pTasks.length },
       {k:"milestones", l:"Jalons",    badge:pMiles.length },
       {k:"team",       l:"Équipe",    badge:pTeam.length  },
+      {k:"ia",         l:"IA",        badge:0             },
     ] as const;
 
     return (
@@ -1472,14 +1480,72 @@ export default function ProjetsPage() {
               <button key={k} onClick={()=>setDetailTab(k as typeof detailTab)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
                 style={detailTab===k
-                  ?{background:`${VIOLET}25`,color:VIOLET,border:`1px solid ${VIOLET}40`}
+                  ?{background:`${GOLD}25`,color:GOLD,border:`1px solid ${GOLD}40`}
                   :{background:"transparent",color:isDark?"rgba(255,255,255,0.35)":"rgba(0,0,0,0.35)",border:"1px solid transparent"}}>
                 {l}
-                {badge>0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:detailTab===k?`${VIOLET}40`:isDark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)"}}>{badge}</span>}
+                {badge>0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{background:detailTab===k?`${GOLD}40`:isDark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)"}}>{badge}</span>}
               </button>
             ))}
           </div>
           <div className="flex-1 overflow-y-auto px-4 py-4">
+            {detailTab==="apercu" && (
+              <div className="space-y-4">
+                {p.description && <p className={`text-sm leading-relaxed ${isDark?"text-white/60":"text-black/60"}`}>{p.description}</p>}
+                {p.budget>0 && (
+                  <div className={`rounded-xl border p-4 space-y-2 ${isDark?"border-white/[0.08] bg-white/[0.02]":"border-black/[0.08] bg-slate-50"}`}>
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${isDark?"text-white/30":"text-black/30"}`}>Budget</p>
+                    <div className="flex justify-between text-sm font-semibold">
+                      <span style={{color:p.spent>p.budget?"#ef4444":GOLD}}>{fmtEur(p.spent)}</span>
+                      <span className={isDark?"text-white/40":"text-black/40"}>{fmtEur(p.budget)}</span>
+                    </div>
+                    <div className={`h-2 rounded-full ${isDark?"bg-white/[0.08]":"bg-black/[0.08]"}`}>
+                      <div className="h-full rounded-full transition-all" style={{width:`${Math.min(100,p.budget>0?Math.round((p.spent/p.budget)*100):0)}%`,background:p.spent>p.budget?"#ef4444":GOLD}}/>
+                    </div>
+                  </div>
+                )}
+                {pTasks.length>0 && (
+                  <div className={`rounded-xl border p-4 space-y-2 ${isDark?"border-white/[0.08] bg-white/[0.02]":"border-black/[0.08] bg-slate-50"}`}>
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${isDark?"text-white/30":"text-black/30"}`}>Avancement</p>
+                    <div className="flex justify-between text-sm font-semibold">
+                      <span className={isDark?"text-white/70":"text-[#0e1420]/70"}>{doneTasks}/{pTasks.length} tâches</span>
+                      <span style={{color:"#10b981"}}>{Math.round((doneTasks/pTasks.length)*100)}%</span>
+                    </div>
+                    <div className={`h-2 rounded-full ${isDark?"bg-white/[0.08]":"bg-black/[0.08]"}`}>
+                      <div className="h-full rounded-full" style={{width:`${(doneTasks/pTasks.length)*100}%`,background:"#10b981"}}/>
+                    </div>
+                  </div>
+                )}
+                {pMiles.filter(m=>!m.done&&m.date).length>0 && (
+                  <div className={`rounded-xl border p-4 ${isDark?"border-white/[0.08] bg-white/[0.02]":"border-black/[0.08] bg-slate-50"}`}>
+                    <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDark?"text-white/30":"text-black/30"}`}>Prochain jalon</p>
+                    {(()=>{
+                      const next = pMiles.filter(m=>!m.done&&m.date).sort((a,b)=>a.date.localeCompare(b.date))[0];
+                      return next ? (
+                        <div className="flex items-center gap-2">
+                          <Flag size={13} className="text-yellow-400 shrink-0"/>
+                          <span className={`text-sm font-semibold ${isDark?"text-white/75":"text-[#0e1420]/75"}`}>{next.title}</span>
+                          <span className={`ml-auto text-[10px] tabular-nums ${isDark?"text-white/35":"text-black/35"}`}>{fmtDateShort(next.date)}</span>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                )}
+                <div className="flex gap-2 flex-wrap pt-1">
+                  <button onClick={()=>router.push("/client/taches")}
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.04] text-white/55 hover:bg-white/[0.08]":"border-black/[0.08] bg-black/[0.03] text-black/50 hover:bg-black/[0.06]"}`}>
+                    <CheckCircle2 size={11}/>Tâches →
+                  </button>
+                  <button onClick={()=>router.push("/client/planning")}
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.04] text-white/55 hover:bg-white/[0.08]":"border-black/[0.08] bg-black/[0.03] text-black/50 hover:bg-black/[0.06]"}`}>
+                    <Calendar size={11}/>Planning →
+                  </button>
+                  <button onClick={()=>router.push("/client/factures")}
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.04] text-white/55 hover:bg-white/[0.08]":"border-black/[0.08] bg-black/[0.03] text-black/50 hover:bg-black/[0.06]"}`}>
+                    <FileText size={11}/>Factures →
+                  </button>
+                </div>
+              </div>
+            )}
             {detailTab==="tasks" && (
               <div className="space-y-3">
                 <div className="flex gap-2">
@@ -1574,6 +1640,23 @@ export default function ProjetsPage() {
                 </div>
               </div>
             )}
+            {detailTab==="ia" && (
+              <div className="space-y-4">
+                <p className={`text-sm ${isDark?"text-white/50":"text-black/50"}`}>
+                  Posez vos questions sur ce projet, générez un résumé, analysez les risques ou créez du contenu.
+                </p>
+                <button
+                  onClick={()=>router.push(`/client/assistant?context=project&id=${p.id}`)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition shadow-lg hover:opacity-90"
+                  style={{background:GOLD}}>
+                  <Sparkles size={15}/>Ouvrir l&apos;assistant IA sur ce projet
+                </button>
+                <button onClick={()=>openCdc(p)}
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark?"border-white/[0.08] bg-white/[0.04] text-white/60 hover:bg-white/[0.08]":"border-black/[0.08] bg-black/[0.03] text-black/50 hover:bg-black/[0.06]"}`}>
+                  <BookOpen size={13}/>Générer le cahier des charges
+                </button>
+              </div>
+            )}
           </div>
           <div className={`px-4 pb-5 pt-3 border-t shrink-0 flex gap-2 ${divider}`}>
             <button onClick={()=>{ openEdit(p); setDetailProj(null); }}
@@ -1594,7 +1677,7 @@ export default function ProjetsPage() {
   if (loading) {
     return (
       <div className={`flex h-64 items-center justify-center ${isDark ? "bg-[#07080e]" : "bg-[#f0f2fb]"}`}>
-        <Loader2 size={28} className="animate-spin text-violet-400"/>
+        <Loader2 size={28} className="animate-spin" style={{color:GOLD}}/>
       </div>
     );
   }
@@ -1630,10 +1713,10 @@ export default function ProjetsPage() {
         {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            {label:"En cours", value:String(kpis.enCours), color:"#3b82f6", sub:"projets actifs",   onClick:()=>{setTab("projets");setFilter("en_cours");}},
-            {label:"Terminés", value:String(kpis.terminé),  color:"#10b981", sub:"projets terminés", onClick:()=>{setTab("projets");setFilter("terminé");}},
-            {label:"Budget",   value:fmtEur(kpis.budget),   color:GOLD,      sub:"budget total",     onClick:()=>{setTab("projets");setFilter("tous");}},
-            {label:"Encaissé", value:fmtEur(kpis.encaissé), color:VIOLET,    sub:"revenus encaissés",onClick:()=>{setTab("projets");setFilter("tous");}},
+            {label:"En cours", value:String(kpis.enCours), color:"#3b82f6", sub:"projets actifs",   onClick:()=>{setTab("grille");setFilter("en_cours");}},
+            {label:"Terminés", value:String(kpis.terminé),  color:"#10b981", sub:"projets terminés", onClick:()=>{setTab("grille");setFilter("terminé");}},
+            {label:"Budget",   value:fmtEur(kpis.budget),   color:GOLD,      sub:"budget total",     onClick:()=>{setTab("grille");setFilter("tous");}},
+            {label:"Encaissé", value:fmtEur(kpis.encaissé), color:"#10b981",  sub:"revenus encaissés",onClick:()=>{setTab("grille");setFilter("tous");}},
           ].map(k=>(
             <motion.div key={k.label}
               whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -1648,28 +1731,33 @@ export default function ProjetsPage() {
         </div>
 
         {/* Tabs + filters */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className={`flex gap-1 rounded-2xl border p-1 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm"}`}>
-            {([["projets","Liste"],["dossiers","Dossiers"],["gantt","Gantt"]] as const).map(([k,l])=>(
-              <button key={k} onClick={()=>setTab(k)}
-                className="flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold transition-all"
-                style={tab===k
-                  ?{background:VIOLET,color:"#fff",boxShadow:`0 2px 12px ${VIOLET}40`}
-                  :{color:isDark?"rgba(255,255,255,0.4)":"rgba(0,0,0,0.4)"}}>
-                {k==="gantt" && <BarChart3 size={12}/>}
-                {k==="dossiers" && <Folder size={12}/>}
-                {l}
-              </button>
-            ))}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className={`flex gap-1 rounded-2xl border p-1 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm"}`}>
+              {([["grille","Grille"],["liste","Liste"],["kanban","Kanban"],["gantt","Gantt"],["dossiers","Dossiers"]] as const).map(([k,l])=>(
+                <button key={k} onClick={()=>setTab(k)}
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all"
+                  style={tab===k
+                    ?{background:GOLD,color:"#fff",boxShadow:`0 2px 12px ${GOLD}40`}
+                    :{color:isDark?"rgba(255,255,255,0.4)":"rgba(0,0,0,0.4)"}}>
+                  {k==="gantt" && <BarChart3 size={12}/>}
+                  {k==="dossiers" && <Folder size={12}/>}
+                  {l}
+                </button>
+              ))}
+            </div>
+            <input value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="Rechercher un projet…"
+              className={`rounded-xl border px-3 py-1.5 text-xs outline-none transition-all flex-1 min-w-[140px] max-w-[220px] ${inputCls}`}/>
           </div>
 
-          {tab==="projets" && (
+          {(tab==="grille"||tab==="liste"||tab==="kanban") && (
             <div className="flex flex-wrap gap-2">
               {([["tous","Tous"],["en_cours","En cours"],["en_attente","En attente"],["terminé","Terminés"],["annulé","Annulés"]] as [Status|"tous",string][]).map(([s,l])=>(
                 <button key={s} onClick={()=>setFilter(s)}
-                  className="rounded-xl border px-4 py-1.5 text-xs font-semibold transition"
+                  className="rounded-xl border px-3 py-1.5 text-xs font-semibold transition"
                   style={filter===s
-                    ?{background:VIOLET,borderColor:VIOLET,color:"#fff"}
+                    ?{background:GOLD,borderColor:GOLD,color:"#fff"}
                     :isDark
                       ?{borderColor:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.04)"}
                       :{borderColor:"rgba(0,0,0,0.08)",color:"rgba(0,0,0,0.4)",background:"rgba(0,0,0,0.03)"}}>
@@ -1683,18 +1771,100 @@ export default function ProjetsPage() {
         {/* Content */}
         {tab==="gantt" ? renderGantt()
         : tab==="dossiers" ? renderDossiers()
-        : filtered.length===0 ? (
+        : tab==="liste" ? (
+          filtered.length===0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <FolderOpen size={28} className={isDark?"text-white/20":"text-black/20"}/>
+              <p className={`text-sm ${isDark?"text-white/40":"text-black/40"}`}>{search?"Aucun résultat":filter==="tous"?"Aucun projet":"Aucun projet avec ce statut"}</p>
+            </div>
+          ) : (
+            <div className={`overflow-hidden rounded-2xl border ${isDark?"border-white/[0.08] bg-white/[0.02]":"border-black/[0.08] bg-white shadow-sm"}`}>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className={`border-b ${isDark?"border-white/[0.06]":"border-black/[0.06]"}`}>
+                    {["Projet","Client","Statut","Budget","Progression","Échéance"].map(h=>(
+                      <th key={h} className={`px-4 py-3 text-left font-bold uppercase tracking-widest text-[10px] ${isDark?"text-white/30":"text-black/30"}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(p=>{
+                    const pT = projTasks.filter(t=>t.projectId===p.id);
+                    const pct = pT.length>0 ? Math.round((pT.filter(t=>t.done).length/pT.length)*100) : (p.budget>0 ? Math.round((p.spent/p.budget)*100) : 0);
+                    return (
+                      <tr key={p.id}
+                        onClick={()=>{setDetailProj(p);setDetailTab("tasks");}}
+                        className={`border-b cursor-pointer transition-colors ${isDark?"border-white/[0.04] hover:bg-white/[0.025]":"border-black/[0.04] hover:bg-slate-50"}`}>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-2 h-2 rounded-full shrink-0" style={{background:p.color}}/>
+                            <span className={`font-bold truncate max-w-[140px] ${isDark?"text-white/85":"text-[#0e1420]/85"}`}>{p.title}</span>
+                          </div>
+                        </td>
+                        <td className={`px-4 py-3 truncate max-w-[100px] ${isDark?"text-white/45":"text-black/45"}`}>{p.client||"—"}</td>
+                        <td className="px-4 py-3"><StatusBadge status={p.status}/></td>
+                        <td className={`px-4 py-3 font-semibold tabular-nums ${p.budget>0&&p.spent>p.budget?"text-red-400":isDark?"text-white/60":"text-[#0e1420]/60"}`}>
+                          {p.budget>0?fmtEur(p.budget):"—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`h-1.5 w-20 rounded-full ${isDark?"bg-white/[0.08]":"bg-black/[0.08]"}`}>
+                              <div className="h-full rounded-full" style={{width:`${Math.min(100,pct)}%`,background:p.color}}/>
+                            </div>
+                            <span className={`text-[10px] tabular-nums ${isDark?"text-white/35":"text-black/35"}`}>{pct}%</span>
+                          </div>
+                        </td>
+                        <td className={`px-4 py-3 tabular-nums ${isDark?"text-white/45":"text-black/45"}`}>{fmtDate(p.end_date)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : tab==="kanban" ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 pb-6">
+            {(["en_attente","en_cours","terminé","annulé"] as Status[]).map(st=>{
+              const col = projects.filter(p=>p.status===st);
+              const cfg = STATUS_CONFIG[st];
+              return (
+                <div key={st} className={`rounded-2xl border ${isDark?"border-white/[0.08] bg-white/[0.02]":"border-black/[0.08] bg-slate-50/60"}`}>
+                  <div className="flex items-center gap-2 px-4 py-3 border-b" style={{borderColor:`${cfg.color}25`}}>
+                    <cfg.Icon size={12} style={{color:cfg.color}}/>
+                    <span className="text-xs font-black" style={{color:cfg.color}}>{cfg.label}</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style={{background:`${cfg.color}15`,color:cfg.color}}>{col.length}</span>
+                  </div>
+                  <div className="p-3 space-y-2 min-h-[80px]">
+                    {col.map(p=>(
+                      <div key={p.id}
+                        onClick={()=>{setDetailProj(p);setDetailTab("tasks");}}
+                        className={`rounded-xl border p-3 cursor-pointer transition-all hover:shadow-md ${isDark?"border-white/[0.06] bg-white/[0.04] hover:bg-white/[0.06]":"border-black/[0.06] bg-white hover:border-black/10"}`}>
+                        <div className="flex items-start gap-2 mb-1.5">
+                          <div className="w-2 h-2 rounded-full mt-0.5 shrink-0" style={{background:p.color}}/>
+                          <p className={`text-xs font-bold leading-tight ${isDark?"text-white/85":"text-[#0e1420]/85"}`}>{p.title}</p>
+                        </div>
+                        {p.client && <p className={`text-[10px] mb-1.5 ml-4 ${isDark?"text-white/35":"text-black/35"}`}>{p.client}</p>}
+                        {p.budget>0 && <p className="text-[10px] ml-4 font-semibold" style={{color:GOLD}}>{fmtEur(p.budget)}</p>}
+                      </div>
+                    ))}
+                    {col.length===0 && <p className={`text-[10px] py-4 text-center ${isDark?"text-white/20":"text-black/20"}`}>Aucun projet</p>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : filtered.length===0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
             <div className={`flex h-16 w-16 items-center justify-center rounded-3xl border ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-black/[0.08] bg-white shadow-sm"}`}>
               <FolderOpen size={28} className={isDark ? "text-white/20" : "text-black/20"}/>
             </div>
             <p className={`font-bold ${isDark ? "text-white/50" : "text-black/50"}`}>
-              {filter==="tous" ? "Aucun projet pour le moment" : `Aucun projet « ${STATUS_CONFIG[filter as Status]?.label??filter} »`}
+              {search ? "Aucun résultat" : filter==="tous" ? "Aucun projet pour le moment" : `Aucun projet « ${STATUS_CONFIG[filter as Status]?.label??filter} »`}
             </p>
             <p className={`text-sm ${isDark ? "text-white/25" : "text-black/25"}`}>
-              {filter==="tous" ? "Créez votre premier projet" : "Essayez un autre filtre"}
+              {search ? "Modifiez votre recherche" : filter==="tous" ? "Créez votre premier projet" : "Essayez un autre filtre"}
             </p>
-            {filter==="tous" && (
+            {filter==="tous" && !search && (
               <button onClick={openNew}
                 className={`mt-2 rounded-2xl border px-6 py-2.5 text-sm font-bold transition ${isDark ? "border-white/10 bg-white/[0.08] text-white hover:bg-white/[0.12]" : "border-black/10 bg-black/5 text-[#0e1420] hover:bg-black/[0.08]"}`}>
                 Créer mon premier projet

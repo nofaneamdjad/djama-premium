@@ -570,6 +570,8 @@ function ComparisonMatrix({ suppliers }: { suppliers: SourcingItem[] }) {
 
 function NegotiationsPanel() {
   const { isDark } = useTheme();
+  const orgState = useOrganization();
+  const orgId    = orgState.status === "ready" ? orgState.org.id : null;
   const [negs,        setNegs]        = useState<Negotiation[]>([]);
   const [authUid,     setAuthUid]     = useState<string | null>(null);
   const [showForm,    setShowForm]    = useState(false);
@@ -581,7 +583,9 @@ function NegotiationsPanel() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setAuthUid(user.id);
-      const { data } = await supabase.from("sourcing_negotiations").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      const orgIdNow = orgState.status === "ready" ? orgState.org.id : null;
+      const query = supabase.from("sourcing_negotiations").select("*").order("created_at", { ascending: false });
+      const { data } = await (orgIdNow ? query.eq("organization_id", orgIdNow) : query.eq("user_id", user.id));
       if (data) setNegs(data.map((r: Record<string,unknown>) => ({
         id: String(r.id), supplier: String(r.supplier), status: String(r.status) as NegStatus,
         notes: String(r.notes ?? ""), amount: r.amount ? String(r.amount) : "",
@@ -598,7 +602,7 @@ function NegotiationsPanel() {
       const { data } = await supabase.from("sourcing_negotiations").update(payload).eq("id", editId).eq("user_id", authUid).select().single();
       if (data) setNegs(prev => prev.map(n => n.id === editId ? { ...n, ...form, updatedAt: now } as Negotiation : n));
     } else {
-      const payload = { user_id: authUid, supplier: form.supplier!, status: form.status ?? "En cours", notes: form.notes ?? "", amount: form.amount ?? "" };
+      const payload = { user_id: authUid, organization_id: orgId ?? null, supplier: form.supplier!, status: form.status ?? "En cours", notes: form.notes ?? "", amount: form.amount ?? "" };
       const { data } = await supabase.from("sourcing_negotiations").insert(payload).select().single();
       if (data) {
         const newNeg: Negotiation = { id: String((data as Record<string,unknown>).id), supplier: form.supplier!, status: form.status ?? "En cours", notes: form.notes ?? "", amount: form.amount ?? "", createdAt: now, updatedAt: now };
@@ -760,7 +764,10 @@ export default function SourcingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setAuthUserId(user.id);
-      const { data } = await supabase.from("sourcing_sessions").select("id,title,messages,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20);
+      // Charger depuis l'org si disponible, sinon depuis user_id (rétrocompat)
+      const orgId = orgState.status === "ready" ? orgState.org.id : null;
+      const query = supabase.from("sourcing_sessions").select("id,title,messages,created_at").order("created_at", { ascending: false }).limit(20);
+      const { data } = await (orgId ? query.eq("organization_id", orgId) : query.eq("user_id", user.id));
       if (data) setHistory(data.map((r: Record<string,unknown>) => ({ id: String(r.id), title: String(r.title), date: String(r.created_at), messages: (r.messages as ChatMsg[]) ?? [] })));
     })();
   }, []);
@@ -886,7 +893,7 @@ export default function SourcingPage() {
     if (validMsgs.length > 0 && authUserId) {
       const title = messages.find(m => m.role === "user")?.content.slice(0, 65) ?? "Session";
       const cleanMsgs = messages.filter(m => !m.loading);
-      void supabase.from("sourcing_sessions").insert({ user_id: authUserId, title, messages: cleanMsgs }).select("id,title,created_at").single()
+      void supabase.from("sourcing_sessions").insert({ user_id: authUserId, organization_id: orgId ?? null, title, messages: cleanMsgs }).select("id,title,created_at").single()
         .then(({ data }) => {
           if (data) {
             const session: HistorySession = { id: String((data as Record<string,unknown>).id), title, date: String((data as Record<string,unknown>).created_at), messages: cleanMsgs };

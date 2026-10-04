@@ -4,41 +4,60 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   DollarSign, Zap, Users, Package, Calendar, BarChart2,
   AlertTriangle, PenLine, Loader2, RefreshCw,
-  Copy, Sparkles, Clock, CreditCard, Receipt, ListTodo,
+  Copy, Clock, CreditCard, Receipt, ListTodo,
   UserCheck, ChevronRight, Menu, X, Send,
-  Download, Volume2, VolumeX, BookMarked, FileText, Check,
+  Download, Volume2, VolumeX, FileText, Check,
+  Paperclip, Database,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import { useTheme } from "@/lib/theme-context";
-import { APP_ICONS } from "@/components/AppIcons";
 import { generatePdf, type PdfData } from "@/lib/pdf/generatePdf";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
+import ArtifactCard from "@/components/assistant/ArtifactCard";
+import type { ArtifactData } from "@/lib/ai/tool-registry";
 
-const CYAN   = "#22d3ee";
-const VIOLET = "#8b5cf6";
+const GOLD = "#c9a55a";
 
-const ACTIONS: { icon: LucideIcon; label: string; color: string; prompt: string }[] = [
-  { icon: DollarSign,    label: "Finances du mois",     color: "#10b981", prompt: "Analyse mes finances du mois : revenus, dépenses, factures impayées. Donne un résumé actionnable avec les chiffres clés." },
-  { icon: Zap,           label: "Tâches urgentes",      color: "#ef4444", prompt: "Quelles sont mes tâches urgentes et en retard ? Que dois-je faire en priorité aujourd'hui ?" },
-  { icon: Users,         label: "Clients impayés",      color: "#f59e0b", prompt: "Liste les clients avec des factures impayées. Donne les montants, les délais de retard et suggère une action de relance." },
-  { icon: Package,       label: "Alertes stock",        color: "#8b5cf6", prompt: "Quels produits sont en stock faible ou en rupture ? Lesquels dois-je réapprovisionner en urgence ?" },
-  { icon: Calendar,      label: "Ma journée",           color: "#3b82f6", prompt: "Organise ma journée idéale en tenant compte de mes tâches prioritaires, réunions prévues et objectifs." },
-  { icon: BarChart2,     label: "Rapport business",     color: CYAN,      prompt: "Génère un rapport business complet : revenus, dépenses, tâches terminées, clients actifs, alertes importantes." },
-  { icon: AlertTriangle, label: "Risques & alertes",    color: "#f97316", prompt: "Détecte tous les risques business : retards de paiement, stock bas, surcharge équipe, projets en retard." },
-  { icon: PenLine,       label: "Créer une facture",    color: "#a78bfa", prompt: "Crée une facture pour un client, prestation de service, montant 500€ HT, TVA 20%." },
+/* ── DJAMA AI Symbol ────────────────────────────────────────────────── */
+function DjamaAiSymbol({ size = 20, color = GOLD }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+      <line x1="10" y1="2.5" x2="3.5" y2="15.5" stroke={color} strokeWidth="0.75" strokeLinecap="round" opacity="0.45"/>
+      <line x1="10" y1="2.5" x2="16.5" y2="15.5" stroke={color} strokeWidth="0.75" strokeLinecap="round" opacity="0.45"/>
+      <line x1="3.5" y1="15.5" x2="16.5" y2="15.5" stroke={color} strokeWidth="0.75" strokeLinecap="round" opacity="0.45"/>
+      <line x1="10" y1="2.5" x2="10" y2="10" stroke={color} strokeWidth="0.55" strokeLinecap="round" opacity="0.28"/>
+      <line x1="3.5" y1="15.5" x2="10" y2="10" stroke={color} strokeWidth="0.55" strokeLinecap="round" opacity="0.28"/>
+      <line x1="16.5" y1="15.5" x2="10" y2="10" stroke={color} strokeWidth="0.55" strokeLinecap="round" opacity="0.28"/>
+      <circle cx="10" cy="2.5" r="2" fill={color}/>
+      <circle cx="3.5" cy="15.5" r="1.55" fill={color} opacity="0.72"/>
+      <circle cx="16.5" cy="15.5" r="1.55" fill={color} opacity="0.72"/>
+      <circle cx="10" cy="10" r="1.15" fill={color} opacity="0.5"/>
+    </svg>
+  );
+}
+
+/* ── Actions & suggestions ──────────────────────────────────────────── */
+const ACTIONS: { icon: LucideIcon; label: string; prompt: string }[] = [
+  { icon: DollarSign,    label: "Finances du mois",  prompt: "Analyse mes finances du mois : revenus, dépenses, factures impayées. Donne un résumé actionnable avec les chiffres clés." },
+  { icon: Zap,           label: "Tâches urgentes",   prompt: "Quelles sont mes tâches urgentes et en retard ? Que dois-je faire en priorité aujourd'hui ?" },
+  { icon: Users,         label: "Clients impayés",   prompt: "Liste les clients avec des factures impayées. Donne les montants, les délais de retard et suggère une action de relance." },
+  { icon: Package,       label: "Alertes stock",     prompt: "Quels produits sont en stock faible ou en rupture ? Lesquels dois-je réapprovisionner en urgence ?" },
+  { icon: Calendar,      label: "Ma journée",        prompt: "Organise ma journée idéale en tenant compte de mes tâches prioritaires, réunions prévues et objectifs." },
+  { icon: BarChart2,     label: "Rapport business",  prompt: "Génère un rapport business complet : revenus, dépenses, tâches terminées, clients actifs, alertes importantes." },
+  { icon: AlertTriangle, label: "Risques & alertes", prompt: "Détecte tous les risques business : retards de paiement, stock bas, surcharge équipe, projets en retard." },
+  { icon: PenLine,       label: "Créer une facture", prompt: "Crée une facture pour un client, prestation de service, montant 500€ HT, TVA 20%." },
 ];
 
 const SUGGESTIONS = [
-  "Crée une facture pour Jean Martin, mission de conseil 1200€ HT",
-  "Génère un devis pour Sophie Dupont, développement site web 3500€",
-  "Quel est mon chiffre d'affaires ce mois-ci ?",
-  "Qui sont mes clients les plus actifs ?",
-  "Quels fournisseurs coûtent le plus cher ?",
-  "Combien de tâches j'ai en retard ?",
+  "Analyser mon activité",
+  "Que dois-je faire aujourd'hui ?",
+  "Préparer un rapport",
+  "Créer une facture",
 ];
 
+/* ── Interfaces ─────────────────────────────────────────────────────── */
 interface Msg {
   id: string;
   role: "user" | "assistant";
@@ -47,41 +66,8 @@ interface Msg {
   loading?: boolean;
   pdfData?: PdfData;
   pdfGenerating?: boolean;
-}
-
-function isDocRequest(text: string): boolean {
-  return /facture|invoice|devis|quote|proposition commerciale|bon de commande/i.test(text);
-}
-
-function DocDownloadButton({ pdfData, isDark }: { pdfData: PdfData; isDark: boolean }) {
-  const [loading, setLoading] = useState(false);
-
-  async function handleDownload() {
-    setLoading(true);
-    try {
-      const co = await fetchCompanySettings();
-      await generatePdf({ ...pdfData, company: co });
-    } catch {
-      // silently fail — generatePdf triggers browser download
-    }
-    setLoading(false);
-  }
-
-  return (
-    <button
-      onClick={handleDownload}
-      disabled={loading}
-      className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.65rem] font-semibold transition active:scale-95 disabled:opacity-60"
-      style={{
-        background: isDark ? "rgba(34,211,238,0.12)" : "rgba(34,211,238,0.10)",
-        border: "1px solid rgba(34,211,238,0.35)",
-        color: isDark ? "#22d3ee" : "#0891b2",
-      }}
-    >
-      {loading ? <Loader2 size={10} className="animate-spin" /> : <FileText size={10} />}
-      {loading ? "Génération…" : `Télécharger ${pdfData.type === "invoice" ? "Facture" : "Devis"} PDF`}
-    </button>
-  );
+  artifact?: ArtifactData;
+  artifactSteps?: string[];
 }
 
 interface Conv {
@@ -98,6 +84,11 @@ interface LiveInsights {
   lowStock:      number;
   pendingLeaves: number;
   todayEvents:   number;
+}
+
+/* ── Business logic: unchanged ──────────────────────────────────────── */
+function isDocRequest(text: string): boolean {
+  return /facture|invoice|devis|quote|proposition commerciale|bon de commande/i.test(text);
 }
 
 async function buildContext(prompt: string, userId: string): Promise<{ ctx: string; modules: string[] }> {
@@ -238,7 +229,10 @@ async function buildContext(prompt: string, userId: string): Promise<{ ctx: stri
   return { ctx, modules: used };
 }
 
-function MsgContent({ text }: { text: string }) {
+/* ── Message renderer ───────────────────────────────────────────────── */
+function MsgContent({ text, isDark }: { text: string; isDark: boolean }) {
+  const tx = isDark ? "rgba(255,255,255,0.82)" : "rgba(0,0,0,0.78)";
+  const txH = isDark ? "#ffffff" : "#111827";
   const lines = text.split("\n");
   const out: React.ReactNode[] = [];
   let listBuf: React.ReactNode[] = [];
@@ -253,22 +247,22 @@ function MsgContent({ text }: { text: string }) {
   lines.forEach((line, i) => {
     if (line.startsWith("## ") || line.startsWith("### ")) {
       flushList();
-      out.push(<p key={i} className="text-[0.82rem] font-bold text-white/95 mt-3 mb-1 first:mt-0">{line.replace(/^#{2,3}\s/, "")}</p>);
+      out.push(<p key={i} className="text-[0.82rem] font-bold mt-3 mb-1 first:mt-0" style={{ color: txH }}>{line.replace(/^#{2,3}\s/, "")}</p>);
     } else if (line.match(/^[-•*]\s/)) {
       const content = line.replace(/^[-•*]\s/, "");
       listBuf.push(
-        <li key={i} className="flex gap-2 text-[0.8rem] text-white/82 leading-relaxed">
-          <span className="mt-2 h-1.5 w-1.5 rounded-full shrink-0 flex-none" style={{ background: CYAN }} />
-          <span>{bold(content)}</span>
+        <li key={i} className="flex gap-2 text-[0.8rem] leading-relaxed" style={{ color: tx }}>
+          <span className="mt-[7px] h-1.5 w-1.5 rounded-full shrink-0" style={{ background: GOLD, opacity: 0.8 }} />
+          <span>{bold(content, isDark)}</span>
         </li>
       );
     } else if (line.match(/^\d+\.\s/)) {
       const content = line.replace(/^\d+\.\s/, "");
       const num = line.match(/^(\d+)\./)?.[1];
       listBuf.push(
-        <li key={i} className="flex gap-2 text-[0.8rem] text-white/82 leading-relaxed">
-          <span className="shrink-0 text-[0.7rem] font-bold" style={{ color: CYAN }}>{num}.</span>
-          <span>{bold(content)}</span>
+        <li key={i} className="flex gap-2 text-[0.8rem] leading-relaxed" style={{ color: tx }}>
+          <span className="shrink-0 text-[0.7rem] font-bold" style={{ color: GOLD }}>{num}.</span>
+          <span>{bold(content, isDark)}</span>
         </li>
       );
     } else if (line.trim() === "") {
@@ -276,197 +270,292 @@ function MsgContent({ text }: { text: string }) {
       out.push(<div key={i} className="h-1" />);
     } else {
       flushList();
-      out.push(<p key={i} className="text-[0.8rem] text-white/82 leading-relaxed">{bold(line)}</p>);
+      out.push(<p key={i} className="text-[0.8rem] leading-relaxed" style={{ color: tx }}>{bold(line, isDark)}</p>);
     }
   });
   flushList();
-
   return <div className="space-y-0.5">{out}</div>;
 }
 
-function bold(text: string): React.ReactNode {
+function bold(text: string, isDark: boolean): React.ReactNode {
+  const txH = isDark ? "#ffffff" : "#111827";
   return text.split(/\*\*(.*?)\*\*/g).map((p, i) =>
-    i % 2 === 1 ? <strong key={i} className="font-semibold text-white">{p}</strong> : p
+    i % 2 === 1 ? <strong key={i} className="font-semibold" style={{ color: txH }}>{p}</strong> : p
   );
 }
 
-function InsightsPanel({ insights, loading }: { insights: LiveInsights | null; loading: boolean }) {
-  const items: { icon: LucideIcon; label: string; value: number | string; color: string; warn: boolean }[] = insights ? [
-    { icon: Zap,        label: "Tâches urgentes",  value: insights.urgentTasks,                  color: "#ef4444", warn: insights.urgentTasks > 0 },
-    { icon: Clock,      label: "En retard",         value: insights.lateTasks,                    color: "#f97316", warn: insights.lateTasks > 0 },
-    { icon: CreditCard, label: "Factures impayées", value: insights.unpaidCount,                  color: "#f59e0b", warn: insights.unpaidCount > 0 },
-    { icon: DollarSign, label: "Montant impayé",    value: `${insights.unpaidTotal.toFixed(0)}€`, color: "#10b981", warn: false },
-    { icon: Package,    label: "Stock faible",      value: insights.lowStock,                     color: "#8b5cf6", warn: insights.lowStock > 0 },
-    { icon: Calendar,   label: "Réunions du jour",  value: insights.todayEvents,                  color: CYAN,      warn: false },
+/* ── PDF download button ────────────────────────────────────────────── */
+function DocDownloadButton({ pdfData, isDark }: { pdfData: PdfData; isDark: boolean }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleDownload() {
+    setLoading(true);
+    try {
+      const co = await fetchCompanySettings();
+      await generatePdf({ ...pdfData, company: co });
+    } catch {}
+    setLoading(false);
+  }
+
+  const bdr = isDark ? `1px solid ${GOLD}40` : `1px solid ${GOLD}55`;
+  const bg  = isDark ? `${GOLD}12` : `${GOLD}10`;
+
+  return (
+    <button
+      onClick={handleDownload}
+      disabled={loading}
+      className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.65rem] font-semibold transition active:scale-95 disabled:opacity-60"
+      style={{ background: bg, border: bdr, color: isDark ? GOLD : "#8a6a28" }}
+    >
+      {loading ? <Loader2 size={10} className="animate-spin" /> : <FileText size={10} />}
+      {loading ? "Génération…" : `Télécharger ${pdfData.type === "invoice" ? "Facture" : "Devis"} PDF`}
+    </button>
+  );
+}
+
+/* ── Insights panel ─────────────────────────────────────────────────── */
+function InsightsPanel({ insights, loading, isDark }: { insights: LiveInsights | null; loading: boolean; isDark: boolean }) {
+  const bdr = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
+  const tx  = isDark ? "rgba(255,255,255,0.52)" : "rgba(0,0,0,0.52)";
+
+  const items: { icon: LucideIcon; label: string; value: number | string; warn: boolean; warnColor: string }[] = insights ? [
+    { icon: Zap,        label: "Tâches urgentes",  value: insights.urgentTasks,                  warn: insights.urgentTasks > 0,  warnColor: "#ef4444" },
+    { icon: Clock,      label: "En retard",         value: insights.lateTasks,                    warn: insights.lateTasks > 0,    warnColor: "#f97316" },
+    { icon: CreditCard, label: "Factures impayées", value: insights.unpaidCount,                  warn: insights.unpaidCount > 0,  warnColor: "#f59e0b" },
+    { icon: DollarSign, label: "Montant impayé",    value: `${insights.unpaidTotal.toFixed(0)}€`, warn: false,                     warnColor: GOLD },
+    { icon: Package,    label: "Stock faible",      value: insights.lowStock,                     warn: insights.lowStock > 0,     warnColor: "#f59e0b" },
+    { icon: Calendar,   label: "Réunions du jour",  value: insights.todayEvents,                  warn: false,                     warnColor: GOLD },
   ] : [];
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {loading && (
-        <div className="flex items-center gap-2 text-xs text-white/30 py-4">
-          <Loader2 size={12} className="animate-spin" /> Chargement…
+        <div className="flex items-center gap-2 py-4" style={{ color: tx }}>
+          <Loader2 size={12} className="animate-spin" />
+          <span className="text-xs">Chargement…</span>
         </div>
       )}
-      {!loading && items.map(item => (
-        <div key={item.label}
-          className={`flex items-center justify-between rounded-xl border px-3 py-2.5 transition ${item.warn ? "border-white/[0.1] bg-white/[0.03]" : "border-white/[0.05] bg-transparent"}`}>
-          <div className="flex items-center gap-2">
-            <item.icon size={14} style={{ color: item.color }} />
-            <span className="text-[0.72rem] text-white/55">{item.label}</span>
+      {!loading && items.map(item => {
+        const accent = item.warn ? item.warnColor : GOLD;
+        return (
+          <div key={item.label}
+            className="flex items-center justify-between rounded-xl px-3 py-2.5 transition"
+            style={{ border: `1px solid ${item.warn ? item.warnColor + "22" : bdr}`, background: item.warn ? `${item.warnColor}09` : "transparent" }}>
+            <div className="flex items-center gap-2">
+              <item.icon size={13} style={{ color: accent }} />
+              <span className="text-[0.72rem]" style={{ color: tx }}>{item.label}</span>
+            </div>
+            <span className="text-sm font-bold" style={{ color: accent }}>{item.value}</span>
           </div>
-          <span className={`text-sm font-bold ${item.warn ? "animate-pulse" : ""}`}
-            style={{ color: item.color }}>
-            {item.value}
-          </span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
+/* ── Conv grouping ──────────────────────────────────────────────────── */
+function groupConvs(convs: Conv[]): { label: string; items: Conv[] }[] {
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const yest  = today - 86400000;
+  const week  = today - 6 * 86400000;
+
+  const toDay  = convs.filter(c => new Date(c.created_at).getTime() >= today);
+  const toYest = convs.filter(c => { const t = new Date(c.created_at).getTime(); return t >= yest && t < today; });
+  const toWeek = convs.filter(c => { const t = new Date(c.created_at).getTime(); return t >= week && t < yest; });
+  const older  = convs.filter(c => new Date(c.created_at).getTime() < week);
+
+  return [
+    { label: "Aujourd'hui",     items: toDay  },
+    { label: "Hier",            items: toYest },
+    { label: "7 derniers jours", items: toWeek },
+    { label: "Plus ancien",     items: older  },
+  ].filter(g => g.items.length > 0);
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────── */
 function SidebarInner({
-  convs, activeConv, onNew, onSend, onSelect, onClose,
-  memNote, onMemChange,
+  convs, activeConv, onNew, onSelect, onClose,
+  memNote, onMemChange, isDark,
 }: {
-  convs: Conv[];
-  activeConv: string | null;
-  onNew: () => void;
-  onSend: (prompt: string) => void;
-  onSelect: (id: string) => void;
-  onClose?: () => void;
-  memNote: string;
-  onMemChange: (v: string) => void;
+  convs: Conv[]; activeConv: string | null;
+  onNew: () => void; onSelect: (id: string) => void;
+  onClose?: () => void; memNote: string;
+  onMemChange: (v: string) => void; isDark: boolean;
 }) {
+  const [search, setSearch] = useState("");
+  const bdr   = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
+  const tx    = isDark ? "rgba(255,255,255,0.88)" : "rgba(0,0,0,0.85)";
+  const txMut = isDark ? "rgba(255,255,255,0.40)" : "rgba(0,0,0,0.42)";
+  const txDim = isDark ? "rgba(255,255,255,0.26)" : "rgba(0,0,0,0.30)";
+  const surH  = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
+
+  const filtered = search.trim()
+    ? convs.filter(c => c.title.toLowerCase().includes(search.toLowerCase()))
+    : convs;
+  const groups = groupConvs(filtered);
+
   return (
     <>
-            <div className="relative px-4 py-4 border-b border-white/[0.06] shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg flex items-center justify-center"
-              style={{ background: CYAN + "20", border: `1px solid ${CYAN}30` }}>
-              <Sparkles size={14} style={{ color: CYAN }} />
+      {/* Header */}
+      <div className="shrink-0 px-4 py-4" style={{ borderBottom: `1px solid ${bdr}` }}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl"
+              style={{ background: `${GOLD}15`, border: `1px solid ${GOLD}28` }}>
+              <DjamaAiSymbol size={14} />
             </div>
             <div>
-              <p className="text-[0.82rem] font-semibold text-white/90">DJAMA AI</p>
-              <p className="text-[0.58rem] text-white/30">Cerveau central</p>
+              <p className="text-[0.82rem] font-bold" style={{ color: tx }}>DJAMA AI</p>
+              <p className="text-[0.52rem] uppercase tracking-wider font-medium" style={{ color: txDim }}>Assistant central</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            {convs.length > 0 && (
-              <motion.div
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                onClick={onNew}
-                className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-cyan-400/25"
-                style={{ background: "rgba(255,255,255,0.035)" }}>
-                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: CYAN }}/>
-                <div>
-                  <p className="text-xs font-bold leading-none text-white">{convs.length}</p>
-                  <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">Conv.</p>
-                </div>
-              </motion.div>
-            )}
-            {onClose && (
-              <button onClick={onClose} className="p-2 text-white/40 hover:text-white/70 rounded-lg transition">
-                <X size={18} />
-              </button>
-            )}
-          </div>
+          {onClose && (
+            <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg transition"
+              style={{ color: txMut }}
+              onMouseEnter={e => (e.currentTarget.style.background = surH)}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+              <X size={16} />
+            </button>
+          )}
         </div>
-        <button onClick={onNew}
-          className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-semibold text-white transition hover:opacity-90 active:scale-[0.98]"
-          style={{ background: `linear-gradient(135deg, ${CYAN}, ${VIOLET})` }}>
+
+        {/* New conversation button */}
+        <button
+          onClick={onNew}
+          className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.78rem] font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
+          style={{
+            background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+            border: `1px solid ${GOLD}30`,
+            color: GOLD,
+          }}>
           + Nouvelle conversation
         </button>
-        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
       </div>
 
-            <div className="px-3 py-3 border-b border-white/[0.06] shrink-0">
-        <p className="text-[0.65rem] font-medium text-white/35 mb-2 px-1">Actions rapides</p>
-        <div className="grid grid-cols-2 gap-1.5">
-          {ACTIONS.map(a => (
-            <button key={a.label}
-              onClick={() => { onSend(a.prompt); onClose?.(); }}
-              className="flex flex-col items-center gap-1 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2 py-2.5 text-center transition hover:border-white/10 hover:bg-white/[0.04] active:scale-95">
-              <a.icon size={18} style={{ color: a.color }} />
-              <span className="text-[0.58rem] text-white/50 leading-tight">{a.label}</span>
+      {/* Search */}
+      <div className="shrink-0 px-3 py-2.5" style={{ borderBottom: `1px solid ${bdr}` }}>
+        <div className="flex items-center gap-2 rounded-lg px-2.5 py-2"
+          style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: `1px solid ${bdr}` }}>
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke={txDim} strokeWidth="1.5"/><line x1="11" y1="11" x2="15" y2="15" stroke={txDim} strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher…"
+            className="flex-1 bg-transparent text-[0.72rem] outline-none"
+            style={{ color: tx }}
+          />
+          {search && (
+            <button onClick={() => setSearch("")} style={{ color: txDim }}>
+              <X size={10} />
             </button>
-          ))}
+          )}
         </div>
       </div>
 
-            <div className="flex-1 overflow-y-auto px-2 py-2">
-        <p className="text-[0.65rem] font-medium text-white/35 mb-2 px-2">Historique</p>
+      {/* Conversations */}
+      <div className="flex-1 overflow-y-auto px-2 py-2" style={{ scrollbarWidth: "none" }}>
         {convs.length === 0 && (
-          <p className="text-center text-[0.68rem] text-white/20 py-4">Aucune conversation</p>
+          <div className="px-3 py-6 text-center">
+            <DjamaAiSymbol size={24} color={txDim} />
+            <p className="mt-3 text-[0.68rem]" style={{ color: txDim }}>Démarrez votre première conversation</p>
+          </div>
         )}
-        {convs.map(c => (
-          <button key={c.id} onClick={() => { onSelect(c.id); onClose?.(); }}
-            className={`w-full text-left rounded-lg px-2.5 py-2.5 text-xs transition mb-0.5 ${activeConv === c.id
-              ? "text-white" : "text-white/45 hover:bg-white/[0.04] hover:text-white/75"}`}
-            style={activeConv === c.id ? { background: CYAN + "18" } : {}}>
-            <p className="truncate font-medium">{c.title}</p>
-            <p className="text-[0.58rem] text-white/25 mt-0.5">
-              {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-            </p>
-          </button>
+        {groups.map(group => (
+          <div key={group.label} className="mb-3">
+            <p className="mb-1 px-2 text-[0.58rem] font-bold uppercase tracking-[0.14em]"
+              style={{ color: txDim }}>{group.label}</p>
+            {group.items.map(c => (
+              <button key={c.id} onClick={() => { onSelect(c.id); onClose?.(); }}
+                className="w-full text-left rounded-lg px-2.5 py-2 text-xs mb-0.5 transition"
+                style={{
+                  background: activeConv === c.id ? `${GOLD}14` : "transparent",
+                  color: activeConv === c.id ? tx : txMut,
+                  border: activeConv === c.id ? `1px solid ${GOLD}22` : "1px solid transparent",
+                }}
+                onMouseEnter={e => { if (activeConv !== c.id) (e.currentTarget.style.background = surH); }}
+                onMouseLeave={e => { if (activeConv !== c.id) (e.currentTarget.style.background = "transparent"); }}>
+                <p className="truncate font-medium" style={{ color: activeConv === c.id ? tx : txMut }}>{c.title}</p>
+                <p className="text-[0.55rem] mt-0.5" style={{ color: txDim }}>
+                  {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                </p>
+              </button>
+            ))}
+          </div>
         ))}
       </div>
 
-      {/* Mémoire persistante */}
-      <div className="shrink-0 border-t border-white/[0.06] px-3 py-3">
-        <div className="flex items-center gap-1.5 mb-2">
-          <BookMarked size={11} style={{ color: CYAN }} />
-          <p className="text-[0.63rem] font-semibold text-white/35">Contexte mémorisé</p>
+      {/* Context mémorisé — la fonctionnalité est réelle (table ai_memories) */}
+      <div className="shrink-0 px-3 py-3" style={{ borderTop: `1px solid ${bdr}` }}>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[0.6rem] font-semibold uppercase tracking-wider" style={{ color: txDim }}>Votre contexte</p>
+          {memNote.trim() && (
+            <span className="flex items-center gap-1 text-[0.55rem]" style={{ color: `${GOLD}90` }}>
+              <Check size={8} />Actif
+            </span>
+          )}
         </div>
         <textarea
           value={memNote}
           onChange={e => onMemChange(e.target.value)}
-          placeholder="Ex: Freelance à Paris, TJM 450€, client principal Acme Corp…"
-          rows={3}
-          className="w-full resize-none rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-[0.66rem] text-white/65 placeholder:text-white/20 outline-none focus:border-cyan-500/30 transition scrollbar-none"
+          placeholder="Ex : Freelance à Paris, TJM 450€, client principal Acme Corp…"
+          rows={2}
+          className="w-full resize-none rounded-lg px-3 py-2 text-[0.65rem] outline-none transition"
+          style={{
+            background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
+            border: `1px solid ${bdr}`,
+            color: tx,
+            scrollbarWidth: "none",
+          }}
         />
-        {memNote.trim() && (
-          <p className="mt-1 text-[0.56rem] px-0.5" style={{ color: CYAN + "90" }}>
-            <Check size={10} className="inline mr-0.5" />Inclus dans chaque conversation
-          </p>
-        )}
+        <p className="mt-1 text-[0.55rem]" style={{ color: txDim }}>Inclus dans chaque conversation</p>
       </div>
     </>
   );
 }
 
+/* ── Insights panel right ───────────────────────────────────────────── */
 function InsightsInner({
-  insights, insLoading, onRefresh, onClose,
+  insights, insLoading, onRefresh, onClose, isDark,
 }: {
   insights: LiveInsights | null;
   insLoading: boolean;
   onRefresh: () => void;
   onClose?: () => void;
+  isDark: boolean;
 }) {
+  const bdr   = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
+  const tx    = isDark ? "rgba(255,255,255,0.88)" : "rgba(0,0,0,0.85)";
+  const txMut = isDark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.42)";
+
   return (
     <>
       {onClose && (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
-          <p className="text-xs font-bold text-white/60">Tableau de bord live</p>
-          <button onClick={onClose} className="p-2 text-white/40 hover:text-white/70 rounded-lg transition">
-            <X size={18} />
+        <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: `1px solid ${bdr}` }}>
+          <p className="text-[0.72rem] font-semibold" style={{ color: txMut }}>Données DJAMA</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg transition" style={{ color: txMut }}>
+            <X size={16} />
           </button>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4" style={{ scrollbarWidth: "none" }}>
         {!onClose && (
-          <p className="text-[0.65rem] font-medium text-white/35">Tableau de bord live</p>
+          <p className="text-[0.65rem] font-semibold uppercase tracking-wider" style={{ color: txMut }}>Données DJAMA</p>
         )}
 
-        <InsightsPanel insights={insights} loading={insLoading} />
+        <InsightsPanel insights={insights} loading={insLoading} isDark={isDark} />
 
         <button onClick={onRefresh}
-          className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.06] py-2.5 text-xs text-white/30 hover:text-white/60 hover:border-white/15 transition">
+          className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs transition"
+          style={{ border: `1px solid ${bdr}`, color: txMut }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = `${GOLD}35`)}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = bdr)}>
           <RefreshCw size={11} /> Actualiser
         </button>
 
         <div>
-          <p className="text-[0.65rem] font-medium text-white/35 mb-2">Accès rapides</p>
+          <p className="mb-2 text-[0.62rem] font-semibold uppercase tracking-wider" style={{ color: txMut }}>Accès directs</p>
           {([
             { Icon: Receipt,   label: "Factures",  href: "/client/factures"     },
             { Icon: ListTodo,  label: "Tâches",    href: "/client/productivite" },
@@ -476,10 +565,13 @@ function InsightsInner({
             { Icon: UserCheck, label: "Équipe",    href: "/client/equipe"       },
           ] as { Icon: LucideIcon; label: string; href: string }[]).map(s => (
             <a key={s.href} href={s.href}
-              className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-xs text-white/45 hover:bg-white/[0.04] hover:text-white/75 transition">
-              <s.Icon size={13} className="text-white/30" />
-              <span>{s.label}</span>
-              <ChevronRight size={11} className="ml-auto text-white/20" />
+              className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-xs transition"
+              style={{ color: txMut }}
+              onMouseEnter={e => (e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+              <s.Icon size={12} style={{ color: isDark ? "rgba(255,255,255,0.30)" : "rgba(0,0,0,0.28)" }} />
+              <span style={{ color: tx }}>{s.label}</span>
+              <ChevronRight size={10} className="ml-auto" style={{ color: isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.20)" }} />
             </a>
           ))}
         </div>
@@ -488,8 +580,11 @@ function InsightsInner({
   );
 }
 
+/* ── Main page ──────────────────────────────────────────────────────── */
 export default function AssistantPage() {
-  const { isDark } = useTheme();
+  const { isDark, accent } = useTheme();
+  const gold = accent || GOLD;
+
   const [convs,        setConvs]        = useState<Conv[]>([]);
   const [activeConv,   setActiveConv]   = useState<string | null>(null);
   const [msgs,         setMsgs]         = useState<Msg[]>([]);
@@ -503,11 +598,12 @@ export default function AssistantPage() {
   const [insLoading,   setInsLoading]   = useState(true);
   const [toastData,    setToastData]    = useState<ToastData | null>(null);
   const [userId,       setUserId]       = useState<string>("");
+  const [userName,     setUserName]     = useState<string>("vous");
   const [speakingId,   setSpeakingId]   = useState<string | null>(null);
   const [mem,          setMem]          = useState<string>("");
 
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef  = useRef<HTMLTextAreaElement>(null);
+  const bottomRef  = useRef<HTMLDivElement>(null);
+  const inputRef   = useRef<HTMLTextAreaElement>(null);
   const memSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toast = useCallback((msg: string, type: ToastData["type"] = "success") => {
@@ -568,7 +664,6 @@ export default function AssistantPage() {
       .order("updated_at", { ascending: false })
       .limit(30);
     setConvs((data ?? []) as Conv[]);
-
   }, []);
 
   const loadMsgs = useCallback(async (convId: string) => {
@@ -577,11 +672,72 @@ export default function AssistantPage() {
       .select("id,role,content,modules_used,created_at")
       .eq("conversation_id", convId)
       .order("created_at");
-    setMsgs((data ?? []).map((m: Record<string, unknown>) => ({
-      id: String(m.id), role: m.role as "user" | "assistant",
-      content: String(m.content),
-      modules: Array.isArray(m.modules_used) ? m.modules_used.map(String) : [],
-    })));
+
+    const rawMsgs = (data ?? []) as Record<string, unknown>[];
+
+    // Récupérer les artifacts: parsés depuis le sentinel JSON (pas de table DB requise)
+    const pendingArtifacts: { msgId: string; bucket: string; path: string; meta: ArtifactData }[] = [];
+
+    const rawMapped = rawMsgs.map((m) => {
+      const modules = Array.isArray(m.modules_used) ? m.modules_used.map(String) : [];
+      const artSentinel = modules.find(mod => mod.startsWith("artifact:"));
+      let artifact: ArtifactData | undefined;
+
+      if (artSentinel) {
+        const sentinelVal = artSentinel.slice(9); // strip "artifact:"
+        if (sentinelVal.startsWith("{")) {
+          // New format: full JSON
+          try {
+            const parsed = JSON.parse(sentinelVal) as {
+              id: string; type: string; title: string; file_name: string;
+              file_size?: number; mime_type: string; bucket?: string; path?: string;
+              metadata?: Record<string, unknown>;
+            };
+            artifact = {
+              id: parsed.id, type: parsed.type as ArtifactData["type"],
+              title: parsed.title, file_name: parsed.file_name,
+              file_size: parsed.file_size, mime_type: parsed.mime_type,
+              download_url: "",
+              storage_bucket: parsed.bucket, storage_path: parsed.path,
+              metadata: parsed.metadata,
+            };
+            if (parsed.bucket && parsed.path) {
+              pendingArtifacts.push({ msgId: String(m.id), bucket: parsed.bucket, path: parsed.path, meta: artifact });
+            }
+          } catch { /* ignore parse errors */ }
+        }
+        // Old format (plain uuid): skip — artifact_files may not exist
+      }
+
+      return {
+        id: String(m.id), role: m.role as "user" | "assistant",
+        content: String(m.content),
+        modules: modules.filter(mod => !mod.startsWith("artifact:")),
+        artifact,
+      };
+    });
+
+    setMsgs(rawMapped);
+
+    // Générer les URLs signées en arrière-plan (ne bloque pas l'affichage)
+    for (const { msgId, bucket, path, meta } of pendingArtifacts) {
+      try {
+        const signRes = await fetch("/api/artifacts/signed-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bucket, path }),
+        });
+        if (signRes.ok) {
+          const { url } = await signRes.json() as { url?: string };
+          if (url) {
+            setMsgs(ms => ms.map(m => m.id === msgId
+              ? { ...m, artifact: m.artifact ? { ...m.artifact, download_url: url } : m.artifact }
+              : m
+            ));
+          }
+        }
+      } catch { /* ignore, user still sees the card without download button */ }
+    }
   }, []);
 
   const loadInsights = useCallback(async () => {
@@ -590,6 +746,11 @@ export default function AssistantPage() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) { setInsLoading(false); return; }
       setUserId(authUser.id);
+      const name = authUser.user_metadata?.full_name as string | undefined
+        || authUser.user_metadata?.name as string | undefined
+        || authUser.email?.split("@")[0];
+      if (name) setUserName(name.split(" ")[0]);
+
       const uid = authUser.id;
       const [tasks, inv, st, lv, ev, memRow] = await Promise.all([
         supabase.from("productivity_tasks").select("status,priority,due_date").eq("user_id", uid).limit(200),
@@ -626,7 +787,6 @@ export default function AssistantPage() {
       console.error("[assistant/insights]", err);
     }
     setInsLoading(false);
-
   }, []);
 
   useEffect(() => { loadConvs(); loadInsights(); }, [loadConvs, loadInsights]);
@@ -669,29 +829,34 @@ export default function AssistantPage() {
     const userMsg: Msg = { id: crypto.randomUUID(), role: "user", content: trimmed };
     setMsgs(ms => [...ms, userMsg]);
 
+    const uid = userId || (await supabase.auth.getUser()).data.user?.id || "";
     await supabase.from("ai_messages").insert({
-      conversation_id: convId, role: "user", content: trimmed,
+      conversation_id: convId, role: "user", content: trimmed, user_id: uid,
     });
 
     setConsulting(["…"]);
-    const uid = userId || (await supabase.auth.getUser()).data.user?.id || "";
     const { ctx, modules } = await buildContext(trimmed, uid);
     const sysCtx = mem.trim()
       ? `${ctx}\n\n[CONTEXTE MÉMORISÉ UTILISATEUR]\n${mem.trim()}\n[FIN CONTEXTE]`
       : ctx;
     setConsulting(modules.length > 0 ? modules : []);
-
     const aId = crypto.randomUUID();
     setMsgs(ms => [...ms, { id: aId, role: "assistant", content: "", modules, loading: true }]);
 
     try {
-      const res = await fetch("/api/notes/ai", {
+      const res = await fetch("/api/assistant/tools", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "chat", content: sysCtx, prompt: trimmed }),
+        body: JSON.stringify({ prompt: trimmed, context: sysCtx, conversation_id: convId, memory: mem }),
       });
-      const d = await res.json();
-      const reply = String(d.result ?? d.error ?? "Désolé, je n'ai pas pu répondre.");
+      const d = await res.json() as {
+        mode?: string; text?: string; result?: string; error?: string;
+        artifact?: ArtifactData; steps?: string[];
+      };
+
+      const reply = String(d.text ?? d.result ?? d.error ?? "Désolé, je n'ai pas pu répondre.");
+      const artifact = d.artifact;
+      const artifactSteps = d.steps;
 
       setMsgs(ms => ms.map(m => m.id === aId ? { ...m, loading: false, content: "" } : m));
       let i = 0;
@@ -704,12 +869,28 @@ export default function AssistantPage() {
         }, 8);
       });
 
+      if (artifact) {
+        setMsgs(ms => ms.map(m => m.id === aId ? { ...m, artifact, artifactSteps } : m));
+      }
+
+      // Store full artifact metadata in sentinel so it can be restored without artifact_files table
+      const modulesToStore = artifact
+        ? [...modules, `artifact:${JSON.stringify({
+            id: artifact.id, type: artifact.type, title: artifact.title,
+            file_name: artifact.file_name, file_size: artifact.file_size,
+            mime_type: artifact.mime_type,
+            bucket: artifact.storage_bucket ?? "djama-artifacts",
+            path: artifact.storage_path ?? "",
+            metadata: artifact.metadata,
+          })}`]
+        : modules;
       await supabase.from("ai_messages").insert({
-        conversation_id: convId, role: "assistant", content: reply, modules_used: modules,
+        conversation_id: convId, role: "assistant", content: reply,
+        modules_used: modulesToStore, user_id: uid,
       });
 
-      // Si l'utilisateur demande un document, extraire les données PDF
-      if (isDocRequest(trimmed)) {
+      // Fallback PDF pour factures/devis (ancien système, si tools ne génère pas d'artefact)
+      if (!artifact && isDocRequest(trimmed)) {
         setMsgs(ms => ms.map(m => m.id === aId ? { ...m, pdfGenerating: true } : m));
         try {
           const docRes = await fetch("/api/assistant/generate-doc", {
@@ -748,7 +929,6 @@ export default function AssistantPage() {
     setConsulting([]);
     setSending(false);
     inputRef.current?.focus();
-
   }, [activeConv, sending, msgs.length, newConv]);
 
   const selectConv = async (id: string) => {
@@ -772,228 +952,296 @@ export default function AssistantPage() {
     setShowSidebar(false);
   };
 
-  return (
-    <div className={`flex h-[calc(100dvh-56px)] overflow-hidden ${isDark ? "bg-[#07080e] text-white" : "bg-[#f0f2fb] text-gray-900 ai-light"}`}>
-      {!isDark && (
-        <style>{`
-          .ai-light [class*="border-white/"] { border-color: rgba(12,24,100,0.09) !important; }
-          .ai-light [class*="bg-white/[0.0"] { background-color: rgba(12,24,100,0.03) !important; }
-          .ai-light [class*="hover:bg-white/"]:hover { background-color: rgba(12,24,100,0.05) !important; }
-          .ai-light .text-white { color: #111827 !important; }
-          .ai-light [class*="text-white/9"] { color: rgba(12,18,50,0.90) !important; }
-          .ai-light [class*="text-white/8"] { color: rgba(12,18,50,0.82) !important; }
-          .ai-light [class*="text-white/7"] { color: rgba(12,18,50,0.65) !important; }
-          .ai-light [class*="text-white/6"] { color: rgba(12,18,50,0.58) !important; }
-          .ai-light [class*="text-white/5"] { color: rgba(12,18,50,0.52) !important; }
-          .ai-light [class*="text-white/4"] { color: rgba(12,18,50,0.45) !important; }
-          .ai-light [class*="text-white/3"] { color: rgba(12,18,50,0.38) !important; }
-          .ai-light [class*="text-white/2"] { color: rgba(12,18,50,0.28) !important; }
-          .ai-light [class*="text-white/1"] { color: rgba(12,18,50,0.18) !important; }
-          .ai-light [class*="hover:text-white/"]:hover { color: rgba(12,18,50,0.75) !important; }
-          .ai-light textarea { color: #111827 !important; }
-          .ai-light textarea::placeholder { color: rgba(12,18,50,0.30) !important; }
-          .ai-light input::placeholder { color: rgba(12,18,50,0.30) !important; }
-        `}</style>
-      )}
+  /* ── Style tokens ── */
+  const bg     = isDark ? "#07080e"                    : "#f8f7f4";
+  const sbBg   = isDark ? "rgba(11,12,18,0.99)"        : "#ffffff";
+  const bdr    = isDark ? "rgba(255,255,255,0.07)"      : "rgba(0,0,0,0.07)";
+  const tx     = isDark ? "rgba(255,255,255,0.88)"      : "rgba(0,0,0,0.85)";
+  const txMut  = isDark ? "rgba(255,255,255,0.42)"      : "rgba(0,0,0,0.42)";
+  const txDim  = isDark ? "rgba(255,255,255,0.26)"      : "rgba(0,0,0,0.30)";
+  const sur    = isDark ? "rgba(255,255,255,0.03)"      : "rgba(255,255,255,0.85)";
+  const surH   = isDark ? "rgba(255,255,255,0.055)"     : "rgba(255,255,255,1)";
+  const inpBg  = isDark ? "rgba(255,255,255,0.03)"      : "rgba(255,255,255,0.9)";
 
-            <AnimatePresence>
+  /* Consulting label */
+  const consultingLabel = consulting[0] === "…"
+    ? "Analyse de votre demande…"
+    : consulting.length > 0
+      ? `Consultation : ${consulting.join(", ")}`
+      : null;
+
+  return (
+    <div className="flex overflow-hidden" style={{ height: "calc(100dvh - 56px)", background: bg, color: tx }}>
+
+      {/* Mobile sidebar drawer */}
+      <AnimatePresence>
         {showSidebar && (
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/70 z-40 lg:hidden"
+              className="fixed inset-0 z-40 lg:hidden"
+              style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
               onClick={() => setShowSidebar(false)}
             />
             <motion.div
               initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className={`fixed left-0 top-0 bottom-0 w-[300px] z-50 flex flex-col lg:hidden overflow-hidden border-r ${isDark ? "bg-white/[0.025] border-white/[0.06]" : "bg-white border-[rgba(12,24,100,0.09)]"}`}
-            >
-              <SidebarInner
-                convs={convs}
-                activeConv={activeConv}
-                onNew={handleNew}
-                onSend={send}
-                onSelect={selectConv}
-                onClose={() => setShowSidebar(false)}
-                memNote={mem}
-                onMemChange={setMem}
-              />
+              className="fixed left-0 top-0 bottom-0 z-50 flex w-[290px] flex-col overflow-hidden lg:hidden"
+              style={{ background: sbBg, borderRight: `1px solid ${bdr}` }}>
+              <SidebarInner convs={convs} activeConv={activeConv} onNew={handleNew} onSelect={selectConv}
+                onClose={() => setShowSidebar(false)} memNote={mem} onMemChange={setMem} isDark={isDark} />
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-            <div className={`hidden lg:flex w-[260px] shrink-0 flex-col border-r ${isDark ? "border-white/[0.06] bg-white/[0.025]" : "border-[rgba(12,24,100,0.09)] bg-white"}`}>
-        <SidebarInner
-          convs={convs}
-          activeConv={activeConv}
-          onNew={handleNew}
-          onSend={send}
-          onSelect={selectConv}
-          memNote={mem}
-          onMemChange={setMem}
-        />
+      {/* Desktop sidebar */}
+      <div className="hidden lg:flex w-[255px] shrink-0 flex-col overflow-hidden"
+        style={{ background: sbBg, borderRight: `1px solid ${bdr}` }}>
+        <SidebarInner convs={convs} activeConv={activeConv} onNew={handleNew} onSelect={selectConv}
+          memNote={mem} onMemChange={setMem} isDark={isDark} />
       </div>
 
-            <div className="flex-1 flex flex-col min-w-0">
+      {/* Main */}
+      <div className="flex flex-1 flex-col min-w-0">
 
-                <div className="relative flex items-center justify-between px-3 md:px-5 py-3 border-b border-white/[0.06] shrink-0 gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-                        <button
-              onClick={() => setShowSidebar(true)}
-              className="lg:hidden shrink-0 h-9 w-9 flex items-center justify-center rounded-xl text-white/40 hover:text-white/70 hover:bg-white/[0.05] transition">
-              <Menu size={19} />
+        {/* Topbar */}
+        <div className="relative flex shrink-0 items-center justify-between gap-3 px-4 py-3"
+          style={{ borderBottom: `1px solid ${bdr}` }}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button onClick={() => setShowSidebar(true)}
+              className="lg:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition"
+              style={{ color: txMut }}>
+              <Menu size={18} />
             </button>
             <div className="min-w-0">
-              <h1 className="text-sm font-bold text-white/85 truncate">
-                {activeConv ? convs.find(c => c.id === activeConv)?.title ?? "Conversation" : "Assistant IA"}
+              <h1 className="text-sm font-bold truncate" style={{ color: tx }}>
+                {activeConv ? (convs.find(c => c.id === activeConv)?.title ?? "Conversation") : "DJAMA AI"}
               </h1>
-              <p className="hidden sm:block text-[0.62rem] text-white/30 truncate">
-                Connecté à tous vos modules DJAMA
+              <p className="hidden sm:block text-[0.6rem]" style={{ color: txDim }}>
+                Connecté à tous vos modules
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-                        {consulting.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-2.5 py-1">
-                  <Loader2 size={11} className="animate-spin text-cyan-400" />
-                  <span className="text-[0.62rem] text-cyan-300 max-w-[120px] truncate">
-                    {consulting.join(", ")}
-                  </span>
-                </div>
-                <Loader2 size={14} className="animate-spin text-cyan-400 sm:hidden" />
+          <div className="flex shrink-0 items-center gap-1.5">
+            {/* Consulting indicator */}
+            {consultingLabel && (
+              <div className="hidden sm:flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                style={{ border: `1px solid ${gold}35`, background: `${gold}0f` }}>
+                <Loader2 size={10} className="animate-spin" style={{ color: gold }} />
+                <span className="max-w-[140px] truncate text-[0.6rem] font-medium" style={{ color: gold }}>
+                  {consultingLabel}
+                </span>
               </div>
             )}
+            {consultingLabel && <Loader2 size={13} className="animate-spin sm:hidden" style={{ color: gold }} />}
+
             {msgs.length > 0 && (
-              <button onClick={exportConv} title="Exporter la conversation"
-                className="flex items-center gap-1.5 rounded-xl border border-white/[0.07] px-2.5 py-2 text-xs text-white/40 hover:border-white/15 hover:text-white/70 transition">
-                <Download size={13} />
-                <span className="hidden sm:inline font-medium">Export</span>
+              <button onClick={exportConv}
+                className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs transition"
+                style={{ border: `1px solid ${bdr}`, color: txMut }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = `${gold}35`)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = bdr)}>
+                <Download size={12} />
+                <span className="hidden sm:inline font-medium">Exporter</span>
               </button>
             )}
-                        <button
+
+            <button
               onClick={() => setShowInsights(s => !s)}
-              className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs transition ${showInsights
-                ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300"
-                : "border-white/[0.07] text-white/40 hover:border-white/15"}`}>
-              <BarChart2 size={13} />
-              <span className="hidden sm:inline font-medium">Live</span>
+              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs transition"
+              style={{
+                border: showInsights ? `1px solid ${gold}50` : `1px solid ${bdr}`,
+                background: showInsights ? `${gold}12` : "transparent",
+                color: showInsights ? gold : txMut,
+              }}>
+              <Database size={12} />
+              <span className="hidden sm:inline font-medium">Données</span>
             </button>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),transparent)" }}/>
+
+          {/* Gold accent line */}
+          <div className="absolute bottom-0 left-0 right-0 h-px"
+            style={{ background: `linear-gradient(90deg, transparent, ${gold}38, transparent)` }} />
         </div>
 
-                <div className="flex-1 overflow-y-auto px-3 sm:px-5 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-5 space-y-5"
+          style={{ scrollbarWidth: "none" }}>
 
-                    <AnimatePresence>
+          {/* Welcome screen */}
+          <AnimatePresence>
             {showActions && msgs.length === 0 && (
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }} className="space-y-5 md:space-y-7">
+              <motion.div
+                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="flex flex-col items-center gap-6 py-6 max-w-xl mx-auto w-full">
 
-                                <div className="text-center pt-4 pb-2">
-                  <div className="mx-auto mb-4 h-14 w-14 overflow-hidden rounded-2xl"
-                    style={isDark ? {} : {
-                      background: "rgba(34,211,238,0.09)",
-                      border: "1px solid rgba(34,211,238,0.22)",
-                      boxShadow: "0 4px 18px rgba(34,211,238,0.12), 0 2px 8px rgba(12,24,100,0.07)",
-                    }}>
-                    {APP_ICONS["/client/assistant"]}
+                {/* Symbol + greeting */}
+                <div className="text-center">
+                  {/* Gold glow */}
+                  <div className="relative mx-auto mb-5 h-12 w-12">
+                    <div className="absolute inset-0 rounded-full blur-xl opacity-30"
+                      style={{ background: gold }} />
+                    <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl"
+                      style={{ background: isDark ? `${gold}14` : `${gold}10`, border: `1px solid ${gold}28` }}>
+                      <DjamaAiSymbol size={22} color={gold} />
+                    </div>
                   </div>
-                  <h2 className="text-xl font-bold text-white/90 mb-2">Bonjour</h2>
-                  <p className="text-sm text-white/45 max-w-sm mx-auto leading-relaxed px-2">
-                    Je suis DJAMA AI, votre assistant business intelligent — factures, tâches, clients, stocks en temps réel.
+                  <h2 className="text-2xl font-bold mb-1.5" style={{ color: tx }}>
+                    Bonjour, <span style={{ color: gold }}>{userName}</span>
+                  </h2>
+                  <p className="text-sm" style={{ color: txMut }}>
+                    Que souhaitez-vous faire dans DJAMA ?
                   </p>
                 </div>
 
-                                <div>
-                  <p className="text-[0.65rem] font-medium text-white/35 mb-3 text-center">Actions rapides</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {ACTIONS.map(a => (
-                      <button key={a.label} onClick={() => send(a.prompt)}
-                        className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3.5 text-center transition active:scale-95"
-                        style={{ background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.85)", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.09)"}`, boxShadow: isDark ? "none" : "0 1px 3px rgba(12,24,100,0.06)" }}>
-                        <a.icon size={22} style={{ color: a.color }} />
-                        <span className="text-[0.65rem] text-white/55 leading-snug">{a.label}</span>
-                      </button>
-                    ))}
-                  </div>
+                {/* Composer (sur l'écran d'accueil) */}
+                <ComposerBox
+                  input={input} setInput={setInput} sending={sending}
+                  onSend={() => send(input)} inputRef={inputRef} handleKey={handleKey}
+                  isDark={isDark} gold={gold} bdr={bdr} inpBg={inpBg} tx={tx} txMut={txMut} txDim={txDim}
+                />
+
+                {/* Suggestion chips */}
+                <div className="flex flex-wrap justify-center gap-2">
+                  {SUGGESTIONS.map(s => (
+                    <button key={s} onClick={() => send(s)}
+                      className="rounded-full px-4 py-1.5 text-xs font-medium transition"
+                      style={{
+                        border: `1px solid ${bdr}`,
+                        background: sur,
+                        color: txMut,
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = `${gold}45`;
+                        (e.currentTarget as HTMLElement).style.color = gold;
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = bdr;
+                        (e.currentTarget as HTMLElement).style.color = txMut;
+                      }}>
+                      {s}
+                    </button>
+                  ))}
                 </div>
 
-                                <div>
-                  <p className="text-[0.65rem] font-medium text-white/35 mb-3 text-center">Essayez de demander…</p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {SUGGESTIONS.map(s => (
-                      <button key={s} onClick={() => send(s)}
-                        className={`rounded-full px-3.5 py-2 text-xs transition active:scale-95 ${isDark ? "border border-white/[0.08] bg-white/[0.03] text-white/55 hover:border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10" : "border border-[rgba(12,24,100,0.12)] bg-white/80 text-[rgba(12,18,50,0.55)] hover:border-[rgba(201,165,90,0.45)] hover:text-[#8a6a28] hover:bg-[rgba(201,165,90,0.08)]"}`}>
-                        {s}
-                      </button>
-                    ))}
+                {/* Quick actions compact grid */}
+                <div className="w-full">
+                  <p className="mb-3 text-center text-[0.6rem] font-semibold uppercase tracking-widest"
+                    style={{ color: txDim }}>Actions rapides</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {ACTIONS.map(a => {
+                      const warnItem = insights && (
+                        (a.label === "Tâches urgentes"  && insights.urgentTasks  > 0) ||
+                        (a.label === "Clients impayés"  && insights.unpaidCount  > 0) ||
+                        (a.label === "Alertes stock"    && insights.lowStock     > 0) ||
+                        (a.label === "Risques & alertes" && (insights.lateTasks > 0 || insights.urgentTasks > 0))
+                      );
+                      return (
+                        <button key={a.label} onClick={() => send(a.prompt)}
+                          className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition-all active:scale-95"
+                          style={{
+                            background: warnItem ? `${gold}09` : sur,
+                            border: `1px solid ${warnItem ? gold + "30" : bdr}`,
+                            color: warnItem ? gold : txMut,
+                            boxShadow: isDark ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
+                          }}
+                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = surH)}
+                          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = warnItem ? `${gold}09` : sur)}>
+                          <a.icon size={13} style={{ color: warnItem ? gold : isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)", flexShrink: 0 }} />
+                          <span className="truncate leading-tight">{a.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-                    <AnimatePresence initial={false}>
+          {/* Messages */}
+          <AnimatePresence initial={false}>
             {msgs.map(m => (
               <motion.div key={m.id}
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className={`flex gap-2 md:gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
 
-                                <div className={`shrink-0 h-8 w-8 rounded-xl flex items-center justify-center text-sm font-bold ${m.role === "user"
-                  ? "bg-violet-500/20 border border-violet-500/30"
-                  : "border border-cyan-500/30"}`}
+                {/* Avatar */}
+                <div className={`shrink-0 h-7 w-7 rounded-xl flex items-center justify-center text-[0.65rem] font-bold`}
                   style={m.role === "assistant"
-                    ? { background: CYAN + "15", color: "#22d3ee" }
-                    : { color: isDark ? "#c4b5fd" : "#6d28d9" }}>
-                  {m.role === "user" ? "U" : <Sparkles size={13} style={{ color: CYAN }} />}
+                    ? { background: `${gold}14`, border: `1px solid ${gold}28` }
+                    : { background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)", border: `1px solid ${bdr}` }}>
+                  {m.role === "user"
+                    ? <span style={{ color: tx }}>{userName[0]?.toUpperCase() ?? "V"}</span>
+                    : <DjamaAiSymbol size={12} color={gold} />}
                 </div>
 
-                                <div className={`max-w-[84%] md:max-w-[76%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
-                  <div className={`rounded-2xl px-3.5 md:px-4 py-3 ${m.role === "user"
-                    ? "rounded-tr-sm border border-violet-500/20"
-                    : "rounded-tl-sm border border-white/[0.07]"}`}
+                {/* Bubble */}
+                <div className={`max-w-[82%] md:max-w-[74%] flex flex-col gap-2 ${m.role === "user" ? "items-end" : "items-start"}`}>
+                  <p className="text-[0.58rem] font-medium mb-0.5 px-0.5" style={{ color: txDim }}>
+                    {m.role === "user" ? userName : "DJAMA AI"}
+                  </p>
+                  <div className="rounded-2xl px-4 py-3"
                     style={m.role === "user"
-                      ? { background: isDark ? "rgba(124,58,237,0.18)" : "rgba(109,40,217,0.07)" }
-                      : { background: isDark ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.85)", borderLeft: `2px solid ${CYAN}40` }}>
-
+                      ? {
+                        background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+                        border: `1px solid ${bdr}`,
+                        borderTopRightRadius: 6,
+                      }
+                      : {
+                        background: sur,
+                        border: `1px solid ${bdr}`,
+                        borderTopLeftRadius: 6,
+                        borderLeft: `2px solid ${gold}50`,
+                        boxShadow: isDark ? "none" : "0 1px 4px rgba(0,0,0,0.05)",
+                      }}>
                     {m.loading ? (
-                      <div className="flex items-center gap-1.5 py-1">
+                      <div className="flex items-center gap-1.5 py-0.5">
                         {[0, 1, 2].map(j => (
                           <motion.span key={j} className="h-1.5 w-1.5 rounded-full"
-                            style={{ background: CYAN }}
-                            animate={{ opacity: [0.3, 1, 0.3], y: [0, -4, 0] }}
-                            transition={{ repeat: Infinity, duration: 0.8, delay: j * 0.15 }} />
+                            style={{ background: gold }}
+                            animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.85, delay: j * 0.17 }} />
                         ))}
                       </div>
                     ) : m.role === "assistant" ? (
-                      <MsgContent text={m.content} />
+                      <MsgContent text={m.content} isDark={isDark} />
                     ) : (
-                      <p className="text-sm text-white/88 leading-relaxed">{m.content}</p>
+                      <p className="text-sm leading-relaxed" style={{ color: tx }}>{m.content}</p>
                     )}
                   </div>
 
-                                    {m.role === "assistant" && !m.loading && (
-                    <div className="flex items-center gap-1.5 flex-wrap px-1">
+                  {/* Actions sous message IA */}
+                  {m.role === "assistant" && !m.loading && (
+                    <div className="flex flex-wrap items-center gap-1.5 px-0.5">
                       {m.modules?.map(mod => (
-                        <span key={mod} className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[0.58rem] text-cyan-300/70">
+                        <span key={mod} className="rounded-full px-2 py-0.5 text-[0.57rem] font-medium"
+                          style={{ border: `1px solid ${gold}22`, background: `${gold}0c`, color: `${gold}b0` }}>
                           {mod}
                         </span>
                       ))}
                       <button onClick={() => copyMsg(m.content)}
-                        className="flex items-center gap-1 rounded-full border border-white/[0.06] px-2.5 py-1 text-[0.62rem] text-white/30 hover:text-white/60 hover:border-white/15 transition ml-0.5">
+                        className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.6rem] transition"
+                        style={{ border: `1px solid ${bdr}`, color: txDim }}
+                        onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = tx)}
+                        onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = txDim)}>
                         <Copy size={9} /> Copier
                       </button>
                       <button onClick={() => speakMsg(m.content, m.id)}
-                        className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[0.62rem] transition ${speakingId === m.id ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300" : "border-white/[0.06] text-white/30 hover:text-white/60 hover:border-white/15"}`}>
+                        className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.6rem] transition"
+                        style={{
+                          border: speakingId === m.id ? `1px solid ${gold}45` : `1px solid ${bdr}`,
+                          background: speakingId === m.id ? `${gold}12` : "transparent",
+                          color: speakingId === m.id ? gold : txDim,
+                        }}>
                         {speakingId === m.id ? <VolumeX size={9} /> : <Volume2 size={9} />}
                         {speakingId === m.id ? "Stop" : "Écouter"}
                       </button>
                       {m.pdfGenerating && (
-                        <span className="flex items-center gap-1 rounded-full border border-cyan-500/20 px-2.5 py-1 text-[0.62rem] text-cyan-300/60">
+                        <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.6rem]"
+                          style={{ border: `1px solid ${gold}25`, color: `${gold}90` }}>
                           <Loader2 size={9} className="animate-spin" /> Préparation doc…
                         </span>
                       )}
@@ -1001,6 +1249,9 @@ export default function AssistantPage() {
                         <DocDownloadButton pdfData={m.pdfData} isDark={isDark} />
                       )}
                     </div>
+                  )}
+                  {m.artifact && (
+                    <ArtifactCard artifact={m.artifact} steps={m.artifactSteps} isDark={isDark} />
                   )}
                 </div>
               </motion.div>
@@ -1010,81 +1261,136 @@ export default function AssistantPage() {
           <div ref={bottomRef} />
         </div>
 
-                <div className="shrink-0 border-t border-white/[0.06] px-3 sm:px-5 md:px-6 py-3 md:py-4">
-          <div className="flex items-end gap-2 md:gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.025] px-3 md:px-4 py-2.5 md:py-3 focus-within:border-cyan-500/40 transition">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="Posez une question sur vos finances, tâches, clients…"
-              rows={1}
-              className="flex-1 resize-none bg-transparent text-sm text-white/85 outline-none placeholder:text-white/25 max-h-32 scrollbar-none"
-              style={{ lineHeight: "1.5" }}
-              onInput={e => {
-                const el = e.currentTarget;
-                el.style.height = "auto";
-                el.style.height = Math.min(el.scrollHeight, 128) + "px";
-              }}
+        {/* Composer — fixé en bas quand conversation active */}
+        {(!showActions || msgs.length > 0) && (
+          <div className="shrink-0 px-4 sm:px-6 md:px-8 py-3.5"
+            style={{ borderTop: `1px solid ${bdr}` }}>
+            <ComposerBox
+              input={input} setInput={setInput} sending={sending}
+              onSend={() => send(input)} inputRef={inputRef} handleKey={handleKey}
+              isDark={isDark} gold={gold} bdr={bdr} inpBg={inpBg} tx={tx} txMut={txMut} txDim={txDim}
             />
-            <button
-              onClick={() => send(input)}
-              disabled={!input.trim() || sending}
-              className="shrink-0 h-10 w-10 rounded-xl flex items-center justify-center transition disabled:opacity-30 hover:opacity-90 active:scale-95"
-              style={{ background: sending ? VIOLET + "60" : `linear-gradient(135deg, ${CYAN}, ${VIOLET})` }}>
-              {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-            </button>
           </div>
-          <p className="hidden md:block text-center text-[0.6rem] text-white/18 mt-2">
-            Maj+Entrée pour saut de ligne · DJAMA AI a accès à vos données en temps réel
-          </p>
-        </div>
+        )}
       </div>
 
-            <AnimatePresence>
+      {/* Insights column — mobile drawer */}
+      <AnimatePresence>
         {showInsights && (
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/70 z-40 lg:hidden"
+              className="fixed inset-0 z-40 lg:hidden"
+              style={{ background: "rgba(0,0,0,0.60)" }}
               onClick={() => setShowInsights(false)}
             />
             <motion.div
               initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="fixed right-0 top-0 bottom-0 w-[300px] z-50 bg-white/[0.025] border-l border-white/[0.06] flex flex-col lg:hidden overflow-hidden"
-            >
-              <InsightsInner
-                insights={insights}
-                insLoading={insLoading}
-                onRefresh={loadInsights}
-                onClose={() => setShowInsights(false)}
-              />
+              className="fixed right-0 top-0 bottom-0 z-50 flex w-[290px] flex-col overflow-hidden lg:hidden"
+              style={{ background: sbBg, borderLeft: `1px solid ${bdr}` }}>
+              <InsightsInner insights={insights} insLoading={insLoading} onRefresh={loadInsights}
+                onClose={() => setShowInsights(false)} isDark={isDark} />
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-            <AnimatePresence>
+      {/* Insights column — desktop */}
+      <AnimatePresence>
         {showInsights && (
           <motion.div
-            initial={{ width: 0, opacity: 0 }} animate={{ width: 260, opacity: 1 }}
+            initial={{ width: 0, opacity: 0 }} animate={{ width: 255, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }} transition={{ type: "spring", damping: 22 }}
-            className="hidden lg:flex shrink-0 flex-col border-l border-white/[0.06] bg-white/[0.025] overflow-hidden">
-            <div className="w-[260px] h-full flex flex-col overflow-hidden">
-              <InsightsInner
-                insights={insights}
-                insLoading={insLoading}
-                onRefresh={loadInsights}
-              />
+            className="hidden lg:flex shrink-0 flex-col overflow-hidden"
+            style={{ borderLeft: `1px solid ${bdr}`, background: sbBg }}>
+            <div className="w-[255px] h-full flex flex-col overflow-hidden">
+              <InsightsInner insights={insights} insLoading={insLoading} onRefresh={loadInsights} isDark={isDark} />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-            <AnimatePresence>
+      <AnimatePresence>
         {toastData && <Toast toast={toastData} onClose={() => setToastData(null)} />}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* ── Composer box (shared between welcome + conversation) ───────────── */
+function ComposerBox({
+  input, setInput, sending, onSend, inputRef, handleKey,
+  isDark, gold, bdr, inpBg, tx, txMut, txDim,
+}: {
+  input: string;
+  setInput: (v: string) => void;
+  sending: boolean;
+  onSend: () => void;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  handleKey: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  isDark: boolean; gold: string; bdr: string; inpBg: string;
+  tx: string; txMut: string; txDim: string;
+}) {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <div className="w-full space-y-1.5">
+      <div
+        className="flex items-end gap-2 rounded-2xl px-3 py-2.5 transition-all"
+        style={{
+          background: inpBg,
+          border: `1px solid ${focused ? gold + "45" : bdr}`,
+          boxShadow: focused
+            ? (isDark ? `0 0 0 3px ${gold}0f, 0 4px 16px rgba(0,0,0,0.18)` : `0 0 0 3px ${gold}12, 0 2px 8px rgba(0,0,0,0.06)`)
+            : (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.05)"),
+        }}>
+        {/* Attach */}
+        <button className="shrink-0 h-8 w-8 flex items-center justify-center rounded-xl transition"
+          style={{ color: txDim }}
+          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = gold)}
+          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = txDim)}>
+          <Paperclip size={14} />
+        </button>
+
+        {/* Textarea */}
+        <textarea
+          ref={inputRef}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKey}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder="Demandez à DJAMA…"
+          rows={1}
+          className="flex-1 resize-none bg-transparent text-sm outline-none max-h-32"
+          style={{
+            color: tx,
+            lineHeight: "1.5",
+            scrollbarWidth: "none",
+          }}
+          onInput={e => {
+            const el = e.currentTarget;
+            el.style.height = "auto";
+            el.style.height = Math.min(el.scrollHeight, 128) + "px";
+          }}
+        />
+
+        {/* Send */}
+        <button
+          onClick={onSend}
+          disabled={!input.trim() || sending}
+          className="shrink-0 h-9 w-9 flex items-center justify-center rounded-xl transition-all disabled:opacity-25 hover:opacity-90 active:scale-95"
+          style={{
+            background: input.trim() && !sending ? gold : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)",
+            color: input.trim() && !sending ? "#0a0a0a" : txMut,
+          }}>
+          {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+        </button>
+      </div>
+      <p className="text-center text-[0.57rem]" style={{ color: txDim }}>
+        Maj+Entrée pour saut de ligne · DJAMA AI peut utiliser les données auxquelles vous avez accès
+      </p>
     </div>
   );
 }
