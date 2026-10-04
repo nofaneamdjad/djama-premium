@@ -62,7 +62,7 @@ function formatDate(iso: string) {
 
 // Couleurs par type
 const TYPE_COLOR: Record<string, string> = {
-  document: GOLD, template: "#8b5cf6", note: "#3b82f6",
+  document: GOLD, template: "#c9a55a", note: "#3b82f6",
 };
 
 export default function BlocNotesHome() {

@@ -16,7 +16,7 @@ import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 
 const GOLD = "#c9a55a";
 const COLORS = [
-  "#c9a55a","#8b5cf6","#3b82f6","#10b981",
+  "#c9a55a","#c9a55a","#3b82f6","#10b981",
   "#f59e0b","#ec4899","#06b6d4","#f87171",
 ];
 
@@ -55,7 +55,7 @@ const ROLE_LABELS: Record<SpaceRole, string> = {
   owner: "Propriétaire", admin: "Administrateur", member: "Membre", viewer: "Lecteur",
 };
 const ROLE_COLORS: Record<SpaceRole, string> = {
-  owner: "#c9a55a", admin: "#8b5cf6", member: "#3b82f6", viewer: "#6b7280",
+  owner: "#c9a55a", admin: "#c9a55a", member: "#3b82f6", viewer: "#6b7280",
 };
 
 const ACTION_LABELS: Record<string, string> = {

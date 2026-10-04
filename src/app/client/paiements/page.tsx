@@ -67,7 +67,7 @@ const TX_STATUS: Record<string, { label:string; color:string }> = {
   pending:             { label:"En cours",    color:"#f59e0b" },
   failed:              { label:"Échoué",      color:"#ef4444" },
   refunded:            { label:"Remboursé",  color:"#6b7280" },
-  partially_refunded:  { label:"Part. remb.",color:"#8b5cf6" },
+  partially_refunded:  { label:"Part. remb.",color:"#c9a55a" },
 };
 
 const CURRENCIES = ["eur","usd","gbp","chf","cad"];
@@ -330,7 +330,7 @@ export default function PaiementsPage() {
             { label:"Collecté",        value:fmtCur(kCollecte,"eur"), color:"#10b981", Icon:Wallet     },
             { label:"À encaisser",     value:fmtCur(kAttendu,"eur"),  color:GOLD,      Icon:TrendingUp  },
             { label:"Transactions",    value:kTxCount,                 color:"#3b82f6", Icon:ArrowUpRight},
-            { label:"Taux de paiement",value:`${kTauxPay}%`,           color:"#8b5cf6", Icon:Clock      },
+            { label:"Taux de paiement",value:`${kTauxPay}%`,           color:"#c9a55a", Icon:Clock      },
           ].map(({label,value,color,Icon})=>(
             <div key={label} className={`relative overflow-hidden rounded-2xl border p-4 ${isDark?"border-white/6 bg-white/4":"border-black/8 bg-white shadow-sm"}`}>
               <div className="pointer-events-none absolute -right-3 -top-3 h-12 w-12 rounded-full opacity-15 blur-xl" style={{background:color}}/>

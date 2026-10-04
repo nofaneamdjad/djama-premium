@@ -170,7 +170,7 @@ const COLOR_PRESETS = [
   { hex:"#c9a55a", label:"Or DJAMA" },
   { hex:"#60a5fa", label:"Bleu"     },
   { hex:"#4ade80", label:"Vert"     },
-  { hex:"#a78bfa", label:"Violet"   },
+  { hex:"#c9a55a", label:"Violet"   },
   { hex:"#f97316", label:"Orange"   },
   { hex:"#f472b6", label:"Rose"     },
   { hex:"#e2e8f0", label:"Blanc"    },
@@ -2801,7 +2801,7 @@ export default function FacturesPage() {
                   )}
                   {selected && draft.type === "facture" && (
                     <button onClick={handlePaymentLink} disabled={payLinkLoading}
-                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#a78bfa]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#a78bfa] disabled:opacity-40 sm:flex">
+                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#c9a55a]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#c9a55a] disabled:opacity-40 sm:flex">
                       {payLinkLoading ? <Loader2 size={13} className="animate-spin"/> : <Link2 size={13}/>} Paiement
                     </button>
                   )}
@@ -3528,7 +3528,7 @@ export default function FacturesPage() {
                     )}
                     {selected && draft.type === "facture" && (
                       <button onClick={handlePaymentLink} disabled={payLinkLoading}
-                        className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#a78bfa]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#a78bfa] disabled:opacity-40">
+                        className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#c9a55a]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#c9a55a] disabled:opacity-40">
                         {payLinkLoading ? <Loader2 size={13} className="animate-spin"/> : <Link2 size={13}/>} Paiement
                       </button>
                     )}
@@ -3798,7 +3798,7 @@ export default function FacturesPage() {
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)]">
-                    <Link2 size={15} className="text-[#a78bfa]"/>
+                    <Link2 size={15} className="text-[#c9a55a]"/>
                   </div>
                   <h3 className="text-sm font-extrabold text-white">Lien de paiement</h3>
                 </div>
@@ -3806,7 +3806,7 @@ export default function FacturesPage() {
               </div>
               {payLinkLoading ? (
                 <div className="flex flex-col items-center gap-3 py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#a78bfa]"/>
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#c9a55a]"/>
                   <p className="text-sm text-white/40">Génération du lien Stripe…</p>
                 </div>
               ) : payLinkUrl ? (
@@ -3820,11 +3820,11 @@ export default function FacturesPage() {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={handleCopyLink}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] py-2.5 text-sm font-semibold text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.15)]">
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] py-2.5 text-sm font-semibold text-[#c9a55a] transition hover:bg-[rgba(167,139,250,0.15)]">
                       {copied ? <Check size={13}/> : <Copy size={13}/>} {copied ? "Copié !" : "Copier"}
                     </button>
                     <a href={payLinkUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] py-2.5 text-sm font-bold text-white transition hover:opacity-90">
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#c9a55a] py-2.5 text-sm font-bold text-white transition hover:opacity-90">
                       Ouvrir
                     </a>
                   </div>

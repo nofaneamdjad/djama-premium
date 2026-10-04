@@ -14,7 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { useTheme } from "@/lib/theme-context";
-const VIOLET = "#8b5cf6";
+const VIOLET = "#c9a55a";
 const GOLD   = "#C9A55A";
 
 const PRIO = {
@@ -29,7 +29,7 @@ const STAT = {
   in_progress: { label: "En cours",   col: "#3b82f6" },
   validation:  { label: "Validation", col: "#f59e0b" },
   done:        { label: "Terminé",    col: "#10b981" },
-  waiting:     { label: "En attente", col: "#8b5cf6" },
+  waiting:     { label: "En attente", col: "#c9a55a" },
   late:        { label: "En retard",  col: "#ef4444" },
 } as const;
 
@@ -101,7 +101,7 @@ const BLANK: Form = {
 
 const TASK_TEMPLATES: { Icon: LucideIcon; color: string; label: string; desc: string; form: Partial<Form> }[] = [
   {
-    Icon: Rocket, color: "#8b5cf6", label: "Lancement produit",
+    Icon: Rocket, color: "#c9a55a", label: "Lancement produit",
     desc: "Tâche de déploiement avec checklist complète",
     form: {
       title: "Lancement produit v1.0", category: "Développement", priority: "high",
@@ -259,7 +259,7 @@ const fmtDate = (d: string) => {
 const ini = (n: string) =>
   n.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? "").join("");
 
-const AV_COLS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
+const AV_COLS = ["#c9a55a", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
 const avCol = (n: string) => AV_COLS[(n.charCodeAt(0) || 0) % AV_COLS.length];
 
 const TASK_PROJECTION = [
@@ -779,7 +779,7 @@ export default function ProductivitePage() {
       .from("productivity_templates").select("*").order("name");
     if (data) setDbTemplates(data.map((r: Record<string, unknown>) => ({
       id: String(r.id), name: String(r.name ?? ""), description: String(r.description ?? ""),
-      icon: String(r.icon ?? ""), color: String(r.color ?? "#8b5cf6"),
+      icon: String(r.icon ?? ""), color: String(r.color ?? "#c9a55a"),
       priority: String(r.priority ?? "normal"), category: String(r.category ?? ""),
       estimated_minutes: Number(r.estimated_minutes ?? 30),
       tags: Array.isArray(r.tags) ? r.tags.map(String) : [],
@@ -1066,7 +1066,7 @@ export default function ProductivitePage() {
         {isDark && (
           <div className="pointer-events-none">
             <div className="absolute -top-16 -left-16 h-48 w-48 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
-            <div className="absolute -bottom-10 right-20 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#8b5cf6,transparent)" }}/>
+            <div className="absolute -bottom-10 right-20 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: "radial-gradient(circle,#c9a55a,transparent)" }}/>
           </div>
         )}
 

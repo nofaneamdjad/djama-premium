@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -55,7 +55,7 @@ export default function RendezVousPage() {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
           className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={CalendarPlus} color="#0891b2" />
+            <ModuleHeaderIcon icon={CalendarPlus} color="#c9a55a" />
             <div>
               <h1 className={`text-[17px] font-black ${s.text}`}>Rendez-vous</h1>
               <p className={`text-[10px] ${s.muted}`}>{todayCount} aujourd'hui · {rdvs.length} total</p>
@@ -63,7 +63,7 @@ export default function RendezVousPage() {
           </div>
           <button onClick={() => setCreating(true)}
             className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold text-white"
-            style={{ background: "linear-gradient(135deg,#0891b2,#0e7490)" }}>
+            style={{ background: "linear-gradient(135deg,#c9a55a,#0e7490)" }}>
             <Plus size={14} /> Nouveau RDV
           </button>
         </motion.div>
@@ -74,7 +74,7 @@ export default function RendezVousPage() {
             <button key={f} onClick={() => setFilter(f)}
               className="shrink-0 rounded-full px-3 py-1 text-[10.5px] font-semibold transition-all"
               style={filter === f
-                ? { background: f === "all" ? "rgba(8,145,178,0.18)" : STATUS_COLORS[f as RdvStatus] + "22", color: f === "all" ? "#0891b2" : STATUS_COLORS[f as RdvStatus], border: `1px solid ${f === "all" ? "rgba(8,145,178,0.35)" : STATUS_COLORS[f as RdvStatus] + "44"}` }
+                ? { background: f === "all" ? "rgba(8,145,178,0.18)" : STATUS_COLORS[f as RdvStatus] + "22", color: f === "all" ? "#c9a55a" : STATUS_COLORS[f as RdvStatus], border: `1px solid ${f === "all" ? "rgba(8,145,178,0.35)" : STATUS_COLORS[f as RdvStatus] + "44"}` }
                 : { background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` }
               }>
               {f === "all" ? "Tous" : STATUS_LABELS[f as RdvStatus]}
@@ -180,7 +180,7 @@ export default function RendezVousPage() {
                     {[30, 45, 60, 90, 120].map(d => (
                       <button key={d} onClick={() => setDraft(p => ({ ...p, duration: d }))}
                         className="flex-1 rounded-xl py-1.5 text-[11px] font-bold transition"
-                        style={draft.duration === d ? { background: "#0891b2", color: "white" } : { background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)" }}>
+                        style={draft.duration === d ? { background: "#c9a55a", color: "white" } : { background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)" }}>
                         {d}
                       </button>
                     ))}
@@ -193,7 +193,7 @@ export default function RendezVousPage() {
               </div>
               <button onClick={save} disabled={!draft.client?.trim() || !draft.date || !draft.time}
                 className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-black text-white disabled:opacity-40 transition"
-                style={{ background: "linear-gradient(135deg,#0891b2,#0e7490)" }}>
+                style={{ background: "linear-gradient(135deg,#c9a55a,#0e7490)" }}>
                 <Check size={15} /> Confirmer le RDV
               </button>
             </motion.div>

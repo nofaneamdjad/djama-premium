@@ -59,7 +59,7 @@ interface RawDoc {
 const INCOME_CATS = [
   { v: "client",     l: "Paiement client",  c: "#10b981", I: Users      },
   { v: "abonnement", l: "Abonnement",        c: "#3b82f6", I: RefreshCw  },
-  { v: "vente",      l: "Vente produit",     c: "#8b5cf6", I: ShoppingBag},
+  { v: "vente",      l: "Vente produit",     c: "#c9a55a", I: ShoppingBag},
   { v: "subvention", l: "Subvention",        c: "#f59e0b", I: Zap        },
   { v: "autre",      l: "Autre revenu",      c: "#6b7280", I: Plus       },
 ] as const;
@@ -67,7 +67,7 @@ const INCOME_CATS = [
 const EXPENSE_CATS = [
   { v: "salaires",     l: "Salaires",       c: "#ef4444", I: Users       },
   { v: "fournisseurs", l: "Fournisseurs",   c: "#f97316", I: Package     },
-  { v: "logiciels",    l: "Logiciels",      c: "#8b5cf6", I: Monitor     },
+  { v: "logiciels",    l: "Logiciels",      c: "#c9a55a", I: Monitor     },
   { v: "marketing",    l: "Marketing",      c: "#ec4899", I: Megaphone   },
   { v: "transport",    l: "Transport",      c: "#3b82f6", I: Car         },
   { v: "taxes",        l: "Taxes & impôts", c: "#dc2626", I: Building2   },
@@ -96,7 +96,7 @@ const FREQUENCIES = [
   { v: "yearly",    l: "Annuel"       },
 ];
 
-const ACCOUNT_COLORS = ["#3b82f6","#10b981","#8b5cf6","#f59e0b","#ec4899","#06b6d4","#c9a55a"];
+const ACCOUNT_COLORS = ["#3b82f6","#10b981","#c9a55a","#f59e0b","#ec4899","#06b6d4","#c9a55a"];
 
 type AlertThreshold = { accountId: string; min: number };;
 const BANKS = [
@@ -614,7 +614,7 @@ function DashboardView({
     { l: "Dépenses",             v: thisExpense,       c: "#ef4444", sub: fmtPct(expensePct) + " vs mois dernier", I: ArrowDownRight,delta: -expensePct, subColor: expensePct > 0 ? "#ef4444" : expensePct < 0 ? "#10b981" : "#6b7280", nav: "transactions" as const },
     { l: "Résultat net",         v: netMonth,          c: netMonth >= 0 ? "#10b981" : "#ef4444", sub: "Ce mois", I: BarChart2,    delta: null,      subColor: null,   nav: "transactions" as const },
     { l: "En attente",           v: Math.abs(pending), c: "#f59e0b", sub: pending >= 0 ? "à encaisser" : "à payer", I: Clock,    delta: null,      subColor: null,   nav: "transactions" as const },
-    { l: "Prévision 30 jours",   v: forecast30,        c: "#8b5cf6", sub: "Basé sur récurrents", I: Target,        delta: null,      subColor: null,   nav: "previsions"   as const },
+    { l: "Prévision 30 jours",   v: forecast30,        c: "#c9a55a", sub: "Basé sur récurrents", I: Target,        delta: null,      subColor: null,   nav: "previsions"   as const },
   ];
 
   return (
@@ -1617,7 +1617,7 @@ function ComptesView({
                 onClick={analyzePdf}
                 disabled={pdfAnalyzing}
                 className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold disabled:opacity-50 transition-all hover:brightness-110"
-                style={{ background: "linear-gradient(135deg,#8b5cf6,#6d28d9)", color: "white" }}>
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "white" }}>
                 {pdfAnalyzing ? (
                   <>
                     <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />

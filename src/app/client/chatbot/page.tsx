@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,7 +72,7 @@ export default function ChatbotPage() {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
           className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={Bot} color="#8b5cf6" />
+            <ModuleHeaderIcon icon={Bot} color="#c9a55a" />
             <div>
               <h1 className={`text-[17px] font-black ${s.text}`}>Chatbot IA</h1>
               <p className={`text-[10px] ${s.muted}`}>{bots.filter(b => b.active).length} chatbots actifs</p>
@@ -81,7 +81,7 @@ export default function ChatbotPage() {
           {tab === "bots" && (
             <button onClick={() => setCreating(true)}
               className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold text-white"
-              style={{ background: "linear-gradient(135deg,#8b5cf6,#7c3aed)" }}>
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
               <Plus size={14} /> Chatbot
             </button>
           )}
@@ -99,7 +99,7 @@ export default function ChatbotPage() {
             <button key={t} onClick={() => setTab(t)}
               className="rounded-xl px-4 py-1.5 text-[11.5px] font-semibold transition"
               style={tab === t
-                ? { background: "rgba(139,92,246,0.15)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.30)" }
+                ? { background: "rgba(201,165,90,0.15)", color: "#c9a55a", border: "1px solid rgba(139,92,246,0.30)" }
                 : { background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", color: isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` }}>
               {t === "bots" ? "Mes chatbots" : "Prévisualisation"}
             </button>
@@ -115,8 +115,8 @@ export default function ChatbotPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="h-11 w-11 shrink-0 rounded-2xl flex items-center justify-center"
-                    style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.25)" }}>
-                    <Bot size={18} style={{ color: "#8b5cf6" }} />
+                    style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.25)" }}>
+                    <Bot size={18} style={{ color: "#c9a55a" }} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -134,7 +134,7 @@ export default function ChatbotPage() {
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button onClick={() => openPreview(b)}
                     className="h-7 rounded-xl px-2.5 flex items-center gap-1 text-[10.5px] font-bold transition"
-                    style={{ background: "rgba(139,92,246,0.12)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.25)" }}>
+                    style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.25)" }}>
                     <Zap size={10} /> Tester
                   </button>
                   <button onClick={() => setBots(p => p.filter(x => x.id !== b.id))}
@@ -157,7 +157,7 @@ export default function ChatbotPage() {
             </div>
           ) : (
             <div className={`rounded-2xl border overflow-hidden ${s.card}`}>
-              <div className="flex items-center gap-2 px-4 py-3" style={{ background: "linear-gradient(135deg,#8b5cf6,#7c3aed)" }}>
+              <div className="flex items-center gap-2 px-4 py-3" style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
                 <Bot size={15} style={{ color: "white" }} />
                 <p className="text-[12px] font-bold text-white">{activeBot.name}</p>
                 <span className="ml-auto text-[9.5px] font-bold rounded-full px-2 py-0.5 bg-white/20 text-white">En ligne</span>
@@ -167,7 +167,7 @@ export default function ChatbotPage() {
                   <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div className="max-w-[80%] rounded-2xl px-3 py-2 text-[12px]"
                       style={m.role === "user"
-                        ? { background: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "white" }
+                        ? { background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "white" }
                         : { background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)", color: isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.75)" }}>
                       {m.text}
                     </div>
@@ -179,7 +179,7 @@ export default function ChatbotPage() {
                   onKeyDown={e => e.key === "Enter" && sendMsg()} />
                 <button onClick={sendMsg}
                   className="h-10 w-10 shrink-0 rounded-xl flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg,#8b5cf6,#7c3aed)" }}>
+                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
                   <Send size={13} style={{ color: "white" }} />
                 </button>
               </div>
@@ -215,7 +215,7 @@ export default function ChatbotPage() {
               </div>
               <button onClick={save} disabled={!form.name.trim() || !form.greeting.trim()}
                 className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-black text-white disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg,#8b5cf6,#7c3aed)" }}>
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
                 <Check size={15} /> Créer le chatbot
               </button>
             </motion.div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -428,7 +428,7 @@ function MindMapCanvas({ mapId, mapTitle, onBack }: { mapId: string; mapTitle: s
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
               <label style={{ fontSize: 11, color: textSub, fontWeight: 500 }}>Couleur</label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {["#c9a55a","#6366f1","#10b981","#f59e0b","#ec4899","#0ea5e9","#8b5cf6","#ef4444"].map(c => (
+                {["#c9a55a","#6366f1","#10b981","#f59e0b","#ec4899","#0ea5e9","#c9a55a","#ef4444"].map(c => (
                   <button key={c} onClick={() => setEditPanel(p => p ? { ...p, color: c } : p)}
                     style={{ width: 24, height: 24, borderRadius: "50%", background: c, border: "none", cursor: "pointer", outline: editPanel.color === c ? "2px solid white" : "none", outlineOffset: 2 }} />
                 ))}

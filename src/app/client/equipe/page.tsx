@@ -917,7 +917,7 @@ export default function EquipePage() {
         if (d.getMonth() !== agMon || d.getFullYear() !== agYear) continue;
         const key = d.toISOString().slice(0,10);
         const arr = leaveDays.get(key) ?? [];
-        const LEAVE_COLORS:Record<string,string> = {vacation:"#0ea5e9",sick:"#f87171",personal:"#a78bfa",training:"#34d399"};
+        const LEAVE_COLORS:Record<string,string> = {vacation:"#0ea5e9",sick:"#f87171",personal:"#c9a55a",training:"#34d399"};
         arr.push({name: l.member_name, color: LEAVE_COLORS[l.type] ?? "#0ea5e9"});
         leaveDays.set(key, arr);
       }
@@ -1121,7 +1121,7 @@ export default function EquipePage() {
               <div className={`flex flex-wrap gap-3 mt-3 pt-3 border-t ${isDark ? "border-white/5" : "border-gray-100"}`}>
                 {Array.from(new Set(leaves.filter(l=>l.status!=="rejected").map(l=>l.member_name))).slice(0,6).map(name=>{
                   const l = leaves.find(x=>x.member_name===name);
-                  const LEAVE_COLORS2:Record<string,string> = {vacation:"#0ea5e9",sick:"#f87171",personal:"#a78bfa",training:"#34d399"};
+                  const LEAVE_COLORS2:Record<string,string> = {vacation:"#0ea5e9",sick:"#f87171",personal:"#c9a55a",training:"#34d399"};
                   const dotColor = l ? (LEAVE_COLORS2[l.type] ?? SKY) : SKY;
                   return (
                     <div key={name} className="flex items-center gap-1.5">

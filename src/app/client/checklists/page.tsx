@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,7 +16,7 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 const PALETTE = [
   "#6366f1","#ec4899","#f59e0b","#10b981",
-  "#0ea5e9","#8b5cf6","#ef4444","#14b8a6",
+  "#0ea5e9","#c9a55a","#ef4444","#14b8a6",
   "#f97316","#84cc16",
 ];
 
@@ -353,7 +353,7 @@ function AiPanel({
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-xl"
             style={{ background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.25)" }}>
-            <Sparkles size={13} style={{ color: "#a78bfa" }} />
+            <Sparkles size={13} style={{ color: "#c9a55a" }} />
           </div>
           <div>
             <p className="text-[12px] font-bold text-white/80">Assistant IA</p>
@@ -382,7 +382,7 @@ function AiPanel({
               onClick={getSuggestions}
               disabled={!instruction.trim() || loading}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white disabled:opacity-30 transition"
-              style={{ background: "linear-gradient(135deg,#7c3aed,#6366f1)" }}
+              style={{ background: "linear-gradient(135deg,#c9a55a,#6366f1)" }}
             >
               {loading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
               {loading ? "Analyse…" : "Suggérer"}
@@ -410,7 +410,7 @@ function AiPanel({
                 pendingOps.map((op, i) => (
                   <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-lg text-[11px]"
                     style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(12,24,100,0.03)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(12,24,100,0.07)"}` }}>
-                    <span className="shrink-0 mt-0.5 text-[9px] font-mono px-1 rounded" style={{ background: "rgba(124,58,237,0.20)", color: "#a78bfa" }}>
+                    <span className="shrink-0 mt-0.5 text-[9px] font-mono px-1 rounded" style={{ background: "rgba(124,58,237,0.20)", color: "#c9a55a" }}>
                       {op.op}
                     </span>
                     <span className="text-white/60 leading-relaxed">{describeOp(op)}</span>
@@ -844,7 +844,7 @@ export default function ChecklistsPage() {
                   <button
                     onClick={() => setShowAiGenerate(v => !v)}
                     className="w-full flex items-center gap-1.5 justify-center rounded-xl py-1.5 text-[10.5px] font-semibold transition"
-                    style={{ color: "#a78bfa", border: "1px dashed rgba(167,139,250,0.30)" }}>
+                    style={{ color: "#c9a55a", border: "1px dashed rgba(167,139,250,0.30)" }}>
                     <Sparkles size={10} />{showAiGenerate ? "Masquer l'IA" : "Générer avec l'IA"}
                   </button>
 
@@ -868,7 +868,7 @@ export default function ChecklistsPage() {
                         <button onClick={generateWithAi}
                           disabled={aiLoading || !aiTopic.trim()}
                           className="w-full flex items-center justify-center gap-1.5 rounded-xl py-1.5 text-[11px] font-bold text-white disabled:opacity-40"
-                          style={{ background: "linear-gradient(135deg,#7c3aed,#6366f1)" }}>
+                          style={{ background: "linear-gradient(135deg,#c9a55a,#6366f1)" }}>
                           {aiLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
                           {aiLoading ? "Génération…" : "Générer la liste"}
                         </button>
@@ -1042,7 +1042,7 @@ export default function ChecklistsPage() {
                   <button onClick={() => setShowAiPanel(v => !v)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition"
                     style={showAiPanel
-                      ? { background: "rgba(124,58,237,0.20)", border: "1px solid rgba(124,58,237,0.40)", color: "#a78bfa" }
+                      ? { background: "rgba(124,58,237,0.20)", border: "1px solid rgba(124,58,237,0.40)", color: "#c9a55a" }
                       : { background: isDark ? "rgba(255,255,255,0.05)" : "rgba(12,24,100,0.04)", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(12,24,100,0.08)"}`, color: isDark ? "rgba(255,255,255,0.40)" : "rgba(12,18,50,0.45)" }
                     }>
                     <Sparkles size={11} />IA

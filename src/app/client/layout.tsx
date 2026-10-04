@@ -318,6 +318,7 @@ const DARK_PAGES = [
   "/client/scanner",
   "/client/mindmap",
   "/client/apps",
+  "/client/ai-docs",
 ];
 
 /* ─────────── LAYOUT ROOT ─────────── */

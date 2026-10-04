@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -26,7 +26,7 @@ export function ClientModal({ client, onSave, onClose }: {
         <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 flex items-center justify-center rounded-xl" style={{ background: "#6366f120", border: "1px solid #6366f130" }}>
-              <Users size={14} style={{ color: "#818cf8" }}/>
+              <Users size={14} style={{ color: "#c9a55a" }}/>
             </div>
             <h3 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{form.id ? "Modifier le client" : "Nouveau client fidèle"}</h3>
           </div>
@@ -45,7 +45,7 @@ export function ClientModal({ client, onSave, onClose }: {
           <button onClick={onClose} className={`px-4 py-2.5 rounded-xl text-sm border transition-colors ${isDark ? "text-white/50 border-white/10 hover:bg-white/[0.04]" : "text-gray-500 border-gray-200 hover:bg-gray-100"}`}>Annuler</button>
           <button onClick={async () => { if (!form.name) return; setSaving(true); await onSave(form); setSaving(false); }} disabled={saving || !form.name}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", color: "#fff" }}>
+            style={{ background: "linear-gradient(135deg,#c9a55a,#6366f1)", color: "#fff" }}>
             {saving ? <RefreshCw size={13} className="animate-spin inline"/> : form.id ? "Enregistrer" : "Créer le client"}
           </button>
         </div>

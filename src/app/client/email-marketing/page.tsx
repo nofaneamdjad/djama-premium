@@ -54,7 +54,7 @@ interface Automation {
 /* ── Status config ── */
 const STATUS_CFG: Record<CampStatus, { label: string; color: string }> = {
   brouillon:  { label: "Brouillon",  color: "#6b7280" },
-  a_valider:  { label: "À valider",  color: "#8b5cf6" },
+  a_valider:  { label: "À valider",  color: "#c9a55a" },
   planifiee:  { label: "Planifiée",  color: "#3b82f6" },
   en_cours:   { label: "En cours",   color: GOLD      },
   envoyee:    { label: "Envoyée",    color: "#10b981" },
@@ -66,7 +66,7 @@ type IconComp = React.ComponentType<{ size?: number; style?: CSSProperties; clas
 const STEP_ICONS: Record<string, { icon: IconComp; label: string; color: string }> = {
   send_email:    { icon: Mail,         label: "Envoyer email",    color: GOLD      },
   wait:          { icon: Clock,        label: "Attendre",         color: "#3b82f6" },
-  condition:     { icon: ChevronRight, label: "Condition",        color: "#8b5cf6" },
+  condition:     { icon: ChevronRight, label: "Condition",        color: "#c9a55a" },
   add_tag:       { icon: Plus,         label: "Ajouter tag",      color: "#10b981" },
   remove_tag:    { icon: Minus,        label: "Retirer tag",      color: "#ef4444" },
   create_task:   { icon: CheckCircle2, label: "Créer tâche",      color: "#f59e0b" },
@@ -682,7 +682,7 @@ export default function EmailMarketingPage() {
                 { label: "Envoyés",           value: fmtNum(sent),       sub: "total",                          color: GOLD      },
                 { label: "Délivrés",          value: `${pct(delivered,sent)}%`,  sub: `${fmtNum(delivered)} emails`, color: "#10b981" },
                 { label: "Ouvertures",        value: `${pct(opened,delivered)}%`, sub: "taux approx.",            color: "#3b82f6" },
-                { label: "Clics",             value: `${pct(clicked,delivered)}%`, sub: `${fmtNum(clicked)} clics`, color: "#8b5cf6" },
+                { label: "Clics",             value: `${pct(clicked,delivered)}%`, sub: `${fmtNum(clicked)} clics`, color: "#c9a55a" },
                 { label: "Désabonnements",    value: fmtNum(unsubs),     sub: "total",                          color: "#f59e0b" },
                 { label: "Bounces",           value: `${pct(bounced,sent)}%`,     sub: `${fmtNum(bounced)} emails`, color: "#ef4444" },
               ].map(k => (
@@ -1085,7 +1085,7 @@ export default function EmailMarketingPage() {
                     { label: "Envoyés",       value: fmtNum(selCamp.stats_sent),       color: GOLD      },
                     { label: "Délivrés",      value: `${pct(selCamp.stats_delivered, selCamp.stats_sent)}%`, color: "#10b981" },
                     { label: "Ouvertures",    value: `${pct(selCamp.stats_opened, selCamp.stats_delivered)}%`, color: "#3b82f6" },
-                    { label: "Clics (CTR)",   value: `${pct(selCamp.stats_clicked, selCamp.stats_delivered)}%`, color: "#8b5cf6" },
+                    { label: "Clics (CTR)",   value: `${pct(selCamp.stats_clicked, selCamp.stats_delivered)}%`, color: "#c9a55a" },
                     { label: "Bounces",       value: `${pct(selCamp.stats_bounced, selCamp.stats_sent)}%`, color: "#ef4444" },
                     { label: "Désabonnements",value: fmtNum(selCamp.stats_unsubscribed), color: "#f59e0b" },
                   ].map(k => (

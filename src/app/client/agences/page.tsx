@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -56,7 +56,7 @@ export default function AgencesPage() {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
           className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={Briefcase} color="#7c3aed" />
+            <ModuleHeaderIcon icon={Briefcase} color="#c9a55a" />
             <div>
               <h1 className={`text-[17px] font-black ${s.text}`}>Gestion des agences</h1>
               <p className={`text-[10px] ${s.muted}`}>{agencies.filter(a => a.status === "partenaire").length} partenaires · {agencies.filter(a => a.status === "prospect").length} prospects</p>
@@ -64,14 +64,14 @@ export default function AgencesPage() {
           </div>
           <button onClick={() => setCreating(true)}
             className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold text-white"
-            style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}>
+            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
             <Plus size={14} /> Agence
           </button>
         </motion.div>
 
         <div className="flex gap-1.5 mt-4">
           {(["all", "partenaire", "prospect", "inactif"] as const).map(f => {
-            const cfg = f === "all" ? { label: "Toutes", color: "#7c3aed" } : STATUS_CFG[f];
+            const cfg = f === "all" ? { label: "Toutes", color: "#c9a55a" } : STATUS_CFG[f];
             return (
               <button key={f} onClick={() => setFilter(f)}
                 className="rounded-xl px-3 py-1.5 text-[11px] font-semibold transition"
@@ -95,7 +95,7 @@ export default function AgencesPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="h-11 w-11 shrink-0 rounded-2xl flex items-center justify-center"
                     style={{ background: "rgba(124,58,237,0.12)", border: "1px solid rgba(124,58,237,0.25)" }}>
-                    <Building2 size={18} style={{ color: "#7c3aed" }} />
+                    <Building2 size={18} style={{ color: "#c9a55a" }} />
                   </div>
                   <div className="min-w-0">
                     <p className={`text-[13px] font-bold ${s.text}`}>{a.name}</p>
@@ -172,7 +172,7 @@ export default function AgencesPage() {
               </div>
               <button onClick={save} disabled={!form.name?.trim()}
                 className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-black text-white disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}>
+                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
                 <Check size={15} /> Ajouter
               </button>
             </motion.div>

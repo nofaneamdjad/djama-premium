@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -30,7 +30,7 @@ const CAT_COLORS: Record<string, string> = {
   Télécoms:           "#6366f1",
   Informatique:       "#0ea5e9",
   "Charges sociales": "#f59e0b",
-  "Frais plateforme": "#8b5cf6",
+  "Frais plateforme": "#c9a55a",
 };
 
 export default function BanquePage() {
@@ -54,7 +54,7 @@ export default function BanquePage() {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
           className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={Landmark} color="#0369a1" />
+            <ModuleHeaderIcon icon={Landmark} color="#c9a55a" />
             <div>
               <h1 className={`text-[17px] font-black ${s.text}`}>Connexion bancaire</h1>
               <p className={`text-[10px] ${s.muted}`}>{connected ? "BNP Paribas · synchronisé" : "Aucun compte connecté"}</p>
@@ -62,7 +62,7 @@ export default function BanquePage() {
           </div>
           <button onClick={() => setConnected(v => !v)}
             className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold text-white"
-            style={{ background: connected ? "rgba(16,185,129,0.20)" : "linear-gradient(135deg,#0369a1,#0284c7)", color: connected ? "#10b981" : "white", border: connected ? "1px solid rgba(16,185,129,0.35)" : "none" }}>
+            style={{ background: connected ? "rgba(16,185,129,0.20)" : "linear-gradient(135deg,#c9a55a,#0284c7)", color: connected ? "#10b981" : "white", border: connected ? "1px solid rgba(16,185,129,0.35)" : "none" }}>
             {connected ? <><RefreshCw size={13} /> Synchroniser</> : <><Link2 size={13} /> Connecter</>}
           </button>
         </motion.div>
@@ -95,7 +95,7 @@ export default function BanquePage() {
 
           {!connected && (
             <div className={`rounded-2xl border p-4 text-center ${s.card}`} style={{ border: "1px dashed rgba(3,105,161,0.35)" }}>
-              <Landmark size={28} className="mx-auto mb-2" style={{ color: "#0369a1" }} />
+              <Landmark size={28} className="mx-auto mb-2" style={{ color: "#c9a55a" }} />
               <p className={`text-[12px] font-bold ${s.text}`}>Connectez votre banque</p>
               <p className={`text-[10.5px] mt-1 ${s.muted}`}>Import automatique des mouvements via Open Banking. Les transactions ci-dessous sont des données de démonstration.</p>
             </div>

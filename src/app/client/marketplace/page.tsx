@@ -59,7 +59,7 @@ const ORDER_STATUSES: Record<string, { label: string; color: string }> = {
   pending:             { label: "En attente",          color: "#f59e0b" },
   paid:                { label: "Payée",               color: "#3b82f6" },
   in_progress:         { label: "En cours",            color: GOLD      },
-  delivered:           { label: "Livrée",              color: "#8b5cf6" },
+  delivered:           { label: "Livrée",              color: "#c9a55a" },
   revision_requested:  { label: "Révision demandée",   color: "#f97316" },
   completed:           { label: "Terminée",            color: "#10b981" },
   cancelled:           { label: "Annulée",             color: "#6b7280" },

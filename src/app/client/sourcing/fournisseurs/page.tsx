@@ -94,7 +94,7 @@ interface GeneratedDoc {
 const blue = "#60a5fa";
 const emerald = "#34d399";
 const amber = "#f59e0b";
-const indigo = "#818cf8";
+const indigo = "#c9a55a";
 
 const STEPS = [
   { id: 1, icon: Target, short: "Besoin" },
@@ -977,7 +977,7 @@ export default function FournisseursPage() {
                           {s.site_web && (
                             <a href={s.site_web} target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition hover:scale-105"
-                              style={{ background: "rgba(139,92,246,0.1)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.22)" }}>
+                              style={{ background: "rgba(139,92,246,0.1)", color: "#c9a55a", border: "1px solid rgba(139,92,246,0.22)" }}>
                               <Globe size={11} /> Site web
                             </a>
                           )}

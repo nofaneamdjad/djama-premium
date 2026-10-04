@@ -71,7 +71,7 @@ function priorityColor(p: string) {
   if (p === "urgent") return "#ef4444";
   if (p === "high")   return "#f97316";
   if (p === "low")    return "#94a3b8";
-  return "#a78bfa";
+  return "#c9a55a";
 }
 
 function tok(isDark: boolean) {
@@ -446,10 +446,10 @@ export default function CockpitPage() {
                       <div className="flex items-center gap-3 px-3.5 py-3 transition hover:bg-white/5">
                         <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg"
                           style={{ background: "rgba(79,70,229,0.10)" }}>
-                          <span className="text-[10px] font-bold uppercase leading-none" style={{ color: "#818cf8" }}>
+                          <span className="text-[10px] font-bold uppercase leading-none" style={{ color: "#c9a55a" }}>
                             {new Date(nextEvent.start_at).toLocaleDateString("fr-FR", { month: "short" })}
                           </span>
-                          <span className="text-sm font-semibold leading-tight tabular-nums" style={{ color: "#818cf8" }}>
+                          <span className="text-sm font-semibold leading-tight tabular-nums" style={{ color: "#c9a55a" }}>
                             {new Date(nextEvent.start_at).getDate()}
                           </span>
                         </div>

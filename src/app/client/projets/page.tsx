@@ -50,7 +50,7 @@ interface PlanProjet {
 }
 
 /* ── Constants ── */
-const VIOLET       = "#8b5cf6";
+const VIOLET       = "#c9a55a";
 const GOLD         = "#c9a55a";
 const SKY          = "#0ea5e9";
 const PX_PER_DAY   = 5;
@@ -62,7 +62,7 @@ const STATUS_CONFIG: Record<Status, { label:string; color:string; bg:string; Ico
   annulé:     { label:"Annulé",     color:"#ef4444", bg:"rgba(239,68,68,0.12)",   Icon:XCircle      },
 };
 
-const COLORS     = ["#8b5cf6","#3b82f6","#10b981","#f59e0b","#ef4444","#ec4899","#06b6d4","#c9a55a"];
+const COLORS     = ["#c9a55a","#3b82f6","#10b981","#f59e0b","#ef4444","#ec4899","#06b6d4","#c9a55a"];
 const CATEGORIES = ["Design","Développement","Marketing","Conseil","Rédaction","Comptabilité","Juridique","Autre"];
 
 function emptyDraft(): Draft {

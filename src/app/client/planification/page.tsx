@@ -28,7 +28,7 @@ interface Plan {
 type FormData = Omit<Plan, "id" | "user_id" | "created_at" | "updated_at">;
 
 const GOLD   = "#c9a55a";
-const COLORS = ["#c9a55a", "#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#06b6d4"];
+const COLORS = ["#c9a55a", "#c9a55a", "#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#06b6d4"];
 
 const HORIZON_CFG: Record<Horizon, { label: string; icon: typeof Target; desc: string }> = {
   quarter:  { label: "Trimestre", icon: Zap,      desc: "3 mois" },
@@ -261,7 +261,7 @@ export default function PlanificationPage() {
       <div className={`border-b px-5 py-4 backdrop-blur-xl sm:px-8 sticky top-0 z-20 ${isDark ? "border-white/[0.06] bg-[#07080e]/95" : "border-black/[0.08] bg-[#f4f5f9]/95 shadow-sm"}`}>
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={Target} color="#075985" />
+            <ModuleHeaderIcon icon={Target} color="#c9a55a" />
             <div>
               <h1 className={`text-base font-extrabold ${pri}`}>Planification Stratégique</h1>
               <p className={`text-xs ${faint}`}>{activeCount} plan{activeCount !== 1 ? "s" : ""} actif{activeCount !== 1 ? "s" : ""} · {allObjs.length} objectifs</p>
@@ -283,7 +283,7 @@ export default function PlanificationPage() {
           {[
             { label: "Plans actifs",    value: activeCount,     icon: Target,    color: GOLD },
             { label: "Terminés",        value: doneCount,       icon: Trophy,    color: "#10b981" },
-            { label: "Objectifs total", value: allObjs.length,  icon: Flag,      color: "#8b5cf6" },
+            { label: "Objectifs total", value: allObjs.length,  icon: Flag,      color: "#c9a55a" },
             { label: "Taux complétion", value: `${donePct}%`,   icon: TrendingUp, color: "#3b82f6" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className={`relative overflow-hidden rounded-2xl border p-4 ${card}`}>

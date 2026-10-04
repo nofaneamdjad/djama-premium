@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -83,19 +83,13 @@ export default function AIDocsPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #0f0c29, #302b63, #24243e)" }}>
-      {/* Grain texture overlay */}
-      <div className="fixed inset-0 pointer-events-none opacity-30" style={{
-        backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")",
-        backgroundSize: "150px 150px",
-      }} />
-
-      <div className="relative z-10 max-w-3xl mx-auto px-4 pt-20 pb-24">
+    <div className="min-h-screen" style={{ background: "#07090e" }}>
+      <div className="max-w-3xl mx-auto px-4 pt-16 pb-24">
 
         {/* Badge */}
         <div className="flex justify-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium"
-            style={{ background: "rgba(124,99,250,0.2)", border: "1px solid rgba(124,99,250,0.4)", color: "#c4b5fd" }}>
+            style={{ background: "rgba(201,165,90,0.16)", border: "1px solid rgba(201,165,90,0.30)", color: "#c9a55a" }}>
             <Sparkles className="w-3.5 h-3.5" />
             DOC IA
           </div>
@@ -104,7 +98,7 @@ export default function AIDocsPage() {
         {/* Headline */}
         <h1 className="text-center text-5xl font-bold text-white mb-4 leading-tight" style={{ letterSpacing: "-0.03em" }}>
           Que voulez-vous<br />
-          <span style={{ background: "linear-gradient(90deg, #a78bfa, #818cf8, #67e8f9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <span style={{ background: "linear-gradient(90deg, #c9a55a, #b08d45)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             créer aujourd&apos;hui ?
           </span>
         </h1>
@@ -113,8 +107,8 @@ export default function AIDocsPage() {
         </p>
 
         {/* Zone de saisie */}
-        <div className="rounded-2xl p-[1px] mb-4" style={{ background: "linear-gradient(135deg, rgba(124,99,250,0.6), rgba(103,232,249,0.3))" }}>
-          <div className="rounded-2xl p-5" style={{ background: "rgba(15,12,41,0.95)", backdropFilter: "blur(20px)" }}>
+        <div className="rounded-2xl p-[1px] mb-4" style={{ background: "linear-gradient(135deg, rgba(201,165,90,0.45), rgba(176,141,69,0.25))" }}>
+          <div className="rounded-2xl p-5" style={{ background: "rgba(12,14,20,0.97)", backdropFilter: "blur(20px)" }}>
             <textarea
               ref={textareaRef}
               value={prompt}
@@ -123,7 +117,7 @@ export default function AIDocsPage() {
               placeholder={PLACEHOLDERS[placeholder]}
               rows={4}
               className="w-full resize-none outline-none text-base leading-relaxed"
-              style={{ background: "transparent", color: "rgba(255,255,255,0.9)", caretColor: "#a78bfa" }}
+              style={{ background: "transparent", color: "rgba(255,255,255,0.9)", caretColor: "#c9a55a" }}
               disabled={loading}
             />
             <div className="flex items-center justify-between mt-4 pt-4"
@@ -133,7 +127,7 @@ export default function AIDocsPage() {
                 onClick={() => void startWithPrompt(prompt)}
                 disabled={!prompt.trim() || loading}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30"
-                style={{ background: "linear-gradient(135deg, #7c63fa, #818cf8)", color: "white" }}
+                style={{ background: "linear-gradient(135deg, #c9a55a, #b08d45)", color: "#0a0a0a" }}
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                 {loading ? "Création…" : "Créer"}
@@ -148,11 +142,11 @@ export default function AIDocsPage() {
             <button key={a.label} onClick={() => void startWithPrompt(a.prompt)} disabled={loading}
               className="flex items-center gap-3 p-4 rounded-xl text-left transition-all group disabled:opacity-30"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "rgba(124,99,250,0.12)")}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,165,90,0.10)")}
               onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(124,99,250,0.18)" }}>
-                <a.icon size={16} style={{ color: "#a78bfa" }} />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(201,165,90,0.16)" }}>
+                <a.icon size={16} style={{ color: "#c9a55a" }} />
               </div>
               <div>
                 <p className="text-sm font-medium text-white">{a.label}</p>
@@ -172,7 +166,7 @@ export default function AIDocsPage() {
                 <Clock className="w-3.5 h-3.5" /> Récents
               </h2>
               <button onClick={() => void startWithPrompt("Nouveau document vierge")} disabled={loading}
-                className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "#a78bfa" }}>
+                className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "#c9a55a" }}>
                 <Plus className="w-3.5 h-3.5" /> Nouveau
               </button>
             </div>
@@ -184,10 +178,10 @@ export default function AIDocsPage() {
                 {recents.map(art => (
                   <div key={art.id} className="group flex items-center gap-3 p-3 rounded-xl transition-all"
                     style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(124,99,250,0.1)")}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,165,90,0.08)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}>
-                    <div className="p-2 rounded-lg flex-shrink-0" style={{ background: "rgba(124,99,250,0.2)" }}>
-                      <FileText className="w-3.5 h-3.5" style={{ color: "#a78bfa" }} />
+                    <div className="p-2 rounded-lg flex-shrink-0" style={{ background: "rgba(201,165,90,0.16)" }}>
+                      <FileText className="w-3.5 h-3.5" style={{ color: "#c9a55a" }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <Link href={`/client/ai-docs/${art.id}`}

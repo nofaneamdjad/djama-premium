@@ -83,7 +83,7 @@ const STATUS_CFG: Record<PostStatus, { label: string; color: string }> = {
   brouillon:   { label: "Brouillon",   color: "#f59e0b" },
   planifié:    { label: "Planifié",    color: "#3b82f6" },
   en_file:     { label: "En file",     color: GOLD      },
-  publication: { label: "Publication", color: "#8b5cf6" },
+  publication: { label: "Publication", color: "#c9a55a" },
   publié:      { label: "Publié",      color: "#10b981" },
   échec:       { label: "Échec",       color: "#ef4444" },
 };

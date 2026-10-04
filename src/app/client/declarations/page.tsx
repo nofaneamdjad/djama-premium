@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -51,7 +51,7 @@ export default function DeclarationsPage() {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
           className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={FileCheck2} color="#7c3aed" />
+            <ModuleHeaderIcon icon={FileCheck2} color="#c9a55a" />
             <div>
               <h1 className={`text-[17px] font-black ${s.text}`}>Déclarations fiscales</h1>
               <p className={`text-[10px] ${s.muted}`}>{decls.filter(d => d.status === "a_faire").length} à déposer · {decls.filter(d => d.status === "faite").length} déposées</p>
@@ -78,7 +78,7 @@ export default function DeclarationsPage() {
               { label: "Base imposable", val: tvaFmt.base, color: s.text },
               { label: "TVA collectée",  val: tvaFmt.collectee, color: "#ef4444" },
               { label: "TVA déductible", val: tvaFmt.deductible, color: "#10b981" },
-              { label: "TVA à payer",    val: tvaFmt.solde, color: "#7c3aed" },
+              { label: "TVA à payer",    val: tvaFmt.solde, color: "#c9a55a" },
             ].map((k, i) => (
               <div key={k.label} className="p-3 text-center"
                 style={{ borderRight: i < 3 ? isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" : "none" }}>
@@ -90,7 +90,7 @@ export default function DeclarationsPage() {
           <div className="px-4 pb-4 pt-3 flex gap-2" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
             <button onClick={() => setDecls(p => p.map(d => d.id === "1" ? { ...d, status: "faite" } : d))}
               className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11.5px] font-black text-white"
-              style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}>
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
               <CheckCircle2 size={13} /> Marquer comme déposée
             </button>
             <button className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11.5px] font-semibold"
@@ -104,7 +104,7 @@ export default function DeclarationsPage() {
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease, delay: 0.05 }}
           className={`rounded-2xl border p-4 ${s.card}`}>
           <div className="flex items-center gap-2 mb-3">
-            <Calendar size={13} style={{ color: "#7c3aed" }} />
+            <Calendar size={13} style={{ color: "#c9a55a" }} />
             <p className={`text-[12px] font-black ${s.text}`}>Prochaines échéances</p>
           </div>
           <div className="space-y-2">

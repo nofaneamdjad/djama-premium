@@ -139,7 +139,7 @@ const QUICKSTART = [
   },
   {
     icon: Building2,
-    color: "#a78bfa",
+    color: "#c9a55a",
     bg:    "rgba(167,139,250,0.08)",
     border:"rgba(167,139,250,0.18)",
     label: "Marchés publics & privés",
@@ -987,7 +987,7 @@ export default function SourcingPage() {
         style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0c0e1a,#07080e)" : "linear-gradient(160deg,#eef0f8,#e8ebf5,#eef0f8)" }}>
         {/* Glow orbs */}
         <div className="pointer-events-none absolute -top-10 -left-8 h-36 w-36 rounded-full opacity-[0.07]"
-          style={{ background: "radial-gradient(circle,#818cf8,transparent 70%)" }}/>
+          style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
         <div className="pointer-events-none absolute -bottom-6 right-12 h-24 w-24 rounded-full opacity-[0.05]"
           style={{ background: "radial-gradient(circle,#60a5fa,transparent 70%)" }}/>
         {/* Bottom accent line */}
@@ -1013,7 +1013,7 @@ export default function SourcingPage() {
                 onClick={() => setShowHistory(v => !v)}
                 className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-indigo-400/25"
                 style={{ background: isDark ? "rgba(255,255,255,0.035)" : "rgba(12,24,100,0.04)" }}>
-                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#818cf8" }}/>
+                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#c9a55a" }}/>
                 <div>
                   <p className="text-xs font-bold leading-none text-white">{history.length}</p>
                   <p className="text-[10px] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">Session{history.length > 1 ? "s" : ""}</p>
@@ -1118,14 +1118,14 @@ export default function SourcingPage() {
               <div className="relative text-center mb-8 pt-8 pb-2">
                 {/* ambient orbs */}
                 <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-48 w-48 rounded-full opacity-[0.10]"
-                  style={{ background: "radial-gradient(circle,#818cf8,transparent 70%)" }}/>
+                  style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }}/>
                 <div className="pointer-events-none absolute top-8 left-1/2 ml-20 h-28 w-28 rounded-full opacity-[0.06]"
                   style={{ background: "radial-gradient(circle,#60a5fa,transparent 70%)" }}/>
 
                 {/* Icon */}
                 <div className="relative inline-flex mb-5">
                   <div className="pointer-events-none absolute inset-0 -m-10 rounded-full opacity-25"
-                    style={{ background: "radial-gradient(circle,#818cf8,transparent 65%)" }}/>
+                    style={{ background: "radial-gradient(circle,#c9a55a,transparent 65%)" }}/>
                   <div className="relative flex h-[5.5rem] w-[5.5rem] items-center justify-center rounded-3xl"
                     style={{
                       background: isDark ? "linear-gradient(145deg,rgba(129,140,248,0.22),rgba(96,165,250,0.10))" : "linear-gradient(145deg,rgba(129,140,248,0.12),rgba(96,165,250,0.06))",
@@ -1172,7 +1172,7 @@ export default function SourcingPage() {
 
                 {/* Thin separator */}
                 <div className="mx-auto mt-6 h-px w-24 opacity-30 rounded-full"
-                  style={{ background: "linear-gradient(90deg,transparent,#818cf8,transparent)" }}/>
+                  style={{ background: "linear-gradient(90deg,transparent,#c9a55a,transparent)" }}/>
               </div>
 
                             <div className="grid grid-cols-2 gap-3 mb-8">
@@ -1261,7 +1261,7 @@ export default function SourcingPage() {
               onClick={() => handleSend()}
               disabled={!input.trim() || sending}
               className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-all disabled:cursor-not-allowed disabled:opacity-25"
-              style={{ backgroundColor: "#818cf820", borderColor: "#818cf830", color: "#818cf8" }}
+              style={{ backgroundColor: "#c9a55a20", borderColor: "#c9a55a30", color: "#c9a55a" }}
             >
               {sending
                 ? <RefreshCw size={13} className="animate-spin" />

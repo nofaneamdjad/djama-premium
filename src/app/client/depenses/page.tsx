@@ -68,7 +68,7 @@ interface ExpenseBudget {
 const CATS = [
   { v: "transport",     l: "Transport",     I: Car,        c: "#3b82f6" },
   { v: "repas",         l: "Repas",         I: Coffee,     c: "#f59e0b" },
-  { v: "logiciel",      l: "Logiciel",      I: Monitor,    c: "#8b5cf6" },
+  { v: "logiciel",      l: "Logiciel",      I: Monitor,    c: "#c9a55a" },
   { v: "carburant",     l: "Carburant",     I: Droplets,   c: "#ef4444" },
   { v: "hotel",         l: "Hôtel",         I: Building2,  c: "#06b6d4" },
   { v: "equipement",    l: "Équipement",    I: Package,    c: "#10b981" },
@@ -92,7 +92,7 @@ const STATUSES = [
   { v: "submitted",  l: "Soumis",    c: "#3b82f6" },
   { v: "approved",   l: "Approuvé",  c: "#10b981" },
   { v: "rejected",   l: "Refusé",    c: "#ef4444" },
-  { v: "reimbursed", l: "Remboursé", c: "#8b5cf6" },
+  { v: "reimbursed", l: "Remboursé", c: "#c9a55a" },
 ] as const;
 
 const CURRENCIES: Currency[] = ["EUR", "USD", "GBP", "CHF", "CAD", "MAD"];
@@ -1973,7 +1973,7 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
     { l: `Total ${year}`, v: fmtCur(allTotal),     sub: `${yearExp.length} dépense${yearExp.length !== 1 ? "s" : ""}`,      c: "#c9a55a" },
     { l: "Moy. / jour",   v: fmtCur(avgDay),       sub: `sur ${daysPassed} jour${daysPassed !== 1 ? "s" : ""}`,             c: "#3b82f6" },
     { l: "Dépense max",   v: maxExp ? fmtCur(amtEur(maxExp, rates)) : "—",
-      sub: maxExp ? `${getCat(maxExp.category).l} · ${fmtDate(maxExp.date)}` : "Aucune", c: "#8b5cf6" },
+      sub: maxExp ? `${getCat(maxExp.category).l} · ${fmtDate(maxExp.date)}` : "Aucune", c: "#c9a55a" },
     { l: "Taux approbation", v: `${approvedPct}%`, sub: `${yearExp.filter(e => e.status==="approved"||e.status==="reimbursed").length} / ${yearExp.length}`, c: "#10b981" },
     { l: "Sans justificatif", v: String(noReceipt), sub: `${yearExp.length > 0 ? Math.round((noReceipt/yearExp.length)*100) : 0}% des dépenses ${yearStr}`, c: noReceipt > 0 ? "#f59e0b" : "#10b981" },
   ];

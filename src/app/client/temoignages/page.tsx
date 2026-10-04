@@ -279,7 +279,7 @@ export default function TemoignagesPage() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 mb-1">
-              <ModuleHeaderIcon icon={MessageSquare} color="#9a3412" />
+              <ModuleHeaderIcon icon={MessageSquare} color="#c9a55a" />
               <h1 className="text-xl font-bold text-white">Témoignages</h1>
             </div>
             <p className="text-sm text-white/30 ml-10">Gérez les avis clients et votre réputation</p>

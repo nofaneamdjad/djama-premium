@@ -71,7 +71,7 @@ const PAYMENT_COLORS: Record<string, string> = {
   refunded: "#6366f1", failed: "#ef4444",
 };
 const FULFILL_COLORS: Record<string, string> = {
-  unfulfilled: "#f59e0b", preparing: "#3b82f6", ready: "#8b5cf6",
+  unfulfilled: "#f59e0b", preparing: "#3b82f6", ready: "#c9a55a",
   shipped: GOLD, delivered: "#10b981", cancelled: "#ef4444",
 };
 const PAYMENT_LABELS: Record<string, string> = {
@@ -370,7 +370,7 @@ export default function BoutiquePage() {
                 { label: "Chiffre d'affaires", value: fmtCur(kpis.ca), color: "#10b981", icon: TrendingUp },
                 { label: "Commandes payées",   value: kpis.orders,     color: GOLD,      icon: ShoppingCart },
                 { label: "Panier moyen",       value: fmtCur(kpis.avg_order), color: "#3b82f6", icon: BarChart2 },
-                { label: "Total commandes",    value: kpis.total_orders, color: "#8b5cf6", icon: Package },
+                { label: "Total commandes",    value: kpis.total_orders, color: "#c9a55a", icon: Package },
               ].map(k => (
                 <div key={k.label} className={`rounded-2xl border p-4 ${card}`}>
                   <div className="flex items-center justify-between mb-2">

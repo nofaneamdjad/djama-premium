@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -47,8 +47,8 @@ export default function AnalyticsPage() {
   const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
   const kpis = [
-    { label: "Visiteurs", value: d.visitors.toLocaleString("fr-FR"), icon: Users,        color: "#8b5cf6", trend: "+12%" },
-    { label: "Pages vues", value: d.pageviews.toLocaleString("fr-FR"), icon: Eye,        color: "#0891b2", trend: "+8%"  },
+    { label: "Visiteurs", value: d.visitors.toLocaleString("fr-FR"), icon: Users,        color: "#c9a55a", trend: "+12%" },
+    { label: "Pages vues", value: d.pageviews.toLocaleString("fr-FR"), icon: Eye,        color: "#c9a55a", trend: "+8%"  },
     { label: "Sessions",   value: d.sessions.toLocaleString("fr-FR"),  icon: MousePointer, color: "#10b981", trend: "+15%"  },
     { label: "Durée moy.", value: d.duration,                           icon: Clock,      color: "#f59e0b", trend: "+5%"  },
   ];
@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
           className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={BarChart2} color="#8b5cf6" />
+            <ModuleHeaderIcon icon={BarChart2} color="#c9a55a" />
             <div>
               <h1 className={`text-[17px] font-black ${s.text}`}>Analytics</h1>
               <p className={`text-[10px] ${s.muted}`}>Données en temps réel · djama.pro</p>
@@ -70,7 +70,7 @@ export default function AnalyticsPage() {
               <button key={p} onClick={() => setPeriod(p)}
                 className="rounded-xl px-2.5 py-1.5 text-[10.5px] font-semibold transition"
                 style={period === p
-                  ? { background: "rgba(139,92,246,0.18)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.35)" }
+                  ? { background: "rgba(201,165,90,0.18)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.35)" }
                   : { background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` }}>
                 {p}
               </button>
@@ -114,7 +114,7 @@ export default function AnalyticsPage() {
                   animate={{ height: `${(v / maxV) * 100}%` }}
                   transition={{ duration: 0.5, ease, delay: i * 0.06 }}
                   className="w-full rounded-md min-h-[4px]"
-                  style={{ background: `linear-gradient(180deg,#8b5cf6,#7c3aed)` }} />
+                  style={{ background: `linear-gradient(180deg,#c9a55a,#c9a55a)` }} />
                 <span className={`text-[8.5px] ${s.muted}`}>{DAYS[i]}</span>
               </div>
             ))}

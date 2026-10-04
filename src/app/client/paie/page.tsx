@@ -27,13 +27,13 @@ const CONTRATS = ["CDI", "CDD", "Freelance", "Stage", "Alternance"] as const;
 const CONTRAT: Record<string, { color: string; glow: string; bg: string; border: string }> = {
   CDI:        { color: "#10b981", glow: "rgba(16,185,129,0.35)",  bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.25)"  },
   CDD:        { color: "#f59e0b", glow: "rgba(245,158,11,0.35)",  bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.25)"  },
-  Freelance:  { color: "#8b5cf6", glow: "rgba(139,92,246,0.35)",  bg: "rgba(139,92,246,0.1)",  border: "rgba(139,92,246,0.25)"  },
+  Freelance:  { color: "#c9a55a", glow: "rgba(201,165,90,0.35)",  bg: "rgba(139,92,246,0.1)",  border: "rgba(201,165,90,0.25)"  },
   Stage:      { color: "#06b6d4", glow: "rgba(6,182,212,0.35)",   bg: "rgba(6,182,212,0.1)",   border: "rgba(6,182,212,0.25)"   },
   Alternance: { color: "#f97316", glow: "rgba(249,115,22,0.35)",  bg: "rgba(249,115,22,0.1)",  border: "rgba(249,115,22,0.25)"  },
 };
 
 const AVATAR_GRADIENTS = [
-  "linear-gradient(135deg,#6366f1,#8b5cf6)",
+  "linear-gradient(135deg,#6366f1,#c9a55a)",
   "linear-gradient(135deg,#10b981,#059669)",
   "linear-gradient(135deg,#f59e0b,#d97706)",
   "linear-gradient(135deg,#3b82f6,#2563eb)",
@@ -394,7 +394,7 @@ export default function PaieRHPage() {
             { label: "Effectif",        value: actifs.length.toString(), color: "#10b981", icon: Users      },
             { label: "Masse salariale", value: fmt(masseTotal),          color: "#c9a55a", icon: Banknote   },
             { label: "Charges patron",  value: fmt(chargesTotal),        color: "#f43f5e", icon: TrendingUp },
-            { label: "Coût total",      value: fmt(masseTotal + chargesTotal), color: "#8b5cf6", icon: Euro },
+            { label: "Coût total",      value: fmt(masseTotal + chargesTotal), color: "#c9a55a", icon: Euro },
           ].map(({ label, value, color, icon: Icon }) => (
             <div key={label} className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm ${card}`}>
               <div className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 blur-2xl" style={{ background: color }} />
@@ -946,7 +946,7 @@ export default function PaieRHPage() {
                     <p className={`text-xs ${faint}`}>Soldes de l&apos;année en cours — cliquez +/− pour ajuster</p>
                     {([
                       { field: "cp"      as const, label: "Congés payés",   sub: "25 jours/an légal",      icon: Plane,        color: "#60a5fa" },
-                      { field: "rtt"     as const, label: "RTT",            sub: "Selon accord collectif", icon: SunMedium,    color: "#a78bfa" },
+                      { field: "rtt"     as const, label: "RTT",            sub: "Selon accord collectif", icon: SunMedium,    color: "#c9a55a" },
                       { field: "maladie" as const, label: "Arrêts maladie", sub: "Jours déclarés",         icon: Stethoscope,  color: "#f87171" },
                     ]).map(({ field, label, sub, icon: Icon, color }) => {
                       const val = (absences[drawer.id] ?? { cp: 0, rtt: 0, maladie: 0 })[field];

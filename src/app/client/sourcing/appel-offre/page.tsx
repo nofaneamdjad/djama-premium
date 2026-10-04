@@ -42,7 +42,7 @@ interface GeneratedDoc { id: string; title: string; content: string; }
 /* ─────────────────────────────────────────────────────────
    CONSTANTS
 ───────────────────────────────────────────────────────── */
-const indigo = "#818cf8";
+const indigo = "#c9a55a";
 const blue = "#60a5fa";
 const emerald = "#34d399";
 
@@ -1194,7 +1194,7 @@ export default function AppelOffrePage() {
       {/* ── HEADER ── */}
       <div className="relative overflow-hidden shrink-0" style={{ background: T.hdrBg }}>
         <div className="pointer-events-none absolute -top-10 -left-8 h-40 w-40 rounded-full opacity-[0.06]"
-          style={{ background: "radial-gradient(circle,#818cf8,transparent 70%)" }} />
+          style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }} />
         <div className="pointer-events-none absolute -bottom-6 right-16 h-28 w-28 rounded-full opacity-[0.04]"
           style={{ background: "radial-gradient(circle,#60a5fa,transparent 70%)" }} />
         <div className="absolute bottom-0 left-0 right-0 h-px"

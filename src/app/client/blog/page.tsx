@@ -248,7 +248,7 @@ export default function BlogPage() {
         <div className={`p-5 border-b ${divider}`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <ModuleHeaderIcon icon={BookOpen} color="#0369a1" />
+              <ModuleHeaderIcon icon={BookOpen} color="#c9a55a" />
               <div>
                 <h1 className={`text-sm font-black ${pri}`}>Blog</h1>
                 <p className={`text-[10px] ${mut}`}>{publishedCount} publié · {draftCount} brouillon</p>

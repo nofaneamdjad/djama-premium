@@ -86,7 +86,7 @@ const AVATAR_GRADIENTS = [
   "linear-gradient(135deg,#c9a55a,#b08d45)",
   "linear-gradient(135deg,#10b981,#059669)",
   "linear-gradient(135deg,#3b82f6,#2563eb)",
-  "linear-gradient(135deg,#8b5cf6,#7c3aed)",
+  "linear-gradient(135deg,#c9a55a,#b08d45)",
   "linear-gradient(135deg,#ec4899,#db2777)",
   "linear-gradient(135deg,#14b8a6,#0d9488)",
 ];

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -60,7 +60,7 @@ export function SuppliersView({ suppliers, products, orders, fournisseursImport,
                 <div className="flex items-center gap-2 mb-1">
                   <h4 className={`text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{s.name}</h4>
                   {s.fournisseur_id && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(139,92,246,0.12)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.2)" }}>Lié</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(139,92,246,0.2)" }}>Lié</span>
                   )}
                 </div>
                 {s.contact && <p className={`text-xs mb-0.5 ${isDark ? "text-white/45" : "text-gray-500"}`}>{s.contact}</p>}
@@ -81,7 +81,7 @@ export function SuppliersView({ suppliers, products, orders, fournisseursImport,
       {fournisseursImport.length > 0 && (
         <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-gray-50 border-gray-200"}`}>
           <div className="flex items-center gap-2">
-            <Truck size={13} style={{ color: "#8b5cf6" }}/>
+            <Truck size={13} style={{ color: "#c9a55a" }}/>
             <h4 className={`text-xs font-semibold ${isDark ? "text-white/60" : "text-gray-500"}`}>
               Importer depuis le module Fournisseurs ({fournisseursImport.length})
             </h4>
@@ -97,7 +97,7 @@ export function SuppliersView({ suppliers, products, orders, fournisseursImport,
                   onClick={() => doImport(f.id)}
                   disabled={importing === f.id}
                   className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all disabled:opacity-50"
-                  style={{ background: "rgba(139,92,246,0.12)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.2)" }}>
+                  style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(139,92,246,0.2)" }}>
                   {importing === f.id ? <RefreshCw size={10} className="animate-spin"/> : <Plus size={10}/>}
                   {importing === f.id ? "…" : "Lier"}
                 </button>

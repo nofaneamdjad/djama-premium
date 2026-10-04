@@ -83,32 +83,32 @@ interface GoalDraft {
   daily_billable_minutes: string;
 }
 
-const violet = "#a78bfa";
+const violet = "#c9a55a";
 const ease   = [0.16, 1, 0.3, 1] as const;
 const POM_WORK  = 25 * 60;
 const POM_BREAK =  5 * 60;
 
 const MODES: { value: TimerMode; label: string; desc: string; color: string }[] = [
-  { value: "classic",   label: "Classique",        desc: "Chronomètre libre",      color: "#a78bfa" },
+  { value: "classic",   label: "Classique",        desc: "Chronomètre libre",      color: "#c9a55a" },
   { value: "pomodoro",  label: "Pomodoro",          desc: "25 min / 5 min pause",   color: "#f87171" },
   { value: "countdown", label: "Compte à rebours",  desc: "Durée définie",          color: "#60a5fa" },
   { value: "focus",     label: "Focus",             desc: "Mode immersif",          color: "#34d399" },
 ];
 
 const CATEGORIES = [
-  { value: "developpement", label: "Développement", color: "#818cf8" },
+  { value: "developpement", label: "Développement", color: "#c9a55a" },
   { value: "design",        label: "Design",         color: "#f472b6" },
   { value: "meeting",       label: "Réunion",         color: "#fb923c" },
   { value: "commercial",    label: "Commercial",      color: "#c9a55a" },
   { value: "admin",         label: "Administratif",   color: "#94a3b8" },
   { value: "redaction",     label: "Rédaction",       color: "#a3e635" },
   { value: "support",       label: "Support",         color: "#38bdf8" },
-  { value: "autre",         label: "Autre",            color: "#a78bfa" },
+  { value: "autre",         label: "Autre",            color: "#c9a55a" },
 ];
 
 const PROJECT_COLORS = [
-  "#a78bfa","#f87171","#60a5fa","#34d399","#c9a55a",
-  "#f472b6","#fb923c","#818cf8","#38bdf8","#a3e635",
+  "#c9a55a","#f87171","#60a5fa","#34d399","#c9a55a",
+  "#f472b6","#fb923c","#c9a55a","#38bdf8","#a3e635",
 ];
 
 const TABS: { value: AppTab; label: string; Icon: React.ElementType }[] = [
@@ -152,7 +152,7 @@ const isoToLabel = (iso: string) => {
 };
 
 const getCategoryColor = (cat: string | null) =>
-  CATEGORIES.find(c => c.value === (cat ?? "autre"))?.color ?? "#a78bfa";
+  CATEGORIES.find(c => c.value === (cat ?? "autre"))?.color ?? "#c9a55a";
 const getCategoryLabel = (cat: string | null) =>
   CATEGORIES.find(c => c.value === (cat ?? "autre"))?.label ?? (cat ?? "Autre");
 
@@ -214,7 +214,7 @@ const emptyManual = (): ManualDraft => ({
   date:todayISO(), duration_minutes:"", hourly_rate:"", is_billable:true, notes:"",
 });
 const emptyProject = (): ProjectDraft => ({
-  name:"", client_name:"", color:"#a78bfa", hourly_rate:"", budget_hours:"",
+  name:"", client_name:"", color:"#c9a55a", hourly_rate:"", budget_hours:"",
 });
 
 export default function ChronoPage() {
@@ -682,7 +682,7 @@ export default function ChronoPage() {
     for (const e of entries) {
       if (!map.has(e.project)) {
         const p = projects.find(p=>p.name===e.project);
-        map.set(e.project,{minutes:0,earnings:0,color:p?.color??"#a78bfa"});
+        map.set(e.project,{minutes:0,earnings:0,color:p?.color??"#c9a55a"});
       }
       const ps = map.get(e.project)!;
       ps.minutes += e.duration_minutes;
@@ -827,7 +827,7 @@ export default function ChronoPage() {
                   <Play size={20} className="ml-0.5 fill-emerald-400 text-emerald-400"/>
                 </button>
               )}
-              <button onClick={handleStop} disabled={saving} className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] shadow-[0_6px_24px_rgba(139,92,246,0.4)] transition hover:opacity-90 disabled:opacity-50">
+              <button onClick={handleStop} disabled={saving} className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#c9a55a] to-[#c9a55a] shadow-[0_6px_24px_rgba(139,92,246,0.4)] transition hover:opacity-90 disabled:opacity-50">
                 {saving?<Loader2 size={22} className="animate-spin text-white"/>:<Square size={20} className="fill-white text-white"/>}
               </button>
             </div>
@@ -914,10 +914,10 @@ export default function ChronoPage() {
 
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                {label:"Aujourd'hui",value:fmtMin(todayStats.minutes),sub:`${todayStats.sessions} session${todayStats.sessions!==1?"s":""}`,color:"#a78bfa",onClick:()=>setTab("timer")},
+                {label:"Aujourd'hui",value:fmtMin(todayStats.minutes),sub:`${todayStats.sessions} session${todayStats.sessions!==1?"s":""}`,color:"#c9a55a",onClick:()=>setTab("timer")},
                 {label:"Facturable",value:fmtMin(todayStats.billable),sub:"heures",color:"#34d399",onClick:()=>setTab("billing")},
                 {label:"Revenus",value:todayStats.earnings>0?fmtEur(todayStats.earnings):"—",sub:"aujourd'hui",color:"#c9a55a",onClick:()=>setTab("billing")},
-                {label:"Objectif",value:dailyGoalPct!==null?`${dailyGoalPct}%`:"—",sub:goal?`/${fmtMin(goal.daily_minutes)}`:"Non défini",color:dailyGoalPct!==null&&dailyGoalPct>=100?"#34d399":"#a78bfa",onClick:()=>setGoalOpen(true)},
+                {label:"Objectif",value:dailyGoalPct!==null?`${dailyGoalPct}%`:"—",sub:goal?`/${fmtMin(goal.daily_minutes)}`:"Non défini",color:dailyGoalPct!==null&&dailyGoalPct>=100?"#34d399":"#c9a55a",onClick:()=>setGoalOpen(true)},
               ].map((k,i)=>(
                 <motion.button key={i} onClick={k.onClick}
                   whileHover={{scale:1.03}} whileTap={{scale:0.97}}
@@ -1085,7 +1085,7 @@ export default function ChronoPage() {
                     {!running&&!paused ? (
                       <div className="flex flex-col items-center gap-2">
                         <button onClick={handleStart} disabled={saving}
-                          className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] shadow-[0_6px_24px_rgba(139,92,246,0.45)] transition active:scale-95 disabled:opacity-40 hover:shadow-[0_8px_32px_rgba(139,92,246,0.55)]">
+                          className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#c9a55a] to-[#c9a55a] shadow-[0_6px_24px_rgba(139,92,246,0.45)] transition active:scale-95 disabled:opacity-40 hover:shadow-[0_8px_32px_rgba(139,92,246,0.55)]">
                           <Play size={22} className="ml-1 fill-white text-white"/>
                         </button>
                         <span className={`text-xs font-semibold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Démarrer</span>
@@ -1199,7 +1199,7 @@ export default function ChronoPage() {
 
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                {label:"Aujourd'hui",value:fmtMin(todayStats.minutes),sub:fmtEur(todayStats.earnings),color:"#a78bfa"},
+                {label:"Aujourd'hui",value:fmtMin(todayStats.minutes),sub:fmtEur(todayStats.earnings),color:"#c9a55a"},
                 {label:"Cette semaine",value:fmtMin(weekStats.minutes),sub:fmtEur(weekStats.earnings),color:"#60a5fa"},
                 {label:"Ce mois",value:fmtMin(monthStats.minutes),sub:fmtEur(monthStats.earnings),color:"#c9a55a"},
                 {label:"Non facturé",value:fmtEur(unbilledAmt),sub:`${unbilled.length} entrée${unbilled.length!==1?"s":""}`,color:"#f87171"},
@@ -1429,7 +1429,7 @@ export default function ChronoPage() {
             {/* Period KPIs */}
             <div className="grid gap-3 sm:grid-cols-4">
               {[
-                {label:"Sessions",   value:String(rapportTotals.sessions),  color:"#a78bfa"},
+                {label:"Sessions",   value:String(rapportTotals.sessions),  color:"#c9a55a"},
                 {label:"Durée totale",value:fmtMin(rapportTotals.minutes),  color:"#60a5fa"},
                 {label:"Facturable", value:fmtMin(rapportTotals.billable),  color:"#34d399"},
                 {label:"Revenus",    value:rapportTotals.earnings>0?fmtEur(rapportTotals.earnings):"—", color:"#c9a55a"},
@@ -1685,7 +1685,7 @@ export default function ChronoPage() {
                   <button onClick={()=>setManualOpen(false)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition hover:border-white/20 ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>Annuler</button>
                   <button onClick={handleManualSave} disabled={manualSaving||!manualDraft.project.trim()||!manualDraft.duration_minutes}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white transition hover:opacity-90 disabled:opacity-40"
-                    style={{background:`linear-gradient(135deg, ${violet}, #7c3aed)`,boxShadow:`0 4px 16px ${violet}30`}}>
+                    style={{background:`linear-gradient(135deg, ${violet}, #c9a55a)`,boxShadow:`0 4px 16px ${violet}30`}}>
                     {manualSaving&&<Loader2 size={13} className="animate-spin"/>}
                     {manualSaving?"Enregistrement…":"Ajouter"}
                   </button>
@@ -1742,7 +1742,7 @@ export default function ChronoPage() {
                   <button onClick={()=>setProjOpen(false)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>Annuler</button>
                   <button onClick={handleSaveProject} disabled={projSaving||!projDraft.name.trim()}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white disabled:opacity-40"
-                    style={{background:`linear-gradient(135deg, ${violet}, #7c3aed)`}}>
+                    style={{background:`linear-gradient(135deg, ${violet}, #c9a55a)`}}>
                     {projSaving&&<Loader2 size={13} className="animate-spin"/>}
                     Créer le projet
                   </button>
@@ -1780,7 +1780,7 @@ export default function ChronoPage() {
                   <button onClick={()=>setGoalOpen(false)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>Annuler</button>
                   <button onClick={handleSaveGoal} disabled={goalSaving}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white"
-                    style={{background:`linear-gradient(135deg, ${violet}, #7c3aed)`}}>
+                    style={{background:`linear-gradient(135deg, ${violet}, #c9a55a)`}}>
                     {goalSaving&&<Loader2 size={13} className="animate-spin"/>}Enregistrer
                   </button>
                 </div>
@@ -1870,7 +1870,7 @@ export default function ChronoPage() {
                   <button onClick={()=>setEditEntry(null)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark ? "border-white/10 text-white/50" : "border-gray-200 text-gray-500"}`}>Annuler</button>
                   <button onClick={handleEditSave} disabled={editSaving||!editEntry.project?.trim()||!editEntry.duration_minutes}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold text-white transition hover:opacity-90 disabled:opacity-40"
-                    style={{background:`linear-gradient(135deg, ${violet}, #7c3aed)`,boxShadow:`0 4px 16px ${violet}30`}}>
+                    style={{background:`linear-gradient(135deg, ${violet}, #c9a55a)`,boxShadow:`0 4px 16px ${violet}30`}}>
                     {editSaving&&<Loader2 size={13} className="animate-spin"/>}
                     {editSaving?"Enregistrement…":"Enregistrer"}
                   </button>

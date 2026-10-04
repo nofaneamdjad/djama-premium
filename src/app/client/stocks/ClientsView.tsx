@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -45,7 +45,7 @@ export function ClientsView({ clients, deliveries, products, onNewClient, onEdit
           </div>
           <button onClick={onNewClient}
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
-            style={{ background: "linear-gradient(135deg,#818cf8,#6366f1)", color: "#fff" }}>
+            style={{ background: "linear-gradient(135deg,#c9a55a,#6366f1)", color: "#fff" }}>
             <Plus size={13}/> Nouveau client
           </button>
         </div>
@@ -67,7 +67,7 @@ export function ClientsView({ clients, deliveries, products, onNewClient, onEdit
                 style={isSelected ? { background: "rgba(99,102,241,0.1)" } : isDark ? { background: "rgba(255,255,255,0.02)" } : { background: "#f9fafb" }}>
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded-xl text-xs font-bold"
-                    style={{ background: "#6366f118", color: "#818cf8", border: "1px solid #6366f128" }}>
+                    style={{ background: "#6366f118", color: "#c9a55a", border: "1px solid #6366f128" }}>
                     {c.name.slice(0,2).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -90,7 +90,7 @@ export function ClientsView({ clients, deliveries, products, onNewClient, onEdit
         {!selectedClient ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
             <div className="h-14 w-14 flex items-center justify-center rounded-2xl" style={{ background: "#6366f112", border: "1px solid #6366f122" }}>
-              <Users size={24} style={{ color: "#818cf8" }}/>
+              <Users size={24} style={{ color: "#c9a55a" }}/>
             </div>
             <div>
               <p className={`text-sm font-medium ${isDark ? "text-white/50" : "text-gray-500"}`}>Sélectionnez un client</p>
@@ -99,7 +99,7 @@ export function ClientsView({ clients, deliveries, products, onNewClient, onEdit
             {clients.length === 0 && (
               <button onClick={onNewClient}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold mt-2"
-                style={{ background: "#6366f120", color: "#818cf8", border: "1px solid #6366f130" }}>
+                style={{ background: "#6366f120", color: "#c9a55a", border: "1px solid #6366f130" }}>
                 <Plus size={13}/> Ajouter votre premier client
               </button>
             )}
@@ -110,7 +110,7 @@ export function ClientsView({ clients, deliveries, products, onNewClient, onEdit
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 flex items-center justify-center rounded-2xl text-base font-bold"
-                  style={{ background: "#6366f118", color: "#818cf8", border: "1px solid #6366f128" }}>
+                  style={{ background: "#6366f118", color: "#c9a55a", border: "1px solid #6366f128" }}>
                   {selectedClient.name.slice(0,2).toUpperCase()}
                 </div>
                 <div>
@@ -144,7 +144,7 @@ export function ClientsView({ clients, deliveries, products, onNewClient, onEdit
               {[
                 { label: "Livraisons",         value: selectedDeliveries.length,                                                              icon: Truck,        color: green },
                 { label: "Produits différents", value: new Set(selectedDeliveries.map(d => d.product_id)).size,                               icon: Package,      color: gold },
-                { label: "Dernière livraison",  value: selectedDeliveries[0] ? new Date(selectedDeliveries[0].delivery_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short"}) : "—", icon: CalendarDays, color: "#818cf8" },
+                { label: "Dernière livraison",  value: selectedDeliveries[0] ? new Date(selectedDeliveries[0].delivery_date).toLocaleDateString("fr-FR",{day:"numeric",month:"short"}) : "—", icon: CalendarDays, color: "#c9a55a" },
               ].map(kpi => {
                 const KpiIcon = kpi.icon;
                 return (

@@ -141,7 +141,7 @@ export default function JeuxPage() {
   function resetVF() { setVfIndex(0); setVfAnswer(null); setVfScore(0); setVfDone(false); }
 
   const GAMES = [
-    { id: "quiz",    color: "#a78bfa", title: "Quiz IA",        badge: "10 Q",      desc: "10 questions sur l'IA avec explications détaillées après chaque réponse." },
+    { id: "quiz",    color: "#c9a55a", title: "Quiz IA",        badge: "10 Q",      desc: "10 questions sur l'IA avec explications détaillées après chaque réponse." },
     { id: "flash",   color: "#38bdf8", title: "Flash Cards",    badge: "12 cartes", desc: "12 termes clés de l'IA à maîtriser. Cliquez sur la carte pour révéler la définition." },
     { id: "speed",   color: "#f59e0b", title: "Speed Quiz",     badge: "8 Q — 30s", desc: "8 questions rapides. Le but : répondre le plus vite possible. Réflexes et connaissance !" },
     { id: "vraifaux",color: "#4ade80", title: "Vrai ou Faux",   badge: "8 Q",       desc: "8 affirmations sur l'IA. Vrai ou faux ? Testez vos certitudes et découvrez la vérité." },
@@ -159,7 +159,7 @@ export default function JeuxPage() {
           <span className="text-white/15">·</span>
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(167,139,250,0.15)] border border-[rgba(167,139,250,0.25)]">
-              <Trophy size={13} className="text-[#a78bfa]" />
+              <Trophy size={13} className="text-[#c9a55a]" />
             </div>
             <span className="text-sm font-extrabold text-white">Jeux IA</span>
           </div>
@@ -231,7 +231,7 @@ export default function JeuxPage() {
                   <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                     onClick={() => setQuizStarted(true)}
                     className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-sm font-extrabold text-black shadow-[0_4px_24px_rgba(167,139,250,0.4)]"
-                    style={{ background: "linear-gradient(135deg, #a78bfa, #7c3aed)" }}>
+                    style={{ background: "linear-gradient(135deg, #c9a55a, #c9a55a)" }}>
                     <Play size={14} fill="black" /> Commencer
                   </motion.button>
                 </div>
@@ -254,7 +254,7 @@ export default function JeuxPage() {
                     <span className="text-xs font-bold text-white/40">Question {qIndex + 1}/10</span>
                     <div className="flex gap-1">
                       {QUIZ_QUESTIONS.map((_, i) => (
-                        <div key={i} className={`h-1.5 rounded-full transition-all ${i < qIndex ? "w-4 bg-[#a78bfa]" : i === qIndex ? "w-4 bg-[#a78bfa] opacity-50" : "w-4 bg-white/10"}`} />
+                        <div key={i} className={`h-1.5 rounded-full transition-all ${i < qIndex ? "w-4 bg-[#c9a55a]" : i === qIndex ? "w-4 bg-[#c9a55a] opacity-50" : "w-4 bg-white/10"}`} />
                       ))}
                     </div>
                     <span className="text-xs font-bold text-[#4ade80]">{answers.filter((a, i) => a === QUIZ_QUESTIONS[i].correct).length} bonnes</span>
@@ -285,7 +285,7 @@ export default function JeuxPage() {
                       {selected !== null && (
                         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                           className="mt-4 rounded-xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.08)] px-4 py-3">
-                          <p className="text-xs font-bold text-[#a78bfa]">Explication</p>
+                          <p className="text-xs font-bold text-[#c9a55a]">Explication</p>
                           <p className="mt-1 text-xs text-white/55 leading-relaxed">{QUIZ_QUESTIONS[qIndex].expl}</p>
                         </motion.div>
                       )}

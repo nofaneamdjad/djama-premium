@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useTheme } from "@/lib/theme-context";
@@ -44,7 +44,7 @@ const TYPE_META: Record<DocType, { label: string; color: string; icon: React.FC<
   photo:        { label: "Photo",          color: "#3b82f6", icon: ImageIcon },
   bon_commande: { label: "Bon de commande",color: "#f97316", icon: Package },
   releve:       { label: "Relevé",         color: "#14b8a6", icon: BarChart2 },
-  devis:        { label: "Devis",          color: "#8b5cf6", icon: FileEdit },
+  devis:        { label: "Devis",          color: "#c9a55a", icon: FileEdit },
   autre:        { label: "Autre",          color: "#6b7280", icon: File },
 };
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, createContext } from "react";
 import { motion } from "framer-motion";
@@ -595,7 +595,7 @@ export default function ComptabilitePage() {
           }}
         >
           <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-            <FileText size={13} style={{ color: "#a78bfa" }} />
+            <FileText size={13} style={{ color: "#c9a55a" }} />
             <h2 className={`text-[12px] font-bold ${isDark ? "text-white/70" : "text-gray-700"}`}>Compte de résultat</h2>
           </div>
 
@@ -629,13 +629,13 @@ export default function ComptabilitePage() {
               onClick={analyseFinances}
               disabled={analyseLoading || loading || caHT === 0}
               className="w-full flex items-center justify-center gap-2 rounded-xl py-2 text-[11px] font-bold text-violet-400 transition hover:bg-violet-500/10 disabled:opacity-40"
-              style={{ border: "1px dashed rgba(139,92,246,0.35)" }}>
+              style={{ border: "1px dashed rgba(201,165,90,0.35)" }}>
               {analyseLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
               {analyseLoading ? "Analyse en cours…" : "Analyser avec l'IA"}
             </button>
             {analyse && (
               <div className="mt-2 rounded-xl p-3 text-[11.5px] leading-relaxed"
-                style={{ background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.18)", color: isDark ? "rgba(255,255,255,0.72)" : "rgba(30,30,60,0.75)" }}>
+                style={{ background: "rgba(139,92,246,0.07)", border: "1px solid rgba(201,165,90,0.18)", color: isDark ? "rgba(255,255,255,0.72)" : "rgba(30,30,60,0.75)" }}>
                 <div className="flex items-center gap-1 mb-1.5 text-[9.5px] font-bold text-violet-400 uppercase tracking-wide">
                   <Sparkles size={9} /> Analyse IA
                 </div>

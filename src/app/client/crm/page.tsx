@@ -107,7 +107,7 @@ interface SupportTicket {
 const CONTACT_TYPES: Record<ContactType, { label: string; color: string }> = {
   prospect:    { label: "Prospect",    color: "#60a5fa" },
   client:      { label: "Client",      color: "#34d399" },
-  partenaire:  { label: "Partenaire",  color: "#a78bfa" },
+  partenaire:  { label: "Partenaire",  color: "#c9a55a" },
   fournisseur: { label: "Fournisseur", color: "#fb923c" },
 };
 
@@ -120,7 +120,7 @@ const STATUSES: Record<ContactStatus, { label: string; color: string; bg: string
 
 const STAGES: Record<OppStage, { label: string; color: string; prob: number }> = {
   nouveau:      { label: "Nouveau",      color: "#60a5fa", prob: 10 },
-  qualifié:     { label: "Qualifié",     color: "#a78bfa", prob: 30 },
+  qualifié:     { label: "Qualifié",     color: "#c9a55a", prob: 30 },
   proposition:  { label: "Proposition",  color: "#fb923c", prob: 50 },
   négociation:  { label: "Négociation",  color: "#f59e0b", prob: 70 },
   gagné:        { label: "Gagné",        color: "#34d399", prob: 100 },
@@ -141,7 +141,7 @@ const ACTIVITY_ICONS: Record<ActivityType, React.ElementType> = {
 
 const ACTIVITY_COLORS: Record<ActivityType, string> = {
   note: "#94a3b8", call: "#34d399", email: "#60a5fa",
-  meeting: "#a78bfa", document: "#fb923c", rdv: "#f59e0b",
+  meeting: "#c9a55a", document: "#fb923c", rdv: "#f59e0b",
 };
 
 const SECTORS = [
@@ -455,7 +455,7 @@ function PipelineView({
           { label: "Pipeline actif",    value: fmtEur(activeStages.reduce((a, s) => a + totalByStage(s), 0)), color: "#f59e0b", icon: TrendingUp },
           { label: "Prévisionnel",      value: fmtEur(forecastTotal), color: "#34d399", icon: Target,
             hint: "Pondéré par probabilité" },
-          { label: "CA gagné",          value: fmtEur(wonTotal),      color: "#a78bfa", icon: CheckCircle },
+          { label: "CA gagné",          value: fmtEur(wonTotal),      color: "#c9a55a", icon: CheckCircle },
           { label: "Taux de conversion",value: `${winRate} %`,        color: "#60a5fa", icon: Award },
         ].map(s => (
           <div key={s.label} className={`rounded-2xl border p-3 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
@@ -799,7 +799,7 @@ function TachesView({
                           <span className={`text-xs flex items-center gap-1 rounded-full px-1.5 py-0.5 ${isDark ? "bg-white/[0.06] text-white/50" : "bg-gray-100 text-gray-500"}`}
                             title={`Assigné à : ${label}`}>
                             <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[10px] font-black text-white"
-                              style={{ background: "#a78bfa" }}>{initials}</span>
+                              style={{ background: "#c9a55a" }}>{initials}</span>
                             {label}
                           </span>
                         );
@@ -1064,7 +1064,7 @@ function RapportView({
   const kpis = [
     { label: "Contacts total",     value: stats.totalContacts, icon: Users,       color: "#60a5fa" },
     { label: "Clients actifs",     value: stats.actifs,        icon: UserCheck,   color: "#34d399" },
-    { label: "Prospects",          value: stats.prospects,     icon: Target,      color: "#a78bfa" },
+    { label: "Prospects",          value: stats.prospects,     icon: Target,      color: "#c9a55a" },
     { label: "Pipeline total",     value: fmtEur(stats.totalOpp), icon: TrendingUp, color: "#f59e0b", big: true },
     { label: "CA gagné",           value: fmtEur(stats.caMtot),   icon: Award,      color: "#34d399", big: true },
     { label: "Taux conversion",    value: `${stats.convRate}%`, icon: PieChart,    color: "#fb923c" },
@@ -1290,7 +1290,7 @@ function RapportView({
                   labels: ["Prospect", "Actif", "Inactif", "Perdu"],
                   datasets: [{
                     data: [stats.byStatus.prospect, stats.byStatus.actif, stats.byStatus.inactif, stats.byStatus.perdu],
-                    backgroundColor: ["#a78bfa", "#34d399", "#94a3b8", "#f87171"],
+                    backgroundColor: ["#c9a55a", "#34d399", "#94a3b8", "#f87171"],
                     borderColor:     isDark ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.8)",
                     borderWidth: 2,
                     hoverOffset: 6,
@@ -1309,7 +1309,7 @@ function RapportView({
             </div>
             <div className="space-y-2 flex-1">
               {[
-                { label: "Prospect", color: "#a78bfa", val: stats.byStatus.prospect },
+                { label: "Prospect", color: "#c9a55a", val: stats.byStatus.prospect },
                 { label: "Actif",    color: "#34d399", val: stats.byStatus.actif },
                 { label: "Inactif",  color: "#94a3b8", val: stats.byStatus.inactif },
                 { label: "Perdu",    color: "#f87171", val: stats.byStatus.perdu },
@@ -1851,7 +1851,7 @@ function ContactDetail({
 
                 <div className="grid grid-cols-3 gap-2 mt-4">
           {[
-            { label: "Opportunités", value: opportunities.length, color: "#a78bfa" },
+            { label: "Opportunités", value: opportunities.length, color: "#c9a55a" },
             { label: "Tâches",       value: tasks.filter(t => !t.done).length, color: "#f59e0b" },
             { label: "Tickets",      value: tickets.filter(t => t.status !== "fermé").length, color: "#60a5fa" },
           ].map(s => (
@@ -2416,7 +2416,7 @@ function ContactDetail({
                   className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition-colors cursor-pointer ${isDark ? "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]" : "border-gray-100 bg-white hover:bg-gray-50"}`}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${isFacture ? (isDark ? "bg-amber-400/10" : "bg-amber-50") : isDevis ? (isDark ? "bg-blue-400/10" : "bg-blue-50") : (isDark ? "bg-purple-400/10" : "bg-purple-50")}`}>
-                      <FileText size={13} style={{ color: isFacture ? "#f59e0b" : isDevis ? "#38bdf8" : "#a78bfa" }}/>
+                      <FileText size={13} style={{ color: isFacture ? "#f59e0b" : isDevis ? "#38bdf8" : "#c9a55a" }}/>
                     </div>
                     <div className="min-w-0">
                       <p className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{doc.numero || "(brouillon)"}</p>
@@ -3180,7 +3180,7 @@ export default function CRMPage() {
       {/* ── HEADER ── */}
       <div className="relative overflow-hidden shrink-0" style={{ background: isDark ? "linear-gradient(160deg,#07080e,#0d1117,#07080e)" : "linear-gradient(160deg,#f0f2f5,#f5f7fa,#f0f2f5)" }}>
         <div className="pointer-events-none absolute -top-16 -left-12 h-48 w-48 rounded-full opacity-[0.07]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 65%)" }}/>
-        <div className="pointer-events-none absolute -bottom-12 right-8 h-40 w-40 rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle,#7c3aed,transparent 65%)" }}/>
+        <div className="pointer-events-none absolute -bottom-12 right-8 h-40 w-40 rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle,#c9a55a,transparent 65%)" }}/>
         <div className="absolute bottom-0 left-0 right-0 h-[1.5px]" style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.4),rgba(124,58,237,0.25),transparent)" }}/>
         <div className="relative px-4 sm:px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-4">
@@ -3466,7 +3466,7 @@ export default function CRMPage() {
                               <div className="flex items-center gap-2 shrink-0">
                                 {cOpps > 0 && (
                                   <div className="text-center hidden sm:block">
-                                    <div className="text-xs font-black" style={{ color: "#a78bfa" }}>{cOpps}</div>
+                                    <div className="text-xs font-black" style={{ color: "#c9a55a" }}>{cOpps}</div>
                                     <div className={`text-[10px] ${isDark ? "text-white/20" : "text-gray-400"}`}>opp.</div>
                                   </div>
                                 )}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -9,8 +9,8 @@ import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const THEMES = [
-  { id: "violet",   name: "Violet",   bg: "linear-gradient(135deg,#7c3aed,#4f46e5)", text: "white" },
-  { id: "teal",     name: "Sarcelle",  bg: "linear-gradient(135deg,#0891b2,#0d9488)", text: "white" },
+  { id: "violet",   name: "Violet",   bg: "linear-gradient(135deg,#c9a55a,#4f46e5)", text: "white" },
+  { id: "teal",     name: "Sarcelle",  bg: "linear-gradient(135deg,#c9a55a,#0d9488)", text: "white" },
   { id: "rose",     name: "Rose",      bg: "linear-gradient(135deg,#ec4899,#db2777)", text: "white" },
   { id: "dark",     name: "Sombre",    bg: "linear-gradient(135deg,#0e1420,#1a2035)", text: "white" },
   { id: "light",    name: "Clair",     bg: "linear-gradient(135deg,#f8fafc,#f1f5f9)", text: "#1e293b" },
@@ -54,7 +54,7 @@ export default function CarteVIsitePage() {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
           className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={Contact2} color="#0891b2" />
+            <ModuleHeaderIcon icon={Contact2} color="#c9a55a" />
             <div>
               <h1 className={`text-[17px] font-black ${s.text}`}>Carte de visite digitale</h1>
               <p className={`text-[10px] ${s.muted}`}>Partageable en 1 lien · QR code inclus</p>
@@ -67,7 +67,7 @@ export default function CarteVIsitePage() {
             <button key={t} onClick={() => setTab(t)}
               className="rounded-xl px-4 py-1.5 text-[11.5px] font-semibold transition"
               style={tab === t
-                ? { background: "rgba(8,145,178,0.15)", color: "#0891b2", border: "1px solid rgba(8,145,178,0.30)" }
+                ? { background: "rgba(201,165,90,0.15)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.30)" }
                 : { background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", color: isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` }}>
               {t === "carte" ? "Aperçu" : "Modifier"}
             </button>
@@ -117,7 +117,7 @@ export default function CarteVIsitePage() {
               {THEMES.map(t => (
                 <button key={t.id} onClick={() => setTheme(t)}
                   className="h-8 w-8 rounded-xl transition"
-                  style={{ background: t.bg, border: theme.id === t.id ? `2.5px solid #0891b2` : "2.5px solid transparent" }} />
+                  style={{ background: t.bg, border: theme.id === t.id ? `2.5px solid #c9a55a` : "2.5px solid transparent" }} />
               ))}
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function CarteVIsitePage() {
           ))}
           <button onClick={() => setTab("carte")}
             className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-black text-white mt-2"
-            style={{ background: "linear-gradient(135deg,#0891b2,#0e7490)" }}>
+            style={{ background: "linear-gradient(135deg,#c9a55a,#0e7490)" }}>
             <Check size={15} /> Voir l'aperçu
           </button>
         </div>
