@@ -37,8 +37,8 @@ function NavItem({
       href={href}
       onClick={onClick}
       title={collapsed ? label : undefined}
-      className={`group relative flex items-center rounded-lg text-[0.8rem] font-medium transition-all duration-150 ${
-        collapsed ? "justify-center py-[7px] mx-1.5" : "gap-2 px-2 py-[5px]"
+      className={`group relative flex items-center rounded-lg text-[0.875rem] font-medium transition-all duration-150 ${
+        collapsed ? "justify-center py-[8px] mx-1.5" : "gap-2.5 px-2 py-[7px]"
       } ${isDark
         ? active ? "text-white" : "text-white/45 hover:text-white/75"
         : active ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
@@ -50,12 +50,12 @@ function NavItem({
     >
       <div
         className={`flex shrink-0 items-center justify-center rounded-md transition-all duration-150 ${
-          collapsed ? "h-[30px] w-[30px]" : "h-[22px] w-[22px]"
+          collapsed ? "h-[32px] w-[32px]" : "h-[26px] w-[26px]"
         }`}
         style={{ background: active ? `${accent}22` : "transparent" }}
       >
         <Icon
-          size={collapsed ? 14 : 12}
+          size={collapsed ? 16 : 14}
           strokeWidth={active ? 2.2 : 1.8}
           style={{ color: active ? accent : undefined }}
         />
@@ -97,7 +97,7 @@ export function DesktopSidebar({
 
   return (
     <motion.aside
-      animate={{ width: collapsed ? 52 : 210 }}
+      animate={{ width: collapsed ? 52 : 228 }}
       transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
       className="hidden lg:flex flex-shrink-0 flex-col overflow-hidden"
       style={{
@@ -107,7 +107,7 @@ export function DesktopSidebar({
     >
       {/* Logo */}
       <div
-        className="flex h-[48px] shrink-0 items-center"
+        className="flex h-[52px] shrink-0 items-center"
         style={{
           padding: collapsed ? "0 11px" : "0 14px",
           borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)",
@@ -122,8 +122,8 @@ export function DesktopSidebar({
           </div>
           {!collapsed && (
             <div className="min-w-0 leading-none">
-              <p className="text-[0.85rem] font-bold truncate" style={{ color: accent }}>DJAMA</p>
-              <p className="text-[0.45rem] uppercase tracking-widest mt-0.5"
+              <p className="text-[0.95rem] font-bold truncate" style={{ color: accent }}>DJAMA</p>
+              <p className="text-[0.6rem] uppercase tracking-widest mt-0.5"
                 style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                 {isPremium ? "PRO · Actif" : "Plan Gratuit"}
               </p>
@@ -140,7 +140,7 @@ export function DesktopSidebar({
         {!isPremium ? (
           <>
             {!collapsed && (
-              <p className="mb-1 px-2 text-[0.55rem] font-bold uppercase tracking-[0.14em]"
+              <p className="mb-1.5 px-2 text-[0.65rem] font-bold uppercase tracking-[0.14em]"
                 style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.32)" }}>
                 Outils gratuits
               </p>
@@ -156,12 +156,12 @@ export function DesktopSidebar({
                   style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
                 <button
                   onClick={onProModalOpen}
-                  className="group w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-[0.75rem] font-semibold transition-all"
+                  className="group w-full flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-[0.8rem] font-semibold transition-all"
                   style={{ background: `${accent}0c`, border: `1px solid ${accent}18`, color: accent }}
                 >
-                  <Lock size={9} style={{ color: accent }} />
+                  <Lock size={11} style={{ color: accent }} />
                   <span className="flex-1 text-left">Outils PRO</span>
-                  <ChevronRight size={10} className="opacity-40" />
+                  <ChevronRight size={11} className="opacity-40" />
                 </button>
               </>
             )}
@@ -178,19 +178,19 @@ export function DesktopSidebar({
               <button
                 onClick={onLauncherOpen}
                 title={collapsed ? "Applications" : undefined}
-                className={`group relative flex w-full items-center rounded-lg text-[0.8rem] font-medium transition-all duration-150 ${
-                  collapsed ? "justify-center py-[7px]" : "gap-2 px-2 py-[5px]"
+                className={`group relative flex w-full items-center rounded-lg text-[0.875rem] font-medium transition-all duration-150 ${
+                  collapsed ? "justify-center py-[8px]" : "gap-2.5 px-2 py-[7px]"
                 } ${isDark ? "text-white/45 hover:text-white/75" : "text-gray-400 hover:text-gray-700"}`}
               >
                 <div
                   className={`flex shrink-0 items-center justify-center rounded-md transition-all duration-150 ${
-                    collapsed ? "h-[30px] w-[30px]" : "h-[22px] w-[22px]"
+                    collapsed ? "h-[32px] w-[32px]" : "h-[26px] w-[26px]"
                   }`}
                 >
-                  <Grid2x2 size={collapsed ? 14 : 12} strokeWidth={1.8} />
+                  <Grid2x2 size={collapsed ? 16 : 14} strokeWidth={1.8} />
                 </div>
                 {!collapsed && <span className="flex-1 truncate leading-none">Applications</span>}
-                {!collapsed && <ChevronRight size={10} className="opacity-30" />}
+                {!collapsed && <ChevronRight size={11} className="opacity-30" />}
               </button>
             </div>
 
@@ -200,9 +200,9 @@ export function DesktopSidebar({
                 <div className={`my-2 ${collapsed ? "mx-2" : "mx-2"}`}
                   style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
                 {!collapsed && (
-                  <p className="mb-1 px-2 text-[0.55rem] font-bold uppercase tracking-[0.14em]"
+                  <p className="mb-1.5 px-2 text-[0.65rem] font-bold uppercase tracking-[0.14em]"
                     style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.32)" }}>
-                    <Pin size={7} className="inline mr-1 opacity-70" />Épinglés
+                    <Pin size={8} className="inline mr-1 opacity-70" />Épinglés
                   </p>
                 )}
                 <div className="space-y-px">
@@ -223,7 +223,7 @@ export function DesktopSidebar({
             {pinnedApps.length === 0 && !collapsed && (
               <button
                 onClick={onLauncherOpen}
-                className="mt-3 w-full rounded-lg px-2 py-2 text-left text-[0.68rem] leading-snug transition-opacity hover:opacity-70"
+                className="mt-3 w-full rounded-lg px-2 py-2 text-left text-[0.78rem] leading-snug transition-opacity hover:opacity-70"
                 style={{ color: isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.30)" }}
               >
                 <Pin size={9} className="inline mr-1.5 opacity-50" />
@@ -247,7 +247,7 @@ export function DesktopSidebar({
               {userInitial}
             </Link>
             <Link href="/client/profil" className="group min-w-0 flex-1">
-              <p className={`truncate text-[0.7rem] font-semibold transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
+              <p className={`truncate text-[0.8rem] font-semibold transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
                 {displayName}
               </p>
             </Link>
@@ -350,7 +350,7 @@ export function MobileSidebar({
             <nav className="flex-1 overflow-y-auto px-2 py-3" style={{ scrollbarWidth: "none" }}>
               {!isPremium ? (
                 <>
-                  <p className="mb-1.5 px-2.5 text-[0.57rem] font-semibold uppercase tracking-widest"
+                  <p className="mb-1.5 px-2.5 text-[0.65rem] font-semibold uppercase tracking-widest"
                     style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                     Outils gratuits
                   </p>
@@ -363,7 +363,7 @@ export function MobileSidebar({
                     style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
                   <button
                     onClick={() => { onProModalOpen(); onClose(); }}
-                    className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-medium transition-all"
+                    className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.875rem] font-medium transition-all"
                     style={{ background: `${accent}0c`, border: `1px solid ${accent}1a`, color: accent }}
                   >
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: `${accent}14` }}>
@@ -379,12 +379,12 @@ export function MobileSidebar({
                     <NavItem href="/client" label="Accueil" icon={Home} exact onClick={onClose} />
                     <button
                       onClick={() => { onLauncherOpen(); onClose(); }}
-                      className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-[5px] text-[0.8rem] font-medium transition-all duration-150 ${
+                      className={`group relative flex w-full items-center gap-2.5 rounded-lg px-2 py-[7px] text-[0.875rem] font-medium transition-all duration-150 ${
                         isDark ? "text-white/45 hover:text-white/75" : "text-gray-400 hover:text-gray-700"
                       }`}
                     >
-                      <div className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md">
-                        <Grid2x2 size={12} strokeWidth={1.8} />
+                      <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md">
+                        <Grid2x2 size={14} strokeWidth={1.8} />
                       </div>
                       <span className="flex-1 truncate leading-none">Applications</span>
                       <ChevronRight size={10} className="opacity-30" />
@@ -395,9 +395,9 @@ export function MobileSidebar({
                     <>
                       <div className="mx-2 my-3"
                         style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
-                      <p className="mb-1 px-2 text-[0.55rem] font-bold uppercase tracking-[0.14em]"
+                      <p className="mb-1.5 px-2 text-[0.65rem] font-bold uppercase tracking-[0.14em]"
                         style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.32)" }}>
-                        <Pin size={7} className="inline mr-1 opacity-70" />Épinglés
+                        <Pin size={8} className="inline mr-1 opacity-70" />Épinglés
                       </p>
                       <div className="space-y-0.5">
                         {pinnedApps.map(app => (
@@ -421,10 +421,10 @@ export function MobileSidebar({
                   {userInitial}
                 </Link>
                 <Link href="/client/profil" onClick={onClose} className="group min-w-0 flex-1">
-                  <p className={`truncate text-[0.72rem] font-medium transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
+                  <p className={`truncate text-[0.82rem] font-medium transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
                     {displayName}
                   </p>
-                  <p className="text-[0.55rem]" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.35)" }}>
+                  <p className="text-[0.65rem]" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.35)" }}>
                     {isPremium ? "DJAMA PRO" : "Plan Gratuit"}
                   </p>
                 </Link>

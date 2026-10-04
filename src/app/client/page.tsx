@@ -262,15 +262,15 @@ export default function CockpitPage() {
       <div className="mx-auto max-w-6xl px-5 pt-6 pb-16 lg:px-8">
 
         {/* ── Header ── */}
-        <div className="mb-5">
-          <p className="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] capitalize" style={{ color: t.text3 }}>
+        <div className="mb-6">
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] capitalize" style={{ color: t.text3 }}>
             {getDay()}
           </p>
-          <h1 className="text-[1.55rem] font-semibold leading-tight tracking-tight" style={{ color: t.text }}>
+          <h1 className="text-2xl font-semibold leading-tight tracking-tight" style={{ color: t.text }}>
             {getGreeting()}
             {firstName && <span style={{ color: GOLD }}>{`, ${firstName.split(" ")[0]}`}</span>}
           </h1>
-          <p className="mt-1 text-[0.75rem]" style={{ color: t.text3 }}>
+          <p className="mt-1.5 text-sm" style={{ color: t.text3 }}>
             Voici ce qui mérite votre attention aujourd&apos;hui
           </p>
         </div>
@@ -278,17 +278,17 @@ export default function CockpitPage() {
         {/* ── DJAMA AI bar ── */}
         <div className="mb-5">
           <div
-            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5"
+            className="flex items-center gap-2.5 rounded-xl px-4 py-3"
             style={{ background: t.glass, border: `1px solid ${t.border}` }}
           >
-            <Sparkles size={14} style={{ color: GOLD, flexShrink: 0 }} />
+            <Sparkles size={15} style={{ color: GOLD, flexShrink: 0 }} />
             <input
               type="text"
               value={aiQuery}
               onChange={e => setAiQuery(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") sendAiQuery(aiQuery); }}
-              placeholder="Demandez à DJAMA AI…"
-              className="flex-1 bg-transparent text-[0.82rem] outline-none placeholder:opacity-50"
+              placeholder="Demander à DJAMA…"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:opacity-40"
               style={{ color: t.text }}
             />
             {aiQuery && (
@@ -297,16 +297,16 @@ export default function CockpitPage() {
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition hover:opacity-80"
                 style={{ background: GOLD }}
               >
-                <Send size={11} color="#0a0a0a" />
+                <Send size={12} color="#0a0a0a" />
               </button>
             )}
           </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {AI_CHIPS.map((chip) => (
               <button
                 key={chip}
                 onClick={() => sendAiQuery(chip)}
-                className="rounded-full px-2.5 py-1 text-[0.62rem] font-medium transition hover:opacity-80"
+                className="rounded-full px-3 py-1 text-xs font-medium transition hover:opacity-80"
                 style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text3 }}
               >
                 {chip}
@@ -320,10 +320,10 @@ export default function CockpitPage() {
           <Link href="/client/abonnements" className="block mb-4">
             <div className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition hover:opacity-90"
               style={{ background: "rgba(201,165,90,0.05)", border: "1px solid rgba(201,165,90,0.18)" }}>
-              <Crown size={12} style={{ color: GOLD }} />
-              <span className="text-[0.72rem] font-semibold" style={{ color: GOLD }}>Passez à DJAMA PRO</span>
-              <span className="text-[0.65rem]" style={{ color: t.text4 }}>· Débloquez tous les modules · 11,90€/mois</span>
-              <ChevronRight size={11} className="ml-auto shrink-0" style={{ color: GOLD, opacity: 0.5 }} />
+              <Crown size={13} style={{ color: GOLD }} />
+              <span className="text-[0.8rem] font-semibold" style={{ color: GOLD }}>Passez à DJAMA PRO</span>
+              <span className="text-xs" style={{ color: t.text4 }}>· Débloquez tous les modules · 11,90€/mois</span>
+              <ChevronRight size={12} className="ml-auto shrink-0" style={{ color: GOLD, opacity: 0.5 }} />
             </div>
           </Link>
         )}
@@ -337,7 +337,7 @@ export default function CockpitPage() {
               exit={{ opacity: 0, y: -6 }}
               className="mb-5 space-y-2"
             >
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>
                 À votre attention
               </p>
               {alerts.map((alert) => {
@@ -352,12 +352,12 @@ export default function CockpitPage() {
                   >
                     <div className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5"
                       style={{ background: alert.bg, border: `1px solid ${alert.border}` }}>
-                      <Icon size={12} className="shrink-0" style={{ color: alert.color }} />
-                      <p className="flex-1 text-[0.72rem] font-semibold" style={{ color: alert.color }}>
+                      <Icon size={13} className="shrink-0" style={{ color: alert.color }} />
+                      <p className="flex-1 text-sm font-semibold" style={{ color: alert.color }}>
                         {alert.text}
                       </p>
                       <Link href={alert.href}
-                        className="shrink-0 text-[0.65rem] font-bold underline underline-offset-2"
+                        className="shrink-0 text-xs font-bold underline underline-offset-2"
                         style={{ color: alert.color }}>
                         Voir →
                       </Link>
@@ -385,8 +385,8 @@ export default function CockpitPage() {
             {/* ── Aujourd'hui ── */}
             <div>
               <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Aujourd&apos;hui</span>
-                <Link href="/client/planning" className="text-[0.6rem] font-medium transition hover:opacity-70" style={{ color: t.text3 }}>
+                <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Aujourd&apos;hui</span>
+                <Link href="/client/planning" className="text-xs font-medium transition hover:opacity-70" style={{ color: t.text3 }}>
                   Agenda →
                 </Link>
               </div>
@@ -396,11 +396,11 @@ export default function CockpitPage() {
                 <div className="overflow-hidden rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
                   <div className="flex items-center justify-between px-3.5 pt-3 pb-2"
                     style={{ borderBottom: `1px solid ${t.borderSoft}` }}>
-                    <span className="flex items-center gap-1.5 text-[0.68rem] font-semibold" style={{ color: t.text2 }}>
-                      <Clock size={11} style={{ color: t.text3 }} /> Tâches
+                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: t.text2 }}>
+                      <Clock size={12} style={{ color: t.text3 }} /> Tâches
                     </span>
                     <Link href="/client/productivite"
-                      className="text-[0.58rem] font-medium" style={{ color: t.text4 }}>
+                      className="text-xs font-medium" style={{ color: t.text4 }}>
                       {nbTasks > 0 ? `${nbTasks} au total` : ""}
                     </Link>
                   </div>
@@ -415,7 +415,7 @@ export default function CockpitPage() {
                         <Link key={task.id} href="/client/productivite">
                           <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition hover:bg-white/5">
                             <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: priorityColor(task.priority) }} />
-                            <span className="flex-1 truncate text-[0.72rem]" style={{ color: t.text2 }}>{task.title}</span>
+                            <span className="flex-1 truncate text-sm" style={{ color: t.text2 }}>{task.title}</span>
                           </div>
                         </Link>
                       ))}
@@ -423,7 +423,7 @@ export default function CockpitPage() {
                   ) : (
                     <div className="flex items-center gap-2 px-3.5 py-3">
                       <CheckCircle2 size={12} className="shrink-0 text-emerald-500" />
-                      <span className="text-[0.72rem] text-emerald-600">Aucun retard</span>
+                      <span className="text-sm text-emerald-600">Aucun retard</span>
                     </div>
                   )}
                 </div>
@@ -432,8 +432,8 @@ export default function CockpitPage() {
                 <div className="overflow-hidden rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
                   <div className="flex items-center justify-between px-3.5 pt-3 pb-2"
                     style={{ borderBottom: `1px solid ${t.borderSoft}` }}>
-                    <span className="flex items-center gap-1.5 text-[0.68rem] font-semibold" style={{ color: t.text2 }}>
-                      <Calendar size={11} style={{ color: t.text3 }} /> Événements
+                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: t.text2 }}>
+                      <Calendar size={12} style={{ color: t.text3 }} /> Événements
                     </span>
                   </div>
                   {todayLoading ? (
@@ -454,8 +454,8 @@ export default function CockpitPage() {
                           </span>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[0.75rem] font-semibold" style={{ color: t.text }}>{nextEvent.title}</p>
-                          <p className="text-[0.62rem]" style={{ color: t.text4 }}>
+                          <p className="truncate text-sm font-semibold" style={{ color: t.text }}>{nextEvent.title}</p>
+                          <p className="text-xs" style={{ color: t.text4 }}>
                             {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
                           </p>
                         </div>
@@ -463,9 +463,9 @@ export default function CockpitPage() {
                     </Link>
                   ) : (
                     <div className="flex items-center justify-between px-3.5 py-3.5">
-                      <span className="text-[0.72rem]" style={{ color: t.text3 }}>Journée libre</span>
+                      <span className="text-sm" style={{ color: t.text3 }}>Journée libre</span>
                       <Link href="/client/planning"
-                        className="text-[0.65rem] font-semibold transition hover:opacity-80"
+                        className="text-xs font-semibold transition hover:opacity-80"
                         style={{ color: GOLD }}>
                         + Planifier
                       </Link>
@@ -479,8 +479,8 @@ export default function CockpitPage() {
             {hasResumeItems && (
               <div>
                 <div className="mb-2.5 flex items-center justify-between">
-                  <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Reprendre</span>
-                  <span className="text-[0.6rem]" style={{ color: t.text4 }}>Activité récente</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Reprendre</span>
+                  <span className="text-xs" style={{ color: t.text4 }}>Activité récente</span>
                 </div>
                 <div className="overflow-hidden rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
                   {lastFac && (
@@ -492,15 +492,15 @@ export default function CockpitPage() {
                           <FileText size={13} style={{ color: "#22c55e" }} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[0.76rem] font-semibold" style={{ color: t.text }}>
+                          <p className="truncate text-sm font-semibold" style={{ color: t.text }}>
                             {lastFac.client_nom || "—"}
-                            <span className="ml-2 font-normal text-[0.62rem]" style={{ color: t.text4 }}>{lastFac.numero}</span>
+                            <span className="ml-2 font-normal text-xs" style={{ color: t.text4 }}>{lastFac.numero}</span>
                           </p>
-                          <p className="text-[0.62rem]" style={{ color: t.text4 }}>
+                          <p className="text-xs" style={{ color: t.text4 }}>
                             Facture · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                           </p>
                         </div>
-                        <span className="shrink-0 text-[0.8rem] font-bold tabular-nums" style={{ color: t.text }}>{fmtEurInt(lastFac.montant_ttc)}</span>
+                        <span className="shrink-0 text-[0.875rem] font-bold tabular-nums" style={{ color: t.text }}>{fmtEurInt(lastFac.montant_ttc)}</span>
                       </div>
                     </Link>
                   )}
@@ -513,14 +513,14 @@ export default function CockpitPage() {
                           <CreditCard size={13} style={{ color: "#ef4444" }} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[0.76rem] font-semibold" style={{ color: t.text }}>
+                          <p className="truncate text-sm font-semibold" style={{ color: t.text }}>
                             {lastExpense.description || lastExpense.category || "Dépense"}
                           </p>
-                          <p className="text-[0.62rem]" style={{ color: t.text4 }}>
+                          <p className="text-xs" style={{ color: t.text4 }}>
                             Dépense · {new Date(lastExpense.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                           </p>
                         </div>
-                        <span className="shrink-0 text-[0.8rem] font-bold tabular-nums text-red-400">−{fmtEurInt(lastExpense.amount)}</span>
+                        <span className="shrink-0 text-[0.875rem] font-bold tabular-nums text-red-400">−{fmtEurInt(lastExpense.amount)}</span>
                       </div>
                     </Link>
                   )}
@@ -532,8 +532,8 @@ export default function CockpitPage() {
                           <Users size={13} style={{ color: "#60a5fa" }} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[0.76rem] font-semibold" style={{ color: t.text }}>{lastContact.nom}</p>
-                          <p className="text-[0.62rem]" style={{ color: t.text4 }}>
+                          <p className="truncate text-sm font-semibold" style={{ color: t.text }}>{lastContact.nom}</p>
+                          <p className="text-xs" style={{ color: t.text4 }}>
                             Contact · {new Date(lastContact.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                           </p>
                         </div>
@@ -550,8 +550,8 @@ export default function CockpitPage() {
               <div className="overflow-hidden rounded-xl"
                 style={{ background: t.glass, border: "1px solid rgba(201,165,90,0.20)" }}>
                 <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${t.borderSoft}` }}>
-                  <Sparkles size={11} style={{ color: GOLD }} />
-                  <span className="text-[0.62rem] font-bold uppercase tracking-[0.14em]" style={{ color: GOLD }}>Démarrage rapide</span>
+                  <Sparkles size={12} style={{ color: GOLD }} />
+                  <span className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: GOLD }}>Démarrage rapide</span>
                   <div className="ml-2 flex-1 h-1 overflow-hidden rounded-full" style={{ background: t.bgSubtle }}>
                     <div className="h-full rounded-full" style={{ width: `${([true, false, nbContacts > 0, nbFacturesPend > 0].filter(Boolean).length / 4) * 100}%`, background: GOLD, transition: "width 0.6s ease" }} />
                   </div>
@@ -576,7 +576,7 @@ export default function CockpitPage() {
                           : <span className="text-[0.5rem] font-bold" style={{ color: GOLD }}>{i + 1}</span>}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[0.72rem] font-semibold leading-tight"
+                        <p className="text-sm font-semibold leading-tight"
                           style={{ color: step.done ? t.text4 : t.text, textDecoration: step.done ? "line-through" : "none" }}>
                           {step.label}
                         </p>
@@ -596,8 +596,8 @@ export default function CockpitPage() {
             {/* ── Aperçu entreprise ── */}
             <div>
               <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Aperçu</span>
-                <Link href="/client/dashboard" className="text-[0.6rem] font-medium transition hover:opacity-70" style={{ color: t.text3 }}>
+                <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Aperçu</span>
+                <Link href="/client/dashboard" className="text-xs font-medium transition hover:opacity-70" style={{ color: t.text3 }}>
                   Dashboard →
                 </Link>
               </div>
@@ -606,23 +606,23 @@ export default function CockpitPage() {
                   <Link key={kpi.label} href={kpi.href}>
                     <div className="rounded-xl p-3 transition hover:opacity-90"
                       style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                      <p className="mb-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em]" style={{ color: t.text3 }}>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: t.text3 }}>
                         {kpi.label}
                       </p>
                       {kpi.value === null ? (
-                        <Skeleton h={18} w="60%" />
+                        <Skeleton h={22} w="65%" />
                       ) : kpi.empty ? (
-                        <p className="text-[1.1rem] font-semibold leading-none" style={{ color: t.text4 }}>—</p>
+                        <p className="text-xl font-semibold leading-none" style={{ color: t.text4 }}>—</p>
                       ) : (
-                        <p className="text-[1.1rem] font-semibold leading-none tabular-nums" style={{ color: t.text }}>{kpi.value}</p>
+                        <p className="text-xl font-semibold leading-none tabular-nums" style={{ color: t.text }}>{kpi.value}</p>
                       )}
-                      <div className="mt-1.5 flex items-center gap-1">
+                      <div className="mt-2 flex items-center gap-1">
                         {kpi.trend !== null && !kpi.empty && (
                           kpi.trend >= 0
-                            ? <TrendingUp size={9} className="text-emerald-500" />
-                            : <TrendingDown size={9} className="text-red-400" />
+                            ? <TrendingUp size={10} className="text-emerald-500" />
+                            : <TrendingDown size={10} className="text-red-400" />
                         )}
-                        <p className="text-[0.58rem] font-medium"
+                        <p className="text-xs font-medium"
                           style={{ color: kpi.empty ? t.text4 : (kpi.trend !== null ? (kpi.trend >= 0 ? "#22c55e" : "#ef4444") : t.text4) }}>
                           {kpi.empty ? "Aucune donnée" : kpi.sub}
                         </p>
@@ -634,7 +634,7 @@ export default function CockpitPage() {
               {!hasSomeData && !kpiLoading && (
                 <div className="mt-2 rounded-xl px-3.5 py-2.5 text-center"
                   style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                  <p className="text-[0.65rem]" style={{ color: t.text4 }}>
+                  <p className="text-xs" style={{ color: t.text4 }}>
                     Les données apparaîtront dès votre première facture ou dépense
                   </p>
                 </div>
@@ -644,10 +644,10 @@ export default function CockpitPage() {
             {/* ── Raccourcis ── */}
             <div>
               <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Raccourcis</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Raccourcis</span>
                 <button
                   onClick={() => { setPickerDraft(quickActions); setEditingQA(true); }}
-                  className="text-[0.6rem] font-medium transition hover:opacity-70"
+                  className="text-xs font-medium transition hover:opacity-70"
                   style={{ color: t.text3 }}
                 >
                   Modifier
@@ -671,7 +671,7 @@ export default function CockpitPage() {
                         >
                           <Icon size={20} style={{ color: t.text3 }} strokeWidth={1.6} />
                         </div>
-                        <span className="w-full truncate text-center text-[0.58rem] font-semibold" style={{ color: t.text3 }}>
+                        <span className="w-full truncate text-center text-[0.7rem] font-semibold" style={{ color: t.text3 }}>
                           {qa.label}
                         </span>
                       </div>
@@ -684,9 +684,9 @@ export default function CockpitPage() {
             {/* ── Accès rapide modules ── */}
             <div>
               <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Applications</span>
-                <Link href="/client/apps" className="flex items-center gap-1 text-[0.6rem] font-medium transition hover:opacity-70" style={{ color: t.text3 }}>
-                  Tout voir <ArrowRight size={9} />
+                <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Applications</span>
+                <Link href="/client/apps" className="flex items-center gap-1 text-xs font-medium transition hover:opacity-70" style={{ color: t.text3 }}>
+                  Tout voir <ArrowRight size={10} />
                 </Link>
               </div>
               <div className="overflow-hidden rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
@@ -699,17 +699,17 @@ export default function CockpitPage() {
                   const Icon = item.icon;
                   return (
                     <Link key={item.href} href={item.href}>
-                      <div className="flex items-center gap-3 px-3.5 py-2.5 transition hover:bg-white/5"
+                      <div className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/5"
                         style={{ borderTop: i > 0 ? `1px solid ${t.borderSoft}` : "none" }}>
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
                           style={{ background: t.bgSubtle }}>
-                          <Icon size={13} style={{ color: t.text3 }} />
+                          <Icon size={15} style={{ color: t.text3 }} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[0.72rem] font-semibold" style={{ color: t.text }}>{item.label}</p>
-                          <p className="text-[0.6rem]" style={{ color: t.text4 }}>{item.sub}</p>
+                          <p className="text-sm font-semibold" style={{ color: t.text }}>{item.label}</p>
+                          <p className="text-xs" style={{ color: t.text4 }}>{item.sub}</p>
                         </div>
-                        <ChevronRight size={11} style={{ color: t.text4 }} />
+                        <ChevronRight size={13} style={{ color: t.text4 }} />
                       </div>
                     </Link>
                   );

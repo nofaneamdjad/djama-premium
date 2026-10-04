@@ -1277,18 +1277,16 @@ html:has(.client-app[data-theme="light"]) {
   --nav-active-bg:        rgba(201,165,90,0.11);
 }
 
-/* Fond fluide — orbes d'ambiance très subtils */
+/* Fond fluide — orbe gold subtile */
 .djama-app-shell {
   background-color: var(--app-bg);
   background-image:
-    radial-gradient(ellipse 55% 50% at 6% 92%,  rgba(201,165,90,0.055) 0%, transparent 58%),
-    radial-gradient(ellipse 40% 46% at 94% 6%,  rgba(100,85,200,0.040)  0%, transparent 58%);
+    radial-gradient(ellipse 55% 50% at 6% 92%,  rgba(201,165,90,0.045) 0%, transparent 58%);
   background-attachment: fixed;
 }
 .client-app[data-theme="light"] .djama-app-shell {
   background-image:
-    radial-gradient(ellipse 50% 44% at 5% 92%,  rgba(201,165,90,0.060) 0%, transparent 55%),
-    radial-gradient(ellipse 38% 44% at 92% 7%,  rgba(100,140,220,0.040) 0%, transparent 55%);
+    radial-gradient(ellipse 50% 44% at 5% 92%,  rgba(201,165,90,0.050) 0%, transparent 55%);
 }
 
 @media (prefers-reduced-motion: reduce) {

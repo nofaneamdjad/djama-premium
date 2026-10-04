@@ -95,7 +95,7 @@ export default function BottomNavMobile({ pathname, dark = false, accent = GOLD,
                 />
               </motion.div>
               <span
-                className="text-[9.5px] font-semibold"
+                className="text-[11px] font-semibold"
                 style={{ color: isCreate ? accent : active ? accent : dimColor }}
               >
                 {item.label}

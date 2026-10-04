@@ -312,7 +312,7 @@ export default function TopBar({
 
   return (
     <header
-      className="flex h-[48px] shrink-0 items-center gap-2 px-3"
+      className="flex h-[52px] shrink-0 items-center gap-2 px-3"
       style={
         isDark
           ? { background: "rgba(9,9,14,0.97)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }
@@ -330,17 +330,17 @@ export default function TopBar({
       {/* Search bar (desktop) */}
       <button
         onClick={onSearchOpen}
-        className={`hidden sm:flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition ${
+        className={`hidden sm:flex items-center gap-2 rounded-lg px-3 py-2 transition ${
           isDark
             ? "bg-white/[0.04] text-white/25 hover:bg-white/[0.07] hover:text-white/45 border border-white/[0.06]"
             : "bg-[#f7f7fa] text-gray-400 hover:bg-[#f0f0f4] hover:text-gray-500 border border-[#eaeaef]"
         }`}
-        style={{ minWidth: 180 }}
+        style={{ minWidth: 220 }}
       >
-        <Search size={12} />
-        <span className="flex-1 text-left text-[0.75rem]">Rechercher…</span>
-        <kbd className={`rounded px-1 py-0.5 text-[0.5rem] font-mono ${
-          isDark ? "bg-white/[0.05] border border-white/[0.07] text-white/18" : "bg-white border border-[#e0e0ea] text-gray-400"
+        <Search size={13} />
+        <span className="flex-1 text-left text-sm">Rechercher…</span>
+        <kbd className={`rounded px-1.5 py-0.5 text-[0.58rem] font-mono ${
+          isDark ? "bg-white/[0.05] border border-white/[0.07] text-white/25" : "bg-white border border-[#e0e0ea] text-gray-400"
         }`}>⌘K</kbd>
       </button>
 
@@ -361,7 +361,7 @@ export default function TopBar({
         {/* +Créer */}
         <Link
           href="/client/factures"
-          className="hidden sm:flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.72rem] font-semibold transition hover:opacity-88"
+          className="hidden sm:flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[0.8rem] font-semibold transition hover:opacity-88"
           style={{ background: `${accent}14`, border: `1px solid ${accent}28`, color: accent }}
         >
           <span style={{ fontSize: "0.9em", lineHeight: 1 }}>+</span>
@@ -370,7 +370,7 @@ export default function TopBar({
 
         {!isPremium && (
           <button onClick={onProModalOpen}
-            className="hidden md:flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[0.68rem] font-bold transition hover:opacity-90"
+            className="hidden md:flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[0.78rem] font-bold transition hover:opacity-90"
             style={{ background: accent, color: "#0a0a0a" }}>
             <Crown size={10} /> PRO
           </button>
