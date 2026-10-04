@@ -7,13 +7,12 @@ import {
   CheckCircle2, Copy, Check, Edit3, Save, Send, MessageSquare,
   Users, ArrowUpRight, Building2, Upload, Download, ExternalLink,
   ShieldCheck, Key, Ban, Clock, RefreshCw, Eye, EyeOff,
-  Toggle, ToggleRight, Lock, Unlock, Settings,
+  ToggleRight, Lock, Unlock, Settings,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useToastStack, ToastStack } from "@/components/ui/ToastStack";
 import { useTheme } from "@/lib/theme-context";
-import { AppModuleIcon } from "@/components/AppIcons";
 
 const GOLD = "#c9a55a";
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -423,7 +422,6 @@ export default function PortailClientPage() {
         <div className="relative px-4 sm:px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <AppModuleIcon href="/client/portail" size={40} hideBackground/>
               <div>
                 <h1 className={`text-xl font-black tracking-tight ${isDark?"text-white":"text-gray-900"}`}>Portail Client</h1>
                 <p className={`text-[0.65rem] mt-0.5 ${isDark?"text-white/40":"text-gray-500"}`}>
