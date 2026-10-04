@@ -205,13 +205,13 @@ export default function PortailClientDashboard() {
   const firstName = access.nom.split(" ")[0] ?? access.nom;
   const perm = access.permissions ?? {};
 
-  const navItems: {id:NavTab;label:string;icon:typeof FileText;count?:number;show:boolean}[] = [
-    {id:"accueil",   label:"Accueil",    icon:Building2,      show:true},
-    {id:"factures",  label:"Factures",   icon:FileText,       count:factures.length,  show:!!perm.factures},
-    {id:"projets",   label:"Projets",    icon:Folder,         count:projets.length,   show:!!perm.projets},
-    {id:"documents", label:"Documents",  icon:FileText,       count:docs.length,      show:!!perm.documents},
-    {id:"messages",  label:"Messages",   icon:MessageSquare,  count:msgs.filter(m=>m.from==="admin").length, show:!!perm.messages},
-  ].filter(n=>n.show);
+  const navItems: {id:NavTab;label:string;icon:typeof FileText;count?:number;show:boolean}[] = ([
+    {id:"accueil"   as NavTab, label:"Accueil",    icon:Building2,      show:true},
+    {id:"factures"  as NavTab, label:"Factures",   icon:FileText,       count:factures.length,  show:!!perm.factures},
+    {id:"projets"   as NavTab, label:"Projets",    icon:Folder,         count:projets.length,   show:!!perm.projets},
+    {id:"documents" as NavTab, label:"Documents",  icon:FileText,       count:docs.length,      show:!!perm.documents},
+    {id:"messages"  as NavTab, label:"Messages",   icon:MessageSquare,  count:msgs.filter(m=>m.from==="admin").length, show:!!perm.messages},
+  ] as {id:NavTab;label:string;icon:typeof FileText;count?:number;show:boolean}[]).filter(n=>n.show);
 
   /* ══════════════════════════════════════════════════════════════════════ */
   return (

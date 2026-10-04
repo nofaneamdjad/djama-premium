@@ -49,7 +49,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     errorCorrectionLevel: "M",
   });
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type":        "image/png",
       "Content-Disposition": `attachment; filename="qr-${link.slug as string}.png"`,

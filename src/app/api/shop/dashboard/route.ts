@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
       .eq("user_id", user.id)
       .eq("sell_online", true)
       .not("stock_current", "is", null)
-      .lt("stock_current", db.raw ? 1 : 5)
+      .lt("stock_current", 5)
       .limit(5),
     db.from("shop_order_items")
       .select("product_name, product_id, quantity, unit_price")
