@@ -31,6 +31,12 @@ type Draft = Partial<Omit<Project, "id" | "user_id" | "created_at" | "updated_at
 interface ProjTask    { id:string; projectId:string; title:string; done:boolean; }
 interface Milestone   { id:string; projectId:string; title:string; date:string; done:boolean; }
 
+interface ProjExpense   { id:string; date:string; description:string; amount:number; category:string; }
+interface ProjTimeEntry { id:string; date:string; description:string; duration:number; }
+interface ProjDoc       { id:string; type:string; numero:string; sujet:string; client_nom:string; date_document:string; total_ttc:number; statut:string; }
+interface ProjActivity  { id:string; type:string; description:string; created_at:string; }
+interface ProjEvent     { id:string; title:string; start_time:string; end_time:string; type:string; }
+
 interface CdcSection { id:string; titre:string; contenu:string; }
 interface CdcData    { titre:string; sections:CdcSection[]; }
 
@@ -63,6 +69,10 @@ function emptyDraft(): Draft {
   return { title:"", client:"", status:"en_cours", category:"Autre", start_date:"", end_date:"", budget:0, spent:0, description:"", color:"#3b82f6" };
 }
 function fmtEur(n:number) { return n.toLocaleString("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}); }
+function fmtSeconds(s:number) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return h>0 ? `${h}h${m.toString().padStart(2,"0")}` : `${m}min`;
+}
 function fmtDate(d:string|null) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"});
@@ -951,13 +961,21 @@ export default function ProjetsPage() {
   const [tab,       setTab]       = useState<"grille"|"liste"|"kanban"|"gantt"|"dossiers">("grille");
   const [search,    setSearch]    = useState("");
   const [detailProj, setDetailProj] = useState<Project|null>(null);
-  const [detailTab,  setDetailTab]  = useState<"apercu"|"tasks"|"milestones"|"team"|"ia">("tasks");
+  const [detailTab,  setDetailTab]  = useState<"apercu"|"tasks"|"milestones"|"budget"|"documents"|"temps"|"planning"|"activite"|"team"|"ia">("apercu");
 
-  const [projTasks,  setProjTasks]  = useState<ProjTask[]>([]);
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [projTeam,   setProjTeam]   = useState<Record<string,string[]>>({});
-  const [userId,     setUserId]     = useState<string | null>(null);
-  const [creatingInv, setCreatingInv] = useState<string|null>(null);
+  const [projTasks,    setProjTasks]    = useState<ProjTask[]>([]);
+  const [milestones,   setMilestones]   = useState<Milestone[]>([]);
+  const [projTeam,     setProjTeam]     = useState<Record<string,string[]>>({});
+  const [userId,       setUserId]       = useState<string | null>(null);
+  const [creatingInv,  setCreatingInv]  = useState<string|null>(null);
+
+  // Lazy-loaded per-project data
+  const [projExpenses,    setProjExpenses]    = useState<ProjExpense[]>([]);
+  const [projTimeEntries, setProjTimeEntries] = useState<ProjTimeEntry[]>([]);
+  const [projDocs,        setProjDocs]        = useState<ProjDoc[]>([]);
+  const [projActivities,  setProjActivities]  = useState<ProjActivity[]>([]);
+  const [projEvents,      setProjEvents]      = useState<ProjEvent[]>([]);
+  const [detailLoading,   setDetailLoading]   = useState(false);
 
   const [taskInput, setTaskInput]   = useState("");
   const [mileTitle, setMileTitle]   = useState("");
@@ -1013,6 +1031,30 @@ export default function ProjetsPage() {
 
   useEffect(()=>{ void load(); }, [load]);
 
+  useEffect(()=>{
+    if (!detailProj) {
+      setProjExpenses([]); setProjTimeEntries([]); setProjDocs([]);
+      setProjActivities([]); setProjEvents([]);
+      return;
+    }
+    const pid = detailProj.id;
+    setDetailLoading(true);
+    void Promise.all([
+      supabase.from("expenses").select("id,date,description,amount,category").eq("project_id",pid).order("date",{ascending:false}).limit(50),
+      supabase.from("time_entries").select("id,date,description,duration").eq("project_id",pid).order("date",{ascending:false}).limit(50),
+      supabase.from("documents").select("id,type,numero,sujet,client_nom,date_document,total_ttc,statut").eq("source_project_id",pid).order("date_document",{ascending:false}).limit(50),
+      supabase.from("project_activities").select("id,type,description,created_at").eq("project_id",pid).order("created_at",{ascending:false}).limit(30),
+      supabase.from("planning_events").select("id,title,start_time,end_time,type").eq("linked_project_id",pid).order("start_time",{ascending:true}).limit(30),
+    ]).then(([expR,teR,docR,actR,evtR])=>{
+      setProjExpenses((expR.data??[]) as ProjExpense[]);
+      setProjTimeEntries((teR.data??[]) as ProjTimeEntry[]);
+      setProjDocs((docR.data??[]) as ProjDoc[]);
+      setProjActivities((actR.data??[]) as ProjActivity[]);
+      setProjEvents((evtR.data??[]) as ProjEvent[]);
+    }).finally(()=>setDetailLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[detailProj?.id]);
+
   const filtered = useMemo(()=>{
     let list = filter==="tous" ? projects : projects.filter(p=>p.status===filter);
     if (search.trim()) {
@@ -1022,12 +1064,17 @@ export default function ProjetsPage() {
     return list;
   },[projects,filter,search]);
 
-  const kpis = useMemo(()=>({
-    enCours:  projects.filter(p=>p.status==="en_cours").length,
-    terminé:  projects.filter(p=>p.status==="terminé").length,
-    budget:   projects.reduce((s,p)=>s+p.budget,0),
-    encaissé: projects.reduce((s,p)=>s+p.spent,0),
-  }),[projects]);
+  const kpis = useMemo(()=>{
+    const today = new Date();
+    return {
+      enCours:  projects.filter(p=>p.status==="en_cours").length,
+      aRisque:  projects.filter(p=>p.status==="en_cours"&&(
+        (p.budget>0&&p.spent>p.budget*0.9)||(p.end_date&&new Date(p.end_date)<today)
+      )).length,
+      budget:   projects.reduce((s,p)=>s+p.budget,0),
+      encaissé: projects.reduce((s,p)=>s+p.spent,0),
+    };
+  },[projects]);
 
   const ganttProjects = useMemo(()=>projects.filter(p=>p.start_date&&p.end_date),[projects]);
 
@@ -1420,11 +1467,16 @@ export default function ProjetsPage() {
     const rowBase  = isDark ? "border-white/[0.06] bg-white/[0.025] hover:border-white/10" : "border-black/[0.06] bg-slate-50 hover:border-black/10";
     const iconBtn  = isDark ? "text-white/40 hover:text-white hover:bg-white/[0.08]" : "text-black/40 hover:text-[#0e1420] hover:bg-black/5";
     const DTABS = [
-      {k:"apercu",     l:"Aperçu",    badge:0             },
-      {k:"tasks",      l:"Tâches",    badge:pTasks.length },
-      {k:"milestones", l:"Jalons",    badge:pMiles.length },
-      {k:"team",       l:"Équipe",    badge:pTeam.length  },
-      {k:"ia",         l:"IA",        badge:0             },
+      {k:"apercu",     l:"Aperçu",   badge:0                       },
+      {k:"tasks",      l:"Tâches",   badge:pTasks.length           },
+      {k:"milestones", l:"Jalons",   badge:pMiles.length           },
+      {k:"budget",     l:"Budget",   badge:0                       },
+      {k:"documents",  l:"Docs",     badge:projDocs.length         },
+      {k:"temps",      l:"Temps",    badge:projTimeEntries.length   },
+      {k:"planning",   l:"Planning", badge:projEvents.length       },
+      {k:"activite",   l:"Activité", badge:projActivities.length   },
+      {k:"team",       l:"Équipe",   badge:pTeam.length            },
+      {k:"ia",         l:"IA",       badge:0                       },
     ] as const;
 
     return (
@@ -1475,10 +1527,10 @@ export default function ProjetsPage() {
               </button>
             </div>
           </div>
-          <div className="flex gap-1 px-4 pt-4 pb-0 shrink-0">
+          <div className="flex gap-1 px-4 pt-4 pb-0 shrink-0 overflow-x-auto scrollbar-none">
             {DTABS.map(({k,l,badge})=>(
               <button key={k} onClick={()=>setDetailTab(k as typeof detailTab)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
                 style={detailTab===k
                   ?{background:`${GOLD}25`,color:GOLD,border:`1px solid ${GOLD}40`}
                   :{background:"transparent",color:isDark?"rgba(255,255,255,0.35)":"rgba(0,0,0,0.35)",border:"1px solid transparent"}}>
@@ -1608,6 +1660,184 @@ export default function ProjetsPage() {
                 )}
               </div>
             )}
+            {detailTab==="budget" && (
+              <div className="space-y-4">
+                {detailLoading ? (
+                  <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin" style={{color:GOLD}}/></div>
+                ) : (
+                  <>
+                    {/* Synthèse budget */}
+                    <div className={`rounded-xl border p-4 space-y-3 ${isDark?"border-white/[0.08] bg-white/[0.02]":"border-black/[0.08] bg-slate-50"}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark?"text-white/30":"text-black/30"}`}>Synthèse</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          {label:"Budget", value:fmtEur(p.budget), color:GOLD},
+                          {label:"Dépenses", value:fmtEur(projExpenses.reduce((s,e)=>s+e.amount,0)), color:"#ef4444"},
+                          {label:"Temps", value:fmtSeconds(projTimeEntries.reduce((s,t)=>s+t.duration,0)), color:SKY},
+                        ].map(kp=>(
+                          <div key={kp.label} className="text-center">
+                            <p className={`text-[10px] ${isDark?"text-white/30":"text-black/30"}`}>{kp.label}</p>
+                            <p className="text-sm font-black mt-0.5 tabular-nums" style={{color:kp.color}}>{kp.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {p.budget>0 && (
+                        <div>
+                          <div className={`h-1.5 rounded-full ${isDark?"bg-white/[0.08]":"bg-black/[0.08]"}`}>
+                            <div className="h-full rounded-full" style={{
+                              width:`${Math.min(100,Math.round((projExpenses.reduce((s,e)=>s+e.amount,0)/p.budget)*100))}%`,
+                              background:projExpenses.reduce((s,e)=>s+e.amount,0)>p.budget?"#ef4444":GOLD
+                            }}/>
+                          </div>
+                          <p className={`text-[10px] mt-1 ${isDark?"text-white/25":"text-black/25"}`}>
+                            {Math.min(100,Math.round((projExpenses.reduce((s,e)=>s+e.amount,0)/p.budget)*100))}% du budget consommé
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {/* Dépenses */}
+                    {projExpenses.length>0 && (
+                      <div>
+                        <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDark?"text-white/30":"text-black/30"}`}>Dépenses</p>
+                        <div className="space-y-1.5">
+                          {projExpenses.map(e=>(
+                            <div key={e.id} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${rowBase}`}>
+                              <div className="min-w-0 flex-1">
+                                <p className={`text-xs font-semibold truncate ${isDark?"text-white/75":"text-[#0e1420]/75"}`}>{e.description||e.category}</p>
+                                <p className={`text-[10px] ${isDark?"text-white/30":"text-black/30"}`}>{fmtDateShort(e.date)}</p>
+                              </div>
+                              <span className="text-sm font-bold tabular-nums text-red-400">{fmtEur(e.amount)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {projExpenses.length===0&&projTimeEntries.length===0 && (
+                      <p className={`text-sm py-6 text-center ${isDark?"text-white/25":"text-black/25"}`}>Aucune dépense imputée à ce projet</p>
+                    )}
+                    <button onClick={()=>router.push("/client/depenses")}
+                      className={`flex items-center gap-1.5 text-xs transition-all ${isDark?"text-white/30 hover:text-white/60":"text-black/30 hover:text-black/60"}`}>
+                      <FileText size={11}/>Gérer les dépenses →
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            {detailTab==="documents" && (
+              <div className="space-y-3">
+                {detailLoading ? (
+                  <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin" style={{color:GOLD}}/></div>
+                ) : projDocs.length===0 ? (
+                  <p className={`text-sm py-6 text-center ${isDark?"text-white/25":"text-black/25"}`}>Aucun document lié à ce projet</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {projDocs.map(d=>(
+                      <div key={d.id} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${rowBase}`}>
+                        <FileText size={14} className={isDark?"text-white/30":"text-black/30"}/>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs font-semibold truncate ${isDark?"text-white/75":"text-[#0e1420]/75"}`}>{d.sujet||d.numero}</p>
+                          <p className={`text-[10px] ${isDark?"text-white/30":"text-black/30"}`}>{d.type} · {fmtDateShort(d.date_document)}</p>
+                        </div>
+                        {d.total_ttc>0 && <span className="text-xs font-bold tabular-nums" style={{color:GOLD}}>{fmtEur(d.total_ttc)}</span>}
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0"
+                          style={{background:d.statut==="payé"?"rgba(16,185,129,0.12)":"rgba(245,158,11,0.12)",
+                                  color:d.statut==="payé"?"#10b981":"#f59e0b"}}>{d.statut}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button onClick={()=>router.push("/client/factures")}
+                  className={`flex items-center gap-1.5 text-xs transition-all ${isDark?"text-white/30 hover:text-white/60":"text-black/30 hover:text-black/60"}`}>
+                  <FileText size={11}/>Voir toutes les factures →
+                </button>
+              </div>
+            )}
+            {detailTab==="temps" && (
+              <div className="space-y-3">
+                {detailLoading ? (
+                  <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin" style={{color:GOLD}}/></div>
+                ) : (
+                  <>
+                    {projTimeEntries.length>0 && (
+                      <div className={`rounded-xl border p-3 text-center ${isDark?"border-white/[0.08] bg-white/[0.02]":"border-black/[0.08] bg-slate-50"}`}>
+                        <p className={`text-[10px] ${isDark?"text-white/30":"text-black/30"}`}>Temps total imputé</p>
+                        <p className="text-xl font-black mt-0.5 tabular-nums" style={{color:SKY}}>
+                          {fmtSeconds(projTimeEntries.reduce((s,t)=>s+t.duration,0))}
+                        </p>
+                      </div>
+                    )}
+                    {projTimeEntries.length===0 ? (
+                      <p className={`text-sm py-6 text-center ${isDark?"text-white/25":"text-black/25"}`}>Aucun temps imputé à ce projet</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {projTimeEntries.map(t=>(
+                          <div key={t.id} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${rowBase}`}>
+                            <Timer size={13} className={isDark?"text-white/30":"text-black/30"}/>
+                            <div className="min-w-0 flex-1">
+                              <p className={`text-xs font-semibold truncate ${isDark?"text-white/75":"text-[#0e1420]/75"}`}>{t.description||"Session de travail"}</p>
+                              <p className={`text-[10px] ${isDark?"text-white/30":"text-black/30"}`}>{fmtDateShort(t.date)}</p>
+                            </div>
+                            <span className="text-sm font-bold tabular-nums" style={{color:SKY}}>{fmtSeconds(t.duration)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <button onClick={()=>router.push("/client/chrono")}
+                      className={`flex items-center gap-1.5 text-xs transition-all ${isDark?"text-white/30 hover:text-white/60":"text-black/30 hover:text-black/60"}`}>
+                      <Timer size={11}/>Ouvrir le chronomètre →
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            {detailTab==="planning" && (
+              <div className="space-y-3">
+                {detailLoading ? (
+                  <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin" style={{color:GOLD}}/></div>
+                ) : projEvents.length===0 ? (
+                  <p className={`text-sm py-6 text-center ${isDark?"text-white/25":"text-black/25"}`}>Aucun événement planning lié à ce projet</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {projEvents.map(ev=>(
+                      <div key={ev.id} className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 ${rowBase}`}>
+                        <Calendar size={13} className={`mt-0.5 shrink-0 ${isDark?"text-white/30":"text-black/30"}`}/>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs font-semibold truncate ${isDark?"text-white/75":"text-[#0e1420]/75"}`}>{ev.title}</p>
+                          <p className={`text-[10px] ${isDark?"text-white/30":"text-black/30"}`}>
+                            {fmtDateShort(ev.start_time.slice(0,10))}
+                            {ev.end_time&&ev.end_time!==ev.start_time ? ` → ${fmtDateShort(ev.end_time.slice(0,10))}` : ""}
+                          </p>
+                        </div>
+                        {ev.type && <span className={`text-[10px] px-2 py-0.5 rounded-full ${isDark?"bg-white/[0.06] text-white/40":"bg-black/[0.05] text-black/40"}`}>{ev.type}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button onClick={()=>router.push("/client/planning")}
+                  className={`flex items-center gap-1.5 text-xs transition-all ${isDark?"text-white/30 hover:text-white/60":"text-black/30 hover:text-black/60"}`}>
+                  <Calendar size={11}/>Ouvrir le planning →
+                </button>
+              </div>
+            )}
+            {detailTab==="activite" && (
+              <div className="space-y-2">
+                {detailLoading ? (
+                  <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin" style={{color:GOLD}}/></div>
+                ) : projActivities.length===0 ? (
+                  <p className={`text-sm py-6 text-center ${isDark?"text-white/25":"text-black/25"}`}>Aucune activité enregistrée</p>
+                ) : (
+                  projActivities.map(a=>(
+                    <div key={a.id} className="flex items-start gap-3 py-2">
+                      <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{background:p.color}}/>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-xs ${isDark?"text-white/70":"text-[#0e1420]/70"}`}>{a.description}</p>
+                        <p className={`text-[10px] mt-0.5 ${isDark?"text-white/25":"text-black/25"}`}>{fmtDateShort(a.created_at.slice(0,10))}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
             {detailTab==="team" && (
               <div className="space-y-3">
                 <div className="flex gap-2">
@@ -1713,10 +1943,10 @@ export default function ProjetsPage() {
         {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            {label:"En cours", value:String(kpis.enCours), color:"#3b82f6", sub:"projets actifs",   onClick:()=>{setTab("grille");setFilter("en_cours");}},
-            {label:"Terminés", value:String(kpis.terminé),  color:"#10b981", sub:"projets terminés", onClick:()=>{setTab("grille");setFilter("terminé");}},
-            {label:"Budget",   value:fmtEur(kpis.budget),   color:GOLD,      sub:"budget total",     onClick:()=>{setTab("grille");setFilter("tous");}},
-            {label:"Encaissé", value:fmtEur(kpis.encaissé), color:"#10b981",  sub:"revenus encaissés",onClick:()=>{setTab("grille");setFilter("tous");}},
+            {label:"En cours", value:String(kpis.enCours),  color:"#3b82f6",  sub:"projets actifs",    onClick:()=>{setTab("grille");setFilter("en_cours");}},
+            {label:"À risque", value:String(kpis.aRisque),  color:"#ef4444",  sub:"budget/délai dépassé",onClick:()=>{setTab("grille");setFilter("en_cours");}},
+            {label:"Budget",   value:fmtEur(kpis.budget),   color:GOLD,       sub:"budget total",      onClick:()=>{setTab("grille");setFilter("tous");}},
+            {label:"Encaissé", value:fmtEur(kpis.encaissé), color:"#10b981",  sub:"revenus encaissés", onClick:()=>{setTab("grille");setFilter("tous");}},
           ].map(k=>(
             <motion.div key={k.label}
               whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
