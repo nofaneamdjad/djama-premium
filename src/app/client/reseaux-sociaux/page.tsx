@@ -72,7 +72,7 @@ interface CampaignWeek { week: number; theme: string; posts: CampaignPost[]; }
 interface CampaignPost { day: string; platform: string; format: string; title: string; content_idea: string; cta: string; }
 
 /* ── Constants ── */
-const PLATFORMS: { id: Platform; label: string; color: string; charLimit: number; Icon: React.ComponentType<{ size?: number }> }[] = [
+const PLATFORMS: { id: Platform; label: string; color: string; charLimit: number; Icon: React.ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }> }[] = [
   { id: "instagram", label: "Instagram", color: "#e1306c", charLimit: 2200,  Icon: Camera    },
   { id: "facebook",  label: "Facebook",  color: "#1877f2", charLimit: 63206, Icon: Globe     },
   { id: "linkedin",  label: "LinkedIn",  color: "#0a66c2", charLimit: 3000,  Icon: Briefcase },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail, Plus, X, Search, Loader2, Check, Trash2, ChevronRight,
@@ -62,7 +62,8 @@ const STATUS_CFG: Record<CampStatus, { label: string; color: string }> = {
   echec:      { label: "Échec",      color: "#ef4444" },
 };
 
-const STEP_ICONS: Record<string, { icon: React.ComponentType<{ size?: number }>; label: string; color: string }> = {
+type IconComp = React.ComponentType<{ size?: number; style?: CSSProperties; className?: string }>;
+const STEP_ICONS: Record<string, { icon: IconComp; label: string; color: string }> = {
   send_email:    { icon: Mail,         label: "Envoyer email",    color: GOLD      },
   wait:          { icon: Clock,        label: "Attendre",         color: "#3b82f6" },
   condition:     { icon: ChevronRight, label: "Condition",        color: "#8b5cf6" },
@@ -163,7 +164,7 @@ function EmailEditor({
     } finally { setRewriting(false); setShowRewrite(false); }
   }
 
-  const BLOCK_TYPES: { type: EmailBlock["type"]; icon: React.ComponentType<{ size?: number }>; label: string }[] = [
+  const BLOCK_TYPES: { type: EmailBlock["type"]; icon: IconComp; label: string }[] = [
     { type: "title",    icon: Type,         label: "Titre"      },
     { type: "text",     icon: AlignLeft,    label: "Texte"      },
     { type: "button",   icon: MousePointer2, label: "Bouton"   },
@@ -598,7 +599,7 @@ export default function EmailMarketingPage() {
     return true;
   });
 
-  const TABS: { key: Tab; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
+  const TABS: { key: Tab; label: string; icon: IconComp }[] = [
     { key: "accueil",        label: "Accueil",         icon: BarChart2   },
     { key: "campagnes",      label: "Campagnes",       icon: Mail        },
     { key: "automatisations",label: "Automatisations", icon: Zap         },

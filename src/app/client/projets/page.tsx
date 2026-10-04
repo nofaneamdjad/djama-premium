@@ -55,7 +55,7 @@ const GOLD         = "#c9a55a";
 const SKY          = "#0ea5e9";
 const PX_PER_DAY   = 5;
 
-const STATUS_CONFIG: Record<Status, { label:string; color:string; bg:string; Icon:React.ComponentType<{size?:number}> }> = {
+const STATUS_CONFIG: Record<Status, { label:string; color:string; bg:string; Icon:React.ComponentType<{size?:number; style?:React.CSSProperties; className?:string}> }> = {
   en_cours:   { label:"En cours",   color:"#3b82f6", bg:"rgba(59,130,246,0.12)",  Icon:Clock        },
   terminé:    { label:"Terminé",    color:"#10b981", bg:"rgba(16,185,129,0.12)",  Icon:CheckCircle2 },
   en_attente: { label:"En attente", color:"#f59e0b", bg:"rgba(245,158,11,0.12)",  Icon:PauseCircle  },
