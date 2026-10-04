@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -37,7 +37,7 @@ function NavItem({
       href={href}
       onClick={onClick}
       title={collapsed ? label : undefined}
-      className={`group relative flex items-center rounded-lg text-[0.875rem] font-medium transition-all duration-150 ${
+      className={`group relative flex items-center rounded-lg text-sm font-medium transition-all duration-150 ${
         collapsed ? "justify-center py-[8px] mx-1.5" : "gap-2.5 px-2 py-[7px]"
       } ${isDark
         ? active ? "text-white" : "text-white/45 hover:text-white/75"
@@ -122,8 +122,8 @@ export function DesktopSidebar({
           </div>
           {!collapsed && (
             <div className="min-w-0 leading-none">
-              <p className="text-[0.95rem] font-bold truncate" style={{ color: accent }}>DJAMA</p>
-              <p className="text-[0.6rem] uppercase tracking-widest mt-0.5"
+              <p className="text-base font-bold truncate" style={{ color: accent }}>DJAMA</p>
+              <p className="text-xs uppercase tracking-widest mt-0.5"
                 style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                 {isPremium ? "PRO · Actif" : "Plan Gratuit"}
               </p>
@@ -140,7 +140,7 @@ export function DesktopSidebar({
         {!isPremium ? (
           <>
             {!collapsed && (
-              <p className="mb-1.5 px-2 text-[0.65rem] font-bold uppercase tracking-[0.14em]"
+              <p className="mb-1.5 px-2 text-xs font-bold uppercase tracking-[0.14em]"
                 style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.32)" }}>
                 Outils gratuits
               </p>
@@ -156,7 +156,7 @@ export function DesktopSidebar({
                   style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
                 <button
                   onClick={onProModalOpen}
-                  className="group w-full flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-[0.8rem] font-semibold transition-all"
+                  className="group w-full flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-sm font-semibold transition-all"
                   style={{ background: `${accent}0c`, border: `1px solid ${accent}18`, color: accent }}
                 >
                   <Lock size={11} style={{ color: accent }} />
@@ -178,7 +178,7 @@ export function DesktopSidebar({
               <button
                 onClick={onLauncherOpen}
                 title={collapsed ? "Applications" : undefined}
-                className={`group relative flex w-full items-center rounded-lg text-[0.875rem] font-medium transition-all duration-150 ${
+                className={`group relative flex w-full items-center rounded-lg text-sm font-medium transition-all duration-150 ${
                   collapsed ? "justify-center py-[8px]" : "gap-2.5 px-2 py-[7px]"
                 } ${isDark ? "text-white/45 hover:text-white/75" : "text-gray-400 hover:text-gray-700"}`}
               >
@@ -200,7 +200,7 @@ export function DesktopSidebar({
                 <div className={`my-2 ${collapsed ? "mx-2" : "mx-2"}`}
                   style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
                 {!collapsed && (
-                  <p className="mb-1.5 px-2 text-[0.65rem] font-bold uppercase tracking-[0.14em]"
+                  <p className="mb-1.5 px-2 text-xs font-bold uppercase tracking-[0.14em]"
                     style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.32)" }}>
                     <Pin size={8} className="inline mr-1 opacity-70" />Épinglés
                   </p>
@@ -223,7 +223,7 @@ export function DesktopSidebar({
             {pinnedApps.length === 0 && !collapsed && (
               <button
                 onClick={onLauncherOpen}
-                className="mt-3 w-full rounded-lg px-2 py-2 text-left text-[0.78rem] leading-snug transition-opacity hover:opacity-70"
+                className="mt-3 w-full rounded-lg px-2 py-2 text-left text-sm leading-snug transition-opacity hover:opacity-70"
                 style={{ color: isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.30)" }}
               >
                 <Pin size={9} className="inline mr-1.5 opacity-50" />
@@ -240,14 +240,14 @@ export function DesktopSidebar({
           <div className="flex items-center gap-2 p-2.5">
             <Link
               href="/client/profil"
-              className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md text-[0.6rem] font-bold transition hover:opacity-75"
+              className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md text-xs font-bold transition hover:opacity-75"
               style={{ background: `${accent}14`, border: `1px solid ${accent}22`, color: accent }}
               title="Mon profil"
             >
               {userInitial}
             </Link>
             <Link href="/client/profil" className="group min-w-0 flex-1">
-              <p className={`truncate text-[0.8rem] font-semibold transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
+              <p className={`truncate text-sm font-semibold transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
                 {displayName}
               </p>
             </Link>
@@ -264,7 +264,7 @@ export function DesktopSidebar({
           <div className="flex flex-col items-center gap-1 py-2">
             <Link
               href="/client/profil"
-              className="flex h-[28px] w-[28px] items-center justify-center rounded-md text-[0.6rem] font-bold transition hover:opacity-75"
+              className="flex h-[28px] w-[28px] items-center justify-center rounded-md text-xs font-bold transition hover:opacity-75"
               style={{ background: `${accent}14`, border: `1px solid ${accent}22`, color: accent }}
               title={displayName}
             >
@@ -333,8 +333,8 @@ export function MobileSidebar({
                   <Sparkles size={13} style={{ color: accent }} />
                 </div>
                 <div className="leading-none">
-                  <p className="text-[0.88rem] font-bold" style={{ color: accent }}>DJAMA</p>
-                  <p className="mt-0.5 text-[0.5rem] uppercase tracking-widest"
+                  <p className="text-sm font-bold" style={{ color: accent }}>DJAMA</p>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-widest"
                     style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                     {isPremium ? "PRO · Actif" : "Plan Gratuit"}
                   </p>
@@ -350,7 +350,7 @@ export function MobileSidebar({
             <nav className="flex-1 overflow-y-auto px-2 py-3" style={{ scrollbarWidth: "none" }}>
               {!isPremium ? (
                 <>
-                  <p className="mb-1.5 px-2.5 text-[0.65rem] font-semibold uppercase tracking-widest"
+                  <p className="mb-1.5 px-2.5 text-xs font-semibold uppercase tracking-widest"
                     style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                     Outils gratuits
                   </p>
@@ -363,7 +363,7 @@ export function MobileSidebar({
                     style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
                   <button
                     onClick={() => { onProModalOpen(); onClose(); }}
-                    className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.875rem] font-medium transition-all"
+                    className="group w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
                     style={{ background: `${accent}0c`, border: `1px solid ${accent}1a`, color: accent }}
                   >
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: `${accent}14` }}>
@@ -379,7 +379,7 @@ export function MobileSidebar({
                     <NavItem href="/client" label="Accueil" icon={Home} exact onClick={onClose} />
                     <button
                       onClick={() => { onLauncherOpen(); onClose(); }}
-                      className={`group relative flex w-full items-center gap-2.5 rounded-lg px-2 py-[7px] text-[0.875rem] font-medium transition-all duration-150 ${
+                      className={`group relative flex w-full items-center gap-2.5 rounded-lg px-2 py-[7px] text-sm font-medium transition-all duration-150 ${
                         isDark ? "text-white/45 hover:text-white/75" : "text-gray-400 hover:text-gray-700"
                       }`}
                     >
@@ -395,7 +395,7 @@ export function MobileSidebar({
                     <>
                       <div className="mx-2 my-3"
                         style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
-                      <p className="mb-1.5 px-2 text-[0.65rem] font-bold uppercase tracking-[0.14em]"
+                      <p className="mb-1.5 px-2 text-xs font-bold uppercase tracking-[0.14em]"
                         style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.32)" }}>
                         <Pin size={8} className="inline mr-1 opacity-70" />Épinglés
                       </p>
@@ -415,16 +415,16 @@ export function MobileSidebar({
               style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }}>
               <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2">
                 <Link href="/client/profil" onClick={onClose}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.65rem] font-bold transition hover:opacity-75"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition hover:opacity-75"
                   style={{ background: `${accent}14`, border: `1px solid ${accent}22`, color: accent }}
                   title="Mon profil">
                   {userInitial}
                 </Link>
                 <Link href="/client/profil" onClick={onClose} className="group min-w-0 flex-1">
-                  <p className={`truncate text-[0.82rem] font-medium transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
+                  <p className={`truncate text-sm font-medium transition ${isDark ? "text-white/65 group-hover:text-white/85" : "text-gray-600 group-hover:text-gray-900"}`}>
                     {displayName}
                   </p>
-                  <p className="text-[0.65rem]" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.35)" }}>
+                  <p className="text-xs" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.35)" }}>
                     {isPremium ? "DJAMA PRO" : "Plan Gratuit"}
                   </p>
                 </Link>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
@@ -246,7 +246,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                     animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
                   />
                 ) : (
-                  <kbd className="hidden shrink-0 rounded-md px-1.5 py-0.5 text-[0.52rem] font-mono sm:block"
+                  <kbd className="hidden shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-mono sm:block"
                     style={{ background: c.sur, border: `1px solid ${c.bdr}`, color: c.tx3 }}>
                     ESC
                   </kbd>
@@ -258,7 +258,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                 {query.trim() && !loading && hits.length === 0 && (
                   <div className="flex flex-col items-center gap-2 py-12">
                     <Search size={22} style={{ color: c.tx3 }} />
-                    <p className="text-[0.875rem] font-semibold" style={{ color: c.tx2 }}>Aucun résultat</p>
+                    <p className="text-sm font-semibold" style={{ color: c.tx2 }}>Aucun résultat</p>
                     <p className="text-[0.70rem]" style={{ color: c.tx3 }}>Essayez un autre mot-clé</p>
                   </div>
                 )}
@@ -291,7 +291,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-[0.80rem] font-semibold leading-tight" style={{ color: c.tx }}>{h.title}</p>
-                                <p className="truncate text-[0.63rem] leading-tight mt-0.5" style={{ color: c.tx2 }}>{h.sub}</p>
+                                <p className="truncate text-xs leading-tight mt-0.5" style={{ color: c.tx2 }}>{h.sub}</p>
                               </div>
                               {h.badge && (
                                 <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[0.50rem] font-bold uppercase tracking-wide"
@@ -338,7 +338,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                           { label: "Agenda",   color: "#a78bfa" },
                           { label: "Apps",     color: GOLD      },
                         ].map(({ label, color }) => (
-                          <span key={label} className="rounded-full px-2 py-0.5 text-[0.58rem] font-semibold"
+                          <span key={label} className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
                             style={{ background: `${color}10`, color, border: `1px solid ${color}20` }}>
                             {label}
                           </span>
@@ -355,10 +355,10 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                   <div key={key} className="flex items-center gap-1">
                     <kbd className="rounded px-1 py-0.5 text-[0.46rem] font-mono"
                       style={{ background: c.sur, border: `1px solid ${c.bdr}`, color: c.tx3 }}>{key}</kbd>
-                    <span className="text-[0.52rem]" style={{ color: c.tx3 }}>{label}</span>
+                    <span className="text-[10px]" style={{ color: c.tx3 }}>{label}</span>
                   </div>
                 ))}
-                <span className="ml-auto text-[0.52rem] font-bold tracking-wider" style={{ color: `${GOLD}70` }}>DJAMA</span>
+                <span className="ml-auto text-[10px] font-bold tracking-wider" style={{ color: `${GOLD}70` }}>DJAMA</span>
               </div>
             </div>
           </motion.div>

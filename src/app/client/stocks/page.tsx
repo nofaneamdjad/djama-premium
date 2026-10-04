@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -334,7 +334,7 @@ export default function StocksPage() {
             <div className="flex items-center gap-3">
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4 }} className="min-w-0">
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Stocks & Inventaire</h1>
-                <p className={`text-[0.62rem] truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>Gestion · Mouvements · Alertes · Fournisseurs</p>
+                <p className={`text-xs truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>Gestion · Mouvements · Alertes · Fournisseurs</p>
               </motion.div>
             </div>
             <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ export default function StocksPage() {
                   <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
                   <div>
                     <p className={`text-sm font-bold leading-none ${isDark ? "text-white" : "text-gray-800"}`}>{kpi.value}</p>
-                    <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
+                    <p className={`text-[11px] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                   </div>
                 </motion.button>
               );

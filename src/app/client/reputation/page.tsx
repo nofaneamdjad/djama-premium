@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -318,16 +318,16 @@ export default function ReputationPage() {
           </div>
           <div>
             <h1 className={`text-base font-black ${text}`}>Réputation</h1>
-            <p className={`text-[0.6rem] ${muted}`}>{fmtNum(reviews.length)} avis · note moy. {avgRating.toFixed(1)}</p>
+            <p className={`text-xs ${muted}`}>{fmtNum(reviews.length)} avis · note moy. {avgRating.toFixed(1)}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => runBatchSentiment()}
-            className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[0.65rem] font-semibold ${card} ${muted} hover:opacity-70`}>
+            className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-semibold ${card} ${muted} hover:opacity-70`}>
             <Sparkles size={10} /> Analyser IA
           </button>
           <button onClick={() => { setTab("collecte"); setShowNewCamp(true); }}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.7rem] font-black"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black"
             style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
             <Plus size={13} /> Collecte
           </button>
@@ -341,7 +341,7 @@ export default function ReputationPage() {
           const active = tab === n.key;
           return (
             <button key={n.key} onClick={() => setTab(n.key)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.67rem] font-bold transition ${active ? "" : `${muted} hover:opacity-70`}`}
+              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${active ? "" : `${muted} hover:opacity-70`}`}
               style={active ? { background: `${GOLD}15`, color: GOLD } : {}}>
               <n.icon size={11} />{n.label}
             </button>
@@ -372,8 +372,8 @@ export default function ReputationPage() {
                   ) : (
                     <p className="text-2xl font-black tabular-nums mb-1" style={{ color: k.color }}>{k.value}</p>
                   )}
-                  <p className={`text-[0.65rem] font-bold ${text}`}>{k.label}</p>
-                  <p className={`text-[0.58rem] mt-0.5 ${muted}`}>{k.sub}</p>
+                  <p className={`text-xs font-bold ${text}`}>{k.label}</p>
+                  <p className={`text-[11px] mt-0.5 ${muted}`}>{k.sub}</p>
                 </div>
               ))}
             </div>
@@ -382,7 +382,7 @@ export default function ReputationPage() {
             <div className={`rounded-2xl border p-4 ${card}`}>
               <div className="flex items-center justify-between mb-3">
                 <p className={`text-sm font-bold ${text}`}>Derniers avis</p>
-                <button onClick={() => setTab("avis")} className="text-[0.65rem] font-semibold" style={{ color: GOLD }}>
+                <button onClick={() => setTab("avis")} className="text-xs font-semibold" style={{ color: GOLD }}>
                   Voir tous <ArrowRight size={10} className="inline" />
                 </button>
               </div>
@@ -399,14 +399,14 @@ export default function ReputationPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <StarRow value={r.rating} />
-                          <span className="text-[0.58rem] font-bold rounded-full px-1.5 py-0.5" style={{ color: sc.color, background: `${sc.color}15` }}>{sc.label}</span>
+                          <span className="text-[11px] font-bold rounded-full px-1.5 py-0.5" style={{ color: sc.color, background: `${sc.color}15` }}>{sc.label}</span>
                           {sen && <sen.icon size={10} style={{ color: sen.color }} />}
                         </div>
                         <p className={`text-xs truncate ${text}`}>{r.message ?? "(sans commentaire)"}</p>
-                        <p className={`text-[0.58rem] mt-0.5 ${muted}`}>{r.author_name ?? "Anonyme"} · {fmtDate(r.created_at)}</p>
+                        <p className={`text-[11px] mt-0.5 ${muted}`}>{r.author_name ?? "Anonyme"} · {fmtDate(r.created_at)}</p>
                       </div>
                       {!r.response_text && (
-                        <span className="shrink-0 text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400">À répondre</span>
+                        <span className="shrink-0 text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400">À répondre</span>
                       )}
                     </button>
                   );
@@ -427,7 +427,7 @@ export default function ReputationPage() {
                       <div key={s} className="flex-1 flex flex-col items-center gap-1.5">
                         <cfg.icon size={16} style={{ color: cfg.color }} />
                         <p className="text-lg font-black tabular-nums" style={{ color: cfg.color }}>{pct}%</p>
-                        <p className={`text-[0.58rem] ${muted}`}>{cfg.label}</p>
+                        <p className={`text-[11px] ${muted}`}>{cfg.label}</p>
                       </div>
                     );
                   })}
@@ -446,8 +446,8 @@ export default function ReputationPage() {
                   }, {} as Record<string, number>))
                     .sort((a, b) => b[1] - a[1]).slice(0, 8)
                     .map(([theme, count]) => (
-                      <span key={theme} className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[0.65rem] font-semibold ${isDark ? "border-white/8 bg-white/4" : "border-black/8 bg-gray-100"} ${text}`}>
-                        {theme} <span className={`text-[0.55rem] ${muted}`}>×{count}</span>
+                      <span key={theme} className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${isDark ? "border-white/8 bg-white/4" : "border-black/8 bg-gray-100"} ${text}`}>
+                        {theme} <span className={`text-[11px] ${muted}`}>×{count}</span>
                       </span>
                     ))}
                 </div>
@@ -492,7 +492,7 @@ export default function ReputationPage() {
                   ["hidden",   "Masqués"],
                 ].map(([k, label]) => (
                   <button key={k} onClick={() => setRevFilter(k as typeof revFilter)}
-                    className="rounded-xl border px-2.5 py-1 text-[0.62rem] font-bold transition"
+                    className="rounded-xl border px-2.5 py-1 text-xs font-bold transition"
                     style={revFilter === k ? { background: `${GOLD}15`, borderColor: `${GOLD}30`, color: GOLD }
                       : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)", color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)" }}>
                     {label}
@@ -519,12 +519,12 @@ export default function ReputationPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <StarRow value={r.rating} />
-                            <span className="text-[0.58rem] font-bold rounded-full px-1.5 py-0.5" style={{ color: sc.color, background: `${sc.color}15` }}>{sc.label}</span>
-                            {r.source !== "djama" && <span className={`text-[0.55rem] px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>{r.source}</span>}
-                            {sen && <span className="flex items-center gap-0.5 text-[0.55rem] font-semibold" style={{ color: sen.color }}><sen.icon size={9} /> {sen.label}</span>}
+                            <span className="text-[11px] font-bold rounded-full px-1.5 py-0.5" style={{ color: sc.color, background: `${sc.color}15` }}>{sc.label}</span>
+                            {r.source !== "djama" && <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>{r.source}</span>}
+                            {sen && <span className="flex items-center gap-0.5 text-[11px] font-semibold" style={{ color: sen.color }}><sen.icon size={9} /> {sen.label}</span>}
                           </div>
                           <p className={`text-xs font-bold ${text}`}>{r.author_name ?? "Anonyme"}</p>
-                          <p className={`text-[0.65rem] mt-0.5 leading-relaxed ${muted}`}>{r.message ?? "(sans commentaire)"}</p>
+                          <p className={`text-xs mt-0.5 leading-relaxed ${muted}`}>{r.message ?? "(sans commentaire)"}</p>
                         </div>
                         <div className="flex flex-col gap-1 shrink-0">
                           <button onClick={() => updateReview(r.id, { is_featured: !r.is_featured })}
@@ -538,12 +538,12 @@ export default function ReputationPage() {
                         </div>
                       </div>
                       {r.response_text && (
-                        <div className={`rounded-xl border-l-2 px-3 py-2 text-[0.65rem] ${isDark ? "border-emerald-500/40 bg-emerald-500/5" : "border-emerald-400 bg-emerald-50"}`}>
+                        <div className={`rounded-xl border-l-2 px-3 py-2 text-xs ${isDark ? "border-emerald-500/40 bg-emerald-500/5" : "border-emerald-400 bg-emerald-50"}`}>
                           <span className="font-bold text-emerald-500">Répondu :</span>
                           <span className={` ml-1 ${muted}`}>{r.response_text.slice(0, 120)}…</span>
                         </div>
                       )}
-                      <div className={`flex items-center gap-3 pt-1 border-t text-[0.6rem] ${div} ${muted}`}>
+                      <div className={`flex items-center gap-3 pt-1 border-t text-xs ${div} ${muted}`}>
                         <span>{fmtDate(r.created_at)}</span>
                         {Array.isArray(r.themes) && r.themes.length > 0 && (
                           <span className="flex gap-1">
@@ -569,7 +569,7 @@ export default function ReputationPage() {
             <div className={`shrink-0 flex items-center justify-between border-b px-4 py-3 ${div}`}>
               <p className={`text-sm font-bold ${text}`}>Campagnes de collecte</p>
               <button onClick={() => setShowNewCamp(true)}
-                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.65rem] font-bold"
+                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
                 style={{ background: `${GOLD}15`, color: GOLD }}>
                 <Plus size={11} /> Nouvelle
               </button>
@@ -595,16 +595,16 @@ export default function ReputationPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <p className={`text-sm font-bold ${text}`}>{c.name}</p>
-                          <p className={`text-[0.62rem] mt-0.5 ${muted}`}>{CAMP_TYPES[c.type] ?? c.type}</p>
+                          <p className={`text-xs mt-0.5 ${muted}`}>{CAMP_TYPES[c.type] ?? c.type}</p>
                         </div>
                         <button onClick={() => void fetch("/api/reputation/campaigns", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: c.id, is_active: !c.is_active }) }).then(() => void loadCampaigns())}
-                          className={`flex items-center gap-1 text-[0.62rem] font-bold rounded-full px-2.5 py-1 ${c.is_active ? "bg-emerald-500/15 text-emerald-500" : `${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}`}>
+                          className={`flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1 ${c.is_active ? "bg-emerald-500/15 text-emerald-500" : `${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}`}>
                           {c.is_active ? <ToggleRight size={11} /> : <ToggleLeft size={11} />}
                           {c.is_active ? "Actif" : "Inactif"}
                         </button>
                       </div>
                       <p className={`text-xs italic ${muted}`}>&ldquo;{c.question}&rdquo;</p>
-                      <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[0.65rem] ${isDark ? "border-white/6 bg-white/3" : "border-black/6 bg-gray-50"}`}>
+                      <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${isDark ? "border-white/6 bg-white/3" : "border-black/6 bg-gray-50"}`}>
                         <span className={`flex-1 truncate font-mono ${muted}`}>{url}</span>
                         <button onClick={() => { void navigator.clipboard.writeText(url); toast("Lien copié", "success"); }}>
                           <Copy size={11} style={{ color: GOLD }} />
@@ -612,7 +612,7 @@ export default function ReputationPage() {
                         <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={11} style={{ color: GOLD }} /></a>
                       </div>
                       {c.auto_trigger && (
-                        <div className={`flex items-center gap-2 text-[0.62rem] px-3 py-2 rounded-xl ${isDark ? "bg-blue-500/8 border border-blue-500/20" : "bg-blue-50 border border-blue-200"}`}>
+                        <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-xl ${isDark ? "bg-blue-500/8 border border-blue-500/20" : "bg-blue-50 border border-blue-200"}`}>
                           <Zap size={10} className="text-blue-400" />
                           <span className="text-blue-400">Déclenchement automatique : {c.auto_trigger.replace(/_/g, " ")} · délai {c.delay_days}j</span>
                         </div>
@@ -641,7 +641,7 @@ export default function ReputationPage() {
                   </div>
                   <div className="flex-1">
                     <p className={`text-sm font-bold ${text} capitalize`}>{src}</p>
-                    <p className={`text-[0.62rem] ${muted}`}>{count} avis</p>
+                    <p className={`text-xs ${muted}`}>{count} avis</p>
                   </div>
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 </div>
@@ -650,7 +650,7 @@ export default function ReputationPage() {
             <div className={`rounded-2xl border p-4 ${isDark ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200 bg-amber-50"}`}>
               <div className="flex items-start gap-2">
                 <AlertCircle size={12} className="text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-[0.65rem] text-amber-500">
+                <p className="text-xs text-amber-500">
                   Les sources externes (Google, Trustpilot…) se connectent via leurs APIs officielles. Aucune intégration n&apos;est simulée. Les tokens API restent côté serveur.
                 </p>
               </div>
@@ -683,9 +683,9 @@ export default function ReputationPage() {
                           {r.sentiment && (() => { const s = SENTIMENT_CFG[r.sentiment!]; return <s.icon size={10} style={{ color: s.color }} />; })()}
                         </div>
                         <p className={`text-xs font-bold ${text}`}>{r.author_name ?? "Anonyme"}</p>
-                        <p className={`text-[0.65rem] mt-0.5 ${muted}`}>{r.message?.slice(0, 100) ?? "(sans commentaire)"}</p>
+                        <p className={`text-xs mt-0.5 ${muted}`}>{r.message?.slice(0, 100) ?? "(sans commentaire)"}</p>
                       </div>
-                      <span className="shrink-0 ml-auto text-[0.6rem] font-bold" style={{ color: GOLD }}>Répondre <ChevronRight size={9} className="inline" /></span>
+                      <span className="shrink-0 ml-auto text-xs font-bold" style={{ color: GOLD }}>Répondre <ChevronRight size={9} className="inline" /></span>
                     </button>
                   ))
                 )}
@@ -702,12 +702,12 @@ export default function ReputationPage() {
                   {/* Avis */}
                   <div className={`rounded-2xl border p-4 ${card}`}>
                     <div className="flex items-center gap-2 mb-2"><StarRow value={selReview.rating} />
-                      <span className="text-[0.58rem] font-bold rounded-full px-1.5 py-0.5" style={{ color: STATUS_CFG[selReview.status].color, background: `${STATUS_CFG[selReview.status].color}15` }}>
+                      <span className="text-[11px] font-bold rounded-full px-1.5 py-0.5" style={{ color: STATUS_CFG[selReview.status].color, background: `${STATUS_CFG[selReview.status].color}15` }}>
                         {STATUS_CFG[selReview.status].label}
                       </span>
                     </div>
                     <p className={`text-sm leading-relaxed ${text}`}>{selReview.message ?? "(sans commentaire)"}</p>
-                    <p className={`text-[0.6rem] mt-2 ${muted}`}>{fmtDate(selReview.created_at)} · {selReview.source}</p>
+                    <p className={`text-xs mt-2 ${muted}`}>{fmtDate(selReview.created_at)} · {selReview.source}</p>
                   </div>
 
                   {/* Éditeur réponse */}
@@ -719,13 +719,13 @@ export default function ReputationPage() {
                     {/* IA */}
                     <div className="flex gap-2">
                       <select value={aiTone} onChange={e => setAiTone(e.target.value)}
-                        className={`flex-1 rounded-xl border px-2.5 py-2 text-[0.65rem] outline-none ${inp}`}>
+                        className={`flex-1 rounded-xl border px-2.5 py-2 text-xs outline-none ${inp}`}>
                         {[["professionnel","Professionnel"],["chaleureux","Chaleureux"],["court","Plus court"],["reformuler","Reformuler"]].map(([k,l]) => (
                           <option key={k} value={k}>{l}</option>
                         ))}
                       </select>
                       <button onClick={() => void genAiReply()} disabled={aiReplyLoad}
-                        className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.65rem] font-bold disabled:opacity-40"
+                        className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold disabled:opacity-40"
                         style={{ background: `${GOLD}15`, color: GOLD }}>
                         {aiReplyLoad ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
                         IA
@@ -746,7 +746,7 @@ export default function ReputationPage() {
                     {selReview.provider && (
                       <div className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${isDark ? "border-blue-500/20 bg-blue-500/5" : "border-blue-200 bg-blue-50"}`}>
                         <AlertCircle size={10} className="text-blue-400 shrink-0" />
-                        <p className="text-[0.62rem] text-blue-400">
+                        <p className="text-xs text-blue-400">
                           Avis provenant de {selReview.provider}. La publication sur leur plateforme nécessite une API connectée.
                         </p>
                       </div>
@@ -764,7 +764,7 @@ export default function ReputationPage() {
                         { label: "Signaler",    icon: Flag,      action: () => void updateReview(selReview.id, { status: "flagged"        }) },
                       ].map(a => (
                         <button key={a.label} onClick={a.action}
-                          className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[0.65rem] font-semibold ${card} ${muted} hover:opacity-70`}>
+                          className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${card} ${muted} hover:opacity-70`}>
                           <a.icon size={11} /> {a.label}
                         </button>
                       ))}
@@ -785,11 +785,11 @@ export default function ReputationPage() {
                         <div className="space-y-2">
                           <div className={`rounded-xl border px-3 py-2 ${isDark ? "border-white/6 bg-white/3" : "border-black/6 bg-gray-50"}`}>
                             <p className={`text-xs leading-relaxed ${text}`}>&ldquo;{socialPost.quote}&rdquo;</p>
-                            <p className={`text-[0.65rem] mt-2 ${muted}`}>{socialPost.caption}</p>
-                            <p className="text-[0.6rem] mt-1" style={{ color: GOLD }}>#{socialPost.hashtags.join(" #")}</p>
+                            <p className={`text-xs mt-2 ${muted}`}>{socialPost.caption}</p>
+                            <p className="text-xs mt-1" style={{ color: GOLD }}>#{socialPost.hashtags.join(" #")}</p>
                           </div>
                           <button onClick={() => setTab("apercu")}
-                            className={`flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[0.65rem] font-bold border ${card} ${text}`}>
+                            className={`flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold border ${card} ${text}`}>
                             <ArrowRight size={11} /> Aller dans Réseaux Sociaux
                           </button>
                         </div>
@@ -808,7 +808,7 @@ export default function ReputationPage() {
             <div className={`shrink-0 flex items-center justify-between border-b px-4 py-3 ${div}`}>
               <p className={`text-sm font-bold ${text}`}>Widgets d&apos;avis</p>
               <button onClick={() => setShowNewWidget(true)}
-                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.65rem] font-bold"
+                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
                 style={{ background: `${GOLD}15`, color: GOLD }}>
                 <Plus size={11} /> Nouveau
               </button>
@@ -834,23 +834,23 @@ export default function ReputationPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className={`text-sm font-bold ${text}`}>{w.name}</p>
-                          <p className={`text-[0.62rem] ${muted}`}>{WIDGET_TYPES[w.widget_type] ?? w.widget_type} · {w.view_count} vues</p>
+                          <p className={`text-xs ${muted}`}>{WIDGET_TYPES[w.widget_type] ?? w.widget_type} · {w.view_count} vues</p>
                         </div>
-                        <span className={`text-[0.6rem] font-bold rounded-full px-2 py-0.5 ${w.is_active ? "bg-emerald-500/15 text-emerald-500" : `${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}`}>
+                        <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${w.is_active ? "bg-emerald-500/15 text-emerald-500" : `${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}`}>
                           {w.is_active ? "Actif" : "Inactif"}
                         </span>
                       </div>
                       <div>
-                        <p className={`text-[0.6rem] font-semibold mb-1 ${muted}`}>Code d&apos;intégration</p>
+                        <p className={`text-xs font-semibold mb-1 ${muted}`}>Code d&apos;intégration</p>
                         <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-white/6 bg-white/3" : "border-black/6 bg-gray-50"}`}>
-                          <code className={`flex-1 truncate text-[0.6rem] font-mono ${muted}`}>{embedCode}</code>
+                          <code className={`flex-1 truncate text-xs font-mono ${muted}`}>{embedCode}</code>
                           <button onClick={() => { void navigator.clipboard.writeText(embedCode); toast("Code copié", "success"); }}>
                             <Copy size={11} style={{ color: GOLD }} />
                           </button>
                         </div>
                       </div>
                       <button onClick={() => void fetch(`/api/reputation/widgets?id=${w.id}`, { method: "DELETE" }).then(() => void loadWidgets())}
-                        className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[0.62rem] font-semibold ${card} ${muted} hover:text-red-500`}>
+                        className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-semibold ${card} ${muted} hover:text-red-500`}>
                         <Trash2 size={10} /> Supprimer
                       </button>
                     </div>
@@ -868,13 +868,13 @@ export default function ReputationPage() {
             <div className="flex gap-1.5">
               {[7, 30, 90].map(d => (
                 <button key={d} onClick={() => setAnalyPeriod(d)}
-                  className="rounded-xl border px-3 py-1.5 text-[0.65rem] font-bold transition"
+                  className="rounded-xl border px-3 py-1.5 text-xs font-bold transition"
                   style={analyPeriod === d ? { background: `${GOLD}15`, borderColor: `${GOLD}30`, color: GOLD }
                     : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)", color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)" }}>
                   {d}j
                 </button>
               ))}
-              <button onClick={() => void loadAnalytics()} className={`ml-auto flex items-center gap-1 rounded-xl border px-2.5 py-1.5 text-[0.62rem] ${card} ${muted}`}>
+              <button onClick={() => void loadAnalytics()} className={`ml-auto flex items-center gap-1 rounded-xl border px-2.5 py-1.5 text-xs ${card} ${muted}`}>
                 <RefreshCw size={10} /> Actualiser
               </button>
             </div>
@@ -898,7 +898,7 @@ export default function ReputationPage() {
                   ].map(k => (
                     <div key={k.label} className={`rounded-2xl border p-4 ${card}`}>
                       <p className="text-xl font-black tabular-nums" style={{ color: k.color }}>{k.value}</p>
-                      <p className={`text-[0.65rem] mt-0.5 ${muted}`}>{k.label}</p>
+                      <p className={`text-xs mt-0.5 ${muted}`}>{k.label}</p>
                     </div>
                   ))}
                 </div>
@@ -916,7 +916,7 @@ export default function ReputationPage() {
                           <div className={`flex-1 h-1.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"}`}>
                             <div className="h-full rounded-full" style={{ width: `${pct}%`, background: GOLD }} />
                           </div>
-                          <span className={`w-8 text-right text-[0.62rem] font-bold tabular-nums ${text}`}>{count}</span>
+                          <span className={`w-8 text-right text-xs font-bold tabular-nums ${text}`}>{count}</span>
                         </div>
                       );
                     })}
@@ -935,7 +935,7 @@ export default function ReputationPage() {
                         return (
                           <div key={s} className="flex-1 text-center">
                             <p className="text-lg font-black" style={{ color: cfg.color }}>{pct}%</p>
-                            <p className={`text-[0.58rem] ${muted}`}>{cfg.label}</p>
+                            <p className={`text-[11px] ${muted}`}>{cfg.label}</p>
                           </div>
                         );
                       })}
@@ -950,11 +950,11 @@ export default function ReputationPage() {
                     <div className="space-y-2">
                       {analytics.themes.slice(0, 6).map(t => (
                         <div key={t.theme} className="flex items-center gap-3">
-                          <span className={`text-[0.65rem] font-semibold w-20 shrink-0 ${text}`}>{t.theme}</span>
+                          <span className={`text-xs font-semibold w-20 shrink-0 ${text}`}>{t.theme}</span>
                           <div className={`flex-1 h-1.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"}`}>
                             <div className="h-full rounded-full" style={{ width: `${Math.round((t.count / analytics.themes[0].count) * 100)}%`, background: `${GOLD}80` }} />
                           </div>
-                          <span className={`w-6 text-right text-[0.62rem] tabular-nums ${muted}`}>{t.count}</span>
+                          <span className={`w-6 text-right text-xs tabular-nums ${muted}`}>{t.count}</span>
                         </div>
                       ))}
                     </div>
@@ -1002,7 +1002,7 @@ export default function ReputationPage() {
               <p className={`text-xs ${muted}`}>La connexion à des plateformes tierces utilise exclusivement leurs APIs officielles. Les clés API sont stockées côté serveur et ne sont jamais retournées au navigateur.</p>
               <div className={`mt-2 flex items-start gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200 bg-amber-50"}`}>
                 <AlertCircle size={11} className="text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-[0.62rem] text-amber-500">DJAMA AI ne génère jamais de faux avis. Les données de démonstration sont identifiées comme telles.</p>
+                <p className="text-xs text-amber-500">DJAMA AI ne génère jamais de faux avis. Les données de démonstration sont identifiées comme telles.</p>
               </div>
             </div>
             <div className={`rounded-2xl border p-4 space-y-2 ${card}`}>
@@ -1016,7 +1016,7 @@ export default function ReputationPage() {
                 ].map(s => (
                   <div key={s} className="flex items-center gap-2">
                     <CheckCircle2 size={11} className="text-emerald-400 shrink-0" />
-                    <p className={`text-[0.65rem] ${muted}`}>{s}</p>
+                    <p className={`text-xs ${muted}`}>{s}</p>
                   </div>
                 ))}
               </div>
@@ -1038,19 +1038,19 @@ export default function ReputationPage() {
               </div>
               <div className="p-5 space-y-3">
                 <div>
-                  <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>Nom *</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Nom *</label>
                   <input value={newCamp.name} onChange={e => setNewCamp(p => ({ ...p, name: e.target.value }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="Campagne après achat" />
                 </div>
                 <div>
-                  <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>Type</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Type</label>
                   <select value={newCamp.type} onChange={e => setNewCamp(p => ({ ...p, type: e.target.value }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}>
                     {Object.entries(CAMP_TYPES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>Question</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Question</label>
                   <input value={newCamp.question} onChange={e => setNewCamp(p => ({ ...p, question: e.target.value }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}
                     placeholder="Comment s'était passée votre expérience ?" />
@@ -1061,7 +1061,7 @@ export default function ReputationPage() {
                       <input type="checkbox" checked={newCamp[k as "collect_name"|"collect_email"]}
                         onChange={e => setNewCamp(p => ({ ...p, [k]: e.target.checked }))}
                         className="rounded accent-amber-400" />
-                      <span className={`text-[0.65rem] ${muted}`}>{l}</span>
+                      <span className={`text-xs ${muted}`}>{l}</span>
                     </label>
                   ))}
                 </div>
@@ -1093,16 +1093,16 @@ export default function ReputationPage() {
               </div>
               <div className="p-5 space-y-3">
                 <div>
-                  <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>Nom *</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Nom *</label>
                   <input value={newWidget.name} onChange={e => setNewWidget(p => ({ ...p, name: e.target.value }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="Widget page d'accueil" />
                 </div>
                 <div>
-                  <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>Type</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Type</label>
                   <div className="grid grid-cols-3 gap-2">
                     {Object.entries(WIDGET_TYPES).map(([k, l]) => (
                       <button key={k} onClick={() => setNewWidget(p => ({ ...p, widget_type: k }))}
-                        className="rounded-xl border px-2 py-2.5 text-[0.65rem] font-semibold transition"
+                        className="rounded-xl border px-2 py-2.5 text-xs font-semibold transition"
                         style={newWidget.widget_type === k ? { background: `${GOLD}15`, borderColor: `${GOLD}30`, color: GOLD }
                           : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)", color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)" }}>
                         {l}

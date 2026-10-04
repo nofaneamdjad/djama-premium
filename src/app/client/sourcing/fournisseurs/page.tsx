@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -211,7 +211,7 @@ function TerritoireDropdown({
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[0.85rem] outline-none transition text-left"
+        className="w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm outline-none transition text-left"
         style={{
           background: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.80)",
           border: `1px solid ${open ? "rgba(96,165,250,0.6)" : isDark ? "rgba(96,165,250,0.25)" : "rgba(96,165,250,0.35)"}`,
@@ -251,7 +251,7 @@ function TerritoireDropdown({
               <div key={g.groupe}>
                 {/* Group header */}
                 <div
-                  className="px-3.5 py-2 text-[0.62rem] font-black uppercase tracking-widest"
+                  className="px-3.5 py-2 text-xs font-black uppercase tracking-widest"
                   style={{
                     color: "rgba(96,165,250,0.65)",
                     background: isDark ? "rgba(96,165,250,0.04)" : "rgba(96,165,250,0.05)",
@@ -266,7 +266,7 @@ function TerritoireDropdown({
                     key={opt}
                     type="button"
                     onClick={() => { onChange(opt); setOpen(false); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[0.83rem] transition-colors"
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors"
                     style={{
                       background: value === opt ? "rgba(96,165,250,0.10)" : "transparent",
                       color: value === opt
@@ -328,7 +328,7 @@ function ConfidenceRing({ value, size = 48 }: { value: number; size?: number }) 
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="4"
           strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
       </svg>
-      <span className="absolute text-[0.6rem] font-black text-white">{value}%</span>
+      <span className="absolute text-xs font-black text-white">{value}%</span>
     </div>
   );
 }
@@ -355,7 +355,7 @@ function StepIndicator({ current }: { current: number }) {
                 }}>
                 {done ? <Check size={13} /> : <Icon size={13} />}
               </div>
-              <span className="text-[0.6rem] font-semibold hidden sm:block"
+              <span className="text-xs font-semibold hidden sm:block"
                 style={{ color: active ? blue : done ? (isDark ? "rgba(255,255,255,0.55)" : "rgba(12,18,50,0.60)") : (isDark ? "rgba(255,255,255,0.25)" : "rgba(12,18,50,0.30)") }}>
                 {step.short}
               </span>
@@ -380,15 +380,15 @@ function Field({ label, value, onChange, placeholder = "", required = false, hin
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[0.72rem] font-semibold text-white/50 uppercase tracking-wider">
+      <label className="text-sm font-semibold text-white/50 uppercase tracking-wider">
         {label}{required && <span className="ml-1 text-blue-400">*</span>}
       </label>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="rounded-xl px-3.5 py-2.5 text-[0.85rem] text-white/85 placeholder:text-white/22 outline-none transition"
+        className="rounded-xl px-3.5 py-2.5 text-sm text-white/85 placeholder:text-white/22 outline-none transition"
         style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(12,24,100,0.12)" }}
         onFocus={e => (e.target.style.borderColor = "rgba(96,165,250,0.5)")}
         onBlur={e => (e.target.style.borderColor = "rgba(12,24,100,0.12)")} />
-      {hint && <p className="text-[0.67rem] text-white/30">{hint}</p>}
+      {hint && <p className="text-xs text-white/30">{hint}</p>}
     </div>
   );
 }
@@ -398,11 +398,11 @@ function SelectField({ label, value, onChange, options, required }: {
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[0.72rem] font-semibold text-white/50 uppercase tracking-wider">
+      <label className="text-sm font-semibold text-white/50 uppercase tracking-wider">
         {label}{required && <span className="ml-1 text-blue-400">*</span>}
       </label>
       <select value={value} onChange={e => onChange(e.target.value)}
-        className="rounded-xl px-3.5 py-2.5 text-[0.85rem] text-white/75 outline-none transition"
+        className="rounded-xl px-3.5 py-2.5 text-sm text-white/75 outline-none transition"
         style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(12,24,100,0.12)" }}>
         <option value="">Sélectionner...</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -588,14 +588,14 @@ export default function FournisseursPage() {
     <div className="space-y-5 max-w-2xl mx-auto">
       <div className="mb-6">
         <h2 className="text-[1.1rem] font-black text-white/88 mb-1">Décrivez votre besoin</h2>
-        <p className="text-[0.78rem] text-white/38">L'IA cherchera les meilleurs fournisseurs mondiaux pour vous.</p>
+        <p className="text-sm text-white/38">L'IA cherchera les meilleurs fournisseurs mondiaux pour vous.</p>
       </div>
 
       {searchError && (
         <div className="flex items-center gap-2.5 rounded-xl p-3"
           style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
           <AlertTriangle size={14} className="text-red-400 shrink-0" />
-          <p className="text-[0.78rem] text-red-300">{searchError}</p>
+          <p className="text-sm text-red-300">{searchError}</p>
         </div>
       )}
 
@@ -604,7 +604,7 @@ export default function FournisseursPage() {
         style={{ background: "rgba(96,165,250,0.04)", border: "1px solid rgba(96,165,250,0.18)" }}>
         <div className="flex items-center gap-2 mb-3">
           <Globe size={14} style={{ color: blue }} />
-          <p className="text-[0.72rem] font-semibold uppercase tracking-wider" style={{ color: blue }}>
+          <p className="text-sm font-semibold uppercase tracking-wider" style={{ color: blue }}>
             Votre pays / territoire de destination *
           </p>
         </div>
@@ -614,7 +614,7 @@ export default function FournisseursPage() {
           groups={PAYS_UTILISATEUR_GROUPS}
         />
         {request.pays_utilisateur && (
-          <p className="mt-2 text-[0.68rem] text-white/40">
+          <p className="mt-2 text-xs text-white/40">
             {request.pays_utilisateur === "Mayotte" && <span className="flex items-center gap-1"><AlertTriangle size={11} className="shrink-0 text-amber-400" />Mayotte : hors UE douanière — réglementation import spécifique (OCT)</span>}
             {(request.pays_utilisateur === "La Réunion" || request.pays_utilisateur === "Guadeloupe" || request.pays_utilisateur === "Martinique") && <span className="flex items-center gap-1"><Info size={11} className="shrink-0" />DROM : Octroi de mer à la place de la TVA, droits douane spécifiques</span>}
             {request.pays_utilisateur === "Guyane" && <span className="flex items-center gap-1"><Info size={11} className="shrink-0" />Guyane : pas de TVA, Octroi de mer, fret depuis Europe ou Brésil</span>}
@@ -644,7 +644,7 @@ export default function FournisseursPage() {
 
       {/* Qualité */}
       <Card>
-        <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider mb-3">Niveau de qualité</p>
+        <p className="text-sm font-semibold text-white/40 uppercase tracking-wider mb-3">Niveau de qualité</p>
         <div className="grid grid-cols-3 gap-2.5">
           {QUALITE_OPTIONS.map(q => (
             <button key={q.id} onClick={() => update("qualite")(q.id)}
@@ -653,10 +653,10 @@ export default function FournisseursPage() {
                 background: request.qualite === q.id ? "rgba(96,165,250,0.10)" : "rgba(255,255,255,0.03)",
                 border: `1px solid ${request.qualite === q.id ? "rgba(96,165,250,0.35)" : "rgba(255,255,255,0.07)"}`,
               }}>
-              <span className="text-[0.82rem] font-bold" style={{ color: request.qualite === q.id ? blue : "rgba(255,255,255,0.65)" }}>
+              <span className="text-sm font-bold" style={{ color: request.qualite === q.id ? blue : "rgba(255,255,255,0.65)" }}>
                 {q.label}
               </span>
-              <span className="text-[0.68rem] text-white/35">{q.desc}</span>
+              <span className="text-xs text-white/35">{q.desc}</span>
             </button>
           ))}
         </div>
@@ -664,7 +664,7 @@ export default function FournisseursPage() {
 
       {/* Type */}
       <Card>
-        <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider mb-3">Type de produit</p>
+        <p className="text-sm font-semibold text-white/40 uppercase tracking-wider mb-3">Type de produit</p>
         <div className="grid grid-cols-3 gap-2.5">
           {TYPE_OPTIONS.map(t => (
             <button key={t.id} onClick={() => update("type_produit")(t.id)}
@@ -673,10 +673,10 @@ export default function FournisseursPage() {
                 background: request.type_produit === t.id ? "rgba(96,165,250,0.10)" : "rgba(255,255,255,0.03)",
                 border: `1px solid ${request.type_produit === t.id ? "rgba(96,165,250,0.35)" : "rgba(255,255,255,0.07)"}`,
               }}>
-              <span className="text-[0.78rem] font-bold leading-tight" style={{ color: request.type_produit === t.id ? blue : "rgba(255,255,255,0.65)" }}>
+              <span className="text-sm font-bold leading-tight" style={{ color: request.type_produit === t.id ? blue : "rgba(255,255,255,0.65)" }}>
                 {t.label}
               </span>
-              <span className="text-[0.65rem] text-white/35">{t.desc}</span>
+              <span className="text-xs text-white/35">{t.desc}</span>
             </button>
           ))}
         </div>
@@ -684,10 +684,10 @@ export default function FournisseursPage() {
 
       {/* Critères spéciaux */}
       <Card>
-        <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider mb-2">Critères spéciaux (optionnel)</p>
+        <p className="text-sm font-semibold text-white/40 uppercase tracking-wider mb-2">Critères spéciaux (optionnel)</p>
         <textarea value={request.criteres_speciaux} onChange={e => update("criteres_speciaux")(e.target.value)}
           placeholder="Certifications requises, matériaux spécifiques, conditions particulières..."
-          rows={2} className="w-full rounded-xl px-3.5 py-2.5 text-[0.85rem] text-white/75 placeholder:text-white/22 outline-none resize-none"
+          rows={2} className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white/75 placeholder:text-white/22 outline-none resize-none"
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)" }}
           onFocus={e => (e.target.style.borderColor = "rgba(96,165,250,0.5)")}
           onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.09)")} />
@@ -697,7 +697,7 @@ export default function FournisseursPage() {
       <div className="flex items-start gap-2.5 rounded-xl p-3"
         style={{ background: "rgba(96,165,250,0.05)", border: "1px solid rgba(96,165,250,0.12)" }}>
         <Info size={13} className="mt-0.5 shrink-0" style={{ color: blue }} />
-        <p className="text-[0.72rem] text-white/45">
+        <p className="text-sm text-white/45">
           L'IA recherche sur <span className="text-white/65 font-semibold">Alibaba, Made-in-China, Global Sources, Europages, IndiaMART</span> et d'autres plateformes pour trouver de vrais fournisseurs actuels.
         </p>
       </div>
@@ -716,7 +716,7 @@ export default function FournisseursPage() {
       </div>
       <div className="text-center">
         <p className="text-[1rem] font-black text-white/80">Recherche en cours…</p>
-        <p className="mt-1.5 text-[0.78rem] text-white/40 max-w-xs">
+        <p className="mt-1.5 text-sm text-white/40 max-w-xs">
           L'IA analyse les plateformes mondiales pour trouver les meilleurs fournisseurs de <strong className="text-white/60">{request.produit}</strong>
         </p>
       </div>
@@ -725,7 +725,7 @@ export default function FournisseursPage() {
           <motion.span key={s}
             initial={{ opacity: 0.2 }} animate={{ opacity: [0.2, 0.8, 0.2] }}
             transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3 }}
-            className="rounded-full px-2.5 py-1 text-[0.65rem] font-semibold"
+            className="rounded-full px-2.5 py-1 text-xs font-semibold"
             style={{ background: "rgba(96,165,250,0.07)", border: "1px solid rgba(96,165,250,0.15)", color: blue }}>
             {s}
           </motion.span>
@@ -744,10 +744,10 @@ export default function FournisseursPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-[1.1rem] font-black text-white/88 mb-0.5">Fournisseurs recommandés</h2>
-            <p className="text-[0.75rem] text-white/38">{suppliers.length} fournisseurs • sources : {sources_recherchees.join(", ")}</p>
+            <p className="text-sm text-white/38">{suppliers.length} fournisseurs • sources : {sources_recherchees.join(", ")}</p>
           </div>
           <button onClick={() => { setSearchResult(null); setStep(1); }}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.72rem] text-white/35 transition hover:text-white/55"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm text-white/35 transition hover:text-white/55"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
             <RefreshCw size={11} /> Nouvelle recherche
           </button>
@@ -762,8 +762,8 @@ export default function FournisseursPage() {
                 <Sparkles size={14} style={{ color: blue }} />
               </div>
               <div>
-                <p className="text-[0.7rem] font-semibold text-blue-400/70 uppercase tracking-wider mb-1">Recommandation IA</p>
-                <p className="text-[0.82rem] text-white/70 leading-relaxed">{recommandation}</p>
+                <p className="text-xs font-semibold text-blue-400/70 uppercase tracking-wider mb-1">Recommandation IA</p>
+                <p className="text-sm text-white/70 leading-relaxed">{recommandation}</p>
               </div>
             </div>
           </Card>
@@ -772,22 +772,22 @@ export default function FournisseursPage() {
         {/* Pays recommandés */}
         {pays_recommandes.length > 0 && (
           <div>
-            <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider mb-2.5">Pays les plus adaptés</p>
+            <p className="text-sm font-semibold text-white/40 uppercase tracking-wider mb-2.5">Pays les plus adaptés</p>
             <div className="grid sm:grid-cols-3 gap-3">
               {pays_recommandes.slice(0, 3).map((p, i) => (
                 <Card key={i}>
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="text-[0.88rem] font-black text-white/85">{p.pays}</p>
-                      <p className="text-[0.65rem] text-white/35 mt-0.5">{p.prix_moyen}</p>
+                      <p className="text-sm font-black text-white/85">{p.pays}</p>
+                      <p className="text-xs text-white/35 mt-0.5">{p.prix_moyen}</p>
                     </div>
                     <div className="flex items-center gap-1 rounded-full px-2 py-0.5"
                       style={{ background: `rgba(52,211,153,${0.05 + i * 0.02})`, border: "1px solid rgba(52,211,153,0.15)" }}>
-                      <span className="text-[0.68rem] font-black" style={{ color: emerald }}>{p.score}%</span>
+                      <span className="text-xs font-black" style={{ color: emerald }}>{p.score}%</span>
                     </div>
                   </div>
-                  <p className="text-[0.72rem] text-white/45 leading-relaxed">{p.raison}</p>
-                  <p className="mt-1.5 text-[0.65rem] text-white/30">Délai total : {p.delai_moyen}</p>
+                  <p className="text-sm text-white/45 leading-relaxed">{p.raison}</p>
+                  <p className="mt-1.5 text-xs text-white/30">Délai total : {p.delai_moyen}</p>
                 </Card>
               ))}
             </div>
@@ -797,22 +797,22 @@ export default function FournisseursPage() {
         {/* Supplier cards */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider">Fournisseurs identifiés</p>
+            <p className="text-sm font-semibold text-white/40 uppercase tracking-wider">Fournisseurs identifiés</p>
             <div className="flex items-center gap-2">
               {selectedSupplierId && (
-                <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.65rem] font-black"
+                <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black"
                   style={{ background: "rgba(52,211,153,0.12)", color: emerald, border: "1px solid rgba(52,211,153,0.25)" }}>
                   <BadgeCheck size={11} /> 1 sélectionné
                 </span>
               )}
               <div className="flex rounded-xl overflow-hidden border border-white/[0.07]">
                 <button onClick={() => setAnalyticsView(false)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-[0.65rem] font-semibold transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold transition-all"
                   style={{ background: !analyticsView ? "rgba(255,255,255,0.07)" : "transparent", color: !analyticsView ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.3)" }}>
                   <List size={11}/> Liste
                 </button>
                 <button onClick={() => setAnalyticsView(true)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-[0.65rem] font-semibold transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold transition-all"
                   style={{ background: analyticsView ? "rgba(96,165,250,0.12)" : "transparent", color: analyticsView ? blue : "rgba(255,255,255,0.3)" }}>
                   <LineChart size={11}/> Analytics
                 </button>
@@ -824,7 +824,7 @@ export default function FournisseursPage() {
           {analyticsView && (
             <div className="rounded-2xl p-4 space-y-3"
               style={{ background: "rgba(96,165,250,0.04)", border: "1px solid rgba(96,165,250,0.15)" }}>
-              <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/35">Performance comparative</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-white/35">Performance comparative</p>
               {[...suppliers].sort((a, b) => b.niveau_confiance - a.niveau_confiance).map((s, i) => {
                 const suppId = s.id || String(suppliers.indexOf(s));
                 const isSelected = selectedSupplierId === suppId;
@@ -833,10 +833,10 @@ export default function FournisseursPage() {
                 return (
                   <div key={suppId} className="flex items-center gap-3 cursor-pointer"
                     onClick={() => setSelectedSupplierId(prev => prev === suppId ? null : suppId)}>
-                    <span className="w-6 text-center text-[0.75rem]">{rank}</span>
+                    <span className="w-6 text-center text-sm">{rank}</span>
                     <div className="w-28 shrink-0">
-                      <p className="text-[0.72rem] font-semibold text-white/75 truncate">{s.nom}</p>
-                      <p className="text-[0.6rem] text-white/35">{s.pays}</p>
+                      <p className="text-sm font-semibold text-white/75 truncate">{s.nom}</p>
+                      <p className="text-xs text-white/35">{s.pays}</p>
                     </div>
                     <div className="flex-1 h-2 rounded-full overflow-hidden bg-white/[0.06]">
                       <motion.div className="h-full rounded-full"
@@ -845,7 +845,7 @@ export default function FournisseursPage() {
                         transition={{ duration: 0.7, ease: "easeOut", delay: i * 0.08 }}
                         style={{ background: isSelected ? `linear-gradient(90deg,${emerald},${blue})` : `linear-gradient(90deg,${blue}80,${indigo}80)` }} />
                     </div>
-                    <span className="w-10 text-right text-[0.72rem] font-black shrink-0"
+                    <span className="w-10 text-right text-sm font-black shrink-0"
                       style={{ color: score >= 80 ? emerald : score >= 70 ? amber : "rgba(255,255,255,0.45)" }}>
                       {score}%
                     </span>
@@ -853,7 +853,7 @@ export default function FournisseursPage() {
                   </div>
                 );
               })}
-              <p className="text-[0.6rem] text-white/25 pt-1">Cliquez sur un fournisseur pour le sélectionner</p>
+              <p className="text-xs text-white/25 pt-1">Cliquez sur un fournisseur pour le sélectionner</p>
             </div>
           )}
           {suppliers.map((s, i) => {
@@ -888,7 +888,7 @@ export default function FournisseursPage() {
                     <div className="flex items-center gap-2 rounded-xl px-3 py-2 mb-3"
                       style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
                       <BadgeCheck size={14} style={{ color: emerald }} />
-                      <span className="text-[0.72rem] font-black" style={{ color: emerald }}>
+                      <span className="text-sm font-black" style={{ color: emerald }}>
                         Fournisseur sélectionné — les documents seront générés pour ce fournisseur
                       </span>
                     </div>
@@ -903,18 +903,18 @@ export default function FournisseursPage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="text-[0.9rem] font-black text-white/88 truncate">{s.nom}</p>
-                        <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.62rem] font-semibold text-white/50"
+                        <p className="text-sm font-black text-white/88 truncate">{s.nom}</p>
+                        <span className="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold text-white/50"
                           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
                           {s.plateforme}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <span className="flex items-center gap-1 text-[0.72rem] text-white/50">
+                        <span className="flex items-center gap-1 text-sm text-white/50">
                           <Flag size={10} /> {s.pays}{s.ville ? `, ${s.ville}` : ""}
                         </span>
                         {s.certifications?.map(c => (
-                          <span key={c} className="text-[0.62rem] font-semibold rounded px-1.5 py-0.5"
+                          <span key={c} className="text-xs font-semibold rounded px-1.5 py-0.5"
                             style={{ background: "rgba(52,211,153,0.07)", color: "rgba(52,211,153,0.7)" }}>
                             {c}
                           </span>
@@ -931,8 +931,8 @@ export default function FournisseursPage() {
                         ].map(m => (
                           <div key={m.label} className="rounded-lg px-2.5 py-1.5"
                             style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                            <p className="text-[0.58rem] text-white/35 uppercase">{m.label}</p>
-                            <p className="text-[0.75rem] font-bold text-white/75 mt-0.5">{m.val}</p>
+                            <p className="text-[11px] text-white/35 uppercase">{m.label}</p>
+                            <p className="text-sm font-bold text-white/75 mt-0.5">{m.val}</p>
                           </div>
                         ))}
                       </div>
@@ -944,7 +944,7 @@ export default function FournisseursPage() {
                             {s.avantages.slice(0, 2).map((a, j) => (
                               <div key={j} className="flex items-center gap-1.5">
                                 <CheckCircle2 size={10} style={{ color: emerald }} className="shrink-0" />
-                                <span className="text-[0.7rem] text-white/55">{a}</span>
+                                <span className="text-xs text-white/55">{a}</span>
                               </div>
                             ))}
                           </div>
@@ -954,7 +954,7 @@ export default function FournisseursPage() {
                             {s.inconvenients.slice(0, 2).map((c, j) => (
                               <div key={j} className="flex items-center gap-1.5">
                                 <AlertTriangle size={10} className="text-amber-400 shrink-0" />
-                                <span className="text-[0.7rem] text-white/45">{c}</span>
+                                <span className="text-xs text-white/45">{c}</span>
                               </div>
                             ))}
                           </div>
@@ -969,32 +969,32 @@ export default function FournisseursPage() {
                         <div className="flex items-center gap-2">
                           {s.url && (
                             <a href={s.url} target="_blank" rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold transition hover:scale-105"
+                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition hover:scale-105"
                               style={{ background: "rgba(96,165,250,0.1)", color: blue, border: "1px solid rgba(96,165,250,0.22)" }}>
                               <ExternalLink size={11} /> {s.plateforme}
                             </a>
                           )}
                           {s.site_web && (
                             <a href={s.site_web} target="_blank" rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold transition hover:scale-105"
+                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition hover:scale-105"
                               style={{ background: "rgba(139,92,246,0.1)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.22)" }}>
                               <Globe size={11} /> Site web
                             </a>
                           )}
                           <a href={waLink} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold transition hover:scale-105"
+                            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition hover:scale-105"
                             style={{ background: "rgba(37,211,102,0.1)", color: "#25d366", border: "1px solid rgba(37,211,102,0.22)" }}>
                             <MessageCircle size={11} /> WhatsApp
                           </a>
                           <a href={`mailto:?subject=${mailSubject}&body=${mailBody}`}
-                            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold transition hover:scale-105"
+                            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition hover:scale-105"
                             style={{ background: "rgba(251,191,36,0.08)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.18)" }}>
                             <Mail size={11} /> Email RFQ
                           </a>
                         </div>
 
                         {/* Upload contrat */}
-                        <label className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.68rem] font-semibold cursor-pointer transition hover:scale-105"
+                        <label className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold cursor-pointer transition hover:scale-105"
                           style={supplierContracts[suppId]
                             ? { background: "rgba(52,211,153,0.08)", color: emerald, border: "1px solid rgba(52,211,153,0.22)" }
                             : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.38)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -1010,7 +1010,7 @@ export default function FournisseursPage() {
                         {/* Bouton sélection */}
                         <button
                           onClick={() => setSelectedSupplierId(isSelected ? null : suppId)}
-                          className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.75rem] font-black transition-all hover:scale-105 active:scale-95"
+                          className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-black transition-all hover:scale-105 active:scale-95"
                           style={isSelected ? {
                             background: "rgba(52,211,153,0.18)",
                             color: emerald,
@@ -1037,7 +1037,7 @@ export default function FournisseursPage() {
         {/* Analyse marché */}
         {analyse_marche && (
           <Card>
-            <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider mb-3">Intelligence commerciale</p>
+            <p className="text-sm font-semibold text-white/40 uppercase tracking-wider mb-3">Intelligence commerciale</p>
             <div className="grid sm:grid-cols-3 gap-3">
               {[
                 { label: "Prix marché France", val: analyse_marche.prix_marche_fr },
@@ -1046,13 +1046,13 @@ export default function FournisseursPage() {
               ].map(m => (
                 <div key={m.label} className="rounded-xl p-3 text-center"
                   style={{ background: "rgba(255,255,255,0.03)" }}>
-                  <p className="text-[0.62rem] text-white/35 uppercase mb-1">{m.label}</p>
-                  <p className="text-[0.9rem] font-black text-white/80">{m.val}</p>
+                  <p className="text-xs text-white/35 uppercase mb-1">{m.label}</p>
+                  <p className="text-sm font-black text-white/80">{m.val}</p>
                 </div>
               ))}
             </div>
             {analyse_marche.tendances && (
-              <p className="mt-3 text-[0.75rem] text-white/50 leading-relaxed border-t border-white/[0.06] pt-3">
+              <p className="mt-3 text-sm text-white/50 leading-relaxed border-t border-white/[0.06] pt-3">
                 {analyse_marche.tendances}
               </p>
             )}
@@ -1062,12 +1062,12 @@ export default function FournisseursPage() {
         {/* Risques */}
         {risques_globaux.length > 0 && (
           <Card>
-            <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider mb-3">Points de vigilance</p>
+            <p className="text-sm font-semibold text-white/40 uppercase tracking-wider mb-3">Points de vigilance</p>
             <div className="space-y-1.5">
               {risques_globaux.map((r, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <Shield size={12} className="mt-0.5 shrink-0 text-amber-400" />
-                  <p className="text-[0.78rem] text-white/60">{r}</p>
+                  <p className="text-sm text-white/60">{r}</p>
                 </div>
               ))}
             </div>
@@ -1085,7 +1085,7 @@ export default function FournisseursPage() {
       <div className="space-y-5 max-w-2xl mx-auto">
         <div className="mb-6">
           <h2 className="text-[1.1rem] font-black text-white/88 mb-1">Analyse logistique</h2>
-          <p className="text-[0.78rem] text-white/38">Coûts de transport, douanes et TVA estimés.</p>
+          <p className="text-sm text-white/38">Coûts de transport, douanes et TVA estimés.</p>
         </div>
 
         {/* Fret aérien */}
@@ -1097,17 +1097,17 @@ export default function FournisseursPage() {
                 <Zap size={16} style={{ color: blue }} />
               </div>
               <div>
-                <p className="text-[0.88rem] font-black text-white/85">Fret aérien</p>
-                <p className="text-[0.65rem] text-white/35">{logistique.fret_aerien.delai}</p>
+                <p className="text-sm font-black text-white/85">Fret aérien</p>
+                <p className="text-xs text-white/35">{logistique.fret_aerien.delai}</p>
               </div>
               <div className="ml-auto">
-                <p className="text-[0.85rem] font-black text-white/80">{logistique.fret_aerien.prix_estime}</p>
+                <p className="text-sm font-black text-white/80">{logistique.fret_aerien.prix_estime}</p>
               </div>
             </div>
-            <p className="text-[0.72rem] text-white/45 mb-2">{logistique.fret_aerien.seuil_recommande}</p>
+            <p className="text-sm text-white/45 mb-2">{logistique.fret_aerien.seuil_recommande}</p>
             <div className="flex flex-wrap gap-1.5">
               {logistique.fret_aerien.transporteurs?.map(t => (
-                <span key={t} className="rounded-full px-2.5 py-1 text-[0.65rem] font-semibold text-white/50"
+                <span key={t} className="rounded-full px-2.5 py-1 text-xs font-semibold text-white/50"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   {t}
                 </span>
@@ -1125,17 +1125,17 @@ export default function FournisseursPage() {
                 <Truck size={16} style={{ color: emerald }} />
               </div>
               <div>
-                <p className="text-[0.88rem] font-black text-white/85">Fret maritime</p>
-                <p className="text-[0.65rem] text-white/35">{logistique.fret_maritime.delai}</p>
+                <p className="text-sm font-black text-white/85">Fret maritime</p>
+                <p className="text-xs text-white/35">{logistique.fret_maritime.delai}</p>
               </div>
               <div className="ml-auto">
-                <p className="text-[0.85rem] font-black text-white/80">{logistique.fret_maritime.prix_estime}</p>
+                <p className="text-sm font-black text-white/80">{logistique.fret_maritime.prix_estime}</p>
               </div>
             </div>
-            <p className="text-[0.72rem] text-white/45 mb-2">{logistique.fret_maritime.seuil_recommande}</p>
+            <p className="text-sm text-white/45 mb-2">{logistique.fret_maritime.seuil_recommande}</p>
             <div className="flex flex-wrap gap-1.5">
               {logistique.fret_maritime.transporteurs?.map(t => (
-                <span key={t} className="rounded-full px-2.5 py-1 text-[0.65rem] font-semibold text-white/50"
+                <span key={t} className="rounded-full px-2.5 py-1 text-xs font-semibold text-white/50"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   {t}
                 </span>
@@ -1147,27 +1147,27 @@ export default function FournisseursPage() {
         {/* Douanes */}
         {logistique.douanes && (
           <Card>
-            <p className="text-[0.72rem] font-semibold text-white/40 uppercase tracking-wider mb-3">Douanes & Fiscalité</p>
+            <p className="text-sm font-semibold text-white/40 uppercase tracking-wider mb-3">Douanes & Fiscalité</p>
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.03)" }}>
-                <p className="text-[0.6rem] text-white/35 uppercase mb-1">Droits douane</p>
-                <p className="text-[0.9rem] font-black text-amber-400">{logistique.douanes.taux_droits}</p>
+                <p className="text-xs text-white/35 uppercase mb-1">Droits douane</p>
+                <p className="text-sm font-black text-amber-400">{logistique.douanes.taux_droits}</p>
               </div>
               <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.03)" }}>
-                <p className="text-[0.6rem] text-white/35 uppercase mb-1">TVA import</p>
-                <p className="text-[0.9rem] font-black text-amber-400">{logistique.douanes.tva_import}</p>
+                <p className="text-xs text-white/35 uppercase mb-1">TVA import</p>
+                <p className="text-sm font-black text-amber-400">{logistique.douanes.tva_import}</p>
               </div>
               <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.03)" }}>
-                <p className="text-[0.6rem] text-white/35 uppercase mb-1">Coût total estimé</p>
-                <p className="text-[0.75rem] font-black text-white/70">{logistique.douanes.montant_estime}</p>
+                <p className="text-xs text-white/35 uppercase mb-1">Coût total estimé</p>
+                <p className="text-sm font-black text-white/70">{logistique.douanes.montant_estime}</p>
               </div>
             </div>
             {logistique.douanes.documents_requis?.length > 0 && (
               <div>
-                <p className="text-[0.65rem] text-white/35 uppercase mb-1.5">Documents requis</p>
+                <p className="text-xs text-white/35 uppercase mb-1.5">Documents requis</p>
                 <div className="flex flex-wrap gap-1.5">
                   {logistique.douanes.documents_requis.map(d => (
-                    <span key={d} className="rounded-lg px-2.5 py-1 text-[0.68rem] font-semibold text-white/55"
+                    <span key={d} className="rounded-lg px-2.5 py-1 text-xs font-semibold text-white/55"
                       style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                       {d}
                     </span>
@@ -1184,8 +1184,8 @@ export default function FournisseursPage() {
             <div className="flex items-center gap-3">
               <TrendingUp size={18} style={{ color: blue }} />
               <div>
-                <p className="text-[0.72rem] text-white/45 uppercase tracking-wider">Coût total rendu France</p>
-                <p className="text-[0.9rem] font-black text-white/85 mt-0.5">{logistique.cout_total_estime}</p>
+                <p className="text-sm text-white/45 uppercase tracking-wider">Coût total rendu France</p>
+                <p className="text-sm font-black text-white/85 mt-0.5">{logistique.cout_total_estime}</p>
               </div>
             </div>
           </Card>
@@ -1208,7 +1208,7 @@ export default function FournisseursPage() {
           </div>
           <div className="text-center">
             <p className="text-[1rem] font-black text-white/80">Génération des documents…</p>
-            <p className="mt-1 text-[0.78rem] text-white/38">{selectedDocs.length} documents créés en parallèle</p>
+            <p className="mt-1 text-sm text-white/38">{selectedDocs.length} documents créés en parallèle</p>
           </div>
           <Loader2 size={20} className="animate-spin text-white/30" />
         </div>
@@ -1221,13 +1221,13 @@ export default function FournisseursPage() {
         <div className="space-y-5 max-w-2xl mx-auto">
           <div className="mb-6">
             <h2 className="text-[1.1rem] font-black text-white/88 mb-1">Outils de contact & documents</h2>
-            <p className="text-[0.78rem] text-white/38">Sélectionnez les documents à générer pour ce sourcing.</p>
+            <p className="text-sm text-white/38">Sélectionnez les documents à générer pour ce sourcing.</p>
           </div>
           {generateError && (
             <div className="flex items-center gap-2 rounded-xl p-3"
               style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
               <AlertTriangle size={13} className="text-red-400 shrink-0" />
-              <p className="text-[0.75rem] text-red-300">{generateError}</p>
+              <p className="text-sm text-red-300">{generateError}</p>
             </div>
           )}
           <div className="grid sm:grid-cols-2 gap-2.5">
@@ -1244,11 +1244,11 @@ export default function FournisseursPage() {
                   }}>
                   <Icon size={14} className="mt-0.5 shrink-0" style={{ color: sel ? blue : "rgba(255,255,255,0.3)" }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[0.8rem] font-semibold leading-tight"
+                    <p className="text-sm font-semibold leading-tight"
                       style={{ color: sel ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>
                       {opt.label}
                     </p>
-                    <p className="text-[0.66rem] text-white/28 mt-0.5">{opt.desc}</p>
+                    <p className="text-xs text-white/28 mt-0.5">{opt.desc}</p>
                   </div>
                   {sel && <Check size={13} className="shrink-0 mt-0.5" style={{ color: blue }} />}
                 </button>
@@ -1259,13 +1259,13 @@ export default function FournisseursPage() {
             <div className="flex items-center gap-2.5 rounded-xl px-4 py-3"
               style={{ background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.2)" }}>
               <AlertTriangle size={13} style={{ color: "#fbbf24", flexShrink: 0 }} />
-              <p className="text-[0.75rem]" style={{ color: "rgba(251,191,36,0.8)" }}>
+              <p className="text-sm" style={{ color: "rgba(251,191,36,0.8)" }}>
                 Retournez à l'étape 3 et choisissez un fournisseur — les documents seront personnalisés pour lui.
               </p>
             </div>
           )}
           <button onClick={runGenerate} disabled={!selectedDocs.length}
-            className="w-full flex items-center justify-center gap-2.5 rounded-xl py-3.5 font-black text-[0.9rem] transition-all disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-2.5 rounded-xl py-3.5 font-black text-sm transition-all disabled:opacity-40"
             style={{ background: "linear-gradient(135deg,rgba(96,165,250,0.85),rgba(129,140,248,0.75))", color: "#fff" }}>
             <Sparkles size={16} /> Générer {selectedDocs.length} document{selectedDocs.length > 1 ? "s" : ""}
           </button>
@@ -1280,10 +1280,10 @@ export default function FournisseursPage() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <h2 className="text-[1.1rem] font-black text-white/88 mb-0.5">Documents générés</h2>
-            <p className="text-[0.72rem] text-white/38">{generatedDocs.length} documents prêts à l'emploi</p>
+            <p className="text-sm text-white/38">{generatedDocs.length} documents prêts à l'emploi</p>
           </div>
           <button onClick={() => { setGeneratedDocs([]); setActiveDocTab(""); }}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.72rem] text-white/35 transition hover:text-white/55"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm text-white/35 transition hover:text-white/55"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
             <RefreshCw size={11} /> Régénérer
           </button>
@@ -1301,7 +1301,7 @@ export default function FournisseursPage() {
                     border: `1px solid ${activeDocTab === d.id ? "rgba(96,165,250,0.3)" : "transparent"}`,
                   }}>
                   <Icon size={12} style={{ color: activeDocTab === d.id ? blue : "rgba(255,255,255,0.3)", flexShrink: 0 }} />
-                  <span className="text-[0.68rem] font-semibold leading-tight"
+                  <span className="text-xs font-semibold leading-tight"
                     style={{ color: activeDocTab === d.id ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.38)" }}>
                     {d.title}
                   </span>
@@ -1314,9 +1314,9 @@ export default function FournisseursPage() {
               style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${editingDocId === activeDoc.id ? "rgba(96,165,250,0.35)" : "rgba(255,255,255,0.07)"}` }}>
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
-                  <span className="text-[0.8rem] font-black text-white/80">{activeDoc.title}</span>
+                  <span className="text-sm font-black text-white/80">{activeDoc.title}</span>
                   {editingDocId === activeDoc.id && (
-                    <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-black uppercase tracking-wider"
+                    <span className="rounded-full px-2 py-0.5 text-xs font-black uppercase tracking-wider"
                       style={{ background: "rgba(96,165,250,0.15)", color: blue }}>
                       Édition
                     </span>
@@ -1326,12 +1326,12 @@ export default function FournisseursPage() {
                   {editingDocId === activeDoc.id ? (
                     <>
                       <button onClick={cancelEdit}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition"
                         style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)" }}>
                         <XIcon size={11} /> Annuler
                       </button>
                       <button onClick={saveEdit}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold"
                         style={{ background: "rgba(96,165,250,0.15)", color: blue, border: "1px solid rgba(96,165,250,0.3)" }}>
                         <Save size={11} /> Sauvegarder
                       </button>
@@ -1340,24 +1340,24 @@ export default function FournisseursPage() {
                     <>
                       <button onClick={() => regenerateDoc(activeDoc.id)}
                         disabled={regeneratingDocId === activeDoc.id}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition disabled:opacity-40"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-40"
                         style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.35)" }}>
                         {regeneratingDocId === activeDoc.id
                           ? <Loader2 size={11} className="animate-spin" />
                           : <RefreshCw size={11} />}
                       </button>
                       <button onClick={() => startEdit(activeDoc)}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition"
                         style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)" }}>
                         <Pencil size={11} /> Éditer
                       </button>
                       <button onClick={() => handleCopy(activeDoc.id, activeDoc.content)}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold transition"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition"
                         style={{ background: "rgba(255,255,255,0.05)", color: copiedId === activeDoc.id ? emerald : "rgba(255,255,255,0.45)" }}>
                         {copiedId === activeDoc.id ? <><Check size={11} /> Copié</> : <><Copy size={11} /> Copier</>}
                       </button>
                       <button onClick={() => downloadDoc(activeDoc)}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-semibold"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold"
                         style={{ background: "rgba(96,165,250,0.08)", color: blue, border: "1px solid rgba(96,165,250,0.2)" }}>
                         <Download size={11} /> PDF
                       </button>
@@ -1370,12 +1370,12 @@ export default function FournisseursPage() {
                   <textarea
                     value={editContent}
                     onChange={e => setEditContent(e.target.value)}
-                    className="w-full min-h-[320px] max-h-[520px] resize-none outline-none font-mono text-[0.77rem] leading-relaxed overflow-y-auto"
+                    className="w-full min-h-[320px] max-h-[520px] resize-none outline-none font-mono text-sm leading-relaxed overflow-y-auto"
                     style={{ background: "transparent", color: "rgba(255,255,255,0.75)", caretColor: blue }}
                     autoFocus
                   />
                 ) : (
-                  <pre className="whitespace-pre-wrap text-[0.77rem] leading-relaxed text-white/60 font-mono">{activeDoc.content}</pre>
+                  <pre className="whitespace-pre-wrap text-sm leading-relaxed text-white/60 font-mono">{activeDoc.content}</pre>
                 )}
               </div>
             </div>
@@ -1389,7 +1389,7 @@ export default function FournisseursPage() {
     <div className="space-y-5 max-w-2xl mx-auto">
       <div className="mb-6">
         <h2 className="text-[1.1rem] font-black text-white/88 mb-1">Exporter le dossier sourcing</h2>
-        <p className="text-[0.78rem] text-white/38">Téléchargez votre stratégie fournisseur complète.</p>
+        <p className="text-sm text-white/38">Téléchargez votre stratégie fournisseur complète.</p>
       </div>
       <div className="grid gap-4">
         {generatedDocs.length > 0 && (
@@ -1401,8 +1401,8 @@ export default function FournisseursPage() {
               <FileText size={22} style={{ color: blue }} />
             </div>
             <div className="flex-1">
-              <p className="text-[0.9rem] font-black text-white/85">PDF complet</p>
-              <p className="text-[0.75rem] text-white/40">Tous les documents en un PDF professionnel</p>
+              <p className="text-sm font-black text-white/85">PDF complet</p>
+              <p className="text-sm text-white/40">Tous les documents en un PDF professionnel</p>
             </div>
             <Download size={18} style={{ color: blue }} />
           </button>
@@ -1416,8 +1416,8 @@ export default function FournisseursPage() {
               <Package size={22} className="text-white/40" />
             </div>
             <div className="flex-1">
-              <p className="text-[0.9rem] font-black text-white/75">Documents individuels (PDF)</p>
-              <p className="text-[0.75rem] text-white/35">Chaque document dans son propre PDF</p>
+              <p className="text-sm font-black text-white/75">Documents individuels (PDF)</p>
+              <p className="text-sm text-white/35">Chaque document dans son propre PDF</p>
             </div>
             <Download size={18} className="text-white/35" />
           </button>
@@ -1474,8 +1474,8 @@ export default function FournisseursPage() {
               <ClipboardList size={22} style={{ color: indigo }} />
             </div>
             <div className="flex-1">
-              <p className="text-[0.9rem] font-black text-white/85">Appel d'offre formel</p>
-              <p className="text-[0.75rem] text-white/40">Document AO structuré — envoi multi-fournisseurs</p>
+              <p className="text-sm font-black text-white/85">Appel d'offre formel</p>
+              <p className="text-sm text-white/40">Document AO structuré — envoi multi-fournisseurs</p>
             </div>
             <Download size={18} style={{ color: indigo }} />
           </button>
@@ -1484,13 +1484,13 @@ export default function FournisseursPage() {
         {generatedDocs.length === 0 && (
           <div className="text-center py-10 text-white/30">
             <FileText size={32} className="mx-auto mb-3 opacity-30" />
-            <p className="text-[0.82rem]">Générez d'abord des documents à l'étape précédente</p>
+            <p className="text-sm">Générez d'abord des documents à l'étape précédente</p>
           </div>
         )}
         <div className="rounded-xl p-4 flex items-start gap-3"
           style={{ background: "rgba(96,165,250,0.05)", border: "1px solid rgba(96,165,250,0.12)" }}>
           <Info size={13} className="mt-0.5 shrink-0" style={{ color: blue }} />
-          <p className="text-[0.72rem] text-white/42">
+          <p className="text-sm text-white/42">
             <strong className="text-white/62">Conseil :</strong> Vérifiez et personnalisez les documents avant envoi. Demandez toujours un échantillon avant toute commande ferme.
           </p>
         </div>
@@ -1566,10 +1566,10 @@ export default function FournisseursPage() {
                 <Factory size={17} style={{ color: blue }} />
               </div>
               <div className="min-w-0">
-                <h1 className="text-[0.95rem] font-black text-white/88 leading-tight truncate">
+                <h1 className="text-base font-black text-white/88 leading-tight truncate">
                   Trouver des fournisseurs
                 </h1>
-                <p className="text-[0.65rem] text-white/35">Assistant IA — Sourcing mondial</p>
+                <p className="text-xs text-white/35">Assistant IA — Sourcing mondial</p>
               </div>
             </div>
           </div>
@@ -1602,28 +1602,28 @@ export default function FournisseursPage() {
           <div className="flex items-center justify-between max-w-3xl mx-auto gap-3">
             <div className="flex items-center gap-2">
               <button onClick={handlePrev} disabled={step === 1}
-                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.82rem] font-semibold transition disabled:opacity-30"
+                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-30"
                 style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(12,24,100,0.04)", color: isDark ? "rgba(255,255,255,0.55)" : "rgba(12,18,50,0.60)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(12,24,100,0.10)"}` }}>
                 <ChevronLeft size={16} /> Précédent
               </button>
               {step > 1 && (
                 <button onClick={resetWizard}
-                  className="flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-semibold transition"
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition"
                   style={{ color: "rgba(255,100,100,0.65)" }}>
                   <RotateCcw size={13} /> Recommencer
                 </button>
               )}
             </div>
-            <span className="text-[0.72rem] text-white/25">Étape {step} / {STEPS.length}</span>
+            <span className="text-sm text-white/25">Étape {step} / {STEPS.length}</span>
             {step < 6 ? (
               <button onClick={handleNext} disabled={!canProceed()}
-                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.82rem] font-black transition-all disabled:opacity-35 active:scale-[0.98]"
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-black transition-all disabled:opacity-35 active:scale-[0.98]"
                 style={{ background: "linear-gradient(135deg,rgba(96,165,250,0.85),rgba(52,211,153,0.6))", color: "#fff" }}>
                 {step === 1 ? (<><Search size={15} /> Rechercher</>) : (<>Suivant <ChevronRight size={15} /></>)}
               </button>
             ) : (
               <button onClick={exportPDF} disabled={!generatedDocs.length}
-                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.82rem] font-black transition-all active:scale-[0.98] disabled:opacity-35"
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-black transition-all active:scale-[0.98] disabled:opacity-35"
                 style={{ background: "linear-gradient(135deg,rgba(96,165,250,0.85),rgba(52,211,153,0.6))", color: "#fff" }}>
                 <Download size={15} /> Exporter PDF
               </button>

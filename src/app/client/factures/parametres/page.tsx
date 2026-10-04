@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 /**
  * Paramètres Factures & Devis — Interface à 4 onglets + aperçu live.
  * Enregistre dans user_settings (clés brand.*, isolé par user_id).
@@ -170,7 +170,7 @@ function Field({ label, value, onChange, placeholder, icon: Icon, type = "text",
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[0.7rem] font-medium text-white/40">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium text-white/40">{label}</label>
       <div className="relative">
         {Icon && (
           <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
@@ -185,7 +185,7 @@ function Field({ label, value, onChange, placeholder, icon: Icon, type = "text",
           className={`w-full rounded-xl border border-white/[0.09] bg-white/[0.04] py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/[0.15] focus:border-[#c9a55a]/45 focus:ring-2 focus:ring-[#c9a55a]/10 ${Icon ? "pl-9 pr-4" : "px-4"}`}
         />
       </div>
-      {hint && <p className="mt-1 text-[0.6rem] text-white/20">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-white/20">{hint}</p>}
     </div>
   );
 }
@@ -196,7 +196,7 @@ function SelectField({ label, value, onChange, options }: {
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[0.7rem] font-medium text-white/40">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium text-white/40">{label}</label>
       <div className="relative">
         <select
           value={value}
@@ -220,8 +220,8 @@ function TextareaField({ label, value, onChange, placeholder, rows = 3, hint }: 
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between">
-        <label className="text-[0.7rem] font-medium text-white/40">{label}</label>
-        {hint && <span className="text-[0.6rem] text-white/25">{hint}</span>}
+        <label className="text-xs font-medium text-white/40">{label}</label>
+        {hint && <span className="text-xs text-white/25">{hint}</span>}
       </div>
       <textarea
         value={value}
@@ -236,7 +236,7 @@ function TextareaField({ label, value, onChange, placeholder, rows = 3, hint }: 
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="pb-2 pt-1 text-[0.62rem] font-bold uppercase tracking-widest text-white/25">
+    <p className="pb-2 pt-1 text-xs font-bold uppercase tracking-widest text-white/25">
       {children}
     </p>
   );
@@ -406,7 +406,7 @@ export default function ParametresFacturesPage() {
         <div className="flex items-center gap-0.5 overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.03] p-1 scrollbar-none">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-[0.68rem] font-semibold transition sm:px-3 ${
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition sm:px-3 ${
                 tab === t.id
                   ? "bg-white/[0.09] text-white shadow-sm"
                   : "text-white/35 hover:text-white/60"
@@ -464,7 +464,7 @@ export default function ParametresFacturesPage() {
               {tab === "entetes" && (
                 <div className="space-y-4">
                   <div className="mb-2">
-                    <h2 className="text-[0.95rem] font-bold text-white">En-tête du document</h2>
+                    <h2 className="text-base font-bold text-white">En-tête du document</h2>
                     <p className="mt-0.5 text-xs text-white/30">Informations affichées en haut de chaque facture et devis.</p>
                   </div>
 
@@ -494,7 +494,7 @@ export default function ParametresFacturesPage() {
 
                   {/* Logo */}
                   <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                    <p className="mb-3 text-[0.7rem] font-medium text-white/40">Logo ou image de marque</p>
+                    <p className="mb-3 text-xs font-medium text-white/40">Logo ou image de marque</p>
                     <div className="flex items-center gap-4">
                       {s.logoUrl ? (
                         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/[0.1] bg-white">
@@ -516,8 +516,8 @@ export default function ParametresFacturesPage() {
                           className="text-sm font-semibold text-[#c9a55a] transition hover:opacity-75">
                           {s.logoUrl ? "Remplacer le logo" : "Ajouter un logo"}
                         </button>
-                        <p className="mt-0.5 text-[0.62rem] text-white/25">PNG, JPG, SVG • max 2 Mo</p>
-                        <p className="text-[0.6rem] text-white/20">Visible dans l'en-tête des documents</p>
+                        <p className="mt-0.5 text-xs text-white/25">PNG, JPG, SVG • max 2 Mo</p>
+                        <p className="text-xs text-white/20">Visible dans l'en-tête des documents</p>
                       </div>
                     </div>
                     <input ref={logoRef} type="file" accept="image/*" onChange={handleLogoFile} className="hidden" />
@@ -527,7 +527,7 @@ export default function ParametresFacturesPage() {
                   <div className="overflow-hidden rounded-xl border border-white/[0.07]">
                     {/* Barre titre + contrôles zoom */}
                     <div className="flex items-center justify-between border-b border-white/[0.05] bg-white/[0.02] px-3 py-2">
-                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-white/30">
+                      <p className="text-xs font-bold uppercase tracking-wider text-white/30">
                         Aperçu de l&apos;en-tête
                       </p>
                       <div className="flex items-center gap-1">
@@ -536,7 +536,7 @@ export default function ParametresFacturesPage() {
                           className="flex h-5 w-5 items-center justify-center rounded text-white/40 transition hover:bg-white/[0.07] hover:text-white/70 disabled:opacity-30">
                           <ZoomOut size={11} />
                         </button>
-                        <span className="w-9 text-center text-[0.6rem] text-white/25">
+                        <span className="w-9 text-center text-xs text-white/25">
                           {Math.round(headerZoom * 100)}%
                         </span>
                         <button onClick={() => setHeaderZoom(z => Math.min(2.5, parseFloat((z + 0.25).toFixed(2))))}
@@ -567,7 +567,7 @@ export default function ParametresFacturesPage() {
                     {s.logoUrl && (
                       <div className="flex items-center gap-2 border-t border-white/[0.05] px-3 py-1.5">
                         <Move size={10} className="text-[#c9a55a]/60" />
-                        <p className="text-[0.6rem] text-white/25">
+                        <p className="text-xs text-white/25">
                           Glissez et redimensionnez le logo dans l&apos;aperçu complet →
                         </p>
                       </div>
@@ -580,7 +580,7 @@ export default function ParametresFacturesPage() {
               {tab === "pieds" && (
                 <div className="space-y-5">
                   <div className="mb-2">
-                    <h2 className="text-[0.95rem] font-bold text-white">Pied de page</h2>
+                    <h2 className="text-base font-bold text-white">Pied de page</h2>
                     <p className="mt-0.5 text-xs text-white/30">Mentions légales et coordonnées bancaires répétées sur chaque document.</p>
                   </div>
 
@@ -633,7 +633,7 @@ export default function ParametresFacturesPage() {
               {tab === "style" && (
                 <div className="space-y-6">
                   <div className="mb-2">
-                    <h2 className="text-[0.95rem] font-bold text-white">Style des documents</h2>
+                    <h2 className="text-base font-bold text-white">Style des documents</h2>
                     <p className="mt-0.5 text-xs text-white/30">Couleur et modèle appliqués par défaut à vos nouveaux documents.</p>
                   </div>
 
@@ -687,10 +687,10 @@ export default function ParametresFacturesPage() {
                             style={{ backgroundColor: tpl.headerColor }} />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold text-white">{tpl.label}</p>
-                            <p className="truncate text-[0.62rem] text-white/30">{tpl.description}</p>
+                            <p className="truncate text-xs text-white/30">{tpl.description}</p>
                           </div>
                           {/* Badge */}
-                          <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.58rem] font-bold"
+                          <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold"
                             style={{ color: tpl.badge.textColor, background: tpl.badge.bgColor }}>
                             {tpl.badge.label}
                           </span>
@@ -708,7 +708,7 @@ export default function ParametresFacturesPage() {
               {tab === "documents" && (
                 <div className="space-y-5">
                   <div className="mb-2">
-                    <h2 className="text-[0.95rem] font-bold text-white">Devis & Factures</h2>
+                    <h2 className="text-base font-bold text-white">Devis & Factures</h2>
                     <p className="mt-0.5 text-xs text-white/30">Paramètres par défaut à la création d'un nouveau document.</p>
                   </div>
 
@@ -762,7 +762,7 @@ export default function ParametresFacturesPage() {
 
         {/* ── Panneau aperçu (droite) ─────────────────────────────── */}
         <div className="hidden sm:flex sm:flex-1 flex-col overflow-hidden bg-[#090c12]">
-          <p className="shrink-0 border-b border-white/[0.05] px-6 py-3 text-[0.62rem] font-bold uppercase tracking-widest text-white/20">
+          <p className="shrink-0 border-b border-white/[0.05] px-6 py-3 text-xs font-bold uppercase tracking-widest text-white/20">
             Aperçu en direct
           </p>
           <div className="flex flex-1 items-start justify-center overflow-y-auto p-6">
@@ -789,7 +789,7 @@ export default function ParametresFacturesPage() {
           </div>
           {/* Hint sous le panneau */}
           {s.logoUrl && (
-            <p className="shrink-0 pb-4 text-center text-[0.58rem] text-white/18">
+            <p className="shrink-0 pb-4 text-center text-[11px] text-white/18">
               <Move size={9} className="mr-1 inline" />
               Glissez · Poignées pour redimensionner · Verrou ratio
             </p>

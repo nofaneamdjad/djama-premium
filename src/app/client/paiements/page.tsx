@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -312,10 +312,10 @@ export default function PaiementsPage() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className={`text-xl font-black tracking-tight ${isDark?"text-white":"text-gray-900"}`}>Liens de paiement</h1>
-            <p className={`text-[0.65rem] mt-0.5 ${isDark?"text-white/40":"text-gray-500"}`}>{kActifs} actifs · {kTxCount} transactions</p>
+            <p className={`text-xs mt-0.5 ${isDark?"text-white/40":"text-gray-500"}`}>{kActifs} actifs · {kTxCount} transactions</p>
           </div>
           <button onClick={()=>setShowCreate(true)}
-            className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-black transition hover:brightness-110"
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-black transition hover:brightness-110"
             style={{background:`linear-gradient(135deg,${GOLD},#b08d45)`,color:"#0a0a0a"}}>
             <Plus size={13}/> Créer un lien
           </button>
@@ -336,7 +336,7 @@ export default function PaiementsPage() {
               <div className="pointer-events-none absolute -right-3 -top-3 h-12 w-12 rounded-full opacity-15 blur-xl" style={{background:color}}/>
               <div className="mb-1 flex items-center gap-1.5">
                 <Icon size={11} style={{color}} className="opacity-80"/>
-                <p className={`text-[0.6rem] font-semibold ${isDark?"text-white/35":"text-[#0e1420]/45"}`}>{label}</p>
+                <p className={`text-xs font-semibold ${isDark?"text-white/35":"text-[#0e1420]/45"}`}>{label}</p>
               </div>
               <p className="text-lg font-black tabular-nums" style={{color}}>{value}</p>
             </div>
@@ -357,7 +357,7 @@ export default function PaiementsPage() {
               const active = filter===s;
               return (
                 <button key={s} onClick={()=>setFilter(s)}
-                  className={`flex shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[0.67rem] font-bold transition-all ${
+                  className={`flex shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
                     active ? "" : isDark?"border border-white/8 bg-white/4 text-white/40 hover:text-white/70"
                       :"border border-black/8 bg-white text-[#0e1420]/40 hover:text-[#0e1420]/70 shadow-sm"
                   }`}
@@ -400,9 +400,9 @@ export default function PaiementsPage() {
                     <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                       <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${s.dot}`}/>
                       <p className={`font-bold text-sm truncate ${isDark?"text-white":"text-gray-900"}`}>{link.title}</p>
-                      <span className="shrink-0 rounded-full border px-2 py-0.5 text-[0.6rem] font-bold" style={{background:s.bg,borderColor:s.border,color:s.color}}>{s.label}</span>
+                      <span className="shrink-0 rounded-full border px-2 py-0.5 text-xs font-bold" style={{background:s.bg,borderColor:s.border,color:s.color}}>{s.label}</span>
                     </div>
-                    <p className={`text-[0.65rem] truncate ${isDark?"text-white/30":"text-gray-400"}`}>{pubUrl}</p>
+                    <p className={`text-xs truncate ${isDark?"text-white/30":"text-gray-400"}`}>{pubUrl}</p>
                   </div>
 
                   {/* Montant */}
@@ -411,7 +411,7 @@ export default function PaiementsPage() {
                       {link.is_free_amount ? "Libre" : link.amount ? fmtCur(link.amount,link.currency) : "—"}
                     </p>
                     {link.total_collected>0 && (
-                      <p className="text-[0.6rem] text-emerald-500">{fmtCur(link.total_collected,link.currency)} collecté</p>
+                      <p className="text-xs text-emerald-500">{fmtCur(link.total_collected,link.currency)} collecté</p>
                     )}
                   </div>
 
@@ -510,7 +510,7 @@ export default function PaiementsPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className={`h-2 w-2 rounded-full ${STATUS[drawer.status].dot}`}/>
-                    <span className="rounded-full border px-2 py-0.5 text-[0.62rem] font-bold"
+                    <span className="rounded-full border px-2 py-0.5 text-xs font-bold"
                       style={{background:STATUS[drawer.status].bg,borderColor:STATUS[drawer.status].border,color:STATUS[drawer.status].color}}>
                       {STATUS[drawer.status].label}
                     </span>
@@ -530,7 +530,7 @@ export default function PaiementsPage() {
                     {label:"Transactions", value:drawer.payment_count},
                   ].map(r=>(
                     <div key={r.label} className={`rounded-xl p-3 ${isDark?"bg-white/4":"bg-gray-50"}`}>
-                      <p className={`text-[0.58rem] mb-0.5 ${isDark?"text-white/30":"text-gray-400"}`}>{r.label}</p>
+                      <p className={`text-[11px] mb-0.5 ${isDark?"text-white/30":"text-gray-400"}`}>{r.label}</p>
                       <p className="text-sm font-black tabular-nums" style={{color:r.color??(isDark?"#fff":"#0e1420")}}>{r.value}</p>
                     </div>
                   ))}
@@ -538,7 +538,7 @@ export default function PaiementsPage() {
 
                 {/* URL + actions */}
                 <div className={`mt-3 flex items-center gap-1.5 rounded-xl border px-3 py-2 ${isDark?"border-white/8 bg-black/30":"border-black/8 bg-gray-50"}`}>
-                  <code className={`flex-1 truncate text-[0.65rem] ${isDark?"text-sky-400":"text-sky-600"}`}>{origin}/pay/{drawer.slug}</code>
+                  <code className={`flex-1 truncate text-xs ${isDark?"text-sky-400":"text-sky-600"}`}>{origin}/pay/{drawer.slug}</code>
                   <button onClick={()=>copy(drawer)} className={isDark?"text-white/25 hover:text-white/60":"text-gray-400 hover:text-gray-700"}>
                     {copied===drawer.id ? <Check size={12} className="text-emerald-400"/> : <Copy size={12}/>}
                   </button>
@@ -573,7 +573,7 @@ export default function PaiementsPage() {
 
               {/* Transactions */}
               <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                <p className={`text-[0.62rem] font-bold uppercase tracking-widest ${isDark?"text-white/25":"text-gray-400"}`}>Transactions</p>
+                <p className={`text-xs font-bold uppercase tracking-widest ${isDark?"text-white/25":"text-gray-400"}`}>Transactions</p>
 
                 {drawerLoad ? (
                   <div className="flex justify-center py-8"><Loader2 size={18} className="animate-spin" style={{color:GOLD}}/></div>
@@ -591,17 +591,17 @@ export default function PaiementsPage() {
                           <div className="min-w-0">
                             <p className={`text-sm font-bold ${isDark?"text-white":"text-gray-900"}`}>{tx.customer_name||tx.customer_email||"Client"}</p>
                             {tx.customer_email && tx.customer_name && (
-                              <p className={`text-[0.62rem] ${isDark?"text-white/30":"text-gray-400"}`}>{tx.customer_email}</p>
+                              <p className={`text-xs ${isDark?"text-white/30":"text-gray-400"}`}>{tx.customer_email}</p>
                             )}
-                            <p className={`text-[0.6rem] mt-0.5 ${isDark?"text-white/25":"text-gray-400"}`}>{fmtDate(tx.created_at)}</p>
+                            <p className={`text-xs mt-0.5 ${isDark?"text-white/25":"text-gray-400"}`}>{fmtDate(tx.created_at)}</p>
                           </div>
                           <div className="shrink-0 text-right">
                             <p className="text-sm font-black tabular-nums" style={{color:txCfg.color}}>{fmtCur(tx.amount,tx.currency)}</p>
-                            <span className="text-[0.58rem] font-semibold" style={{color:txCfg.color}}>{txCfg.label}</span>
+                            <span className="text-[11px] font-semibold" style={{color:txCfg.color}}>{txCfg.label}</span>
                           </div>
                         </div>
                         {tx.refunded_amount>0 && (
-                          <p className="text-[0.62rem] text-purple-400">Remboursé : {fmtCur(tx.refunded_amount,tx.currency)}</p>
+                          <p className="text-xs text-purple-400">Remboursé : {fmtCur(tx.refunded_amount,tx.currency)}</p>
                         )}
                         {tx.status==="succeeded" && tx.amount>tx.refunded_amount && (
                           <div className="mt-2">
@@ -618,7 +618,7 @@ export default function PaiementsPage() {
                               </div>
                             ) : (
                               <button onClick={()=>setShowRefund(tx.id)}
-                                className={`flex items-center gap-1 text-[0.65rem] font-semibold transition ${isDark?"text-white/25 hover:text-purple-400":"text-gray-400 hover:text-purple-500"}`}>
+                                className={`flex items-center gap-1 text-xs font-semibold transition ${isDark?"text-white/25 hover:text-purple-400":"text-gray-400 hover:text-purple-500"}`}>
                                 <RotateCcw size={10}/> Rembourser
                               </button>
                             )}
@@ -655,27 +655,27 @@ export default function PaiementsPage() {
               <div className="p-5 space-y-4">
                 {/* Titre */}
                 <div>
-                  <label className={`mb-1 block text-[0.68rem] font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Titre *</label>
+                  <label className={`mb-1 block text-xs font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Titre *</label>
                   <input value={fTitle} onChange={e=>setFTitle(e.target.value)} placeholder="Formation Excel avancée"
                     className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition ${isDark?"border-white/8 bg-white/4 text-white placeholder-white/20 focus:border-white/16":"border-black/8 bg-gray-50 text-gray-900 focus:border-gray-300"}`}/>
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className={`mb-1 block text-[0.68rem] font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Description</label>
+                  <label className={`mb-1 block text-xs font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Description</label>
                   <textarea value={fDesc} onChange={e=>setFDesc(e.target.value)} rows={2} placeholder="Description de la prestation…"
                     className={`w-full resize-none rounded-xl border px-3.5 py-2.5 text-sm outline-none transition ${isDark?"border-white/8 bg-white/4 text-white placeholder-white/20 focus:border-white/16":"border-black/8 bg-gray-50 text-gray-900 focus:border-gray-300"}`}/>
                 </div>
 
                 {/* Facture existante OU montant */}
                 <div>
-                  <label className={`mb-1 block text-[0.68rem] font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Facture liée (optionnel)</label>
+                  <label className={`mb-1 block text-xs font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Facture liée (optionnel)</label>
                   {fDocObj ? (
                     <div className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${isDark?"border-emerald-500/25 bg-emerald-500/8":"border-emerald-300 bg-emerald-50"}`}>
                       <FileText size={12} className="text-emerald-400 shrink-0"/>
                       <div className="flex-1 min-w-0">
                         <p className={`text-xs font-semibold truncate ${isDark?"text-white":"text-gray-900"}`}>{fDocObj.sujet||fDocObj.numero}</p>
-                        <p className="text-[0.6rem] text-emerald-500">{fmtCur(fDocObj.total_ttc,fDocObj.devise||"eur")}</p>
+                        <p className="text-xs text-emerald-500">{fmtCur(fDocObj.total_ttc,fDocObj.devise||"eur")}</p>
                       </div>
                       <button onClick={()=>{setFDocObj(null);setFDocSearch("");}} className={isDark?"text-white/30":"text-gray-400"}><X size={12}/></button>
                     </div>
@@ -691,7 +691,7 @@ export default function PaiementsPage() {
                               <FileText size={11} className={isDark?"text-white/30":"text-gray-400"}/>
                               <div className="min-w-0">
                                 <p className={`text-xs font-semibold truncate ${isDark?"text-white/80":"text-gray-800"}`}>{d.sujet||d.numero}</p>
-                                <p className={`text-[0.6rem] ${isDark?"text-white/30":"text-gray-400"}`}>{d.numero} · {fmtCur(d.total_ttc,d.devise||"eur")}</p>
+                                <p className={`text-xs ${isDark?"text-white/30":"text-gray-400"}`}>{d.numero} · {fmtCur(d.total_ttc,d.devise||"eur")}</p>
                               </div>
                             </button>
                           ))}
@@ -705,8 +705,8 @@ export default function PaiementsPage() {
                 {!fDocObj && (
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <label className={`text-[0.68rem] font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Montant *</label>
-                      <label className={`flex items-center gap-1.5 cursor-pointer text-[0.68rem] font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>
+                      <label className={`text-xs font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Montant *</label>
+                      <label className={`flex items-center gap-1.5 cursor-pointer text-xs font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>
                         <input type="checkbox" checked={fFree} onChange={e=>setFFree(e.target.checked)} className="rounded"/>
                         Montant libre
                       </label>
@@ -726,7 +726,7 @@ export default function PaiementsPage() {
 
                 {/* Options */}
                 <div className={`rounded-xl border p-3.5 space-y-2.5 ${isDark?"border-white/6 bg-white/2":"border-black/6 bg-gray-50"}`}>
-                  <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${isDark?"text-white/25":"text-gray-400"}`}>Options</p>
+                  <p className={`text-xs font-bold uppercase tracking-widest ${isDark?"text-white/25":"text-gray-400"}`}>Options</p>
                   {[
                     {label:"Collecter le téléphone",state:fColPhone,set:setFColPhone},
                   ].map(({label,state,set})=>(
@@ -742,14 +742,14 @@ export default function PaiementsPage() {
 
                 {/* Expiration */}
                 <div>
-                  <label className={`mb-1 block text-[0.68rem] font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Date d'expiration (optionnel)</label>
+                  <label className={`mb-1 block text-xs font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Date d'expiration (optionnel)</label>
                   <input type="date" value={fExpire} onChange={e=>setFExpire(e.target.value)}
                     className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition ${isDark?"border-white/8 bg-white/4 text-white":"border-black/8 bg-gray-50 text-gray-900"}`}/>
                 </div>
 
                 {/* Message après paiement */}
                 <div>
-                  <label className={`mb-1 block text-[0.68rem] font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Message après paiement</label>
+                  <label className={`mb-1 block text-xs font-semibold ${isDark?"text-white/40":"text-gray-500"}`}>Message après paiement</label>
                   <input value={fMsg} onChange={e=>setFMsg(e.target.value)} placeholder="Merci ! Vous recevrez un email de confirmation."
                     className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition ${isDark?"border-white/8 bg-white/4 text-white placeholder-white/20":"border-black/8 bg-gray-50 text-gray-900"}`}/>
                 </div>
@@ -757,7 +757,7 @@ export default function PaiementsPage() {
                 {/* Info Stripe */}
                 <div className={`flex items-start gap-2 rounded-xl border p-3 ${isDark?"border-blue-500/15 bg-blue-500/5":"border-blue-300/40 bg-blue-50"}`}>
                   <AlertTriangle size={12} className="text-blue-400 shrink-0 mt-0.5"/>
-                  <p className="text-[0.65rem] text-blue-400 leading-relaxed">Le paiement passe par Stripe. Les fonds sont crédités sur votre compte Stripe après la collecte.</p>
+                  <p className="text-xs text-blue-400 leading-relaxed">Le paiement passe par Stripe. Les fonds sont crédités sur votre compte Stripe après la collecte.</p>
                 </div>
               </div>
 

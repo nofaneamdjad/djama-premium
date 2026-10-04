@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -316,13 +316,13 @@ export default function BoutiquePage() {
           </div>
           <div>
             <h1 className={`text-base font-black ${text}`}>{config.shop_name || "Boutique"}</h1>
-            <p className={`text-[0.6rem] ${config.is_published ? "text-emerald-400" : muted}`}>
+            <p className={`text-xs ${config.is_published ? "text-emerald-400" : muted}`}>
               {config.is_published ? "En ligne" : "Hors ligne"}
             </p>
           </div>
         </div>
         {config.is_published && (
-          <a href="#" className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.68rem] font-bold transition hover:opacity-80 ${card} ${muted}`}>
+          <a href="#" className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition hover:opacity-80 ${card} ${muted}`}>
             <ExternalLink size={11} /> Voir la boutique
           </a>
         )}
@@ -335,7 +335,7 @@ export default function BoutiquePage() {
           const active = tab === n.key;
           return (
             <button key={n.key} onClick={() => setTab(n.key)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.67rem] font-bold transition-all ${active ? "" : `${muted} hover:opacity-70`}`}
+              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${active ? "" : `${muted} hover:opacity-70`}`}
               style={active ? { background: `${GOLD}15`, color: GOLD } : {}}>
               <n.icon size={11} />
               {n.label}
@@ -356,7 +356,7 @@ export default function BoutiquePage() {
               <div className={`flex rounded-xl border p-0.5 ${card}`}>
                 {(["today","7d","30d"] as const).map(p => (
                   <button key={p} onClick={() => setDashPeriod(p)}
-                    className={`rounded-lg px-3 py-1 text-[0.65rem] font-bold transition-all ${dashPeriod === p ? "" : `${muted} hover:opacity-70`}`}
+                    className={`rounded-lg px-3 py-1 text-xs font-bold transition-all ${dashPeriod === p ? "" : `${muted} hover:opacity-70`}`}
                     style={dashPeriod === p ? { background: `${GOLD}15`, color: GOLD } : {}}>
                     {p === "today" ? "Auj." : p}
                   </button>
@@ -374,7 +374,7 @@ export default function BoutiquePage() {
               ].map(k => (
                 <div key={k.label} className={`rounded-2xl border p-4 ${card}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <p className={`text-[0.6rem] ${muted}`}>{k.label}</p>
+                    <p className={`text-xs ${muted}`}>{k.label}</p>
                     <k.icon size={13} style={{ color: k.color, opacity: 0.6 }} />
                   </div>
                   <p className="text-xl font-black tabular-nums" style={{ color: k.color }}>{k.value}</p>
@@ -387,7 +387,7 @@ export default function BoutiquePage() {
               <div className={`rounded-2xl border ${card}`}>
                 <div className={`flex items-center justify-between border-b px-4 py-3 ${divider}`}>
                   <p className={`text-xs font-bold ${text}`}>Commandes récentes</p>
-                  <button onClick={() => setTab("commandes")} className={`text-[0.62rem] font-semibold ${muted} hover:opacity-70`}>
+                  <button onClick={() => setTab("commandes")} className={`text-xs font-semibold ${muted} hover:opacity-70`}>
                     Voir tout
                   </button>
                 </div>
@@ -401,11 +401,11 @@ export default function BoutiquePage() {
                       <div key={o.id} className="flex items-center gap-3 px-4 py-3">
                         <div className="flex-1 min-w-0">
                           <p className={`text-xs font-bold truncate ${text}`}>{o.customer_name || o.customer_email}</p>
-                          <p className={`text-[0.6rem] ${muted}`}>{o.order_number} · {fmtDate(o.created_at)}</p>
+                          <p className={`text-xs ${muted}`}>{o.order_number} · {fmtDate(o.created_at)}</p>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-xs font-black tabular-nums" style={{ color: GOLD }}>{fmtCur(o.total)}</p>
-                          <span className="text-[0.58rem] font-semibold rounded-full px-1.5 py-0.5"
+                          <span className="text-[11px] font-semibold rounded-full px-1.5 py-0.5"
                             style={{ background: `${PAYMENT_COLORS[o.payment_status]}15`, color: PAYMENT_COLORS[o.payment_status] }}>
                             {PAYMENT_LABELS[o.payment_status]}
                           </span>
@@ -420,7 +420,7 @@ export default function BoutiquePage() {
               <div className={`rounded-2xl border ${card}`}>
                 <div className={`flex items-center justify-between border-b px-4 py-3 ${divider}`}>
                   <p className={`text-xs font-bold ${text}`}>À préparer</p>
-                  <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold text-black" style={{ background: GOLD }}>
+                  <span className="rounded-full px-2 py-0.5 text-xs font-bold text-black" style={{ background: GOLD }}>
                     {ordersToFulfill.length}
                   </span>
                 </div>
@@ -433,7 +433,7 @@ export default function BoutiquePage() {
                         <AlertTriangle size={13} className="shrink-0 text-amber-500" />
                         <div className="flex-1 min-w-0">
                           <p className={`text-xs font-bold truncate ${text}`}>{o.order_number}</p>
-                          <p className={`text-[0.6rem] ${muted}`}>{o.customer_name}</p>
+                          <p className={`text-xs ${muted}`}>{o.customer_name}</p>
                         </div>
                         <p className="text-xs font-bold tabular-nums" style={{ color: GOLD }}>{fmtCur(o.total)}</p>
                       </div>
@@ -456,7 +456,7 @@ export default function BoutiquePage() {
                       {lowStock.map(p => (
                         <div key={p.id} className="flex items-center justify-between">
                           <p className={`text-xs ${text}`}>{p.name}</p>
-                          <span className="text-[0.65rem] font-bold text-amber-500">{p.stock_current ?? 0} restant</span>
+                          <span className="text-xs font-bold text-amber-500">{p.stock_current ?? 0} restant</span>
                         </div>
                       ))}
                     </div>
@@ -496,7 +496,7 @@ export default function BoutiquePage() {
                   {prodSearch && <button onClick={() => setProdSearch("")}><X size={11} className={muted} /></button>}
                 </div>
                 <button onClick={() => { setEditProduct({ sell_online: true, sell_pos: false, featured: false }); setShowProdModal(true); }}
-                  className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.7rem] font-black transition hover:brightness-105"
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition hover:brightness-105"
                   style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
                   <Plus size={13} /> Produit
                 </button>
@@ -504,7 +504,7 @@ export default function BoutiquePage() {
               <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
                 {["all","online","pos","draft"].map(f => (
                   <button key={f} onClick={() => setProdFilter(f)}
-                    className={`shrink-0 rounded-xl border px-3 py-1 text-[0.65rem] font-bold transition ${prodFilter === f ? "" : `${card} ${muted}`}`}
+                    className={`shrink-0 rounded-xl border px-3 py-1 text-xs font-bold transition ${prodFilter === f ? "" : `${card} ${muted}`}`}
                     style={prodFilter === f ? { background: `${GOLD}15`, borderColor: `${GOLD}30`, color: GOLD } : {}}>
                     {f === "all" ? "Tous" : f === "online" ? "En ligne" : f === "pos" ? "Caisse" : "Hors ligne"}
                   </button>
@@ -538,14 +538,14 @@ export default function BoutiquePage() {
                         <div className="flex items-center gap-2">
                           <p className={`text-sm font-bold truncate ${text}`}>{p.name}</p>
                           {p.featured && <Star size={11} style={{ color: GOLD }} />}
-                          {p.is_digital && <span className={`text-[0.58rem] font-bold rounded-full px-1.5 py-0.5 ${isDark ? "bg-blue-500/15 text-blue-400" : "bg-blue-50 text-blue-600"}`}>Numérique</span>}
+                          {p.is_digital && <span className={`text-[11px] font-bold rounded-full px-1.5 py-0.5 ${isDark ? "bg-blue-500/15 text-blue-400" : "bg-blue-50 text-blue-600"}`}>Numérique</span>}
                         </div>
-                        <p className={`text-[0.62rem] ${muted}`}>{p.sku || p.category || "—"}</p>
+                        <p className={`text-xs ${muted}`}>{p.sku || p.category || "—"}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          {p.sell_online && <span className="text-[0.58rem] font-bold text-emerald-400">En ligne</span>}
-                          {p.sell_pos    && <span className="text-[0.58rem] font-bold text-blue-400">Caisse</span>}
+                          {p.sell_online && <span className="text-[11px] font-bold text-emerald-400">En ligne</span>}
+                          {p.sell_pos    && <span className="text-[11px] font-bold text-blue-400">Caisse</span>}
                           {p.stock_current !== null && (
-                            <span className={`text-[0.58rem] font-bold ${p.stock_current <= 0 ? "text-red-400" : p.stock_min !== null && p.stock_current <= p.stock_min ? "text-amber-400" : muted}`}>
+                            <span className={`text-[11px] font-bold ${p.stock_current <= 0 ? "text-red-400" : p.stock_min !== null && p.stock_current <= p.stock_min ? "text-amber-400" : muted}`}>
                               {p.stock_current} en stock
                             </span>
                           )}
@@ -554,7 +554,7 @@ export default function BoutiquePage() {
                       <div className="shrink-0 text-right">
                         <p className="text-sm font-black tabular-nums" style={{ color: GOLD }}>{fmtCur(p.sale_price)}</p>
                         {p.compare_price && p.compare_price > p.sale_price && (
-                          <p className={`text-[0.6rem] line-through ${muted}`}>{fmtCur(p.compare_price)}</p>
+                          <p className={`text-xs line-through ${muted}`}>{fmtCur(p.compare_price)}</p>
                         )}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
@@ -588,11 +588,11 @@ export default function BoutiquePage() {
               </div>
               <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
                 <button onClick={() => setPayFilter("")}
-                  className={`shrink-0 rounded-xl border px-3 py-1 text-[0.65rem] font-bold transition ${!payFilter ? "" : `${card} ${muted}`}`}
+                  className={`shrink-0 rounded-xl border px-3 py-1 text-xs font-bold transition ${!payFilter ? "" : `${card} ${muted}`}`}
                   style={!payFilter ? { background: `${GOLD}15`, borderColor: `${GOLD}30`, color: GOLD } : {}}>Tout</button>
                 {Object.entries(PAYMENT_LABELS).map(([k, v]) => (
                   <button key={k} onClick={() => setPayFilter(payFilter === k ? "" : k)}
-                    className={`shrink-0 rounded-xl border px-3 py-1 text-[0.65rem] font-bold transition ${payFilter === k ? "" : `${card} ${muted}`}`}
+                    className={`shrink-0 rounded-xl border px-3 py-1 text-xs font-bold transition ${payFilter === k ? "" : `${card} ${muted}`}`}
                     style={payFilter === k ? { background: `${PAYMENT_COLORS[k]}15`, borderColor: `${PAYMENT_COLORS[k]}30`, color: PAYMENT_COLORS[k] } : {}}>
                     {v}
                   </button>
@@ -615,17 +615,17 @@ export default function BoutiquePage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <p className={`text-sm font-bold ${text}`}>{o.order_number}</p>
-                          <span className="text-[0.58rem] font-bold rounded-full px-1.5 py-0.5"
+                          <span className="text-[11px] font-bold rounded-full px-1.5 py-0.5"
                             style={{ background: `${PAYMENT_COLORS[o.payment_status]}15`, color: PAYMENT_COLORS[o.payment_status] }}>
                             {PAYMENT_LABELS[o.payment_status]}
                           </span>
-                          <span className="text-[0.58rem] font-bold rounded-full px-1.5 py-0.5"
+                          <span className="text-[11px] font-bold rounded-full px-1.5 py-0.5"
                             style={{ background: `${FULFILL_COLORS[o.fulfillment_status]}15`, color: FULFILL_COLORS[o.fulfillment_status] }}>
                             {FULFILL_LABELS[o.fulfillment_status]}
                           </span>
                         </div>
-                        <p className={`text-[0.65rem] ${muted}`}>{o.customer_name || o.customer_email} · {fmtDate(o.created_at)}</p>
-                        <p className={`text-[0.6rem] ${muted}`}>{(o.shop_order_items ?? []).length} article(s)</p>
+                        <p className={`text-xs ${muted}`}>{o.customer_name || o.customer_email} · {fmtDate(o.created_at)}</p>
+                        <p className={`text-xs ${muted}`}>{(o.shop_order_items ?? []).length} article(s)</p>
                       </div>
                       <p className="text-sm font-black tabular-nums shrink-0" style={{ color: GOLD }}>{fmtCur(o.total)}</p>
                     </button>
@@ -657,7 +657,7 @@ export default function BoutiquePage() {
             <div className="flex items-center justify-between">
               <p className={`text-sm font-bold ${text}`}>{collections.length} collection(s)</p>
               <button onClick={() => { setEditColl({ is_active: true }); setShowCollModal(true); }}
-                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.7rem] font-black transition hover:brightness-105"
+                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition hover:brightness-105"
                 style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
                 <Plus size={13} /> Collection
               </button>
@@ -677,11 +677,11 @@ export default function BoutiquePage() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className={`text-sm font-bold ${text}`}>{c.name}</p>
-                          <span className={`text-[0.58rem] font-bold rounded-full px-1.5 py-0.5 ${c.is_active ? "text-emerald-400 bg-emerald-500/10" : `${muted} ${isDark ? "bg-white/5" : "bg-gray-100"}`}`}>
+                          <span className={`text-[11px] font-bold rounded-full px-1.5 py-0.5 ${c.is_active ? "text-emerald-400 bg-emerald-500/10" : `${muted} ${isDark ? "bg-white/5" : "bg-gray-100"}`}`}>
                             {c.is_active ? "Active" : "Inactive"}
                           </span>
                         </div>
-                        <p className={`text-[0.62rem] ${muted}`}>/{c.slug}</p>
+                        <p className={`text-xs ${muted}`}>/{c.slug}</p>
                         {c.description && <p className={`text-xs mt-1 ${muted}`}>{c.description}</p>}
                       </div>
                       <div className="flex gap-1 shrink-0">
@@ -708,7 +708,7 @@ export default function BoutiquePage() {
             <div className="flex items-center justify-between">
               <p className={`text-sm font-bold ${text}`}>{promotions.length} promotion(s)</p>
               <button onClick={() => { setEditPromo({ type: "pct", value: 10, is_active: true }); setShowPromoModal(true); }}
-                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.7rem] font-black transition hover:brightness-105"
+                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition hover:brightness-105"
                 style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
                 <Plus size={13} /> Promotion
               </button>
@@ -733,12 +733,12 @@ export default function BoutiquePage() {
                           <span className="text-sm font-bold" style={{ color: GOLD }}>
                             {p.type === "pct" ? `${p.value}%` : p.type === "fixed" ? fmtCur(p.value) : "Livraison gratuite"}
                           </span>
-                          <span className={`text-[0.58rem] font-bold rounded-full px-1.5 py-0.5 ${p.is_active ? "text-emerald-400 bg-emerald-500/10" : `${muted} ${isDark ? "bg-white/5" : "bg-gray-100"}`}`}>
+                          <span className={`text-[11px] font-bold rounded-full px-1.5 py-0.5 ${p.is_active ? "text-emerald-400 bg-emerald-500/10" : `${muted} ${isDark ? "bg-white/5" : "bg-gray-100"}`}`}>
                             {p.is_active ? "Active" : "Inactive"}
                           </span>
                         </div>
                         {p.description && <p className={`text-xs mt-1 ${muted}`}>{p.description}</p>}
-                        <div className={`flex items-center gap-3 mt-1 text-[0.62rem] ${muted}`}>
+                        <div className={`flex items-center gap-3 mt-1 text-xs ${muted}`}>
                           <span>{p.used_count} utilisation(s){p.max_uses ? ` / ${p.max_uses}` : ""}</span>
                           {p.min_order && <span>Minimum {fmtCur(p.min_order)}</span>}
                           {p.expires_at && <span>Expire le {fmtDate(p.expires_at)}</span>}
@@ -791,7 +791,7 @@ export default function BoutiquePage() {
                 <div className={`rounded-2xl border p-4 space-y-3 ${card}`}>
                   <p className={`text-sm font-bold ${text}`}>Domaine</p>
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Sous-domaine DJAMA</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Sous-domaine DJAMA</label>
                     <div className={`flex items-center gap-0 rounded-xl border overflow-hidden ${isDark ? "border-white/8" : "border-black/8"}`}>
                       <input value={config.subdomain ?? ""} onChange={e => setConfig(c => ({ ...c, subdomain: e.target.value }))}
                         placeholder="monentreprise" className={`flex-1 bg-transparent px-3 py-2.5 text-sm outline-none ${text}`} />
@@ -799,11 +799,11 @@ export default function BoutiquePage() {
                     </div>
                   </div>
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Domaine personnalisé</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Domaine personnalisé</label>
                     <input value={config.domain ?? ""} onChange={e => setConfig(c => ({ ...c, domain: e.target.value }))}
                       placeholder="www.monentreprise.fr"
                       className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} />
-                    <p className={`mt-1 text-[0.6rem] ${muted}`}>Configuration DNS requise — contacter le support DJAMA.</p>
+                    <p className={`mt-1 text-xs ${muted}`}>Configuration DNS requise — contacter le support DJAMA.</p>
                   </div>
                 </div>
 
@@ -811,7 +811,7 @@ export default function BoutiquePage() {
                 <div className={`rounded-2xl border p-4 space-y-3 ${card}`}>
                   <p className={`text-sm font-bold ${text}`}>Apparence</p>
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Couleur principale</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Couleur principale</label>
                     <div className="flex items-center gap-2">
                       <input type="color" value={config.primary_color ?? "#c9a55a"} onChange={e => setConfig(c => ({ ...c, primary_color: e.target.value }))}
                         className="h-9 w-14 cursor-pointer rounded-lg border-0 p-0.5" />
@@ -820,7 +820,7 @@ export default function BoutiquePage() {
                     </div>
                   </div>
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>URL logo</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>URL logo</label>
                     <input value={config.logo_url ?? ""} onChange={e => setConfig(c => ({ ...c, logo_url: e.target.value }))}
                       placeholder="https://…" className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} />
                   </div>
@@ -848,7 +848,7 @@ export default function BoutiquePage() {
                 { label: "Total commandes",value: kpis.total_orders,     delta: "+0%" },
               ].map(k => (
                 <div key={k.label} className={`rounded-2xl border p-4 ${card}`}>
-                  <p className={`text-[0.6rem] mb-1 ${muted}`}>{k.label}</p>
+                  <p className={`text-xs mb-1 ${muted}`}>{k.label}</p>
                   <p className="text-xl font-black tabular-nums" style={{ color: GOLD }}>{k.value}</p>
                 </div>
               ))}
@@ -875,7 +875,7 @@ export default function BoutiquePage() {
                     { key: "shop_description", label: "Description", placeholder: "Bienvenue dans ma boutique…" },
                   ].map(f => (
                     <div key={f.key}>
-                      <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>{f.label}</label>
+                      <label className={`block text-xs font-semibold mb-1 ${muted}`}>{f.label}</label>
                       <input value={(config as Record<string, string>)[f.key] ?? ""}
                         onChange={e => setConfig(c => ({ ...c, [f.key]: e.target.value }))}
                         placeholder={f.placeholder}
@@ -888,13 +888,13 @@ export default function BoutiquePage() {
                   <p className={`text-sm font-bold ${text}`}>Taxes & Paiement</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Taux TVA par défaut (%)</label>
+                      <label className={`block text-xs font-semibold mb-1 ${muted}`}>Taux TVA par défaut (%)</label>
                       <input type="number" min="0" max="100" value={config.tax_rate ?? 20}
                         onChange={e => setConfig(c => ({ ...c, tax_rate: parseFloat(e.target.value) || 20 }))}
                         className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} />
                     </div>
                     <div>
-                      <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Devise</label>
+                      <label className={`block text-xs font-semibold mb-1 ${muted}`}>Devise</label>
                       <select value={config.currency ?? "EUR"} onChange={e => setConfig(c => ({ ...c, currency: e.target.value }))}
                         className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}>
                         <option value="EUR">EUR (€)</option>
@@ -906,7 +906,7 @@ export default function BoutiquePage() {
                   <div className={`flex items-center justify-between rounded-xl border p-3 ${isDark ? "border-white/8" : "border-black/8"}`}>
                     <div>
                       <p className={`text-xs font-semibold ${text}`}>TVA incluse dans les prix</p>
-                      <p className={`text-[0.6rem] ${muted}`}>Les prix affichés incluent la TVA</p>
+                      <p className={`text-xs ${muted}`}>Les prix affichés incluent la TVA</p>
                     </div>
                     <button onClick={() => setConfig(c => ({ ...c, tax_included: !c.tax_included }))}
                       className="transition">
@@ -916,7 +916,7 @@ export default function BoutiquePage() {
                   <div className={`flex items-center justify-between rounded-xl border p-3 ${isDark ? "border-white/8" : "border-black/8"}`}>
                     <div>
                       <p className={`text-xs font-semibold ${text}`}>Checkout invité</p>
-                      <p className={`text-[0.6rem] ${muted}`}>Commande sans création de compte</p>
+                      <p className={`text-xs ${muted}`}>Commande sans création de compte</p>
                     </div>
                     <button onClick={() => setConfig(c => ({ ...c, guest_checkout: !c.guest_checkout }))} className="transition">
                       {config.guest_checkout ? <ToggleRight size={24} style={{ color: GOLD }} /> : <ToggleLeft size={24} className={muted} />}
@@ -931,7 +931,7 @@ export default function BoutiquePage() {
                     { key: "seo_description", label: "Meta description", placeholder: "Découvrez nos produits…" },
                   ].map(f => (
                     <div key={f.key}>
-                      <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>{f.label}</label>
+                      <label className={`block text-xs font-semibold mb-1 ${muted}`}>{f.label}</label>
                       <input value={(config as Record<string, string>)[f.key] ?? ""}
                         onChange={e => setConfig(c => ({ ...c, [f.key]: e.target.value }))}
                         placeholder={f.placeholder}
@@ -962,7 +962,7 @@ export default function BoutiquePage() {
               <div className={`flex items-center justify-between border-b px-5 py-4 ${divider}`}>
                 <div>
                   <p className={`text-sm font-bold ${text}`}>{selectedOrder.order_number}</p>
-                  <p className={`text-[0.62rem] ${muted}`}>{selectedOrder.customer_name} · {fmtDate(selectedOrder.created_at)}</p>
+                  <p className={`text-xs ${muted}`}>{selectedOrder.customer_name} · {fmtDate(selectedOrder.created_at)}</p>
                 </div>
                 <button onClick={() => setSelectedOrder(null)}><X size={16} className={muted} /></button>
               </div>
@@ -970,7 +970,7 @@ export default function BoutiquePage() {
                 {/* Statuts */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className={`block text-[0.62rem] font-semibold mb-1 ${muted}`}>Paiement</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Paiement</label>
                     <select defaultValue={selectedOrder.payment_status}
                       onChange={e => void updateOrder(selectedOrder.id, { payment_status: e.target.value })}
                       className={`w-full rounded-xl border px-3 py-2 text-xs outline-none ${inp}`}>
@@ -978,7 +978,7 @@ export default function BoutiquePage() {
                     </select>
                   </div>
                   <div>
-                    <label className={`block text-[0.62rem] font-semibold mb-1 ${muted}`}>Exécution</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Exécution</label>
                     <select defaultValue={selectedOrder.fulfillment_status}
                       onChange={e => void updateOrder(selectedOrder.id, { fulfillment_status: e.target.value })}
                       className={`w-full rounded-xl border px-3 py-2 text-xs outline-none ${inp}`}>
@@ -989,12 +989,12 @@ export default function BoutiquePage() {
                 {/* Articles */}
                 {(selectedOrder.shop_order_items ?? []).length > 0 && (
                   <div>
-                    <p className={`text-[0.65rem] font-semibold mb-2 ${muted}`}>Articles</p>
+                    <p className={`text-xs font-semibold mb-2 ${muted}`}>Articles</p>
                     <div className="space-y-2">
                       {(selectedOrder.shop_order_items ?? []).map((item, i) => (
                         <div key={i} className={`flex items-center gap-3 rounded-xl border p-3 ${card}`}>
                           <p className={`flex-1 text-xs ${text}`}>{item.product_name}</p>
-                          <p className={`text-[0.65rem] ${muted}`}>×{item.quantity}</p>
+                          <p className={`text-xs ${muted}`}>×{item.quantity}</p>
                           <p className="text-xs font-bold tabular-nums" style={{ color: GOLD }}>{fmtCur(item.unit_price * item.quantity)}</p>
                         </div>
                       ))}
@@ -1008,14 +1008,14 @@ export default function BoutiquePage() {
                 </div>
                 {/* Note interne */}
                 <div>
-                  <label className={`block text-[0.62rem] font-semibold mb-1 ${muted}`}>Note interne</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Note interne</label>
                   <textarea defaultValue={selectedOrder.internal_note ?? ""} rows={2}
                     onBlur={e => void updateOrder(selectedOrder.id, { internal_note: e.target.value })}
                     className={`w-full resize-none rounded-xl border px-3 py-2 text-xs outline-none ${inp}`} />
                 </div>
                 {/* Suivi */}
                 <div>
-                  <label className={`block text-[0.62rem] font-semibold mb-1 ${muted}`}>Numéro de suivi</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Numéro de suivi</label>
                   <input defaultValue={selectedOrder.tracking_number ?? ""}
                     onBlur={e => void updateOrder(selectedOrder.id, { tracking_number: e.target.value })}
                     className={`w-full rounded-xl border px-3 py-2 text-xs outline-none ${inp}`} placeholder="1Z999AA10123456784" />
@@ -1041,19 +1041,19 @@ export default function BoutiquePage() {
                 {!editProduct.id && (
                   <>
                     <div>
-                      <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Nom *</label>
+                      <label className={`block text-xs font-semibold mb-1 ${muted}`}>Nom *</label>
                       <input value={editProduct.name ?? ""} onChange={e => setEditProduct(p => ({ ...p, name: e.target.value }))}
                         className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="Nom du produit" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Prix HT (€)</label>
+                        <label className={`block text-xs font-semibold mb-1 ${muted}`}>Prix HT (€)</label>
                         <input type="number" min="0" step="0.01" value={editProduct.sale_price ?? ""}
                           onChange={e => setEditProduct(p => ({ ...p, sale_price: parseFloat(e.target.value) || 0 }))}
                           className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="0.00" />
                       </div>
                       <div>
-                        <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>TVA (%)</label>
+                        <label className={`block text-xs font-semibold mb-1 ${muted}`}>TVA (%)</label>
                         <input type="number" min="0" max="100" value={editProduct.vat_rate ?? 20}
                           onChange={e => setEditProduct(p => ({ ...p, vat_rate: parseFloat(e.target.value) || 20 }))}
                           className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} />
@@ -1085,21 +1085,21 @@ export default function BoutiquePage() {
                 </div>
                 {/* Description courte */}
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Description courte</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Description courte</label>
                   <textarea value={editProduct.short_description ?? ""} rows={2}
                     onChange={e => setEditProduct(p => ({ ...p, short_description: e.target.value }))}
                     className={`w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="Résumé du produit…" />
                 </div>
                 {/* Prix barré */}
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Prix barré (€)</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Prix barré (€)</label>
                   <input type="number" min="0" step="0.01" value={editProduct.compare_price ?? ""}
                     onChange={e => setEditProduct(p => ({ ...p, compare_price: e.target.value ? parseFloat(e.target.value) : null }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="Prix avant remise" />
                 </div>
                 {/* Slug SEO */}
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Slug URL</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Slug URL</label>
                   <input value={editProduct.slug ?? ""} onChange={e => setEditProduct(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="mon-produit" />
                 </div>
@@ -1132,7 +1132,7 @@ export default function BoutiquePage() {
               </div>
               <div className="p-5 space-y-4">
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Nom *</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Nom *</label>
                   <input value={editColl.name ?? ""} onChange={e => {
                     const n = e.target.value;
                     const s = n.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -1140,12 +1140,12 @@ export default function BoutiquePage() {
                   }} className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="Été 2026" />
                 </div>
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Slug URL</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Slug URL</label>
                   <input value={editColl.slug ?? ""} onChange={e => setEditColl(c => ({ ...c, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="ete-2026" />
                 </div>
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Description</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Description</label>
                   <textarea value={editColl.description ?? ""} rows={2}
                     onChange={e => setEditColl(c => ({ ...c, description: e.target.value }))}
                     className={`w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} />
@@ -1179,13 +1179,13 @@ export default function BoutiquePage() {
               </div>
               <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Code promo *</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Code promo *</label>
                   <input value={editPromo.code ?? ""} onChange={e => setEditPromo(p => ({ ...p, code: e.target.value.toUpperCase() }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm font-bold outline-none tracking-widest ${inp}`} placeholder="DJAMA10" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Type</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Type</label>
                     <select value={editPromo.type ?? "pct"} onChange={e => setEditPromo(p => ({ ...p, type: e.target.value }))}
                       className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}>
                       <option value="pct">Pourcentage (%)</option>
@@ -1195,7 +1195,7 @@ export default function BoutiquePage() {
                   </div>
                   {editPromo.type !== "free_shipping" && (
                     <div>
-                      <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Valeur</label>
+                      <label className={`block text-xs font-semibold mb-1 ${muted}`}>Valeur</label>
                       <input type="number" min="0" value={editPromo.value ?? ""}
                         onChange={e => setEditPromo(p => ({ ...p, value: parseFloat(e.target.value) || 0 }))}
                         className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} />
@@ -1204,13 +1204,13 @@ export default function BoutiquePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Commande minimum (€)</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Commande minimum (€)</label>
                     <input type="number" min="0" value={editPromo.min_order ?? ""}
                       onChange={e => setEditPromo(p => ({ ...p, min_order: e.target.value ? parseFloat(e.target.value) : null }))}
                       className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="0" />
                   </div>
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Max utilisations</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Max utilisations</label>
                     <input type="number" min="0" value={editPromo.max_uses ?? ""}
                       onChange={e => setEditPromo(p => ({ ...p, max_uses: e.target.value ? parseInt(e.target.value) : null }))}
                       className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="Illimité" />
@@ -1218,13 +1218,13 @@ export default function BoutiquePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Début</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Début</label>
                     <input type="date" value={editPromo.starts_at ? editPromo.starts_at.slice(0, 10) : ""}
                       onChange={e => setEditPromo(p => ({ ...p, starts_at: e.target.value || null }))}
                       className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} />
                   </div>
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Expiration</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Expiration</label>
                     <input type="date" value={editPromo.expires_at ? editPromo.expires_at.slice(0, 10) : ""}
                       onChange={e => setEditPromo(p => ({ ...p, expires_at: e.target.value || null }))}
                       className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} />

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef, CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -191,14 +191,14 @@ function EmailEditor({
           <button onClick={onClose} className={`flex h-8 w-8 items-center justify-center rounded-xl ${muted} hover:opacity-70`}><ChevronLeft size={16} /></button>
           <div>
             <p className={`text-sm font-bold ${text}`}>Éditeur email</p>
-            <p className={`text-[0.6rem] ${muted}`}>{blocks.length} bloc{blocks.length > 1 ? "s" : ""}</p>
+            <p className={`text-xs ${muted}`}>{blocks.length} bloc{blocks.length > 1 ? "s" : ""}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-0.5 rounded-xl p-0.5 ${isDark ? "bg-white/4" : "bg-gray-100"}`}>
             {(["desktop","mobile"] as const).map(v => (
               <button key={v} onClick={() => setPreview(v)}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.62rem] font-bold transition"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition"
                 style={preview === v ? { background: `${GOLD}18`, color: GOLD } : { color: isDark ? "rgba(255,255,255,0.35)" : "#aaa" }}>
                 {v === "desktop" ? <Monitor size={11} /> : <Smartphone size={11} />}
                 {v === "desktop" ? "Desktop" : "Mobile"}
@@ -216,10 +216,10 @@ function EmailEditor({
       <div className="flex flex-1 overflow-hidden">
         {/* Panneau gauche — blocs */}
         <div className={`shrink-0 w-48 border-r overflow-y-auto p-3 space-y-1 ${isDark ? "border-white/6 bg-[#0a0d14]" : "border-black/6 bg-gray-50"}`}>
-          <p className={`text-[0.6rem] font-bold uppercase tracking-wider mb-2 ${muted}`}>Blocs</p>
+          <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${muted}`}>Blocs</p>
           {BLOCK_TYPES.map(bt => (
             <button key={bt.type} onClick={() => addBlock(bt.type)}
-              className={`flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-[0.65rem] font-semibold transition ${card} ${muted} hover:opacity-70`}>
+              className={`flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-xs font-semibold transition ${card} ${muted} hover:opacity-70`}>
               <bt.icon size={11} />{bt.label}
             </button>
           ))}
@@ -305,14 +305,14 @@ function EmailEditor({
           ) : (
             <>
               <div className="flex items-center justify-between">
-                <p className={`text-[0.65rem] font-bold uppercase tracking-wider ${muted}`}>{selected.type}</p>
+                <p className={`text-xs font-bold uppercase tracking-wider ${muted}`}>{selected.type}</p>
                 <button onClick={() => setSelectedId(null)} className={muted}><X size={11} /></button>
               </div>
 
               {/* Contenu */}
               {(selected.type === "title" || selected.type === "text" || selected.type === "footer") && (
                 <div>
-                  <label className={`block text-[0.6rem] font-semibold mb-1 ${muted}`}>Contenu</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Contenu</label>
                   <textarea value={selected.content ?? ""} rows={5}
                     onChange={e => updateBlock(selected.id, { content: e.target.value })}
                     className={`w-full resize-none rounded-xl border px-2.5 py-2 text-xs outline-none ${inp}`} />
@@ -320,7 +320,7 @@ function EmailEditor({
                   <div className="mt-1.5">
                     {!showRewrite ? (
                       <button onClick={() => setShowRewrite(true)}
-                        className="flex w-full items-center justify-center gap-1.5 rounded-xl py-1.5 text-[0.6rem] font-bold"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-bold"
                         style={{ background: `${GOLD}15`, color: GOLD }}>
                         <Sparkles size={9} /> Réécrire avec IA
                       </button>
@@ -331,9 +331,9 @@ function EmailEditor({
                           {TONES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
                         </select>
                         <div className="flex gap-1">
-                          <button onClick={() => setShowRewrite(false)} className={`flex-1 rounded-xl py-1 text-[0.6rem] border ${card} ${muted}`}>Annuler</button>
+                          <button onClick={() => setShowRewrite(false)} className={`flex-1 rounded-xl py-1 text-xs border ${card} ${muted}`}>Annuler</button>
                           <button onClick={() => void rewriteBlock()} disabled={rewriting}
-                            className="flex-1 rounded-xl py-1 text-[0.6rem] font-bold"
+                            className="flex-1 rounded-xl py-1 text-xs font-bold"
                             style={{ background: `${GOLD}15`, color: GOLD }}>
                             {rewriting ? <Loader2 size={9} className="mx-auto animate-spin" /> : "Réécrire"}
                           </button>
@@ -347,12 +347,12 @@ function EmailEditor({
               {selected.type === "button" && (
                 <div className="space-y-2">
                   <div>
-                    <label className={`block text-[0.6rem] font-semibold mb-1 ${muted}`}>Libellé</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Libellé</label>
                     <input value={selected.label ?? ""} onChange={e => updateBlock(selected.id, { label: e.target.value })}
                       className={`w-full rounded-xl border px-2.5 py-2 text-xs outline-none ${inp}`} />
                   </div>
                   <div>
-                    <label className={`block text-[0.6rem] font-semibold mb-1 ${muted}`}>URL</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>URL</label>
                     <input value={selected.url ?? ""} onChange={e => updateBlock(selected.id, { url: e.target.value })}
                       className={`w-full rounded-xl border px-2.5 py-2 text-xs outline-none ${inp}`}
                       placeholder="{{cta_url}}" />
@@ -362,11 +362,11 @@ function EmailEditor({
 
               {selected.type === "image" && (
                 <div>
-                  <label className={`block text-[0.6rem] font-semibold mb-1 ${muted}`}>URL image</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>URL image</label>
                   <input value={selected.src ?? ""} onChange={e => updateBlock(selected.id, { src: e.target.value })}
                     className={`w-full rounded-xl border px-2.5 py-2 text-xs outline-none ${inp}`}
                     placeholder="https://…" />
-                  <label className={`block text-[0.6rem] font-semibold mt-2 mb-1 ${muted}`}>Alt</label>
+                  <label className={`block text-xs font-semibold mt-2 mb-1 ${muted}`}>Alt</label>
                   <input value={selected.alt ?? ""} onChange={e => updateBlock(selected.id, { alt: e.target.value })}
                     className={`w-full rounded-xl border px-2.5 py-2 text-xs outline-none ${inp}`} />
                 </div>
@@ -375,11 +375,11 @@ function EmailEditor({
               {/* Alignement */}
               {["title","text","button"].includes(selected.type) && (
                 <div>
-                  <label className={`block text-[0.6rem] font-semibold mb-1 ${muted}`}>Alignement</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Alignement</label>
                   <div className="flex gap-1">
                     {(["left","center","right"] as const).map(a => (
                       <button key={a} onClick={() => updateBlock(selected.id, { align: a })}
-                        className="flex-1 rounded-lg py-1 text-[0.58rem] font-bold border transition"
+                        className="flex-1 rounded-lg py-1 text-[11px] font-bold border transition"
                         style={selected.align === a ? { background: `${GOLD}18`, borderColor: `${GOLD}40`, color: GOLD } : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)", color: isDark ? "rgba(255,255,255,0.35)" : "#aaa" }}>
                         {a === "left" ? "G" : a === "center" ? "C" : "D"}
                       </button>
@@ -391,7 +391,7 @@ function EmailEditor({
               {/* Couleur */}
               {["title","text"].includes(selected.type) && (
                 <div>
-                  <label className={`block text-[0.6rem] font-semibold mb-1 ${muted}`}>Couleur texte</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Couleur texte</label>
                   <div className="flex items-center gap-2">
                     <input type="color" value={selected.color ?? "#111111"} onChange={e => updateBlock(selected.id, { color: e.target.value })}
                       className="h-7 w-7 rounded cursor-pointer border-0" />
@@ -402,7 +402,7 @@ function EmailEditor({
 
               {selected.type === "button" && (
                 <div>
-                  <label className={`block text-[0.6rem] font-semibold mb-1 ${muted}`}>Couleur bouton</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Couleur bouton</label>
                   <input type="color" value={selected.bg ?? GOLD} onChange={e => updateBlock(selected.id, { bg: e.target.value })}
                     className="h-7 w-7 rounded cursor-pointer border-0" />
                 </div>
@@ -410,7 +410,7 @@ function EmailEditor({
 
               {selected.type === "spacer" && (
                 <div>
-                  <label className={`block text-[0.6rem] font-semibold mb-1 ${muted}`}>Hauteur (px)</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Hauteur (px)</label>
                   <input type="number" value={selected.padding ?? 24} min={4} max={120}
                     onChange={e => updateBlock(selected.id, { padding: parseInt(e.target.value) })}
                     className={`w-full rounded-xl border px-2.5 py-2 text-xs outline-none ${inp}`} />
@@ -645,11 +645,11 @@ export default function EmailMarketingPage() {
           </div>
           <div>
             <h1 className={`text-base font-black ${text}`}>Email Marketing</h1>
-            <p className={`text-[0.6rem] ${muted}`}>{fmtNum(sent)} envoyés · {campaigns.filter(c => c.status === "planifiee").length} planifiée{campaigns.filter(c => c.status === "planifiee").length > 1 ? "s" : ""}</p>
+            <p className={`text-xs ${muted}`}>{fmtNum(sent)} envoyés · {campaigns.filter(c => c.status === "planifiee").length} planifiée{campaigns.filter(c => c.status === "planifiee").length > 1 ? "s" : ""}</p>
           </div>
         </div>
         <button onClick={() => { setShowAIModal(true); setAiBrief(""); }}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.7rem] font-black transition hover:brightness-105"
+          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition hover:brightness-105"
           style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
           <Plus size={13} /> Nouvelle campagne
         </button>
@@ -662,7 +662,7 @@ export default function EmailMarketingPage() {
           const active = tab === n.key;
           return (
             <button key={n.key} onClick={() => setTab(n.key)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.67rem] font-bold transition-all ${active ? "" : `${muted} hover:opacity-70`}`}
+              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${active ? "" : `${muted} hover:opacity-70`}`}
               style={active ? { background: `${GOLD}15`, color: GOLD } : {}}>
               <n.icon size={11} />{n.label}
             </button>
@@ -688,15 +688,15 @@ export default function EmailMarketingPage() {
               ].map(k => (
                 <div key={k.label} className={`rounded-2xl border p-4 ${card}`}>
                   <p className="text-xl font-black tabular-nums" style={{ color: k.color }}>{k.value}</p>
-                  <p className={`text-[0.65rem] font-bold mt-0.5 ${text}`}>{k.label}</p>
-                  <p className={`text-[0.58rem] mt-0.5 ${muted}`}>{k.sub}</p>
+                  <p className={`text-xs font-bold mt-0.5 ${text}`}>{k.label}</p>
+                  <p className={`text-[11px] mt-0.5 ${muted}`}>{k.sub}</p>
                 </div>
               ))}
             </div>
             {/* Note métriques */}
             <div className={`flex items-start gap-2 rounded-2xl border p-3 ${isDark ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200 bg-amber-50"}`}>
               <AlertCircle size={12} className="text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-[0.65rem] text-amber-500">
+              <p className="text-xs text-amber-500">
                 Le taux d&apos;ouverture peut être biaisé par les protections de confidentialité des clients mail (Apple Mail Privacy Protection, etc.). Il n&apos;est pas une mesure parfaitement fiable.
               </p>
             </div>
@@ -716,12 +716,12 @@ export default function EmailMarketingPage() {
                         <div key={c.id} className={`flex items-center gap-3 rounded-xl border p-3 ${isDark ? "border-white/5 bg-white/2" : "border-black/5 bg-gray-50"}`}>
                           <div className="flex-1 min-w-0">
                             <p className={`text-xs font-bold truncate ${text}`}>{c.name}</p>
-                            <p className={`text-[0.6rem] ${muted}`}>{c.subject.slice(0, 50)}</p>
+                            <p className={`text-xs ${muted}`}>{c.subject.slice(0, 50)}</p>
                           </div>
-                          <span className="text-[0.6rem] font-bold rounded-full px-2 py-0.5" style={{ color: s.color, background: `${s.color}15` }}>{s.label}</span>
+                          <span className="text-xs font-bold rounded-full px-2 py-0.5" style={{ color: s.color, background: `${s.color}15` }}>{s.label}</span>
                           <div className="text-right shrink-0">
                             <p className="text-sm font-black tabular-nums" style={{ color: GOLD }}>{ctr}%</p>
-                            <p className={`text-[0.55rem] ${muted}`}>CTR</p>
+                            <p className={`text-[11px] ${muted}`}>CTR</p>
                           </div>
                         </div>
                       );
@@ -760,7 +760,7 @@ export default function EmailMarketingPage() {
               <div className="flex flex-wrap gap-1.5">
                 {([["tous","Tous"], ...Object.entries(STATUS_CFG).map(([k, v]) => [k, v.label])]).map(([k, label]) => (
                   <button key={k} onClick={() => setCampFilter(k as CampStatus | "tous")}
-                    className="rounded-xl border px-2.5 py-1 text-[0.62rem] font-bold transition"
+                    className="rounded-xl border px-2.5 py-1 text-xs font-bold transition"
                     style={campFilter === k ? { background: `${GOLD}15`, borderColor: `${GOLD}30`, color: GOLD }
                       : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)", color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)" }}>
                     {label}
@@ -790,8 +790,8 @@ export default function EmailMarketingPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[0.6rem] font-bold rounded-full px-2 py-0.5" style={{ color: s.color, background: `${s.color}15` }}>{s.label}</span>
-                            {c.ai_generated && <span className={`text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"}`} style={{ color: GOLD }}>IA</span>}
+                            <span className="text-xs font-bold rounded-full px-2 py-0.5" style={{ color: s.color, background: `${s.color}15` }}>{s.label}</span>
+                            {c.ai_generated && <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"}`} style={{ color: GOLD }}>IA</span>}
                           </div>
                           <p className={`text-sm font-bold truncate ${text}`}>{c.name}</p>
                           <p className={`text-xs mt-0.5 ${muted}`}>{c.subject || "(sans objet)"}</p>
@@ -813,12 +813,12 @@ export default function EmailMarketingPage() {
                           ].map(k => (
                             <div key={k.label} className={`rounded-xl border p-2 text-center ${isDark ? "border-white/5 bg-white/2" : "border-black/5 bg-gray-50"}`}>
                               <p className={`text-sm font-black tabular-nums ${text}`}>{k.value}</p>
-                              <p className={`text-[0.55rem] ${muted}`}>{k.label}</p>
+                              <p className={`text-[11px] ${muted}`}>{k.label}</p>
                             </div>
                           ))}
                         </div>
                       )}
-                      <div className={`flex items-center gap-3 pt-1 text-[0.6rem] border-t ${div} ${muted}`}>
+                      <div className={`flex items-center gap-3 pt-1 text-xs border-t ${div} ${muted}`}>
                         {c.scheduled_at && <span className="flex items-center gap-1"><Clock size={9} />{fmtDate(c.scheduled_at)}</span>}
                         {c.stats_sent > 0 && <span>{fmtNum(c.stats_recipients)} destinataires</span>}
                         <span className="ml-auto">{fmtDate(c.created_at)}</span>
@@ -838,7 +838,7 @@ export default function EmailMarketingPage() {
               <div className="flex items-center justify-between">
                 <p className={`text-sm font-bold ${text}`}>Workflows d&apos;automatisation</p>
                 <button onClick={() => { setNewAuto({ name: "", trigger_type: "new_contact", trigger_config: {}, is_active: false, run_count: 0, steps: [] }); }}
-                  className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.65rem] font-bold`} style={{ background: `${GOLD}15`, color: GOLD }}>
+                  className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold`} style={{ background: `${GOLD}15`, color: GOLD }}>
                   <Plus size={11} /> Nouveau
                 </button>
               </div>
@@ -876,8 +876,8 @@ export default function EmailMarketingPage() {
                         <Zap size={14} style={{ color: GOLD }} />
                       </div>
                       <div>
-                        <p className={`text-[0.7rem] font-bold ${text}`}>Déclencheur</p>
-                        <p className={`text-[0.62rem] ${muted}`}>{newAuto.trigger_type.replace(/_/g, " ")}</p>
+                        <p className={`text-xs font-bold ${text}`}>Déclencheur</p>
+                        <p className={`text-xs ${muted}`}>{newAuto.trigger_type.replace(/_/g, " ")}</p>
                       </div>
                     </div>
                     {/* Étapes */}
@@ -891,8 +891,8 @@ export default function EmailMarketingPage() {
                               <cfg.icon size={14} style={{ color: cfg.color }} />
                             </div>
                             <div className="flex-1">
-                              <p className={`text-[0.7rem] font-bold ${text}`}>{cfg.label}</p>
-                              <p className={`text-[0.62rem] ${muted}`}>
+                              <p className={`text-xs font-bold ${text}`}>{cfg.label}</p>
+                              <p className={`text-xs ${muted}`}>
                                 {step.step_type === "wait" ? `Attendre ${(step.config as {days?: number}).days ?? 1} jour(s)` :
                                  step.step_type === "send_email" ? (step.config as {subject?: string}).subject ?? "" :
                                  step.step_type === "condition" ? (step.config as {condition?: string}).condition ?? "" : ""}
@@ -927,14 +927,14 @@ export default function EmailMarketingPage() {
                   <div className="flex items-center justify-between mb-2">
                     <p className={`text-sm font-bold ${text}`}>{a.name}</p>
                     <div className="flex items-center gap-2">
-                      <span className={`text-[0.6rem] font-bold rounded-full px-2 py-0.5 ${a.is_active ? "text-emerald-500 bg-emerald-500/15" : `${muted} ${isDark ? "bg-white/8" : "bg-gray-100"}`}`}>
+                      <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${a.is_active ? "text-emerald-500 bg-emerald-500/15" : `${muted} ${isDark ? "bg-white/8" : "bg-gray-100"}`}`}>
                         {a.is_active ? "Actif" : "Inactif"}
                       </span>
                       <button onClick={() => setAutomations(aut => aut.map((x, j) => j === i ? { ...x, is_active: !x.is_active } : x))}
                         className={muted}>{a.is_active ? <Pause size={14} /> : <Play size={14} />}</button>
                     </div>
                   </div>
-                  <p className={`text-[0.65rem] ${muted}`}>{a.steps.length} étape{a.steps.length > 1 ? "s" : ""} · {a.run_count} exécution{a.run_count > 1 ? "s" : ""}</p>
+                  <p className={`text-xs ${muted}`}>{a.steps.length} étape{a.steps.length > 1 ? "s" : ""} · {a.run_count} exécution{a.run_count > 1 ? "s" : ""}</p>
                 </div>
               ))}
             </div>
@@ -954,9 +954,9 @@ export default function EmailMarketingPage() {
                   </div>
                   <div>
                     <p className={`text-xs font-bold ${text}`}>{t.label}</p>
-                    <p className={`text-[0.6rem] mt-0.5 ${muted}`}>{t.desc}</p>
+                    <p className={`text-xs mt-0.5 ${muted}`}>{t.desc}</p>
                   </div>
-                  <span className={`text-[0.58rem] font-bold px-2 py-0.5 rounded-full`} style={{ background: `${GOLD}15`, color: GOLD }}>
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full`} style={{ background: `${GOLD}15`, color: GOLD }}>
                     Utiliser
                   </span>
                 </button>
@@ -975,7 +975,7 @@ export default function EmailMarketingPage() {
             <div className={`shrink-0 border-b px-4 py-3 space-y-2 ${div}`}>
               <div className="flex items-center justify-between">
                 <p className={`text-sm font-bold ${text}`}>Contacts CRM</p>
-                <div className="flex items-center gap-1 text-[0.6rem]">
+                <div className="flex items-center gap-1 text-xs">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                   <span className={muted}>Synchronisé avec CRM</span>
                 </div>
@@ -987,7 +987,7 @@ export default function EmailMarketingPage() {
               </div>
               <div className={`flex items-start gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-blue-500/20 bg-blue-500/5" : "border-blue-200 bg-blue-50"}`}>
                 <AlertCircle size={11} className="text-blue-400 shrink-0 mt-0.5" />
-                <p className="text-[0.62rem] text-blue-400">
+                <p className="text-xs text-blue-400">
                   Email Marketing ne crée pas de base contacts séparée. Il enrichit les contacts CRM avec des propriétés marketing (consentement, listes, préférences).
                 </p>
               </div>
@@ -1013,9 +1013,9 @@ export default function EmailMarketingPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`text-xs font-bold truncate ${text}`}>{c.first_name ?? ""} {c.last_name ?? ""} {(!c.first_name && !c.last_name) ? c.email : ""}</p>
-                        <p className={`text-[0.62rem] ${muted}`}>{c.email} {c.company ? `· ${c.company}` : ""}</p>
+                        <p className={`text-xs ${muted}`}>{c.email} {c.company ? `· ${c.company}` : ""}</p>
                       </div>
-                      <span className="text-[0.58rem] font-bold rounded-full px-2 py-0.5 shrink-0" style={{ color: statusColor, background: `${statusColor}15` }}>
+                      <span className="text-[11px] font-bold rounded-full px-2 py-0.5 shrink-0" style={{ color: statusColor, background: `${statusColor}15` }}>
                         {gstatus === "subscribed" ? "Abonné" : gstatus === "unsubscribed" ? "Désab." : gstatus === "bounced" ? "Bounce" : mktg ? gstatus : "Non inscrit"}
                       </span>
                     </div>
@@ -1064,9 +1064,9 @@ export default function EmailMarketingPage() {
                         className={`w-full flex items-center gap-3 rounded-2xl border p-4 text-left transition hover:opacity-70 ${card}`}>
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm font-bold truncate ${text}`}>{c.name}</p>
-                          <p className={`text-[0.65rem] ${muted}`}>{fmtNum(c.stats_sent)} envoyés · {fmtDate(c.completed_at)}</p>
+                          <p className={`text-xs ${muted}`}>{fmtNum(c.stats_sent)} envoyés · {fmtDate(c.completed_at)}</p>
                         </div>
-                        <span className="text-[0.6rem] font-bold rounded-full px-2 py-0.5" style={{ color: s.color, background: `${s.color}15` }}>{s.label}</span>
+                        <span className="text-xs font-bold rounded-full px-2 py-0.5" style={{ color: s.color, background: `${s.color}15` }}>{s.label}</span>
                         <ArrowRight size={13} className={muted} />
                       </button>
                     );
@@ -1091,7 +1091,7 @@ export default function EmailMarketingPage() {
                   ].map(k => (
                     <div key={k.label} className={`rounded-2xl border p-4 text-center ${card}`}>
                       <p className="text-xl font-black tabular-nums" style={{ color: k.color }}>{k.value}</p>
-                      <p className={`text-[0.62rem] mt-0.5 ${muted}`}>{k.label}</p>
+                      <p className={`text-xs mt-0.5 ${muted}`}>{k.label}</p>
                     </div>
                   ))}
                 </div>
@@ -1123,7 +1123,7 @@ export default function EmailMarketingPage() {
             <div className={`rounded-2xl border p-4 space-y-3 ${card}`}>
               <p className={`text-sm font-bold ${text}`}>Fournisseur email</p>
               <div>
-                <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>Provider</label>
+                <label className={`block text-xs font-semibold mb-1 ${muted}`}>Provider</label>
                 <select value={providerForm.provider} onChange={e => setProviderForm(f => ({ ...f, provider: e.target.value }))}
                   className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}>
                   {["resend","sendgrid","mailgun","smtp","ses"].map(p => <option key={p} value={p}>{p}</option>)}
@@ -1135,7 +1135,7 @@ export default function EmailMarketingPage() {
                 { key: "reply_to",   label: "Répondre à",       placeholder: "contact@votre-domaine.fr" },
               ].map(f => (
                 <div key={f.key}>
-                  <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>{f.label}</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>{f.label}</label>
                   <input value={providerForm[f.key as keyof typeof providerForm]}
                     onChange={e => setProviderForm(p => ({ ...p, [f.key]: e.target.value }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}
@@ -1144,7 +1144,7 @@ export default function EmailMarketingPage() {
               ))}
               <div className={`flex items-start gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200 bg-amber-50"}`}>
                 <AlertCircle size={11} className="text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-[0.62rem] text-amber-500">La clé API est stockée côté serveur uniquement. Elle n&apos;est jamais retournée au navigateur.</p>
+                <p className="text-xs text-amber-500">La clé API est stockée côté serveur uniquement. Elle n&apos;est jamais retournée au navigateur.</p>
               </div>
               <button onClick={() => toast("Paramètres sauvegardés", "success")}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-black transition hover:brightness-105"
@@ -1160,7 +1160,7 @@ export default function EmailMarketingPage() {
                 <input value={domainInput} onChange={e => setDomainInput(e.target.value)}
                   className="flex-1 bg-transparent text-sm outline-none" placeholder="votre-domaine.fr" />
                 <button onClick={() => { if (domainInput.trim()) toast("Vérification DNS lancée (provider requis)", "info"); }}
-                  className="shrink-0 text-[0.65rem] font-bold" style={{ color: GOLD }}>Vérifier</button>
+                  className="shrink-0 text-xs font-bold" style={{ color: GOLD }}>Vérifier</button>
               </div>
             </div>
             {/* Désabonnement */}
@@ -1202,7 +1202,7 @@ export default function EmailMarketingPage() {
                 </div>
                 <div className="relative flex items-center gap-3">
                   <div className={`flex-1 h-px ${isDark ? "bg-white/8" : "bg-black/8"}`} />
-                  <span className={`text-[0.62rem] font-semibold ${muted}`}>ou</span>
+                  <span className={`text-xs font-semibold ${muted}`}>ou</span>
                   <div className={`flex-1 h-px ${isDark ? "bg-white/8" : "bg-black/8"}`} />
                 </div>
                 <button onClick={() => {
@@ -1236,7 +1236,7 @@ export default function EmailMarketingPage() {
                   { key: "preheader", label: "Texte de prévisualisation", placeholder: "Aperçu court visible dans la boîte de réception" },
                 ].map(f => (
                   <div key={f.key}>
-                    <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>{f.label}</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>{f.label}</label>
                     <input value={(editingCamp as Record<string, unknown>)[f.key] as string ?? ""}
                       onChange={e => setEditingCamp(p => ({ ...p, [f.key]: e.target.value }))}
                       className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}
@@ -1244,7 +1244,7 @@ export default function EmailMarketingPage() {
                   </div>
                 ))}
                 <div>
-                  <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>Planification</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Planification</label>
                   <input type="datetime-local"
                     value={editingCamp.scheduled_at ? editingCamp.scheduled_at.slice(0, 16) : ""}
                     onChange={e => setEditingCamp(p => ({ ...p, scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : null }))}

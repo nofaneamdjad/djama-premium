@@ -329,7 +329,7 @@ function resolveVars(s: string, contact: Pick<Contact, "name" | "company" | "bud
 
 function Badge({ label, color, bg }: { label: string; color: string; bg?: string }) {
   return (
-    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
+    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider"
       style={{ color, backgroundColor: bg ?? `${color}1a` }}>
       {label}
     </span>
@@ -350,9 +350,9 @@ function Input({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> 
   const isDark = useDark();
   return (
     <div className="space-y-1">
-      {label && <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</label>}
+      {label && <label className={`block text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</label>}
       <input {...props}
-        className={`w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`} />
+        className={`w-full rounded-xl border px-3 py-2 text-sm outline-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`} />
     </div>
   );
 }
@@ -361,9 +361,9 @@ function Textarea({ label, ...props }: React.TextareaHTMLAttributes<HTMLTextArea
   const isDark = useDark();
   return (
     <div className="space-y-1">
-      {label && <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</label>}
+      {label && <label className={`block text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</label>}
       <textarea {...props} rows={3}
-        className={`w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none resize-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`} />
+        className={`w-full rounded-xl border px-3 py-2 text-sm outline-none resize-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`} />
     </div>
   );
 }
@@ -372,9 +372,9 @@ function Select({ label, children, ...props }: React.SelectHTMLAttributes<HTMLSe
   const isDark = useDark();
   return (
     <div className="space-y-1">
-      {label && <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</label>}
+      {label && <label className={`block text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</label>}
       <select {...props}
-        className="w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none transition-colors appearance-none"
+        className="w-full rounded-xl border px-3 py-2 text-sm outline-none transition-colors appearance-none"
         style={{ backgroundColor: isDark ? "#0d1117" : "#f9fafb", color: isDark ? "#ffffff" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
         {children}
       </select>
@@ -461,10 +461,10 @@ function PipelineView({
           <div key={s.label} className={`rounded-2xl border p-3 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
             <div className="flex items-center gap-1.5 mb-1">
               <s.icon size={11} style={{ color: s.color }}/>
-              <span className={`text-[0.58rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{s.label}</span>
+              <span className={`text-[11px] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{s.label}</span>
             </div>
             <div className="text-base font-black" style={{ color: s.color }}>{s.value}</div>
-            {s.hint && <div className={`text-[0.55rem] mt-0.5 ${isDark ? "text-white/20" : "text-gray-400"}`}>{s.hint}</div>}
+            {s.hint && <div className={`text-[11px] mt-0.5 ${isDark ? "text-white/20" : "text-gray-400"}`}>{s.hint}</div>}
           </div>
         ))}
       </div>
@@ -477,12 +477,12 @@ function PipelineView({
           const count    = byStage[stage].length;
           return (
             <div key={stage} className={`rounded-2xl border p-2.5 text-center ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-              <div className="text-[0.55rem] font-bold uppercase tracking-widest mb-1"
+              <div className="text-[11px] font-bold uppercase tracking-widest mb-1"
                 style={{ color: STAGES[stage].color }}>{STAGES[stage].label}</div>
               <div className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"}`}>{count}</div>
-              {total > 0 && <div className={`text-[0.58rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{fmtEur(total)}</div>}
+              {total > 0 && <div className={`text-[11px] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{fmtEur(total)}</div>}
               {forecast > 0 && stage !== "gagné" && (
-                <div className="text-[0.52rem] mt-0.5 text-emerald-500">~{fmtEur(forecast)}</div>
+                <div className="text-[10px] mt-0.5 text-emerald-500">~{fmtEur(forecast)}</div>
               )}
             </div>
           );
@@ -508,9 +508,9 @@ function PipelineView({
           }}>
                         <div className={`flex items-center justify-between p-3 border-b ${isDark ? "border-white/[0.05]" : "border-gray-100"}`}>
               <div>
-                <span className="text-[0.65rem] font-black uppercase tracking-widest"
+                <span className="text-xs font-black uppercase tracking-widest"
                   style={{ color: STAGES[stage].color }}>{STAGES[stage].label}</span>
-                <span className={`ml-1.5 text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>({byStage[stage].length})</span>
+                <span className={`ml-1.5 text-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>({byStage[stage].length})</span>
               </div>
               {stage !== "gagné" && stage !== "perdu" && (
                 <button onClick={() => openAdd(stage)}
@@ -532,7 +532,7 @@ function PipelineView({
                     style={draggedId === opp.id ? { opacity: 0.45 } : {}}
                     onClick={() => openEdit(opp)}>
                     <div className="flex items-start justify-between gap-1">
-                      <p className={`text-[0.72rem] font-semibold leading-tight flex-1 min-w-0 ${isDark ? "text-white" : "text-gray-900"}`}>{opp.title}</p>
+                      <p className={`text-sm font-semibold leading-tight flex-1 min-w-0 ${isDark ? "text-white" : "text-gray-900"}`}>{opp.title}</p>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         {isActive && (
                           <>
@@ -557,18 +557,18 @@ function PipelineView({
                       </div>
                     </div>
                     {opp.contact && (
-                      <p className={`text-[0.62rem] mt-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                      <p className={`text-xs mt-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
                         {opp.contact.name}{opp.contact.company ? ` · ${opp.contact.company}` : ""}
                       </p>
                     )}
                     <div className="flex items-center justify-between mt-2 gap-1 flex-wrap">
                       {opp.amount > 0 && (
-                        <span className="text-[0.68rem] font-black" style={{ color: STAGES[stage].color }}>
+                        <span className="text-xs font-black" style={{ color: STAGES[stage].color }}>
                           {fmtEur(opp.amount)}
                         </span>
                       )}
                       {opp.close_date && (
-                        <span className={`text-[0.6rem] ml-auto flex items-center gap-0.5 rounded-full px-1.5 py-0.5 ${
+                        <span className={`text-xs ml-auto flex items-center gap-0.5 rounded-full px-1.5 py-0.5 ${
                           urgency === "overdue"   ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
                           urgency === "this-week" ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
                           isDark ? "text-white/30" : "text-gray-400"
@@ -591,7 +591,7 @@ function PipelineView({
               {dragOver === stage && draggedId && (
                 <div className="h-12 rounded-xl border-2 border-dashed flex items-center justify-center shrink-0"
                   style={{ borderColor: `${STAGES[stage].color}50` }}>
-                  <span className="text-[0.6rem] font-semibold" style={{ color: STAGES[stage].color }}>
+                  <span className="text-xs font-semibold" style={{ color: STAGES[stage].color }}>
                     Déposer ici
                   </span>
                 </div>
@@ -731,7 +731,7 @@ function TachesView({
             <button key={f.id} onClick={() => setFilter(f.id)}
               className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${filter === f.id ? (isDark ? "bg-white/10 text-white" : "bg-black/[0.06] text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700")}`}>
               {f.label}
-              {counts[f.id] > 0 && <span className={`ml-1.5 rounded-full px-1.5 text-[0.6rem] ${
+              {counts[f.id] > 0 && <span className={`ml-1.5 rounded-full px-1.5 text-xs ${
                 f.id === "late" ? "bg-red-500/20 text-red-400" : (isDark ? "bg-white/10 text-white/50" : "bg-black/[0.06] text-gray-500")}`}>{counts[f.id]}</span>}
             </button>
           ))}
@@ -764,28 +764,28 @@ function TachesView({
                   </button>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-[0.78rem] font-semibold ${task.done ? (isDark ? "line-through text-white/30" : "line-through text-gray-400") : (isDark ? "text-white" : "text-gray-900")}`}>
+                      <span className={`text-sm font-semibold ${task.done ? (isDark ? "line-through text-white/30" : "line-through text-gray-400") : (isDark ? "text-white" : "text-gray-900")}`}>
                         {task.title}
                       </span>
-                      <div className="flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-wider"
+                      <div className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider"
                         style={{ color: pColor }}>
                         <TaskIcon size={9}/>{task.type}
                       </div>
                     </div>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
                       {task.contact && (
-                        <span className={`text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
+                        <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>
                           {task.contact.name}{task.contact.company ? ` · ${task.contact.company}` : ""}
                         </span>
                       )}
                       {task.due_date && (
-                        <span className={`text-[0.65rem] flex items-center gap-0.5 ${isLate ? "text-red-400" : (isDark ? "text-white/30" : "text-gray-400")}`}>
+                        <span className={`text-xs flex items-center gap-0.5 ${isLate ? "text-red-400" : (isDark ? "text-white/30" : "text-gray-400")}`}>
                           <Calendar size={9}/>{fmtDate(task.due_date)}
                           {isLate && " · En retard"}
                         </span>
                       )}
                       {task.reminder_at && (
-                        <span className={`text-[0.65rem] flex items-center gap-0.5 ${isDark ? "text-amber-400/60" : "text-amber-500"}`}
+                        <span className={`text-xs flex items-center gap-0.5 ${isDark ? "text-amber-400/60" : "text-amber-500"}`}
                           title={`Rappel : ${new Date(task.reminder_at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}`}>
                           <Bell size={9}/>
                           {new Date(task.reminder_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
@@ -796,9 +796,9 @@ function TachesView({
                         const label = m?.display_name ?? "Assigné";
                         const initials = label.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
                         return (
-                          <span className={`text-[0.6rem] flex items-center gap-1 rounded-full px-1.5 py-0.5 ${isDark ? "bg-white/[0.06] text-white/50" : "bg-gray-100 text-gray-500"}`}
+                          <span className={`text-xs flex items-center gap-1 rounded-full px-1.5 py-0.5 ${isDark ? "bg-white/[0.06] text-white/50" : "bg-gray-100 text-gray-500"}`}
                             title={`Assigné à : ${label}`}>
-                            <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[0.5rem] font-black text-white"
+                            <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[10px] font-black text-white"
                               style={{ background: "#a78bfa" }}>{initials}</span>
                             {label}
                           </span>
@@ -845,12 +845,12 @@ function TachesView({
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Échéance" type="date" value={form.due_date ?? ""} onChange={e => setForm(f => ({ ...f, due_date: e.target.value || null }))}/>
                 <div className="space-y-1">
-                  <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                  <label className={`block text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>
                     Rappel <Bell size={9} className="inline mb-0.5"/>
                   </label>
                   <input type="datetime-local" value={form.reminder_at?.slice(0, 16) ?? ""}
                     onChange={e => setForm(f => ({ ...f, reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null }))}
-                    className={`w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 focus:border-gray-300"}`}
+                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 focus:border-gray-300"}`}
                     style={{ colorScheme: isDark ? "dark" : "light" }}/>
                 </div>
               </div>
@@ -1077,7 +1077,7 @@ function RapportView({
 
       {/* ── Header + bouton Analyse IA ── */}
       <div className="flex items-center justify-between">
-        <p className={`text-[0.65rem] font-black uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Synthèse CRM</p>
+        <p className={`text-xs font-black uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Synthèse CRM</p>
         <button
           onClick={runRapportIA}
           disabled={rapportLoading}
@@ -1121,13 +1121,13 @@ function RapportView({
                   />
                   <text x={36} y={40} textAnchor="middle" fill={scoreColor} fontSize={15} fontWeight={900} fontFamily="inherit">{score}</text>
                 </svg>
-                <p className={`text-[0.55rem] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Score</p>
+                <p className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Score</p>
               </div>
 
               {/* Résumé */}
               <div className="flex-1 min-w-0">
-                <p className="text-[0.65rem] font-black uppercase tracking-widest mb-1.5" style={{ color: "#c9a55a" }}>Résumé exécutif</p>
-                <p className={`text-[0.75rem] leading-relaxed ${isDark ? "text-white/70" : "text-gray-700"}`}>{rapport.resume_executif}</p>
+                <p className="text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: "#c9a55a" }}>Résumé exécutif</p>
+                <p className={`text-sm leading-relaxed ${isDark ? "text-white/70" : "text-gray-700"}`}>{rapport.resume_executif}</p>
               </div>
             </div>
 
@@ -1135,10 +1135,10 @@ function RapportView({
             <div className="grid sm:grid-cols-2 gap-4">
               {rapport.points_forts.length > 0 && (
                 <div className="rounded-xl p-4" style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.15)" }}>
-                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-emerald-400/70 mb-2.5">Points forts</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-emerald-400/70 mb-2.5">Points forts</p>
                   <ul className="space-y-1.5">
                     {rapport.points_forts.map((pt, i) => (
-                      <li key={i} className={`flex items-start gap-2 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
+                      <li key={i} className={`flex items-start gap-2 text-sm ${isDark ? "text-white/65" : "text-gray-600"}`}>
                         <span className="mt-1 shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-400"/>
                         {pt}
                       </li>
@@ -1148,10 +1148,10 @@ function RapportView({
               )}
               {rapport.alertes.length > 0 && (
                 <div className="rounded-xl p-4" style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)" }}>
-                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-red-400/70 mb-2.5">Alertes</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-red-400/70 mb-2.5">Alertes</p>
                   <ul className="space-y-1.5">
                     {rapport.alertes.map((al, i) => (
-                      <li key={i} className={`flex items-start gap-2 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
+                      <li key={i} className={`flex items-start gap-2 text-sm ${isDark ? "text-white/65" : "text-gray-600"}`}>
                         <AlertCircle size={10} className="mt-0.5 shrink-0 text-red-400"/>
                         {al}
                       </li>
@@ -1164,11 +1164,11 @@ function RapportView({
             {/* Recommandations */}
             {rapport.recommandations.length > 0 && (
               <div>
-                <p className="text-[0.6rem] font-black uppercase tracking-widest mb-2.5" style={{ color: "rgba(201,165,90,0.7)" }}>Recommandations</p>
+                <p className="text-xs font-black uppercase tracking-widest mb-2.5" style={{ color: "rgba(201,165,90,0.7)" }}>Recommandations</p>
                 <ol className="space-y-2">
                   {rapport.recommandations.map((r, i) => (
-                    <li key={i} className={`flex items-start gap-2.5 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
-                      <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[0.55rem] font-black"
+                    <li key={i} className={`flex items-start gap-2.5 text-sm ${isDark ? "text-white/65" : "text-gray-600"}`}>
+                      <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[11px] font-black"
                         style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>{i + 1}</span>
                       {r}
                     </li>
@@ -1180,21 +1180,21 @@ function RapportView({
             {/* Contacts à relancer */}
             {rapport.contacts_a_relancer.length > 0 && (
               <div>
-                <p className={`text-[0.6rem] font-black uppercase tracking-widest mb-2.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>Contacts à relancer</p>
+                <p className={`text-xs font-black uppercase tracking-widest mb-2.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>Contacts à relancer</p>
                 <div className="space-y-1.5">
                   {rapport.contacts_a_relancer.map((c, i) => (
                     <div key={i} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2" style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" }}>
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-[0.6rem] font-black"
+                        <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-xs font-black"
                           style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>
                           {c.nom.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className={`text-[0.7rem] font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>{c.nom}</p>
-                          {c.societe && <p className={`text-[0.6rem] truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>{c.societe}</p>}
+                          <p className={`text-xs font-bold truncate ${isDark ? "text-white/80" : "text-gray-800"}`}>{c.nom}</p>
+                          {c.societe && <p className={`text-xs truncate ${isDark ? "text-white/35" : "text-gray-400"}`}>{c.societe}</p>}
                         </div>
                       </div>
-                      <p className={`text-[0.65rem] shrink-0 text-right max-w-[45%] leading-snug ${isDark ? "text-white/40" : "text-gray-500"}`}>{c.raison}</p>
+                      <p className={`text-xs shrink-0 text-right max-w-[45%] leading-snug ${isDark ? "text-white/40" : "text-gray-500"}`}>{c.raison}</p>
                     </div>
                   ))}
                 </div>
@@ -1207,8 +1207,8 @@ function RapportView({
                 style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
                 <Flag size={12} className="shrink-0 mt-0.5" style={{ color: "#c9a55a" }}/>
                 <div>
-                  <p className="text-[0.55rem] font-black uppercase tracking-widest mb-0.5" style={{ color: "rgba(201,165,90,0.6)" }}>Objectif de la semaine</p>
-                  <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{rapport.objectif_semaine}</p>
+                  <p className="text-[11px] font-black uppercase tracking-widest mb-0.5" style={{ color: "rgba(201,165,90,0.6)" }}>Objectif de la semaine</p>
+                  <p className={`text-sm font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{rapport.objectif_semaine}</p>
                 </div>
               </div>
             )}
@@ -1221,7 +1221,7 @@ function RapportView({
         {kpis.map(k => (
           <div key={k.label} className={`rounded-2xl border p-4 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
             <div className="flex items-center justify-between mb-2">
-              <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
+              <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
               <k.icon size={13} style={{ color: k.color }}/>
             </div>
             <p className={`font-black ${isDark ? "text-white" : "text-gray-900"} ${k.big ? "text-base" : "text-xl"}`}>{k.value}</p>
@@ -1233,7 +1233,7 @@ function RapportView({
       <div className="grid sm:grid-cols-2 gap-4">
         {/* Pipeline horizontal bar chart */}
         <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Pipeline commercial</h3>
+          <h3 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Pipeline commercial</h3>
           <div style={{ height: 180 }}>
             <Bar
               data={{
@@ -1282,7 +1282,7 @@ function RapportView({
 
         {/* Contacts by status — Doughnut */}
         <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Contacts par statut</h3>
+          <h3 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Contacts par statut</h3>
           <div className="flex items-center gap-4">
             <div style={{ height: 140, width: 140, flexShrink: 0 }}>
               <Doughnut
@@ -1317,9 +1317,9 @@ function RapportView({
                 <div key={s.label} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: s.color }}/>
-                    <span className={`text-[0.65rem] ${isDark ? "text-white/50" : "text-gray-600"}`}>{s.label}</span>
+                    <span className={`text-xs ${isDark ? "text-white/50" : "text-gray-600"}`}>{s.label}</span>
                   </div>
-                  <span className={`text-[0.65rem] font-bold ${isDark ? "text-white/40" : "text-gray-500"}`}>{s.val}</span>
+                  <span className={`text-xs font-bold ${isDark ? "text-white/40" : "text-gray-500"}`}>{s.val}</span>
                 </div>
               ))}
             </div>
@@ -1327,12 +1327,12 @@ function RapportView({
 
           {stats.topSectors.length > 0 && (
             <>
-              <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-2 mt-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Top secteurs</h3>
+              <h3 className={`text-xs font-black uppercase tracking-widest mb-2 mt-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Top secteurs</h3>
               <div className="space-y-1">
                 {stats.topSectors.map(([sector, count]) => (
                   <div key={sector} className="flex items-center justify-between">
-                    <span className={`text-[0.68rem] truncate ${isDark ? "text-white/50" : "text-gray-600"}`}>{sector}</span>
-                    <span className={`text-[0.65rem] font-bold shrink-0 ml-2 ${isDark ? "text-white/30" : "text-gray-400"}`}>{count}</span>
+                    <span className={`text-xs truncate ${isDark ? "text-white/50" : "text-gray-600"}`}>{sector}</span>
+                    <span className={`text-xs font-bold shrink-0 ml-2 ${isDark ? "text-white/30" : "text-gray-400"}`}>{count}</span>
                   </div>
                 ))}
               </div>
@@ -1345,7 +1345,7 @@ function RapportView({
       <div className="grid sm:grid-cols-2 gap-4">
         {/* Weekly activity line chart */}
         <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Activités (8 semaines)</h3>
+          <h3 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Activités (8 semaines)</h3>
           <div style={{ height: 150 }}>
             <Line
               data={{
@@ -1384,7 +1384,7 @@ function RapportView({
 
         {/* Monthly pipeline + won bar chart */}
         <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.65rem] font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Pipeline / CA par mois</h3>
+          <h3 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDark ? "text-white/40" : "text-gray-400"}`}>Pipeline / CA par mois</h3>
           <div style={{ height: 150 }}>
             <Bar
               data={{
@@ -1537,7 +1537,7 @@ function TicketsGlobalView({
         ].map(s => (
           <div key={s.label} className={`rounded-2xl border p-2.5 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-white"}`}>
             <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
-            <div className={`text-[0.58rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{s.label}</div>
+            <div className={`text-[11px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -1550,7 +1550,7 @@ function TicketsGlobalView({
               className="rounded-full px-3 py-1 text-xs font-bold transition-all"
               style={{ background: filter===f ? "rgba(201,165,90,0.15)" : "transparent", color: filter===f ? "#c9a55a" : isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)" }}>
               {f === "tous" ? "Tous" : f === "en_cours" ? "En cours" : f.charAt(0).toUpperCase()+f.slice(1)}
-              {counts[f] > 0 && <span className="ml-1.5 text-[0.6rem] opacity-70">{counts[f]}</span>}
+              {counts[f] > 0 && <span className="ml-1.5 text-xs opacity-70">{counts[f]}</span>}
             </button>
           ))}
         </div>
@@ -1579,22 +1579,22 @@ function TicketsGlobalView({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
+                        <p className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
                         {ticket.category && (
-                          <span className={`flex items-center gap-0.5 text-[0.58rem] px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/[0.05] text-white/40" : "bg-gray-100 text-gray-500"}`}>
+                          <span className={`flex items-center gap-0.5 text-[11px] px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/[0.05] text-white/40" : "bg-gray-100 text-gray-500"}`}>
                             {(() => { const Icon = TICKET_CATEGORIES[ticket.category].icon; return <Icon size={9} className="flex-shrink-0" />; })()}
                             {TICKET_CATEGORIES[ticket.category].label}
                           </span>
                         )}
                       </div>
                       {ticket.contact && (
-                        <p className={`text-[0.62rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{ticket.contact.name}{ticket.contact.company ? ` · ${ticket.contact.company}` : ""}</p>
+                        <p className={`text-xs mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{ticket.contact.name}{ticket.contact.company ? ` · ${ticket.contact.company}` : ""}</p>
                       )}
-                      {ticket.description && <p className={`text-[0.65rem] mt-1 leading-relaxed ${isDark ? "text-white/35" : "text-gray-400"}`}>{ticket.description}</p>}
+                      {ticket.description && <p className={`text-xs mt-1 leading-relaxed ${isDark ? "text-white/35" : "text-gray-400"}`}>{ticket.description}</p>}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                       <Badge label={TICKET_STATUSES[ticket.status].label} color={TICKET_STATUSES[ticket.status].color}/>
-                      <span className="text-[0.58rem] font-bold px-1.5 py-0.5 rounded-full"
+                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                         style={{ background: `${TICKET_PRIORITIES[ticket.priority]}18`, color: TICKET_PRIORITIES[ticket.priority] }}>
                         {ticket.priority}
                       </span>
@@ -1610,8 +1610,8 @@ function TicketsGlobalView({
                   {/* ── SLA bar ──────────────────────────────── */}
                   <div className="mt-2.5">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[0.58rem] font-semibold" style={{ color: sla.color }}>{sla.label}</span>
-                      {isOpen && <span className={`text-[0.55rem] ${isDark ? "text-white/20" : "text-gray-400"}`} title="Échéance SLA">⏱ {sla.deadlineStr}</span>}
+                      <span className="text-[11px] font-semibold" style={{ color: sla.color }}>{sla.label}</span>
+                      {isOpen && <span className={`text-[11px] ${isDark ? "text-white/20" : "text-gray-400"}`} title="Échéance SLA">⏱ {sla.deadlineStr}</span>}
                     </div>
                     <div className={`h-1 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                       <div className="h-full rounded-full transition-all duration-500"
@@ -1630,13 +1630,13 @@ function TicketsGlobalView({
                           }
                           onUpdate(ticket.id, update);
                         }}
-                        className={`rounded-lg border pl-2 pr-6 py-1 text-[0.62rem] outline-none appearance-none ${isDark ? "border-white/[0.08] bg-white/[0.05] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-600"}`}>
+                        className={`rounded-lg border pl-2 pr-6 py-1 text-xs outline-none appearance-none ${isDark ? "border-white/[0.08] bg-white/[0.05] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-gray-50 text-gray-600"}`}>
                         {(["ouvert","en_cours","résolu","fermé"] as TicketStatus[]).map(s =>
                           <option key={s} value={s}>{TICKET_STATUSES[s].label}</option>)}
                       </select>
                       <ChevronDown size={8} className={`absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? "text-white/30" : "text-gray-400"}`}/>
                     </div>
-                    <p className={`text-[0.6rem] ml-auto ${isDark ? "text-white/25" : "text-gray-400"}`}>{fmtDate(ticket.created_at)}</p>
+                    <p className={`text-xs ml-auto ${isDark ? "text-white/25" : "text-gray-400"}`}>{fmtDate(ticket.created_at)}</p>
                   </div>
                 </motion.div>
               );
@@ -1812,10 +1812,10 @@ function ContactDetail({
               <Badge label={STATUSES[contact.status].label}
                 color={STATUSES[contact.status].color} bg={STATUSES[contact.status].bg}/>
             </div>
-            {contact.company && <p className={`text-[0.72rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{contact.company}</p>}
+            {contact.company && <p className={`text-sm mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{contact.company}</p>}
             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              {contact.email  && <a href={`mailto:${contact.email}`}  className={`flex items-center gap-1 text-[0.65rem] transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}><Mail  size={10}/>{contact.email}</a>}
-              {contact.phone  && <a href={`tel:${contact.phone}`}     className={`flex items-center gap-1 text-[0.65rem] transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}><Phone size={10}/>{contact.phone}</a>}
+              {contact.email  && <a href={`mailto:${contact.email}`}  className={`flex items-center gap-1 text-xs transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}><Mail  size={10}/>{contact.email}</a>}
+              {contact.phone  && <a href={`tel:${contact.phone}`}     className={`flex items-center gap-1 text-xs transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}><Phone size={10}/>{contact.phone}</a>}
             </div>
           </div>
           <div className="flex gap-1.5 shrink-0">
@@ -1857,7 +1857,7 @@ function ContactDetail({
           ].map(s => (
             <div key={s.label} className={`rounded-xl p-2 text-center ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
               <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
-              <div className={`text-[0.58rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{s.label}</div>
+              <div className={`text-[11px] ${isDark ? "text-white/25" : "text-gray-400"}`}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -1870,9 +1870,9 @@ function ContactDetail({
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5">
                   <Flame size={13} className={isDark ? "text-white/30" : "text-gray-400"} />
-                  <span className={`text-[0.62rem] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Chaleur contact</span>
+                  <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Chaleur contact</span>
                 </div>
-                <span className={`text-[0.65rem] font-black`} style={{ color: heat.color }}>{heat.label} · {heat.score}</span>
+                <span className={`text-xs font-black`} style={{ color: heat.color }}>{heat.label} · {heat.score}</span>
               </div>
               <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                 <div className="h-full rounded-full transition-all duration-500"
@@ -1887,7 +1887,7 @@ function ContactDetail({
           <div className="mt-3">
             {!quickNoteOpen ? (
               <button onClick={() => setQuickNoteOpen(true)}
-                className={`flex items-center gap-1.5 text-[0.65rem] font-bold transition-colors ${isDark ? "text-white/20 hover:text-white/50" : "text-gray-300 hover:text-gray-500"}`}>
+                className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${isDark ? "text-white/20 hover:text-white/50" : "text-gray-300 hover:text-gray-500"}`}>
                 <MessageSquare size={11}/> Note rapide
               </button>
             ) : (
@@ -1898,7 +1898,7 @@ function ContactDetail({
                   placeholder="Résumé, action à suivre, point important…"
                   value={quickNote}
                   onChange={e => setQuickNote(e.target.value)}
-                  className={`w-full resize-none text-[0.72rem] rounded-lg p-2 outline-none ${isDark ? "bg-white/[0.04] text-white placeholder-white/20 border border-white/[0.08]" : "bg-white text-gray-900 placeholder-gray-300 border border-gray-200"}`}
+                  className={`w-full resize-none text-sm rounded-lg p-2 outline-none ${isDark ? "bg-white/[0.04] text-white placeholder-white/20 border border-white/[0.08]" : "bg-white text-gray-900 placeholder-gray-300 border border-gray-200"}`}
                 />
                 <div className="flex gap-2">
                   <button onClick={() => { setQuickNoteOpen(false); setQuickNote(""); }}
@@ -1939,40 +1939,40 @@ function ContactDetail({
             transition={{ duration: 0.2 }}
             className={`shrink-0 border-b px-5 py-3 ${isDark ? "border-white/[0.06] bg-violet-500/[0.04]" : "border-violet-100 bg-violet-50/60"}`}>
             {insightError ? (
-              <p className="text-[0.68rem] text-red-400">{insightError}</p>
+              <p className="text-xs text-red-400">{insightError}</p>
             ) : insight && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <Sparkles size={11} className={isDark ? "text-violet-400" : "text-violet-500"}/>
-                    <span className={`text-[0.6rem] font-black uppercase tracking-wider ${isDark ? "text-violet-400/70" : "text-violet-500/80"}`}>Analyse IA</span>
+                    <span className={`text-xs font-black uppercase tracking-wider ${isDark ? "text-violet-400/70" : "text-violet-500/80"}`}>Analyse IA</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded-md ${
+                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${
                       insight.risque === "élevé"  ? "bg-red-500/15 text-red-400" :
                       insight.risque === "moyen"  ? "bg-amber-500/15 text-amber-400" :
                                                     "bg-emerald-500/15 text-emerald-400"
                     }`}>Risque {insight.risque}</span>
-                    <span className={`text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                    <span className={`text-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>
                       Score {insight.score_engagement}/100
                     </span>
                     <button onClick={() => { setInsight(null); setInsightError(null); }}
-                      className={`text-[0.6rem] transition-opacity ${isDark ? "text-white/20 hover:text-white/50" : "text-gray-300 hover:text-gray-500"}`}>
+                      className={`text-xs transition-opacity ${isDark ? "text-white/20 hover:text-white/50" : "text-gray-300 hover:text-gray-500"}`}>
                       <X size={10}/>
                     </button>
                   </div>
                 </div>
-                <p className={`text-[0.68rem] leading-relaxed ${isDark ? "text-white/60" : "text-gray-600"}`}>{insight.resume}</p>
+                <p className={`text-xs leading-relaxed ${isDark ? "text-white/60" : "text-gray-600"}`}>{insight.resume}</p>
                 <div className={`rounded-lg px-2.5 py-2 border ${isDark ? "border-violet-500/20 bg-violet-500/[0.06]" : "border-violet-200 bg-violet-50"}`}>
                   <div className="flex items-start gap-1.5">
                     <Zap size={10} className={`mt-0.5 shrink-0 ${isDark ? "text-violet-400" : "text-violet-500"}`}/>
-                    <p className={`text-[0.68rem] font-semibold ${isDark ? "text-violet-300" : "text-violet-700"}`}>{insight.prochaine_action}</p>
+                    <p className={`text-xs font-semibold ${isDark ? "text-violet-300" : "text-violet-700"}`}>{insight.prochaine_action}</p>
                   </div>
                 </div>
                 {insight.tags_suggeres?.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {insight.tags_suggeres.map(tag => (
-                      <span key={tag} className={`text-[0.6rem] px-1.5 py-0.5 rounded-md ${isDark ? "bg-white/[0.06] text-white/40" : "bg-gray-100 text-gray-500"}`}>
+                      <span key={tag} className={`text-xs px-1.5 py-0.5 rounded-md ${isDark ? "bg-white/[0.06] text-white/40" : "bg-gray-100 text-gray-500"}`}>
                         #{tag}
                       </span>
                     ))}
@@ -1987,7 +1987,7 @@ function ContactDetail({
             <div className={`shrink-0 flex border-b overflow-x-auto ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-3 text-[0.65rem] font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2 ${
+            className={`flex items-center gap-1.5 px-4 py-3 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2 ${
               tab === t.id ? (isDark ? "border-white text-white" : "border-gray-900 text-gray-900") : (isDark ? "border-transparent text-white/30 hover:text-white/60" : "border-transparent text-gray-400 hover:text-gray-600")}`}>
             <t.icon size={10}/>{t.label}
           </button>
@@ -2038,7 +2038,7 @@ function ContactDetail({
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="Budget estimé (€)" type="number" value={form.budget ?? ""} onChange={e => setForm(f => ({ ...f, budget: +e.target.value }))}/>
                   <div className="space-y-1">
-                    <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Intérêt (0-5)</label>
+                    <label className={`block text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Intérêt (0-5)</label>
                     <div className="flex gap-1 mt-1.5">
                       {[1,2,3,4,5].map(n => (
                         <button key={n} onClick={() => setForm(f => ({ ...f, interest_level: n }))}
@@ -2076,8 +2076,8 @@ function ContactDetail({
                     <div key={item.label} className="flex items-start gap-2">
                       <item.icon size={11} className={`mt-0.5 shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
                       <div>
-                        <p className={`text-[0.58rem] uppercase tracking-wider ${isDark ? "text-white/25" : "text-gray-400"}`}>{item.label}</p>
-                        <p className={`text-[0.72rem] break-all ${isDark ? "text-white/70" : "text-gray-700"}`}>{item.value}</p>
+                        <p className={`text-[11px] uppercase tracking-wider ${isDark ? "text-white/25" : "text-gray-400"}`}>{item.label}</p>
+                        <p className={`text-sm break-all ${isDark ? "text-white/70" : "text-gray-700"}`}>{item.value}</p>
                       </div>
                     </div>
                   ))}
@@ -2086,13 +2086,13 @@ function ContactDetail({
                                 <div className="flex gap-3 flex-wrap">
                   {contact.budget && contact.budget > 0 && (
                     <div className={`rounded-xl px-3 py-2 ${isDark ? "bg-white/[0.04]" : "bg-gray-50"}`}>
-                      <p className={`text-[0.58rem] mb-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}>Budget</p>
+                      <p className={`text-[11px] mb-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}>Budget</p>
                       <p className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>{fmtEur(contact.budget)}</p>
                     </div>
                   )}
                   {contact.priority && contact.priority !== "normal" && (
                     <div className={`rounded-xl px-3 py-2 ${isDark ? "bg-white/[0.04]" : "bg-gray-50"}`}>
-                      <p className={`text-[0.58rem] mb-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}>Priorité</p>
+                      <p className={`text-[11px] mb-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}>Priorité</p>
                       <p className="text-sm font-bold" style={{ color: PRIORITIES[contact.priority].color }}>
                         {PRIORITIES[contact.priority].label}
                       </p>
@@ -2100,7 +2100,7 @@ function ContactDetail({
                   )}
                   {contact.interest_level && contact.interest_level > 0 && (
                     <div className={`rounded-xl px-3 py-2 ${isDark ? "bg-white/[0.04]" : "bg-gray-50"}`}>
-                      <p className={`text-[0.58rem] mb-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>Intérêt</p>
+                      <p className={`text-[11px] mb-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>Intérêt</p>
                       <div className="flex gap-0.5">
                         {[1,2,3,4,5].map(n => (
                           <Star key={n} size={12} fill={n <= (contact.interest_level ?? 0) ? "#f59e0b" : "none"}
@@ -2113,15 +2113,15 @@ function ContactDetail({
 
                 {contact.notes && (
                   <div className={`rounded-xl p-3 ${isDark ? "bg-white/[0.03]" : "bg-gray-50"}`}>
-                    <p className={`text-[0.58rem] uppercase tracking-wider mb-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>Notes</p>
-                    <p className={`text-[0.72rem] leading-relaxed whitespace-pre-line ${isDark ? "text-white/60" : "text-gray-600"}`}>{contact.notes}</p>
+                    <p className={`text-[11px] uppercase tracking-wider mb-1 ${isDark ? "text-white/25" : "text-gray-400"}`}>Notes</p>
+                    <p className={`text-sm leading-relaxed whitespace-pre-line ${isDark ? "text-white/60" : "text-gray-600"}`}>{contact.notes}</p>
                   </div>
                 )}
 
                                 {contact.tags && contact.tags.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap">
                     {contact.tags.map(tag => (
-                      <span key={tag} className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.62rem] ${isDark ? "bg-white/[0.05] text-white/40" : "bg-gray-100 text-gray-500"}`}>
+                      <span key={tag} className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ${isDark ? "bg-white/[0.05] text-white/40" : "bg-gray-100 text-gray-500"}`}>
                         <Hash size={8}/>{tag}
                       </span>
                     ))}
@@ -2132,14 +2132,14 @@ function ContactDetail({
                   <div className={`pt-2 border-t ${isDark ? "border-white/[0.04]" : "border-gray-100"}`}>
                     {!confirmDel ? (
                       <button onClick={() => setConfirmDel(true)}
-                        className="text-[0.65rem] text-red-400/50 hover:text-red-400 transition-colors flex items-center gap-1">
+                        className="text-xs text-red-400/50 hover:text-red-400 transition-colors flex items-center gap-1">
                         <Trash2 size={10}/> Supprimer ce contact
                       </button>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-[0.65rem] text-red-400">Confirmer la suppression ?</span>
-                        <button onClick={onDeleteContact} className="text-[0.65rem] font-bold text-red-400 hover:text-red-300">Oui</button>
-                        <button onClick={() => setConfirmDel(false)} className={`text-[0.65rem] ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>Non</button>
+                        <span className="text-xs text-red-400">Confirmer la suppression ?</span>
+                        <button onClick={onDeleteContact} className="text-xs font-bold text-red-400 hover:text-red-300">Oui</button>
+                        <button onClick={() => setConfirmDel(false)} className={`text-xs ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>Non</button>
                       </div>
                     )}
                   </div>
@@ -2152,7 +2152,7 @@ function ContactDetail({
                 {tab === "activites" && (
           <div className="space-y-4">
             <button onClick={() => setNewAct({ type: "note", activity_date: new Date().toISOString().split("T")[0] })}
-              className={`flex items-center gap-2 text-[0.72rem] font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
+              className={`flex items-center gap-2 text-sm font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
               <Plus size={13}/> Ajouter une activité
             </button>
 
@@ -2192,7 +2192,7 @@ function ContactDetail({
               ).map(group => (
                 <div key={group.label}>
                   <div className={`flex items-center gap-2 mb-3`}>
-                    <span className={`text-[0.58rem] font-black uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>{group.label}</span>
+                    <span className={`text-[11px] font-black uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>{group.label}</span>
                     <div className={`flex-1 h-px ${isDark ? "bg-white/[0.04]" : "bg-gray-100"}`}/>
                   </div>
                   <div className="relative space-y-0">
@@ -2209,7 +2209,7 @@ function ContactDetail({
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{act.title}</p>
+                              <p className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{act.title}</p>
                               {perms.can_delete && (
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                                   <button onClick={() => onDeleteActivity(act.id)} className={`${isDark ? "text-white/20" : "text-gray-300"} hover:text-red-400`}>
@@ -2218,11 +2218,11 @@ function ContactDetail({
                                 </div>
                               )}
                             </div>
-                            <p className={`text-[0.6rem] mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(act.activity_date)}</p>
+                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(act.activity_date)}</p>
                             {isEmail && act.description ? (
                               <EmailActivityPreview body={act.description} isDark={isDark}/>
                             ) : act.description ? (
-                              <p className={`text-[0.68rem] mt-1 leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>{act.description}</p>
+                              <p className={`text-xs mt-1 leading-relaxed ${isDark ? "text-white/40" : "text-gray-500"}`}>{act.description}</p>
                             ) : null}
                           </div>
                         </div>
@@ -2238,7 +2238,7 @@ function ContactDetail({
                 {tab === "opps" && (
           <div className="space-y-3">
             <button onClick={() => setNewOpp({ stage: "nouveau", amount: 0, probability: 20, contact_id: contact.id })}
-              className={`flex items-center gap-2 text-[0.72rem] font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
+              className={`flex items-center gap-2 text-sm font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
               <Plus size={13}/> Nouvelle opportunité
             </button>
 
@@ -2277,15 +2277,15 @@ function ContactDetail({
               <div key={opp.id} className={`rounded-2xl border p-4 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{opp.title}</p>
-                    {opp.product_service && <p className={`text-[0.62rem] mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{opp.product_service}</p>}
+                    <p className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{opp.title}</p>
+                    {opp.product_service && <p className={`text-xs mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{opp.product_service}</p>}
                   </div>
                   <Badge label={STAGES[opp.stage].label} color={STAGES[opp.stage].color}/>
                 </div>
                 <div className="flex items-center gap-3 mt-3 flex-wrap">
                   {opp.amount > 0 && <span className="text-sm font-black" style={{ color: STAGES[opp.stage].color }}>{fmtEur(opp.amount)}</span>}
-                  {opp.probability > 0 && <span className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{opp.probability}% proba.</span>}
-                  {opp.close_date && <span className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}><Calendar size={9} className="inline mr-0.5"/>{fmtDate(opp.close_date)}</span>}
+                  {opp.probability > 0 && <span className={`text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>{opp.probability}% proba.</span>}
+                  {opp.close_date && <span className={`text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}><Calendar size={9} className="inline mr-0.5"/>{fmtDate(opp.close_date)}</span>}
                 </div>
               </div>
             ))}
@@ -2295,7 +2295,7 @@ function ContactDetail({
                 {tab === "taches" && (
           <div className="space-y-3">
             <button onClick={() => setNewTask({ type: "action", priority: "normal", contact_id: contact.id })}
-              className={`flex items-center gap-2 text-[0.72rem] font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
+              className={`flex items-center gap-2 text-sm font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
               <Plus size={13}/> Nouvelle tâche
             </button>
 
@@ -2326,9 +2326,9 @@ function ContactDetail({
                     {task.done ? <CheckSquare size={15}/> : <Square size={15}/>}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[0.72rem] font-semibold ${task.done ? (isDark ? "line-through text-white/30" : "line-through text-gray-400") : (isDark ? "text-white" : "text-gray-900")}`}>{task.title}</p>
+                    <p className={`text-sm font-semibold ${task.done ? (isDark ? "line-through text-white/30" : "line-through text-gray-400") : (isDark ? "text-white" : "text-gray-900")}`}>{task.title}</p>
                     {task.due_date && (
-                      <p className={`text-[0.62rem] mt-0.5 flex items-center gap-1 ${isLate ? "text-red-400" : (isDark ? "text-white/30" : "text-gray-400")}`}>
+                      <p className={`text-xs mt-0.5 flex items-center gap-1 ${isLate ? "text-red-400" : (isDark ? "text-white/30" : "text-gray-400")}`}>
                         <Calendar size={9}/>{fmtDate(task.due_date)}
                       </p>
                     )}
@@ -2347,7 +2347,7 @@ function ContactDetail({
                 {tab === "tickets" && (
           <div className="space-y-3">
             <button onClick={() => setNewTicket({ status: "ouvert", priority: "normale", contact_id: contact.id })}
-              className={`flex items-center gap-2 text-[0.72rem] font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
+              className={`flex items-center gap-2 text-sm font-bold transition-colors ${isDark ? "text-white/40 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}>
               <Plus size={13}/> Nouveau ticket
             </button>
 
@@ -2376,7 +2376,7 @@ function ContactDetail({
             {tickets.map(ticket => (
               <div key={ticket.id} className={`rounded-2xl border p-4 group ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
                 <div className="flex items-start justify-between gap-2">
-                  <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
+                  <p className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{ticket.title}</p>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Badge label={TICKET_STATUSES[ticket.status].label} color={TICKET_STATUSES[ticket.status].color}/>
                     {perms.can_delete && (
@@ -2386,14 +2386,14 @@ function ContactDetail({
                     )}
                   </div>
                 </div>
-                {ticket.description && <p className={`text-[0.65rem] mt-1.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{ticket.description}</p>}
+                {ticket.description && <p className={`text-xs mt-1.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{ticket.description}</p>}
                 <div className="flex items-center gap-2 mt-2">
                   <Select value={ticket.status} onChange={e => onUpdateTicket(ticket.id, { status: e.target.value as TicketStatus })}
-                    className="text-[0.6rem] !py-1 !px-2 rounded-lg">
+                    className="text-xs !py-1 !px-2 rounded-lg">
                     {(["ouvert","en_cours","résolu","fermé"] as TicketStatus[]).map(s =>
                       <option key={s} value={s}>{TICKET_STATUSES[s].label}</option>)}
                   </Select>
-                  <p className={`text-[0.6rem] ml-auto ${isDark ? "text-white/25" : "text-gray-400"}`}>{fmtDate(ticket.created_at)}</p>
+                  <p className={`text-xs ml-auto ${isDark ? "text-white/25" : "text-gray-400"}`}>{fmtDate(ticket.created_at)}</p>
                 </div>
               </div>
             ))}
@@ -2419,13 +2419,13 @@ function ContactDetail({
                       <FileText size={13} style={{ color: isFacture ? "#f59e0b" : isDevis ? "#38bdf8" : "#a78bfa" }}/>
                     </div>
                     <div className="min-w-0">
-                      <p className={`text-[0.72rem] font-semibold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{doc.numero || "(brouillon)"}</p>
-                      <p className={`text-[0.6rem] capitalize ${isDark ? "text-white/30" : "text-gray-400"}`}>{doc.type} · {fmtDate(doc.date_document)}</p>
+                      <p className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{doc.numero || "(brouillon)"}</p>
+                      <p className={`text-xs capitalize ${isDark ? "text-white/30" : "text-gray-400"}`}>{doc.type} · {fmtDate(doc.date_document)}</p>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`text-[0.72rem] font-black ${isDark ? "text-white" : "text-gray-900"}`}>{fmtEur(doc.total_ttc)}</p>
-                    <p className="text-[0.6rem] font-semibold" style={{ color: statusColor }}>{doc.statut}</p>
+                    <p className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>{fmtEur(doc.total_ttc)}</p>
+                    <p className="text-xs font-semibold" style={{ color: statusColor }}>{doc.statut}</p>
                   </div>
                 </a>
               );
@@ -2443,14 +2443,14 @@ function EmailActivityPreview({ body, isDark }: { body: string; isDark: boolean 
   return (
     <div className="mt-1">
       <button onClick={() => setExpanded(v => !v)}
-        className={`flex items-center gap-1 text-[0.62rem] transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
+        className={`flex items-center gap-1 text-xs transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
         <ChevronDown size={9} className={`transition-transform ${expanded ? "rotate-180" : ""}`}/>
         {expanded ? "Masquer" : preview || "Voir le corps"}
       </button>
       <AnimatePresence>
         {expanded && (
           <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }} exit={{ height:0, opacity:0 }}>
-            <pre className={`mt-1.5 text-[0.65rem] leading-relaxed whitespace-pre-wrap rounded-lg p-2.5 ${isDark ? "bg-white/[0.04] text-white/50" : "bg-gray-50 text-gray-600"}`}>
+            <pre className={`mt-1.5 text-xs leading-relaxed whitespace-pre-wrap rounded-lg p-2.5 ${isDark ? "bg-white/[0.04] text-white/50" : "bg-gray-50 text-gray-600"}`}>
               {body}
             </pre>
           </motion.div>
@@ -2530,7 +2530,7 @@ function EmailComposeModal({ contact, customTemplates, onClose, onSent, onSaveTe
             </div>
             <div>
               <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Composer un email</h3>
-              <p className={`text-[0.62rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{contact.email || "Aucun email enregistré"}</p>
+              <p className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>{contact.email || "Aucun email enregistré"}</p>
             </div>
           </div>
           <button onClick={onClose} className={`transition-colors ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}><X size={16}/></button>
@@ -2539,9 +2539,9 @@ function EmailComposeModal({ contact, customTemplates, onClose, onSent, onSaveTe
         {/* ── Templates ──────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>Templates</p>
+            <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-gray-400"}`}>Templates</p>
             <button onClick={() => setNewTmplOpen(v => !v)}
-              className={`flex items-center gap-1 text-[0.6rem] font-semibold transition-colors ${isDark ? "text-white/25 hover:text-white/50" : "text-gray-400 hover:text-gray-600"}`}>
+              className={`flex items-center gap-1 text-xs font-semibold transition-colors ${isDark ? "text-white/25 hover:text-white/50" : "text-gray-400 hover:text-gray-600"}`}>
               <Plus size={10}/> Nouveau
             </button>
           </div>
@@ -2549,8 +2549,8 @@ function EmailComposeModal({ contact, customTemplates, onClose, onSent, onSaveTe
             {allTemplates.map(tmpl => (
               <div key={tmpl.id} className="relative group flex items-center gap-0.5">
                 <button onClick={() => fill(tmpl.subject, tmpl.body)}
-                  className={`px-2.5 py-1 rounded-lg text-[0.65rem] font-semibold border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-white/60 hover:text-white" : "border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300 text-gray-500 hover:text-gray-700"}`}>
-                  {tmpl.custom && <span className="text-[0.5rem] mr-1" style={{ color: "#c9a55a" }}>★</span>}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-white/60 hover:text-white" : "border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300 text-gray-500 hover:text-gray-700"}`}>
+                  {tmpl.custom && <span className="text-[10px] mr-1" style={{ color: "#c9a55a" }}>★</span>}
                   {tmpl.displayName}
                 </button>
                 {tmpl.custom && (
@@ -2569,30 +2569,30 @@ function EmailComposeModal({ contact, customTemplates, onClose, onSent, onSaveTe
             {newTmplOpen && (
               <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
                 className={`mt-3 rounded-2xl border p-3 space-y-2 overflow-hidden ${isDark ? "border-white/[0.08] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
-                <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Nouveau template</p>
+                <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Nouveau template</p>
                 <input value={newTmplName} onChange={e => setNewTmplName(e.target.value)} placeholder="Nom du template…"
-                  className={`w-full rounded-lg border px-2.5 py-1.5 text-[0.75rem] outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400"}`}/>
+                  className={`w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400"}`}/>
                 <input value={newTmplSubj} onChange={e => setNewTmplSubj(e.target.value)} placeholder="Objet (ex: Suivi {société})…"
-                  className={`w-full rounded-lg border px-2.5 py-1.5 text-[0.75rem] outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400"}`}/>
+                  className={`w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400"}`}/>
                 <textarea value={newTmplBody} onChange={e => setNewTmplBody(e.target.value)} rows={4} placeholder={"Corps du template…\nVariables : {nom}, {société}, {date}, {budget}"}
-                  className={`w-full rounded-lg border px-2.5 py-1.5 text-[0.75rem] outline-none resize-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400"}`}/>
+                  className={`w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none resize-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400"}`}/>
                 {/* Variables helper */}
                 <div className="flex flex-wrap gap-1">
                   {TEMPLATE_VARIABLES.map(v => (
                     <button key={v.token} title={v.hint}
                       onClick={() => setNewTmplBody(b => b + v.token)}
-                      className={`px-1.5 py-0.5 rounded text-[0.58rem] font-mono border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/70" : "border-gray-200 bg-gray-100 text-gray-500 hover:text-gray-700"}`}>
+                      className={`px-1.5 py-0.5 rounded text-[11px] font-mono border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/70" : "border-gray-200 bg-gray-100 text-gray-500 hover:text-gray-700"}`}>
                       {v.token}
                     </button>
                   ))}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setNewTmplOpen(false)}
-                    className={`flex-1 rounded-lg border py-1.5 text-[0.7rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
+                    className={`flex-1 rounded-lg border py-1.5 text-xs transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
                     Annuler
                   </button>
                   <button onClick={handleSaveTemplate} disabled={savingTmpl || !newTmplName.trim()}
-                    className="flex-1 rounded-lg py-1.5 text-[0.7rem] font-bold disabled:opacity-40"
+                    className="flex-1 rounded-lg py-1.5 text-xs font-bold disabled:opacity-40"
                     style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
                     {savingTmpl ? "Sauvegarde…" : "Sauvegarder"}
                   </button>
@@ -2605,37 +2605,37 @@ function EmailComposeModal({ contact, customTemplates, onClose, onSent, onSaveTe
         {/* ── Champs email ───────────────────────────────── */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Objet</label>
+            <label className={`block text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Objet</label>
             {subject && (
               <button onClick={() => setPreviewMode(v => !v)}
-                className={`text-[0.58rem] transition-colors ${isDark ? "text-white/25 hover:text-white/50" : "text-gray-400 hover:text-gray-600"}`}>
+                className={`text-[11px] transition-colors ${isDark ? "text-white/25 hover:text-white/50" : "text-gray-400 hover:text-gray-600"}`}>
                 {previewMode ? "Masquer aperçu" : "Aperçu"}
               </button>
             )}
           </div>
           <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Objet de l'email…"
-            className={`w-full rounded-xl border px-3 py-2 text-[0.8rem] outline-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
+            className={`w-full rounded-xl border px-3 py-2 text-sm outline-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
         </div>
 
         <div className="space-y-1">
-          <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Message</label>
+          <label className={`block text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Message</label>
           {previewMode ? (
-            <div className={`w-full rounded-xl border px-3 py-2.5 text-[0.8rem] min-h-[140px] whitespace-pre-wrap ${isDark ? "border-white/[0.08] bg-white/[0.02] text-white/80" : "border-gray-200 bg-gray-50 text-gray-700"}`}>
+            <div className={`w-full rounded-xl border px-3 py-2.5 text-sm min-h-[140px] whitespace-pre-wrap ${isDark ? "border-white/[0.08] bg-white/[0.02] text-white/80" : "border-gray-200 bg-gray-50 text-gray-700"}`}>
               {resolveVars(body, contact) || <span className="opacity-30">Votre message…</span>}
             </div>
           ) : (
             <textarea value={body} onChange={e => setBody(e.target.value)} rows={8} placeholder="Votre message…"
-              className={`w-full rounded-xl border px-3 py-2.5 text-[0.8rem] outline-none resize-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
+              className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none resize-none transition-colors ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/20" : "border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
           )}
         </div>
 
         {/* ── Variables helper ───────────────────────────── */}
         <div className="flex flex-wrap gap-1 items-center">
-          <span className={`text-[0.58rem] mr-1 ${isDark ? "text-white/20" : "text-gray-400"}`}>Variables :</span>
+          <span className={`text-[11px] mr-1 ${isDark ? "text-white/20" : "text-gray-400"}`}>Variables :</span>
           {TEMPLATE_VARIABLES.map(v => (
             <button key={v.token} title={v.hint}
               onClick={() => setBody(b => b + v.token)}
-              className={`px-1.5 py-0.5 rounded text-[0.58rem] font-mono border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/35 hover:text-white/60" : "border-gray-200 bg-gray-100 text-gray-500 hover:text-gray-700"}`}>
+              className={`px-1.5 py-0.5 rounded text-[11px] font-mono border transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/35 hover:text-white/60" : "border-gray-200 bg-gray-100 text-gray-500 hover:text-gray-700"}`}>
               {v.token}
             </button>
           ))}
@@ -3187,7 +3187,7 @@ export default function CRMPage() {
             <div className="flex items-center gap-3">
               <div>
                 <h1 className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>CRM</h1>
-                <p className={`text-[0.65rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                <p className={`text-xs mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>
                   {contactsTotal} contact{contactsTotal !== 1 ? "s" : ""} · {opportunities.filter(o => o.stage !== "perdu").length} opportunités actives
                 </p>
               </div>
@@ -3198,7 +3198,7 @@ export default function CRMPage() {
                   className="h-9 rounded-xl flex items-center gap-1.5 px-3 cursor-pointer transition-all hover:brightness-110"
                   style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
                   <Upload size={13} className={isDark ? "text-white/50" : "text-gray-500"}/>
-                  <span className={`hidden sm:inline text-[0.72rem] font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Importer</span>
+                  <span className={`hidden sm:inline text-sm font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Importer</span>
                   <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV}/>
                 </label>
               )}
@@ -3207,7 +3207,7 @@ export default function CRMPage() {
                   className="h-9 rounded-xl flex items-center gap-1.5 px-3 transition-all hover:brightness-110"
                   style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
                   <Download size={13} className={isDark ? "text-white/50" : "text-gray-500"}/>
-                  <span className={`hidden sm:inline text-[0.72rem] font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Exporter</span>
+                  <span className={`hidden sm:inline text-sm font-semibold ${isDark ? "text-white/50" : "text-gray-500"}`}>Exporter</span>
                 </button>
               )}
               <button
@@ -3216,14 +3216,14 @@ export default function CRMPage() {
                 className={`h-9 w-9 rounded-xl flex items-center justify-center relative transition-all hover:brightness-110 ${isDark ? "bg-white/[0.04] border border-white/[0.08]" : "bg-white border border-black/[0.08]"}`}>
                 <Trash2 size={13} className={isDark ? "text-white/30" : "text-gray-400"}/>
                 {deletedContacts.length > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[0.55rem] font-black text-white flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[11px] font-black text-white flex items-center justify-center">
                     {deletedContacts.length > 9 ? "9+" : deletedContacts.length}
                   </span>
                 )}
               </button>
               {perms.can_create && (
                 <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
-                  className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+                  className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-all hover:brightness-110"
                   style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
                   <Plus size={13}/> Nouveau contact
                 </button>
@@ -3250,7 +3250,7 @@ export default function CRMPage() {
                   <k.icon size={14} style={{ color: k.color }}/>
                 </div>
                 <div>
-                  <p className={`text-[0.58rem] font-semibold uppercase tracking-wide ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
+                  <p className={`text-[11px] font-semibold uppercase tracking-wide ${isDark ? "text-white/30" : "text-gray-400"}`}>{k.label}</p>
                   <p className={`text-sm font-black mt-0.5 ${isDark ? "text-white" : "text-gray-900"}`}>{k.value}</p>
                 </div>
               </motion.button>
@@ -3263,7 +3263,7 @@ export default function CRMPage() {
       <div className={`shrink-0 px-4 sm:px-6 py-2.5 flex gap-1 overflow-x-auto ${isDark ? "border-b border-white/[0.05] bg-[#07080e]" : "border-b border-black/[0.05] bg-[#f0f2f5]"}`}>
         {MAIN_TABS.map(t => (
           <button key={t.id} onClick={() => setMainTab(t.id)}
-            className="relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[0.67rem] font-bold uppercase tracking-wider whitespace-nowrap transition-all active:scale-[0.97]"
+            className="relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all active:scale-[0.97]"
             style={{
               background: mainTab === t.id ? "rgba(201,165,90,0.14)" : "transparent",
               color: mainTab === t.id ? "#c9a55a" : (isDark ? "rgba(255,255,255,0.35)" : "rgba(17,24,39,0.45)"),
@@ -3273,7 +3273,7 @@ export default function CRMPage() {
             <t.icon size={11}/>
             {t.label}
             {t.badge > 0 && (
-              <span className="rounded-full px-1.5 py-0.5 text-[0.56rem] font-black"
+              <span className="rounded-full px-1.5 py-0.5 text-[11px] font-black"
                 style={{
                   background: mainTab === t.id ? "rgba(201,165,90,0.2)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"),
                   color: mainTab === t.id ? "#c9a55a" : (isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.45)"),
@@ -3306,18 +3306,18 @@ export default function CRMPage() {
                         <div className="flex items-start gap-2.5">
                           <Bell size={13} className="mt-0.5 shrink-0 text-orange-400"/>
                           <div>
-                            <p className="text-[0.72rem] font-bold text-orange-300">
+                            <p className="text-sm font-bold text-orange-300">
                               {overdueRelances.length} relance{overdueRelances.length > 1 ? "s" : ""} en retard
                             </p>
                             <div className="flex flex-wrap gap-1.5 mt-1.5">
                               {overdueRelances.slice(0, 5).map(c => (
                                 <button key={c.id} onClick={() => setSelected(c)}
-                                  className="flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-[0.6rem] font-semibold text-orange-300/80 hover:bg-orange-500/25 transition-colors">
+                                  className="flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-semibold text-orange-300/80 hover:bg-orange-500/25 transition-colors">
                                   {c.name} · {fmtDate(c.next_relance)}
                                 </button>
                               ))}
                               {overdueRelances.length > 5 && (
-                                <span className="text-[0.6rem] text-orange-400/60">+{overdueRelances.length - 5} autres</span>
+                                <span className="text-xs text-orange-400/60">+{overdueRelances.length - 5} autres</span>
                               )}
                             </div>
                           </div>
@@ -3334,23 +3334,23 @@ export default function CRMPage() {
                       <Search size={13} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/25" : "text-gray-400"}`}/>
                       <input value={query} onChange={e => setQuery(e.target.value)}
                         placeholder="Rechercher un contact, une société…"
-                        className={`w-full rounded-xl border pl-9 pr-4 py-2.5 text-[0.8rem] outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/15" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
+                        className={`w-full rounded-xl border pl-9 pr-4 py-2.5 text-sm outline-none ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white placeholder-white/20 focus:border-white/15" : "border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-gray-300"}`}/>
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value as ContactStatus | "tous"); }}
-                        className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
+                        className="rounded-xl border px-3 py-2 text-sm outline-none appearance-none"
                         style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="tous">Tous statuts</option>
                         {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
                       <select value={filterType} onChange={e => { setFilterType(e.target.value as ContactType | "tous"); }}
-                        className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
+                        className="rounded-xl border px-3 py-2 text-sm outline-none appearance-none"
                         style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="tous">Tous types</option>
                         {Object.entries(CONTACT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
                       <select value={sortBy} onChange={e => { setSortBy(e.target.value as "date" | "name" | "budget" | "relance" | "score"); }}
-                        className="rounded-xl border px-3 py-2 text-[0.75rem] outline-none appearance-none"
+                        className="rounded-xl border px-3 py-2 text-sm outline-none appearance-none"
                         style={{ backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#ffffff", color: isDark ? "rgba(255,255,255,0.6)" : "#374151", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb", colorScheme: isDark ? "dark" : "light" }}>
                         <option value="date">Plus récent</option>
                         <option value="name">Nom A→Z</option>
@@ -3368,7 +3368,7 @@ export default function CRMPage() {
                       const isOther  = filterStatus !== "tous" && !isActive;
                       return count > 0 ? (
                         <button key={s} onClick={() => setFilterStatus(isActive ? "tous" : s)}
-                          className="flex items-center gap-1.5 text-[0.62rem] font-bold rounded-xl px-2.5 py-1 transition-all"
+                          className="flex items-center gap-1.5 text-xs font-bold rounded-xl px-2.5 py-1 transition-all"
                           style={{
                             color: STATUSES[s].color,
                             background: isActive ? `${STATUSES[s].color}1a` : "transparent",
@@ -3381,7 +3381,7 @@ export default function CRMPage() {
                       ) : null;
                     })}
                     {contactsLoading && (
-                      <span className={`flex items-center gap-1 text-[0.6rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>
+                      <span className={`flex items-center gap-1 text-xs ${isDark ? "text-white/20" : "text-gray-400"}`}>
                         <Loader2 size={9} className="animate-spin"/> Chargement…
                       </span>
                     )}
@@ -3395,12 +3395,12 @@ export default function CRMPage() {
                       <p className={`text-sm font-bold mb-1 ${isDark ? "text-white/40" : "text-gray-500"}`}>
                         {contactsTotal === 0 ? "Aucun contact pour l'instant" : "Aucun résultat"}
                       </p>
-                      <p className={`text-[0.72rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>
+                      <p className={`text-sm ${isDark ? "text-white/20" : "text-gray-400"}`}>
                         {contactsTotal === 0 ? "Ajoutez votre premier contact ou importez un fichier CSV." : "Modifiez les filtres pour voir plus de contacts."}
                       </p>
                       {contactsTotal === 0 && perms.can_create && (
                         <button onClick={() => { setForm({ status: "prospect", type: "prospect" }); setEditContact(null); setAddModal(true); }}
-                          className="mt-5 flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+                          className="mt-5 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-all hover:brightness-110"
                           style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
                           <Plus size={13}/> Ajouter un contact
                         </button>
@@ -3438,9 +3438,9 @@ export default function CRMPage() {
                               <Avatar name={c.name} color={typeColor} size={38}/>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`text-[0.82rem] font-bold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{c.name}</span>
+                                  <span className={`text-sm font-bold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{c.name}</span>
                                   <Badge label={STATUSES[c.status].label} color={STATUSES[c.status].color} bg={STATUSES[c.status].bg}/>
-                                  <span className="text-[0.58rem] font-black px-1.5 py-0.5 rounded-full hidden sm:inline-flex items-center gap-0.5"
+                                  <span className="text-[11px] font-black px-1.5 py-0.5 rounded-full hidden sm:inline-flex items-center gap-0.5"
                                     title={`Score lead : ${score}/100`}
                                     style={{ color: scoreColor, background: `${scoreColor}18`, border: `1px solid ${scoreColor}30` }}>
                                     <Target size={7}/>{score}
@@ -3449,14 +3449,14 @@ export default function CRMPage() {
                                   {c.priority === "urgent" && <Flag size={10} className="text-red-400"/>}
                                 </div>
                                 <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                                  {c.company && <span className={`text-[0.65rem] truncate ${isDark ? "text-white/40" : "text-gray-500"}`}>{c.company}</span>}
-                                  {c.sector  && <span className={`text-[0.6rem] truncate ${isDark ? "text-white/25" : "text-gray-400"}`}>{c.sector}</span>}
+                                  {c.company && <span className={`text-xs truncate ${isDark ? "text-white/40" : "text-gray-500"}`}>{c.company}</span>}
+                                  {c.sector  && <span className={`text-xs truncate ${isDark ? "text-white/25" : "text-gray-400"}`}>{c.sector}</span>}
                                 </div>
                                 <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                  {c.email && <span className={`text-[0.62rem] truncate flex items-center gap-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}><Mail size={8}/>{c.email}</span>}
-                                  {c.phone && <span className={`text-[0.62rem] flex items-center gap-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}><Phone size={8}/>{c.phone}</span>}
+                                  {c.email && <span className={`text-xs truncate flex items-center gap-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}><Mail size={8}/>{c.email}</span>}
+                                  {c.phone && <span className={`text-xs flex items-center gap-0.5 ${isDark ? "text-white/25" : "text-gray-400"}`}><Phone size={8}/>{c.phone}</span>}
                                   {c.next_relance && (
-                                    <span className="text-[0.58rem] flex items-center gap-0.5"
+                                    <span className="text-[11px] flex items-center gap-0.5"
                                       style={{ color: c.next_relance < new Date().toISOString().split("T")[0] ? "#f87171" : "#f59e0b" }}>
                                       <Bell size={7}/> {fmtDate(c.next_relance)}
                                     </span>
@@ -3467,13 +3467,13 @@ export default function CRMPage() {
                                 {cOpps > 0 && (
                                   <div className="text-center hidden sm:block">
                                     <div className="text-xs font-black" style={{ color: "#a78bfa" }}>{cOpps}</div>
-                                    <div className={`text-[0.52rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>opp.</div>
+                                    <div className={`text-[10px] ${isDark ? "text-white/20" : "text-gray-400"}`}>opp.</div>
                                   </div>
                                 )}
                                 {c.budget && c.budget > 0 && (
                                   <div className="text-right hidden lg:block">
-                                    <div className={`text-[0.7rem] font-black ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtEur(c.budget)}</div>
-                                    <div className={`text-[0.52rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>budget</div>
+                                    <div className={`text-xs font-black ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtEur(c.budget)}</div>
+                                    <div className={`text-[10px] ${isDark ? "text-white/20" : "text-gray-400"}`}>budget</div>
                                   </div>
                                 )}
                                 <div className="flex gap-1">
@@ -3649,17 +3649,17 @@ export default function CRMPage() {
 
               {/* Tags */}
               <div className="space-y-1">
-                <label className={`block text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Tags</label>
+                <label className={`block text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Tags</label>
                 <div className={`flex flex-wrap gap-1.5 min-h-[36px] rounded-xl border p-2 ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-gray-50"}`}>
                   {(form.tags ?? []).map(tag => (
-                    <span key={tag} className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.65rem] ${isDark ? "bg-white/[0.08] text-white/70" : "bg-gray-200 text-gray-700"}`}>
+                    <span key={tag} className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs ${isDark ? "bg-white/[0.08] text-white/70" : "bg-gray-200 text-gray-700"}`}>
                       {tag}
                       <button type="button" onClick={() => setForm(f => ({ ...f, tags: (f.tags ?? []).filter(t => t !== tag) }))}
                         className={`ml-0.5 ${isDark ? "text-white/30 hover:text-white/70" : "text-gray-400 hover:text-gray-700"}`}><X size={9}/></button>
                     </span>
                   ))}
                   <input placeholder="Ajouter un tag…"
-                    className={`bg-transparent text-[0.72rem] outline-none flex-1 min-w-[80px] ${isDark ? "text-white placeholder-white/20" : "text-gray-900 placeholder-gray-400"}`}
+                    className={`bg-transparent text-sm outline-none flex-1 min-w-[80px] ${isDark ? "text-white placeholder-white/20" : "text-gray-900 placeholder-gray-400"}`}
                     onKeyDown={e => {
                       if ((e.key === "Enter" || e.key === ",") && e.currentTarget.value.trim()) {
                         e.preventDefault();
@@ -3670,11 +3670,11 @@ export default function CRMPage() {
                     }}
                   />
                 </div>
-                <p className={`text-[0.58rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Entrée ou virgule pour ajouter</p>
+                <p className={`text-[11px] ${isDark ? "text-white/20" : "text-gray-400"}`}>Entrée ou virgule pour ajouter</p>
               </div>
 
               {saveError && (
-                <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
+                <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
                   <AlertTriangle size={13} className="shrink-0"/>{saveError}
                 </div>
               )}
@@ -3842,7 +3842,7 @@ export default function CRMPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>Prévisualisation import</h3>
-                  <p className={`text-[0.62rem] mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{importPreview.fileName}</p>
+                  <p className={`text-xs mt-0.5 ${isDark ? "text-white/40" : "text-gray-500"}`}>{importPreview.fileName}</p>
                 </div>
                 <button onClick={() => setImportPreview(null)} disabled={importing}
                   className={isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}><X size={16}/></button>
@@ -3857,7 +3857,7 @@ export default function CRMPage() {
                 ].map(s => (
                   <div key={s.label} className={`rounded-xl border p-2.5 text-center ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
                     <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
-                    <div className={`text-[0.58rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{s.label}</div>
+                    <div className={`text-[11px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -3865,17 +3865,17 @@ export default function CRMPage() {
               {/* Aperçu des 5 premières lignes */}
               {importPreview.rows.length > 0 && (
                 <div>
-                  <p className={`text-[0.6rem] font-bold uppercase tracking-widest mb-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                  <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>
                     Aperçu ({Math.min(5, importPreview.rows.length)} sur {importPreview.rows.length})
                   </p>
                   <div className="space-y-1.5">
                     {importPreview.rows.slice(0, 5).map((r, i) => (
                       <div key={i} className={`rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-200 bg-gray-50"}`}>
-                        <p className={`text-[0.75rem] font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{r.name}</p>
+                        <p className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{r.name}</p>
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-                          {r.company && <span className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>{r.company}</span>}
-                          {r.email   && <span className={`text-[0.62rem] ${isDark ? "text-blue-400/60" : "text-blue-500"}`}>{r.email}</span>}
-                          {r.phone   && <span className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{r.phone}</span>}
+                          {r.company && <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>{r.company}</span>}
+                          {r.email   && <span className={`text-xs ${isDark ? "text-blue-400/60" : "text-blue-500"}`}>{r.email}</span>}
+                          {r.phone   && <span className={`text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>{r.phone}</span>}
                         </div>
                       </div>
                     ))}

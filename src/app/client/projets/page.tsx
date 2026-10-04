@@ -360,19 +360,19 @@ function ProjectModal({
         </div>
         <div className="space-y-4">
           <div>
-            <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Titre *</label>
+            <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Titre *</label>
             <input value={draft.title??""} onChange={e=>field("title",e.target.value)}
               placeholder="Ex : Site e-commerce Boutique X"
               className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Client</label>
+              <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Client</label>
               <input value={draft.client??""} onChange={e=>field("client",e.target.value)} placeholder="Nom du client"
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
             </div>
             <div>
-              <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Catégorie / Dossier</label>
+              <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Catégorie / Dossier</label>
               <select value={draft.category??"Autre"} onChange={e=>field("category",e.target.value)}
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${selectCls}`}>
                 {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
@@ -380,7 +380,7 @@ function ProjectModal({
             </div>
           </div>
           <div>
-            <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Statut</label>
+            <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Statut</label>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(STATUS_CONFIG) as Status[]).map(s=>{
                 const {label,color,bg} = STATUS_CONFIG[s];
@@ -399,30 +399,30 @@ function ProjectModal({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Date début</label>
+              <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Date début</label>
               <input type="date" value={draft.start_date??""} onChange={e=>field("start_date",e.target.value)}
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls} ${isDark?"[color-scheme:dark]":"[color-scheme:light]"}`}/>
             </div>
             <div>
-              <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Date fin</label>
+              <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Date fin</label>
               <input type="date" value={draft.end_date??""} onChange={e=>field("end_date",e.target.value)}
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls} ${isDark?"[color-scheme:dark]":"[color-scheme:light]"}`}/>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Budget (€)</label>
+              <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Budget (€)</label>
               <input type="number" min="0" value={draft.budget??0} onChange={e=>field("budget",parseFloat(e.target.value)||0)}
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
             </div>
             <div>
-              <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Encaissé (€)</label>
+              <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Encaissé (€)</label>
               <input type="number" min="0" value={draft.spent??0} onChange={e=>field("spent",parseFloat(e.target.value)||0)}
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
             </div>
           </div>
           <div>
-            <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Couleur</label>
+            <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Couleur</label>
             <div className="flex gap-2">
               {COLORS.map(c=>(
                 <button key={c} onClick={()=>field("color",c)}
@@ -432,7 +432,7 @@ function ProjectModal({
             </div>
           </div>
           <div>
-            <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Description</label>
+            <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Description</label>
             <textarea value={draft.description??""} onChange={e=>field("description",e.target.value)}
               placeholder="Contexte, livrables, notes..." rows={3}
               className={`w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
@@ -556,30 +556,30 @@ function CahierDesChargesModal({ onClose, isDark, initialName, initialDesc }: {
                 <div className="rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-400">{error}</div>
               )}
               <div>
-                <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Nom du projet (optionnel)</label>
+                <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Nom du projet (optionnel)</label>
                 <input value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex : Application mobile de livraison"
                   className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
               </div>
               <div>
-                <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Description du projet *</label>
+                <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Description du projet *</label>
                 <textarea value={desc} onChange={e=>setDesc(e.target.value)} rows={5}
                   placeholder="Décrivez votre projet en détail : objectifs, cibles, fonctionnalités souhaitées, contexte métier…"
                   className={`w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Budget estimé (optionnel)</label>
+                  <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Budget estimé (optionnel)</label>
                   <input value={budget} onChange={e=>setBudget(e.target.value)} placeholder="Ex : 15 000 €"
                     className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
                 </div>
                 <div>
-                  <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Délai souhaité (optionnel)</label>
+                  <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Délai souhaité (optionnel)</label>
                   <input value={delai} onChange={e=>setDelai(e.target.value)} placeholder="Ex : 3 mois"
                     className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
                 </div>
               </div>
               <div>
-                <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Technologies / contraintes (optionnel)</label>
+                <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Technologies / contraintes (optionnel)</label>
                 <input value={tech} onChange={e=>setTech(e.target.value)} placeholder="Ex : React, Node.js, doit s'intégrer à Salesforce"
                   className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
               </div>
@@ -856,29 +856,29 @@ function GanttPlanModal({ onClose, isDark, onCreated }: {
             <div className="p-6 space-y-4">
               {error && <div className="rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-400">{error}</div>}
               <div>
-                <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Nom du projet (optionnel)</label>
+                <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Nom du projet (optionnel)</label>
                 <input value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ex : Refonte site e-commerce"
                   className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
               </div>
               <div>
-                <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Description du projet *</label>
+                <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Description du projet *</label>
                 <textarea value={desc} onChange={e=>setDesc(e.target.value)} rows={4}
                   placeholder="Décrivez votre projet : objectifs, livrables, équipe, contraintes techniques…"
                   className={`w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none transition ${inputCls}`}/>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Date de début</label>
+                  <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Date de début</label>
                   <input type="date" value={debut} onChange={e=>setDebut(e.target.value)}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition ${inputCls} ${isDark?"[color-scheme:dark]":"[color-scheme:light]"}`}/>
                 </div>
                 <div>
-                  <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Délai souhaité</label>
+                  <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Délai souhaité</label>
                   <input value={delai} onChange={e=>setDelai(e.target.value)} placeholder="Ex : 3 mois"
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition ${inputCls}`}/>
                 </div>
                 <div>
-                  <label className={`mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] ${labelCls}`}>Budget (optionnel)</label>
+                  <label className={`mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] ${labelCls}`}>Budget (optionnel)</label>
                   <input value={budget} onChange={e=>setBudget(e.target.value)} placeholder="Ex : 20 000 €"
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition ${inputCls}`}/>
                 </div>
@@ -1920,7 +1920,7 @@ export default function ProjetsPage() {
         {/* Header */}
         <div className="relative flex items-start justify-between gap-3 flex-wrap pb-5">
           <div>
-            <p className={`mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Gestion</p>
+            <p className={`mb-1 text-xs font-bold uppercase tracking-[0.18em] ${textMuted}`}>Gestion</p>
             <h1 className={`text-2xl font-black ${textPrimary}`}>Projets</h1>
             <p className={`text-sm ${textSec}`}>{projects.length} projet{projects.length!==1?"s":""}</p>
           </div>
@@ -1953,9 +1953,9 @@ export default function ProjetsPage() {
               onClick={k.onClick}
               className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm cursor-pointer ${cardBase}`}>
               <div className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 blur-2xl" style={{background:k.color}}/>
-              <p className={`text-[0.65rem] font-bold uppercase tracking-[0.18em] ${textMuted}`}>{k.label}</p>
+              <p className={`text-xs font-bold uppercase tracking-[0.18em] ${textMuted}`}>{k.label}</p>
               <p className="mt-1 text-2xl font-black" style={{color:k.color}}>{k.value}</p>
-              <p className={`text-[0.65rem] ${isDark ? "text-white/25" : "text-black/25"}`}>{k.sub}</p>
+              <p className={`text-xs ${isDark ? "text-white/25" : "text-black/25"}`}>{k.sub}</p>
             </motion.div>
           ))}
         </div>

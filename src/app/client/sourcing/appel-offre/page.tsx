@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -131,7 +131,7 @@ function Field({
   const borderDefault = isDark ? "rgba(255,255,255,0.09)" : "rgba(12,24,100,0.12)";
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[0.72rem] font-semibold uppercase tracking-wider"
+      <label className="text-sm font-semibold uppercase tracking-wider"
         style={{ color: isDark ? "rgba(255,255,255,0.50)" : "rgba(12,18,50,0.55)" }}>
         {label}{required && <span className="ml-1 text-indigo-400">*</span>}
       </label>
@@ -140,7 +140,7 @@ function Field({
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="rounded-xl px-3.5 py-2.5 text-[0.85rem] outline-none transition"
+        className="rounded-xl px-3.5 py-2.5 text-sm outline-none transition"
         style={{
           background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
           border: `1px solid ${borderDefault}`,
@@ -150,7 +150,7 @@ function Field({
         onBlur={e => (e.target.style.borderColor = borderDefault)}
       />
       {hint && (
-        <p className="text-[0.67rem]" style={{ color: isDark ? "rgba(255,255,255,0.30)" : "rgba(12,18,50,0.45)" }}>
+        <p className="text-xs" style={{ color: isDark ? "rgba(255,255,255,0.30)" : "rgba(12,18,50,0.45)" }}>
           {hint}
         </p>
       )}
@@ -170,7 +170,7 @@ function TextareaField({
   const borderDefault = isDark ? "rgba(255,255,255,0.09)" : "rgba(12,24,100,0.12)";
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[0.72rem] font-semibold uppercase tracking-wider"
+      <label className="text-sm font-semibold uppercase tracking-wider"
         style={{ color: isDark ? "rgba(255,255,255,0.50)" : "rgba(12,18,50,0.55)" }}>
         {label}
       </label>
@@ -179,7 +179,7 @@ function TextareaField({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         rows={rows}
-        className="rounded-xl px-3.5 py-2.5 text-[0.85rem] outline-none transition resize-none"
+        className="rounded-xl px-3.5 py-2.5 text-sm outline-none transition resize-none"
         style={{
           background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
           border: `1px solid ${borderDefault}`,
@@ -189,7 +189,7 @@ function TextareaField({
         onBlur={e => (e.target.style.borderColor = borderDefault)}
       />
       {hint && (
-        <p className="text-[0.67rem]" style={{ color: isDark ? "rgba(255,255,255,0.30)" : "rgba(12,18,50,0.45)" }}>
+        <p className="text-xs" style={{ color: isDark ? "rgba(255,255,255,0.30)" : "rgba(12,18,50,0.45)" }}>
           {hint}
         </p>
       )}
@@ -233,7 +233,7 @@ function StepIndicator({ current, isDark = true }: { current: number; isDark?: b
                 {done ? <Check size={13} /> : <Icon size={13} />}
               </div>
               <span
-                className="text-[0.6rem] font-semibold hidden sm:block"
+                className="text-xs font-semibold hidden sm:block"
                 style={{
                   color: active
                     ? indigo
@@ -280,7 +280,7 @@ function SuccessRing({ taux, isDark = true }: { taux: number; isDark?: boolean }
       </svg>
       <div className="text-center">
         <span className="block text-xl font-black" style={{ color: isDark ? "#ffffff" : "#0d0f1a" }}>{taux}%</span>
-        <span className="block text-[0.55rem] font-semibold" style={{ color: isDark ? "rgba(255,255,255,0.40)" : "rgba(12,18,50,0.50)" }}>
+        <span className="block text-[11px] font-semibold" style={{ color: isDark ? "rgba(255,255,255,0.40)" : "rgba(12,18,50,0.50)" }}>
           SUCCÈS
         </span>
       </div>
@@ -492,7 +492,7 @@ export default function AppelOffrePage() {
         <h2 className="text-[1.1rem] font-black mb-1" style={{ color: T.text88 }}>
           Informations de votre entreprise
         </h2>
-        <p className="text-[0.78rem]" style={{ color: T.text38 }}>
+        <p className="text-sm" style={{ color: T.text38 }}>
           Ces données seront intégrées dans tous les documents générés.
         </p>
       </div>
@@ -538,7 +538,7 @@ export default function AppelOffrePage() {
     <div className="space-y-5 max-w-2xl mx-auto">
       <div className="mb-6">
         <h2 className="text-[1.1rem] font-black mb-1" style={{ color: T.text88 }}>Documents du marché</h2>
-        <p className="text-[0.78rem]" style={{ color: T.text38 }}>
+        <p className="text-sm" style={{ color: T.text38 }}>
           Déposez les documents de l'appel d'offre. Les PDFs sont lus nativement par l'IA.
         </p>
       </div>
@@ -562,10 +562,10 @@ export default function AppelOffrePage() {
             <Upload size={24} style={{ color: indigo }} />
           </div>
           <div>
-            <p className="text-[0.88rem] font-semibold" style={{ color: T.text70 }}>
+            <p className="text-sm font-semibold" style={{ color: T.text70 }}>
               Glissez vos documents ou <span style={{ color: indigo }}>parcourez</span>
             </p>
-            <p className="mt-1 text-[0.72rem]" style={{ color: T.text30 }}>
+            <p className="mt-1 text-sm" style={{ color: T.text30 }}>
               PDF, DOCX, TXT — Cahier des charges, CCTP, règlement...
             </p>
           </div>
@@ -583,13 +583,13 @@ export default function AppelOffrePage() {
                   <File size={14} style={{ color: indigo }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[0.8rem] font-semibold" style={{ color: T.text80 }}>{f.name}</p>
-                  <p className="text-[0.65rem]" style={{ color: T.text30 }}>{formatBytes(f.size)}</p>
+                  <p className="truncate text-sm font-semibold" style={{ color: T.text80 }}>{f.name}</p>
+                  <p className="text-xs" style={{ color: T.text30 }}>{formatBytes(f.size)}</p>
                 </div>
                 <select
                   value={f.category}
                   onChange={e => setFiles(prev => prev.map(p => p.id === f.id ? { ...p, category: e.target.value } : p))}
-                  className="rounded-lg px-2.5 py-1.5 text-[0.7rem] outline-none"
+                  className="rounded-lg px-2.5 py-1.5 text-xs outline-none"
                   style={{
                     background: T.bg05,
                     border: `1px solid ${T.bd07}`,
@@ -610,7 +610,7 @@ export default function AppelOffrePage() {
       )}
 
       {files.length === 0 && (
-        <p className="text-center text-[0.75rem]" style={{ color: T.text25 }}>
+        <p className="text-center text-sm" style={{ color: T.text25 }}>
           Vous pouvez continuer sans document — l'IA effectuera une analyse générique.
         </p>
       )}
@@ -632,7 +632,7 @@ export default function AppelOffrePage() {
           </div>
           <div className="text-center">
             <p className="text-[1rem] font-black" style={{ color: T.text80 }}>Analyse en cours…</p>
-            <p className="mt-1 text-[0.78rem]" style={{ color: T.text38 }}>L'IA lit vos documents et analyse le marché</p>
+            <p className="mt-1 text-sm" style={{ color: T.text38 }}>L'IA lit vos documents et analyse le marché</p>
           </div>
           <Loader2 size={20} className="animate-spin" style={{ color: T.text30 }} />
         </div>
@@ -648,10 +648,10 @@ export default function AppelOffrePage() {
           </div>
           <div>
             <p className="font-semibold mb-1" style={{ color: T.text80 }}>Erreur d'analyse</p>
-            <p className="text-[0.78rem]" style={{ color: T.text40 }}>{analyzeError}</p>
+            <p className="text-sm" style={{ color: T.text40 }}>{analyzeError}</p>
           </div>
           <button onClick={runAnalysis}
-            className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.82rem] font-semibold transition"
+            className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition"
             style={{ background: "rgba(129,140,248,0.12)", color: indigo, border: "1px solid rgba(129,140,248,0.25)" }}>
             <RefreshCw size={14} /> Réessayer
           </button>
@@ -665,7 +665,7 @@ export default function AppelOffrePage() {
       <div className="space-y-5 max-w-3xl mx-auto">
         <div className="mb-6">
           <h2 className="text-[1.1rem] font-black mb-1" style={{ color: T.text88 }}>Analyse de votre dossier</h2>
-          <p className="text-[0.78rem]" style={{ color: T.text38 }}>Résultats de l'analyse IA — vérifiez avant de générer.</p>
+          <p className="text-sm" style={{ color: T.text38 }}>Résultats de l'analyse IA — vérifiez avant de générer.</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -677,25 +677,25 @@ export default function AppelOffrePage() {
           ].map(item => (
             <div key={item.label} className="rounded-xl p-3"
               style={{ background: T.bg025, border: `1px solid ${T.bd06}` }}>
-              <p className="text-[0.62rem] font-semibold uppercase tracking-wider mb-1" style={{ color: T.text35 }}>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: T.text35 }}>
                 {item.label}
               </p>
-              <p className="text-[0.82rem] font-black truncate" style={{ color: T.text80 }}>{item.value}</p>
+              <p className="text-sm font-black truncate" style={{ color: T.text80 }}>{item.value}</p>
             </div>
           ))}
         </div>
 
         <div className="flex gap-4">
           <Card isDark={isDark} className="flex-1">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-wider mb-2" style={{ color: T.text40 }}>
+            <p className="text-sm font-semibold uppercase tracking-wider mb-2" style={{ color: T.text40 }}>
               Objet du marché
             </p>
-            <p className="text-[0.9rem] font-bold mb-3" style={{ color: T.text80 }}>{analysis.objet}</p>
-            <p className="text-[0.8rem] leading-relaxed" style={{ color: T.text55 }}>{analysis.summary}</p>
+            <p className="text-sm font-bold mb-3" style={{ color: T.text80 }}>{analysis.objet}</p>
+            <p className="text-sm leading-relaxed" style={{ color: T.text55 }}>{analysis.summary}</p>
           </Card>
           <div className="flex flex-col items-center gap-2 shrink-0">
             <SuccessRing taux={analysis.taux_succes || 0} isDark={isDark} />
-            <p className="text-[0.65rem] text-center max-w-[80px]" style={{ color: T.text35 }}>
+            <p className="text-xs text-center max-w-[80px]" style={{ color: T.text35 }}>
               Taux de réussite estimé
             </p>
           </div>
@@ -703,19 +703,19 @@ export default function AppelOffrePage() {
 
         {analysis.criteres_notation?.length > 0 && (
           <Card isDark={isDark}>
-            <p className="text-[0.72rem] font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
+            <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
               Critères de notation
             </p>
             <div className="space-y-2">
               {analysis.criteres_notation.map((c, i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <span className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-black text-white"
+                  <span className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-xs font-black text-white"
                     style={{ background: `rgba(129,140,248,${0.15 + i * 0.05})` }}>
                     {c.poids}
                   </span>
                   <div>
-                    <p className="text-[0.82rem] font-semibold" style={{ color: T.text80 }}>{c.critere}</p>
-                    <p className="text-[0.72rem]" style={{ color: T.text40 }}>{c.detail}</p>
+                    <p className="text-sm font-semibold" style={{ color: T.text80 }}>{c.critere}</p>
+                    <p className="text-sm" style={{ color: T.text40 }}>{c.detail}</p>
                   </div>
                 </div>
               ))}
@@ -726,14 +726,14 @@ export default function AppelOffrePage() {
         <div className="grid sm:grid-cols-2 gap-4">
           {analysis.points_forts?.length > 0 && (
             <Card isDark={isDark}>
-              <p className="text-[0.72rem] font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
+              <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
                 Points forts
               </p>
               <div className="space-y-1.5">
                 {analysis.points_forts.map((p, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <CheckCircle2 size={13} className="mt-0.5 shrink-0" style={{ color: emerald }} />
-                    <p className="text-[0.78rem]" style={{ color: T.text60 }}>{p}</p>
+                    <p className="text-sm" style={{ color: T.text60 }}>{p}</p>
                   </div>
                 ))}
               </div>
@@ -741,14 +741,14 @@ export default function AppelOffrePage() {
           )}
           {analysis.points_vigilance?.length > 0 && (
             <Card isDark={isDark}>
-              <p className="text-[0.72rem] font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
+              <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
                 Points de vigilance
               </p>
               <div className="space-y-1.5">
                 {analysis.points_vigilance.map((p, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-400" />
-                    <p className="text-[0.78rem]" style={{ color: T.text60 }}>{p}</p>
+                    <p className="text-sm" style={{ color: T.text60 }}>{p}</p>
                   </div>
                 ))}
               </div>
@@ -758,7 +758,7 @@ export default function AppelOffrePage() {
 
         {analysis.pieces_manquantes?.length > 0 && (
           <Card isDark={isDark}>
-            <p className="text-[0.72rem] font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
+            <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
               Pièces à préparer
             </p>
             <div className="grid sm:grid-cols-2 gap-1.5">
@@ -766,7 +766,7 @@ export default function AppelOffrePage() {
                 <div key={i} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
                   style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
                   <div className="h-1.5 w-1.5 rounded-full bg-red-400 shrink-0" />
-                  <p className="text-[0.75rem]" style={{ color: T.text60 }}>{p}</p>
+                  <p className="text-sm" style={{ color: T.text60 }}>{p}</p>
                 </div>
               ))}
             </div>
@@ -775,14 +775,14 @@ export default function AppelOffrePage() {
 
         {analysis.conseils?.length > 0 && (
           <Card isDark={isDark}>
-            <p className="text-[0.72rem] font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
+            <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
               Conseils stratégiques
             </p>
             <div className="space-y-2">
               {analysis.conseils.map((c, i) => (
                 <div key={i} className="flex items-start gap-2.5">
                   <Star size={12} className="mt-1 shrink-0" style={{ color: "#f59e0b" }} />
-                  <p className="text-[0.8rem]" style={{ color: T.text60 }}>{c}</p>
+                  <p className="text-sm" style={{ color: T.text60 }}>{c}</p>
                 </div>
               ))}
             </div>
@@ -803,7 +803,7 @@ export default function AppelOffrePage() {
             <h2 className="text-[1.1rem] font-black mb-1" style={{ color: T.text88 }}>
               Sélectionnez les documents à générer
             </h2>
-            <p className="text-[0.78rem]" style={{ color: T.text38 }}>
+            <p className="text-sm" style={{ color: T.text38 }}>
               Choisissez les documents dont vous avez besoin pour votre candidature.
             </p>
           </div>
@@ -824,10 +824,10 @@ export default function AppelOffrePage() {
                     <Icon size={15} style={{ color: sel ? indigo : T.text35 }} />
                   </div>
                   <div>
-                    <p className="text-[0.82rem] font-semibold" style={{ color: sel ? T.text88 : T.text55 }}>
+                    <p className="text-sm font-semibold" style={{ color: sel ? T.text88 : T.text55 }}>
                       {opt.label}
                     </p>
-                    <p className="text-[0.68rem]" style={{ color: T.text30 }}>{opt.desc}</p>
+                    <p className="text-xs" style={{ color: T.text30 }}>{opt.desc}</p>
                   </div>
                   {sel && <Check size={14} className="ml-auto mt-0.5 shrink-0" style={{ color: indigo }} />}
                 </button>
@@ -838,13 +838,13 @@ export default function AppelOffrePage() {
             <div className="rounded-xl p-3 flex items-center gap-2"
               style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
               <AlertTriangle size={14} className="text-red-400 shrink-0" />
-              <p className="text-[0.78rem] text-red-400">{generateError}</p>
+              <p className="text-sm text-red-400">{generateError}</p>
             </div>
           )}
           <button
             onClick={runGeneration}
             disabled={selectedDocs.length === 0 || generating}
-            className="w-full flex items-center justify-center gap-2.5 rounded-xl py-3.5 font-black text-[0.9rem] transition-all disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-2.5 rounded-xl py-3.5 font-black text-sm transition-all disabled:opacity-40"
             style={{ background: "linear-gradient(135deg,rgba(129,140,248,0.9),rgba(96,165,250,0.8))", color: "#fff" }}
           >
             <Sparkles size={16} />
@@ -867,7 +867,7 @@ export default function AppelOffrePage() {
           </div>
           <div className="text-center">
             <p className="text-[1rem] font-black" style={{ color: T.text80 }}>Génération en cours…</p>
-            <p className="mt-1 text-[0.78rem]" style={{ color: T.text38 }}>
+            <p className="mt-1 text-sm" style={{ color: T.text38 }}>
               Rédaction de {selectedDocs.length} documents professionnels — cela peut prendre 2-3 minutes
             </p>
           </div>
@@ -883,12 +883,12 @@ export default function AppelOffrePage() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <h2 className="text-[1.1rem] font-black mb-0.5" style={{ color: T.text88 }}>Documents générés</h2>
-            <p className="text-[0.75rem]" style={{ color: T.text38 }}>
+            <p className="text-sm" style={{ color: T.text38 }}>
               {generatedDocs.length} documents prêts à être complétés
             </p>
           </div>
           <button onClick={() => { setGeneratedDocs([]); setActiveDocTab(""); }}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.75rem] transition"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm transition"
             style={{ background: T.bg05, border: `1px solid ${T.bd07}`, color: T.text40 }}>
             <RefreshCw size={12} /> Régénérer
           </button>
@@ -909,7 +909,7 @@ export default function AppelOffrePage() {
                     border: `1px solid ${active ? "rgba(129,140,248,0.3)" : "transparent"}`,
                   }}>
                   <Icon size={13} style={{ color: active ? indigo : T.text30, flexShrink: 0 }} />
-                  <span className="text-[0.72rem] font-semibold leading-tight"
+                  <span className="text-sm font-semibold leading-tight"
                     style={{ color: active ? T.text80 : T.text40 }}>
                     {d.title}
                   </span>
@@ -927,9 +927,9 @@ export default function AppelOffrePage() {
               <div className="flex items-center justify-between px-4 py-3"
                 style={{ borderBottom: `1px solid ${T.bd06}` }}>
                 <div className="flex items-center gap-2">
-                  <span className="text-[0.82rem] font-black" style={{ color: T.text80 }}>{activeDoc.title}</span>
+                  <span className="text-sm font-black" style={{ color: T.text80 }}>{activeDoc.title}</span>
                   {editingDocId === activeDoc.id && (
-                    <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-black uppercase tracking-wider"
+                    <span className="rounded-full px-2 py-0.5 text-xs font-black uppercase tracking-wider"
                       style={{ background: "rgba(129,140,248,0.15)", color: indigo }}>
                       Édition
                     </span>
@@ -939,12 +939,12 @@ export default function AppelOffrePage() {
                   {editingDocId === activeDoc.id ? (
                     <>
                       <button onClick={cancelEdit}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold transition"
                         style={{ background: T.bg05, color: T.text45 }}>
                         <X size={12} /> Annuler
                       </button>
                       <button onClick={saveEdit}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold"
                         style={{ background: "rgba(129,140,248,0.15)", color: indigo, border: "1px solid rgba(129,140,248,0.3)" }}>
                         <Save size={12} /> Sauvegarder
                       </button>
@@ -953,24 +953,24 @@ export default function AppelOffrePage() {
                     <>
                       <button onClick={() => regenerateDoc(activeDoc.id)}
                         disabled={regeneratingDocId === activeDoc.id}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition disabled:opacity-40"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold transition disabled:opacity-40"
                         style={{ background: T.bg04, color: T.text35 }}>
                         {regeneratingDocId === activeDoc.id
                           ? <Loader2 size={12} className="animate-spin" />
                           : <RefreshCw size={12} />}
                       </button>
                       <button onClick={() => startEdit(activeDoc)}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold transition"
                         style={{ background: T.bg04, color: T.text40 }}>
                         <Pencil size={12} /> Éditer
                       </button>
                       <button onClick={() => handleCopy(activeDoc.id, activeDoc.content)}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold transition"
                         style={{ background: T.bg05, color: copiedId === activeDoc.id ? emerald : T.text45 }}>
                         {copiedId === activeDoc.id ? <><Check size={12} /> Copié</> : <><Copy size={12} /> Copier</>}
                       </button>
                       <button onClick={() => downloadDoc(activeDoc)}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.72rem] font-semibold transition"
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold transition"
                         style={{ background: "rgba(129,140,248,0.08)", color: indigo, border: "1px solid rgba(129,140,248,0.2)" }}>
                         <Download size={12} /> PDF
                       </button>
@@ -983,12 +983,12 @@ export default function AppelOffrePage() {
                   <textarea
                     value={editContent}
                     onChange={e => setEditContent(e.target.value)}
-                    className="w-full min-h-[380px] max-h-[540px] resize-none outline-none font-mono text-[0.78rem] leading-relaxed overflow-y-auto"
+                    className="w-full min-h-[380px] max-h-[540px] resize-none outline-none font-mono text-sm leading-relaxed overflow-y-auto"
                     style={{ background: "transparent", color: T.text80, caretColor: indigo }}
                     autoFocus
                   />
                 ) : (
-                  <pre className="whitespace-pre-wrap text-[0.78rem] leading-relaxed font-mono"
+                  <pre className="whitespace-pre-wrap text-sm leading-relaxed font-mono"
                     style={{ color: T.text60 }}>
                     {activeDoc.content}
                   </pre>
@@ -1024,7 +1024,7 @@ export default function AppelOffrePage() {
       <div className="space-y-5 max-w-2xl mx-auto">
         <div className="mb-6">
           <h2 className="text-[1.1rem] font-black mb-1" style={{ color: T.text88 }}>Vérification finale</h2>
-          <p className="text-[0.78rem]" style={{ color: T.text38 }}>
+          <p className="text-sm" style={{ color: T.text38 }}>
             Confirmez chaque point avant de soumettre votre dossier.
           </p>
         </div>
@@ -1035,7 +1035,7 @@ export default function AppelOffrePage() {
             <div className="h-full rounded-full transition-all duration-500"
               style={{ width: `${pct}%`, background: pct === 100 ? emerald : "rgba(129,140,248,0.8)" }} />
           </div>
-          <span className="text-[0.78rem] font-black" style={{ color: pct === 100 ? emerald : indigo }}>
+          <span className="text-sm font-black" style={{ color: pct === 100 ? emerald : indigo }}>
             {checkedCount}/{checks.length}
           </span>
         </div>
@@ -1058,7 +1058,7 @@ export default function AppelOffrePage() {
                   }}>
                   {verifChecks[c.id] && <Check size={11} className="text-white" />}
                 </div>
-                <span className="text-[0.82rem]"
+                <span className="text-sm"
                   style={{ color: verifChecks[c.id] ? T.text70 : T.text50 }}>
                   {c.label}
                 </span>
@@ -1073,8 +1073,8 @@ export default function AppelOffrePage() {
             style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.25)" }}>
             <Shield size={18} style={{ color: emerald }} />
             <div>
-              <p className="text-[0.85rem] font-black" style={{ color: emerald }}>Dossier complet !</p>
-              <p className="text-[0.72rem]" style={{ color: T.text45 }}>Votre candidature est prête pour soumission.</p>
+              <p className="text-sm font-black" style={{ color: emerald }}>Dossier complet !</p>
+              <p className="text-sm" style={{ color: T.text45 }}>Votre candidature est prête pour soumission.</p>
             </div>
           </motion.div>
         )}
@@ -1087,7 +1087,7 @@ export default function AppelOffrePage() {
     <div className="space-y-5 max-w-2xl mx-auto">
       <div className="mb-6">
         <h2 className="text-[1.1rem] font-black mb-1" style={{ color: T.text88 }}>Exporter votre dossier</h2>
-        <p className="text-[0.78rem]" style={{ color: T.text38 }}>
+        <p className="text-sm" style={{ color: T.text38 }}>
           Téléchargez vos documents dans le format de votre choix.
         </p>
       </div>
@@ -1101,8 +1101,8 @@ export default function AppelOffrePage() {
             <FileText size={22} style={{ color: indigo }} />
           </div>
           <div className="flex-1">
-            <p className="text-[0.9rem] font-black" style={{ color: T.text88 }}>PDF complet</p>
-            <p className="text-[0.75rem]" style={{ color: T.text40 }}>
+            <p className="text-sm font-black" style={{ color: T.text88 }}>PDF complet</p>
+            <p className="text-sm" style={{ color: T.text40 }}>
               Tous les documents en un seul fichier PDF professionnel
             </p>
           </div>
@@ -1117,8 +1117,8 @@ export default function AppelOffrePage() {
             <Package size={22} style={{ color: T.text40 }} />
           </div>
           <div className="flex-1">
-            <p className="text-[0.9rem] font-black" style={{ color: T.text80 }}>Documents individuels (PDF)</p>
-            <p className="text-[0.75rem]" style={{ color: T.text35 }}>
+            <p className="text-sm font-black" style={{ color: T.text80 }}>Documents individuels (PDF)</p>
+            <p className="text-sm" style={{ color: T.text35 }}>
               Chaque document dans son propre PDF professionnel
             </p>
           </div>
@@ -1127,7 +1127,7 @@ export default function AppelOffrePage() {
 
         {generatedDocs.length > 0 && (
           <Card isDark={isDark}>
-            <p className="text-[0.72rem] font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
+            <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: T.text40 }}>
               Documents individuels
             </p>
             <div className="space-y-2">
@@ -1137,14 +1137,14 @@ export default function AppelOffrePage() {
                 return (
                   <div key={doc.id} className="flex items-center gap-3">
                     <Icon size={14} style={{ color: T.text30 }} className="shrink-0" />
-                    <span className="flex-1 text-[0.8rem]" style={{ color: T.text60 }}>{doc.title}</span>
+                    <span className="flex-1 text-sm" style={{ color: T.text60 }}>{doc.title}</span>
                     <button onClick={() => handleCopy(doc.id, doc.content)}
-                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-[0.68rem] transition"
+                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition"
                       style={{ background: T.bg04, color: T.text35 }}>
                       {copiedId === doc.id ? <Check size={11} /> : <Copy size={11} />}
                     </button>
                     <button onClick={() => downloadDoc(doc)}
-                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-[0.68rem] transition"
+                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition"
                       style={{ background: "rgba(129,140,248,0.07)", color: indigo }}>
                       <Download size={11} />
                     </button>
@@ -1159,7 +1159,7 @@ export default function AppelOffrePage() {
       <div className="rounded-xl p-4 flex items-start gap-3"
         style={{ background: "rgba(96,165,250,0.05)", border: "1px solid rgba(96,165,250,0.12)" }}>
         <Info size={14} className="mt-0.5 shrink-0" style={{ color: blue }} />
-        <p className="text-[0.75rem]" style={{ color: T.text45 }}>
+        <p className="text-sm" style={{ color: T.text45 }}>
           <strong style={{ color: T.text60 }}>Conseil :</strong>{" "}
           Relisez chaque document et personnalisez les passages entre crochets avant soumission.
           Ces documents sont des bases professionnelles à adapter à votre contexte exact.
@@ -1221,10 +1221,10 @@ export default function AppelOffrePage() {
                 <Target size={17} style={{ color: indigo }} />
               </div>
               <div className="min-w-0">
-                <h1 className="text-[0.95rem] font-black leading-tight truncate" style={{ color: T.text88 }}>
+                <h1 className="text-base font-black leading-tight truncate" style={{ color: T.text88 }}>
                   Répondre à un appel d'offre
                 </h1>
-                <p className="text-[0.65rem]" style={{ color: T.text35 }}>
+                <p className="text-xs" style={{ color: T.text35 }}>
                   Assistant IA — Marchés publics & privés
                 </p>
               </div>
@@ -1269,7 +1269,7 @@ export default function AppelOffrePage() {
               <button
                 onClick={handlePrev}
                 disabled={step === 1}
-                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.82rem] font-semibold transition disabled:opacity-30"
+                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-30"
                 style={{
                   background: T.bg04,
                   color: T.text55,
@@ -1280,14 +1280,14 @@ export default function AppelOffrePage() {
               </button>
               {step > 1 && (
                 <button onClick={resetWizard}
-                  className="flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-[0.78rem] font-semibold transition"
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition"
                   style={{ color: "rgba(239,100,100,0.72)" }}>
                   <RotateCcw size={13} /> Recommencer
                 </button>
               )}
             </div>
 
-            <span className="text-[0.72rem]" style={{ color: T.text25 }}>
+            <span className="text-sm" style={{ color: T.text25 }}>
               Étape {step} / {STEPS.length}
             </span>
 
@@ -1295,7 +1295,7 @@ export default function AppelOffrePage() {
               <button
                 onClick={handleNext}
                 disabled={!canProceed()}
-                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.82rem] font-black transition-all disabled:opacity-35 active:scale-[0.98]"
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-black transition-all disabled:opacity-35 active:scale-[0.98]"
                 style={{ background: "linear-gradient(135deg,rgba(129,140,248,0.85),rgba(96,165,250,0.75))", color: "#fff" }}
               >
                 {step === 2
@@ -1308,7 +1308,7 @@ export default function AppelOffrePage() {
             ) : (
               <button
                 onClick={exportPDF}
-                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.82rem] font-black transition-all active:scale-[0.98]"
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-black transition-all active:scale-[0.98]"
                 style={{ background: "linear-gradient(135deg,rgba(129,140,248,0.85),rgba(96,165,250,0.75))", color: "#fff" }}
               >
                 <Download size={15} /> Exporter PDF

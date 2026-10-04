@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "@/lib/theme-context";
@@ -160,8 +160,8 @@ function DonutChart({ segments, isDark }: {
           <div key={i} className="flex items-center gap-2 min-w-0">
             <div className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: p.color }}/>
             <div className="min-w-0 flex-1">
-              <span className={`text-[0.65rem] font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>{p.label}</span>
-              <span className={`ml-1 text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>({p.pct})</span>
+              <span className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>{p.label}</span>
+              <span className={`ml-1 text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>({p.pct})</span>
             </div>
           </div>
         ))}
@@ -180,13 +180,13 @@ function KpiCard({ label, value, sub, color, icon: Icon, isDark, bd, bg2, t1, t2
   return (
     <div className={`rounded-2xl border ${bd} ${bg2} p-4`}>
       <div className="mb-2 flex items-center justify-between">
-        <p className={`text-[0.62rem] font-bold uppercase tracking-wider ${t3}`}>{label}</p>
+        <p className={`text-xs font-bold uppercase tracking-wider ${t3}`}>{label}</p>
         <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: `${color}18` }}>
           <Icon size={12} style={{ color }}/>
         </div>
       </div>
       <p className="text-xl font-black tabular-nums leading-none" style={{ color }}>{value}</p>
-      {sub && <p className={`mt-1 text-[0.6rem] ${t3}`}>{sub}</p>}
+      {sub && <p className={`mt-1 text-xs ${t3}`}>{sub}</p>}
     </div>
   );
 }
@@ -333,7 +333,7 @@ export default function StatsPage() {
           style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}>
           {(["3m", "6m", "12m", "all"] as Period[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`rounded-lg px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wide transition ${
+              className={`rounded-lg px-3 py-1 text-xs font-bold uppercase tracking-wide transition ${
                 period === p
                   ? "text-[#0a0a0a]"
                   : `${t3} hover:${t2}`
@@ -396,9 +396,9 @@ export default function StatsPage() {
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <p className={`text-sm font-bold ${t1}`}>CA encaissé — 12 mois glissants</p>
-                  <p className={`text-[0.62rem] ${t3}`}>Factures marquées payées par mois de facturation</p>
+                  <p className={`text-xs ${t3}`}>Factures marquées payées par mois de facturation</p>
                 </div>
-                <div className="flex items-center gap-2 text-[0.6rem]">
+                <div className="flex items-center gap-2 text-xs">
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-2 rounded-full bg-emerald-400"/>
                     <span className={t3}>Mois en cours</span>
@@ -437,7 +437,7 @@ export default function StatsPage() {
                             <span className={`mr-1.5 tabular-nums ${t3}`}>{i + 1}.</span>
                             {c.nom}
                           </span>
-                          <span className="shrink-0 text-[0.72rem] font-black tabular-nums text-emerald-400">
+                          <span className="shrink-0 text-sm font-black tabular-nums text-emerald-400">
                             {fmtEurCompact(c.ca)}
                           </span>
                         </div>
@@ -447,7 +447,7 @@ export default function StatsPage() {
                             style={{ width: `${(c.ca / topClientMax) * 100}%`, opacity: i === 0 ? 1 : 0.6 - i * 0.08 }}
                           />
                         </div>
-                        <p className={`mt-0.5 text-[0.58rem] ${t3}`}>{c.count} facture{c.count !== 1 ? "s" : ""}</p>
+                        <p className={`mt-0.5 text-[11px] ${t3}`}>{c.count} facture{c.count !== 1 ? "s" : ""}</p>
                       </div>
                     ))}
                   </div>
@@ -474,11 +474,11 @@ export default function StatsPage() {
                         <div key={d.id} className={`flex items-center gap-2 rounded-xl px-3 py-2 ${isDark ? "hover:bg-white/[0.03]" : "hover:bg-gray-50"} transition`}>
                           <div className="min-w-0 flex-1">
                             <p className={`truncate text-xs font-semibold ${t1}`}>{d.client_societe || d.client_nom || "—"}</p>
-                            <p className={`text-[0.6rem] ${t3}`}>{d.numero}</p>
+                            <p className={`text-xs ${t3}`}>{d.numero}</p>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-[0.72rem] font-black tabular-nums" style={{ color: "#60a5fa" }}>{fmtEurCompact(d.total_ttc)}</p>
-                            <p className={`text-[0.58rem] ${days <= 7 ? "text-amber-400" : t3}`}>
+                            <p className="text-sm font-black tabular-nums" style={{ color: "#60a5fa" }}>{fmtEurCompact(d.total_ttc)}</p>
+                            <p className={`text-[11px] ${days <= 7 ? "text-amber-400" : t3}`}>
                               {days === 0 ? "Aujourd'hui" : days < 0 ? `J${days}` : `dans ${days} j`}
                             </p>
                           </div>
@@ -486,7 +486,7 @@ export default function StatsPage() {
                       );
                     })}
                     {upcoming.length > 0 && (
-                      <p className={`pt-1 text-center text-[0.6rem] ${t3}`}>
+                      <p className={`pt-1 text-center text-xs ${t3}`}>
                         Total : {fmtEur(r2(upcoming.reduce((s, d) => s + (d.total_ttc || 0), 0)))}
                       </p>
                     )}
@@ -514,17 +514,17 @@ export default function StatsPage() {
                         <div key={d.id} className={`flex items-center gap-2 rounded-xl px-3 py-2 ${isDark ? "hover:bg-white/[0.03]" : "hover:bg-gray-50"} transition`}>
                           <div className="min-w-0 flex-1">
                             <p className={`truncate text-xs font-semibold ${t1}`}>{d.client_societe || d.client_nom || "—"}</p>
-                            <p className={`text-[0.6rem] ${t3}`}>{d.numero}</p>
+                            <p className={`text-xs ${t3}`}>{d.numero}</p>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-[0.72rem] font-black tabular-nums" style={{ color: "#f87171" }}>{fmtEurCompact(d.total_ttc)}</p>
-                            <p className="text-[0.6rem] font-bold" style={{ color }}>J+{days}</p>
+                            <p className="text-sm font-black tabular-nums" style={{ color: "#f87171" }}>{fmtEurCompact(d.total_ttc)}</p>
+                            <p className="text-xs font-bold" style={{ color }}>J+{days}</p>
                           </div>
                         </div>
                       );
                     })}
                     {overdueList.length > 0 && (
-                      <p className={`pt-1 text-center text-[0.6rem] ${t3}`}>
+                      <p className={`pt-1 text-center text-xs ${t3}`}>
                         Total impayé : {fmtEur(overdue)}
                       </p>
                     )}
@@ -535,7 +535,7 @@ export default function StatsPage() {
 
             {/* ── Footer info ── */}
             {docs.length > 0 && (
-              <p className={`pb-2 text-center text-[0.6rem] ${t3}`}>
+              <p className={`pb-2 text-center text-xs ${t3}`}>
                 {docs.length} document{docs.length !== 1 ? "s" : ""} analysé{docs.length !== 1 ? "s" : ""}
                 {devisCount > 0 && ` · ${devisCount} devis`}
               </p>

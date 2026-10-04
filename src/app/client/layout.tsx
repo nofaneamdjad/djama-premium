@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -62,7 +62,7 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white">DJAMA PRO</h3>
-                    <p className="text-[0.62rem] text-white/35">{PRO_TOOLS_LIST.length} outils professionnels</p>
+                    <p className="text-xs text-white/35">{PRO_TOOLS_LIST.length} outils professionnels</p>
                   </div>
                 </div>
                 <button onClick={onClose}
@@ -83,7 +83,7 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
                         style={{ background: `${GOLD}12` }}>
                         <Icon size={10} style={{ color: GOLD }} />
                       </div>
-                      <span className="truncate text-[0.72rem] font-medium text-white/60">{app.name}</span>
+                      <span className="truncate text-sm font-medium text-white/60">{app.name}</span>
                     </div>
                   );
                 })}
@@ -98,7 +98,7 @@ function ProToolsModal({ open, onClose }: { open: boolean; onClose: () => void }
                   Débloquer DJAMA PRO — 11,90€/mois
                   <ArrowRight size={13} />
                 </a>
-                <p className="mt-2.5 text-center text-[0.6rem] text-white/25">
+                <p className="mt-2.5 text-center text-xs text-white/25">
                   Sans engagement · Résiliable à tout moment
                 </p>
               </div>
@@ -169,7 +169,7 @@ function PremiumGate() {
               </div>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.18 }}>
-              <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-widest"
+              <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-widest"
                 style={{ background: `${GOLD}12`, color: GOLD, border: `1px solid ${GOLD}22` }}>
                 <Sparkles size={8} /> DJAMA PRO
               </div>
@@ -181,7 +181,7 @@ function PremiumGate() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.28 }}
               className="mt-5 flex flex-wrap justify-center gap-1.5">
               {["CRM", "Trésorerie", "Contrats IA", "Assistant IA", "Portail Client", "Paie & RH", "+ 13 autres"].map(f => (
-                <span key={f} className="rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold"
+                <span key={f} className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
                   style={{ background: `${GOLD}0d`, color: `${GOLD}cc`, border: `1px solid ${GOLD}1a` }}>
                   {f}
                 </span>
@@ -192,7 +192,7 @@ function PremiumGate() {
               {["Accès complet immédiat", "Tous les outils débloqués", "Résiliable à tout moment"].map(f => (
                 <div key={f} className="flex items-center gap-2">
                   <CheckCircle2 size={13} style={{ color: GOLD }} className="shrink-0" />
-                  <span className="text-[0.8rem] text-gray-500">{f}</span>
+                  <span className="text-sm text-gray-500">{f}</span>
                 </div>
               ))}
             </motion.div>
@@ -214,7 +214,7 @@ function PremiumGate() {
               Débloquer DJAMA PRO
               <ArrowRight size={13} />
             </motion.a>
-            <Link href="/client" className="mt-3 block text-center text-[0.7rem] text-gray-300 transition hover:text-gray-500">
+            <Link href="/client" className="mt-3 block text-center text-xs text-gray-300 transition hover:text-gray-500">
               ← Retour à l&apos;accueil
             </Link>
           </div>
@@ -273,7 +273,7 @@ function FreeAppGate() {
               Changer de forfait
               <ArrowRight size={13} />
             </motion.a>
-            <Link href="/client" className="mt-3 block text-center text-[0.7rem] text-gray-300 transition hover:text-gray-500">
+            <Link href="/client" className="mt-3 block text-center text-xs text-gray-300 transition hover:text-gray-500">
               ← Retour à l&apos;accueil
             </Link>
           </div>

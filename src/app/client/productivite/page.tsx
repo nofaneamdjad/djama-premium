@@ -289,7 +289,7 @@ const SEL = "rounded-lg border border-white/8 bg-white/6 py-1.5 pl-3 pr-8 text-s
 function PBadge({ p }: { p: Priority }) {
   const c = PRIO[p];
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.62rem] font-semibold ${c.bg} ${c.txt}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${c.bg} ${c.txt}`}>
       <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: c.color }} />
       {c.label}
     </span>
@@ -317,7 +317,7 @@ function SubBar({ subs }: { subs: Sub[] }) {
         <div className="h-full rounded-full transition-all duration-300"
           style={{ width: `${(done / subs.length) * 100}%`, background: VIOLET }} />
       </div>
-      <span className={`text-[0.6rem] shrink-0 ${isDark ? "text-white/35" : "text-gray-400"}`}>{done}/{subs.length}</span>
+      <span className={`text-xs shrink-0 ${isDark ? "text-white/35" : "text-gray-400"}`}>{done}/{subs.length}</span>
     </div>
   );
 }
@@ -368,28 +368,28 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
         /* Mode compact : titre + badge priorité sur une seule ligne */
         <div className="flex items-center gap-2 pr-4">
           <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: pc.color }} />
-          <p className={`text-[0.78rem] font-medium truncate flex-1 ${isDark ? "text-white/88" : "text-gray-800"}`}>{task.title}</p>
-          {task.due_date && <span className={`text-[0.58rem] shrink-0 ${late ? "text-red-400" : isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(task.due_date)}</span>}
+          <p className={`text-sm font-medium truncate flex-1 ${isDark ? "text-white/88" : "text-gray-800"}`}>{task.title}</p>
+          {task.due_date && <span className={`text-[11px] shrink-0 ${late ? "text-red-400" : isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(task.due_date)}</span>}
         </div>
       ) : (
         <>
-          <p className={`text-[0.82rem] font-medium leading-snug line-clamp-2 pr-4 mb-2 ${isDark ? "text-white/88" : "text-gray-800"}`}>
+          <p className={`text-sm font-medium leading-snug line-clamp-2 pr-4 mb-2 ${isDark ? "text-white/88" : "text-gray-800"}`}>
             {task.title}
           </p>
 
           <div className="flex flex-wrap gap-1 mb-2">
             {task.category && (
-              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.58rem] ${isDark ? "bg-violet-500/10 text-violet-300/80" : "bg-violet-50 text-violet-600"}`}>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${isDark ? "bg-violet-500/10 text-violet-300/80" : "bg-violet-50 text-violet-600"}`}>
                 {task.category}
               </span>
             )}
             {task.tags.slice(0, 3).map(tag => (
-              <span key={tag} className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[0.55rem] border ${isDark ? "bg-white/6 text-white/40 border-white/8" : "bg-gray-50 text-gray-500 border-gray-200"}`}>
+              <span key={tag} className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] border ${isDark ? "bg-white/6 text-white/40 border-white/8" : "bg-gray-50 text-gray-500 border-gray-200"}`}>
                 #{tag}
               </span>
             ))}
             {task.tags.length > 3 && (
-              <span className={`text-[0.55rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>+{task.tags.length - 3}</span>
+              <span className={`text-[11px] ${isDark ? "text-white/25" : "text-gray-400"}`}>+{task.tags.length - 3}</span>
             )}
           </div>
 
@@ -398,7 +398,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
           </div>
 
           {task.dependencies.length > 0 && (
-            <div className="mb-1.5 flex items-center gap-1 text-[0.58rem] text-amber-400/70">
+            <div className="mb-1.5 flex items-center gap-1 text-[11px] text-amber-400/70">
               <Link2 size={9} /> Bloqué par {task.dependencies.length} tâche{task.dependencies.length > 1 ? "s" : ""}
             </div>
           )}
@@ -411,12 +411,12 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
         <div className={`flex items-center justify-between mt-2 pt-2 border-t ${isDark ? "border-white/5" : "border-gray-100"}`}>
           <div className="flex items-center gap-2">
             {task.due_date && (
-              <span className={`text-[0.62rem] font-medium ${late ? "text-red-400" : isDark ? "text-white/35" : "text-gray-400"}`}>
+              <span className={`text-xs font-medium ${late ? "text-red-400" : isDark ? "text-white/35" : "text-gray-400"}`}>
                 {late && <AlertTriangle size={10} className="inline mr-0.5" />}{fmtDate(task.due_date)}
               </span>
             )}
             {elapsed > 0 && (
-              <span className={`text-[0.58rem] ${running ? "text-green-400" : isDark ? "text-white/25" : "text-gray-400"}`}>
+              <span className={`text-[11px] ${running ? "text-green-400" : isDark ? "text-white/25" : "text-gray-400"}`}>
                 {fmtSec(elapsed)}
               </span>
             )}
@@ -424,7 +424,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
           <div className="flex items-center gap-1">
             {task.assignees.slice(0, 3).map(a => <Av key={a} name={a} size={18} />)}
             {task.assignees.length > 3 && (
-              <span className={`text-[0.58rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>+{task.assignees.length - 3}</span>
+              <span className={`text-[11px] ${isDark ? "text-white/35" : "text-gray-400"}`}>+{task.assignees.length - 3}</span>
             )}
           </div>
         </div>
@@ -436,7 +436,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
             className="absolute bottom-2 right-2 flex gap-1"
             onClick={e => e.stopPropagation()}>
             <button onClick={onTimer}
-              className={`rounded-md px-1.5 py-0.5 text-[0.62rem] font-medium transition ${running
+              className={`rounded-md px-1.5 py-0.5 text-xs font-medium transition ${running
                 ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                 : isDark ? "bg-white/5 text-white/40 hover:bg-violet-500/20 hover:text-violet-400"
                 : "bg-gray-100 text-gray-500 hover:bg-violet-50 hover:text-violet-600"}`}>
@@ -444,7 +444,7 @@ function TaskCard({ task, now, onEdit, onMove, onTimer, onDragStart, onDropBefor
             </button>
             {nextSt && (
               <button onClick={() => onMove(nextSt)}
-                className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[0.62rem] transition ${isDark
+                className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs transition ${isDark
                   ? "bg-white/5 text-white/40 hover:bg-blue-500/20 hover:text-blue-400"
                   : "bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600"}`}>
                 <ArrowRight size={9} /> {STAT[nextSt].label}
@@ -534,13 +534,13 @@ function AiPanel({ tasks, onClose, onAddTasks }: {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        <p className={`text-[0.67rem] leading-relaxed ${isDark ? "text-white/30" : "text-gray-400"}`}>{ctx}</p>
+        <p className={`text-xs leading-relaxed ${isDark ? "text-white/30" : "text-gray-400"}`}>{ctx}</p>
         <div className="grid grid-cols-2 gap-2">
           {QUICK.map(q => (
             <button key={q.l} onClick={() => ask(q.p)}
               className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition hover:border-violet-500/40 hover:bg-violet-500/10 ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-gray-200 bg-white hover:border-violet-400 hover:bg-violet-50"}`}>
               <q.Icon size={18} style={{ color: VIOLET }} />
-              <span className={`text-[0.63rem] leading-tight ${isDark ? "text-white/55" : "text-gray-500"}`}>{q.l}</span>
+              <span className={`text-xs leading-tight ${isDark ? "text-white/55" : "text-gray-500"}`}>{q.l}</span>
             </button>
           ))}
         </div>
@@ -558,7 +558,7 @@ function AiPanel({ tasks, onClose, onAddTasks }: {
 
       {/* Générateur de tâches IA */}
       <div className={`border-t p-3 space-y-2 ${isDark ? "border-white/[0.06]" : "border-gray-200"}`}>
-        <p className={`text-[0.62rem] font-semibold uppercase tracking-wide ${isDark ? "text-white/25" : "text-gray-400"}`}>Générer des tâches</p>
+        <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-white/25" : "text-gray-400"}`}>Générer des tâches</p>
         <div className="flex gap-1.5">
           <input value={genGoal} onChange={e => setGenGoal(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") generateTasks(); }}
@@ -575,7 +575,7 @@ function AiPanel({ tasks, onClose, onAddTasks }: {
             {genResult.map((t, i) => (
               <div key={i} className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 ${isDark ? "border-white/6 bg-white/4" : "border-gray-200 bg-gray-50"}`}>
                 <span className={`text-xs truncate flex-1 ${isDark ? "text-white/70" : "text-gray-700"}`}>{t.title}</span>
-                <span className={`text-[0.55rem] mr-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>{t.estimated_minutes}min</span>
+                <span className={`text-[11px] mr-2 ${isDark ? "text-white/25" : "text-gray-400"}`}>{t.estimated_minutes}min</span>
               </div>
             ))}
             <button onClick={() => { onAddTasks(genResult); setGenResult([]); setGenGoal(""); }}
@@ -1076,7 +1076,7 @@ export default function ProductivitePage() {
             <div className="flex items-center gap-3">
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4 }}>
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Productivité</h1>
-                <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
+                <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>
                 {completionRate}% de complétion
                 {tasks.filter(isLate).length > 0 && <span className="ml-1.5 text-red-400">· {tasks.filter(isLate).length} en retard</span>}
                 {tasks.filter(t => t.priority === "urgent" && t.status !== "done").length > 0 && (
@@ -1143,7 +1143,7 @@ export default function ProductivitePage() {
                     <KpiIcon size={13} style={{ color: "#c9a55a" }} className="shrink-0"/>
                     <div className="min-w-0">
                       <p className={`text-sm font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
-                      <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
+                      <p className={`text-[11px] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                     </div>
                   </motion.button>
                 );
@@ -1155,7 +1155,7 @@ export default function ProductivitePage() {
                 <motion.div className="h-full rounded-full" style={{ background: "#c9a55a" }}
                   initial={{ width: 0 }} animate={{ width: `${completionRate}%` }} transition={{ duration: 0.8 }} />
               </div>
-              <span className={`text-[0.58rem] shrink-0 ${isDark ? "text-white/35" : "text-gray-400"}`}>{completionRate}% terminé</span>
+              <span className={`text-[11px] shrink-0 ${isDark ? "text-white/35" : "text-gray-400"}`}>{completionRate}% terminé</span>
             </div>
           </div>
         </div>
@@ -1274,7 +1274,7 @@ export default function ProductivitePage() {
                     await Promise.all(ids.map(id => supabase.from("productivity_tasks").update({ status: s }).eq("id", id).eq("user_id", userId!)));
                     setSelectedIds(new Set());
                   }}
-                  className="rounded-lg px-2 py-1 text-[0.68rem] border transition"
+                  className="rounded-lg px-2 py-1 text-xs border transition"
                   style={{ color: STAT[s].col, borderColor: STAT[s].col + "40", background: STAT[s].col + "15" }}>
                     → {STAT[s].label}
                   </button>
@@ -1286,10 +1286,10 @@ export default function ProductivitePage() {
                   await Promise.all(ids.map(id => supabase.from("productivity_tasks").delete().eq("id", id).eq("user_id", userId!)));
                   setSelectedIds(new Set());
                 }}
-                className={`rounded-lg px-2 py-1 text-[0.68rem] border transition ${isDark ? "border-red-500/30 text-red-400 hover:bg-red-500/15" : "border-red-300 text-red-600 hover:bg-red-50"}`}>
+                className={`rounded-lg px-2 py-1 text-xs border transition ${isDark ? "border-red-500/30 text-red-400 hover:bg-red-500/15" : "border-red-300 text-red-600 hover:bg-red-50"}`}>
                   <Trash2 size={11} className="inline mr-0.5" />Supprimer
                 </button>
-                <button onClick={() => setSelectedIds(new Set())} className={`text-[0.68rem] ${isDark ? "text-white/40" : "text-gray-400"}`}><X size={11} className="inline mr-0.5" />Désélectionner</button>
+                <button onClick={() => setSelectedIds(new Set())} className={`text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}><X size={11} className="inline mr-0.5" />Désélectionner</button>
               </div>
             </div>
           )}
@@ -1316,7 +1316,7 @@ export default function ProductivitePage() {
                         <span className="text-sm font-semibold" style={{ color: col.col }}>
                           {STAT[col.key].label}
                         </span>
-                        <span className="rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold"
+                        <span className="rounded-full px-1.5 py-0.5 text-xs font-bold"
                           style={{ background: col.col + "22", color: col.col }}>
                           {colTasks.length}
                         </span>
@@ -1351,7 +1351,7 @@ export default function ProductivitePage() {
                     {!loading && colTasks.length === 0 && (
                       <div className="flex flex-col items-center justify-center py-12 text-center">
                         <span className="text-3xl mb-2" style={{ color: col.col, opacity: isDark ? 0.2 : 0.35 }}>○</span>
-                        <p className={`text-[0.68rem] ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune tâche</p>
+                        <p className={`text-xs ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune tâche</p>
                       </div>
                     )}
                   </div>
@@ -1395,7 +1395,7 @@ export default function ProductivitePage() {
                   style={listTab === tab.k && isDark ? { background: VIOLET + "25" } : {}}>
                   {tab.l}
                   {tab.n > 0 && (
-                    <span className={`rounded-full px-1.5 py-0.5 text-[0.58rem] font-bold ${tab.k === "late" ? "bg-red-500/20 text-red-400" : isDark ? "bg-white/10 text-white/50" : "bg-gray-200 text-gray-500"}`}>
+                    <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${tab.k === "late" ? "bg-red-500/20 text-red-400" : isDark ? "bg-white/10 text-white/50" : "bg-gray-200 text-gray-500"}`}>
                       {tab.n}
                     </span>
                   )}
@@ -1430,9 +1430,9 @@ export default function ProductivitePage() {
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium truncate ${isDark ? "text-white/85" : "text-gray-800"}`}>{t.title}</p>
                       <div className="flex items-center gap-3 mt-0.5">
-                        {t.category && <span className={`text-[0.6rem] ${isDark ? "text-violet-400/70" : "text-violet-500"}`}>{t.category}</span>}
+                        {t.category && <span className={`text-xs ${isDark ? "text-violet-400/70" : "text-violet-500"}`}>{t.category}</span>}
                         {t.due_date && (
-                          <span className={`text-[0.6rem] ${isLate(t) ? "text-red-400" : isDark ? "text-white/30" : "text-gray-400"}`}>
+                          <span className={`text-xs ${isLate(t) ? "text-red-400" : isDark ? "text-white/30" : "text-gray-400"}`}>
                             {isLate(t) && <AlertTriangle size={9} className="inline mr-0.5" />}{fmtDate(t.due_date)}
                           </span>
                         )}
@@ -1442,18 +1442,18 @@ export default function ProductivitePage() {
 
                     <div className="flex items-center gap-2 shrink-0">
                       <PBadge p={t.priority} />
-                      <span className="text-[0.65rem] px-2 py-0.5 rounded-full border"
+                      <span className="text-xs px-2 py-0.5 rounded-full border"
                         style={{ color: STAT[t.status].col, borderColor: STAT[t.status].col + "40", background: STAT[t.status].col + "15" }}>
                         {STAT[t.status].label}
                       </span>
                       {t.assignees.slice(0, 3).map(a => <Av key={a} name={a} size={20} />)}
                       {totalSec(t, now) > 0 && (
-                        <span className={`text-[0.62rem] ${t.timer_started_at ? "text-green-400" : isDark ? "text-white/30" : "text-gray-400"}`}>
+                        <span className={`text-xs ${t.timer_started_at ? "text-green-400" : isDark ? "text-white/30" : "text-gray-400"}`}>
                           {fmtSec(totalSec(t, now))}
                         </span>
                       )}
                       <button onClick={e => { e.stopPropagation(); toggleTimer(t.id); }}
-                        className={`rounded-lg px-2 py-1 text-[0.62rem] transition ${t.timer_started_at
+                        className={`rounded-lg px-2 py-1 text-xs transition ${t.timer_started_at
                           ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                           : isDark ? "bg-white/5 text-white/35 hover:bg-violet-500/15 hover:text-violet-400"
                           : "bg-gray-100 text-gray-500 hover:bg-violet-50 hover:text-violet-600"}`}>
@@ -1514,7 +1514,7 @@ export default function ProductivitePage() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Priorité</label>
+                    <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Priorité</label>
                     <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))}
                       className="rounded-lg border py-1.5 pl-3 pr-8 text-sm outline-none appearance-none w-full transition"
                       style={selStyle(isDark)}>
@@ -1524,7 +1524,7 @@ export default function ProductivitePage() {
                     </select>
                   </div>
                   <div>
-                    <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Statut</label>
+                    <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Statut</label>
                     <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))}
                       className="rounded-lg border py-1.5 pl-3 pr-8 text-sm outline-none appearance-none w-full transition"
                       style={selStyle(isDark)}>
@@ -1534,7 +1534,7 @@ export default function ProductivitePage() {
                     </select>
                   </div>
                   <div>
-                    <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Catégorie</label>
+                    <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Catégorie</label>
                     <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                       className="rounded-lg border py-1.5 pl-3 pr-8 text-sm outline-none appearance-none w-full transition"
                       style={selStyle(isDark)}>
@@ -1546,19 +1546,19 @@ export default function ProductivitePage() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Date limite</label>
+                    <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Date limite</label>
                     <input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
                       className="rounded-lg border py-1.5 pl-3 pr-2 text-sm outline-none w-full transition"
                       style={selStyle(isDark)} />
                   </div>
                   <div>
-                    <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Heure</label>
+                    <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Heure</label>
                     <input type="time" value={form.due_time} onChange={e => setForm(f => ({ ...f, due_time: e.target.value }))}
                       className="rounded-lg border py-1.5 pl-3 pr-2 text-sm outline-none w-full transition"
                       style={selStyle(isDark)} />
                   </div>
                   <div>
-                    <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Durée estimée (min)</label>
+                    <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Durée estimée (min)</label>
                     <input type="number" value={form.estimated_minutes} min={5} step={5}
                       onChange={e => setForm(f => ({ ...f, estimated_minutes: Number(e.target.value) }))}
                       className="rounded-lg border py-1.5 pl-3 pr-2 text-sm outline-none w-full transition"
@@ -1567,22 +1567,22 @@ export default function ProductivitePage() {
                 </div>
 
                 <div>
-                  <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Responsable</label>
+                  <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Responsable</label>
                   <input value={form.responsible} onChange={e => setForm(f => ({ ...f, responsible: e.target.value }))}
                     placeholder="Nom du responsable"
                     className={`w-full rounded-xl border px-3 py-2 text-sm outline-none transition ${isDark ? "border-white/8 bg-white/6 text-white/75 placeholder:text-white/25 focus:border-white/15" : "border-gray-200 bg-white text-gray-700 placeholder:text-gray-400 focus:border-gray-300"}`} />
                 </div>
 
                 <div>
-                  <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Collaborateurs</label>
+                  <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Collaborateurs</label>
                   {form.assignees.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {form.assignees.map(a => (
                         <span key={a} className={`flex items-center gap-1.5 rounded-full border pl-1 pr-2 py-0.5 ${isDark ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"}`}>
                           <Av name={a} size={16} />
-                          <span className={`text-[0.65rem] ${isDark ? "text-white/70" : "text-gray-600"}`}>{a}</span>
+                          <span className={`text-xs ${isDark ? "text-white/70" : "text-gray-600"}`}>{a}</span>
                           <button onClick={() => setForm(f => ({ ...f, assignees: f.assignees.filter(x => x !== a) }))}
-                            className={`text-[0.7rem] hover:text-red-400 transition ${isDark ? "text-white/30" : "text-gray-400"}`}>×</button>
+                            className={`text-xs hover:text-red-400 transition ${isDark ? "text-white/30" : "text-gray-400"}`}>×</button>
                         </span>
                       ))}
                     </div>
@@ -1598,7 +1598,7 @@ export default function ProductivitePage() {
                 </div>
 
                 <div>
-                  <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                  <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>
                     Sous-tâches ({form.subtasks.filter(s => s.done).length}/{form.subtasks.length})
                   </label>
                   {form.subtasks.length > 0 && (
@@ -1611,7 +1611,7 @@ export default function ProductivitePage() {
                             {s.title}
                           </span>
                           <button onClick={() => removeSub(s.id)}
-                            className={`opacity-0 group-hover/sub:opacity-100 text-[0.65rem] hover:text-red-400 transition ${isDark ? "text-white/30" : "text-gray-400"}`}>×</button>
+                            className={`opacity-0 group-hover/sub:opacity-100 text-xs hover:text-red-400 transition ${isDark ? "text-white/30" : "text-gray-400"}`}>×</button>
                         </div>
                       ))}
                       {form.subtasks.length > 0 && (
@@ -1620,7 +1620,7 @@ export default function ProductivitePage() {
                             <div className="h-full rounded-full transition-all duration-300"
                               style={{ width: `${(form.subtasks.filter(s => s.done).length / form.subtasks.length) * 100}%`, background: VIOLET }} />
                           </div>
-                          <span className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
+                          <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>
                             {Math.round((form.subtasks.filter(s => s.done).length / form.subtasks.length) * 100)}%
                           </span>
                         </div>
@@ -1639,10 +1639,10 @@ export default function ProductivitePage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Tags</label>
+                    <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Tags</label>
                     <div className="flex flex-wrap gap-1 mb-1.5">
                       {form.tags.map(tag => (
-                        <span key={tag} className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[0.62rem] ${isDark ? "bg-violet-500/15 text-violet-300" : "bg-violet-50 text-violet-600"}`}>
+                        <span key={tag} className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs ${isDark ? "bg-violet-500/15 text-violet-300" : "bg-violet-50 text-violet-600"}`}>
                           #{tag}
                           <button onClick={() => setForm(f => ({ ...f, tags: f.tags.filter(t => t !== tag) }))}
                             className="hover:text-red-400 ml-0.5">×</button>
@@ -1659,7 +1659,7 @@ export default function ProductivitePage() {
                     </div>
                   </div>
                   <div>
-                    <label className={`text-[0.68rem] mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Répétition</label>
+                    <label className={`text-xs mb-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>Répétition</label>
                     <select value={form.recurrence}
                       onChange={e => setForm(f => ({ ...f, recurrence: e.target.value, is_recurring: e.target.value !== "none" }))}
                       className="rounded-lg border py-1.5 pl-3 pr-8 text-sm outline-none appearance-none w-full transition"
@@ -1667,14 +1667,14 @@ export default function ProductivitePage() {
                       {RECURS.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
                     </select>
                     {form.linked_module && (
-                      <p className={`mt-2 flex items-center gap-1 text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}><Link2 size={9} />Lié à : {form.linked_module}</p>
+                      <p className={`mt-2 flex items-center gap-1 text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}><Link2 size={9} />Lié à : {form.linked_module}</p>
                     )}
                   </div>
                 </div>
 
                 {/* ── Dépendances ── */}
                 <div>
-                  <label className={`text-[0.68rem] mb-1.5 flex items-center gap-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                  <label className={`text-xs mb-1.5 flex items-center gap-1.5 block ${isDark ? "text-white/40" : "text-gray-500"}`}>
                     <Link2 size={11} className="text-amber-400" /> Dépendances — tâches bloquantes ({form.dependencies.length})
                   </label>
                   {form.dependencies.length > 0 && (
@@ -1682,7 +1682,7 @@ export default function ProductivitePage() {
                       {form.dependencies.map(depId => {
                         const dep = tasks.find(t => t.id === depId);
                         return dep ? (
-                          <span key={depId} className="flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/8 pl-2 pr-1.5 py-0.5 text-[0.62rem] text-amber-300">
+                          <span key={depId} className="flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/8 pl-2 pr-1.5 py-0.5 text-xs text-amber-300">
                             <Network size={9}/> {dep.title.slice(0, 30)}{dep.title.length > 30 ? "…" : ""}
                             <button onClick={() => toggleDependency(depId)} className="text-amber-400/60 hover:text-red-400 transition ml-0.5">×</button>
                           </span>
@@ -1700,11 +1700,11 @@ export default function ProductivitePage() {
                           className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition ${form.dependencies.includes(t.id) ? "bg-amber-500/15 text-amber-300" : isDark ? "text-white/55 hover:bg-white/5" : "text-gray-600 hover:bg-gray-100"}`}>
                           <span className="h-2 w-2 rounded-full shrink-0" style={{ background: STAT[t.status].col }} />
                           <span className="flex-1 truncate">{t.title}</span>
-                          {form.dependencies.includes(t.id) && <span className="flex items-center gap-0.5 text-amber-400 text-[0.6rem]"><Check size={9} />Liée</span>}
+                          {form.dependencies.includes(t.id) && <span className="flex items-center gap-0.5 text-amber-400 text-xs"><Check size={9} />Liée</span>}
                         </button>
                       ))}
                       {tasks.filter(t => t.id !== editId).length === 0 && (
-                        <p className={`text-center text-[0.62rem] py-3 ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune autre tâche</p>
+                        <p className={`text-center text-xs py-3 ${isDark ? "text-white/20" : "text-gray-400"}`}>Aucune autre tâche</p>
                       )}
                     </div>
                   </div>
@@ -1716,12 +1716,12 @@ export default function ProductivitePage() {
                     <div className="h-5 w-5 rounded-md flex items-center justify-center" style={{ background: GOLD + "20", border: `1px solid ${GOLD}40` }}>
                       <Link2 size={10} style={{ color: GOLD }} />
                     </div>
-                    <span className={`text-[0.68rem] font-semibold uppercase tracking-wide ${isDark ? "text-white/45" : "text-gray-500"}`}>Connexions ERP</span>
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-white/45" : "text-gray-500"}`}>Connexions ERP</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     {/* Document */}
                     <div>
-                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Facture / Devis</label>
+                      <label className={`text-xs mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Facture / Devis</label>
                       <select value={form.linked_document_id ?? ""}
                         onChange={e => setForm(f => ({ ...f, linked_document_id: e.target.value || null }))}
                         className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
@@ -1732,7 +1732,7 @@ export default function ProductivitePage() {
                     </div>
                     {/* Contact CRM */}
                     <div>
-                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Contact CRM</label>
+                      <label className={`text-xs mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Contact CRM</label>
                       <select value={form.linked_contact_id ?? ""}
                         onChange={e => setForm(f => ({ ...f, linked_contact_id: e.target.value || null }))}
                         className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
@@ -1743,7 +1743,7 @@ export default function ProductivitePage() {
                     </div>
                     {/* Projet */}
                     <div>
-                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Projet</label>
+                      <label className={`text-xs mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Projet</label>
                       <select value={form.linked_project_id ?? ""}
                         onChange={e => setForm(f => ({ ...f, linked_project_id: e.target.value || null }))}
                         className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
@@ -1754,7 +1754,7 @@ export default function ProductivitePage() {
                     </div>
                     {/* Contrat */}
                     <div>
-                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Contrat</label>
+                      <label className={`text-xs mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Contrat</label>
                       <select value={form.linked_contract_id ?? ""}
                         onChange={e => setForm(f => ({ ...f, linked_contract_id: e.target.value || null }))}
                         className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
@@ -1765,7 +1765,7 @@ export default function ProductivitePage() {
                     </div>
                     {/* Fournisseur */}
                     <div>
-                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Fournisseur</label>
+                      <label className={`text-xs mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Fournisseur</label>
                       <select value={form.linked_supplier_id ?? ""}
                         onChange={e => setForm(f => ({ ...f, linked_supplier_id: e.target.value || null }))}
                         className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
@@ -1776,7 +1776,7 @@ export default function ProductivitePage() {
                     </div>
                     {/* Produit */}
                     <div>
-                      <label className={`text-[0.62rem] mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Produit stock</label>
+                      <label className={`text-xs mb-1 block ${isDark ? "text-white/30" : "text-gray-400"}`}>Produit stock</label>
                       <select value={form.linked_product_id ?? ""}
                         onChange={e => setForm(f => ({ ...f, linked_product_id: e.target.value || null }))}
                         className="rounded-lg border py-1.5 pl-3 pr-8 text-xs outline-none appearance-none w-full transition"
@@ -1790,7 +1790,7 @@ export default function ProductivitePage() {
 
                 {editId && (
                   <div className={`border-t pt-5 ${isDark ? "border-white/6" : "border-gray-200"}`}>
-                    <label className={`text-[0.68rem] mb-3 block ${isDark ? "text-white/40" : "text-gray-500"}`}>
+                    <label className={`text-xs mb-3 block ${isDark ? "text-white/40" : "text-gray-500"}`}>
                       <MessageSquare size={11} className="inline mr-1" />Commentaires ({comments.length})
                     </label>
                     {comments.length > 0 && (
@@ -1800,8 +1800,8 @@ export default function ProductivitePage() {
                             <Av name={c.author_name} size={26} />
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-0.5">
-                                <span className={`text-[0.65rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{c.author_name}</span>
-                                <span className={`text-[0.58rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                                <span className={`text-xs font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>{c.author_name}</span>
+                                <span className={`text-[11px] ${isDark ? "text-white/25" : "text-gray-400"}`}>
                                   {new Date(c.created_at).toLocaleDateString("fr-FR", {
                                     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
                                   })}
@@ -1877,7 +1877,7 @@ export default function ProductivitePage() {
                   </div>
                   <div>
                     <p className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Templates de tâches</p>
-                    <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Cliquez pour pré-remplir le formulaire</p>
+                    <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>Cliquez pour pré-remplir le formulaire</p>
                   </div>
                 </div>
                 <button onClick={() => setShowTemplates(false)}
@@ -1909,12 +1909,12 @@ export default function ProductivitePage() {
                     </div>
                     <div className="min-w-0">
                       <p className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{tpl.label}</p>
-                      <p className={`text-[0.65rem] mt-0.5 leading-snug ${isDark ? "text-white/40" : "text-gray-500"}`}>{tpl.desc}</p>
+                      <p className={`text-xs mt-0.5 leading-snug ${isDark ? "text-white/40" : "text-gray-500"}`}>{tpl.desc}</p>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {tpl.form.tags?.map(tag => (
-                          <span key={tag} className={`rounded-full px-2 py-0.5 text-[0.55rem] ${isDark ? "bg-white/6 text-white/40" : "bg-gray-100 text-gray-500"}`}>#{tag}</span>
+                          <span key={tag} className={`rounded-full px-2 py-0.5 text-[11px] ${isDark ? "bg-white/6 text-white/40" : "bg-gray-100 text-gray-500"}`}>#{tag}</span>
                         ))}
-                        <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[0.55rem] text-amber-500">
+                        <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-500">
                           {tpl.form.subtasks?.length ?? 0} sous-tâches
                         </span>
                       </div>
@@ -1930,16 +1930,16 @@ export default function ProductivitePage() {
                   <div className="flex flex-col items-center py-12 text-center">
                     <LayoutTemplate size={32} className={`mb-3 ${isDark ? "text-white/15" : "text-gray-300"}`} />
                     <p className={`text-sm ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucun template sauvegardé</p>
-                    <p className={`text-[0.65rem] mt-1 ${isDark ? "text-white/15" : "text-gray-300"}`}>Ouvrez une tâche et cliquez « Template »</p>
+                    <p className={`text-xs mt-1 ${isDark ? "text-white/15" : "text-gray-300"}`}>Ouvrez une tâche et cliquez « Template »</p>
                   </div>
                 ) : dbTemplates.map(tpl => (
                   <div key={tpl.id} className={`flex items-center gap-3 rounded-xl border p-3 ${isDark ? "border-white/8 bg-white/4" : "border-gray-200 bg-gray-50"}`}>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold truncate ${isDark ? "text-white/85" : "text-gray-800"}`}>{tpl.name}</p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        {tpl.category && <span className={`text-[0.6rem] ${isDark ? "text-violet-400/70" : "text-violet-500"}`}>{tpl.category}</span>}
-                        {tpl.tags.slice(0, 3).map(tag => <span key={tag} className={`text-[0.58rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>#{tag}</span>)}
-                        <span className={`text-[0.58rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{tpl.subtasks.length} sous-tâches</span>
+                        {tpl.category && <span className={`text-xs ${isDark ? "text-violet-400/70" : "text-violet-500"}`}>{tpl.category}</span>}
+                        {tpl.tags.slice(0, 3).map(tag => <span key={tag} className={`text-[11px] ${isDark ? "text-white/30" : "text-gray-400"}`}>#{tag}</span>)}
+                        <span className={`text-[11px] ${isDark ? "text-white/25" : "text-gray-400"}`}>{tpl.subtasks.length} sous-tâches</span>
                       </div>
                     </div>
                     <button onClick={() => applyDbTemplate(tpl)}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -322,7 +322,7 @@ export function ReportView({ products, movements }: { products: Product[]; movem
       {subView === "inventaire" && <>
 
         <div className="flex items-center justify-between">
-          <p className={`text-[0.65rem] font-black uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Rapport inventaire</p>
+          <p className={`text-xs font-black uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Rapport inventaire</p>
           <button onClick={runRapportIA} disabled={rapportLoading}
             className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all disabled:opacity-60 hover:brightness-110 active:scale-95"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
@@ -348,11 +348,11 @@ export function ReportView({ products, movements }: { products: Product[]; movem
                       transform="rotate(-90 36 36)" style={{ transition: "stroke-dashoffset 0.8s ease" }}/>
                     <text x={36} y={40} textAnchor="middle" fill={scoreColor} fontSize={15} fontWeight={900} fontFamily="inherit">{score}</text>
                   </svg>
-                  <p className={`text-[0.55rem] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Score</p>
+                  <p className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? "text-white/30" : "text-gray-400"}`}>Score</p>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[0.65rem] font-black uppercase tracking-widest mb-1.5" style={{ color: "#c9a55a" }}>Résumé exécutif</p>
-                  <p className={`text-[0.75rem] leading-relaxed ${isDark ? "text-white/70" : "text-gray-600"}`}>{rapport.resume_executif}</p>
+                  <p className="text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: "#c9a55a" }}>Résumé exécutif</p>
+                  <p className={`text-sm leading-relaxed ${isDark ? "text-white/70" : "text-gray-600"}`}>{rapport.resume_executif}</p>
                 </div>
               </div>
 
@@ -360,10 +360,10 @@ export function ReportView({ products, movements }: { products: Product[]; movem
               <div className="grid sm:grid-cols-2 gap-4">
                 {rapport.points_forts.length > 0 && (
                   <div className="rounded-xl p-4" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
-                    <p className="text-[0.6rem] font-black uppercase tracking-widest text-emerald-400/70 mb-2.5">Points forts</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-emerald-400/70 mb-2.5">Points forts</p>
                     <ul className="space-y-1.5">
                       {rapport.points_forts.map((pt, i) => (
-                        <li key={i} className={`flex items-start gap-2 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
+                        <li key={i} className={`flex items-start gap-2 text-sm ${isDark ? "text-white/65" : "text-gray-600"}`}>
                           <span className="mt-1 shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-400"/>
                           {pt}
                         </li>
@@ -373,10 +373,10 @@ export function ReportView({ products, movements }: { products: Product[]; movem
                 )}
                 {rapport.alertes.length > 0 && (
                   <div className="rounded-xl p-4" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
-                    <p className="text-[0.6rem] font-black uppercase tracking-widest text-red-400/70 mb-2.5">Alertes</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-red-400/70 mb-2.5">Alertes</p>
                     <ul className="space-y-1.5">
                       {rapport.alertes.map((al, i) => (
-                        <li key={i} className={`flex items-start gap-2 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
+                        <li key={i} className={`flex items-start gap-2 text-sm ${isDark ? "text-white/65" : "text-gray-600"}`}>
                           <AlertTriangle size={10} className="mt-0.5 shrink-0 text-red-400"/>
                           {al}
                         </li>
@@ -389,11 +389,11 @@ export function ReportView({ products, movements }: { products: Product[]; movem
               {/* Recommandations */}
               {rapport.recommandations.length > 0 && (
                 <div>
-                  <p className="text-[0.6rem] font-black uppercase tracking-widest mb-2.5" style={{ color: "rgba(201,165,90,0.7)" }}>Recommandations</p>
+                  <p className="text-xs font-black uppercase tracking-widest mb-2.5" style={{ color: "rgba(201,165,90,0.7)" }}>Recommandations</p>
                   <ol className="space-y-2">
                     {rapport.recommandations.map((r, i) => (
-                      <li key={i} className={`flex items-start gap-2.5 text-[0.72rem] ${isDark ? "text-white/65" : "text-gray-600"}`}>
-                        <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[0.55rem] font-black"
+                      <li key={i} className={`flex items-start gap-2.5 text-sm ${isDark ? "text-white/65" : "text-gray-600"}`}>
+                        <span className="shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[11px] font-black"
                           style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>{i + 1}</span>
                         {r}
                       </li>
@@ -405,7 +405,7 @@ export function ReportView({ products, movements }: { products: Product[]; movem
               {/* Produits prioritaires */}
               {rapport.produits_prioritaires.length > 0 && (
                 <div>
-                  <p className={`text-[0.6rem] font-black uppercase tracking-widest mb-2.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>Produits prioritaires</p>
+                  <p className={`text-xs font-black uppercase tracking-widest mb-2.5 ${isDark ? "text-white/30" : "text-gray-400"}`}>Produits prioritaires</p>
                   <div className="space-y-1.5">
                     {rapport.produits_prioritaires.map((p, i) => {
                       const stateColor = p.etat === "rupture" ? "#ef4444" : p.etat === "critique" ? "#f97316" : "#f59e0b";
@@ -417,13 +417,13 @@ export function ReportView({ products, movements }: { products: Product[]; movem
                               <Package size={10} style={{ color: stateColor }}/>
                             </div>
                             <div className="min-w-0">
-                              <p className={`text-[0.7rem] font-bold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{p.nom}</p>
-                              {p.sku && <p className={`text-[0.58rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>{p.sku}</p>}
+                              <p className={`text-xs font-bold truncate ${isDark ? "text-white/80" : "text-gray-700"}`}>{p.nom}</p>
+                              {p.sku && <p className={`text-[11px] ${isDark ? "text-white/30" : "text-gray-400"}`}>{p.sku}</p>}
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-[0.6rem] font-black uppercase" style={{ color: stateColor }}>{p.etat}</p>
-                            <p className={`text-[0.62rem] max-w-[120px] text-right leading-snug ${isDark ? "text-white/40" : "text-gray-400"}`}>{p.action}</p>
+                            <p className="text-xs font-black uppercase" style={{ color: stateColor }}>{p.etat}</p>
+                            <p className={`text-xs max-w-[120px] text-right leading-snug ${isDark ? "text-white/40" : "text-gray-400"}`}>{p.action}</p>
                           </div>
                         </div>
                       );
@@ -438,8 +438,8 @@ export function ReportView({ products, movements }: { products: Product[]; movem
                   style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
                   <Activity size={12} className="shrink-0 mt-0.5" style={{ color: "#c9a55a" }}/>
                   <div>
-                    <p className="text-[0.55rem] font-black uppercase tracking-widest mb-0.5" style={{ color: "rgba(201,165,90,0.6)" }}>Objectif de la semaine</p>
-                    <p className={`text-[0.72rem] font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>{rapport.objectif_semaine}</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest mb-0.5" style={{ color: "rgba(201,165,90,0.6)" }}>Objectif de la semaine</p>
+                    <p className={`text-sm font-semibold ${isDark ? "text-white/70" : "text-gray-600"}`}>{rapport.objectif_semaine}</p>
                   </div>
                 </div>
               )}

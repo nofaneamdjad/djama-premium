@@ -102,7 +102,7 @@ function Cell({ val, isProCol }: { val: FeatureValue; isProCol: boolean }) {
     return <Minus size={13} className="text-white/20" strokeWidth={2} />;
   return (
     <span
-      className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
+      className="rounded-full px-2 py-0.5 text-xs font-bold"
       style={
         isProCol
           ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}28` }
@@ -278,7 +278,7 @@ export default function AbonnementsPage() {
         className="relative z-10 mb-10 text-center"
       >
         <div
-          className="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.62rem] font-bold uppercase tracking-widest"
+          className="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest"
           style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}22`, color: GOLD }}
         >
           <Sparkles size={9} /> Nos formules
@@ -302,7 +302,7 @@ export default function AbonnementsPage() {
             <span className="mb-1 text-xl font-bold text-white/40">€</span>
             <span className="mb-0.5 ml-0.5 text-sm text-white/25">/mois</span>
           </div>
-          <p className="mb-5 text-[0.68rem] text-white/25">Pour commencer</p>
+          <p className="mb-5 text-xs text-white/25">Pour commencer</p>
           <div className="mt-auto space-y-2.5">
             {["Factures & devis (5 max)", "Planning", "Bloc-note"].map(f => (
               <div key={f} className="flex items-center gap-2.5">
@@ -329,7 +329,7 @@ export default function AbonnementsPage() {
           {/* Popular badge */}
           <div className="absolute -top-3 left-1/2 -translate-x-1/2">
             <div
-              className="flex items-center gap-1 rounded-full px-3 py-1 text-[0.6rem] font-black uppercase tracking-widest"
+              className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black uppercase tracking-widest"
               style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a" }}
             >
               <Crown size={8} /> Recommandé
@@ -342,7 +342,7 @@ export default function AbonnementsPage() {
             <span className="mb-1 text-xl font-bold text-white/60">,90€</span>
             <span className="mb-0.5 ml-0.5 text-sm text-white/30">/mois</span>
           </div>
-          <p className="mb-5 text-[0.68rem] text-white/30">Accès complet · sans engagement</p>
+          <p className="mb-5 text-xs text-white/30">Accès complet · sans engagement</p>
 
           <div className="mt-auto space-y-2.5">
             {["Tout le plan Gratuit", "16 outils PRO débloqués", "IA & Coaching personnalisé", "Support prioritaire"].map(f => (
@@ -383,7 +383,7 @@ export default function AbonnementsPage() {
                       href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[0.6rem] text-white/30 transition hover:text-white/60"
+                      className="flex items-center gap-1 text-xs text-white/30 transition hover:text-white/60"
                     >
                       Gérer <ExternalLink size={9} /> <RefreshCw size={9} />
                     </a>
@@ -393,7 +393,7 @@ export default function AbonnementsPage() {
                 {renewalDate && (
                   <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: `${GOLD}08` }}>
                     <Calendar size={12} style={{ color: GOLD }} />
-                    <p className="text-[0.7rem] text-white/50">
+                    <p className="text-xs text-white/50">
                       Renouvellement le <span className="font-semibold text-white/70">{formatDate(renewalDate)}</span>
                     </p>
                   </div>
@@ -401,7 +401,7 @@ export default function AbonnementsPage() {
                 {loadingBill && !renewalDate && (
                   <div className="flex items-center gap-2 px-1 py-1">
                     <Loader2 size={11} className="animate-spin text-white/25" />
-                    <span className="text-[0.65rem] text-white/25">Chargement…</span>
+                    <span className="text-xs text-white/25">Chargement…</span>
                   </div>
                 )}
               </>
@@ -428,7 +428,7 @@ export default function AbonnementsPage() {
                         className="overflow-hidden">
                         <div className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/8 px-2.5 py-1.5">
                           <AlertCircle size={11} className="shrink-0 text-red-400" />
-                          <p className="text-[0.65rem] text-red-400">{promoError}</p>
+                          <p className="text-xs text-red-400">{promoError}</p>
                         </div>
                       </motion.div>
                     )}
@@ -505,8 +505,8 @@ export default function AbonnementsPage() {
                   </div>
                   <p className="text-xl font-black text-white leading-none">{stat.value}</p>
                   <div>
-                    <p className="text-[0.65rem] font-semibold text-white/50">{stat.label}</p>
-                    <p className="text-[0.6rem] text-white/25">{stat.sub}</p>
+                    <p className="text-xs font-semibold text-white/50">{stat.label}</p>
+                    <p className="text-xs text-white/25">{stat.sub}</p>
                   </div>
                 </div>
               );
@@ -544,9 +544,9 @@ export default function AbonnementsPage() {
               <div>
                 {/* Header */}
                 <div className="grid grid-cols-[1fr_90px_80px_40px] gap-0 border-b border-white/6 px-5 py-2.5 bg-white/2">
-                  <span className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Facture</span>
-                  <span className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25 text-right">Montant</span>
-                  <span className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25 text-center">Statut</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-white/25">Facture</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-white/25 text-right">Montant</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-white/25 text-center">Statut</span>
                   <span />
                 </div>
                 {billing.invoices.map((inv, i) => {
@@ -566,7 +566,7 @@ export default function AbonnementsPage() {
                       </p>
                       <div className="flex justify-center">
                         <span
-                          className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
+                          className="rounded-full px-2 py-0.5 text-xs font-bold"
                           style={{ background: s.bg, color: s.color }}
                         >
                           {s.label}
@@ -596,7 +596,7 @@ export default function AbonnementsPage() {
             )}
           </div>
 
-          <p className="mt-2 text-right text-[0.62rem] text-white/20">
+          <p className="mt-2 text-right text-xs text-white/20">
             Factures générées par Stripe
             {process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL && (
               <>
@@ -625,8 +625,8 @@ export default function AbonnementsPage() {
         {/* Table header */}
         <div className="grid grid-cols-[1fr_80px_80px] gap-0 border-b border-white/6 px-5 py-3 bg-white/3">
           <div />
-          <div className="text-center text-[0.68rem] font-bold uppercase tracking-widest text-white/30">Gratuit</div>
-          <div className="text-center text-[0.68rem] font-bold uppercase tracking-widest" style={{ color: GOLD }}>PRO</div>
+          <div className="text-center text-xs font-bold uppercase tracking-widest text-white/30">Gratuit</div>
+          <div className="text-center text-xs font-bold uppercase tracking-widest" style={{ color: GOLD }}>PRO</div>
         </div>
 
         {/* Sections */}
@@ -636,7 +636,7 @@ export default function AbonnementsPage() {
               className="px-5 pb-1 pt-3"
               style={{ borderTop: si > 0 ? "1px solid rgba(255,255,255,0.05)" : undefined }}
             >
-              <p className="text-[0.58rem] font-bold uppercase tracking-wider text-white/25">{section.category}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-white/25">{section.category}</p>
             </div>
             {section.features.map((feat, fi) => (
               <div
@@ -662,7 +662,7 @@ export default function AbonnementsPage() {
             <div className="grid grid-cols-[1fr_80px_80px] items-center gap-0">
               <p className="text-sm font-semibold text-white/50">Commencer maintenant</p>
               <div className="flex justify-center">
-                <div className="text-[0.7rem] font-semibold text-white/25">Plan actuel</div>
+                <div className="text-xs font-semibold text-white/25">Plan actuel</div>
               </div>
               <div className="flex justify-center">
                 <motion.button
@@ -670,7 +670,7 @@ export default function AbonnementsPage() {
                   disabled={checkingOut}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[0.72rem] font-bold text-[#0a0a0a] disabled:opacity-60"
+                  className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-bold text-[#0a0a0a] disabled:opacity-60"
                   style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
                 >
                   Choisir <ArrowRight size={10} />
@@ -691,12 +691,12 @@ export default function AbonnementsPage() {
         {["Stripe SSL", "Paiement sécurisé", "Résiliable à tout moment", "Données hébergées en Europe"].map((badge) => (
           <div key={badge} className="flex items-center gap-1.5">
             <div className="h-1 w-1 rounded-full" style={{ background: `${GOLD}50` }} />
-            <span className="text-[0.6rem] text-white/20">{badge}</span>
+            <span className="text-xs text-white/20">{badge}</span>
           </div>
         ))}
       </motion.div>
 
-      <p className="relative z-10 mt-4 text-center text-[0.6rem] text-white/15 pb-20 lg:pb-4">
+      <p className="relative z-10 mt-4 text-center text-xs text-white/15 pb-20 lg:pb-4">
         DJAMA · Plateforme SaaS professionnelle
       </p>
     </div>

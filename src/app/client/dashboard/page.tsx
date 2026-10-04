@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
@@ -223,10 +223,10 @@ function DonutChart({ slices, isDark }: { slices: { label: string; value: number
         {paths.slice(0, 5).map((p, i) => (
           <div key={i} className="flex items-center gap-1.5 min-w-0">
             <div className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
-            <span className="text-[0.65rem] truncate" style={{ color: tok(isDark).text2 }}>
+            <span className="text-xs truncate" style={{ color: tok(isDark).text2 }}>
               {p.label}
             </span>
-            <span className="text-[0.65rem] font-semibold ml-auto pl-1 shrink-0" style={{ color: tok(isDark).text }}>
+            <span className="text-xs font-semibold ml-auto pl-1 shrink-0" style={{ color: tok(isDark).text }}>
               {Math.round((p.value / total) * 100)}%
             </span>
           </div>
@@ -307,7 +307,7 @@ function RapportModal({ open, onClose, isDark }: { open: boolean; onClose: () =>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold mb-1" style={{ color: t.text }}>{rapport.mois}</div>
-                  <p className="text-[0.7rem] leading-relaxed line-clamp-3" style={{ color: t.text2 }}>{rapport.resume_executif}</p>
+                  <p className="text-xs leading-relaxed line-clamp-3" style={{ color: t.text2 }}>{rapport.resume_executif}</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -320,17 +320,17 @@ function RapportModal({ open, onClose, isDark }: { open: boolean; onClose: () =>
                   { label: "Clients", val: String(rapport.kpis.nb_clients) },
                 ].map(({ label, val }) => (
                   <div key={label} className="p-2 rounded-lg text-center" style={{ background: t.glass, border: `1px solid ${t.borderSoft}` }}>
-                    <div className="text-[0.6rem] mb-0.5" style={{ color: t.text3 }}>{label}</div>
+                    <div className="text-xs mb-0.5" style={{ color: t.text3 }}>{label}</div>
                     <div className="text-xs font-semibold" style={{ color: t.text }}>{val}</div>
                   </div>
                 ))}
               </div>
               {rapport.points_forts.length > 0 && (
                 <div>
-                  <div className="text-[0.65rem] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#22c55e" }}>Points forts</div>
+                  <div className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#22c55e" }}>Points forts</div>
                   <ul className="flex flex-col gap-1">
                     {rapport.points_forts.map((p, i) => (
-                      <li key={i} className="flex items-start gap-1.5 text-[0.7rem]" style={{ color: t.text2 }}>
+                      <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: t.text2 }}>
                         <CheckCircle2 size={10} className="mt-0.5 shrink-0" style={{ color: "#22c55e" }} />{p}
                       </li>
                     ))}
@@ -339,10 +339,10 @@ function RapportModal({ open, onClose, isDark }: { open: boolean; onClose: () =>
               )}
               {rapport.alertes.length > 0 && (
                 <div>
-                  <div className="text-[0.65rem] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#f87171" }}>Alertes</div>
+                  <div className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#f87171" }}>Alertes</div>
                   <ul className="flex flex-col gap-1">
                     {rapport.alertes.map((a, i) => (
-                      <li key={i} className="flex items-start gap-1.5 text-[0.7rem]" style={{ color: t.text2 }}>
+                      <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: t.text2 }}>
                         <AlertTriangle size={10} className="mt-0.5 shrink-0" style={{ color: "#f87171" }} />{a}
                       </li>
                     ))}
@@ -351,10 +351,10 @@ function RapportModal({ open, onClose, isDark }: { open: boolean; onClose: () =>
               )}
               {rapport.recommandations.length > 0 && (
                 <div>
-                  <div className="text-[0.65rem] font-semibold uppercase tracking-wider mb-1.5" style={{ color: GOLD }}>Recommandations</div>
+                  <div className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: GOLD }}>Recommandations</div>
                   <ul className="flex flex-col gap-1">
                     {rapport.recommandations.map((r, i) => (
-                      <li key={i} className="flex items-start gap-1.5 text-[0.7rem]" style={{ color: t.text2 }}>
+                      <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: t.text2 }}>
                         <ChevronRight size={10} className="mt-0.5 shrink-0" style={{ color: GOLD }} />{r}
                       </li>
                     ))}
@@ -363,8 +363,8 @@ function RapportModal({ open, onClose, isDark }: { open: boolean; onClose: () =>
               )}
               {rapport.objectif_mois_prochain && (
                 <div className="p-3 rounded-xl" style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}20` }}>
-                  <div className="text-[0.65rem] font-semibold mb-0.5" style={{ color: GOLD }}>Objectif mois prochain</div>
-                  <p className="text-[0.7rem]" style={{ color: t.text2 }}>{rapport.objectif_mois_prochain}</p>
+                  <div className="text-xs font-semibold mb-0.5" style={{ color: GOLD }}>Objectif mois prochain</div>
+                  <p className="text-xs" style={{ color: t.text2 }}>{rapport.objectif_mois_prochain}</p>
                 </div>
               )}
             </div>
@@ -760,7 +760,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-center w-6 h-6 rounded-lg" style={{ background: `${kpi.color}15`, color: kpi.color }}>
                     {kpi.icon}
                   </div>
-                  <span className="text-[0.65rem] font-medium" style={{ color: t.text3 }}>{kpi.label}</span>
+                  <span className="text-xs font-medium" style={{ color: t.text3 }}>{kpi.label}</span>
                 </div>
                 {kpi.sparkline.length > 1 && <Sparkline data={kpi.sparkline} color={kpi.color} />}
               </div>
@@ -773,7 +773,7 @@ export default function DashboardPage() {
                       {("isResultat" in kpi && kpi.isResultat) ? (kpi.positive ? "+" : "-") + fmtEurInt((kpi as typeof kpi & { val: number }).val) : fmtEurInt(kpi.val)}
                     </div>
                   )}
-                  <div className="text-[0.62rem] mt-0.5" style={{ color: t.text4 }}>{kpi.sub}</div>
+                  <div className="text-xs mt-0.5" style={{ color: t.text4 }}>{kpi.sub}</div>
                 </div>
                 {!kpi.noTrend && !loading && kpi.prev > 0 && (
                   <TrendBadge pct={pctChange(kpi.val, kpi.prev)} />
@@ -795,16 +795,16 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-sm font-semibold" style={{ color: t.text }}>Performance financière</div>
-                <div className="text-[0.65rem] mt-0.5" style={{ color: t.text3 }}>{currentPeriodLabel}</div>
+                <div className="text-xs mt-0.5" style={{ color: t.text3 }}>{currentPeriodLabel}</div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ background: GOLD }} />
-                  <span className="text-[0.6rem]" style={{ color: t.text3 }}>CA</span>
+                  <span className="text-xs" style={{ color: t.text3 }}>CA</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#ef4444", opacity: 0.7 }} />
-                  <span className="text-[0.6rem]" style={{ color: t.text3 }}>Dépenses</span>
+                  <span className="text-xs" style={{ color: t.text3 }}>Dépenses</span>
                 </div>
               </div>
             </div>
@@ -816,7 +816,7 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center h-28 gap-2">
                 <BarChart3 size={28} style={{ color: t.text4 }} />
                 <p className="text-xs" style={{ color: t.text3 }}>Aucune donnée pour cette période</p>
-                <Link href="/client/factures" className="text-[0.65rem] underline" style={{ color: GOLD }}>Créer une facture</Link>
+                <Link href="/client/factures" className="text-xs underline" style={{ color: GOLD }}>Créer une facture</Link>
               </div>
             ) : (
               <BarChartCA months={months} caData={caByMonth} depData={depByMonth} isDark={isDark} />
@@ -827,7 +827,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold" style={{ color: t.text }}>Trésorerie</div>
-              <Link href="/client/tresorerie" className="text-[0.6rem] flex items-center gap-0.5" style={{ color: t.text3 }}>
+              <Link href="/client/tresorerie" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
                 Voir <ChevronRight size={9} />
               </Link>
             </div>
@@ -839,15 +839,15 @@ export default function DashboardPage() {
             ) : tresorerie === null ? (
               <div className="flex flex-col items-center justify-center flex-1 gap-2 py-4">
                 <CreditCard size={24} style={{ color: t.text4 }} />
-                <p className="text-[0.65rem] text-center" style={{ color: t.text3 }}>Aucun compte configuré</p>
-                <Link href="/client/tresorerie" className="text-[0.65rem] underline" style={{ color: GOLD }}>Configurer</Link>
+                <p className="text-xs text-center" style={{ color: t.text3 }}>Aucun compte configuré</p>
+                <Link href="/client/tresorerie" className="text-xs underline" style={{ color: GOLD }}>Configurer</Link>
               </div>
             ) : (
               <>
                 <div className="text-2xl font-bold tabular-nums" style={{ color: tresorerie >= 0 ? "#22c55e" : "#ef4444" }}>
                   {fmtEurInt(tresorerie)}
                 </div>
-                <div className="text-[0.62rem]" style={{ color: t.text3 }}>Solde actuel</div>
+                <div className="text-xs" style={{ color: t.text3 }}>Solde actuel</div>
                 <div className="flex flex-col gap-2 mt-1">
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1" style={{ color: "#22c55e" }}>
@@ -880,7 +880,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm font-semibold" style={{ color: t.text }}>Facturation</div>
-              <Link href="/client/factures" className="text-[0.6rem] flex items-center gap-0.5" style={{ color: t.text3 }}>
+              <Link href="/client/factures" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
                 {nbFactures} facture{nbFactures > 1 ? "s" : ""} <ChevronRight size={9} />
               </Link>
             </div>
@@ -892,7 +892,7 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center py-8 gap-2">
                 <ReceiptText size={28} style={{ color: t.text4 }} />
                 <p className="text-xs" style={{ color: t.text3 }}>Aucune facture sur cette période</p>
-                <Link href="/client/factures" className="text-[0.65rem] underline" style={{ color: GOLD }}>Créer une facture</Link>
+                <Link href="/client/factures" className="text-xs underline" style={{ color: GOLD }}>Créer une facture</Link>
               </div>
             ) : (
               <>
@@ -905,14 +905,14 @@ export default function DashboardPage() {
                   ].map(({ label, val, color, href }) => (
                     <Link key={label} href={href} className="rounded-xl p-3 transition-all hover:opacity-80"
                       style={{ background: t.glassMd, border: `1px solid ${t.borderSoft}` }}>
-                      <div className="text-[0.6rem] mb-1" style={{ color: t.text3 }}>{label}</div>
+                      <div className="text-xs mb-1" style={{ color: t.text3 }}>{label}</div>
                       <div className="text-sm font-bold tabular-nums" style={{ color }}>{fmtEurInt(val)}</div>
                     </Link>
                   ))}
                 </div>
                 {overdueList.length > 0 && (
                   <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${t.borderSoft}` }}>
-                    <div className="text-[0.62rem] font-semibold mb-2 flex items-center gap-1" style={{ color: "#ef4444" }}>
+                    <div className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: "#ef4444" }}>
                       <AlertTriangle size={10} /> En retard
                     </div>
                     {overdueList.map(inv => (
@@ -934,7 +934,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm font-semibold" style={{ color: t.text }}>Dépenses par catégorie</div>
-              <Link href="/client/depenses" className="text-[0.6rem] flex items-center gap-0.5" style={{ color: t.text3 }}>
+              <Link href="/client/depenses" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
                 Voir tout <ChevronRight size={9} />
               </Link>
             </div>
@@ -944,7 +944,7 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center py-8 gap-2">
                 <CreditCard size={28} style={{ color: t.text4 }} />
                 <p className="text-xs" style={{ color: t.text3 }}>Aucune dépense sur cette période</p>
-                <Link href="/client/depenses" className="text-[0.65rem] underline" style={{ color: GOLD }}>Ajouter une dépense</Link>
+                <Link href="/client/depenses" className="text-xs underline" style={{ color: GOLD }}>Ajouter une dépense</Link>
               </div>
             ) : (
               <>
@@ -958,7 +958,7 @@ export default function DashboardPage() {
                         <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: t.glassMd }}>
                           <div className="h-full rounded-full" style={{ width: `${pctV}%`, background: CAT_COLORS[i % CAT_COLORS.length] }} />
                         </div>
-                        <span className="text-[0.62rem] w-8 text-right tabular-nums shrink-0" style={{ color: t.text3 }}>{pctV}%</span>
+                        <span className="text-xs w-8 text-right tabular-nums shrink-0" style={{ color: t.text3 }}>{pctV}%</span>
                       </div>
                     );
                   })}
@@ -978,7 +978,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm font-semibold" style={{ color: t.text }}>Commercial</div>
-              <Link href="/client/crm" className="text-[0.6rem] flex items-center gap-0.5" style={{ color: t.text3 }}>
+              <Link href="/client/crm" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
                 CRM <ChevronRight size={9} />
               </Link>
             </div>
@@ -988,7 +988,7 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center py-8 gap-2">
                 <Users size={28} style={{ color: t.text4 }} />
                 <p className="text-xs" style={{ color: t.text3 }}>Aucun contact actif</p>
-                <Link href="/client/crm" className="text-[0.65rem] underline" style={{ color: GOLD }}>Ajouter un contact</Link>
+                <Link href="/client/crm" className="text-xs underline" style={{ color: GOLD }}>Ajouter un contact</Link>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2">
@@ -1001,7 +1001,7 @@ export default function DashboardPage() {
                     style={{ background: t.glassMd, border: `1px solid ${t.borderSoft}` }}>
                     <div className="flex items-center gap-1" style={{ color }}>
                       {icon}
-                      <span className="text-[0.6rem]">{label}</span>
+                      <span className="text-xs">{label}</span>
                     </div>
                     <div className="text-base font-bold" style={{ color }}>{val}</div>
                   </Link>
@@ -1014,7 +1014,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm font-semibold" style={{ color: t.text }}>Meilleurs clients</div>
-              <Link href="/client/factures" className="text-[0.6rem] flex items-center gap-0.5" style={{ color: t.text3 }}>
+              <Link href="/client/factures" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
                 Factures <ChevronRight size={9} />
               </Link>
             </div>
@@ -1031,7 +1031,7 @@ export default function DashboardPage() {
                   const pctV = ca > 0 ? Math.round((c.amount / ca) * 100) : 0;
                   return (
                     <div key={c.name} className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[0.55rem] font-bold shrink-0"
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
                         style={{ background: `${GOLD}20`, color: GOLD }}>{i + 1}</div>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs truncate" style={{ color: t.text }}>{c.name}</div>
@@ -1058,7 +1058,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm font-semibold" style={{ color: t.text }}>Tâches</div>
-              <Link href="/client/productivite" className="text-[0.6rem] flex items-center gap-0.5" style={{ color: t.text3 }}>
+              <Link href="/client/productivite" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
                 Voir <ChevronRight size={9} />
               </Link>
             </div>
@@ -1068,7 +1068,7 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center py-6 gap-2">
                 <CheckCircle2 size={24} style={{ color: t.text4 }} />
                 <p className="text-xs" style={{ color: t.text3 }}>Aucune tâche</p>
-                <Link href="/client/productivite" className="text-[0.65rem] underline" style={{ color: GOLD }}>Créer une tâche</Link>
+                <Link href="/client/productivite" className="text-xs underline" style={{ color: GOLD }}>Créer une tâche</Link>
               </div>
             ) : (
               <>
@@ -1079,7 +1079,7 @@ export default function DashboardPage() {
                       background: "#22c55e",
                     }} />
                   </div>
-                  <span className="text-[0.65rem] shrink-0 tabular-nums" style={{ color: t.text3 }}>
+                  <span className="text-xs shrink-0 tabular-nums" style={{ color: t.text3 }}>
                     {tasksDone}/{tasksTotal}
                   </span>
                 </div>
@@ -1101,7 +1101,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm font-semibold" style={{ color: t.text }}>Temps suivi</div>
-              <Link href="/client/chrono" className="text-[0.6rem] flex items-center gap-0.5" style={{ color: t.text3 }}>
+              <Link href="/client/chrono" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
                 Chrono <ChevronRight size={9} />
               </Link>
             </div>
@@ -1109,19 +1109,19 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center py-6 gap-2">
                 <Clock size={24} style={{ color: t.text4 }} />
                 <p className="text-xs" style={{ color: t.text3 }}>Aucune heure enregistrée</p>
-                <Link href="/client/chrono" className="text-[0.65rem] underline" style={{ color: GOLD }}>Démarrer un chrono</Link>
+                <Link href="/client/chrono" className="text-xs underline" style={{ color: GOLD }}>Démarrer un chrono</Link>
               </div>
             ) : (
               <>
                 <div className="text-3xl font-bold tabular-nums" style={{ color: t.text }}>{heures}h</div>
-                <div className="text-[0.62rem] mt-1" style={{ color: t.text3 }}>sur la période</div>
+                <div className="text-xs mt-1" style={{ color: t.text3 }}>sur la période</div>
                 <div className="mt-4 flex items-center gap-2">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: `${GOLD}15` }}>
                     <Clock size={14} style={{ color: GOLD }} />
                   </div>
                   <div>
                     <div className="text-xs font-semibold" style={{ color: t.text }}>{Math.round(heures * 60)} min</div>
-                    <div className="text-[0.6rem]" style={{ color: t.text3 }}>total enregistré</div>
+                    <div className="text-xs" style={{ color: t.text3 }}>total enregistré</div>
                   </div>
                 </div>
               </>
@@ -1132,7 +1132,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm font-semibold" style={{ color: t.text }}>Contrats</div>
-              <Link href="/client/contrats" className="text-[0.6rem] flex items-center gap-0.5" style={{ color: t.text3 }}>
+              <Link href="/client/contrats" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
                 Voir <ChevronRight size={9} />
               </Link>
             </div>
@@ -1142,7 +1142,7 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center py-6 gap-2">
                 <FileText size={24} style={{ color: t.text4 }} />
                 <p className="text-xs" style={{ color: t.text3 }}>Aucun contrat</p>
-                <Link href="/client/contrats" className="text-[0.65rem] underline" style={{ color: GOLD }}>Créer un contrat</Link>
+                <Link href="/client/contrats" className="text-xs underline" style={{ color: GOLD }}>Créer un contrat</Link>
               </div>
             ) : (
               <div className="flex flex-col gap-2">

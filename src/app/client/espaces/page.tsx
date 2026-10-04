@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, {
   useEffect, useState, useCallback, useRef, useMemo,
@@ -389,7 +389,7 @@ export default function EspacesPrives() {
               <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: GOLD }}/>
               <div>
                 <p className={`text-xs font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
-                <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
+                <p className={`text-[11px] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
               </div>
             </motion.div>
           ))}

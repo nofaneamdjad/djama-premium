@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -283,7 +283,7 @@ export default function BlocNotesHome() {
           {/* Dossiers */}
           <div className={`mx-1 my-2 border-t ${isDark?"border-white/6":"border-gray-100"}`}/>
           <div className={`flex items-center justify-between px-3 py-1 ${txtMuted}`}>
-            <span className="text-[0.58rem] font-bold uppercase tracking-widest">Dossiers</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest">Dossiers</span>
             <button onClick={()=>setNewFolderOpen(true)} title="Nouveau dossier" className={`transition ${isDark?"hover:text-white":"hover:text-gray-600"}`}><FolderPlus size={11}/></button>
           </div>
           {folders.map(f=>(

@@ -136,21 +136,21 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   const isDark = useDark();
   return (
     <div className="space-y-1">
-      <label className={`text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>{label}</label>
+      <label className={`text-xs font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>{label}</label>
       {children}
     </div>
   );
 }
 
-const INP_DARK = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[0.8rem] text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
-const INP_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[0.8rem] text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300 focus:bg-gray-50 transition-all";
-const SEL_DARK = "w-full rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2.5 pr-8 text-[0.8rem] text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
-const SEL_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-[0.8rem] text-gray-900 outline-none appearance-none focus:border-gray-300 transition-all";
+const INP_DARK = "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all";
+const INP_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300 focus:bg-gray-50 transition-all";
+const SEL_DARK = "w-full rounded-xl border border-white/[0.08] bg-[#131c30] px-3 py-2.5 pr-8 text-sm text-white outline-none appearance-none [color-scheme:dark] focus:border-white/[0.15] transition-all";
+const SEL_LITE = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-sm text-gray-900 outline-none appearance-none focus:border-gray-300 transition-all";
 
 function TxBadge({ status }: { status: TxStatus }) {
   const s = TX_STATUSES.find(x => x.v === status) ?? TX_STATUSES[0];
   return (
-    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
+    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider"
       style={{ backgroundColor: s.c + "22", color: s.c }}>
       {s.l}
     </span>
@@ -218,7 +218,7 @@ function TransactionModal({
                 <div className="grid grid-cols-2 gap-2">
           {(["income", "expense"] as TxType[]).map(t => (
             <button key={t} type="button" onClick={() => { set("type", t); set("category", "autre"); }}
-              className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.78rem] font-bold border transition-all"
+              className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold border transition-all"
               style={{
                 backgroundColor: form.type === t ? (t === "income" ? "#10b98122" : "#ef444422") : "transparent",
                 borderColor:     form.type === t ? (t === "income" ? "#10b98144" : "#ef444444") : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)"),
@@ -255,7 +255,7 @@ function TransactionModal({
           <div className="grid grid-cols-4 gap-1.5">
             {cats.map(({ v, l, c, I }) => (
               <button key={v} type="button" onClick={() => set("category", v)}
-                className="flex flex-col items-center gap-1 rounded-xl p-2 text-[0.58rem] font-medium border transition-all"
+                className="flex flex-col items-center gap-1 rounded-xl p-2 text-[11px] font-medium border transition-all"
                 style={{
                   backgroundColor: form.category === v ? c + "2a" : "transparent",
                   borderColor:     form.category === v ? c + "55" : (isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"),
@@ -318,15 +318,15 @@ function TransactionModal({
         </Field>
 
         {saveError && (
-          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
             <AlertTriangle size={13} className="shrink-0" />
             {saveError}
           </div>
         )}
         <div className="flex gap-2 pt-1">
-          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-[0.78rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
+          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
           <button onClick={save} disabled={saving}
-            className="flex-1 rounded-xl py-2.5 text-[0.78rem] font-bold disabled:opacity-40 transition-all hover:brightness-110"
+            className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {saving ? "…" : tx?.id ? "Mettre à jour" : "Ajouter"}
           </button>
@@ -407,15 +407,15 @@ function AccountModal({
           </div>
         </Field>
         {saveError && (
-          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
             <AlertTriangle size={13} className="shrink-0" />
             {saveError}
           </div>
         )}
         <div className="flex gap-2">
-          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-[0.78rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
+          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
           <button onClick={save} disabled={saving}
-            className="flex-1 rounded-xl py-2.5 text-[0.78rem] font-bold disabled:opacity-40 transition-all hover:brightness-110"
+            className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {account ? "Mettre à jour" : "Créer"}
           </button>
@@ -477,7 +477,7 @@ function RecurringModal({
         <div className="grid grid-cols-2 gap-2">
           {(["income","expense"] as TxType[]).map(t => (
             <button key={t} type="button" onClick={() => { set("type", t); set("category", "autre"); }}
-              className="rounded-xl py-2 text-[0.75rem] font-bold border transition-all"
+              className="rounded-xl py-2 text-sm font-bold border transition-all"
               style={{
                 backgroundColor: form.type === t ? (t === "income" ? "#10b98122" : "#ef444422") : "transparent",
                 borderColor:     form.type === t ? (t === "income" ? "#10b98144" : "#ef444444") : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)"),
@@ -508,7 +508,7 @@ function RecurringModal({
           <div className="grid grid-cols-4 gap-1.5">
             {cats.map(({ v, l, c, I }) => (
               <button key={v} type="button" onClick={() => set("category", v)}
-                className="flex flex-col items-center gap-1 rounded-xl p-2 text-[0.58rem] border transition-all"
+                className="flex flex-col items-center gap-1 rounded-xl p-2 text-[11px] border transition-all"
                 style={{
                   backgroundColor: form.category === v ? c + "2a" : "transparent",
                   borderColor:     form.category === v ? c + "55" : (isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"),
@@ -523,15 +523,15 @@ function RecurringModal({
           <input type="date" className={`${inp} ${isDark ? "[color-scheme:dark]" : ""}`} value={form.next_date ?? ""} onChange={e => set("next_date", e.target.value || null)} />
         </Field>
         {saveError && (
-          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[0.7rem] text-red-400">
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
             <AlertTriangle size={13} className="shrink-0" />
             {saveError}
           </div>
         )}
         <div className="flex gap-2">
-          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-[0.78rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
+          <button onClick={onClose} className={`flex-1 rounded-xl border py-2.5 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
           <button onClick={save} disabled={saving}
-            className="flex-1 rounded-xl py-2.5 text-[0.78rem] font-bold disabled:opacity-40 transition-all hover:brightness-110"
+            className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             {item ? "Mettre à jour" : "Ajouter"}
           </button>
@@ -624,7 +624,7 @@ function DashboardView({
           {threshAlerts.map(a => (
             <div key={a.id} className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
               <AlertTriangle size={15} className="shrink-0 text-amber-400" />
-              <p className="text-[0.75rem] text-amber-300">
+              <p className="text-sm text-amber-300">
                 <strong>{a.name}</strong> — solde <strong>{fmtC(a.balance)}</strong> en dessous du seuil d'alerte de <strong>{fmtC(thresholds.find(t => t.accountId === a.id)!.min)}</strong>.
               </p>
             </div>
@@ -632,7 +632,7 @@ function DashboardView({
           {forecast30 < 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
               <AlertTriangle size={15} className="shrink-0 text-red-400" />
-              <p className="text-[0.75rem] text-red-300">
+              <p className="text-sm text-red-300">
                 <strong>Risque de trésorerie négative</strong> dans 30 jours.
                 Projection : <span className="font-bold">{fmtC(forecast30)}</span>
               </p>
@@ -641,7 +641,7 @@ function DashboardView({
           {overdue.length > 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
               <AlertTriangle size={15} className="shrink-0 text-amber-400" />
-              <p className="text-[0.75rem] text-amber-300">
+              <p className="text-sm text-amber-300">
                 <strong>{overdue.length} facture{overdue.length > 1 ? "s" : ""} en retard</strong> — relancez vos clients.
               </p>
             </div>
@@ -655,7 +655,7 @@ function DashboardView({
             className="rounded-2xl p-4 space-y-2 text-left transition-all hover:brightness-110 active:scale-[0.98]"
             style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)", cursor: nav ? "pointer" : "default" }}>
             <div className="flex items-center justify-between">
-              <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>{l}</p>
+              <p className={`text-xs font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>{l}</p>
               <div className="flex h-6 w-6 items-center justify-center rounded-lg"
                 style={{ backgroundColor: c + "20" }}>
                 <I size={12} style={{ color: c }} />
@@ -670,7 +670,7 @@ function DashboardView({
                   ? <TrendingUp size={10} className="text-green-400" />
                   : <TrendingDown size={10} className="text-red-400" />
               )}
-              <p className="text-[0.62rem]" style={{ color: (subColor ?? c) + "bb" }}>{sub}</p>
+              <p className="text-xs" style={{ color: (subColor ?? c) + "bb" }}>{sub}</p>
             </div>
           </button>
         ))}
@@ -679,8 +679,8 @@ function DashboardView({
             <div className="rounded-2xl p-4 space-y-3"
         style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)" }}>
         <div className="flex items-center justify-between">
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Cashflow — 6 mois</h3>
-          <div className={`flex items-center gap-3 text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
+          <h3 className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Cashflow — 6 mois</h3>
+          <div className={`flex items-center gap-3 text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>
             <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: "rgba(16,185,129,0.7)" }} /> Entrées</span>
             <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: "rgba(239,68,68,0.7)" }} /> Sorties</span>
           </div>
@@ -750,7 +750,7 @@ function DashboardView({
             const net = m.inc - m.exp;
             const lp  = Math.min(Math.max((hovMonth + 0.5) / 6 * 100, 14), 86);
             return (
-              <div className="pointer-events-none absolute z-20 rounded-xl border px-3 py-2 text-[0.68rem] shadow-xl"
+              <div className="pointer-events-none absolute z-20 rounded-xl border px-3 py-2 text-xs shadow-xl"
                 style={{
                   background: isDark ? "rgba(13,17,23,0.97)" : "rgba(255,255,255,0.97)",
                   border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)",
@@ -758,7 +758,7 @@ function DashboardView({
                   left: `calc(${lp}% - 66px)`,
                   minWidth: "132px",
                 }}>
-                <p className={`text-[0.7rem] font-bold mb-1.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>{m.label}</p>
+                <p className={`text-xs font-bold mb-1.5 ${isDark ? "text-white/80" : "text-gray-700"}`}>{m.label}</p>
                 <div className="space-y-0.5">
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-emerald-400">Entrées</span>
@@ -783,7 +783,7 @@ function DashboardView({
                 {upcoming30.length > 0 && (
           <div className="rounded-2xl p-4 space-y-3"
             style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)" }}>
-            <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Prochains paiements</h3>
+            <h3 className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Prochains paiements</h3>
             <div className="space-y-2">
               {upcoming30.map(r => {
                 const ci = getCat(r.type, r.category);
@@ -791,9 +791,9 @@ function DashboardView({
                 return (
                   <div key={r.id} className="flex items-center gap-3">
                     <CI size={12} style={{ color: ci.c }} className="shrink-0" />
-                    <span className={`flex-1 text-[0.72rem] truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{r.label}</span>
-                    <span className={`shrink-0 text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{r.next_date ? fmtDate(r.next_date) : "—"}</span>
-                    <span className="shrink-0 text-[0.75rem] font-bold" style={{ color: r.type === "expense" ? "#ef4444" : "#10b981" }}>
+                    <span className={`flex-1 text-sm truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{r.label}</span>
+                    <span className={`shrink-0 text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>{r.next_date ? fmtDate(r.next_date) : "—"}</span>
+                    <span className="shrink-0 text-sm font-bold" style={{ color: r.type === "expense" ? "#ef4444" : "#10b981" }}>
                       {r.type === "income" ? "+" : "-"}{fmtC(r.amount)}
                     </span>
                   </div>
@@ -805,9 +805,9 @@ function DashboardView({
 
                 <div className="rounded-2xl p-4 space-y-3"
           style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.06)" }}>
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Dernières transactions</h3>
+          <h3 className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Dernières transactions</h3>
           {recent5.length === 0
-            ? <p className={`py-4 text-center text-[0.72rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune transaction</p>
+            ? <p className={`py-4 text-center text-sm ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune transaction</p>
             : (
               <div className="space-y-1.5">
                 {recent5.map(t => {
@@ -820,10 +820,10 @@ function DashboardView({
                         <CI size={12} style={{ color: ci.c }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`truncate text-[0.72rem] font-medium ${isDark ? "text-white/70" : "text-gray-700"}`}>{t.label}</p>
-                        <p className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{fmtDate(t.date)}</p>
+                        <p className={`truncate text-sm font-medium ${isDark ? "text-white/70" : "text-gray-700"}`}>{t.label}</p>
+                        <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>{fmtDate(t.date)}</p>
                       </div>
-                      <span className={`shrink-0 text-[0.78rem] font-bold ${t.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                      <span className={`shrink-0 text-sm font-bold ${t.type === "income" ? "text-green-400" : "text-red-400"}`}>
                         {t.type === "income" ? "+" : "-"}{fmtC(t.amount)}
                       </span>
                     </div>
@@ -879,11 +879,11 @@ function TransactionsView({
         <div className={`flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-gray-200 bg-white"}`}>
           <Search size={13} className={`shrink-0 ${isDark ? "text-white/35" : "text-gray-400"}`} />
           <input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
-            className={`flex-1 bg-transparent text-[0.78rem] outline-none ${isDark ? "text-white placeholder-white/20" : "text-gray-900 placeholder-gray-400"}`} />
+            className={`flex-1 bg-transparent text-sm outline-none ${isDark ? "text-white placeholder-white/20" : "text-gray-900 placeholder-gray-400"}`} />
         </div>
         <div className="relative">
           <select value={filterType} onChange={e => { setFilterType(e.target.value as "" | TxType); setFilterCat(""); setPage(1); }}
-            className={`rounded-xl border px-3 py-2 pr-8 text-[0.75rem] outline-none appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`}>
+            className={`rounded-xl border px-3 py-2 pr-8 text-sm outline-none appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`}>
             <option value="">Tout</option>
             <option value="income">Encaissements</option>
             <option value="expense">Dépenses</option>
@@ -892,7 +892,7 @@ function TransactionsView({
         </div>
         <div className="relative">
           <select value={filterCat} onChange={e => { setFilterCat(e.target.value); setPage(1); }}
-            className={`rounded-xl border px-3 py-2 pr-8 text-[0.75rem] outline-none appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`}>
+            className={`rounded-xl border px-3 py-2 pr-8 text-sm outline-none appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`}>
             <option value="">Toutes catégories</option>
             {filterType !== "expense" && INCOME_CATS.map(c => <option key={`i-${c.v}`} value={c.v}>{c.l}</option>)}
             {filterType !== "income"  && EXPENSE_CATS.map(c => <option key={`e-${c.v}`} value={c.v}>{c.l}</option>)}
@@ -901,22 +901,22 @@ function TransactionsView({
         </div>
         <div className="relative">
           <select value={filterSt} onChange={e => { setFilterSt(e.target.value); setPage(1); }}
-            className={`rounded-xl border px-3 py-2 pr-8 text-[0.75rem] outline-none appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`}>
+            className={`rounded-xl border px-3 py-2 pr-8 text-sm outline-none appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`}>
             <option value="">Tous statuts</option>
             {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
           </select>
           <ChevronDown size={11} className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`} />
         </div>
         <input type="month" value={filterMonth} onChange={e => { setFilterMonth(e.target.value); setPage(1); }}
-          className={`rounded-xl border px-3 py-2 text-[0.75rem] outline-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`} />
+          className={`rounded-xl border px-3 py-2 text-sm outline-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/60 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-600"}`} />
         {(search || filterType || filterSt || filterMonth || filterCat) && (
           <button onClick={() => { setSearch(""); setFilterType(""); setFilterSt(""); setFilterMonth(""); setFilterCat(""); setPage(1); }}
-            className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-[0.72rem] ${isDark ? "border-white/[0.08] text-white/35 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
+            className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-sm ${isDark ? "border-white/[0.08] text-white/35 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
             <X size={12} /> Effacer
           </button>
         )}
         <button onClick={() => { setEditTx(null); setShowModal(true); }}
-          className="flex items-center gap-2 rounded-xl px-3 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold transition-all hover:brightness-110"
           style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={13} /> Transaction
         </button>
@@ -924,15 +924,15 @@ function TransactionsView({
 
             <div className="grid grid-cols-3 gap-3">
         <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Entrées (filtré)</p>
+          <p className={`text-xs font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Entrées (filtré)</p>
           <p className="mt-0.5 text-base font-bold text-green-500">{fmtC(totalIn)}</p>
         </div>
         <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Sorties (filtré)</p>
+          <p className={`text-xs font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Sorties (filtré)</p>
           <p className="mt-0.5 text-base font-bold text-red-500">{fmtC(totalOut)}</p>
         </div>
         <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Net</p>
+          <p className={`text-xs font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Net</p>
           <p className={`mt-0.5 text-base font-bold ${totalIn - totalOut >= 0 ? "text-green-500" : "text-red-500"}`}>{fmtC(totalIn - totalOut)}</p>
         </div>
       </div>
@@ -940,7 +940,7 @@ function TransactionsView({
             {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Receipt size={32} className={isDark ? "text-white/25" : "text-gray-300"} />
-          <p className={`text-[0.78rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucune transaction trouvée</p>
+          <p className={`text-sm ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucune transaction trouvée</p>
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -957,24 +957,24 @@ function TransactionsView({
                     <CI size={14} style={{ color: ci.c }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`truncate text-[0.78rem] font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{t.label}</p>
+                    <p className={`truncate text-sm font-semibold ${isDark ? "text-white/90" : "text-gray-800"}`}>{t.label}</p>
                     <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                      <span className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{fmtDate(t.date)}</span>
-                      {t.client_supplier && <span className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{t.client_supplier}</span>}
+                      <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>{fmtDate(t.date)}</span>
+                      {t.client_supplier && <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>{t.client_supplier}</span>}
                       <TxBadge status={t.status} />
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className={`text-[0.88rem] font-bold ${t.type === "income" ? "text-green-500" : "text-red-500"}`}>
+                    <p className={`text-sm font-bold ${t.type === "income" ? "text-green-500" : "text-red-500"}`}>
                       {t.type === "income" ? "+" : "-"}{fmtC(t.amount, t.currency)}
                     </p>
-                    <p className={`text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>{PAY_METHODS.find(m => m.v === t.payment_method)?.l}</p>
+                    <p className={`text-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>{PAY_METHODS.find(m => m.v === t.payment_method)?.l}</p>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                     {confirmDeleteTxId === t.id ? (
                       <>
                         <button onClick={() => { onDelete(t.id); setConfirmDeleteTxId(null); }}
-                          className="h-7 px-2 rounded-lg flex items-center gap-1 text-[0.6rem] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                          className="h-7 px-2 rounded-lg flex items-center gap-1 text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
                           <Trash2 size={10} /> Oui
                         </button>
                         <button onClick={() => setConfirmDeleteTxId(null)}
@@ -996,7 +996,7 @@ function TransactionsView({
                     )}
                   </div>
                   <select value={t.status} onChange={e => onStatusChange(t.id, e.target.value as TxStatus)}
-                    className={`shrink-0 cursor-pointer rounded-lg border px-2 py-1 text-[0.6rem] outline-none opacity-0 group-hover:opacity-100 transition-all appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/40 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-500"}`}
+                    className={`shrink-0 cursor-pointer rounded-lg border px-2 py-1 text-xs outline-none opacity-0 group-hover:opacity-100 transition-all appearance-none ${isDark ? "border-white/[0.08] bg-[#131c30] text-white/40 [color-scheme:dark]" : "border-gray-200 bg-white text-gray-500"}`}
                     style={{ minWidth: "90px" }}>
                     {TX_STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                   </select>
@@ -1078,19 +1078,19 @@ function PrevisionsView({
     <div className="space-y-5">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Solde actuel</p>
+          <p className={`text-xs font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Solde actuel</p>
           <p className={`mt-0.5 text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtC(totalBalance)}</p>
         </div>
         <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>MRR</p>
+          <p className={`text-xs font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>MRR</p>
           <p className="mt-0.5 text-lg font-bold text-green-500">{fmtC(mrrIncome)}</p>
         </div>
         <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Burn rate</p>
+          <p className={`text-xs font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Burn rate</p>
           <p className="mt-0.5 text-lg font-bold text-red-500">{fmtC(burnRate)}/mois</p>
         </div>
         <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Runway</p>
+          <p className={`text-xs font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>Runway</p>
           <p className="mt-0.5 text-lg font-bold" style={{ color: runway === null ? "#6b7280" : runway < 3 ? "#ef4444" : runway < 6 ? "#f59e0b" : "#10b981" }}>
             {runway === null ? "∞" : `${runway} mois`}
           </p>
@@ -1101,14 +1101,14 @@ function PrevisionsView({
         style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)", border: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)" }}>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h3 className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Projection trésorerie</h3>
-            <p className={`text-[0.65rem] mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>Basé sur les récurrents + factures ouvertes</p>
+            <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Projection trésorerie</h3>
+            <p className={`text-xs mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>Basé sur les récurrents + factures ouvertes</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex gap-1">
               {SCENARIOS.map(s => (
                 <button key={s.id} onClick={() => setScenario(s.id)}
-                  className={`rounded-xl px-3 py-1.5 text-[0.68rem] font-bold transition-all border ${
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all border ${
                     scenario === s.id
                       ? isDark ? "bg-white/[0.07]" : "bg-gray-100"
                       : `border-transparent ${isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`
@@ -1121,7 +1121,7 @@ function PrevisionsView({
             <div className="flex gap-1">
               {([30, 90, 365] as const).map(h => (
                 <button key={h} onClick={() => setHorizon(h)}
-                  className={`rounded-xl px-3 py-1.5 text-[0.68rem] font-bold transition-all ${
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
                     horizon === h
                       ? isDark ? "bg-white/[0.08] text-white" : "bg-gray-200 text-gray-900"
                       : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-600"
@@ -1136,7 +1136,7 @@ function PrevisionsView({
         <div className={`flex items-center gap-3 rounded-xl border p-3 ${isDark ? "border-white/[0.07] bg-white/[0.025]" : "border-gray-200 bg-gray-50"}`}>
           <Target size={16} className="shrink-0 text-purple-400" />
           <div>
-            <p className={`text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Trésorerie dans {horizon} jours</p>
+            <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>Trésorerie dans {horizon} jours</p>
             <p className={`text-2xl font-bold ${forecast < 0 ? "text-red-500" : isDark ? "text-white" : "text-gray-900"}`}>{fmtC(forecast)}</p>
           </div>
           {forecast < totalBalance
@@ -1196,7 +1196,7 @@ function PrevisionsView({
         })()}
 
         {openInvoices > 0 && horizon <= 90 && (
-          <p className={`text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
+          <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>
             + <span className="font-semibold text-amber-400">{fmtC(openInvoices)}</span> de factures ouvertes incluses dans la projection.
           </p>
         )}
@@ -1204,9 +1204,9 @@ function PrevisionsView({
 
             <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className={`text-[0.78rem] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Éléments récurrents</h3>
+          <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Éléments récurrents</h3>
           <button onClick={() => { setEditItem(null); setShowModal(true); }}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.68rem] font-semibold transition-all hover:brightness-110"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             <Plus size={12} /> Ajouter
           </button>
@@ -1215,8 +1215,8 @@ function PrevisionsView({
         {recurring.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <RefreshCw size={24} className={isDark ? "text-white/25" : "text-gray-300"} />
-            <p className={`text-[0.75rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucun élément récurrent</p>
-            <p className={`text-[0.65rem] text-center max-w-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>Ajoutez vos revenus et dépenses récurrents pour activer la prévision.</p>
+            <p className={`text-sm ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucun élément récurrent</p>
+            <p className={`text-xs text-center max-w-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>Ajoutez vos revenus et dépenses récurrents pour activer la prévision.</p>
           </div>
         ) : (
           <div className="space-y-1.5">
@@ -1227,10 +1227,10 @@ function PrevisionsView({
               return (
                 <div key={type} className="space-y-1">
                   <div className="flex items-center justify-between px-1 py-1">
-                    <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${type === "income" ? "text-green-500/60" : "text-red-500/60"}`}>
+                    <p className={`text-xs font-bold uppercase tracking-widest ${type === "income" ? "text-green-500/60" : "text-red-500/60"}`}>
                       {type === "income" ? "Revenus récurrents" : "Dépenses récurrentes"}
                     </p>
-                    <span className={`text-[0.68rem] font-bold ${type === "income" ? "text-green-500" : "text-red-500"}`}>
+                    <span className={`text-xs font-bold ${type === "income" ? "text-green-500" : "text-red-500"}`}>
                       {type === "income" ? "+" : "-"}{fmtC(total)}/mois
                     </span>
                   </div>
@@ -1246,20 +1246,20 @@ function PrevisionsView({
                           <CI size={13} style={{ color: ci.c }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-[0.75rem] font-semibold truncate ${isDark ? "text-white/70" : "text-gray-700"}`}>{r.label}</p>
+                          <p className={`text-sm font-semibold truncate ${isDark ? "text-white/70" : "text-gray-700"}`}>{r.label}</p>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{FREQUENCIES.find(f => f.v === r.frequency)?.l}</span>
-                            {r.next_date && <span className={`text-[0.6rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>→ {fmtDate(r.next_date)}</span>}
+                            <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>{FREQUENCIES.find(f => f.v === r.frequency)?.l}</span>
+                            {r.next_date && <span className={`text-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>→ {fmtDate(r.next_date)}</span>}
                           </div>
                         </div>
-                        <span className={`shrink-0 text-[0.82rem] font-bold ${r.type === "income" ? "text-green-500" : "text-red-500"}`}>
+                        <span className={`shrink-0 text-sm font-bold ${r.type === "income" ? "text-green-500" : "text-red-500"}`}>
                           {r.type === "income" ? "+" : "-"}{fmtC(r.amount)}
                         </span>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                           {confirmDeleteRecId === r.id ? (
                             <>
                               <button onClick={() => { onRecurringDelete(r.id); setConfirmDeleteRecId(null); }}
-                                className="h-6 px-1.5 rounded-md flex items-center gap-1 text-[0.58rem] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                                className="h-6 px-1.5 rounded-md flex items-center gap-1 text-[11px] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
                                 <Trash2 size={9} /> Oui
                               </button>
                               <button onClick={() => setConfirmDeleteRecId(null)}
@@ -1272,7 +1272,7 @@ function PrevisionsView({
                               <button onClick={async () => {
                                 const { error } = await supabase.from("treasury_recurring").update({ active: !r.active }).eq("id", r.id);
                                 if (!error) onRecurringEdit({ ...r, active: !r.active });
-                              }} className={`h-6 w-6 rounded-md flex items-center justify-center transition-all text-[0.6rem] ${isDark ? "text-white/35 hover:text-white hover:bg-white/[0.08]" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`} title={r.active ? "Désactiver" : "Activer"}>
+                              }} className={`h-6 w-6 rounded-md flex items-center justify-center transition-all text-xs ${isDark ? "text-white/35 hover:text-white hover:bg-white/[0.08]" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`} title={r.active ? "Désactiver" : "Activer"}>
                                 {r.active ? "⏸" : "▶"}
                               </button>
                               <button onClick={() => { setEditItem(r); setShowModal(true); }}
@@ -1420,11 +1420,11 @@ function ComptesView({
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <p className={`text-[0.65rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Solde total consolidé</p>
+          <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>Solde total consolidé</p>
           <p className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtC(totalBalance)}</p>
         </div>
         <button onClick={() => { setEditAccount(null); setShowModal(true); }}
-          className="flex items-center gap-2 rounded-xl px-3 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold transition-all hover:brightness-110"
           style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
           <Plus size={13} /> Compte
         </button>
@@ -1433,9 +1433,9 @@ function ComptesView({
       {accounts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <Building2 size={32} className={isDark ? "text-white/25" : "text-gray-300"} />
-          <p className={`text-[0.78rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucun compte bancaire</p>
+          <p className={`text-sm ${isDark ? "text-white/35" : "text-gray-400"}`}>Aucun compte bancaire</p>
           <button onClick={() => { setEditAccount(null); setShowModal(true); }}
-            className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.72rem] font-semibold transition-all hover:brightness-110"
+            className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
             <Plus size={13} /> Ajouter un compte
           </button>
@@ -1457,9 +1457,9 @@ function ComptesView({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className={`text-[0.82rem] font-bold ${isDark ? "text-white/90" : "text-gray-800"}`}>{a.name}</p>
+                        <p className={`text-sm font-bold ${isDark ? "text-white/90" : "text-gray-800"}`}>{a.name}</p>
                       </div>
-                      <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>
+                      <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>
                         {a.bank || "—"} · {txCount} transactions
                         {thresh && <span className="ml-1" style={{ color: belowMin ? "#fbbf24" : "inherit" }}>· seuil {fmtC(thresh.min)}</span>}
                       </p>
@@ -1482,7 +1482,7 @@ function ComptesView({
                     {confirmDeleteAccId === a.id ? (
                       <>
                         <button onClick={() => { onAccountDelete(a.id); setConfirmDeleteAccId(null); }}
-                          className="h-7 px-2 rounded-lg flex items-center gap-1 text-[0.6rem] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                          className="h-7 px-2 rounded-lg flex items-center gap-1 text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all">
                           <Trash2 size={10} /> Oui
                         </button>
                         <button onClick={() => setConfirmDeleteAccId(null)}
@@ -1508,7 +1508,7 @@ function ComptesView({
                   <p className="text-2xl font-bold" style={{ color: a.balance < 0 ? "#ef4444" : isDark ? "white" : "#111827" }}>
                     {fmtC(a.balance, a.currency)}
                   </p>
-                  {a.iban && <p className={`mt-0.5 text-[0.6rem] font-mono ${isDark ? "text-white/25" : "text-gray-400"}`}>{a.iban}</p>}
+                  {a.iban && <p className={`mt-0.5 text-xs font-mono ${isDark ? "text-white/25" : "text-gray-400"}`}>{a.iban}</p>}
                 </div>
                 {/* Inline threshold editor */}
                 <AnimatePresence>
@@ -1517,12 +1517,12 @@ function ComptesView({
                       exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                       <div className="flex items-center gap-2 pt-1">
                         <AlertTriangle size={12} className="text-amber-400 shrink-0"/>
-                        <span className="text-[0.65rem] text-amber-400/80">Seuil d'alerte (€)</span>
+                        <span className="text-xs text-amber-400/80">Seuil d'alerte (€)</span>
                         <input type="number" value={threshInput} onChange={e => setThreshInput(e.target.value)}
-                          className="flex-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[0.72rem] text-amber-200 outline-none"
+                          className="flex-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-sm text-amber-200 outline-none"
                           placeholder="ex: 500" autoFocus/>
                         <button onClick={() => applyThreshold(a.id, threshInput)}
-                          className="h-7 px-2 rounded-lg text-[0.6rem] font-bold text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 transition-all">OK</button>
+                          className="h-7 px-2 rounded-lg text-xs font-bold text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 transition-all">OK</button>
                         <button onClick={() => setEditThreshId(null)}
                           className={`h-7 w-7 rounded-lg flex items-center justify-center ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"}`}>
                           <X size={10}/>
@@ -1558,8 +1558,8 @@ function ComptesView({
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: "rgba(201,165,90,0.12)" }}>
                   <Banknote size={18} style={{ color: "#c9a55a" }}/>
                 </div>
-                <p className={`text-[0.78rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>Bientôt disponible</p>
-                <p className={`text-[0.68rem] max-w-[200px] leading-relaxed ${isDark ? "text-white/35" : "text-gray-400"}`}>La connexion Open Banking arrive prochainement.</p>
+                <p className={`text-sm font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>Bientôt disponible</p>
+                <p className={`text-xs max-w-[200px] leading-relaxed ${isDark ? "text-white/35" : "text-gray-400"}`}>La connexion Open Banking arrive prochainement.</p>
               </div>
             </motion.div>
           </motion.div>
@@ -1570,8 +1570,8 @@ function ComptesView({
         <div className="flex items-center gap-3">
           <Download size={15} className={isDark ? "text-white/35" : "text-gray-400"} />
           <div>
-            <h3 className={`text-[0.78rem] font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>Import relevé bancaire</h3>
-            <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>CSV : date, libellé, montant, type, catégorie · PDF : analyse IA (bientôt)</p>
+            <h3 className={`text-sm font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>Import relevé bancaire</h3>
+            <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>CSV : date, libellé, montant, type, catégorie · PDF : analyse IA (bientôt)</p>
           </div>
         </div>
 
@@ -1579,7 +1579,7 @@ function ComptesView({
           <div className="space-y-3">
             {/* Erreur IA */}
             {pdfError && (
-              <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-[0.7rem] text-red-400">
+              <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
                 <AlertTriangle size={13} className="shrink-0" />
                 <span>{pdfError}</span>
               </div>
@@ -1589,8 +1589,8 @@ function ComptesView({
             <div className="flex items-center gap-3 rounded-xl border border-purple-500/20 bg-purple-500/10 px-4 py-3">
               <FileText size={16} className="shrink-0 text-purple-400" />
               <div className="flex-1 min-w-0">
-                <p className="truncate text-[0.78rem] font-semibold text-purple-200">{pdfFile.name}</p>
-                <p className="text-[0.62rem] text-purple-300/50">{(pdfFile.size / 1024).toFixed(0)} Ko · Relevé bancaire PDF</p>
+                <p className="truncate text-sm font-semibold text-purple-200">{pdfFile.name}</p>
+                <p className="text-xs text-purple-300/50">{(pdfFile.size / 1024).toFixed(0)} Ko · Relevé bancaire PDF</p>
               </div>
             </div>
 
@@ -1599,8 +1599,8 @@ function ComptesView({
               <div className={`flex items-center gap-3 rounded-xl border border-purple-500/10 px-4 py-3 ${isDark ? "bg-white/[0.02]" : "bg-purple-50"}`}>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500/20 border-t-purple-400 shrink-0" />
                 <div>
-                  <p className={`text-[0.72rem] font-medium ${isDark ? "text-white/60" : "text-gray-600"}`}>Analyse en cours…</p>
-                  <p className={`text-[0.62rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>Claude lit votre relevé et identifie les transactions</p>
+                  <p className={`text-sm font-medium ${isDark ? "text-white/60" : "text-gray-600"}`}>Analyse en cours…</p>
+                  <p className={`text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>Claude lit votre relevé et identifie les transactions</p>
                 </div>
               </div>
             )}
@@ -1610,13 +1610,13 @@ function ComptesView({
               <button
                 onClick={() => { setPdfFile(null); setPdfError(""); if (fileRef.current) fileRef.current.value = ""; }}
                 disabled={pdfAnalyzing}
-                className={`flex-1 rounded-xl border py-2.5 text-[0.72rem] disabled:opacity-40 transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
+                className={`flex-1 rounded-xl border py-2.5 text-sm disabled:opacity-40 transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
                 Annuler
               </button>
               <button
                 onClick={analyzePdf}
                 disabled={pdfAnalyzing}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.72rem] font-bold disabled:opacity-50 transition-all hover:brightness-110"
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold disabled:opacity-50 transition-all hover:brightness-110"
                 style={{ background: "linear-gradient(135deg,#8b5cf6,#6d28d9)", color: "white" }}>
                 {pdfAnalyzing ? (
                   <>
@@ -1634,7 +1634,7 @@ function ComptesView({
         ) : csvDraft.length === 0 ? (
           <label className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed py-6 transition-all ${isDark ? "border-white/[0.08] bg-white/[0.025] hover:border-white/[0.15] hover:bg-white/[0.06]" : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"}`}>
             <Upload size={18} className={isDark ? "text-white/25" : "text-gray-300"} />
-            <span className={`text-[0.68rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Cliquez pour importer · CSV ou PDF</span>
+            <span className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>Cliquez pour importer · CSV ou PDF</span>
             <input ref={fileRef} type="file" accept=".csv,.txt,.pdf,application/pdf" className="hidden"
               onChange={e => {
                 const f = e.target.files?.[0];
@@ -1655,10 +1655,10 @@ function ComptesView({
           </label>
         ) : (
           <div className="space-y-3">
-            <p className={`text-[0.72rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{csvDraft.length} transaction{csvDraft.length !== 1 ? "s" : ""} détectée{csvDraft.length !== 1 ? "s" : ""}</p>
+            <p className={`text-sm ${isDark ? "text-white/40" : "text-gray-500"}`}>{csvDraft.length} transaction{csvDraft.length !== 1 ? "s" : ""} détectée{csvDraft.length !== 1 ? "s" : ""}</p>
             <div className="max-h-40 overflow-y-auto space-y-1">
               {csvDraft.slice(0, 10).map((t, i) => (
-                <div key={i} className="flex items-center gap-2 rounded-lg px-2 py-1 text-[0.68rem]">
+                <div key={i} className="flex items-center gap-2 rounded-lg px-2 py-1 text-xs">
                   <span className={`w-2 h-2 rounded-full shrink-0 ${t.type === "income" ? "bg-green-500" : "bg-red-500"}`} />
                   <span className={`flex-1 truncate ${isDark ? "text-white/60" : "text-gray-600"}`}>{t.label}</span>
                   <span className={`shrink-0 ${isDark ? "text-white/40" : "text-gray-400"}`}>{t.date}</span>
@@ -1667,15 +1667,15 @@ function ComptesView({
                   </span>
                 </div>
               ))}
-              {csvDraft.length > 10 && <p className={`text-center text-[0.65rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>+ {csvDraft.length - 10} autres…</p>}
+              {csvDraft.length > 10 && <p className={`text-center text-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>+ {csvDraft.length - 10} autres…</p>}
             </div>
             <div className="flex gap-2">
               <button onClick={() => { setCsvDraft([]); setPdfFile(null); setPdfError(""); if (fileRef.current) fileRef.current.value = ""; }}
-                className={`flex-1 rounded-xl border py-2 text-[0.72rem] transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
+                className={`flex-1 rounded-xl border py-2 text-sm transition-colors ${isDark ? "border-white/[0.08] text-white/40 hover:text-white/60" : "border-gray-200 text-gray-400 hover:text-gray-600"}`}>
                 Annuler
               </button>
               <button onClick={importCSV} disabled={csvImporting}
-                className="flex-1 rounded-xl py-2 text-[0.72rem] font-bold disabled:opacity-40 transition-all hover:brightness-110"
+                className="flex-1 rounded-xl py-2 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
                 style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
                 {csvImporting ? "Import…" : `Importer ${csvDraft.length} transactions`}
               </button>
@@ -1779,41 +1779,41 @@ function RapportView({ transactions, recurring, accounts }: {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className={`text-[0.78rem] font-bold uppercase tracking-widest ${isDark ? "text-white/60" : "text-gray-500"}`}>Rapport financier</h2>
+        <h2 className={`text-sm font-bold uppercase tracking-widest ${isDark ? "text-white/60" : "text-gray-500"}`}>Rapport financier</h2>
         <button onClick={exportRapport}
-          className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.68rem] font-semibold transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:bg-white/[0.06]" : "border-gray-200 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
+          className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${isDark ? "border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:bg-white/[0.06]" : "border-gray-200 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
           <Download size={12}/> Exporter
         </button>
       </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {advKPI.map(({ l, v, sub, c }) => (
           <div key={l} className={`rounded-2xl border p-4 space-y-1 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-            <p className={`text-[0.65rem] font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>{l}</p>
+            <p className={`text-xs font-medium ${isDark ? "text-white/40" : "text-gray-500"}`}>{l}</p>
             <p className={`text-xl font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{v}</p>
-            <p className="text-[0.62rem]" style={{ color: c }}>{sub}</p>
+            <p className="text-xs" style={{ color: c }}>{sub}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Répartition dépenses</h3>
+          <h3 className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Répartition dépenses</h3>
           {expCatList.length === 0
-            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune dépense</p>
+            ? <p className={`py-6 text-center text-sm ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucune dépense</p>
             : expCatList.slice(0, 7).map(([cat, total]) => {
               const ci = getCat("expense", cat);
               const CI = ci.I;
               return (
                 <div key={cat} className="flex items-center gap-2">
                   <CI size={11} style={{ color: ci.c }} className="shrink-0" />
-                  <span className={`w-20 shrink-0 truncate text-[0.65rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{ci.l}</span>
+                  <span className={`w-20 shrink-0 truncate text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>{ci.l}</span>
                   <div className={`flex-1 h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                     <motion.div className="h-full rounded-full"
                       initial={{ width: 0 }} animate={{ width: `${(total / maxExpCat) * 100}%` }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       style={{ backgroundColor: ci.c }} />
                   </div>
-                  <span className={`w-16 shrink-0 text-right text-[0.65rem] font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtC(total)}</span>
+                  <span className={`w-16 shrink-0 text-right text-xs font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtC(total)}</span>
                 </div>
               );
             })
@@ -1821,23 +1821,23 @@ function RapportView({ transactions, recurring, accounts }: {
         </div>
 
                 <div className={`rounded-2xl border p-4 space-y-3 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <h3 className={`text-[0.68rem] font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Répartition revenus</h3>
+          <h3 className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/35" : "text-gray-400"}`}>Répartition revenus</h3>
           {incCatList.length === 0
-            ? <p className={`py-6 text-center text-[0.72rem] ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucun revenu</p>
+            ? <p className={`py-6 text-center text-sm ${isDark ? "text-white/25" : "text-gray-400"}`}>Aucun revenu</p>
             : incCatList.slice(0, 7).map(([cat, total]) => {
               const ci = getCat("income", cat);
               const CI = ci.I;
               return (
                 <div key={cat} className="flex items-center gap-2">
                   <CI size={11} style={{ color: ci.c }} className="shrink-0" />
-                  <span className={`w-20 shrink-0 truncate text-[0.65rem] ${isDark ? "text-white/40" : "text-gray-500"}`}>{ci.l}</span>
+                  <span className={`w-20 shrink-0 truncate text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>{ci.l}</span>
                   <div className={`flex-1 h-1.5 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
                     <motion.div className="h-full rounded-full"
                       initial={{ width: 0 }} animate={{ width: `${(total / maxIncCat) * 100}%` }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       style={{ backgroundColor: ci.c }} />
                   </div>
-                  <span className={`w-16 shrink-0 text-right text-[0.65rem] font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtC(total)}</span>
+                  <span className={`w-16 shrink-0 text-right text-xs font-semibold ${isDark ? "text-white/60" : "text-gray-600"}`}>{fmtC(total)}</span>
                 </div>
               );
             })
@@ -1967,7 +1967,7 @@ export default function TresoreriePage() {
           <div className="flex items-center gap-3">
             <div>
               <h1 className={`text-xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Trésorerie</h1>
-              <p className={`mt-0.5 text-[0.65rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+              <p className={`mt-0.5 text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>
                 Solde : <span className={totalBalance < 0 ? "text-red-400 font-bold" : "font-semibold"} style={totalBalance >= 0 ? { color: "#c9a55a" } : {}}>{fmtC(totalBalance)}</span>
                 {" · "}{transactions.length} transactions
               </p>
@@ -1986,14 +1986,14 @@ export default function TresoreriePage() {
         style={{ background: isDark ? "rgba(6,8,14,0.5)" : "rgba(255,255,255,0.8)" }}>
         {TABS.map(({ id, l, I, badge }) => (
           <button key={id} onClick={() => setTab(id as typeof tab)}
-            className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-3 text-[0.72rem] font-semibold transition-colors ${
+            className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-semibold transition-colors ${
               tab === id
                 ? isDark ? "text-white" : "text-gray-900"
                 : isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600"
             }`}>
             <I size={13} />{l}
             {badge > 0 && (
-              <span className="rounded-full px-1.5 py-0.5 text-[0.55rem] font-bold"
+              <span className="rounded-full px-1.5 py-0.5 text-[11px] font-bold"
                 style={{ background: "rgba(201,165,90,0.15)", color: "#c9a55a" }}>{badge}</span>
             )}
             {tab === id && (

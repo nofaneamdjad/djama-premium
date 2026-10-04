@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -424,13 +424,13 @@ export default function PortailClientPage() {
             <div className="flex items-center gap-3">
               <div>
                 <h1 className={`text-xl font-black tracking-tight ${isDark?"text-white":"text-gray-900"}`}>Portail Client</h1>
-                <p className={`text-[0.65rem] mt-0.5 ${isDark?"text-white/40":"text-gray-500"}`}>
+                <p className={`text-xs mt-0.5 ${isDark?"text-white/40":"text-gray-500"}`}>
                   {accesses.length} accès · {counts.active} actifs
                 </p>
               </div>
             </div>
             <button onClick={()=>setShowGrant(true)}
-              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.72rem] font-bold transition-all hover:brightness-110"
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-all hover:brightness-110"
               style={{background:"linear-gradient(135deg,#c9a55a,#b08d45)",color:"#0a0a0a"}}>
               <Key size={13}/> Donner accès au portail
             </button>
@@ -453,7 +453,7 @@ export default function PortailClientPage() {
               <p className="mb-2 text-2xl font-black" style={{color}}>{value}</p>
               <div className="flex items-center gap-1.5">
                 <Icon size={11} style={{color}} className="opacity-70"/>
-                <p className={`text-[0.65rem] font-semibold ${isDark?"text-white/40":"text-[#0e1420]/50"}`}>{label}</p>
+                <p className={`text-xs font-semibold ${isDark?"text-white/40":"text-[#0e1420]/50"}`}>{label}</p>
               </div>
             </div>
           ))}
@@ -473,7 +473,7 @@ export default function PortailClientPage() {
               const active = filter===k;
               return (
                 <button key={k} onClick={()=>setFilter(k)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-[0.68rem] font-bold transition-all ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                     active ? "" : isDark
                       ? "border border-white/8 bg-white/4 text-white/40 hover:text-white/70"
                       : "border border-black/8 bg-white text-[#0e1420]/40 hover:text-[#0e1420]/70 shadow-sm"
@@ -481,7 +481,7 @@ export default function PortailClientPage() {
                   style={active&&s ? {background:s.bg,border:`1px solid ${s.border}`,color:s.color}
                     : active ? {background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)"} : {}}>
                   {k==="all" ? "Tous" : PS[k as PortalStatus].label}
-                  <span className="rounded-full px-1.5 py-0.5 text-[0.55rem]"
+                  <span className="rounded-full px-1.5 py-0.5 text-[11px]"
                     style={active ? {background:"rgba(0,0,0,0.2)"} : {background:isDark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.07)"}}>
                     {k==="all" ? counts.all : accesses.filter(a=>a.portal_status===k).length}
                   </span>
@@ -527,7 +527,7 @@ export default function PortailClientPage() {
                     </div>
                     <div className="flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5" style={{background:s.bg,borderColor:s.border}}>
                       <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`}/>
-                      <span className="text-[0.62rem] font-bold" style={{color:s.color}}>{s.label}</span>
+                      <span className="text-xs font-bold" style={{color:s.color}}>{s.label}</span>
                     </div>
                   </div>
                   <p className={`mb-0.5 text-base font-bold ${isDark?"text-white":"text-[#0e1420]"}`}>{a.nom}</p>
@@ -538,10 +538,10 @@ export default function PortailClientPage() {
                     <p className={`flex items-center gap-1.5 text-xs mb-3 ${isDark?"text-white/35":"text-[#0e1420]/40"}`}><Mail size={10}/>{a.email}</p>
                   )}
                   <div className={`mt-3 flex items-center justify-between border-t pt-3 ${isDark?"border-white/5":"border-black/5"}`}>
-                    <p className={`text-[0.6rem] ${isDark?"text-white/25":"text-[#0e1420]/30"}`}>
+                    <p className={`text-xs ${isDark?"text-white/25":"text-[#0e1420]/30"}`}>
                       {a.invitation_sent_at ? `Invité le ${fmtDate(a.invitation_sent_at)}` : `Créé le ${fmtDate(a.created_at)}`}
                     </p>
-                    <div className={`flex items-center gap-1 text-[0.6rem] font-semibold transition ${isDark?"text-white/25 group-hover:text-white/50":"text-[#0e1420]/25 group-hover:text-[#0e1420]/50"}`}>
+                    <div className={`flex items-center gap-1 text-xs font-semibold transition ${isDark?"text-white/25 group-hover:text-white/50":"text-[#0e1420]/25 group-hover:text-[#0e1420]/50"}`}>
                       Gérer <ArrowUpRight size={10}/>
                     </div>
                   </div>
@@ -589,7 +589,7 @@ export default function PortailClientPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <div className="flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5" style={{background:PS[drawer.portal_status].bg,borderColor:PS[drawer.portal_status].border}}>
                     <span className={`h-1.5 w-1.5 rounded-full ${PS[drawer.portal_status].dot}`}/>
-                    <span className="text-[0.65rem] font-bold" style={{color:PS[drawer.portal_status].color}}>{PS[drawer.portal_status].label}</span>
+                    <span className="text-xs font-bold" style={{color:PS[drawer.portal_status].color}}>{PS[drawer.portal_status].label}</span>
                   </div>
                   {drawer.email && (
                     <a href={`mailto:${drawer.email}`} className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/8 px-3 py-2 text-xs font-bold text-white/70 transition hover:bg-white/14 hover:text-white">
@@ -607,15 +607,15 @@ export default function PortailClientPage() {
                 <div className="mt-4 flex gap-0.5 overflow-x-auto scrollbar-none">
                   {(["info","permissions","factures","projets","documents","messages","activite"] as DrawerTab[]).map(t=>(
                     <button key={t} onClick={()=>setDrawerTab(t)}
-                      className={`flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-2 text-[0.67rem] font-bold transition-all capitalize ${
+                      className={`flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all capitalize ${
                         drawerTab===t ? "bg-white/12 text-white" : "text-white/35 hover:text-white/60"
                       }`}>
                       {t==="activite" ? "Activité" : t.charAt(0).toUpperCase()+t.slice(1)}
                       {t==="messages" && drawerMsgs.filter(m=>m.from==="client").length>0 && (
-                        <span className="ml-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[0.5rem] text-white">{drawerMsgs.filter(m=>m.from==="client").length}</span>
+                        <span className="ml-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] text-white">{drawerMsgs.filter(m=>m.from==="client").length}</span>
                       )}
                       {t==="documents" && drawerDocs.length>0 && (
-                        <span className="ml-0.5 rounded-full bg-sky-500/80 px-1.5 py-0.5 text-[0.5rem] text-white">{drawerDocs.length}</span>
+                        <span className="ml-0.5 rounded-full bg-sky-500/80 px-1.5 py-0.5 text-[10px] text-white">{drawerDocs.length}</span>
                       )}
                     </button>
                   ))}
@@ -631,24 +631,24 @@ export default function PortailClientPage() {
                     {/* Lien portail */}
                     <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
                       <div className="mb-2.5 flex items-center justify-between">
-                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/30">Lien portail</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-white/30">Lien portail</p>
                         <div className="flex gap-1.5">
                           {drawer.portal_status!=="active" && (
                             <button onClick={()=>changeStatus(drawer.id,"active")}
-                              className="flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[0.62rem] font-bold text-emerald-400 transition hover:bg-emerald-500/20">
+                              className="flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/20">
                               <Unlock size={9}/> Activer
                             </button>
                           )}
                           {drawer.portal_status==="active" && (
                             <button onClick={()=>changeStatus(drawer.id,"suspended")}
-                              className="flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-[0.62rem] font-bold text-red-400 transition hover:bg-red-500/20">
+                              className="flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-xs font-bold text-red-400 transition hover:bg-red-500/20">
                               <Lock size={9}/> Suspendre
                             </button>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-black/30 px-3 py-2">
-                        <code className="flex-1 truncate text-[0.62rem] text-sky-400">{portalUrl}</code>
+                        <code className="flex-1 truncate text-xs text-sky-400">{portalUrl}</code>
                         <CopyBtn text={portalUrl}/>
                         <a href={portalUrl} target="_blank" rel="noopener noreferrer"
                           className="shrink-0 rounded-md p-1 text-white/25 transition hover:text-white/60">
@@ -662,7 +662,7 @@ export default function PortailClientPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-semibold text-white/70">Invitation par email</p>
-                          <p className="text-[0.6rem] text-white/30">
+                          <p className="text-xs text-white/30">
                             {drawer.invitation_sent_at ? `Envoyée le ${fmtDate(drawer.invitation_sent_at)}` : "Pas encore envoyée"}
                           </p>
                         </div>
@@ -694,16 +694,16 @@ export default function PortailClientPage() {
                     {/* Note de bienvenue */}
                     <div className="rounded-2xl border border-white/6 bg-white/4 overflow-hidden">
                       <div className="flex items-center justify-between border-b border-white/6 px-4 py-2.5">
-                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">Message de bienvenue</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-white/25">Message de bienvenue</p>
                         {!editNotes ? (
-                          <button onClick={()=>{setEditNotes(true)}} className="flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-[0.65rem] font-bold text-white/40 transition hover:text-white/70">
+                          <button onClick={()=>{setEditNotes(true)}} className="flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-xs font-bold text-white/40 transition hover:text-white/70">
                             <Edit3 size={9}/> Modifier
                           </button>
                         ) : (
                           <div className="flex gap-2">
-                            <button onClick={()=>{setEditNotes(false);setNotes(drawer.welcome_message??"");}} className="text-[0.65rem] text-white/30 hover:text-white/60 transition">Annuler</button>
+                            <button onClick={()=>{setEditNotes(false);setNotes(drawer.welcome_message??"");}} className="text-xs text-white/30 hover:text-white/60 transition">Annuler</button>
                             <button onClick={saveNotes} disabled={savingN}
-                              className="flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/20 px-2 py-1 text-[0.65rem] font-bold text-emerald-400 transition">
+                              className="flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/20 px-2 py-1 text-xs font-bold text-emerald-400 transition">
                               {savingN ? <Loader2 size={9} className="animate-spin"/> : <Save size={9}/>} Sauver
                             </button>
                           </div>
@@ -727,7 +727,7 @@ export default function PortailClientPage() {
                 {drawerTab==="permissions" && (
                   <div className="space-y-3">
                     <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
-                      <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25 mb-4">Accès autorisés</p>
+                      <p className="text-xs font-bold uppercase tracking-widest text-white/25 mb-4">Accès autorisés</p>
                       <div className="space-y-3">
                         {(Object.keys(PERM_LABELS) as (keyof PortalPermissions)[]).map(key=>{
                           const enabled = drawer.permissions?.[key] ?? false;
@@ -735,7 +735,7 @@ export default function PortailClientPage() {
                             <div key={key} className="flex items-center justify-between">
                               <div>
                                 <p className="text-sm font-semibold text-white/80">{PERM_LABELS[key]}</p>
-                                <p className="text-[0.62rem] text-white/35">{enabled ? "Visible dans le portail" : "Masqué dans le portail"}</p>
+                                <p className="text-xs text-white/35">{enabled ? "Visible dans le portail" : "Masqué dans le portail"}</p>
                               </div>
                               <button onClick={()=>{
                                 const next = {...drawer.permissions,[key]:!enabled};
@@ -752,7 +752,7 @@ export default function PortailClientPage() {
 
                     {/* Statut d'accès */}
                     <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
-                      <p className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25 mb-3">Statut d'accès</p>
+                      <p className="text-xs font-bold uppercase tracking-widest text-white/25 mb-3">Statut d'accès</p>
                       <div className="grid grid-cols-2 gap-2">
                         {(["invited","active","suspended","expired"] as PortalStatus[]).map(s=>{
                           const ps = PS[s];
@@ -798,11 +798,11 @@ export default function PortailClientPage() {
                               className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/4 px-4 py-3 cursor-pointer hover:border-white/12 hover:bg-white/7 transition-all">
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs font-semibold text-white/80 truncate">{d.sujet||d.numero}</p>
-                                <p className="text-[0.6rem] text-white/30">{d.numero} · {fmtDate(d.date_document)}</p>
+                                <p className="text-xs text-white/30">{d.numero} · {fmtDate(d.date_document)}</p>
                               </div>
-                              <span className="text-[0.62rem] px-2 py-0.5 rounded-full font-semibold" style={{background:`${typeColor}15`,color:typeColor}}>{d.type}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{background:`${typeColor}15`,color:typeColor}}>{d.type}</span>
                               <span className="text-xs font-bold tabular-nums" style={{color:GOLD}}>{d.total_ttc.toLocaleString("fr-FR",{style:"currency",currency:"EUR"})}</span>
-                              <span className="text-[0.6rem] text-white/25">{d.statut}</span>
+                              <span className="text-xs text-white/25">{d.statut}</span>
                             </div>
                           );
                         })}
@@ -838,12 +838,12 @@ export default function PortailClientPage() {
                             className="rounded-2xl border border-white/6 bg-white/4 px-4 py-3 cursor-pointer hover:border-white/12 hover:bg-white/7 transition-all">
                             <div className="flex items-center justify-between mb-2">
                               <p className="text-xs font-bold text-white/80 truncate">{p.nom}</p>
-                              <span className="text-[0.6rem] text-white/30 shrink-0 ml-2">{p.end_date ? fmtDate(p.end_date) : "—"}</span>
+                              <span className="text-xs text-white/30 shrink-0 ml-2">{p.end_date ? fmtDate(p.end_date) : "—"}</span>
                             </div>
                             <div className="h-1.5 rounded-full bg-white/8">
                               <div className="h-full rounded-full" style={{width:`${p.progress??0}%`,background:p.color??GOLD}}/>
                             </div>
-                            <p className="mt-1.5 text-[0.6rem] text-white/30">{p.progress??0}% · {p.status}</p>
+                            <p className="mt-1.5 text-xs text-white/30">{p.progress??0}% · {p.status}</p>
                           </div>
                         ))}
                       </div>
@@ -881,7 +881,7 @@ export default function PortailClientPage() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-white">{doc.name}</p>
-                            <p className="text-[0.6rem] text-white/30">{fmtSize(doc.size)} · {fmtDate(doc.uploadedAt)}</p>
+                            <p className="text-xs text-white/30">{fmtSize(doc.size)} · {fmtDate(doc.uploadedAt)}</p>
                           </div>
                           <div className="flex shrink-0 gap-1">
                             {doc.url && (
@@ -921,7 +921,7 @@ export default function PortailClientPage() {
                                 : "rounded-bl-sm border border-white/6 bg-white/5"
                             }`}>
                               <p className="text-sm leading-snug text-white/85">{m.text}</p>
-                              <p className="mt-1 text-[0.58rem] text-white/25">
+                              <p className="mt-1 text-[11px] text-white/25">
                                 {m.from==="admin"?"Vous":drawer.nom.split(" ")[0]} · {new Date(m.date).toLocaleString("fr-FR",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"})}
                               </p>
                             </div>
@@ -956,8 +956,8 @@ export default function PortailClientPage() {
                           <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{background:GOLD}}/>
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-white/70 font-medium capitalize">{a.action.replace(/_/g," ")}</p>
-                            {a.resource_type && <p className="text-[0.6rem] text-white/35">{a.resource_type}</p>}
-                            <p className="text-[0.6rem] text-white/25 mt-0.5">{fmtDate(a.created_at)}</p>
+                            {a.resource_type && <p className="text-xs text-white/35">{a.resource_type}</p>}
+                            <p className="text-xs text-white/25 mt-0.5">{fmtDate(a.created_at)}</p>
                           </div>
                         </div>
                       ))
@@ -986,7 +986,7 @@ export default function PortailClientPage() {
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-white">Donner accès au portail</h2>
-                      <p className="text-[0.62rem] text-white/30">Recherchez un client CRM existant</p>
+                      <p className="text-xs text-white/30">Recherchez un client CRM existant</p>
                     </div>
                   </div>
                   <button onClick={()=>{setShowGrant(false);setSelContact(null);setCrmSearch("");setCrmResults([]);setGrantPerms(DEFAULT_PERMS);setGrantWelcome("");}}
@@ -999,7 +999,7 @@ export default function PortailClientPage() {
               <div className="p-5 space-y-4">
                 {/* Recherche CRM */}
                 <div>
-                  <label className="mb-1.5 block text-[0.68rem] font-semibold text-white/40">
+                  <label className="mb-1.5 block text-xs font-semibold text-white/40">
                     Rechercher dans le CRM *
                   </label>
                   <div className={`flex items-center gap-2.5 rounded-xl border ${selContact?"border-emerald-500/30 bg-emerald-500/5":"border-white/10 bg-white/5"} px-3.5 py-2.5`}>
@@ -1023,7 +1023,7 @@ export default function PortailClientPage() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-semibold text-white/80 truncate">{c.name}</p>
-                            <p className="text-[0.6rem] text-white/35 truncate">{c.company?`${c.company} · `:""}{c.email}</p>
+                            <p className="text-xs text-white/35 truncate">{c.company?`${c.company} · `:""}{c.email}</p>
                           </div>
                         </button>
                       ))}
@@ -1046,7 +1046,7 @@ export default function PortailClientPage() {
 
                 {/* Permissions */}
                 <div>
-                  <label className="mb-2 block text-[0.68rem] font-semibold text-white/40">Ce client pourra voir</label>
+                  <label className="mb-2 block text-xs font-semibold text-white/40">Ce client pourra voir</label>
                   <div className="grid grid-cols-2 gap-2">
                     {(Object.keys(PERM_LABELS) as (keyof PortalPermissions)[]).map(key=>{
                       const on = grantPerms[key];
@@ -1070,7 +1070,7 @@ export default function PortailClientPage() {
 
                 {/* Message de bienvenue */}
                 <div>
-                  <label className="mb-1.5 block text-[0.68rem] font-semibold text-white/40">Message de bienvenue (optionnel)</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-white/40">Message de bienvenue (optionnel)</label>
                   <textarea value={grantWelcome} onChange={e=>setGrantWelcome(e.target.value)} rows={2}
                     placeholder="Bienvenue dans votre espace client personnel…"
                     className="w-full rounded-xl border border-white/8 bg-white/4 px-3.5 py-2.5 text-sm text-white placeholder-white/20 outline-none transition focus:border-white/16 focus:bg-white/6 resize-none"/>

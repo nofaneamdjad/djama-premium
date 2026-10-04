@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence }                            from "framer-motion";
@@ -1001,7 +1001,7 @@ export default function SourcingPage() {
             </div>
             <div>
               <h1 className="text-base font-extrabold text-white">Sourcing IA</h1>
-              <p className="text-[0.65rem] text-white/32">Fournisseurs · Marchés · Analyse Sonnet</p>
+              <p className="text-xs text-white/32">Fournisseurs · Marchés · Analyse Sonnet</p>
             </div>
           </div>
 
@@ -1016,7 +1016,7 @@ export default function SourcingPage() {
                 <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#818cf8" }}/>
                 <div>
                   <p className="text-xs font-bold leading-none text-white">{history.length}</p>
-                  <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">Session{history.length > 1 ? "s" : ""}</p>
+                  <p className="text-[10px] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">Session{history.length > 1 ? "s" : ""}</p>
                 </div>
               </motion.div>
             )}
@@ -1149,22 +1149,22 @@ export default function SourcingPage() {
                   Expert Sourcing & Marchés IA
                 </h2>
 
-                <p className="text-[0.8rem] text-white/38 max-w-xs mx-auto leading-relaxed mb-4">
+                <p className="text-sm text-white/38 max-w-xs mx-auto leading-relaxed mb-4">
                   Analyses complètes, raisonnement stratégique, guides actionnables.<br/>
                   Propulsé par <span className="text-white/55 font-semibold">Claude Sonnet</span>.
                 </p>
 
                 {/* Chips */}
                 <div className="flex items-center justify-center gap-2 flex-wrap">
-                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.7rem] font-semibold"
+                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
                     style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", color: "rgba(52,211,153,0.8)" }}>
                     <CheckCircle2 size={10} /> Réponses longues
                   </span>
-                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.7rem] font-semibold"
+                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
                     style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)", color: "rgba(167,139,250,0.8)" }}>
                     <Brain size={10} /> Raisonnement stratégique
                   </span>
-                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.7rem] font-semibold"
+                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
                     style={{ background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)", color: "rgba(96,165,250,0.8)" }}>
                     <Download size={10} /> Export PDF
                   </span>

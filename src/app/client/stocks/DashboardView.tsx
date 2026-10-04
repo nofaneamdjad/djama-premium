@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion } from "framer-motion";
 import {
@@ -79,7 +79,7 @@ export function DashboardView({ products, movements, onNewProduct, onNewMovement
                   <span className={`text-sm ${isDark ? "text-white/80" : "text-gray-700"}`}>{p.name}</span>
                   <span className="text-xs text-red-400">{p.sku && `· ${p.sku}`}</span>
                 </div>
-                <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full" style={{ color:"#ef4444",background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)" }}>RUPTURE</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ color:"#ef4444",background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)" }}>RUPTURE</span>
               </div>
             ))}
             {criticalStock.slice(0, 3).map((p) => (
@@ -89,7 +89,7 @@ export function DashboardView({ products, movements, onNewProduct, onNewMovement
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>{p.stock_current} / min. {p.stock_minimum} {p.unit}</span>
-                  <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full" style={{ color:"#f97316",background:"rgba(249,115,22,0.12)",border:"1px solid rgba(249,115,22,0.25)" }}>CRITIQUE</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ color:"#f97316",background:"rgba(249,115,22,0.12)",border:"1px solid rgba(249,115,22,0.25)" }}>CRITIQUE</span>
                 </div>
               </div>
             ))}
@@ -100,7 +100,7 @@ export function DashboardView({ products, movements, onNewProduct, onNewMovement
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>{p.stock_current} / min. {p.stock_minimum} {p.unit}</span>
-                  <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full" style={{ color:"#f59e0b",background:"rgba(245,158,11,0.12)",border:"1px solid rgba(245,158,11,0.25)" }}>FAIBLE</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ color:"#f59e0b",background:"rgba(245,158,11,0.12)",border:"1px solid rgba(245,158,11,0.25)" }}>FAIBLE</span>
                 </div>
               </div>
             ))}

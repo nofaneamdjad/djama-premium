@@ -148,7 +148,7 @@ export default function ListeDocuments() {
             {/* En-tête tableau */}
             <div className="hidden grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 border-b border-white/6 bg-white/4 px-6 py-3 sm:grid">
               {["Type", "Client / Numéro", "Date", "Montant TTC", ""].map((h) => (
-                <span key={h} className="text-[0.6rem] font-bold uppercase tracking-widest text-white/25">{h}</span>
+                <span key={h} className="text-xs font-bold uppercase tracking-widest text-white/25">{h}</span>
               ))}
             </div>
 
@@ -163,7 +163,7 @@ export default function ListeDocuments() {
                 {/* Type + statut */}
                 <div className="flex items-center gap-2">
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.65rem] font-bold"
+                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
                     style={{
                       background: `${TYPE_COLOR[doc.type] ?? "#c9a55a"}15`,
                       color:      TYPE_COLOR[doc.type] ?? "#c9a55a",
@@ -174,7 +174,7 @@ export default function ListeDocuments() {
                     {TYPE_LABEL[doc.type] ?? doc.type}
                   </span>
                   <span
-                    className="hidden rounded-full px-2 py-0.5 text-[0.58rem] font-bold sm:inline"
+                    className="hidden rounded-full px-2 py-0.5 text-[11px] font-bold sm:inline"
                     style={{
                       color:      STATUT_COLOR[doc.statut] ?? "#94a3b8",
                       background: `${STATUT_COLOR[doc.statut] ?? "#94a3b8"}18`,

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -354,7 +354,7 @@ export default function PaieRHPage() {
         {/* ── HEADER ── */}
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className={`mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] ${isDark ? "text-white/30" : "text-gray-400"}`}>Ressources Humaines</p>
+            <p className={`mb-1 text-xs font-bold uppercase tracking-[0.18em] ${isDark ? "text-white/30" : "text-gray-400"}`}>Ressources Humaines</p>
             <h1 className={`text-2xl font-black sm:text-3xl ${isDark ? "text-white" : "text-gray-900"}`}>Paie & RH</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -365,7 +365,7 @@ export default function PaieRHPage() {
                 { id: "dashboard", label: "Tableau RH",  icon: BarChart2  },
               ] as const).map(({ id, label, icon: Icon }) => (
                 <button key={id} onClick={() => setView(id)}
-                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[0.68rem] font-bold transition ${
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
                     view === id
                       ? isDark ? "bg-white/12 text-white" : "bg-white text-gray-900 shadow-sm"
                       : isDark ? "text-white/35 hover:text-white/60" : "text-gray-400 hover:text-gray-700"
@@ -376,7 +376,7 @@ export default function PaieRHPage() {
             </div>
             {actifs.length > 0 && (
               <button onClick={exportDSN}
-                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[0.72rem] font-bold transition ${isDark ? "border border-white/8 bg-white/4 text-white/50 hover:text-white/80" : "border border-black/8 bg-white text-gray-500 hover:text-gray-800"}`}>
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-bold transition ${isDark ? "border border-white/8 bg-white/4 text-white/50 hover:text-white/80" : "border border-black/8 bg-white text-gray-500 hover:text-gray-800"}`}>
                 <Download size={13} /> Export DSN
               </button>
             )}
@@ -401,7 +401,7 @@ export default function PaieRHPage() {
               <p className="mb-2 text-2xl font-black" style={{ color }}>{value}</p>
               <div className="flex items-center gap-1.5">
                 <Icon size={11} style={{ color }} className="opacity-70" />
-                <p className={`text-[0.65rem] font-semibold ${mut}`}>{label}</p>
+                <p className={`text-xs font-semibold ${mut}`}>{label}</p>
               </div>
             </div>
           ))}
@@ -417,7 +417,7 @@ export default function PaieRHPage() {
                 </div>
                 <div>
                   <p className={`text-xs font-bold ${isDark ? "text-white" : "text-gray-800"}`}>Déclaration URSSAF du mois</p>
-                  <p className={`text-[0.6rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>{new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</p>
+                  <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>{new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -426,7 +426,7 @@ export default function PaieRHPage() {
                 </span>
                 <button
                   onClick={() => toggleUrssafDone(currentMonthKey)}
-                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.72rem] font-bold transition ${
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-bold transition ${
                     urssafDone.includes(currentMonthKey)
                       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                       : isDark ? "border-white/10 bg-white/4 text-white/40 hover:text-white/70" : "border-black/10 bg-black/[0.03] text-[#0e1420]/40 hover:text-[#0e1420]/70"
@@ -445,17 +445,17 @@ export default function PaieRHPage() {
               ].map(({ label, value, color }) => (
                 <div key={label} className="px-4 py-3">
                   <p className="text-sm font-black" style={{ color }}>{value}</p>
-                  <p className={`mt-0.5 text-[0.58rem] leading-snug ${faint}`}>{label}</p>
+                  <p className={`mt-0.5 text-[11px] leading-snug ${faint}`}>{label}</p>
                 </div>
               ))}
             </div>
             {/* Historique déclarations */}
             <div className={`border-t px-5 py-3 ${isDark ? "border-white/[0.05]" : "border-black/[0.05]"}`}>
-              <p className={`mb-2 text-[0.58rem] font-bold uppercase tracking-widest ${faint}`}>Suivi déclarations</p>
+              <p className={`mb-2 text-[11px] font-bold uppercase tracking-widest ${faint}`}>Suivi déclarations</p>
               <div className="flex flex-wrap gap-2">
                 {last3Months.map(({ key, label }) => (
                   <button key={key} onClick={() => toggleUrssafDone(key)}
-                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[0.62rem] font-semibold transition ${
+                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
                       urssafDone.includes(key)
                         ? "border-emerald-500/25 bg-emerald-500/8 text-emerald-400"
                         : isDark ? "border-white/[0.08] bg-white/[0.04] text-white/30 hover:text-white/50" : "border-black/[0.08] bg-black/[0.03] text-[#0e1420]/30 hover:text-[#0e1420]/50"
@@ -466,11 +466,11 @@ export default function PaieRHPage() {
                 ))}
               </div>
               <div className="mt-2.5 flex items-center justify-between">
-                <p className={`text-[0.6rem] ${faint}`}>
+                <p className={`text-xs ${faint}`}>
                   Échéance : {(() => { const d = new Date(); d.setMonth(d.getMonth() + 1); d.setDate(15); return d.toLocaleDateString("fr-FR"); })()}
                 </p>
                 <button onClick={exportDSN}
-                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.62rem] font-semibold transition ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white/50 hover:text-white/80" : "border-black/[0.08] bg-black/[0.03] text-[#0e1420]/50 hover:text-[#0e1420]/80"}`}>
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${isDark ? "border-white/[0.08] bg-white/[0.04] text-white/50 hover:text-white/80" : "border-black/[0.08] bg-black/[0.03] text-[#0e1420]/50 hover:text-[#0e1420]/80"}`}>
                   <Download size={10} /> Exporter DSN
                 </button>
               </div>
@@ -504,7 +504,7 @@ export default function PaieRHPage() {
                       const pct = Math.round((count / actifs.length) * 100);
                       return (
                         <div key={contrat}>
-                          <div className="mb-1.5 flex items-center justify-between text-[0.7rem]">
+                          <div className="mb-1.5 flex items-center justify-between text-xs">
                             <div className="flex items-center gap-2">
                               <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
                               <span className={`font-semibold ${sec}`}>{contrat}</span>
@@ -551,8 +551,8 @@ export default function PaieRHPage() {
                   <div key={label} className={`relative overflow-hidden rounded-2xl border p-5 ${card}`}>
                     <div className="pointer-events-none absolute -right-4 -top-4 h-16 w-16 rounded-full opacity-10 blur-xl" style={{ background: color }} />
                     <p className="text-lg font-black" style={{ color }}>{value}</p>
-                    <p className={`mt-1 text-[0.68rem] font-semibold ${mut}`}>{label}</p>
-                    <p className={`mt-0.5 text-[0.6rem] ${faint}`}>{sub}</p>
+                    <p className={`mt-1 text-xs font-semibold ${mut}`}>{label}</p>
+                    <p className={`mt-0.5 text-xs ${faint}`}>{sub}</p>
                   </div>
                 ))}
               </div>
@@ -566,18 +566,18 @@ export default function PaieRHPage() {
                   <div className={`divide-y ${div5}`}>
                     {[...actifs].sort((a, b) => b.salaire_brut - a.salaire_brut).slice(0, 5).map((e, i) => (
                       <div key={e.id} className="flex items-center gap-4 px-5 py-3">
-                        <span className={`w-5 text-[0.65rem] font-black ${faint}`}>#{i + 1}</span>
+                        <span className={`w-5 text-xs font-black ${faint}`}>#{i + 1}</span>
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-black text-white"
                           style={{ background: avatarGradient(e.id) }}>
                           {e.nom[0].toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className={`truncate text-[0.78rem] font-bold ${sec}`}>{e.nom}</p>
-                          <p className={`text-[0.62rem] ${mut}`}>{e.poste ?? e.type_contrat}</p>
+                          <p className={`truncate text-sm font-bold ${sec}`}>{e.nom}</p>
+                          <p className={`text-xs ${mut}`}>{e.poste ?? e.type_contrat}</p>
                         </div>
                         <div className="shrink-0 text-right">
-                          <p className="text-[0.78rem] font-black text-[#c9a55a]">{fmt(e.salaire_brut)}</p>
-                          <p className={`text-[0.6rem] ${faint}`}>brut</p>
+                          <p className="text-sm font-black text-[#c9a55a]">{fmt(e.salaire_brut)}</p>
+                          <p className={`text-xs ${faint}`}>brut</p>
                         </div>
                       </div>
                     ))}
@@ -590,7 +590,7 @@ export default function PaieRHPage() {
                 <div className={`border-b px-5 py-4 flex items-center justify-between ${isDark ? "border-white/[0.06]" : "border-black/[0.06]"}`}>
                   <div>
                     <p className={`text-xs font-bold ${pri}`}>Bulletins du mois</p>
-                    <p className={`text-[0.6rem] ${faint}`}>
+                    <p className={`text-xs ${faint}`}>
                       {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })} —{" "}
                       {actifs.filter(e => (bulletinHist[e.id] ?? []).includes(currentMonthKey)).length}/{actifs.length} générés
                     </p>
@@ -614,16 +614,16 @@ export default function PaieRHPage() {
                           {e.nom[0].toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className={`truncate text-[0.78rem] font-bold ${sec}`}>{e.nom}</p>
-                          <p className={`text-[0.62rem] ${mut}`}>{fmt(e.salaire_brut)} brut</p>
+                          <p className={`truncate text-sm font-bold ${sec}`}>{e.nom}</p>
+                          <p className={`text-xs ${mut}`}>{fmt(e.salaire_brut)} brut</p>
                         </div>
                         {done ? (
-                          <div className="flex items-center gap-1.5 text-[0.65rem] font-bold text-emerald-400">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
                             <CheckCircle2 size={12} /> Généré
                           </div>
                         ) : (
                           <button onClick={() => handleGenerateBulletin(e)}
-                            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[0.65rem] font-bold transition ${isDark ? "border-white/[0.08] bg-white/[0.05] text-white/45 hover:text-white/80" : "border-black/[0.08] bg-black/[0.03] text-[#0e1420]/45 hover:text-[#0e1420]/80"}`}>
+                            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold transition ${isDark ? "border-white/[0.08] bg-white/[0.05] text-white/45 hover:text-white/80" : "border-black/[0.08] bg-black/[0.03] text-[#0e1420]/45 hover:text-[#0e1420]/80"}`}>
                             <FileText size={11} /> Générer
                           </button>
                         )}
@@ -656,7 +656,7 @@ export default function PaieRHPage() {
                     const active = filter === k;
                     return (
                       <button key={k} onClick={() => setFilter(k)}
-                        className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-[0.68rem] font-bold transition-all ${
+                        className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                           active ? "text-white" : isDark ? "border border-white/[0.08] bg-white/[0.04] text-white/40 hover:text-white/70" : "border border-black/[0.08] bg-black/[0.03] text-[#0e1420]/40 hover:text-[#0e1420]/70"
                         }`}
                         style={active && s
@@ -718,10 +718,10 @@ export default function PaieRHPage() {
                             <div className="flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5"
                               style={{ background: c.bg, borderColor: c.border }}>
                               <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.color, boxShadow: `0 0 6px ${c.color}` }} />
-                              <span className="text-[0.62rem] font-bold" style={{ color: c.color }}>{e.type_contrat}</span>
+                              <span className="text-xs font-bold" style={{ color: c.color }}>{e.type_contrat}</span>
                             </div>
                             {bulletinCeMois && (
-                              <span className="flex items-center gap-1 text-[0.55rem] font-bold text-emerald-400">
+                              <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
                                 <CheckCircle2 size={9} /> Bulletin émis
                               </span>
                             )}
@@ -738,14 +738,14 @@ export default function PaieRHPage() {
                             { label: "Charges", value: fmt(charges),        color: "text-red-400"  },
                           ].map(({ label, value, color }) => (
                             <div key={label} className={`rounded-xl px-2.5 py-2 text-center ${isDark ? "bg-white/[0.05]" : "bg-black/[0.04]"}`}>
-                              <p className={`text-[0.7rem] font-bold ${color}`}>{value}</p>
-                              <p className={`mt-0.5 text-[0.55rem] font-semibold ${faint}`}>{label}</p>
+                              <p className={`text-xs font-bold ${color}`}>{value}</p>
+                              <p className={`mt-0.5 text-[11px] font-semibold ${faint}`}>{label}</p>
                             </div>
                           ))}
                         </div>
 
                         <div className="mt-3">
-                          <div className={`mb-1 flex justify-between text-[0.55rem] ${faint}`}>
+                          <div className={`mb-1 flex justify-between text-[11px] ${faint}`}>
                             <span>Net {netPct}%</span><span>Charges {100 - netPct}%</span>
                           </div>
                           <div className={`h-1.5 overflow-hidden rounded-full ${bar}`}>
@@ -756,11 +756,11 @@ export default function PaieRHPage() {
 
                         <div className={`mt-4 flex items-center justify-between border-t pt-3 ${isDark ? "border-white/[0.05]" : "border-black/[0.05]"}`}>
                           {e.date_embauche ? (
-                            <p className={`flex items-center gap-1 text-[0.6rem] ${faint}`}>
+                            <p className={`flex items-center gap-1 text-xs ${faint}`}>
                               <Calendar size={9} /> {new Date(e.date_embauche).toLocaleDateString("fr-FR")}
                             </p>
                           ) : <span />}
-                          <div className={`flex items-center gap-1 text-[0.6rem] font-semibold transition ${faint} group-hover:${mut}`}>
+                          <div className={`flex items-center gap-1 text-xs font-semibold transition ${faint} group-hover:${mut}`}>
                             Voir <ArrowUpRight size={10} />
                           </div>
                         </div>
@@ -797,7 +797,7 @@ export default function PaieRHPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => handleGenerateBulletin(drawer)}
-                      className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.68rem] font-semibold transition ${isDark ? "border-white/10 bg-white/[0.06] text-white/60 hover:border-white/20 hover:text-white/90" : "border-black/10 bg-black/[0.04] text-[#0e1420]/60 hover:border-black/20 hover:text-[#0e1420]/90"}`}>
+                      className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${isDark ? "border-white/10 bg-white/[0.06] text-white/60 hover:border-white/20 hover:text-white/90" : "border-black/10 bg-black/[0.04] text-[#0e1420]/60 hover:border-black/20 hover:text-[#0e1420]/90"}`}>
                       <FileText size={11} /> Bulletin PDF
                     </button>
                     <button onClick={() => del(drawer.id, drawer.nom)}
@@ -815,14 +815,14 @@ export default function PaieRHPage() {
                 <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1"
                   style={{ background: CONTRAT[drawer.type_contrat]?.bg, borderColor: CONTRAT[drawer.type_contrat]?.border }}>
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: CONTRAT[drawer.type_contrat]?.color }} />
-                  <span className="text-[0.62rem] font-bold" style={{ color: CONTRAT[drawer.type_contrat]?.color }}>{drawer.type_contrat}</span>
+                  <span className="text-xs font-bold" style={{ color: CONTRAT[drawer.type_contrat]?.color }}>{drawer.type_contrat}</span>
                 </div>
 
                 {/* Tabs */}
                 <div className={`mt-4 flex gap-0.5 rounded-xl border p-1 ${isDark ? "border-white/[0.06] bg-white/[0.04]" : "border-black/[0.08] bg-black/[0.03]"}`}>
                   {(["salaire", "absences", "urssaf", "historique"] as const).map(tab => (
                     <button key={tab} onClick={() => setDrawerTab(tab)}
-                      className={`flex-1 rounded-lg px-2 py-1.5 text-[0.6rem] font-bold capitalize transition ${
+                      className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold capitalize transition ${
                         drawerTab === tab
                           ? isDark ? "bg-white/12 text-white" : "bg-white text-[#0e1420] shadow-sm"
                           : isDark ? "text-white/35 hover:text-white/60" : "text-[#0e1420]/35 hover:text-[#0e1420]/60"
@@ -841,7 +841,7 @@ export default function PaieRHPage() {
                   <>
                     <div className={`overflow-hidden rounded-2xl border ${card}`}>
                       <div className={`border-b px-4 py-3 ${isDark ? "border-white/[0.06]" : "border-black/[0.06]"}`}>
-                        <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${faint}`}>Cotisations salariales 2024</p>
+                        <p className={`text-xs font-bold uppercase tracking-widest ${faint}`}>Cotisations salariales 2024</p>
                       </div>
                       <div className={`divide-y ${div5}`}>
                         <div className="flex items-center justify-between px-4 py-2.5">
@@ -851,8 +851,8 @@ export default function PaieRHPage() {
                         {COT_SAL.filter(c => c.pct > 0).map(c => (
                           <div key={c.label} className="flex items-center justify-between px-4 py-2">
                             <div>
-                              <p className={`text-[0.68rem] ${mut}`}>{c.label}</p>
-                              <p className={`text-[0.58rem] ${faint}`}>{c.pct}% du brut</p>
+                              <p className={`text-xs ${mut}`}>{c.label}</p>
+                              <p className={`text-[11px] ${faint}`}>{c.pct}% du brut</p>
                             </div>
                             <p className="text-xs font-semibold text-amber-400">− {fmt2(drawer.salaire_brut * c.pct / 100)}</p>
                           </div>
@@ -868,14 +868,14 @@ export default function PaieRHPage() {
 
                     <div className={`overflow-hidden rounded-2xl border ${card}`}>
                       <div className={`border-b px-4 py-3 ${isDark ? "border-white/[0.06]" : "border-black/[0.06]"}`}>
-                        <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${faint}`}>Charges patronales</p>
+                        <p className={`text-xs font-bold uppercase tracking-widest ${faint}`}>Charges patronales</p>
                       </div>
                       <div className={`divide-y ${div5}`}>
                         {COT_PAT.map(c => (
                           <div key={c.label} className="flex items-center justify-between px-4 py-2">
                             <div>
-                              <p className={`text-[0.68rem] ${mut}`}>{c.label}</p>
-                              <p className={`text-[0.58rem] ${faint}`}>{c.pct}%</p>
+                              <p className={`text-xs ${mut}`}>{c.label}</p>
+                              <p className={`text-[11px] ${faint}`}>{c.pct}%</p>
                             </div>
                             <p className="text-xs font-semibold text-red-400">{fmt2(drawer.salaire_brut * c.pct / 100)}</p>
                           </div>
@@ -904,7 +904,7 @@ export default function PaieRHPage() {
                       const patPct = 100 - netPct - salPct;
                       return (
                         <div className={`rounded-2xl border p-4 ${card}`}>
-                          <p className={`mb-3 text-[0.6rem] font-bold uppercase tracking-widest ${faint}`}>Répartition du coût total</p>
+                          <p className={`mb-3 text-xs font-bold uppercase tracking-widest ${faint}`}>Répartition du coût total</p>
                           <div className="flex h-3 overflow-hidden rounded-full">
                             <div className="bg-emerald-500" style={{ width: `${netPct}%` }} />
                             <div className="bg-amber-500/80" style={{ width: `${salPct}%` }} />
@@ -918,7 +918,7 @@ export default function PaieRHPage() {
                             ].map(({ l, p, c }) => (
                               <div key={l} className="flex items-center gap-1.5">
                                 <span className={`h-2 w-2 rounded-full ${c}`} />
-                                <span className={`text-[0.58rem] ${faint}`}>{l} {p}%</span>
+                                <span className={`text-[11px] ${faint}`}>{l} {p}%</span>
                               </div>
                             ))}
                           </div>
@@ -930,7 +930,7 @@ export default function PaieRHPage() {
                       <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${card}`}>
                         <Calendar size={13} className={`shrink-0 ${faint}`} />
                         <div>
-                          <p className={`text-[0.58rem] font-bold uppercase tracking-widest ${faint}`}>Embauché le</p>
+                          <p className={`text-[11px] font-bold uppercase tracking-widest ${faint}`}>Embauché le</p>
                           <p className={`text-sm font-semibold ${sec}`}>
                             {new Date(drawer.date_embauche).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
                           </p>
@@ -943,7 +943,7 @@ export default function PaieRHPage() {
                 {/* ── Onglet Absences ── */}
                 {drawerTab === "absences" && (
                   <div className="space-y-3">
-                    <p className={`text-[0.62rem] ${faint}`}>Soldes de l&apos;année en cours — cliquez +/− pour ajuster</p>
+                    <p className={`text-xs ${faint}`}>Soldes de l&apos;année en cours — cliquez +/− pour ajuster</p>
                     {([
                       { field: "cp"      as const, label: "Congés payés",   sub: "25 jours/an légal",      icon: Plane,        color: "#60a5fa" },
                       { field: "rtt"     as const, label: "RTT",            sub: "Selon accord collectif", icon: SunMedium,    color: "#a78bfa" },
@@ -958,7 +958,7 @@ export default function PaieRHPage() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className={`text-xs font-bold ${sec}`}>{label}</p>
-                            <p className={`text-[0.58rem] ${faint}`}>{sub}</p>
+                            <p className={`text-[11px] ${faint}`}>{sub}</p>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
                             <button onClick={() => updateAbsence(drawer.id, field, -1)}
@@ -971,7 +971,7 @@ export default function PaieRHPage() {
                       );
                     })}
                     <div className={`rounded-2xl border p-4 text-center ${card}`}>
-                      <p className={`mb-2 text-[0.6rem] ${faint}`}>Impact estimé sur le bulletin</p>
+                      <p className={`mb-2 text-xs ${faint}`}>Impact estimé sur le bulletin</p>
                       {(() => {
                         const abs = absences[drawer.id] ?? { cp: 0, rtt: 0, maladie: 0 };
                         const totalJours = abs.cp + abs.rtt + abs.maladie;
@@ -989,12 +989,12 @@ export default function PaieRHPage() {
                 {/* ── Onglet URSSAF ── */}
                 {drawerTab === "urssaf" && (
                   <div className="space-y-3">
-                    <p className={`text-[0.62rem] ${faint}`}>
+                    <p className={`text-xs ${faint}`}>
                       Récapitulatif déclaratif — {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
                     </p>
                     <div className={`overflow-hidden rounded-2xl border border-[rgba(249,115,22,0.2)] ${isDark ? "bg-[rgba(249,115,22,0.04)]" : "bg-[rgba(249,115,22,0.03)]"}`}>
                       <div className={`border-b px-4 py-3 ${isDark ? "border-white/[0.06]" : "border-black/[0.06]"}`}>
-                        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-orange-400">Cotisations à déclarer</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-orange-400">Cotisations à déclarer</p>
                       </div>
                       <div className={`divide-y ${div5}`}>
                         {[
@@ -1007,7 +1007,7 @@ export default function PaieRHPage() {
                           { label: "Formation + taxe apprent.", amount: drawer.salaire_brut * (0.55 + 0.68) / 100 },
                         ].map(({ label, amount }) => (
                           <div key={label} className="flex items-center justify-between px-4 py-2.5">
-                            <p className={`text-[0.68rem] ${mut}`}>{label}</p>
+                            <p className={`text-xs ${mut}`}>{label}</p>
                             <p className="text-xs font-bold text-orange-400">{fmt2(amount)}</p>
                           </div>
                         ))}
@@ -1024,7 +1024,7 @@ export default function PaieRHPage() {
                     </div>
                     <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${card}`}>
                       <AlertCircle size={13} className="shrink-0 text-orange-400" />
-                      <p className={`text-[0.62rem] leading-relaxed ${mut}`}>
+                      <p className={`text-xs leading-relaxed ${mut}`}>
                         Échéance DSN : 5 ou 15 du mois suivant selon l&apos;effectif. Taux indicatifs base 2024.
                       </p>
                     </div>
@@ -1038,7 +1038,7 @@ export default function PaieRHPage() {
                 {/* ── Onglet Historique ── */}
                 {drawerTab === "historique" && (
                   <div className="space-y-3">
-                    <p className={`text-[0.62rem] ${faint}`}>Bulletins générés depuis cette interface</p>
+                    <p className={`text-xs ${faint}`}>Bulletins générés depuis cette interface</p>
                     {(bulletinHist[drawer.id] ?? []).length === 0 ? (
                       <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
                         <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${card}`}>
@@ -1049,14 +1049,14 @@ export default function PaieRHPage() {
                           <p className={`mt-0.5 text-xs ${faint}`}>Les bulletins apparaîtront ici après génération</p>
                         </div>
                         <button onClick={() => handleGenerateBulletin(drawer)}
-                          className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-[0.72rem] font-bold transition ${isDark ? "border-white/10 bg-white/[0.06] text-white/50 hover:text-white/80" : "border-black/10 bg-black/[0.04] text-[#0e1420]/50 hover:text-[#0e1420]/80"}`}>
+                          className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition ${isDark ? "border-white/10 bg-white/[0.06] text-white/50 hover:text-white/80" : "border-black/10 bg-black/[0.04] text-[#0e1420]/50 hover:text-[#0e1420]/80"}`}>
                           <FileText size={12} /> Générer le premier bulletin
                         </button>
                       </div>
                     ) : (
                       <div className={`overflow-hidden rounded-2xl border ${card}`}>
                         <div className={`border-b px-4 py-3 ${isDark ? "border-white/[0.06]" : "border-black/[0.06]"}`}>
-                          <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${faint}`}>
+                          <p className={`text-xs font-bold uppercase tracking-widest ${faint}`}>
                             {(bulletinHist[drawer.id] ?? []).length} bulletin(s) au total
                           </p>
                         </div>
@@ -1072,12 +1072,12 @@ export default function PaieRHPage() {
                                     <CheckCircle2 size={13} className="text-emerald-400" />
                                   </div>
                                   <div>
-                                    <p className={`text-[0.72rem] font-bold capitalize ${sec}`}>{label}</p>
-                                    <p className={`text-[0.6rem] ${faint}`}>{fmt(drawer.salaire_brut)} brut</p>
+                                    <p className={`text-sm font-bold capitalize ${sec}`}>{label}</p>
+                                    <p className={`text-xs ${faint}`}>{fmt(drawer.salaire_brut)} brut</p>
                                   </div>
                                 </div>
                                 <button onClick={() => handleGenerateBulletin(drawer)}
-                                  className={`flex items-center gap-1 text-[0.62rem] font-semibold transition ${faint} hover:${mut}`}>
+                                  className={`flex items-center gap-1 text-xs font-semibold transition ${faint} hover:${mut}`}>
                                   <FileText size={10} /> Regénérer
                                 </button>
                               </div>
@@ -1110,7 +1110,7 @@ export default function PaieRHPage() {
                     </div>
                     <div>
                       <h2 className={`text-sm font-bold ${pri}`}>Ajouter un employé</h2>
-                      <p className={`text-[0.62rem] ${faint}`}>Remplis les informations du collaborateur</p>
+                      <p className={`text-xs ${faint}`}>Remplis les informations du collaborateur</p>
                     </div>
                   </div>
                   <button onClick={() => setShowForm(false)}
@@ -1128,7 +1128,7 @@ export default function PaieRHPage() {
                   { key: "date_embauche", label: "Date d\'embauche",           placeholder: "",             type: "date"   },
                 ].map(({ key, label, placeholder, type }) => (
                   <div key={key}>
-                    <label className={`mb-1.5 block text-[0.68rem] font-semibold ${mut}`}>{label}</label>
+                    <label className={`mb-1.5 block text-xs font-semibold ${mut}`}>{label}</label>
                     <input type={type} placeholder={placeholder}
                       value={form[key as keyof typeof form]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
@@ -1138,7 +1138,7 @@ export default function PaieRHPage() {
                 ))}
 
                 <div>
-                  <label className={`mb-2 block text-[0.68rem] font-semibold ${mut}`}>Type de contrat</label>
+                  <label className={`mb-2 block text-xs font-semibold ${mut}`}>Type de contrat</label>
                   <div className="flex flex-wrap gap-2">
                     {CONTRATS.map(c => {
                       const s = CONTRAT[c];
@@ -1160,11 +1160,11 @@ export default function PaieRHPage() {
 
                 {form.salaire_brut && !isNaN(parseFloat(form.salaire_brut)) && parseFloat(form.salaire_brut) > 0 && (
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3">
-                    <div className="flex items-center justify-between text-[0.72rem]">
+                    <div className="flex items-center justify-between text-sm">
                       <span className="font-semibold text-emerald-400">Net estimé</span>
                       <span className="font-black text-emerald-400">{fmt(calcNet(parseFloat(form.salaire_brut)))}</span>
                     </div>
-                    <div className="mt-1 flex items-center justify-between text-[0.68rem]">
+                    <div className="mt-1 flex items-center justify-between text-xs">
                       <span className={faint}>Charges patronales</span>
                       <span className="font-semibold text-red-400">{fmt(calcCharges(parseFloat(form.salaire_brut)))}</span>
                     </div>

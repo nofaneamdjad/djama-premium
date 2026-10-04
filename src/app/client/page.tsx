@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
@@ -321,7 +321,7 @@ export default function CockpitPage() {
             <div className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition hover:opacity-90"
               style={{ background: "rgba(201,165,90,0.05)", border: "1px solid rgba(201,165,90,0.18)" }}>
               <Crown size={13} style={{ color: GOLD }} />
-              <span className="text-[0.8rem] font-semibold" style={{ color: GOLD }}>Passez à DJAMA PRO</span>
+              <span className="text-sm font-semibold" style={{ color: GOLD }}>Passez à DJAMA PRO</span>
               <span className="text-xs" style={{ color: t.text4 }}>· Débloquez tous les modules · 11,90€/mois</span>
               <ChevronRight size={12} className="ml-auto shrink-0" style={{ color: GOLD, opacity: 0.5 }} />
             </div>
@@ -446,10 +446,10 @@ export default function CockpitPage() {
                       <div className="flex items-center gap-3 px-3.5 py-3 transition hover:bg-white/5">
                         <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg"
                           style={{ background: "rgba(79,70,229,0.10)" }}>
-                          <span className="text-[0.42rem] font-bold uppercase leading-none" style={{ color: "#818cf8" }}>
+                          <span className="text-[10px] font-bold uppercase leading-none" style={{ color: "#818cf8" }}>
                             {new Date(nextEvent.start_at).toLocaleDateString("fr-FR", { month: "short" })}
                           </span>
-                          <span className="text-[0.9rem] font-semibold leading-tight tabular-nums" style={{ color: "#818cf8" }}>
+                          <span className="text-sm font-semibold leading-tight tabular-nums" style={{ color: "#818cf8" }}>
                             {new Date(nextEvent.start_at).getDate()}
                           </span>
                         </div>
@@ -500,7 +500,7 @@ export default function CockpitPage() {
                             Facture · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                           </p>
                         </div>
-                        <span className="shrink-0 text-[0.875rem] font-bold tabular-nums" style={{ color: t.text }}>{fmtEurInt(lastFac.montant_ttc)}</span>
+                        <span className="shrink-0 text-sm font-bold tabular-nums" style={{ color: t.text }}>{fmtEurInt(lastFac.montant_ttc)}</span>
                       </div>
                     </Link>
                   )}
@@ -520,7 +520,7 @@ export default function CockpitPage() {
                             Dépense · {new Date(lastExpense.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                           </p>
                         </div>
-                        <span className="shrink-0 text-[0.875rem] font-bold tabular-nums text-red-400">−{fmtEurInt(lastExpense.amount)}</span>
+                        <span className="shrink-0 text-sm font-bold tabular-nums text-red-400">−{fmtEurInt(lastExpense.amount)}</span>
                       </div>
                     </Link>
                   )}
@@ -555,7 +555,7 @@ export default function CockpitPage() {
                   <div className="ml-2 flex-1 h-1 overflow-hidden rounded-full" style={{ background: t.bgSubtle }}>
                     <div className="h-full rounded-full" style={{ width: `${([true, false, nbContacts > 0, nbFacturesPend > 0].filter(Boolean).length / 4) * 100}%`, background: GOLD, transition: "width 0.6s ease" }} />
                   </div>
-                  <span className="text-[0.58rem] font-bold" style={{ color: GOLD }}>
+                  <span className="text-[11px] font-bold" style={{ color: GOLD }}>
                     {[true, false, nbContacts > 0, nbFacturesPend > 0].filter(Boolean).length}/4
                   </span>
                 </div>
@@ -573,14 +573,14 @@ export default function CockpitPage() {
                         style={{ background: step.done ? "rgba(34,197,94,0.12)" : "rgba(201,165,90,0.10)" }}>
                         {step.done
                           ? <CheckCircle2 size={11} className="text-emerald-500" />
-                          : <span className="text-[0.5rem] font-bold" style={{ color: GOLD }}>{i + 1}</span>}
+                          : <span className="text-[10px] font-bold" style={{ color: GOLD }}>{i + 1}</span>}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold leading-tight"
                           style={{ color: step.done ? t.text4 : t.text, textDecoration: step.done ? "line-through" : "none" }}>
                           {step.label}
                         </p>
-                        <p className="text-[0.6rem]" style={{ color: t.text4 }}>{step.sub}</p>
+                        <p className="text-xs" style={{ color: t.text4 }}>{step.sub}</p>
                       </div>
                       {!step.done && step.href && <ChevronRight size={11} style={{ color: t.text4 }} />}
                     </div>
@@ -671,7 +671,7 @@ export default function CockpitPage() {
                         >
                           <Icon size={20} style={{ color: t.text3 }} strokeWidth={1.6} />
                         </div>
-                        <span className="w-full truncate text-center text-[0.7rem] font-semibold" style={{ color: t.text3 }}>
+                        <span className="w-full truncate text-center text-xs font-semibold" style={{ color: t.text3 }}>
                           {qa.label}
                         </span>
                       </div>
@@ -724,7 +724,7 @@ export default function CockpitPage() {
           <div className="mt-10 flex justify-center">
             <Link
               href="/client/abonnements"
-              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.75rem] font-bold transition hover:opacity-90"
+              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition hover:opacity-90"
               style={{ background: GOLD, color: "#0a0a0a" }}
             >
               <Crown size={12} /> Passer à DJAMA PRO — 11,90€/mois
@@ -760,7 +760,7 @@ export default function CockpitPage() {
                   <X size={13} style={{ color: t.text3 }} />
                 </button>
               </div>
-              <p className="mb-4 text-[0.65rem]" style={{ color: t.text3 }}>
+              <p className="mb-4 text-xs" style={{ color: t.text3 }}>
                 Choisissez jusqu&apos;à <strong>6 modules</strong> à afficher en accès rapide
               </p>
 
@@ -803,7 +803,7 @@ export default function CockpitPage() {
                           </div>
                         )}
                       </div>
-                      <span className="line-clamp-2 px-0.5 text-center text-[0.58rem] font-semibold leading-tight"
+                      <span className="line-clamp-2 px-0.5 text-center text-[11px] font-semibold leading-tight"
                         style={{ color: selected ? t.text : t.text3 }}>
                         {app.name}
                       </span>
@@ -819,13 +819,13 @@ export default function CockpitPage() {
                       style={{ background: i < pickerDraft.length ? "#22c55e" : t.bgSubtle }} />
                   ))}
                 </div>
-                <span className="text-[0.6rem] font-bold" style={{ color: t.text4 }}>{pickerDraft.length}/6</span>
+                <span className="text-xs font-bold" style={{ color: t.text4 }}>{pickerDraft.length}/6</span>
               </div>
 
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => setPickerDraft(DEFAULT_QA)}
-                  className="flex-1 rounded-xl py-2.5 text-[0.72rem] font-semibold transition hover:opacity-80"
+                  className="flex-1 rounded-xl py-2.5 text-sm font-semibold transition hover:opacity-80"
                   style={{ background: t.bgSubtle, border: `1px solid ${t.border}`, color: t.text3 }}
                 >
                   Réinitialiser
@@ -837,7 +837,7 @@ export default function CockpitPage() {
                     await saveQuickActions(pickerDraft);
                   }}
                   disabled={pickerDraft.length === 0}
-                  className="flex-[2] rounded-xl py-2.5 text-[0.78rem] font-bold text-white transition"
+                  className="flex-[2] rounded-xl py-2.5 text-sm font-bold text-white transition"
                   style={{ background: pickerDraft.length === 0 ? "rgba(34,197,94,0.18)" : "#22c55e" }}
                 >
                   Enregistrer

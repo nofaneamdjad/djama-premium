@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -553,18 +553,18 @@ export default function ReseauxSociauxPage() {
           </div>
           <div>
             <h1 className={`text-base font-black ${text}`}>Réseaux Sociaux</h1>
-            <p className={`text-[0.6rem] ${muted}`}>{posts.length} publication{posts.length > 1 ? "s" : ""} · {kpis.planifiés} planifiée{kpis.planifiés > 1 ? "s" : ""}</p>
+            <p className={`text-xs ${muted}`}>{posts.length} publication{posts.length > 1 ? "s" : ""} · {kpis.planifiés} planifiée{kpis.planifiés > 1 ? "s" : ""}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {kpis.planifiés > 0 && (
-            <div className={`hidden sm:flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.65rem] ${isDark ? "border-blue-500/25 bg-blue-500/8 text-blue-400" : "border-blue-200 bg-blue-50 text-blue-600"}`}>
+            <div className={`hidden sm:flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs ${isDark ? "border-blue-500/25 bg-blue-500/8 text-blue-400" : "border-blue-200 bg-blue-50 text-blue-600"}`}>
               <Clock size={10} className="animate-pulse" />
               {kpis.planifiés} planifié{kpis.planifiés > 1 ? "s" : ""}
             </div>
           )}
           <button onClick={() => { setTab("creer"); setContent(""); setVariants({}); }}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.7rem] font-black transition hover:brightness-105"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition hover:brightness-105"
             style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
             <Plus size={13} /> Nouveau post
           </button>
@@ -578,7 +578,7 @@ export default function ReseauxSociauxPage() {
           const active = tab === n.key;
           return (
             <button key={n.key} onClick={() => setTab(n.key)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.67rem] font-bold transition-all ${active ? "" : `${muted} hover:opacity-70`}`}
+              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${active ? "" : `${muted} hover:opacity-70`}`}
               style={active ? { background: `${GOLD}15`, color: GOLD } : {}}>
               <n.icon size={11} />{n.label}
             </button>
@@ -607,7 +607,7 @@ export default function ReseauxSociauxPage() {
                     className={`flex-1 bg-transparent px-3 py-2.5 text-sm outline-none`}
                     placeholder="Décrivez votre idée ou sujet de publication…" />
                   <button onClick={() => void generateAI()} disabled={aiLoad}
-                    className={`shrink-0 flex items-center gap-1.5 m-1 rounded-lg px-3 py-1.5 text-[0.65rem] font-black disabled:opacity-40 transition hover:brightness-105`}
+                    className={`shrink-0 flex items-center gap-1.5 m-1 rounded-lg px-3 py-1.5 text-xs font-black disabled:opacity-40 transition hover:brightness-105`}
                     style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
                     {aiLoad ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
                     Générer
@@ -615,13 +615,13 @@ export default function ReseauxSociauxPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button onClick={() => void generateVariants()} disabled={variantsLoad}
-                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.65rem] font-bold disabled:opacity-40 ${card} ${muted} hover:opacity-70`}>
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold disabled:opacity-40 ${card} ${muted} hover:opacity-70`}>
                     {variantsLoad ? <Loader2 size={10} className="animate-spin" /> : <Layers size={10} />}
                     Variantes pour toutes les plateformes
                   </button>
                   <div className="relative">
                     <button onClick={() => setShowTones(s => !s)}
-                      className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.65rem] font-bold ${card} ${muted} hover:opacity-70`}>
+                      className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold ${card} ${muted} hover:opacity-70`}>
                       <RefreshCw size={10} /> Changer le ton
                     </button>
                     <AnimatePresence>
@@ -649,7 +649,7 @@ export default function ReseauxSociauxPage() {
                     const active = selPlatforms.includes(pf.id);
                     return (
                       <button key={pf.id} onClick={() => togglePlatform(pf.id)}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2 text-[0.65rem] font-bold transition"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-bold transition"
                         style={active ? { background: `${pf.color}22`, borderColor: `${pf.color}55`, color: pf.color }
                           : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)", color: isDark ? "rgba(255,255,255,0.3)" : "rgba(14,20,32,0.35)" }}>
                         <pf.Icon size={11} /><span className="hidden sm:inline">{pf.label}</span>
@@ -667,7 +667,7 @@ export default function ReseauxSociauxPage() {
                       const hasVariant = !!variants[pf]?.content;
                       return (
                         <button key={pf} onClick={() => setActivePlatform(pf)}
-                          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[0.6rem] font-bold transition"
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition"
                           style={isActive ? { background: `${pfCfg.color}20`, color: pfCfg.color } : {}}>
                           <pfCfg.Icon size={9} />
                           {pfCfg.label}
@@ -699,7 +699,7 @@ export default function ReseauxSociauxPage() {
 
                 {/* Hashtags */}
                 <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${inp}`}>
-                  <span className={`text-[0.65rem] font-bold shrink-0 ${muted}`}>#</span>
+                  <span className={`text-xs font-bold shrink-0 ${muted}`}>#</span>
                   <input value={hashtags} onChange={e => setHashtags(e.target.value)}
                     className="flex-1 bg-transparent text-sm outline-none" placeholder="#hashtag #motclé…" />
                 </div>
@@ -729,7 +729,7 @@ export default function ReseauxSociauxPage() {
                 )}
                 {mediaFiles.length < 4 && (
                   <button onClick={() => fileRef.current?.click()}
-                    className={`flex w-full items-center justify-center gap-2 rounded-xl border border-dashed py-2.5 text-[0.7rem] font-semibold transition ${isDark ? "border-white/12 text-white/35 hover:border-white/25" : "border-black/12 text-gray-400 hover:border-black/25"}`}>
+                    className={`flex w-full items-center justify-center gap-2 rounded-xl border border-dashed py-2.5 text-xs font-semibold transition ${isDark ? "border-white/12 text-white/35 hover:border-white/25" : "border-black/12 text-gray-400 hover:border-black/25"}`}>
                     <ImagePlus size={13} /> Ajouter des photos / vidéos
                   </button>
                 )}
@@ -771,7 +771,7 @@ export default function ReseauxSociauxPage() {
                     const pfCfg = PLATFORMS.find(p => p.id === pf)!;
                     return (
                       <button key={pf} onClick={() => setActivePlatform(pf)}
-                        className="rounded-lg px-2 py-1 text-[0.6rem] font-bold transition"
+                        className="rounded-lg px-2 py-1 text-xs font-bold transition"
                         style={activePlatform === pf ? { background: `${pfCfg.color}20`, color: pfCfg.color } : { color: isDark ? "rgba(255,255,255,0.3)" : "#aaa" }}>
                         {pfCfg.label}
                       </button>
@@ -806,7 +806,7 @@ export default function ReseauxSociauxPage() {
                 {/* Statuts */}
                 {([["tous","Tous"] as const, ...Object.entries(STATUS_CFG).map(([k, v]) => [k, v.label] as [string, string])]).map(([k, label]) => (
                   <button key={k} onClick={() => setFilterStatus(k as PostStatus | "tous")}
-                    className="rounded-xl border px-2.5 py-1 text-[0.62rem] font-bold transition"
+                    className="rounded-xl border px-2.5 py-1 text-xs font-bold transition"
                     style={filterStatus === k ? { background: `${GOLD}15`, borderColor: `${GOLD}30`, color: GOLD }
                       : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)", color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)" }}>
                     {label}
@@ -815,7 +815,7 @@ export default function ReseauxSociauxPage() {
                 <div className={`h-4 w-px ${isDark ? "bg-white/10" : "bg-black/10"} self-center mx-1`} />
                 {PLATFORMS.map(pf => (
                   <button key={pf.id} onClick={() => setFilterPlatform(filterPlatform === pf.id ? "tous" : pf.id)}
-                    className="flex items-center gap-1 rounded-xl border px-2.5 py-1 text-[0.62rem] font-bold transition"
+                    className="flex items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-bold transition"
                     style={filterPlatform === pf.id ? { background: `${pf.color}20`, borderColor: `${pf.color}40`, color: pf.color }
                       : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)", color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)" }}>
                     <pf.Icon size={9} />{pf.label}
@@ -844,11 +844,11 @@ export default function ReseauxSociauxPage() {
                     <motion.div key={post.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                       className={`rounded-2xl border p-4 space-y-2.5 ${card}`}>
                       <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[0.62rem] font-bold" style={{ color: pf.color, background: `${pf.color}18` }}>
+                        <span className="flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold" style={{ color: pf.color, background: `${pf.color}18` }}>
                           <pf.Icon size={9} />{pf.label}
                         </span>
-                        <span className="rounded-xl px-2.5 py-1 text-[0.62rem] font-bold" style={{ color: st.color, background: `${st.color}18` }}>{st.label}</span>
-                        {post.ai_generated && <span className={`text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"}`} style={{ color: GOLD }}>IA</span>}
+                        <span className="rounded-xl px-2.5 py-1 text-xs font-bold" style={{ color: st.color, background: `${st.color}18` }}>{st.label}</span>
+                        {post.ai_generated && <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"}`} style={{ color: GOLD }}>IA</span>}
                         <div className="ml-auto flex items-center gap-1">
                           {post.external_url && (
                             <a href={post.external_url} target="_blank" rel="noopener noreferrer"
@@ -859,7 +859,7 @@ export default function ReseauxSociauxPage() {
                         </div>
                       </div>
                       <p className={`text-sm leading-relaxed line-clamp-3 ${text}`}>{post.content}</p>
-                      {post.hashtags.length > 0 && <p className="text-[0.65rem] font-semibold" style={{ color: GOLD }}>{post.hashtags.slice(0, 8).join(" ")}</p>}
+                      {post.hashtags.length > 0 && <p className="text-xs font-semibold" style={{ color: GOLD }}>{post.hashtags.slice(0, 8).join(" ")}</p>}
                       {post.media_urls.length > 0 && (
                         <div className="flex gap-1.5 overflow-x-auto pb-1">
                           {post.media_urls.slice(0, 4).map((url, i) => (
@@ -875,10 +875,10 @@ export default function ReseauxSociauxPage() {
                       {post.error_message && (
                         <div className="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/8 px-3 py-2">
                           <AlertCircle size={11} className="text-red-400 shrink-0 mt-0.5" />
-                          <p className="text-[0.62rem] text-red-400">{post.error_message}</p>
+                          <p className="text-xs text-red-400">{post.error_message}</p>
                         </div>
                       )}
-                      <div className={`flex items-center gap-3 pt-1 text-[0.62rem] border-t ${divider} ${muted}`}>
+                      <div className={`flex items-center gap-3 pt-1 text-xs border-t ${divider} ${muted}`}>
                         {post.scheduled_at && <span className="flex items-center gap-1"><Clock size={9} />{fmtRelative(post.scheduled_at)}</span>}
                         {post.published_at && <span className="flex items-center gap-1"><CheckCircle2 size={9} className="text-emerald-400" />Publié {fmtDate(post.published_at)}</span>}
                         <span className="ml-auto">{fmtDate(post.created_at)}</span>
@@ -903,7 +903,7 @@ export default function ReseauxSociauxPage() {
                   className={`flex h-8 w-8 items-center justify-center rounded-xl transition ${muted} hover:opacity-70`}><ChevronRight size={14} /></button>
               </div>
               <div className="mb-1 grid grid-cols-7 gap-0.5">
-                {DAYS_FR.map(d => <div key={d} className={`py-1 text-center text-[0.6rem] font-semibold uppercase ${muted}`}>{d}</div>)}
+                {DAYS_FR.map(d => <div key={d} className={`py-1 text-center text-xs font-semibold uppercase ${muted}`}>{d}</div>)}
               </div>
               <div className="grid grid-cols-7 gap-0.5">
                 {calCells.map((dateStr, i) => {
@@ -918,7 +918,7 @@ export default function ReseauxSociauxPage() {
                         background: isSel ? `${GOLD}15` : isToday ? (isDark ? "rgba(255,255,255,0.04)" : `${GOLD}08`) : "transparent",
                         border: `0.5px solid ${isSel ? `${GOLD}40` : isToday ? `${GOLD}20` : "transparent"}`,
                       }}>
-                      <span className={`mb-1 text-[0.65rem] font-semibold ${isToday ? "" : isSel ? text : muted}`}
+                      <span className={`mb-1 text-xs font-semibold ${isToday ? "" : isSel ? text : muted}`}
                         style={isToday ? { color: GOLD } : {}}>
                         {parseInt(dateStr.slice(-2))}
                       </span>
@@ -927,7 +927,7 @@ export default function ReseauxSociauxPage() {
                           const pf = PLATFORMS.find(x => x.id === p.platform)!;
                           return <div key={j} className="h-1.5 w-1.5 rounded-full" style={{ background: pf.color }} />;
                         })}
-                        {dayPosts.length > 3 && <span className={`text-[0.5rem] ${muted}`}>+{dayPosts.length - 3}</span>}
+                        {dayPosts.length > 3 && <span className={`text-[10px] ${muted}`}>+{dayPosts.length - 3}</span>}
                       </div>
                     </button>
                   );
@@ -958,9 +958,9 @@ export default function ReseauxSociauxPage() {
                     return (
                       <div key={p.id} className={`mb-2 rounded-xl border p-3 ${isDark ? "border-white/6 bg-white/3" : "border-black/6 bg-gray-50"}`}>
                         <div className="mb-1.5 flex items-center gap-2">
-                          <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg" style={{ color: pf.color, background: `${pf.color}18` }}><pf.Icon size={8} /></span>
-                          <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg" style={{ color: st.color, background: `${st.color}18` }}>{st.label}</span>
-                          {p.scheduled_at && <span className={`ml-auto text-[0.58rem] ${muted}`}>{new Date(p.scheduled_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>}
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-lg" style={{ color: pf.color, background: `${pf.color}18` }}><pf.Icon size={8} /></span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-lg" style={{ color: st.color, background: `${st.color}18` }}>{st.label}</span>
+                          {p.scheduled_at && <span className={`ml-auto text-[11px] ${muted}`}>{new Date(p.scheduled_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>}
                         </div>
                         <p className={`text-xs line-clamp-2 ${text}`}>{p.content}</p>
                       </div>
@@ -978,7 +978,7 @@ export default function ReseauxSociauxPage() {
             <div className={`shrink-0 flex items-center justify-between border-b px-4 py-3 ${divider}`}>
               <p className={`text-sm font-bold ${text}`}>{mediaLib.length} fichier{mediaLib.length > 1 ? "s" : ""}</p>
               <button onClick={() => mediaUpRef.current?.click()}
-                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.7rem] font-black transition hover:brightness-105"
+                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition hover:brightness-105"
                 style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
                 <Upload size={12} /> Importer
               </button>
@@ -1016,8 +1016,8 @@ export default function ReseauxSociauxPage() {
                         </div>
                       </div>
                       <div className="p-2">
-                        <p className={`truncate text-[0.62rem] font-bold ${text}`}>{m.name}</p>
-                        <p className={`text-[0.58rem] ${muted}`}>{fmtSize(m.size_bytes)}</p>
+                        <p className={`truncate text-xs font-bold ${text}`}>{m.name}</p>
+                        <p className={`text-[11px] ${muted}`}>{fmtSize(m.size_bytes)}</p>
                       </div>
                     </div>
                   ))}
@@ -1049,7 +1049,7 @@ export default function ReseauxSociauxPage() {
               ].map(k => (
                 <div key={k.label} className={`rounded-2xl border p-4 text-center ${card}`}>
                   <p className="text-2xl font-black tabular-nums" style={{ color: k.color }}>{k.value}</p>
-                  <p className={`mt-1 text-[0.62rem] ${muted}`}>{k.label}</p>
+                  <p className={`mt-1 text-xs ${muted}`}>{k.label}</p>
                 </div>
               ))}
             </div>
@@ -1089,7 +1089,7 @@ export default function ReseauxSociauxPage() {
                         </div>
                         <div>
                           <p className={`text-xs font-bold ${text}`}>{a.account_name}</p>
-                          <p className={`text-[0.58rem] ${muted}`}>{a.platform} · Analytics via API requis</p>
+                          <p className={`text-[11px] ${muted}`}>{a.platform} · Analytics via API requis</p>
                         </div>
                       </div>
                     );
@@ -1106,7 +1106,7 @@ export default function ReseauxSociauxPage() {
             <div className={`shrink-0 flex items-center gap-1 border-b px-4 py-2 ${divider}`}>
               {([["ideas","Idées de contenu"] as const, ["campagne","Créer une campagne"] as const]).map(([k, label]) => (
                 <button key={k} onClick={() => setIdeasTab(k)}
-                  className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.67rem] font-bold transition-all ${ideasTab === k ? "" : `${muted} hover:opacity-70`}`}
+                  className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${ideasTab === k ? "" : `${muted} hover:opacity-70`}`}
                   style={ideasTab === k ? { background: `${GOLD}15`, color: GOLD } : {}}>
                   {k === "ideas" ? <Sparkles size={11} /> : <Zap size={11} />}{label}
                 </button>
@@ -1123,7 +1123,7 @@ export default function ReseauxSociauxPage() {
                       { key: "ideeAudience", label: "Audience cible",             value: ideeAudience, set: setIdeeAudience, placeholder: "PME, indépendants, particuliers…" },
                     ].map(f => (
                       <div key={f.key}>
-                        <label className={`block text-[0.63rem] font-semibold mb-1 ${muted}`}>{f.label}</label>
+                        <label className={`block text-xs font-semibold mb-1 ${muted}`}>{f.label}</label>
                         <input value={f.value} onChange={e => f.set(e.target.value)}
                           className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder={f.placeholder} />
                       </div>
@@ -1152,13 +1152,13 @@ export default function ReseauxSociauxPage() {
                                     <div className="flex-1">
                                       <div className="flex items-center gap-2 mb-1">
                                         <p className={`text-xs font-bold ${text}`}>{idea.title}</p>
-                                        {pf && <span className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full" style={{ color: pf.color, background: `${pf.color}18` }}>{pf.label}</span>}
-                                        {idea.format && <span className={`text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>{idea.format}</span>}
+                                        {pf && <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: pf.color, background: `${pf.color}18` }}>{pf.label}</span>}
+                                        {idea.format && <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>{idea.format}</span>}
                                       </div>
-                                      <p className={`text-[0.65rem] ${muted}`}>{idea.description}</p>
+                                      <p className={`text-xs ${muted}`}>{idea.description}</p>
                                     </div>
                                     <button onClick={() => convertIdeaToPost(idea)}
-                                      className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[0.6rem] font-bold transition hover:brightness-105"
+                                      className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition hover:brightness-105"
                                       style={{ background: `${GOLD}15`, color: GOLD }}>
                                       <ArrowRight size={10} /> Créer
                                     </button>
@@ -1199,15 +1199,15 @@ export default function ReseauxSociauxPage() {
                           {campaign.platforms?.map(p => {
                             const pf = PLATFORMS.find(x => x.id === p);
                             return pf ? (
-                              <span key={p} className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.62rem] font-bold" style={{ color: pf.color, background: `${pf.color}18` }}>
+                              <span key={p} className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold" style={{ color: pf.color, background: `${pf.color}18` }}>
                                 <pf.Icon size={9} />{pf.label}
                               </span>
                             ) : null;
                           })}
-                          {campaign.duration_weeks && <span className={`rounded-full px-2 py-0.5 text-[0.62rem] font-bold ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>{campaign.duration_weeks} semaines</span>}
+                          {campaign.duration_weeks && <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>{campaign.duration_weeks} semaines</span>}
                         </div>
                         {campaign.hashtag_strategy?.length ? (
-                          <p className="mt-2 text-[0.65rem] font-semibold" style={{ color: GOLD }}>{campaign.hashtag_strategy.slice(0, 8).join(" ")}</p>
+                          <p className="mt-2 text-xs font-semibold" style={{ color: GOLD }}>{campaign.hashtag_strategy.slice(0, 8).join(" ")}</p>
                         ) : null}
                       </div>
                       {campaign.weeks?.map(w => (
@@ -1219,13 +1219,13 @@ export default function ReseauxSociauxPage() {
                               return (
                                 <div key={i} className={`rounded-xl border p-3 ${isDark ? "border-white/5 bg-white/2" : "border-black/5 bg-gray-50"}`}>
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className={`text-[0.58rem] font-bold ${muted}`}>{p.day}</span>
-                                    {pf && <span className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full" style={{ color: pf.color, background: `${pf.color}18` }}>{pf.label}</span>}
-                                    <span className={`text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>{p.format}</span>
+                                    <span className={`text-[11px] font-bold ${muted}`}>{p.day}</span>
+                                    {pf && <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: pf.color, background: `${pf.color}18` }}>{pf.label}</span>}
+                                    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>{p.format}</span>
                                   </div>
                                   <p className={`text-xs font-bold ${text}`}>{p.title}</p>
-                                  <p className={`text-[0.65rem] mt-0.5 ${muted}`}>{p.content_idea}</p>
-                                  {p.cta && <p className="mt-1 text-[0.62rem] font-semibold" style={{ color: GOLD }}>CTA : {p.cta}</p>}
+                                  <p className={`text-xs mt-0.5 ${muted}`}>{p.content_idea}</p>
+                                  {p.cta && <p className="mt-1 text-xs font-semibold" style={{ color: GOLD }}>CTA : {p.cta}</p>}
                                 </div>
                               );
                             })}
@@ -1248,13 +1248,13 @@ export default function ReseauxSociauxPage() {
               <div className="flex items-center justify-between">
                 <p className={`text-sm font-bold ${text}`}>Comptes connectés</p>
                 <button onClick={() => setConnectForm({ platform: "instagram", account_name: "", account_id: "" })}
-                  className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.65rem] font-bold" style={{ background: `${GOLD}15`, color: GOLD }}>
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold" style={{ background: `${GOLD}15`, color: GOLD }}>
                   <Plus size={11} /> Connecter un compte
                 </button>
               </div>
               <div className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 ${isDark ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200 bg-amber-50"}`}>
                 <AlertCircle size={12} className="text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-[0.65rem] text-amber-500">
+                <p className="text-xs text-amber-500">
                   La connexion OAuth réelle (Instagram Business API, Facebook, LinkedIn, TikTok) nécessite l&apos;enregistrement de votre application sur chaque plateforme.
                   L&apos;architecture est prête. Configurez vos App ID et secrets dans les variables d&apos;environnement.
                 </p>
@@ -1284,8 +1284,8 @@ export default function ReseauxSociauxPage() {
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm font-bold truncate ${text}`}>{a.account_name}</p>
                           <div className="flex items-center gap-2">
-                            <span className="text-[0.58rem] font-bold rounded-full px-1.5 py-0.5" style={{ color: sc.color, background: `${sc.color}15` }}>{sc.label}</span>
-                            <span className={`text-[0.58rem] ${muted}`}>{a.platform}</span>
+                            <span className="text-[11px] font-bold rounded-full px-1.5 py-0.5" style={{ color: sc.color, background: `${sc.color}15` }}>{sc.label}</span>
+                            <span className={`text-[11px] ${muted}`}>{a.platform}</span>
                           </div>
                         </div>
                         <button onClick={() => { void disconnectAccount(a.id); }}
@@ -1307,14 +1307,14 @@ export default function ReseauxSociauxPage() {
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ color: pf.color, background: `${pf.color}15` }}><pf.Icon size={14} /></div>
                   <div className="flex-1">
                     <p className={`text-xs font-bold ${text}`}>{pf.label}</p>
-                    <p className={`text-[0.6rem] ${muted}`}>{
+                    <p className={`text-xs ${muted}`}>{
                       pf.id === "instagram" ? "Requiert Instagram Business + Facebook App Review" :
                       pf.id === "facebook"  ? "Facebook Pages API — App Review requis" :
                       pf.id === "linkedin"  ? "LinkedIn API — OAuth 2.0 + partner approval" :
                       "TikTok for Business API — sandbox disponible"
                     }</p>
                   </div>
-                  <span className={`text-[0.58rem] font-bold rounded-full px-1.5 py-0.5 ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>
+                  <span className={`text-[11px] font-bold rounded-full px-1.5 py-0.5 ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>
                     {accounts.some(a => a.platform === pf.id && a.status === "active") ? "Connecté" : "Non connecté"}
                   </span>
                 </div>
@@ -1337,11 +1337,11 @@ export default function ReseauxSociauxPage() {
               </div>
               <div className="p-5 space-y-4">
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Plateforme</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Plateforme</label>
                   <div className="flex gap-2">
                     {PLATFORMS.map(pf => (
                       <button key={pf.id} onClick={() => setConnectForm(f => f ? { ...f, platform: pf.id } : f)}
-                        className="flex flex-1 flex-col items-center gap-1 rounded-xl border py-2 text-[0.58rem] font-bold transition"
+                        className="flex flex-1 flex-col items-center gap-1 rounded-xl border py-2 text-[11px] font-bold transition"
                         style={connectForm.platform === pf.id ? { background: `${pf.color}20`, borderColor: `${pf.color}40`, color: pf.color }
                           : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)", color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)" }}>
                         <pf.Icon size={14} />{pf.label}
@@ -1350,18 +1350,18 @@ export default function ReseauxSociauxPage() {
                   </div>
                 </div>
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Nom du compte</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Nom du compte</label>
                   <input value={connectForm.account_name} onChange={e => setConnectForm(f => f ? { ...f, account_name: e.target.value } : f)}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="@votre_compte" />
                 </div>
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>ID du compte</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>ID du compte</label>
                   <input value={connectForm.account_id} onChange={e => setConnectForm(f => f ? { ...f, account_id: e.target.value } : f)}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="ID de la page / profil" />
                 </div>
                 <div className={`flex items-start gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200 bg-amber-50"}`}>
                   <AlertCircle size={11} className="text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-[0.62rem] text-amber-500">Le flux OAuth complet sera disponible une fois vos App ID configurés. En attendant, vous pouvez enregistrer manuellement l&apos;ID de votre compte.</p>
+                  <p className="text-xs text-amber-500">Le flux OAuth complet sera disponible une fois vos App ID configurés. En attendant, vous pouvez enregistrer manuellement l&apos;ID de votre compte.</p>
                 </div>
               </div>
               <div className={`flex gap-2 border-t px-5 py-4 ${divider}`}>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTheme } from "@/lib/theme-context";
@@ -174,7 +174,7 @@ export default function CataloguePage() {
           <BookOpen size={14} style={{ color: GOLD }}/>
           <span className={`text-sm font-bold ${t1}`}>Catalogue articles</span>
           {items.length > 0 && (
-            <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
+            <span className="rounded-full px-2 py-0.5 text-xs font-bold"
               style={{ background: "rgba(201,165,90,0.15)", color: GOLD }}>
               {items.length}
             </span>
@@ -182,7 +182,7 @@ export default function CataloguePage() {
         </div>
 
         <button onClick={() => setAddOpen(v => !v)}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.72rem] font-bold text-[#0a0a0a] transition hover:opacity-90"
+          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-[#0a0a0a] transition hover:opacity-90"
           style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
           <Plus size={13}/> Ajouter
         </button>
@@ -211,7 +211,7 @@ export default function CataloguePage() {
                 />
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className={`mb-1 block text-[0.65rem] font-semibold uppercase tracking-wider ${t3}`}>Unité</label>
+                    <label className={`mb-1 block text-xs font-semibold uppercase tracking-wider ${t3}`}>Unité</label>
                     <div className="relative">
                       <select value={addState.unit} onChange={e => setAddState(s => ({ ...s, unit: e.target.value }))}
                         className={`w-full appearance-none rounded-xl py-2 pl-3 pr-7 text-sm outline-none transition ${inp}`}>
@@ -221,14 +221,14 @@ export default function CataloguePage() {
                     </div>
                   </div>
                   <div>
-                    <label className={`mb-1 block text-[0.65rem] font-semibold uppercase tracking-wider ${t3}`}>Prix HT</label>
+                    <label className={`mb-1 block text-xs font-semibold uppercase tracking-wider ${t3}`}>Prix HT</label>
                     <input type="number" min="0" step="0.01"
                       value={addState.unit_price}
                       onChange={e => setAddState(s => ({ ...s, unit_price: e.target.value }))}
                       className={`w-full rounded-xl px-3 py-2 text-right text-sm outline-none transition ${inp}`}/>
                   </div>
                   <div>
-                    <label className={`mb-1 block text-[0.65rem] font-semibold uppercase tracking-wider ${t3}`}>TVA %</label>
+                    <label className={`mb-1 block text-xs font-semibold uppercase tracking-wider ${t3}`}>TVA %</label>
                     <div className="relative">
                       <select value={addState.vat_rate} onChange={e => setAddState(s => ({ ...s, vat_rate: e.target.value }))}
                         className={`w-full appearance-none rounded-xl py-2 pl-3 pr-7 text-sm outline-none transition ${inp}`}>
@@ -295,7 +295,7 @@ export default function CataloguePage() {
             {/* En-tête tableau */}
             <div className={`grid grid-cols-[1fr_80px_110px_70px_72px] gap-0 border-b ${bd} px-4 py-2`}>
               {["Description", "Unité", "Prix HT", "TVA", ""].map((h, i) => (
-                <span key={i} className={`text-[0.6rem] font-bold uppercase tracking-wider ${t3} ${i >= 2 ? "text-right" : ""}`}>{h}</span>
+                <span key={i} className={`text-xs font-bold uppercase tracking-wider ${t3} ${i >= 2 ? "text-right" : ""}`}>{h}</span>
               ))}
             </div>
 
@@ -389,7 +389,7 @@ export default function CataloguePage() {
                       ) : isDel ? (
                         <>
                           <button onClick={() => void deleteItem(item.id)} disabled={deletingId === item.id}
-                            className="flex h-7 items-center gap-1 rounded-lg bg-red-500/10 px-2 text-[0.62rem] font-bold text-red-400 transition hover:bg-red-500/20 disabled:opacity-50">
+                            className="flex h-7 items-center gap-1 rounded-lg bg-red-500/10 px-2 text-xs font-bold text-red-400 transition hover:bg-red-500/20 disabled:opacity-50">
                             {deletingId === item.id ? <Loader2 size={10} className="animate-spin"/> : <Trash2 size={10}/>} Oui
                           </button>
                           <button onClick={() => setConfirmDel(null)}
@@ -420,7 +420,7 @@ export default function CataloguePage() {
             {/* Footer */}
             {items.length > 0 && (
               <div className={`border-t ${bd} px-4 py-2.5`}>
-                <p className={`text-[0.62rem] ${t3}`}>
+                <p className={`text-xs ${t3}`}>
                   {filtered.length === items.length
                     ? `${items.length} article${items.length !== 1 ? "s" : ""} dans le catalogue`
                     : `${filtered.length} / ${items.length} articles`}

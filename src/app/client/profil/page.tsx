@@ -70,7 +70,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">
+      <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] text-white/30">
         {label}
       </label>
       <div className="relative">
@@ -95,7 +95,7 @@ function Field({
           </div>
         )}
       </div>
-      {hint && <p className="mt-1 text-[0.65rem] text-white/30">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-white/30">{hint}</p>}
     </div>
   );
 }
@@ -414,7 +414,7 @@ function ProfilPage() {
         >
           {/* Header */}
           <div className="mb-6">
-            <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">Compte</p>
+            <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-white/30">Compte</p>
             <h1 className="text-xl font-black text-white">Mon profil</h1>
             <p className="mt-0.5 text-sm text-white/40">Gérez vos informations et votre abonnement</p>
           </div>
@@ -454,12 +454,12 @@ function ProfilPage() {
               <p className="truncate text-sm text-white/40">{email}</p>
               <div className="mt-1.5 flex items-center gap-1.5">
                 <PlanIcon size={11} style={{ color: planColor }} />
-                <span className="text-[0.7rem] font-semibold" style={{ color: planColor }}>{planLabel}</span>
+                <span className="text-xs font-semibold" style={{ color: planColor }}>{planLabel}</span>
               </div>
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="mt-1.5 text-[0.65rem] font-medium text-white/25 transition hover:text-white/50"
+                className="mt-1.5 text-xs font-medium text-white/25 transition hover:text-white/50"
               >
                 Changer la photo
               </button>
@@ -531,14 +531,14 @@ function ProfilPage() {
               <AnimatePresence>
                 {savedNotif && (
                   <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[0.65rem] font-semibold text-emerald-400">
+                    className="flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-xs font-semibold text-emerald-400">
                     <CheckCircle2 size={10} /> Sauvegardé
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
             <div className="space-y-4">
-              <p className="text-[0.65rem] font-bold uppercase tracking-[0.15em] text-white/25">E-mails</p>
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-white/25">E-mails</p>
               <Toggle
                 enabled={notifPrefs.email_factures}
                 onChange={v => handleToggleNotif("email_factures", v)}
@@ -561,7 +561,7 @@ function ProfilPage() {
                 icon={Sparkles}
               />
               <div className="border-t border-white/6 pt-3">
-                <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-white/25">Navigateur</p>
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-white/25">Navigateur</p>
                 <Toggle
                   enabled={notifPrefs.push}
                   onChange={v => handleToggleNotif("push", v)}
@@ -599,7 +599,7 @@ function ProfilPage() {
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium text-white/80">{entry.label}</p>
                           {entry.current && (
-                            <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold text-emerald-400"
+                            <span className="rounded-full px-2 py-0.5 text-xs font-bold text-emerald-400"
                               style={{ background: "rgba(52,211,153,0.12)" }}>
                               Actif
                             </span>
@@ -607,7 +607,7 @@ function ProfilPage() {
                         </div>
                         <p className="text-xs text-white/30">{entry.device}</p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-1 text-[0.65rem] text-white/25">
+                      <div className="flex shrink-0 items-center gap-1 text-xs text-white/25">
                         <Clock size={10} />
                         <span>{formatRelative(entry.ts)}</span>
                       </div>
@@ -704,7 +704,7 @@ function ProfilPage() {
             <h2 className="mb-4 text-sm font-bold text-white">Changer le mot de passe</h2>
             <form onSubmit={handleChangePwd} className="space-y-3">
               <div>
-                <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] text-white/30">
                   Mot de passe actuel
                 </label>
                 <div className="relative">
@@ -718,7 +718,7 @@ function ProfilPage() {
                 </div>
               </div>
               <div>
-                <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/30">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.18em] text-white/30">
                   Nouveau mot de passe
                 </label>
                 <div className="relative">
@@ -765,7 +765,7 @@ function ProfilPage() {
             style={{ borderColor: isPremium ? `${planColor}30` : "rgba(255,255,255,0.06)" }}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-bold text-white">Abonnement</h2>
-              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.65rem] font-bold"
+              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
                 style={{ background: `${planColor}14`, color: planColor }}>
                 <PlanIcon size={10} /> {planLabel}
               </div>
@@ -877,7 +877,7 @@ function ProfilPage() {
             <LogOut size={14} /> Se déconnecter
           </button>
 
-          {userId && <p className="text-center text-[0.6rem] text-white/20">ID · {userId}</p>}
+          {userId && <p className="text-center text-xs text-white/20">ID · {userId}</p>}
         </motion.div>
       </div>
     </div>

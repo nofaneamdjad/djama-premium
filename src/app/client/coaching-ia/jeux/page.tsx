@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -196,7 +196,7 @@ export default function JeuxPage() {
                   <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
 
                   <div className="relative mb-4 flex items-start justify-between">
-                    <span className="rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold" style={{ color, backgroundColor: color + "15", border: `1px solid ${color}25` }}>{badge}</span>
+                    <span className="rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ color, backgroundColor: color + "15", border: `1px solid ${color}25` }}>{badge}</span>
                   </div>
                   <p className="relative text-sm font-extrabold text-white">{title}</p>
                   <p className="relative mt-1.5 text-xs leading-relaxed text-white/40">{desc}</p>
@@ -511,7 +511,7 @@ export default function JeuxPage() {
               <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(244,114,182,0.07) 0%, transparent 60%)" }} />
 
               <div className="relative">
-                <span className="text-[0.65rem] font-medium text-white/35" style={{ color: "#f472b6" }}>Mission du jour</span>
+                <span className="text-xs font-medium text-white/35" style={{ color: "#f472b6" }}>Mission du jour</span>
                 <h2 className="mt-1 text-xl font-bold text-white">{DEFI.title}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-white/55">{DEFI.desc}</p>
               </div>
@@ -535,7 +535,7 @@ export default function JeuxPage() {
                   className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 placeholder-white/20 outline-none focus:border-[rgba(244,114,182,0.4)] transition-colors disabled:opacity-50"
                 />
                 <div className="mt-1.5 flex items-center justify-between">
-                  <span className="text-[0.6rem] text-white/25">{prompt.length} caractères</span>
+                  <span className="text-xs text-white/25">{prompt.length} caractères</span>
                   {!defiDone && (
                     <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                       disabled={prompt.trim().length < 30}
@@ -565,7 +565,7 @@ export default function JeuxPage() {
                     {showExemple && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                         <div className="rounded-xl border border-[rgba(244,114,182,0.2)] bg-[rgba(244,114,182,0.05)] p-4">
-                          <p className="mb-2 text-[0.65rem] font-medium text-white/35" style={{ color: "#f472b6" }}>Exemple expert</p>
+                          <p className="mb-2 text-xs font-medium text-white/35" style={{ color: "#f472b6" }}>Exemple expert</p>
                           <pre className="text-xs leading-relaxed text-white/60 whitespace-pre-wrap font-sans italic">{DEFI.exemple}</pre>
                         </div>
                       </motion.div>

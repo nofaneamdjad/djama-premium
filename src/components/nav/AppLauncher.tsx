@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -128,7 +128,7 @@ export default function AppLauncher({ open, onClose, isPremium, pinnedIds, onTog
                       value={query}
                       onChange={e => setQuery(e.target.value)}
                       placeholder="Rechercher une application…"
-                      className="flex-1 bg-transparent text-[0.85rem] font-medium outline-none"
+                      className="flex-1 bg-transparent text-sm font-medium outline-none"
                       style={{ color: tx, caretColor: accent }}
                       autoComplete="off"
                       spellCheck={false}
@@ -150,7 +150,7 @@ export default function AppLauncher({ open, onClose, isPremium, pinnedIds, onTog
                 <div className="flex items-center gap-1 overflow-x-auto px-4 py-2.5" style={{ scrollbarWidth: "none", borderBottom: `1px solid ${bdr}` }}>
                   <button
                     onClick={() => setActiveTab("all")}
-                    className="shrink-0 rounded-lg px-3 py-1.5 text-[0.72rem] font-semibold transition-all"
+                    className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition-all"
                     style={{
                       background: activeTab === "all" ? `${accent}18` : "transparent",
                       color: activeTab === "all" ? accent : tx2,
@@ -163,7 +163,7 @@ export default function AppLauncher({ open, onClose, isPremium, pinnedIds, onTog
                     <button
                       key={cat}
                       onClick={() => setActiveTab(cat)}
-                      className="shrink-0 rounded-lg px-3 py-1.5 text-[0.72rem] font-semibold transition-all"
+                      className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition-all"
                       style={{
                         background: activeTab === cat ? `${accent}18` : "transparent",
                         color: activeTab === cat ? accent : tx2,
@@ -181,7 +181,7 @@ export default function AppLauncher({ open, onClose, isPremium, pinnedIds, onTog
                 {filtered.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-10">
                     <Search size={20} style={{ color: tx2 }} />
-                    <p className="text-[0.82rem] font-medium" style={{ color: tx2 }}>Aucune application trouvée</p>
+                    <p className="text-sm font-medium" style={{ color: tx2 }}>Aucune application trouvée</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
@@ -207,7 +207,7 @@ export default function AppLauncher({ open, onClose, isPremium, pinnedIds, onTog
                               style={{ background: `${accent}14`, border: `1px solid ${accent}1c` }}>
                               <Icon size={16} style={{ color: accent }} />
                             </div>
-                            <span className="w-full truncate text-[0.68rem] font-semibold leading-tight" style={{ color: tx }}>
+                            <span className="w-full truncate text-xs font-semibold leading-tight" style={{ color: tx }}>
                               {app.name}
                             </span>
                             {locked && (
@@ -242,8 +242,8 @@ export default function AppLauncher({ open, onClose, isPremium, pinnedIds, onTog
 
               {/* Footer */}
               <div className="flex items-center justify-between px-4 py-2.5" style={{ borderTop: `1px solid ${bdr}` }}>
-                <span className="text-[0.58rem] font-bold tracking-wider" style={{ color: `${accent}60` }}>DJAMA</span>
-                <span className="text-[0.58rem]" style={{ color: tx2 }}>
+                <span className="text-[11px] font-bold tracking-wider" style={{ color: `${accent}60` }}>DJAMA</span>
+                <span className="text-[11px]" style={{ color: tx2 }}>
                   {pinnedIds.length > 0 ? `${pinnedIds.length} app${pinnedIds.length > 1 ? "s" : ""} épinglée${pinnedIds.length > 1 ? "s" : ""}` : "Épinglez vos apps préférées"}
                 </span>
               </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "@/lib/theme-context";
@@ -140,7 +140,7 @@ export default function RelancesPage() {
         </div>
 
         <button onClick={() => void save()} disabled={!dirty || saving}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.72rem] font-bold text-[#0a0a0a] transition hover:opacity-90 disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-[#0a0a0a] transition hover:opacity-90 disabled:opacity-40"
           style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
           {saving ? <Loader2 size={13} className="animate-spin"/> : <Save size={13}/>}
           Enregistrer
@@ -226,7 +226,7 @@ export default function RelancesPage() {
                         <span className={`text-xs ${t3}`}>jours</span>
                       </div>
 
-                      <span className={`ml-auto text-[0.65rem] font-bold uppercase tracking-wider ${tone.color}`}>
+                      <span className={`ml-auto text-xs font-bold uppercase tracking-wider ${tone.color}`}>
                         {tone.label}
                       </span>
 
@@ -241,7 +241,7 @@ export default function RelancesPage() {
                 })}
               </div>
 
-              <p className={`mt-3 text-[0.62rem] ${t3}`}>
+              <p className={`mt-3 text-xs ${t3}`}>
                 Ton adapté automatiquement : &lt;15j → amical · 15-29j → ferme · ≥30j → formel (mise en demeure)
               </p>
             </div>
@@ -274,7 +274,7 @@ export default function RelancesPage() {
                 <p className={`text-sm font-bold ${t1}`}>
                   Historique des envois
                   {logData.length > 0 && (
-                    <span className="ml-2 rounded-full px-1.5 py-0.5 text-[0.58rem] font-bold"
+                    <span className="ml-2 rounded-full px-1.5 py-0.5 text-[11px] font-bold"
                       style={{ background: "rgba(201,165,90,0.12)", color: GOLD }}>
                       {logData.length}
                     </span>
@@ -305,12 +305,12 @@ export default function RelancesPage() {
                               · {entry.documents?.client_nom ?? "—"}
                             </span>
                           </p>
-                          <p className={`text-[0.62rem] ${t3}`}>
+                          <p className={`text-xs ${t3}`}>
                             Relance J+{entry.delay_days}
                           </p>
                         </div>
-                        <span className={`text-[0.62rem] font-bold ${tone.color}`}>{tone.label}</span>
-                        <span className={`text-[0.62rem] ${t3} whitespace-nowrap`}>{relDate(entry.sent_at)}</span>
+                        <span className={`text-xs font-bold ${tone.color}`}>{tone.label}</span>
+                        <span className={`text-xs ${t3} whitespace-nowrap`}>{relDate(entry.sent_at)}</span>
                       </div>
                     );
                   })}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -490,7 +490,7 @@ function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnTyp
 function StatutBadge({ statut }: { statut: DocStatut }) {
   const s = STATUTS[statut];
   return (
-    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider"
       style={{ color:s.color, background:s.bg, border:`1px solid ${s.border}` }}>
       <s.Icon size={9}/>{s.label}
     </span>
@@ -509,7 +509,7 @@ function DInput({ label, value, onChange, placeholder, type="text", small, disab
     : `w-full rounded-xl ${iB} ${disabled ? "" : iBH} focus:border-[rgba(201,165,90,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition ${disabledCls}`;
   return (
     <div title={disabled && lockTitle ? lockTitle : undefined}>
-      {label && <label className={`mb-1 block text-[0.65rem] font-medium ${lbl}`}>{label}</label>}
+      {label && <label className={`mb-1 block text-xs font-medium ${lbl}`}>{label}</label>}
       <div className="relative">
         {!disabled && (
           <motion.div animate={{ opacity: focused ? 1 : 0 }} transition={{ duration:0.15 }}
@@ -536,7 +536,7 @@ function DSelect({ label, value, onChange, options, small }:
     : `w-full rounded-xl ${iB} ${iBH} focus:border-[rgba(201,165,90,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition appearance-none cursor-pointer`;
   return (
     <div>
-      {label && <label className={`mb-1 block text-[0.65rem] font-medium ${lbl}`}>{label}</label>}
+      {label && <label className={`mb-1 block text-xs font-medium ${lbl}`}>{label}</label>}
       <div className="relative">
         <select value={value} onChange={e => onChange(e.target.value)} className={cls}>
           {options.map(o => <option key={o.val} value={o.val} style={{ background: optBg }}>{o.label}</option>)}
@@ -554,8 +554,8 @@ function DTextarea({ label, value, onChange, placeholder, rows=3, hint }:
     <div>
       {label && (
         <div className="mb-1 flex items-center justify-between">
-          <label className={`text-[0.65rem] font-medium ${lbl}`}>{label}</label>
-          {hint && <span className={`text-[0.58rem] ${isDark ? "text-white/20" : "text-gray-300"}`}>{hint}</span>}
+          <label className={`text-xs font-medium ${lbl}`}>{label}</label>
+          {hint && <span className={`text-[11px] ${isDark ? "text-white/20" : "text-gray-300"}`}>{hint}</span>}
         </div>
       )}
       <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
@@ -569,7 +569,7 @@ function ColorPicker({ value, onChange }: { value:string; onChange:(v:string)=>v
   const isPreset = COLOR_PRESETS.some(p => p.hex === value);
   return (
     <div>
-      <label className="mb-2 block text-[0.65rem] font-medium text-white/35">
+      <label className="mb-2 block text-xs font-medium text-white/35">
         <Palette size={9} className="mr-1 inline-block"/>Couleur du document
       </label>
       <div className="flex flex-wrap items-center gap-2">
@@ -608,7 +608,7 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
   }
   return (
     <div>
-      <label className="mb-2 block text-[0.65rem] font-medium text-white/35">
+      <label className="mb-2 block text-xs font-medium text-white/35">
         <ImagePlus size={9} className="mr-1 inline-block"/>Logo entreprise
       </label>
       <div className="flex items-center gap-3">
@@ -627,7 +627,7 @@ function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)
           </div>
         )}
         <button onClick={() => ref.current?.click()}
-          className="text-[0.7rem] font-semibold text-white/35 underline-offset-2 transition hover:text-white/60 hover:underline">
+          className="text-xs font-semibold text-white/35 underline-offset-2 transition hover:text-white/60 hover:underline">
           {value ? "Remplacer" : "Importer le logo"}
         </button>
         <input ref={ref} type="file" accept="image/*" onChange={handleFile} className="hidden"/>
@@ -731,7 +731,7 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
                     }}
                     className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs transition ${isDark ? "hover:bg-white/[0.06] text-white/70" : "hover:bg-gray-50 text-gray-700"}`}>
                     <span className="truncate font-medium">{s.description}</span>
-                    <span className={`shrink-0 text-[0.6rem] ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                    <span className={`shrink-0 text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>
                       {s.unit_price > 0 ? `${s.unit_price} €` : ""}
                     </span>
                   </button>
@@ -751,7 +751,7 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
             </div>
           ))}
           <button onClick={() => applySubs([...subs, ""])}
-            className="flex items-center gap-1 self-start text-[0.6rem] text-white/20 transition hover:text-white/50">
+            className="flex items-center gap-1 self-start text-xs text-white/20 transition hover:text-white/50">
             <Plus size={8}/> sous-description
           </button>
         </div>
@@ -784,7 +784,7 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
           <div className="relative">
             <DInput small type="number" value={String(it.remise_pct||"")}
               onChange={v => updItem(idx,"remise_pct", v===""?0:isNaN(parseFloat(v))?it.remise_pct:parseFloat(v))} placeholder="0"/>
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6rem] text-white/30 pointer-events-none">%</span>
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white/30 pointer-events-none">%</span>
           </div>
           <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
             options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
@@ -800,7 +800,7 @@ function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise
           <div className="relative">
             <DInput small type="number" value={String(it.remise_pct||"")}
               onChange={v => updItem(idx,"remise_pct", v===""?0:isNaN(parseFloat(v))?it.remise_pct:parseFloat(v))} placeholder="0"/>
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6rem] text-white/30 pointer-events-none">%</span>
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white/30 pointer-events-none">%</span>
           </div>
           <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
             options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
@@ -816,9 +816,9 @@ function SectionLabel({ icon, label, hint }: { icon?: React.ReactNode; label: st
   return (
     <div className="flex items-center gap-2.5">
       {icon && <span className={`shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}>{icon}</span>}
-      <span className={`shrink-0 text-[0.63rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</span>
+      <span className={`shrink-0 text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</span>
       <div className={`flex-1 h-px ${isDark ? "bg-white/[0.06]" : "bg-gray-200"}`}/>
-      {hint && <span className={`shrink-0 text-[0.58rem] ${isDark ? "text-white/20" : "text-gray-300"}`}>{hint}</span>}
+      {hint && <span className={`shrink-0 text-[11px] ${isDark ? "text-white/20" : "text-gray-300"}`}>{hint}</span>}
     </div>
   );
 }
@@ -2349,9 +2349,9 @@ export default function FacturesPage() {
           <div>
             <h1 className={`text-base font-extrabold ${tw1}`}>Factures & Devis</h1>
             <div className="flex items-center gap-2">
-              <p className={`text-[0.65rem] ${tw4}`}>{documents.length} document{documents.length !== 1 ? "s" : ""}</p>
+              <p className={`text-xs ${tw4}`}>{documents.length} document{documents.length !== 1 ? "s" : ""}</p>
                 {activeOrgName && (
-                  <span className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.6rem] font-semibold"
+                  <span className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold"
                     style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.25)" }}>
                     <Building2 size={9} />
                     {activeOrgName}
@@ -2391,7 +2391,7 @@ export default function FacturesPage() {
                 <strong className="text-red-300/90">{overdueWithEmail.length}</strong> facture{overdueWithEmail.length > 1 ? "s" : ""} en retard avec email
               </p>
               <button onClick={() => setRemindersModal(true)}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/25 px-3 py-1 text-[0.68rem] font-semibold text-red-400 transition hover:bg-red-500/[0.08]">
+                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/25 px-3 py-1 text-xs font-semibold text-red-400 transition hover:bg-red-500/[0.08]">
                 Envoyer relances
               </button>
             </div>
@@ -2425,7 +2425,7 @@ export default function FacturesPage() {
                       <k.Icon size={10} style={{ color: k.color }} />
                     </div>
                   </div>
-                  <span className="text-[0.56rem] font-bold uppercase tracking-wide" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)" }}>{k.label}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)" }}>{k.label}</span>
                 </motion.button>
               ))}
             </div>
@@ -2438,7 +2438,7 @@ export default function FacturesPage() {
             const currentKey = new Date().toISOString().slice(0, 7);
             return (
               <div className={`border-b ${tbd2} px-3 pb-2 pt-2.5`}>
-                <p className={`mb-1.5 text-[0.55rem] font-bold uppercase tracking-[0.09em] ${tw5}`}>CA encaissé — 6 mois</p>
+                <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-[0.09em] ${tw5}`}>CA encaissé — 6 mois</p>
                 <svg viewBox={`0 0 ${W} ${H + 14}`} width="100%" style={{ display:"block" }}>
                   {caByMonth.map((m, i) => {
                     const barH  = m.ca > 0 ? Math.max(4, Math.round((m.ca / maxCA) * H)) : 2;
@@ -2479,13 +2479,13 @@ export default function FacturesPage() {
             <div className="flex gap-1.5">
               {(["tous","facture","devis","avoir"] as const).map(t => (
                 <button key={t} onClick={() => setFilterType(t)}
-                  className={`rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${filterType === t ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600")}`}>
+                  className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider transition ${filterType === t ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600")}`}>
                   {t === "tous" ? "Tous" : t === "facture" ? "Factures" : t === "devis" ? "Devis" : "Avoirs"}
                 </button>
               ))}
               <div className="ml-auto flex items-center gap-1">
                 <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
-                  className={`appearance-none rounded-lg border ${tbd1} ${tbg1} px-2 py-0.5 text-[0.6rem] font-bold uppercase ${tw4} outline-none cursor-pointer`}>
+                  className={`appearance-none rounded-lg border ${tbd1} ${tbg1} px-2 py-0.5 text-xs font-bold uppercase ${tw4} outline-none cursor-pointer`}>
                   <option value="date">Date</option>
                   <option value="montant">Montant</option>
                   <option value="echeance">Échéance</option>
@@ -2495,7 +2495,7 @@ export default function FacturesPage() {
             {/* Statut filter */}
             <div className="flex flex-wrap gap-1">
               <button onClick={() => setFilterStatut("tous")}
-                className={`rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider transition ${filterStatut === "tous" ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/20 hover:text-white/50" : "text-gray-400 hover:text-gray-600")}`}>
+                className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider transition ${filterStatut === "tous" ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/20 hover:text-white/50" : "text-gray-400 hover:text-gray-600")}`}>
                 Tous
               </button>
               {(Object.keys(STATUTS) as DocStatut[]).map(s => {
@@ -2504,7 +2504,7 @@ export default function FacturesPage() {
                 if (!count && filterStatut !== s) return null;
                 return (
                   <button key={s} onClick={() => setFilterStatut(prev => prev === s ? "tous" : s)}
-                    className={`rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider transition`}
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider transition`}
                     style={filterStatut === s
                       ? { background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }
                       : { color: isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.35)" }}>
@@ -2557,7 +2557,7 @@ export default function FacturesPage() {
                               : `linear-gradient(145deg, rgba(96,165,250,0.18), rgba(96,165,250,0.08))`,
                             border: `1px solid ${doc.type === "facture" ? "rgba(201,165,90,0.22)" : doc.type === "avoir" ? "rgba(244,114,182,0.22)" : "rgba(96,165,250,0.22)"}`,
                           }}>
-                          <span className="text-[0.65rem] font-black"
+                          <span className="text-xs font-black"
                             style={{ color: doc.type === "facture" ? "#c9a55a" : doc.type === "avoir" ? "#f472b6" : "#60a5fa" }}>
                             {doc.type === "facture" ? "F" : doc.type === "avoir" ? "A" : "D"}
                           </span>
@@ -2566,26 +2566,26 @@ export default function FacturesPage() {
                         <div className="min-w-0 flex-1">
                           {/* Ligne 1 : référence + montant */}
                           <div className="flex items-baseline justify-between gap-2">
-                            <p className={`text-[0.8rem] font-extrabold leading-tight truncate ${tw1}`}>{doc.numero || "(sans numéro)"}</p>
-                            <span className="shrink-0 text-[0.9rem] font-black" style={{ color: docColor }}>{fmtEur(doc.total_ttc)}</span>
+                            <p className={`text-sm font-extrabold leading-tight truncate ${tw1}`}>{doc.numero || "(sans numéro)"}</p>
+                            <span className="shrink-0 text-sm font-black" style={{ color: docColor }}>{fmtEur(doc.total_ttc)}</span>
                           </div>
                           {/* Ligne 2 : sujet */}
-                          {doc.sujet && <p className={`mt-0.5 text-[0.7rem] truncate ${tw3}`}>{doc.sujet}</p>}
+                          {doc.sujet && <p className={`mt-0.5 text-xs truncate ${tw3}`}>{doc.sujet}</p>}
                           {/* Ligne 3 : statut + date */}
                           <div className="mt-1.5 flex items-center gap-1.5">
                             <StatutBadge statut={doc.statut}/>
-                            <span className={`ml-auto text-[0.58rem] ${tw6}`}>{fmtDate(doc.date_document)}</span>
+                            <span className={`ml-auto text-[11px] ${tw6}`}>{fmtDate(doc.date_document)}</span>
                           </div>
                           {/* Ligne 4 : client + délai */}
                           <div className="mt-0.5 flex items-center justify-between gap-1">
                             {doc.client_nom && (
-                              <p className={`text-[0.63rem] font-medium truncate ${tw4}`}>{doc.client_nom}</p>
+                              <p className={`text-xs font-medium truncate ${tw4}`}>{doc.client_nom}</p>
                             )}
                             {doc.date_echeance && (doc.statut === "envoyé" || doc.statut === "en_retard") && (() => {
                               const days = Math.floor((new Date(doc.date_echeance).getTime() - Date.now()) / 86_400_000);
                               const late = days < 0;
                               return (
-                                <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[0.52rem] font-bold"
+                                <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold"
                                   style={{ background: late ? "rgba(248,113,113,0.14)" : "rgba(251,191,36,0.14)", color: late ? "#f87171" : "#fbbf24" }}>
                                   {late ? `−${Math.abs(days)}j` : `+${days}j`}
                                 </span>
@@ -2595,8 +2595,8 @@ export default function FacturesPage() {
                           {/* Ligne 5 : lien Avoir ↔ Facture source */}
                         {doc.type === "avoir" && doc.source_id && docById.has(doc.source_id) && (
                           <div className="mt-1 flex items-center gap-1">
-                            <span className="text-[0.52rem] font-bold" style={{ color: "#f472b6", opacity: 0.6 }}>↗</span>
-                            <span className="text-[0.6rem] font-semibold" style={{ color: "#f472b6" }}>
+                            <span className="text-[10px] font-bold" style={{ color: "#f472b6", opacity: 0.6 }}>↗</span>
+                            <span className="text-xs font-semibold" style={{ color: "#f472b6" }}>
                               {docById.get(doc.source_id)!.numero}
                             </span>
                           </div>
@@ -2604,7 +2604,7 @@ export default function FacturesPage() {
                         {doc.type === "facture" && (avoirsBySourceId.get(doc.id)?.length ?? 0) > 0 && (
                           <div className="mt-1 flex flex-wrap items-center gap-1">
                             {avoirsBySourceId.get(doc.id)!.map(av => (
-                              <span key={av.id} className="rounded-full px-1.5 py-0.5 text-[0.52rem] font-bold"
+                              <span key={av.id} className="rounded-full px-1.5 py-0.5 text-[10px] font-bold"
                                 style={{ background: "rgba(244,114,182,0.1)", color: "#f472b6", border: "1px solid rgba(244,114,182,0.25)" }}>
                                 {av.numero}
                               </span>
@@ -2623,7 +2623,7 @@ export default function FacturesPage() {
           {/* Pagination */}
           {listTotalPages > 1 && (
             <div className={`shrink-0 flex items-center justify-between gap-2 border-t ${tbd2} px-4 py-2`}>
-              <p className={`text-[0.58rem] ${tw5}`}>
+              <p className={`text-[11px] ${tw5}`}>
                 {(listPage-1)*PAGE_SIZE+1}–{Math.min(listPage*PAGE_SIZE, listTotal)} / {listTotal}
               </p>
               <div className="flex items-center gap-0.5">
@@ -2635,10 +2635,10 @@ export default function FacturesPage() {
                   ? Array.from({length: listTotalPages}, (_,i) => i+1)
                   : [1, ...(listPage > 3 ? ["…"] : []), ...Array.from({length:3}, (_,i) => Math.max(2,listPage-1)+i).filter(p => p > 1 && p < listTotalPages), ...(listPage < listTotalPages-2 ? ["…"] : []), listTotalPages]
                 ).map((p, i) => p === "…" ? (
-                  <span key={`e${i}`} className={`px-1 text-[0.6rem] ${tw6}`}>…</span>
+                  <span key={`e${i}`} className={`px-1 text-xs ${tw6}`}>…</span>
                 ) : (
                   <button key={p} onClick={() => setListPage(p as number)}
-                    className={`h-6 min-w-[1.5rem] px-1 rounded-lg text-[0.6rem] font-bold transition ${p===listPage ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700")}`}>
+                    className={`h-6 min-w-[1.5rem] px-1 rounded-lg text-xs font-bold transition ${p===listPage ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700")}`}>
                     {p}
                   </button>
                 ))}
@@ -2653,11 +2653,11 @@ export default function FacturesPage() {
           {/* Bouton création rapide bas de sidebar */}
           <div className={`shrink-0 border-t ${tbd2} p-3 grid grid-cols-2 gap-2`}>
             <button onClick={() => newDoc("devis")}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-400/20 py-2 text-[0.7rem] font-bold text-blue-400/70 transition hover:bg-blue-400/10 hover:text-blue-400">
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-400/20 py-2 text-xs font-bold text-blue-400/70 transition hover:bg-blue-400/10 hover:text-blue-400">
               <Plus size={11}/> Devis
             </button>
             <button onClick={() => newDoc("facture")}
-              className="flex items-center justify-center gap-1.5 rounded-xl py-2 text-[0.7rem] font-extrabold transition hover:opacity-90"
+              className="flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-extrabold transition hover:opacity-90"
               style={{ background:"linear-gradient(135deg,#c9a55a,#b08d45)", color:"#0a0a0a" }}>
               <Plus size={11}/> Facture
             </button>
@@ -2702,7 +2702,7 @@ export default function FacturesPage() {
                 <button
                   onClick={() => { setDraft(null); setSelected(null); setMobileView("list"); }}
                   title="Retour aux documents"
-                  className={`hidden sm:flex items-center gap-1.5 h-7 rounded-lg border ${tbd1} px-2.5 ${tw4} text-[0.68rem] font-medium transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"}`}>
+                  className={`hidden sm:flex items-center gap-1.5 h-7 rounded-lg border ${tbd1} px-2.5 ${tw4} text-xs font-medium transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"}`}>
                   <ChevronLeft size={11}/> Documents
                 </button>
                 {/* ← Retour à la liste (mobile) */}
@@ -2712,14 +2712,14 @@ export default function FacturesPage() {
                 {/* Aperçu / Éditer toggle (mobile) */}
                 <button
                   onClick={() => setMobileView(mv => mv === "preview" ? "editor" : "preview")}
-                  className={`flex items-center gap-1.5 text-[0.72rem] font-medium transition sm:hidden ${mobileView === "preview" ? tw2 : tw4}`}>
+                  className={`flex items-center gap-1.5 text-sm font-medium transition sm:hidden ${mobileView === "preview" ? tw2 : tw4}`}>
                   <Eye size={13}/> {mobileView === "preview" ? "Éditer" : "Aperçu"}
                 </button>
                 {/* Type toggle */}
                 <div className={`flex rounded-xl ${tiB} p-0.5`}>
                   {(["facture","devis"] as DocType[]).map(t => (
                     <button key={t} onClick={() => { updDraft("type", t); if (!selected) setDraft(d => d ? { ...d, numero: newNumero(t, documents) } : d); }}
-                      className={`rounded-lg px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${draft.type === t ? "text-[#0a0a0a]" : (isDark ? "text-white/40 hover:text-white/70" : "text-gray-400 hover:text-gray-700")}`}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition ${draft.type === t ? "text-[#0a0a0a]" : (isDark ? "text-white/40 hover:text-white/70" : "text-gray-400 hover:text-gray-700")}`}
                       style={draft.type === t ? { background:`linear-gradient(135deg,${activeColor},${activeColor}cc)` } : {}}>
                       {t}
                     </button>
@@ -2729,7 +2729,7 @@ export default function FacturesPage() {
                 <div className="relative">
                   <select value={draft.statut}
                     onChange={e => selected ? handleStatut(e.target.value as DocStatut) : updDraft("statut", e.target.value)}
-                    className="appearance-none rounded-xl border py-1.5 pl-3 pr-7 text-[0.65rem] font-bold uppercase tracking-wider outline-none cursor-pointer transition"
+                    className="appearance-none rounded-xl border py-1.5 pl-3 pr-7 text-xs font-bold uppercase tracking-wider outline-none cursor-pointer transition"
                     style={(() => { const s = STATUTS[draft.statut]; return { color:s.color, background:s.bg, borderColor:s.border }; })()}>
                     {(Object.keys(STATUTS) as DocStatut[]).map(s => (
                       <option key={s} value={s} style={{ background:"#181818", color:"#fff" }}>{STATUTS[s].label}</option>
@@ -2738,7 +2738,7 @@ export default function FacturesPage() {
                   <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-current opacity-60"/>
                 </div>
                 {dirty && (
-                  <span className="flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.08)] px-2.5 py-1 text-[0.6rem] font-semibold text-[#c9a55a]">
+                  <span className="flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.08)] px-2.5 py-1 text-xs font-semibold text-[#c9a55a]">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#c9a55a]"/>
                     <span className="hidden sm:inline">Non sauvegardé</span>
                   </span>
@@ -2848,7 +2848,7 @@ export default function FacturesPage() {
                   { id:"historique", label:"Historique" },
                 ] as { id: EditorTab; label: string }[]).map(tab => (
                   <button key={tab.id} onClick={() => setActiveEditorTab(tab.id)}
-                    className={`flex items-center border-b-2 px-4 py-2.5 text-[0.68rem] font-bold whitespace-nowrap transition-all -mb-px
+                    className={`flex items-center border-b-2 px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-all -mb-px
                       ${activeEditorTab === tab.id
                         ? "border-[#c9a55a] text-[#c9a55a]"
                         : `border-transparent ${tw4} ${isDark ? "hover:text-white/60" : "hover:text-gray-600"}`
@@ -2879,15 +2879,15 @@ export default function FacturesPage() {
                       )}
                       {/* Centre : type + référence + sujet */}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[0.5rem] font-bold uppercase tracking-[0.2em] ${tw4}`}>{draft.type === "facture" ? "Facture" : "Devis"}</p>
+                        <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${tw4}`}>{draft.type === "facture" ? "Facture" : "Devis"}</p>
                         <p className={`text-base font-extrabold leading-snug truncate ${tw1}`}>{draft.numero || "(numéro)"}</p>
-                        {draft.sujet && <p className={`text-[0.65rem] truncate ${tw3}`}>{draft.sujet}</p>}
+                        {draft.sujet && <p className={`text-xs truncate ${tw3}`}>{draft.sujet}</p>}
                       </div>
                       {/* Droite : montant + client */}
                       <div className="shrink-0 text-right">
                         <p className="text-xl font-black leading-none" style={{ color: activeColor }}>{fmt(totals.ttc)}</p>
-                        <p className={`mt-1 text-[0.6rem] ${tw4}`}>{fmtDate(draft.date_document)}</p>
-                        {draft.client_nom && <p className={`text-[0.6rem] font-semibold truncate max-w-[120px] ${tw2}`}>{draft.client_nom}</p>}
+                        <p className={`mt-1 text-xs ${tw4}`}>{fmtDate(draft.date_document)}</p>
+                        {draft.client_nom && <p className={`text-xs font-semibold truncate max-w-[120px] ${tw2}`}>{draft.client_nom}</p>}
                       </div>
                     </div>
                   </div>
@@ -2895,7 +2895,7 @@ export default function FacturesPage() {
                   {/* ── Lien Avoir ↔ Facture source ── */}
                   {selected?.type === "avoir" && selected.source_id && (
                     <div className="rounded-2xl border p-4" style={{ borderColor: "rgba(244,114,182,0.2)", background: "rgba(244,114,182,0.04)" }}>
-                      <p className="mb-2.5 text-[0.58rem] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(244,114,182,0.5)" }}>
+                      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(244,114,182,0.5)" }}>
                         Facture source
                       </p>
                       {docById.has(selected.source_id) ? (() => {
@@ -2911,7 +2911,7 @@ export default function FacturesPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-extrabold leading-tight" style={{ color: "#f9a8d4" }}>{src.numero}</p>
-                              <p className="text-[0.62rem]" style={{ color: "rgba(244,114,182,0.5)" }}>
+                              <p className="text-xs" style={{ color: "rgba(244,114,182,0.5)" }}>
                                 {fmtDate(src.date_document)}{src.client_nom ? ` · ${src.client_nom}` : ""}
                               </p>
                             </div>
@@ -2926,7 +2926,7 @@ export default function FacturesPage() {
                   )}
                   {selected?.type === "facture" && (avoirsBySourceId.get(selected.id)?.length ?? 0) > 0 && (
                     <div className="rounded-2xl border p-4" style={{ borderColor: "rgba(244,114,182,0.2)", background: "rgba(244,114,182,0.04)" }}>
-                      <p className="mb-2.5 text-[0.58rem] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(244,114,182,0.5)" }}>
+                      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(244,114,182,0.5)" }}>
                         {avoirsBySourceId.get(selected.id)!.length > 1 ? "Avoirs liés" : "Avoir lié"}
                       </p>
                       <div className="space-y-2">
@@ -2941,7 +2941,7 @@ export default function FacturesPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-extrabold leading-tight" style={{ color: "#f9a8d4" }}>{av.numero}</p>
-                              <p className="text-[0.62rem]" style={{ color: "rgba(244,114,182,0.5)" }}>
+                              <p className="text-xs" style={{ color: "rgba(244,114,182,0.5)" }}>
                                 {fmtDate(av.date_document)} · <StatutBadge statut={av.statut}/>
                               </p>
                             </div>
@@ -2957,11 +2957,11 @@ export default function FacturesPage() {
                   {selected?.type === "facture" && (selected.montant_paye ?? 0) > 0 && (
                     <div className="rounded-2xl border p-4" style={{ borderColor:"rgba(251,191,36,0.2)", background:"rgba(251,191,36,0.04)" }}>
                       <div className="mb-3 flex items-center justify-between">
-                        <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.5)" }}>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.5)" }}>
                           Paiements reçus
                         </p>
                         <button onClick={() => setPayModal(true)}
-                          className="rounded-lg border border-[rgba(251,191,36,0.3)] px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
+                          className="rounded-lg border border-[rgba(251,191,36,0.3)] px-2 py-1 text-[11px] font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
                           style={{ color:"#fbbf24" }}>
                           + Ajouter
                         </button>
@@ -2981,7 +2981,7 @@ export default function FacturesPage() {
                         }}/>
                       </div>
                       {(selected.total_ttc - (selected.montant_paye ?? 0)) > 0.01 && (
-                        <p className="mt-1.5 text-[0.62rem]" style={{ color:"rgba(251,191,36,0.45)" }}>
+                        <p className="mt-1.5 text-xs" style={{ color:"rgba(251,191,36,0.45)" }}>
                           Solde restant : {fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}
                         </p>
                       )}
@@ -3022,14 +3022,14 @@ export default function FacturesPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2.5">
                       <User size={10} className="shrink-0 text-blue-400/60"/>
-                      <span className={`shrink-0 text-[0.63rem] font-bold uppercase tracking-widest ${tw4}`}>Client</span>
+                      <span className={`shrink-0 text-xs font-bold uppercase tracking-widest ${tw4}`}>Client</span>
                       <div className={`flex-1 h-px ${tsep}`}/>
                       <a href="/client/factures/parametres" title="Infos entreprise"
-                        className={`flex shrink-0 items-center gap-1 rounded-lg border ${tbd2} px-2 py-1 text-[0.62rem] font-semibold ${tw5} transition ${isDark ? "hover:border-white/20 hover:text-white/50" : "hover:border-gray-300 hover:text-gray-500"}`}>
+                        className={`flex shrink-0 items-center gap-1 rounded-lg border ${tbd2} px-2 py-1 text-xs font-semibold ${tw5} transition ${isDark ? "hover:border-white/20 hover:text-white/50" : "hover:border-gray-300 hover:text-gray-500"}`}>
                         <Building2 size={9}/> Mon entreprise
                       </a>
                       <button onClick={openCrmModal}
-                        className="flex shrink-0 items-center gap-1 rounded-lg border border-[rgba(96,165,250,0.2)] px-2 py-1 text-[0.62rem] font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400">
+                        className="flex shrink-0 items-center gap-1 rounded-lg border border-[rgba(96,165,250,0.2)] px-2 py-1 text-xs font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400">
                         <Users size={9}/> CRM
                       </button>
                     </div>
@@ -3058,15 +3058,15 @@ export default function FacturesPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2.5">
                       <ReceiptText size={10} className={`shrink-0 ${tw5}`}/>
-                      <span className={`shrink-0 text-[0.63rem] font-bold uppercase tracking-widest ${tw4}`}>Lignes de prestation</span>
+                      <span className={`shrink-0 text-xs font-bold uppercase tracking-widest ${tw4}`}>Lignes de prestation</span>
                       <div className={`flex-1 h-px ${tsep}`}/>
                       <button onClick={addItem}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[0.65rem] font-semibold transition hover:opacity-80"
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition hover:opacity-80"
                         style={{ color:activeColor, borderColor:`${activeColor}44`, background:`${activeColor}11` }}>
                         <Plus size={10}/> Ajouter une ligne
                       </button>
                       <button onClick={() => { setShowAiBox(v => !v); setTimeout(() => document.getElementById("ai-prompt-input")?.focus(), 50); }}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.07)] px-2.5 py-1 text-[0.65rem] font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)]">
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.07)] px-2.5 py-1 text-xs font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)]">
                         <Sparkles size={10}/> IA
                       </button>
                     </div>
@@ -3090,12 +3090,12 @@ export default function FacturesPage() {
                               onChange={e => setAiPrompt(e.target.value)}
                               onKeyDown={e => { if (e.key === "Enter") void handleAiGenerate(); if (e.key === "Escape") setShowAiBox(false); }}
                               placeholder="Ex : Développement site e-commerce, 3 500€ HT, TVA 20%…"
-                              className={`flex-1 bg-transparent text-[0.72rem] outline-none ${isDark ? "text-white placeholder:text-white/25" : "text-gray-700 placeholder:text-gray-400"}`}
+                              className={`flex-1 bg-transparent text-sm outline-none ${isDark ? "text-white placeholder:text-white/25" : "text-gray-700 placeholder:text-gray-400"}`}
                             />
                             <button
                               onClick={() => void handleAiGenerate()}
                               disabled={!aiPrompt.trim() || aiLoading}
-                              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#c9a55a] px-3 py-1.5 text-[0.65rem] font-bold text-white transition hover:bg-[#d4af6a] disabled:opacity-40">
+                              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#c9a55a] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#d4af6a] disabled:opacity-40">
                               {aiLoading ? <Loader2 size={10} className="animate-spin"/> : <Sparkles size={10}/>}
                               {aiLoading ? "Génération…" : "Générer"}
                             </button>
@@ -3110,7 +3110,7 @@ export default function FacturesPage() {
                     {/* Column headers */}
                     <div className="mb-1 hidden grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] gap-1.5 px-3 sm:grid">
                       {["Description","Unité","Qté","Prix HT","Remise %","TVA %","Total HT",""].map(h => (
-                        <span key={h} className={`text-[0.6rem] font-bold uppercase tracking-wider ${tw5}`}>{h}</span>
+                        <span key={h} className={`text-xs font-bold uppercase tracking-wider ${tw5}`}>{h}</span>
                       ))}
                     </div>
                     <div className="space-y-2">
@@ -3139,7 +3139,7 @@ export default function FacturesPage() {
                       <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
                         <Percent size={13} style={{ color:activeColor }}/>
                         <div className="flex-1">
-                          <p className={`mb-1 text-[0.63rem] font-medium ${tw3}`}>Remise globale</p>
+                          <p className={`mb-1 text-xs font-medium ${tw3}`}>Remise globale</p>
                           <div className="flex items-center gap-2">
                             <input type="number" min="0" max="100" step="0.5"
                               value={draft.remise_pct || ""}
@@ -3154,7 +3154,7 @@ export default function FacturesPage() {
                       <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
                         <BadgeCheck size={13} className="text-green-400"/>
                         <div className="flex-1">
-                          <p className={`mb-1 text-[0.63rem] font-medium ${tw3}`}>Acompte versé</p>
+                          <p className={`mb-1 text-xs font-medium ${tw3}`}>Acompte versé</p>
                           <div className="flex items-center gap-2">
                             <input type="number" min="0" step="0.01"
                               value={draft.acompte || ""}
@@ -3232,7 +3232,7 @@ export default function FacturesPage() {
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {CONDITIONS_PRESETS.map(p => (
                             <button key={p.label} onClick={() => updDraft("conditions", p.val)}
-                              className={`rounded-full border ${tbd1} px-2 py-0.5 text-[0.6rem] font-semibold ${tw4} transition ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`}>
+                              className={`rounded-full border ${tbd1} px-2 py-0.5 text-xs font-semibold ${tw4} transition ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`}>
                               {p.label}
                             </button>
                           ))}
@@ -3247,11 +3247,11 @@ export default function FacturesPage() {
 
                     {/* Sélecteur de régime fiscal */}
                     <div className={`rounded-xl border ${tbd1} ${tbg2} p-3 space-y-2`}>
-                      <p className={`text-[0.6rem] font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Régime fiscal</p>
+                      <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Régime fiscal</p>
                       <div className="flex flex-wrap gap-1.5">
                         {REGIMES_FISCAUX.map(r => (
                           <button key={r.id} onClick={() => applyRegime(r.id)}
-                            className={`rounded-full border px-2.5 py-1 text-[0.62rem] font-semibold transition ${
+                            className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
                               regimeFiscal === r.id
                                 ? "border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.1)] text-[#c9a55a]"
                                 : `${tbd1} ${tw4} ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`
@@ -3261,7 +3261,7 @@ export default function FacturesPage() {
                         ))}
                       </div>
                       {regimeFiscal && (
-                        <p className={`text-[0.58rem] leading-relaxed ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                        <p className={`text-[11px] leading-relaxed ${isDark ? "text-white/30" : "text-gray-400"}`}>
                           {REGIMES_FISCAUX.find(r => r.id === regimeFiscal)?.hint}
                           {" · "}
                           <button
@@ -3278,7 +3278,7 @@ export default function FacturesPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {MENTIONS_PRESETS.map(p => (
                         <button key={p.label} onClick={() => updDraft("mentions_legales", draft.mentions_legales ? `${draft.mentions_legales}\n${p.val}` : p.val)}
-                          className={`flex items-center gap-1 rounded-full border ${tbd1} px-2.5 py-1 text-[0.62rem] font-semibold ${tw4} transition ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`}>
+                          className={`flex items-center gap-1 rounded-full border ${tbd1} px-2.5 py-1 text-xs font-semibold ${tw4} transition ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`}>
                           <Plus size={8}/>{p.label}
                         </button>
                       ))}
@@ -3320,14 +3320,14 @@ export default function FacturesPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className={`text-xs font-semibold ${tw1}`}>{RECUR_FREQS.find(f => f.val === docRecurCfg.freq)?.label}</p>
-                              <p className={`text-[0.65rem] ${tw3}`}>Prochaine : {fmtDate(docRecurCfg.next_date)}</p>
+                              <p className={`text-xs ${tw3}`}>Prochaine : {fmtDate(docRecurCfg.next_date)}</p>
                             </div>
                             <button onClick={() => { setRecurFreq(docRecurCfg.freq); setRecurModal(true); }}
-                              className={`shrink-0 text-[0.65rem] ${tw4} transition hover:${tw2}`}>Modifier</button>
+                              className={`shrink-0 text-xs ${tw4} transition hover:${tw2}`}>Modifier</button>
                             <button onClick={() => { void supabase.from("documents").update({ recur_freq: null, recur_next_date: null }).eq("id", selected.id).eq("user_id", uid ?? ""); setDocRecurCfg(null); setSelected(s => s ? { ...s, recur_freq: null, recur_next_date: null } : s); showToast("success", "Récurrence désactivée."); }}
-                              className="shrink-0 text-[0.65rem] text-red-400/50 transition hover:text-red-400">Désactiver</button>
+                              className="shrink-0 text-xs text-red-400/50 transition hover:text-red-400">Désactiver</button>
                             <button onClick={() => handleDuplicateRecur(docRecurCfg.freq, docRecurCfg.next_date)} disabled={duplicating}
-                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-bold transition hover:bg-[rgba(201,165,90,0.08)] disabled:opacity-40"
+                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-xs font-bold transition hover:bg-[rgba(201,165,90,0.08)] disabled:opacity-40"
                               style={{ color:"#c9a55a" }}>
                               {duplicating ? <Loader2 size={9} className="animate-spin"/> : <Repeat2 size={9}/>} Créer prochaine
                             </button>
@@ -3337,9 +3337,9 @@ export default function FacturesPage() {
                             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${tbd1} ${tbg1}`}>
                               <Repeat2 size={14} className={tw5}/>
                             </div>
-                            <p className={`flex-1 text-[0.65rem] ${tw4}`}>Aucune récurrence configurée</p>
+                            <p className={`flex-1 text-xs ${tw4}`}>Aucune récurrence configurée</p>
                             <button onClick={() => setRecurModal(true)}
-                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-semibold transition hover:bg-[rgba(201,165,90,0.08)]"
+                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-xs font-semibold transition hover:bg-[rgba(201,165,90,0.08)]"
                               style={{ color:"#c9a55a" }}>
                               <Plus size={9}/> Activer
                             </button>
@@ -3364,16 +3364,16 @@ export default function FacturesPage() {
                               <img src={docSignature} alt="Signature" className="mt-1 h-8 w-auto max-w-[120px] opacity-80"/>
                             </div>
                             <button onClick={sigDelete}
-                              className="shrink-0 text-[0.65rem] text-red-400/50 transition hover:text-red-400">Supprimer</button>
+                              className="shrink-0 text-xs text-red-400/50 transition hover:text-red-400">Supprimer</button>
                           </>
                         ) : (
                           <>
                             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${tbd1} ${tbg1}`}>
                               <PenLine size={14} className={tw5}/>
                             </div>
-                            <p className={`flex-1 text-[0.65rem] ${tw4}`}>Aucune signature</p>
+                            <p className={`flex-1 text-xs ${tw4}`}>Aucune signature</p>
                             <button onClick={() => setSigModal(true)}
-                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-[0.65rem] font-semibold transition hover:bg-[rgba(201,165,90,0.08)]"
+                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-xs font-semibold transition hover:bg-[rgba(201,165,90,0.08)]"
                               style={{ color:"#c9a55a" }}>
                               <PenLine size={9}/> Signer
                             </button>
@@ -3392,9 +3392,9 @@ export default function FacturesPage() {
                     <>
                       <div className="rounded-2xl border p-5" style={{ borderColor:"rgba(251,191,36,0.2)", background:"rgba(251,191,36,0.04)" }}>
                         <div className="mb-4 flex items-center justify-between">
-                          <p className="text-[0.6rem] font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.6)" }}>Paiements reçus</p>
+                          <p className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.6)" }}>Paiements reçus</p>
                           <button onClick={() => setPayModal(true)}
-                            className="flex items-center gap-1.5 rounded-lg border border-[rgba(251,191,36,0.3)] px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
+                            className="flex items-center gap-1.5 rounded-lg border border-[rgba(251,191,36,0.3)] px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
                             style={{ color:"#fbbf24" }}>
                             <Plus size={10}/> Ajouter
                           </button>
@@ -3421,7 +3421,7 @@ export default function FacturesPage() {
                       </div>
                     </>
                   ) : (
-                    <p className={`text-[0.75rem] ${tw4}`}>Le suivi des paiements est disponible pour les factures uniquement.</p>
+                    <p className={`text-sm ${tw4}`}>Le suivi des paiements est disponible pour les factures uniquement.</p>
                   )}
                 </div>)}
 
@@ -3434,7 +3434,7 @@ export default function FacturesPage() {
                     <div className="space-y-3">
                       <SectionLabel icon={<Clock size={10}/>} label="Historique"/>
                       {auditLog.length === 0 ? (
-                        <p className={`text-[0.7rem] ${tw5}`}>Aucun événement enregistré.</p>
+                        <p className={`text-xs ${tw5}`}>Aucun événement enregistré.</p>
                       ) : (
                         <div className="relative space-y-0">
                           {auditLog.map((entry, i) => {
@@ -3464,8 +3464,8 @@ export default function FacturesPage() {
                                   {!isLast && <div className={`mt-1 w-px flex-1 ${isDark ? "bg-white/[0.06]" : "bg-gray-200"}`}/>}
                                 </div>
                                 <div className="pb-3 min-w-0">
-                                  <p className={`text-[0.72rem] font-medium ${tw2} leading-snug`}>{meta.label(entry.details)}</p>
-                                  <p className={`text-[0.62rem] ${tw5} mt-0.5`}>{relTime}</p>
+                                  <p className={`text-sm font-medium ${tw2} leading-snug`}>{meta.label(entry.details)}</p>
+                                  <p className={`text-xs ${tw5} mt-0.5`}>{relTime}</p>
                                 </div>
                               </div>
                             );
@@ -3561,19 +3561,19 @@ export default function FacturesPage() {
             style={{ background: isDark ? "#181818" : "#ffffff" }}>
             <div className="flex items-center gap-2">
               <Eye size={11} style={{ color: activeColor }}/>
-              <span className={`text-[0.62rem] font-semibold uppercase tracking-widest ${tw4}`}>Aperçu live</span>
+              <span className={`text-xs font-semibold uppercase tracking-widest ${tw4}`}>Aperçu live</span>
             </div>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
-                className="flex items-center gap-1 rounded px-2 py-1 text-[0.6rem] font-semibold transition hover:opacity-90"
+                className="flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold transition hover:opacity-90"
                 style={{ background: `${activeColor}1a`, color: activeColor, border: `1px solid ${activeColor}33` }}>
                 <FileDown size={9}/> PDF
               </button>
               {draft.type !== "devis" && (
                 <button
                   onClick={downloadXml}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-[0.6rem] font-semibold transition hover:opacity-90"
+                  className="flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold transition hover:opacity-90"
                   style={{ background: "rgba(100,200,120,0.10)", color: "#6abf7b", border: "1px solid rgba(100,200,120,0.20)" }}
                   title="Télécharger XML Factur-X">
                   <FileCode2 size={9}/> XML
@@ -3666,7 +3666,7 @@ export default function FacturesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => { setCrmModal(false); csvInputRef.current?.click(); }}
-                    className="flex items-center gap-1.5 rounded-xl border border-white/[0.09] px-2.5 py-1.5 text-[0.65rem] font-semibold text-white/40 transition hover:text-white/70">
+                    className="flex items-center gap-1.5 rounded-xl border border-white/[0.09] px-2.5 py-1.5 text-xs font-semibold text-white/40 transition hover:text-white/70">
                     <Upload size={11}/> CSV
                   </button>
                   <button onClick={() => setCrmModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
@@ -3739,7 +3739,7 @@ export default function FacturesPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold text-white">Envoyer par email</h3>
-                    <p className="text-[0.65rem] text-white/30">{draft?.numero}</p>
+                    <p className="text-xs text-white/30">{draft?.numero}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -3748,7 +3748,7 @@ export default function FacturesPage() {
                       onClick={() => void handleAiRelance()}
                       disabled={relanceAiLoading}
                       title="Générer un message de relance avec l'IA"
-                      className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.07)] px-2.5 py-1.5 text-[0.65rem] font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)] disabled:opacity-50">
+                      className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.07)] px-2.5 py-1.5 text-xs font-bold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.15)] disabled:opacity-50">
                       {relanceAiLoading ? <Loader2 size={10} className="animate-spin"/> : <Sparkles size={10}/>}
                       {relanceAiLoading ? "IA…" : "IA"}
                     </button>
@@ -3758,17 +3758,17 @@ export default function FacturesPage() {
               </div>
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Destinataire</label>
+                  <label className="mb-1 block text-xs font-medium text-white/35">Destinataire</label>
                   <input value={emailTo} onChange={e => setEmailTo(e.target.value)} placeholder="email@client.com"
                     className={`w-full rounded-xl ${B} ${BH} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-400/40`}/>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Objet</label>
+                  <label className="mb-1 block text-xs font-medium text-white/35">Objet</label>
                   <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
                     className={`w-full rounded-xl ${B} ${BH} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-400/40`}/>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[0.65rem] font-medium text-white/35">Message</label>
+                  <label className="mb-1 block text-xs font-medium text-white/35">Message</label>
                   <textarea value={emailMsg} onChange={e => setEmailMsg(e.target.value)} rows={4}
                     className={`w-full resize-none rounded-xl ${B} ${BH} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-400/40`}/>
                 </div>
@@ -3850,7 +3850,7 @@ export default function FacturesPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold text-white">Portail client</h3>
-                    <p className="text-[0.62rem] text-white/35">{draft?.client_nom}</p>
+                    <p className="text-xs text-white/35">{draft?.client_nom}</p>
                   </div>
                 </div>
                 <button onClick={() => setPortalModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
@@ -3906,14 +3906,14 @@ export default function FacturesPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold text-white">Facturation récurrente</h3>
-                    <p className="text-[0.62rem] text-white/30">Génère la prochaine facture automatiquement</p>
+                    <p className="text-xs text-white/30">Génère la prochaine facture automatiquement</p>
                   </div>
                 </div>
                 <button onClick={() => setRecurModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-[0.65rem] font-medium text-white/35">Fréquence</label>
+                  <label className="mb-2 block text-xs font-medium text-white/35">Fréquence</label>
                   <div className="grid grid-cols-2 gap-2">
                     {RECUR_FREQS.map(f => (
                       <button key={f.val} onClick={() => setRecurFreq(f.val)}
@@ -3928,7 +3928,7 @@ export default function FacturesPage() {
                 </div>
                 {draft?.date_echeance && (
                   <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-                    <p className="text-[0.65rem] text-white/35">Prochaine facture le</p>
+                    <p className="text-xs text-white/35">Prochaine facture le</p>
                     <p className="mt-0.5 text-sm font-bold text-white">{fmtDate(nextRecurDate(draft.date_echeance, recurFreq))}</p>
                   </div>
                 )}
@@ -3962,7 +3962,7 @@ export default function FacturesPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold text-white">Signature électronique</h3>
-                    <p className="text-[0.62rem] text-white/30">Signez avec votre souris ou votre doigt</p>
+                    <p className="text-xs text-white/30">Signez avec votre souris ou votre doigt</p>
                   </div>
                 </div>
                 <button onClick={() => { setSigModal(false); sigClear(); }} className="text-white/25 hover:text-white/60"><X size={15}/></button>
@@ -3981,7 +3981,7 @@ export default function FacturesPage() {
                   onTouchEnd={sigEnd}
                 />
               </div>
-              <p className="mt-2 text-center text-[0.6rem] text-white/20">Signez dans la zone ci-dessus</p>
+              <p className="mt-2 text-center text-xs text-white/20">Signez dans la zone ci-dessus</p>
               <div className="mt-4 flex gap-3">
                 <button onClick={sigClear}
                   className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/40 transition hover:text-white/60">Effacer</button>
@@ -4011,7 +4011,7 @@ export default function FacturesPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold text-white">Import CSV — {csvRows.length} contact{csvRows.length !== 1 ? "s" : ""}</h3>
-                    <p className="text-[0.62rem] text-white/30">Colonnes reconnues : nom, email, societe, telephone</p>
+                    <p className="text-xs text-white/30">Colonnes reconnues : nom, email, societe, telephone</p>
                   </div>
                 </div>
                 <button onClick={() => { setCsvModal(false); setCsvRows([]); }} className="text-white/25 hover:text-white/60"><X size={15}/></button>
@@ -4022,17 +4022,17 @@ export default function FacturesPage() {
                 <div className="mb-4 max-h-60 space-y-1.5 overflow-y-auto">
                   {csvRows.slice(0, 50).map((r, i) => (
                     <div key={i} className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-blue-400/[0.07] text-[0.62rem] font-bold text-blue-400">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-blue-400/[0.07] text-xs font-bold text-blue-400">
                         {(r.nom || r.email || "?").charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-white truncate">{r.nom || "(sans nom)"}</p>
-                        {r.societe && <p className="text-[0.6rem] text-white/35 truncate">{r.societe}</p>}
+                        {r.societe && <p className="text-xs text-white/35 truncate">{r.societe}</p>}
                       </div>
-                      {r.email && <span className="shrink-0 max-w-[140px] truncate text-[0.6rem] text-white/30">{r.email}</span>}
+                      {r.email && <span className="shrink-0 max-w-[140px] truncate text-xs text-white/30">{r.email}</span>}
                     </div>
                   ))}
-                  {csvRows.length > 50 && <p className="text-center text-[0.6rem] text-white/25">+{csvRows.length - 50} autres…</p>}
+                  {csvRows.length > 50 && <p className="text-center text-xs text-white/25">+{csvRows.length - 50} autres…</p>}
                 </div>
               )}
               <div className="flex gap-3">
@@ -4064,7 +4064,7 @@ export default function FacturesPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold text-white">Rappels automatiques</h3>
-                    <p className="text-[0.62rem] text-white/30">{overdueWithEmail.length} facture{overdueWithEmail.length !== 1 ? "s" : ""} en retard avec email</p>
+                    <p className="text-xs text-white/30">{overdueWithEmail.length} facture{overdueWithEmail.length !== 1 ? "s" : ""} en retard avec email</p>
                   </div>
                 </div>
                 <button onClick={() => setRemindersModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
@@ -4078,9 +4078,9 @@ export default function FacturesPage() {
                     <div key={doc.id} className="flex items-center gap-3 rounded-xl border border-red-500/[0.09] bg-red-500/[0.04] px-3 py-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-white truncate">{doc.client_nom} — {doc.numero}</p>
-                        <p className="text-[0.6rem] text-white/35">{doc.client_email}</p>
+                        <p className="text-xs text-white/35">{doc.client_email}</p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-[0.6rem] font-bold text-red-400">+{daysLate}j</span>
+                      <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-bold text-red-400">+{daysLate}j</span>
                       <span className="shrink-0 text-sm font-bold text-red-300/80">{fmtEur(doc.total_ttc)}</span>
                     </div>
                   );
@@ -4117,7 +4117,7 @@ export default function FacturesPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold text-white">Encaisser un paiement</h3>
-                    <p className="text-[0.62rem] text-white/30">{selected.numero} · Total {fmtEur(selected.total_ttc)}</p>
+                    <p className="text-xs text-white/30">{selected.numero} · Total {fmtEur(selected.total_ttc)}</p>
                   </div>
                 </div>
                 <button onClick={() => setPayModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
@@ -4145,7 +4145,7 @@ export default function FacturesPage() {
               <div className="mb-5 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-[0.62rem] font-bold uppercase tracking-wider text-white/40">Montant (€)</label>
+                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/40">Montant (€)</label>
                     <input
                       type="number" step="0.01" min="0.01"
                       placeholder={`Max ${fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}`}
@@ -4155,7 +4155,7 @@ export default function FacturesPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-[0.62rem] font-bold uppercase tracking-wider text-white/40">Date</label>
+                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/40">Date</label>
                     <input
                       type="date" value={payDate}
                       onChange={e => setPayDate(e.target.value)}
@@ -4164,7 +4164,7 @@ export default function FacturesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[0.62rem] font-bold uppercase tracking-wider text-white/40">Mode de paiement</label>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/40">Mode de paiement</label>
                   <select value={payMethod} onChange={e => setPayMethod(e.target.value)}
                     className="w-full rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(251,191,36,0.4)]"
                     style={{ colorScheme:"dark" }}>
@@ -4174,7 +4174,7 @@ export default function FacturesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[0.62rem] font-bold uppercase tracking-wider text-white/40">Notes (optionnel)</label>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/40">Notes (optionnel)</label>
                   <input
                     type="text" placeholder="Référence virement, commentaire…"
                     value={payNotes}
@@ -4197,18 +4197,18 @@ export default function FacturesPage() {
               {/* Historique des paiements */}
               {payments.length > 0 && (
                 <div>
-                  <p className="mb-2 text-[0.58rem] font-bold uppercase tracking-[0.15em] text-white/25">Historique</p>
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.15em] text-white/25">Historique</p>
                   <div className="max-h-44 space-y-1.5 overflow-y-auto">
                     {payments.map(p => (
                       <div key={p.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-white">{fmtEur(p.amount)}</span>
-                            <span className="rounded-full border border-[rgba(251,191,36,0.2)] px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-wider" style={{ color:"#fbbf24" }}>
+                            <span className="rounded-full border border-[rgba(251,191,36,0.2)] px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider" style={{ color:"#fbbf24" }}>
                               {PAYMENT_METHODS.find(m => m.val === p.method)?.label ?? p.method}
                             </span>
                           </div>
-                          <p className="text-[0.62rem] text-white/30">{fmtDate(p.date)}{p.notes ? ` · ${p.notes}` : ""}</p>
+                          <p className="text-xs text-white/30">{fmtDate(p.date)}{p.notes ? ` · ${p.notes}` : ""}</p>
                         </div>
                         <button onClick={() => handleDeletePayment(p.id)}
                           className="shrink-0 rounded-lg p-1.5 text-white/20 transition hover:bg-red-500/10 hover:text-red-400">

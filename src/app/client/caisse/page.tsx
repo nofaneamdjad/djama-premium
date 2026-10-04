@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -366,11 +366,11 @@ export default function CaissePage() {
         <div>
           <h1 className={`text-base font-black ${text}`}>Caisse</h1>
           {session ? (
-            <p className="text-[0.62rem] text-emerald-400">
+            <p className="text-xs text-emerald-400">
               Session ouverte · {new Date(session.opened_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
             </p>
           ) : sessionLoad ? null : (
-            <p className={`text-[0.62rem] ${muted}`}>Aucune session</p>
+            <p className={`text-xs ${muted}`}>Aucune session</p>
           )}
         </div>
 
@@ -378,7 +378,7 @@ export default function CaissePage() {
           {/* Ventes en attente */}
           {pending.length > 0 && (
             <button onClick={()=>setShowPending(true)}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.68rem] font-bold ${card} transition hover:opacity-80`}>
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold ${card} transition hover:opacity-80`}>
               <PauseCircle size={12} style={{color:GOLD}}/> En attente · {pending.length}
             </button>
           )}
@@ -387,7 +387,7 @@ export default function CaissePage() {
           <div className={`hidden sm:flex rounded-xl border p-0.5 ${card}`}>
             {(["caisse","historique"] as const).map(t=>(
               <button key={t} onClick={()=>setTab(t)}
-                className={`rounded-lg px-3 py-1.5 text-[0.68rem] font-bold capitalize transition-all ${
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-all ${
                   tab===t ? "" : `${muted} hover:opacity-70`
                 }`}
                 style={tab===t?{background:`${GOLD}15`,color:GOLD}:{}}>
@@ -399,7 +399,7 @@ export default function CaissePage() {
 
           {/* Session */}
           <button onClick={()=>{ setSessionAction(session?"close":"open"); setShowSessionModal(true); }}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.68rem] font-bold transition ${
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
               session ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : `${card} ${muted}`
             }`}>
             <Settings size={11}/> {session ? "Fermer" : "Ouvrir"}
@@ -440,7 +440,7 @@ export default function CaissePage() {
               <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
                 {categories.map(cat=>(
                   <button key={cat} onClick={()=>setCatFilter(cat)}
-                    className={`shrink-0 flex items-center gap-1 rounded-xl border px-3 py-1.5 text-[0.67rem] font-bold transition-all ${
+                    className={`shrink-0 flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
                       catFilter===cat
                         ? isDark?"bg-white/10 border-white/20 text-white":"bg-white border-gray-300 text-gray-900 shadow-sm"
                         : `${card} ${muted} hover:opacity-80`
@@ -487,19 +487,19 @@ export default function CaissePage() {
                           )}
                         </div>
 
-                        <p className={`text-[0.72rem] font-bold leading-tight line-clamp-2 mb-1 ${text}`}>{item.name}</p>
+                        <p className={`text-sm font-bold leading-tight line-clamp-2 mb-1 ${text}`}>{item.name}</p>
                         <p className="text-sm font-black tabular-nums" style={{color:GOLD}}>{fmtCur(item.price)}</p>
 
                         {/* Stock */}
                         {item.type === "product" && item.stock !== null && (
-                          <p className="mt-0.5 text-[0.58rem] font-semibold" style={{color:stockC}}>
+                          <p className="mt-0.5 text-[11px] font-semibold" style={{color:stockC}}>
                             {item.stock <= 0 ? "Rupture" : item.stock_min !== null && item.stock <= item.stock_min ? `Faible · ${item.stock}` : `${item.stock} en stock`}
                           </p>
                         )}
 
                         {/* Badge en panier */}
                         {inCart && (
-                          <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[0.6rem] font-black text-black" style={{background:GOLD}}>
+                          <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full text-xs font-black text-black" style={{background:GOLD}}>
                             {inCart.qty}
                           </div>
                         )}
@@ -520,7 +520,7 @@ export default function CaissePage() {
                 <ShoppingCart size={14} style={{color:GOLD}}/>
                 <p className={`text-sm font-black ${text}`}>Panier</p>
                 {cart.length > 0 && (
-                  <span className="rounded-full px-1.5 py-0.5 text-[0.6rem] font-black text-black" style={{background:GOLD}}>
+                  <span className="rounded-full px-1.5 py-0.5 text-xs font-black text-black" style={{background:GOLD}}>
                     {cart.reduce((s,c)=>s+c.qty,0)}
                   </span>
                 )}
@@ -548,12 +548,12 @@ export default function CaissePage() {
             <div className={`shrink-0 border-b px-3 py-2.5 ${isDark?"border-white/6":"border-black/8"}`}>
               {contact ? (
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full text-[0.6rem] font-black text-black" style={{background:GOLD}}>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-black text-black" style={{background:GOLD}}>
                     {contact.name[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`text-xs font-bold truncate ${text}`}>{contact.name}</p>
-                    {contact.company && <p className={`text-[0.6rem] truncate ${muted}`}>{contact.company}</p>}
+                    {contact.company && <p className={`text-xs truncate ${muted}`}>{contact.company}</p>}
                   </div>
                   <button onClick={()=>setContact(null)} className={`${muted} hover:text-red-400`}><X size={12}/></button>
                 </div>
@@ -572,12 +572,12 @@ export default function CaissePage() {
                       {contactResults.slice(0,6).map(c=>(
                         <button key={c.id} onClick={()=>{setContact(c);setContactSearch("");setShowContactBox(false);}}
                           className={`flex w-full items-center gap-2 px-3 py-2 text-left transition ${isDark?"hover:bg-white/5":"hover:bg-gray-50"}`}>
-                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.55rem] font-black text-black" style={{background:GOLD}}>
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black text-black" style={{background:GOLD}}>
                             {c.name[0]}
                           </div>
                           <div className="min-w-0">
                             <p className={`text-xs font-semibold truncate ${text}`}>{c.name}</p>
-                            {c.company && <p className={`text-[0.6rem] ${muted} truncate`}>{c.company}</p>}
+                            {c.company && <p className={`text-xs ${muted} truncate`}>{c.company}</p>}
                           </div>
                         </button>
                       ))}
@@ -593,7 +593,7 @@ export default function CaissePage() {
                 <div className="flex flex-col items-center gap-3 py-12">
                   <ShoppingCart size={24} className={muted}/>
                   <p className={`text-sm ${muted}`}>Ajouter des articles</p>
-                  <p className={`text-[0.65rem] text-center ${muted}`}>Cliquer ou scanner un code-barres</p>
+                  <p className={`text-xs text-center ${muted}`}>Cliquer ou scanner un code-barres</p>
                 </div>
               ) : cart.map(c=>(
                 <div key={c.item.id} className={`rounded-2xl border p-3 ${card}`}>
@@ -603,7 +603,7 @@ export default function CaissePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-xs font-bold truncate ${text}`}>{c.item.name}</p>
-                      {c.item.sku && <p className={`text-[0.58rem] ${muted}`}>{c.item.sku}</p>}
+                      {c.item.sku && <p className={`text-[11px] ${muted}`}>{c.item.sku}</p>}
                     </div>
                     <button onClick={()=>removeFromCart(c.item.id)} className={`shrink-0 ${muted} hover:text-red-400`}>
                       <X size={12}/>
@@ -627,7 +627,7 @@ export default function CaissePage() {
                         const v = Math.min(100,Math.max(0,parseFloat(e.target.value)||0));
                         setCart(prev=>prev.map(p=>p.item.id===c.item.id?{...p,discount:v}:p));
                       }} type="number" min="0" max="100" placeholder="Rem%"
-                        className={`w-14 rounded-lg border px-2 py-1 text-[0.65rem] text-center outline-none ${input}`}/>
+                        className={`w-14 rounded-lg border px-2 py-1 text-xs text-center outline-none ${input}`}/>
                       <p className="text-xs font-black tabular-nums" style={{color:GOLD}}>
                         {fmtCur(c.item.price * c.qty * (1 - c.discount/100))}
                       </p>
@@ -656,10 +656,10 @@ export default function CaissePage() {
                     type="number" min="0" placeholder="Remise"
                     className={`flex-1 bg-transparent text-xs outline-none ${text}`}/>
                   <button onClick={()=>setDiscType(discType==="pct"?"fixed":"pct")}
-                    className={`rounded-lg border px-2 py-0.5 text-[0.65rem] font-bold ${card} ${muted}`}>
+                    className={`rounded-lg border px-2 py-0.5 text-xs font-bold ${card} ${muted}`}>
                     {discType === "pct" ? "%" : "€"}
                   </button>
-                  {remiseGlobale > 0 && <span className="text-[0.65rem] text-red-400">−{fmtCur(remiseGlobale)}</span>}
+                  {remiseGlobale > 0 && <span className="text-xs text-red-400">−{fmtCur(remiseGlobale)}</span>}
                 </div>
 
                 <div className={`flex items-center justify-between border-t pt-2 ${isDark?"border-white/6":"border-black/8"}`}>
@@ -702,7 +702,7 @@ export default function CaissePage() {
                 {label:"Panier moyen",   value:fmtCur(salesKpis.avg_today), color:"#3b82f6"},
               ].map(k=>(
                 <div key={k.label} className={`rounded-2xl border p-3 ${card}`}>
-                  <p className={`text-[0.58rem] mb-0.5 ${muted}`}>{k.label}</p>
+                  <p className={`text-[11px] mb-0.5 ${muted}`}>{k.label}</p>
                   <p className="text-sm font-black tabular-nums" style={{color:k.color}}>{k.value}</p>
                 </div>
               ))}
@@ -735,12 +735,12 @@ export default function CaissePage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-bold ${text}`}>{s.numero}</p>
-                        <p className={`text-[0.65rem] truncate ${muted}`}>{s.client_nom || "Client de passage"}</p>
-                        <p className={`text-[0.6rem] ${muted}`}>{fmtDate(s.created_at)}</p>
+                        <p className={`text-xs truncate ${muted}`}>{s.client_nom || "Client de passage"}</p>
+                        <p className={`text-xs ${muted}`}>{fmtDate(s.created_at)}</p>
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-sm font-black tabular-nums" style={{color:GOLD}}>{fmtCur(s.total_ttc)}</p>
-                        <p className={`text-[0.62rem] capitalize ${muted}`}>{method}</p>
+                        <p className={`text-xs capitalize ${muted}`}>{method}</p>
                       </div>
                     </div>
                   );
@@ -767,7 +767,7 @@ export default function CaissePage() {
               <div className="p-5 space-y-4">
                 {/* Total */}
                 <div className="text-center">
-                  <p className={`text-[0.65rem] mb-1 ${muted}`}>Total à encaisser</p>
+                  <p className={`text-xs mb-1 ${muted}`}>Total à encaisser</p>
                   <p className="text-4xl font-black tabular-nums" style={{color:GOLD}}>{fmtCur(totalTtc)}</p>
                 </div>
 
@@ -860,7 +860,7 @@ export default function CaissePage() {
                   <div key={p.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${card}`}>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-bold truncate ${text}`}>{p.label}</p>
-                      <p className={`text-[0.62rem] ${muted}`}>
+                      <p className={`text-xs ${muted}`}>
                         {(p.cart_data as CartItem[]).length} articles · {new Date(p.updated_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
                       </p>
                     </div>
@@ -899,12 +899,12 @@ export default function CaissePage() {
                 {sessionAction === "open" ? (
                   <>
                     <div>
-                      <label className={`mb-1 block text-[0.68rem] font-semibold ${muted}`}>Nom de la caisse</label>
+                      <label className={`mb-1 block text-xs font-semibold ${muted}`}>Nom de la caisse</label>
                       <input value={terminalName} onChange={e=>setTerminalName(e.target.value)}
                         className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none ${isDark?"border-white/8 bg-white/4 text-white":"border-black/8 bg-gray-50 text-gray-900"}`}/>
                     </div>
                     <div>
-                      <label className={`mb-1 block text-[0.68rem] font-semibold ${muted}`}>Fond de caisse</label>
+                      <label className={`mb-1 block text-xs font-semibold ${muted}`}>Fond de caisse</label>
                       <div className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${isDark?"border-white/8 bg-white/4":"border-black/8 bg-gray-50"}`}>
                         <Banknote size={13} className={muted}/>
                         <input value={openingCash} onChange={e=>setOpeningCash(e.target.value)} type="number" min="0"
@@ -932,7 +932,7 @@ export default function CaissePage() {
                       </div>
                     )}
                     <div>
-                      <label className={`mb-1 block text-[0.68rem] font-semibold ${muted}`}>Espèces comptées</label>
+                      <label className={`mb-1 block text-xs font-semibold ${muted}`}>Espèces comptées</label>
                       <div className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${isDark?"border-white/8 bg-white/4":"border-black/8 bg-gray-50"}`}>
                         <Banknote size={13} className={muted}/>
                         <input value={closingCash} onChange={e=>setClosingCash(e.target.value)} type="number" min="0"
@@ -941,7 +941,7 @@ export default function CaissePage() {
                       </div>
                     </div>
                     <div>
-                      <label className={`mb-1 block text-[0.68rem] font-semibold ${muted}`}>Commentaire</label>
+                      <label className={`mb-1 block text-xs font-semibold ${muted}`}>Commentaire</label>
                       <textarea value={closingNotes} onChange={e=>setClosingNotes(e.target.value)} rows={2}
                         className={`w-full resize-none rounded-xl border px-3.5 py-2.5 text-sm outline-none ${isDark?"border-white/8 bg-white/4 text-white placeholder-white/20":"border-black/8 bg-gray-50 text-gray-900"}`}/>
                     </div>

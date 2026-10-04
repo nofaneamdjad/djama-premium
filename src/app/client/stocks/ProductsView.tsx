@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -285,7 +285,7 @@ function CardGrid({ products, isDark, onEdit, onDelete, onAddMovement }: {
               <div className="flex items-center justify-end gap-1.5 mb-0.5">
                 <p className={`text-sm font-bold ${isDark ? "text-white/85" : "text-gray-800"}`}>{p.stock_current}</p>
                 {(() => { const s = STOCK_STATES[getStockState(p)]; return (
-                  <span className="text-[0.58rem] font-bold px-1.5 py-0.5 rounded-full"
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
                     {s.label}
                   </span>

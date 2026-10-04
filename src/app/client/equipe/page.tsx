@@ -1484,7 +1484,7 @@ export default function EquipePage() {
         <div className="relative flex items-center gap-3 px-5 pt-4 pb-3 flex-wrap gap-y-2">
           <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4 }} className="mr-auto">
             <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Équipe</h1>
-            <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-500"}`}>{members.length} membre{members.length!==1?"s":""} · {stats.active} actif{stats.active!==1?"s":""}</p>
+            <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-500"}`}>{members.length} membre{members.length!==1?"s":""} · {stats.active} actif{stats.active!==1?"s":""}</p>
           </motion.div>
           <div className="relative">
             <Search size={12} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`}/>
@@ -1532,7 +1532,7 @@ export default function EquipePage() {
                   <KpiIcon size={11} style={{ color: "#c9a55a" }} className="shrink-0"/>
                   <div>
                     <p className={`text-xs font-bold leading-none ${isDark ? "text-white" : "text-gray-900"}`}>{kpi.value}</p>
-                    <p className={`text-[0.55rem] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-500"}`}>{kpi.label}</p>
+                    <p className={`text-[11px] uppercase tracking-wide mt-0.5 whitespace-nowrap ${isDark ? "text-white/35" : "text-gray-500"}`}>{kpi.label}</p>
                   </div>
                 </motion.button>
               );

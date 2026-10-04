@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 interface BadgeProps {
   label:    string;
@@ -31,7 +31,7 @@ export function Badge({
   dot = false,
 }: BadgeProps) {
   const sizeClass = size === "xs"
-    ? "px-2 py-0.5 text-[0.65rem]"
+    ? "px-2 py-0.5 text-xs"
     : "px-2.5 py-1 text-xs";
 
   const variantClass = variant ? VARIANT_CLASSES[variant] : "";

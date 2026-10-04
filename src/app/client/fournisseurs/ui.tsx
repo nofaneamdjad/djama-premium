@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { createContext, useContext } from "react";
 import type { CSSProperties } from "react";
@@ -26,7 +26,7 @@ export function selStyle(isDark: boolean): CSSProperties {
 export function Lbl({ children }: { children: React.ReactNode }) {
   const isDark = useDark();
   return (
-    <label className={`mb-1.5 block text-[0.65rem] font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>
+    <label className={`mb-1.5 block text-xs font-medium ${isDark ? "text-white/35" : "text-gray-500"}`}>
       {children}
     </label>
   );

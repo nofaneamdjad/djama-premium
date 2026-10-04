@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import type { ContractStatus } from "./types";
@@ -18,5 +18,5 @@ export function inp(extra = "") {
 }
 
 export function Label({ children }: { children: React.ReactNode }) {
-  return <label className="mb-1.5 block text-[0.65rem] font-medium text-white/35">{children}</label>;
+  return <label className="mb-1.5 block text-xs font-medium text-white/35">{children}</label>;
 }

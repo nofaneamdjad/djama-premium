@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -247,11 +247,11 @@ function MsgContent({ text, isDark }: { text: string; isDark: boolean }) {
   lines.forEach((line, i) => {
     if (line.startsWith("## ") || line.startsWith("### ")) {
       flushList();
-      out.push(<p key={i} className="text-[0.82rem] font-bold mt-3 mb-1 first:mt-0" style={{ color: txH }}>{line.replace(/^#{2,3}\s/, "")}</p>);
+      out.push(<p key={i} className="text-sm font-bold mt-3 mb-1 first:mt-0" style={{ color: txH }}>{line.replace(/^#{2,3}\s/, "")}</p>);
     } else if (line.match(/^[-•*]\s/)) {
       const content = line.replace(/^[-•*]\s/, "");
       listBuf.push(
-        <li key={i} className="flex gap-2 text-[0.8rem] leading-relaxed" style={{ color: tx }}>
+        <li key={i} className="flex gap-2 text-sm leading-relaxed" style={{ color: tx }}>
           <span className="mt-[7px] h-1.5 w-1.5 rounded-full shrink-0" style={{ background: GOLD, opacity: 0.8 }} />
           <span>{bold(content, isDark)}</span>
         </li>
@@ -260,8 +260,8 @@ function MsgContent({ text, isDark }: { text: string; isDark: boolean }) {
       const content = line.replace(/^\d+\.\s/, "");
       const num = line.match(/^(\d+)\./)?.[1];
       listBuf.push(
-        <li key={i} className="flex gap-2 text-[0.8rem] leading-relaxed" style={{ color: tx }}>
-          <span className="shrink-0 text-[0.7rem] font-bold" style={{ color: GOLD }}>{num}.</span>
+        <li key={i} className="flex gap-2 text-sm leading-relaxed" style={{ color: tx }}>
+          <span className="shrink-0 text-xs font-bold" style={{ color: GOLD }}>{num}.</span>
           <span>{bold(content, isDark)}</span>
         </li>
       );
@@ -270,7 +270,7 @@ function MsgContent({ text, isDark }: { text: string; isDark: boolean }) {
       out.push(<div key={i} className="h-1" />);
     } else {
       flushList();
-      out.push(<p key={i} className="text-[0.8rem] leading-relaxed" style={{ color: tx }}>{bold(line, isDark)}</p>);
+      out.push(<p key={i} className="text-sm leading-relaxed" style={{ color: tx }}>{bold(line, isDark)}</p>);
     }
   });
   flushList();
@@ -304,7 +304,7 @@ function DocDownloadButton({ pdfData, isDark }: { pdfData: PdfData; isDark: bool
     <button
       onClick={handleDownload}
       disabled={loading}
-      className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.65rem] font-semibold transition active:scale-95 disabled:opacity-60"
+      className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition active:scale-95 disabled:opacity-60"
       style={{ background: bg, border: bdr, color: isDark ? GOLD : "#8a6a28" }}
     >
       {loading ? <Loader2 size={10} className="animate-spin" /> : <FileText size={10} />}
@@ -343,7 +343,7 @@ function InsightsPanel({ insights, loading, isDark }: { insights: LiveInsights |
             style={{ border: `1px solid ${item.warn ? item.warnColor + "22" : bdr}`, background: item.warn ? `${item.warnColor}09` : "transparent" }}>
             <div className="flex items-center gap-2">
               <item.icon size={13} style={{ color: accent }} />
-              <span className="text-[0.72rem]" style={{ color: tx }}>{item.label}</span>
+              <span className="text-sm" style={{ color: tx }}>{item.label}</span>
             </div>
             <span className="text-sm font-bold" style={{ color: accent }}>{item.value}</span>
           </div>
@@ -406,8 +406,8 @@ function SidebarInner({
               <DjamaAiSymbol size={14} />
             </div>
             <div>
-              <p className="text-[0.82rem] font-bold" style={{ color: tx }}>DJAMA AI</p>
-              <p className="text-[0.52rem] uppercase tracking-wider font-medium" style={{ color: txDim }}>Assistant central</p>
+              <p className="text-sm font-bold" style={{ color: tx }}>DJAMA AI</p>
+              <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: txDim }}>Assistant central</p>
             </div>
           </div>
           {onClose && (
@@ -423,7 +423,7 @@ function SidebarInner({
         {/* New conversation button */}
         <button
           onClick={onNew}
-          className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[0.78rem] font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
           style={{
             background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
             border: `1px solid ${GOLD}30`,
@@ -443,7 +443,7 @@ function SidebarInner({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher…"
-            className="flex-1 bg-transparent text-[0.72rem] outline-none"
+            className="flex-1 bg-transparent text-sm outline-none"
             style={{ color: tx }}
           />
           {search && (
@@ -459,12 +459,12 @@ function SidebarInner({
         {convs.length === 0 && (
           <div className="px-3 py-6 text-center">
             <DjamaAiSymbol size={24} color={txDim} />
-            <p className="mt-3 text-[0.68rem]" style={{ color: txDim }}>Démarrez votre première conversation</p>
+            <p className="mt-3 text-xs" style={{ color: txDim }}>Démarrez votre première conversation</p>
           </div>
         )}
         {groups.map(group => (
           <div key={group.label} className="mb-3">
-            <p className="mb-1 px-2 text-[0.58rem] font-bold uppercase tracking-[0.14em]"
+            <p className="mb-1 px-2 text-[11px] font-bold uppercase tracking-[0.14em]"
               style={{ color: txDim }}>{group.label}</p>
             {group.items.map(c => (
               <button key={c.id} onClick={() => { onSelect(c.id); onClose?.(); }}
@@ -477,7 +477,7 @@ function SidebarInner({
                 onMouseEnter={e => { if (activeConv !== c.id) (e.currentTarget.style.background = surH); }}
                 onMouseLeave={e => { if (activeConv !== c.id) (e.currentTarget.style.background = "transparent"); }}>
                 <p className="truncate font-medium" style={{ color: activeConv === c.id ? tx : txMut }}>{c.title}</p>
-                <p className="text-[0.55rem] mt-0.5" style={{ color: txDim }}>
+                <p className="text-[11px] mt-0.5" style={{ color: txDim }}>
                   {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                 </p>
               </button>
@@ -489,9 +489,9 @@ function SidebarInner({
       {/* Context mémorisé — la fonctionnalité est réelle (table ai_memories) */}
       <div className="shrink-0 px-3 py-3" style={{ borderTop: `1px solid ${bdr}` }}>
         <div className="flex items-center justify-between mb-1.5">
-          <p className="text-[0.6rem] font-semibold uppercase tracking-wider" style={{ color: txDim }}>Votre contexte</p>
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: txDim }}>Votre contexte</p>
           {memNote.trim() && (
-            <span className="flex items-center gap-1 text-[0.55rem]" style={{ color: `${GOLD}90` }}>
+            <span className="flex items-center gap-1 text-[11px]" style={{ color: `${GOLD}90` }}>
               <Check size={8} />Actif
             </span>
           )}
@@ -501,7 +501,7 @@ function SidebarInner({
           onChange={e => onMemChange(e.target.value)}
           placeholder="Ex : Freelance à Paris, TJM 450€, client principal Acme Corp…"
           rows={2}
-          className="w-full resize-none rounded-lg px-3 py-2 text-[0.65rem] outline-none transition"
+          className="w-full resize-none rounded-lg px-3 py-2 text-xs outline-none transition"
           style={{
             background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
             border: `1px solid ${bdr}`,
@@ -509,7 +509,7 @@ function SidebarInner({
             scrollbarWidth: "none",
           }}
         />
-        <p className="mt-1 text-[0.55rem]" style={{ color: txDim }}>Inclus dans chaque conversation</p>
+        <p className="mt-1 text-[11px]" style={{ color: txDim }}>Inclus dans chaque conversation</p>
       </div>
     </>
   );
@@ -533,7 +533,7 @@ function InsightsInner({
     <>
       {onClose && (
         <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: `1px solid ${bdr}` }}>
-          <p className="text-[0.72rem] font-semibold" style={{ color: txMut }}>Données DJAMA</p>
+          <p className="text-sm font-semibold" style={{ color: txMut }}>Données DJAMA</p>
           <button onClick={onClose} className="p-1.5 rounded-lg transition" style={{ color: txMut }}>
             <X size={16} />
           </button>
@@ -541,7 +541,7 @@ function InsightsInner({
       )}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4" style={{ scrollbarWidth: "none" }}>
         {!onClose && (
-          <p className="text-[0.65rem] font-semibold uppercase tracking-wider" style={{ color: txMut }}>Données DJAMA</p>
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: txMut }}>Données DJAMA</p>
         )}
 
         <InsightsPanel insights={insights} loading={insLoading} isDark={isDark} />
@@ -555,7 +555,7 @@ function InsightsInner({
         </button>
 
         <div>
-          <p className="mb-2 text-[0.62rem] font-semibold uppercase tracking-wider" style={{ color: txMut }}>Accès directs</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: txMut }}>Accès directs</p>
           {([
             { Icon: Receipt,   label: "Factures",  href: "/client/factures"     },
             { Icon: ListTodo,  label: "Tâches",    href: "/client/productivite" },
@@ -1018,7 +1018,7 @@ export default function AssistantPage() {
               <h1 className="text-sm font-bold truncate" style={{ color: tx }}>
                 {activeConv ? (convs.find(c => c.id === activeConv)?.title ?? "Conversation") : "DJAMA AI"}
               </h1>
-              <p className="hidden sm:block text-[0.6rem]" style={{ color: txDim }}>
+              <p className="hidden sm:block text-xs" style={{ color: txDim }}>
                 Connecté à tous vos modules
               </p>
             </div>
@@ -1030,7 +1030,7 @@ export default function AssistantPage() {
               <div className="hidden sm:flex items-center gap-1.5 rounded-full px-2.5 py-1"
                 style={{ border: `1px solid ${gold}35`, background: `${gold}0f` }}>
                 <Loader2 size={10} className="animate-spin" style={{ color: gold }} />
-                <span className="max-w-[140px] truncate text-[0.6rem] font-medium" style={{ color: gold }}>
+                <span className="max-w-[140px] truncate text-xs font-medium" style={{ color: gold }}>
                   {consultingLabel}
                 </span>
               </div>
@@ -1129,7 +1129,7 @@ export default function AssistantPage() {
 
                 {/* Quick actions compact grid */}
                 <div className="w-full">
-                  <p className="mb-3 text-center text-[0.6rem] font-semibold uppercase tracking-widest"
+                  <p className="mb-3 text-center text-xs font-semibold uppercase tracking-widest"
                     style={{ color: txDim }}>Actions rapides</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                     {ACTIONS.map(a => {
@@ -1169,7 +1169,7 @@ export default function AssistantPage() {
                 className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
 
                 {/* Avatar */}
-                <div className={`shrink-0 h-7 w-7 rounded-xl flex items-center justify-center text-[0.65rem] font-bold`}
+                <div className={`shrink-0 h-7 w-7 rounded-xl flex items-center justify-center text-xs font-bold`}
                   style={m.role === "assistant"
                     ? { background: `${gold}14`, border: `1px solid ${gold}28` }
                     : { background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)", border: `1px solid ${bdr}` }}>
@@ -1180,7 +1180,7 @@ export default function AssistantPage() {
 
                 {/* Bubble */}
                 <div className={`max-w-[82%] md:max-w-[74%] flex flex-col gap-2 ${m.role === "user" ? "items-end" : "items-start"}`}>
-                  <p className="text-[0.58rem] font-medium mb-0.5 px-0.5" style={{ color: txDim }}>
+                  <p className="text-[11px] font-medium mb-0.5 px-0.5" style={{ color: txDim }}>
                     {m.role === "user" ? userName : "DJAMA AI"}
                   </p>
                   <div className="rounded-2xl px-4 py-3"
@@ -1217,20 +1217,20 @@ export default function AssistantPage() {
                   {m.role === "assistant" && !m.loading && (
                     <div className="flex flex-wrap items-center gap-1.5 px-0.5">
                       {m.modules?.map(mod => (
-                        <span key={mod} className="rounded-full px-2 py-0.5 text-[0.57rem] font-medium"
+                        <span key={mod} className="rounded-full px-2 py-0.5 text-[11px] font-medium"
                           style={{ border: `1px solid ${gold}22`, background: `${gold}0c`, color: `${gold}b0` }}>
                           {mod}
                         </span>
                       ))}
                       <button onClick={() => copyMsg(m.content)}
-                        className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.6rem] transition"
+                        className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition"
                         style={{ border: `1px solid ${bdr}`, color: txDim }}
                         onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = tx)}
                         onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = txDim)}>
                         <Copy size={9} /> Copier
                       </button>
                       <button onClick={() => speakMsg(m.content, m.id)}
-                        className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.6rem] transition"
+                        className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition"
                         style={{
                           border: speakingId === m.id ? `1px solid ${gold}45` : `1px solid ${bdr}`,
                           background: speakingId === m.id ? `${gold}12` : "transparent",
@@ -1240,7 +1240,7 @@ export default function AssistantPage() {
                         {speakingId === m.id ? "Stop" : "Écouter"}
                       </button>
                       {m.pdfGenerating && (
-                        <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.6rem]"
+                        <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
                           style={{ border: `1px solid ${gold}25`, color: `${gold}90` }}>
                           <Loader2 size={9} className="animate-spin" /> Préparation doc…
                         </span>
@@ -1388,7 +1388,7 @@ function ComposerBox({
           {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
         </button>
       </div>
-      <p className="text-center text-[0.57rem]" style={{ color: txDim }}>
+      <p className="text-center text-[11px]" style={{ color: txDim }}>
         Maj+Entrée pour saut de ligne · DJAMA AI peut utiliser les données auxquelles vous avez accès
       </p>
     </div>

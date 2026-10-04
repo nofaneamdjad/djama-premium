@@ -1,4 +1,4 @@
-export default function ClientLoading() {
+﻿export default function ClientLoading() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="flex flex-col items-center gap-4">
@@ -12,7 +12,7 @@ export default function ClientLoading() {
             style={{ animationDuration: "1.4s", animationDirection: "reverse" }}
           />
         </div>
-        <p className="text-[0.68rem] font-black uppercase tracking-[.2em] text-gray-300">
+        <p className="text-xs font-black uppercase tracking-[.2em] text-gray-300">
           Chargement…
         </p>
       </div>

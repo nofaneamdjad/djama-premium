@@ -264,7 +264,7 @@ export default function PlanificationPage() {
             <ModuleHeaderIcon icon={Target} color="#075985" />
             <div>
               <h1 className={`text-base font-extrabold ${pri}`}>Planification Stratégique</h1>
-              <p className={`text-[0.65rem] ${faint}`}>{activeCount} plan{activeCount !== 1 ? "s" : ""} actif{activeCount !== 1 ? "s" : ""} · {allObjs.length} objectifs</p>
+              <p className={`text-xs ${faint}`}>{activeCount} plan{activeCount !== 1 ? "s" : ""} actif{activeCount !== 1 ? "s" : ""} · {allObjs.length} objectifs</p>
             </div>
           </div>
           <button onClick={openNew}
@@ -290,7 +290,7 @@ export default function PlanificationPage() {
               <div className="absolute right-3 top-3 opacity-8">
                 <Icon size={28} style={{ color }} />
               </div>
-              <p className={`mb-1 text-[0.65rem] font-medium ${mut}`}>{label}</p>
+              <p className={`mb-1 text-xs font-medium ${mut}`}>{label}</p>
               <p className="text-[2rem] font-bold leading-none" style={{ color }}>{value}</p>
             </div>
           ))}

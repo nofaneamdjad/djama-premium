@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -219,7 +219,7 @@ export default function FournisseursPage() {
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
               <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
                 <h1 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Fournisseurs</h1>
-                <p className={`text-[0.62rem] ${isDark ? "text-white/35" : "text-gray-400"}`}>Fiches · Commandes · Factures · Évaluation</p>
+                <p className={`text-xs ${isDark ? "text-white/35" : "text-gray-400"}`}>Fiches · Commandes · Factures · Évaluation</p>
               </motion.div>
               <div className="flex items-center gap-2">
                 <button onClick={exportCSV} title="Exporter CSV"
@@ -250,7 +250,7 @@ export default function FournisseursPage() {
                     <KpiIcon size={13} style={{ color: gold }} className="shrink-0"/>
                     <div className="min-w-0">
                       <p className={`text-sm font-bold leading-none truncate ${isDark ? "text-white" : "text-gray-800"}`}>{kpi.value}</p>
-                      <p className={`text-[0.58rem] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
+                      <p className={`text-[11px] uppercase tracking-wide mt-0.5 ${isDark ? "text-white/35" : "text-gray-400"}`}>{kpi.label}</p>
                     </div>
                   </motion.button>
                 );

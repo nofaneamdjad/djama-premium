@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -283,7 +283,7 @@ export default function MarketplacePage() {
         {[1,2,3,4,5].map(i => (
           <Star key={i} size={10} fill={i <= Math.round(rating) ? GOLD : "none"} style={{ color: GOLD }} />
         ))}
-        <span className={`text-[0.6rem] ${muted}`}>{fmtRating(rating)} ({count})</span>
+        <span className={`text-xs ${muted}`}>{fmtRating(rating)} ({count})</span>
       </div>
     );
   }
@@ -301,7 +301,7 @@ export default function MarketplacePage() {
             : <div className="flex h-full w-full items-center justify-center"><Package size={28} className={muted} /></div>
           }
           {s.is_featured && (
-            <span className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[0.58rem] font-black text-black" style={{ background: GOLD }}>
+            <span className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[11px] font-black text-black" style={{ background: GOLD }}>
               Mis en avant
             </span>
           )}
@@ -312,7 +312,7 @@ export default function MarketplacePage() {
         </div>
         <div className="p-3 space-y-2">
           {s.category && (
-            <span className={`text-[0.58rem] font-bold rounded-full px-2 py-0.5 ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>
+            <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>
               {s.category.name}
             </span>
           )}
@@ -324,25 +324,25 @@ export default function MarketplacePage() {
               <div className={`h-5 w-5 rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-gray-200"}`}>
                 {s.provider.avatar_url
                   ? <img src={s.provider.avatar_url} alt="" className="h-full w-full object-cover" />
-                  : <div className="flex h-full w-full items-center justify-center text-[0.5rem] font-bold" style={{ color: GOLD }}>
+                  : <div className="flex h-full w-full items-center justify-center text-[10px] font-bold" style={{ color: GOLD }}>
                       {s.provider.display_name[0]?.toUpperCase()}
                     </div>
                 }
               </div>
-              <span className={`text-[0.62rem] ${muted}`}>{s.provider.display_name}</span>
+              <span className={`text-xs ${muted}`}>{s.provider.display_name}</span>
               {s.provider.is_verified && <Shield size={9} style={{ color: GOLD }} />}
             </div>
           )}
           {s.rating_count > 0 && <Stars rating={s.rating_avg} count={s.rating_count} />}
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-[0.58rem] ${muted}`}>À partir de</p>
+              <p className={`text-[11px] ${muted}`}>À partir de</p>
               <p className="text-sm font-black tabular-nums" style={{ color: GOLD }}>
                 {s.price_from !== null ? fmtCur(s.price_from) : "Sur devis"}
               </p>
             </div>
             {pkg && (
-              <div className={`text-right text-[0.58rem] ${muted}`}>
+              <div className={`text-right text-[11px] ${muted}`}>
                 <Clock size={9} className="inline mr-0.5" />{pkg.delivery_days}j
               </div>
             )}
@@ -368,15 +368,15 @@ export default function MarketplacePage() {
           </div>
           <div>
             <h1 className={`text-base font-black ${text}`}>Marketplace</h1>
-            <p className={`text-[0.6rem] ${muted}`}>{svcTotal > 0 ? `${svcTotal} service${svcTotal > 1 ? "s" : ""} disponible${svcTotal > 1 ? "s" : ""}` : "Services professionnels"}</p>
+            <p className={`text-xs ${muted}`}>{svcTotal > 0 ? `${svcTotal} service${svcTotal > 1 ? "s" : ""} disponible${svcTotal > 1 ? "s" : ""}` : "Services professionnels"}</p>
           </div>
         </div>
         {myProvider?.status === "active" ? (
-          <button onClick={() => setTab("mes-services")} className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[0.68rem] font-bold ${card} ${muted} hover:opacity-80`}>
+          <button onClick={() => setTab("mes-services")} className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold ${card} ${muted} hover:opacity-80`}>
             <Layers size={11} /> Mes services
           </button>
         ) : (
-          <button onClick={() => setTab("profil")} className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.68rem] font-bold transition hover:brightness-105"
+          <button onClick={() => setTab("profil")} className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition hover:brightness-105"
             style={{ background: `${GOLD}15`, color: GOLD }}>
             <Plus size={11} /> Vendre
           </button>
@@ -396,7 +396,7 @@ export default function MarketplacePage() {
           const active = tab === n.key;
           return (
             <button key={n.key} onClick={() => setTab(n.key)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.67rem] font-bold transition-all ${active ? "" : `${muted} hover:opacity-70`}`}
+              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${active ? "" : `${muted} hover:opacity-70`}`}
               style={active ? { background: `${GOLD}15`, color: GOLD } : {}}>
               <n.icon size={11} />{n.label}
             </button>
@@ -431,13 +431,13 @@ export default function MarketplacePage() {
               {/* Catégories */}
               <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
                 <button onClick={() => setSelCategory("")}
-                  className={`shrink-0 rounded-xl border px-3 py-1 text-[0.65rem] font-bold transition ${!selCategory ? "" : `${card} ${muted}`}`}
+                  className={`shrink-0 rounded-xl border px-3 py-1 text-xs font-bold transition ${!selCategory ? "" : `${card} ${muted}`}`}
                   style={!selCategory ? { background: `${GOLD}15`, borderColor: `${GOLD}30`, color: GOLD } : {}}>
                   Tout
                 </button>
                 {categories.map(c => (
                   <button key={c.id} onClick={() => setSelCategory(selCategory === c.id ? "" : c.id)}
-                    className={`shrink-0 rounded-xl border px-3 py-1 text-[0.65rem] font-bold transition ${selCategory === c.id ? "" : `${card} ${muted}`}`}
+                    className={`shrink-0 rounded-xl border px-3 py-1 text-xs font-bold transition ${selCategory === c.id ? "" : `${card} ${muted}`}`}
                     style={selCategory === c.id ? { background: `${GOLD}15`, borderColor: `${GOLD}30`, color: GOLD } : {}}>
                     {c.name}
                   </button>
@@ -449,9 +449,9 @@ export default function MarketplacePage() {
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                     className="flex flex-wrap gap-3 overflow-hidden">
                     <div className="flex items-center gap-2">
-                      <span className={`text-[0.65rem] ${muted}`}>Tri :</span>
+                      <span className={`text-xs ${muted}`}>Tri :</span>
                       <select value={sort} onChange={e => setSort(e.target.value as SortType)}
-                        className={`rounded-xl border px-2 py-1.5 text-[0.65rem] outline-none ${inp}`}>
+                        className={`rounded-xl border px-2 py-1.5 text-xs outline-none ${inp}`}>
                         <option value="pertinence">Pertinence</option>
                         <option value="rating">Mieux notés</option>
                         <option value="price_asc">Prix croissant</option>
@@ -460,11 +460,11 @@ export default function MarketplacePage() {
                       </select>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-[0.65rem] ${muted}`}>Budget max :</span>
+                      <span className={`text-xs ${muted}`}>Budget max :</span>
                       <input type="number" min="0" value={priceMax || ""} onChange={e => setPriceMax(parseFloat(e.target.value) || 0)}
-                        className={`w-24 rounded-xl border px-2 py-1.5 text-[0.65rem] outline-none ${inp}`} placeholder="€" />
+                        className={`w-24 rounded-xl border px-2 py-1.5 text-xs outline-none ${inp}`} placeholder="€" />
                     </div>
-                    <button onClick={() => void loadServices()} className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-[0.65rem] font-bold"
+                    <button onClick={() => void loadServices()} className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold"
                       style={{ background: `${GOLD}15`, color: GOLD }}>
                       <RefreshCw size={10} /> Appliquer
                     </button>
@@ -508,7 +508,7 @@ export default function MarketplacePage() {
               <div className={`flex rounded-xl border p-0.5 ${card}`}>
                 {(["acheteur","vendeur"] as OrderRole[]).map(r => (
                   <button key={r} onClick={() => setOrderRole(r)}
-                    className={`rounded-lg px-3 py-1 text-[0.65rem] font-bold capitalize transition-all ${orderRole === r ? "" : `${muted} hover:opacity-70`}`}
+                    className={`rounded-lg px-3 py-1 text-xs font-bold capitalize transition-all ${orderRole === r ? "" : `${muted} hover:opacity-70`}`}
                     style={orderRole === r ? { background: `${GOLD}15`, color: GOLD } : {}}>
                     {r === "acheteur" ? "Mes achats" : "Mes ventes"}
                   </button>
@@ -544,16 +544,16 @@ export default function MarketplacePage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className={`text-xs font-bold truncate ${text}`}>{o.service?.title ?? "Service"}</p>
-                          <p className={`text-[0.62rem] ${muted}`}>{o.order_number} · {fmtDate(o.created_at)}</p>
+                          <p className={`text-xs ${muted}`}>{o.order_number} · {fmtDate(o.created_at)}</p>
                           {o.deadline && (
-                            <p className={`text-[0.58rem] ${muted}`}>
+                            <p className={`text-[11px] ${muted}`}>
                               <Clock size={9} className="inline mr-0.5" />Échéance {fmtDate(o.deadline)}
                             </p>
                           )}
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-black tabular-nums" style={{ color: GOLD }}>{fmtCur(o.amount)}</p>
-                          <span className="text-[0.58rem] font-bold rounded-full px-1.5 py-0.5"
+                          <span className="text-[11px] font-bold rounded-full px-1.5 py-0.5"
                             style={{ background: `${st.color}15`, color: st.color }}>{st.label}</span>
                         </div>
                       </button>
@@ -572,7 +572,7 @@ export default function MarketplacePage() {
               <p className={`text-sm font-bold ${text}`}>{myServices.length} service(s)</p>
               {myProvider?.status === "active" && (
                 <button onClick={() => { setEditSvc({ status: "draft" }); setShowSvcModal(true); }}
-                  className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.7rem] font-black transition hover:brightness-105"
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition hover:brightness-105"
                   style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }}>
                   <Plus size={13} /> Nouvelle offre
                 </button>
@@ -602,13 +602,13 @@ export default function MarketplacePage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className={`text-sm font-bold truncate ${text}`}>{s.title}</p>
-                      <span className="text-[0.58rem] font-bold rounded-full px-1.5 py-0.5"
+                      <span className="text-[11px] font-bold rounded-full px-1.5 py-0.5"
                         style={{ background: s.status === "published" ? "#10b98115" : `${GOLD}15`, color: s.status === "published" ? "#10b981" : GOLD }}>
                         {s.status === "published" ? "Publié" : s.status === "draft" ? "Brouillon" : s.status === "paused" ? "Pausé" : s.status}
                       </span>
                     </div>
                     {s.rating_count > 0 && <Stars rating={s.rating_avg} count={s.rating_count} />}
-                    <div className={`flex items-center gap-3 mt-1 text-[0.62rem] ${muted}`}>
+                    <div className={`flex items-center gap-3 mt-1 text-xs ${muted}`}>
                       <span>{s.order_count} commande(s)</span>
                       {s.price_from !== null && <span>À partir de {fmtCur(s.price_from)}</span>}
                     </div>
@@ -644,24 +644,24 @@ export default function MarketplacePage() {
                     { key: "website",      label: "Site web",              placeholder: "https://…" },
                   ].map(f => (
                     <div key={f.key}>
-                      <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>{f.label}</label>
+                      <label className={`block text-xs font-semibold mb-1 ${muted}`}>{f.label}</label>
                       <input value={(editProvider ?? {})[f.key as keyof typeof editProvider] as string ?? ""}
                         onChange={e => setEditProvider(p => ({ ...(p ?? {}), [f.key]: e.target.value }))}
                         className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder={f.placeholder} />
                     </div>
                   ))}
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Bio / Description</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Bio / Description</label>
                     <textarea value={editProvider?.bio ?? ""} rows={4}
                       onChange={e => setEditProvider(p => ({ ...(p ?? {}), bio: e.target.value }))}
                       className={`w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}
                       placeholder="Décrivez vos compétences et votre expérience…" />
                   </div>
                   <div>
-                    <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Compétences</label>
+                    <label className={`block text-xs font-semibold mb-1 ${muted}`}>Compétences</label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {(editProvider?.skills ?? []).map((s, i) => (
-                        <span key={i} className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${isDark ? "bg-white/8" : "bg-gray-100"}`} style={{ color: GOLD }}>
+                        <span key={i} className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${isDark ? "bg-white/8" : "bg-gray-100"}`} style={{ color: GOLD }}>
                           {s}
                           <button onClick={() => setEditProvider(p => ({ ...(p ?? {}), skills: (p?.skills ?? []).filter((_,j) => j !== i) }))}>
                             <X size={9} />
@@ -712,11 +712,11 @@ export default function MarketplacePage() {
                         <div className="flex items-center gap-2">
                           <p className={`text-sm font-bold ${text}`}>{myProvider.display_name}</p>
                           {myProvider.is_verified && <Shield size={12} style={{ color: GOLD }} />}
-                          <span className={`text-[0.58rem] font-bold rounded-full px-1.5 py-0.5 ${myProvider.status === "active" ? "text-emerald-400 bg-emerald-500/10" : `${muted} ${isDark ? "bg-white/5" : "bg-gray-100"}`}`}>
+                          <span className={`text-[11px] font-bold rounded-full px-1.5 py-0.5 ${myProvider.status === "active" ? "text-emerald-400 bg-emerald-500/10" : `${muted} ${isDark ? "bg-white/5" : "bg-gray-100"}`}`}>
                             {myProvider.status === "active" ? "Actif" : myProvider.status === "pending" ? "En attente" : "Suspendu"}
                           </span>
                         </div>
-                        {myProvider.company_name && <p className={`text-[0.65rem] ${muted}`}>{myProvider.company_name}</p>}
+                        {myProvider.company_name && <p className={`text-xs ${muted}`}>{myProvider.company_name}</p>}
                         {myProvider.rating_count > 0 && <Stars rating={myProvider.rating_avg} count={myProvider.rating_count} />}
                       </div>
                     </div>
@@ -729,7 +729,7 @@ export default function MarketplacePage() {
                   {myProvider.skills.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-3">
                       {myProvider.skills.map((s, i) => (
-                        <span key={i} className={`rounded-full px-2 py-0.5 text-[0.62rem] font-bold ${isDark ? "bg-white/8" : "bg-gray-100"}`} style={{ color: GOLD }}>{s}</span>
+                        <span key={i} className={`rounded-full px-2 py-0.5 text-xs font-bold ${isDark ? "bg-white/8" : "bg-gray-100"}`} style={{ color: GOLD }}>{s}</span>
                       ))}
                     </div>
                   )}
@@ -741,7 +741,7 @@ export default function MarketplacePage() {
                     ].map(s => (
                       <div key={s.label} className="text-center">
                         <p className="text-base font-black" style={{ color: GOLD }}>{s.value}</p>
-                        <p className={`text-[0.6rem] ${muted}`}>{s.label}</p>
+                        <p className={`text-xs ${muted}`}>{s.label}</p>
                       </div>
                     ))}
                   </div>
@@ -766,7 +766,7 @@ export default function MarketplacePage() {
                       </p>
                       <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200 bg-amber-50"}`}>
                         <AlertCircle size={12} className="text-amber-500 shrink-0" />
-                        <p className="text-[0.65rem] text-amber-500">Configuration Stripe Connect requise — disponible prochainement</p>
+                        <p className="text-xs text-amber-500">Configuration Stripe Connect requise — disponible prochainement</p>
                       </div>
                     </div>
                   )}
@@ -818,7 +818,7 @@ export default function MarketplacePage() {
               </div>
               <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
                 {selectedSvc.category && (
-                  <span className={`text-[0.62rem] font-bold rounded-full px-2 py-0.5 ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>
+                  <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${isDark ? "bg-white/8" : "bg-gray-100"} ${muted}`}>
                     {selectedSvc.category.name}
                   </span>
                 )}
@@ -828,14 +828,14 @@ export default function MarketplacePage() {
                     <div className={`h-7 w-7 rounded-full overflow-hidden ${isDark ? "bg-white/10" : "bg-gray-200"}`}>
                       {selectedSvc.provider.avatar_url
                         ? <img src={selectedSvc.provider.avatar_url} alt="" className="h-full w-full object-cover" />
-                        : <div className="flex h-full w-full items-center justify-center text-[0.6rem] font-black" style={{ color: GOLD }}>
+                        : <div className="flex h-full w-full items-center justify-center text-xs font-black" style={{ color: GOLD }}>
                             {selectedSvc.provider.display_name[0]?.toUpperCase()}
                           </div>
                       }
                     </div>
                     <span className={`text-xs font-semibold ${text}`}>{selectedSvc.provider.display_name}</span>
                     {selectedSvc.provider.is_verified && <Shield size={11} style={{ color: GOLD }} />}
-                    <span className={`text-[0.6rem] ${muted}`}>{selectedSvc.provider.orders_completed} commandes</span>
+                    <span className={`text-xs ${muted}`}>{selectedSvc.provider.orders_completed} commandes</span>
                   </div>
                 )}
                 {selectedSvc.rating_count > 0 && <Stars rating={selectedSvc.rating_avg} count={selectedSvc.rating_count} />}
@@ -851,7 +851,7 @@ export default function MarketplacePage() {
                         style={selPackage?.id === pkg.id ? { background: `${GOLD}12`, borderColor: `${GOLD}40` } : {}}>
                         <div>
                           <p className={`text-xs font-bold capitalize ${text}`}>{pkg.name}</p>
-                          <div className={`flex items-center gap-2 text-[0.6rem] ${muted}`}>
+                          <div className={`flex items-center gap-2 text-xs ${muted}`}>
                             <span><Clock size={9} className="inline mr-0.5" />{pkg.delivery_days}j</span>
                             <span>{pkg.revisions} révision(s)</span>
                           </div>
@@ -896,21 +896,21 @@ export default function MarketplacePage() {
                   <p className={`text-xs font-bold ${text} mb-1`}>{orderSvc.title}</p>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className={`text-[0.65rem] capitalize font-bold ${muted}`}>{selPackage.name}</p>
-                      <p className={`text-[0.62rem] ${muted}`}><Clock size={9} className="inline mr-0.5" />{selPackage.delivery_days} jours</p>
+                      <p className={`text-xs capitalize font-bold ${muted}`}>{selPackage.name}</p>
+                      <p className={`text-xs ${muted}`}><Clock size={9} className="inline mr-0.5" />{selPackage.delivery_days} jours</p>
                     </div>
                     <p className="text-xl font-black tabular-nums" style={{ color: GOLD }}>{fmtCur(selPackage.price)}</p>
                   </div>
                 </div>
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Décrivez votre besoin au prestataire *</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Décrivez votre besoin au prestataire *</label>
                   <textarea value={orderReq} onChange={e => setOrderReq(e.target.value)} rows={4}
                     className={`w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}
                     placeholder="Expliquez votre projet, vos attentes, vos contraintes…" />
                 </div>
                 <div className={`flex items-start gap-2 rounded-xl border p-3 ${isDark ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200 bg-amber-50"}`}>
                   <AlertCircle size={13} className="text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-[0.65rem] text-amber-500">Le paiement Stripe sera intégré prochainement. La commande est créée et le prestataire sera notifié.</p>
+                  <p className="text-xs text-amber-500">Le paiement Stripe sera intégré prochainement. La commande est créée et le prestataire sera notifié.</p>
                 </div>
               </div>
               <div className={`flex gap-2 border-t px-5 py-4 ${divider}`}>
@@ -940,8 +940,8 @@ export default function MarketplacePage() {
                 <div>
                   <p className={`text-sm font-bold ${text}`}>{selectedOrder.service?.title ?? selectedOrder.order_number}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <p className={`text-[0.62rem] ${muted}`}>{selectedOrder.order_number}</p>
-                    <span className="text-[0.58rem] font-bold rounded-full px-1.5 py-0.5"
+                    <p className={`text-xs ${muted}`}>{selectedOrder.order_number}</p>
+                    <span className="text-[11px] font-bold rounded-full px-1.5 py-0.5"
                       style={{ background: `${ORDER_STATUSES[selectedOrder.status]?.color}15`, color: ORDER_STATUSES[selectedOrder.status]?.color }}>
                       {ORDER_STATUSES[selectedOrder.status]?.label}
                     </span>
@@ -954,15 +954,15 @@ export default function MarketplacePage() {
               <div className={`shrink-0 border-b px-5 py-3 ${divider}`}>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <p className={`text-[0.58rem] ${muted}`}>Montant</p>
+                    <p className={`text-[11px] ${muted}`}>Montant</p>
                     <p className="text-sm font-black tabular-nums" style={{ color: GOLD }}>{fmtCur(selectedOrder.amount)}</p>
                   </div>
                   <div>
-                    <p className={`text-[0.58rem] ${muted}`}>Formule</p>
+                    <p className={`text-[11px] ${muted}`}>Formule</p>
                     <p className={`text-xs font-bold capitalize ${text}`}>{selectedOrder.package?.name ?? "—"}</p>
                   </div>
                   <div>
-                    <p className={`text-[0.58rem] ${muted}`}>Échéance</p>
+                    <p className={`text-[11px] ${muted}`}>Échéance</p>
                     <p className={`text-xs font-bold ${text}`}>{selectedOrder.deadline ? fmtDate(selectedOrder.deadline) : "—"}</p>
                   </div>
                 </div>
@@ -982,7 +982,7 @@ export default function MarketplacePage() {
                         <div className={`max-w-[80%] rounded-2xl px-3 py-2 ${mine ? "rounded-br-sm" : "rounded-bl-sm"}`}
                           style={mine ? { background: `${GOLD}18`, border: `1px solid ${GOLD}25` } : { background: isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6" }}>
                           <p className={`text-xs ${mine ? `${text}` : `${text}`}`}>{m.content}</p>
-                          <p className={`text-[0.55rem] mt-1 ${muted}`}>{fmtDate(m.created_at)}</p>
+                          <p className={`text-[11px] mt-1 ${muted}`}>{fmtDate(m.created_at)}</p>
                         </div>
                       </div>
                     );
@@ -997,25 +997,25 @@ export default function MarketplacePage() {
                   {selectedOrder.status === "delivered" && (
                     <>
                       <button onClick={() => void updateOrderStatus(selectedOrder.id, "completed")}
-                        className="shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.65rem] font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10">
+                        className="shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10">
                         <CheckCircle2 size={11} /> Accepter
                       </button>
                       <button onClick={() => void updateOrderStatus(selectedOrder.id, "revision_requested")}
-                        className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.65rem] font-bold border ${card} text-amber-400 border-amber-500/30 bg-amber-500/10`}>
+                        className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold border ${card} text-amber-400 border-amber-500/30 bg-amber-500/10`}>
                         <RefreshCw size={11} /> Révision
                       </button>
                     </>
                   )}
                   {selectedOrder.status === "in_progress" && (
                     <button onClick={() => void updateOrderStatus(selectedOrder.id, "delivered")}
-                      className="shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.65rem] font-bold"
+                      className="shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
                       style={{ background: `${GOLD}15`, color: GOLD }}>
                       <Truck size={11} /> Livrer
                     </button>
                   )}
                   {(selectedOrder.status === "paid") && (
                     <button onClick={() => void updateOrderStatus(selectedOrder.id, "in_progress")}
-                      className="shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.65rem] font-bold"
+                      className="shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
                       style={{ background: `${GOLD}15`, color: GOLD }}>
                       <ArrowRight size={11} /> Démarrer
                     </button>
@@ -1055,12 +1055,12 @@ export default function MarketplacePage() {
               </div>
               <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Titre *</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Titre *</label>
                   <input value={editSvc.title ?? ""} onChange={e => setEditSvc(s => ({ ...s, title: e.target.value }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="Développement site vitrine Next.js" />
                 </div>
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Catégorie</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Catégorie</label>
                   <select value={editSvc.category?.id ?? ""} onChange={e => {
                     const cat = categories.find(c => c.id === e.target.value);
                     setEditSvc(s => ({ ...s, category: cat ?? null, category_id: e.target.value } as Partial<Service & { description: string; category_id: string }>));
@@ -1071,13 +1071,13 @@ export default function MarketplacePage() {
                   </select>
                 </div>
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Description courte</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Description courte</label>
                   <textarea value={editSvc.short_description ?? ""} rows={3}
                     onChange={e => setEditSvc(s => ({ ...s, short_description: e.target.value }))}
                     className={`w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`} placeholder="Résumez votre offre en 2-3 phrases…" />
                 </div>
                 <div>
-                  <label className={`block text-[0.65rem] font-semibold mb-1 ${muted}`}>Statut</label>
+                  <label className={`block text-xs font-semibold mb-1 ${muted}`}>Statut</label>
                   <select value={editSvc.status ?? "draft"} onChange={e => setEditSvc(s => ({ ...s, status: e.target.value }))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${inp}`}>
                     <option value="draft">Brouillon</option>

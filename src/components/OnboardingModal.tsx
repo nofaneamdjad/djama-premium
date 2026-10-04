@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -86,13 +86,13 @@ const STEPS: Step[] = [
               className="flex flex-col items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3"
             >
               <Icon size={16} style={{ color }} strokeWidth={1.8} />
-              <span className="text-[0.65rem] font-semibold text-white/50">{label}</span>
+              <span className="text-xs font-semibold text-white/50">{label}</span>
             </div>
           ))}
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.07)] px-3 py-2.5">
           <Crown size={13} style={{ color: GOLD }} />
-          <p className="text-[0.7rem] text-white/45">
+          <p className="text-xs text-white/45">
             Débloquez <span className="font-bold text-white/70">15+ outils PRO</span> avec DJAMA PRO
           </p>
         </div>
@@ -117,7 +117,7 @@ const STEPS: Step[] = [
           ].map((text, i) => (
             <div key={text} className="flex items-center gap-3">
               <div
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-bold"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
                 style={{ background: `${GOLD}20`, color: GOLD }}
               >
                 {i + 1}
@@ -150,9 +150,9 @@ const STEPS: Step[] = [
             <div key={label} className="flex items-center justify-between">
               <span className="text-xs text-white/50">{label}</span>
               {free ? (
-                <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[0.6rem] font-bold text-green-400">Inclus</span>
+                <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-bold text-green-400">Inclus</span>
               ) : (
-                <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold"
+                <span className="rounded-full px-2 py-0.5 text-xs font-bold"
                   style={{ background: `${GOLD}18`, color: GOLD }}>PRO</span>
               )}
             </div>
@@ -270,7 +270,7 @@ export default function OnboardingModal({ name }: Props) {
 
                         <div className="mt-2 space-y-0.5">
                           {step === 0 && name && (
-                            <p className="text-[0.7rem] font-semibold text-white/35">
+                            <p className="text-xs font-semibold text-white/35">
                               Bonjour, <span className="text-white/65">{name}</span>
                             </p>
                           )}
