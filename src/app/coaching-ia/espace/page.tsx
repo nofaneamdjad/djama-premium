@@ -17,7 +17,7 @@ import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
 import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const ACCENT = "#a78bfa";
+const GOLD = "#c9a55a";
 
 /* ─────────────────────────────────────────────────────────
    STORAGE — Progress
@@ -49,7 +49,7 @@ function saveFavorites(s: Set<string>) {
 /* ─────────────────────────────────────────────────────────
    TYPES
 ───────────────────────────────────────────────────────── */
-type View      = "dashboard" | "chapter" | "assistant" | "booking" | "favorites" | "jeux";
+type View      = "dashboard" | "chapter" | "assistant" | "booking" | "favorites" | "jeux" | "progression";
 type AiAction  = "summarize" | "simplify" | "quiz" | "action_plan" | "create_prompt";
 
 /* ─────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ const LEVEL_DATA = [
   { name: "Apprenti",  min: 300,  color: "#60a5fa" },
   { name: "Praticien", min: 700,  color: "#a78bfa" },
   { name: "Expert IA", min: 1400, color: "#f59e0b" },
-  { name: "Maître IA", min: 2500, color: "#d946ef" },
+  { name: "Maître IA", min: 2500, color: "#c9a55a" },
 ];
 
 function getLevel(xp: number) {
@@ -1951,6 +1951,157 @@ function JeuxPanel() {
 }
 
 /* ─────────────────────────────────────────────────────────
+   COMPOSANT — Progression
+───────────────────────────────────────────────────────── */
+function ProgressionPanel({ completed }: { completed: Set<string> }) {
+  const { isDark } = useTheme();
+  const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
+  const completedCount = completed.size;
+  const overallPct     = Math.round((completedCount / totalChapters) * 100);
+  const doneModules    = COACHING_MODULES.filter((m) => m.chapters.every((c) => completed.has(c.id))).length;
+  const xp             = completedCount * XP_PER_CHAPTER;
+  const levelInfo      = getLevel(xp);
+  const { streak }     = loadStreak();
+  const quizDone       = COACHING_MODULES.flatMap((m) => m.chapters).filter((c) => c.type === "quiz" && completed.has(c.id)).length;
+
+  const dp = {
+    pri:  isDark ? "text-white"          : "text-[#0e1420]",
+    sec:  isDark ? "text-white/50"       : "text-[#0e1420]/55",
+    mut:  isDark ? "text-white/30"       : "text-[#0e1420]/35",
+    faint:isDark ? "text-white/20"       : "text-[#0e1420]/25",
+    card: isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-white shadow-sm",
+    bar:  isDark ? "bg-white/[0.07]"    : "bg-black/[0.07]",
+    lbl:  `text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`,
+  };
+
+  const LEVEL_ICONS: Record<string, React.ElementType> = {
+    "Novice":    Circle,
+    "Apprenti":  BookOpen,
+    "Praticien": Zap,
+    "Expert IA": Brain,
+    "Maître IA": Award,
+  };
+  const LevelIcon = LEVEL_ICONS[levelInfo.name] ?? Circle;
+
+  const BADGES = [
+    { id: "first",     label: "Premier pas",      Icon: CheckCircle2, color: "#34d399", desc: "1er chapitre terminé",    earned: completedCount >= 1 },
+    { id: "week",      label: "7 jours de suite",  Icon: Timer,        color: "#f59e0b", desc: `Série : ${streak}j`,      earned: streak >= 7 },
+    { id: "halfway",   label: "Mi-parcours",        Icon: Zap,          color: "#60a5fa", desc: "50% du programme",       earned: overallPct >= 50 },
+    { id: "module",    label: "Module Expert",      Icon: Brain,        color: GOLD,      desc: "1 module à 100%",        earned: doneModules >= 1 },
+    { id: "quiz",      label: "Quiz Master",        Icon: Trophy,       color: GOLD,      desc: "5 quiz validés",          earned: quizDone >= 5 },
+    { id: "certified", label: "Certifié DJAMA",     Icon: Award,        color: "#34d399", desc: "100% du programme",      earned: overallPct === 100 },
+  ];
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-10 px-4 py-8 sm:px-8">
+      {/* En-tête */}
+      <div>
+        <p className={dp.lbl}>Progression</p>
+        <h2 className={`mt-2 text-2xl font-black ${dp.pri}`}>{overallPct}% complété</h2>
+        <p className={`mt-1 text-sm ${dp.sec}`}>{completedCount} chapitres sur {totalChapters}</p>
+      </div>
+
+      {/* Niveau + XP */}
+      <div className={`rounded-2xl border p-5 ${dp.card}`}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl"
+              style={{ background: `${levelInfo.color}18`, border: `1px solid ${levelInfo.color}30` }}>
+              <LevelIcon size={18} style={{ color: levelInfo.color }} />
+            </div>
+            <div>
+              <p className={`text-sm font-extrabold ${dp.pri}`}>{levelInfo.name}</p>
+              <p className={`text-[0.6rem] ${dp.mut}`}>{xp} XP total</p>
+            </div>
+          </div>
+          {levelInfo.nextName && (
+            <div className="text-right">
+              <p className={`text-[0.58rem] ${dp.mut}`}>Prochain niveau</p>
+              <p className="text-xs font-bold" style={{ color: levelInfo.color }}>
+                {levelInfo.xpNext} XP → {levelInfo.nextName}
+              </p>
+            </div>
+          )}
+        </div>
+        <div className={`h-1.5 overflow-hidden rounded-full ${dp.bar}`}>
+          <motion.div className="h-full rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${levelInfo.pct}%` }}
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            style={{ background: `linear-gradient(90deg, ${levelInfo.color}aa, ${levelInfo.color})` }} />
+        </div>
+        <p className={`mt-1.5 text-[0.58rem] ${dp.faint}`}>{levelInfo.pct}% vers {levelInfo.nextName ?? "niveau maximum"}</p>
+      </div>
+
+      {/* Badges */}
+      <div>
+        <p className={`mb-4 ${dp.lbl}`}>Badges</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {BADGES.map(({ id, label, Icon, color, desc, earned }) => (
+            <div key={id}
+              className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all ${dp.card} ${!earned ? "opacity-40 grayscale" : ""}`}
+              style={earned ? { borderColor: `${color}30`, background: `${color}07` } : {}}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
+                <Icon size={18} style={{ color }} />
+              </div>
+              <p className={`text-xs font-bold ${dp.pri}`}>{label}</p>
+              <p className={`text-[0.58rem] ${dp.mut}`}>{desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Modules */}
+      <div>
+        <p className={`mb-4 ${dp.lbl}`}>Modules</p>
+        <div className="space-y-2">
+          {COACHING_MODULES.map((m) => {
+            const done = m.chapters.filter((c) => completed.has(c.id)).length;
+            const pct  = Math.round((done / m.chapters.length) * 100);
+            return (
+              <div key={m.id} className={`flex items-center gap-4 rounded-xl border p-3 ${dp.card}`}>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                  style={{ background: `${m.color}15`, border: `1px solid ${m.color}25` }}>
+                  {pct === 100
+                    ? <CheckCircle2 size={14} style={{ color: m.color }} />
+                    : <Circle size={14} style={{ color: m.color }} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-semibold truncate ${dp.pri}`}>{m.title}</p>
+                  <div className={`mt-1 h-1 rounded-full overflow-hidden ${dp.bar}`}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: m.color }} />
+                  </div>
+                </div>
+                <span className={`text-xs font-bold shrink-0 ${dp.sec}`}>{done}/{m.chapters.length}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Certificat si 100% */}
+      {overallPct === 100 && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          className="overflow-hidden rounded-2xl border border-[rgba(52,211,153,0.3)] bg-gradient-to-br from-[rgba(52,211,153,0.06)] to-[rgba(52,211,153,0.02)] p-7 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.08)]">
+            <Award size={32} className="text-[#34d399]" />
+          </div>
+          <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#34d399] mb-2">Certificat DJAMA</p>
+          <h3 className={`text-lg font-extrabold ${dp.pri}`}>Formation complétée</h3>
+          <p className={`mt-1 text-sm ${dp.sec}`}>
+            {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+          </p>
+          <p className={`mt-2 text-xs ${dp.mut}`}>
+            Certificat DJAMA · {totalChapters} chapitres · {xp} XP
+          </p>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    COMPOSANT — Dashboard
 ───────────────────────────────────────────────────────── */
 function DashboardPanel({
@@ -1966,23 +2117,11 @@ function DashboardPanel({
   const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
   const completedCount = completed.size;
   const overallPct     = Math.round((completedCount / totalChapters) * 100);
-  const favCount       = favorites.size;
   const totalModules   = COACHING_MODULES.length;
   const doneModules    = COACHING_MODULES.filter((m) => m.chapters.every((c) => completed.has(c.id))).length;
-
-  /* ─ Gamification ─ */
-  const xp         = completedCount * XP_PER_CHAPTER;
-  const levelInfo  = getLevel(xp);
-  const { streak } = loadStreak();
-
-  const BADGES = [
-    { id: "first",   label: "Premier pas",    icon: "🌱", desc: "1er chapitre terminé",     earned: completedCount >= 1   },
-    { id: "week",    label: "7 jours de suite",icon: "🔥", desc: `Streak actuel : ${streak}j`, earned: streak >= 7           },
-    { id: "halfway", label: "Mi-parcours",     icon: "⚡", desc: "50% du programme validé",   earned: overallPct >= 50      },
-    { id: "module1", label: "Module Expert",   icon: "🧠", desc: "1 module complété à 100%",  earned: doneModules >= 1      },
-    { id: "quizmaster", label: "Quiz Master",  icon: "🏆", desc: "5 chapitres quiz validés",  earned: COACHING_MODULES.flatMap(m => m.chapters).filter(c => c.type === "quiz" && completed.has(c.id)).length >= 5 },
-    { id: "certified",  label: "Certifié IA",  icon: "🎓", desc: "100% du programme !",       earned: overallPct === 100    },
-  ];
+  const xp             = completedCount * XP_PER_CHAPTER;
+  const levelInfo      = getLevel(xp);
+  const { streak }     = loadStreak();
 
   /* Prochain chapitre non terminé */
   let nextModule:  Module  | null = null;
@@ -1994,194 +2133,155 @@ function DashboardPanel({
     if (nextChapter) break;
   }
 
-  const STATS = [
-    { label: "Progression",       value: `${overallPct}%`, sub: `${completedCount}/${totalChapters} chapitres`, color: "#a78bfa", icon: TrendingUp },
-    { label: "Modules terminés",  value: `${doneModules}/${totalModules}`, sub: "modules complétés", color: "#34d399", icon: Award },
-    { label: "Favoris",           value: String(favCount), sub: "chapitres sauvegardés", color: "#f9a826", icon: Star },
-    { label: "Restant",           value: String(totalChapters - completedCount), sub: "chapitres à faire", color: "#60a5fa", icon: Target },
-  ];
+  /* Progression du module en cours */
+  const modulePct = nextModule
+    ? Math.round((nextModule.chapters.filter((c) => completed.has(c.id)).length / nextModule.chapters.length) * 100)
+    : 0;
 
-  const dPri    = isDark ? "text-white"    : "text-[#0e1420]";
-  const dSec    = isDark ? "text-white/40" : "text-[#0e1420]/45";
-  const dMut    = isDark ? "text-white/30" : "text-[#0e1420]/35";
-  const dFaint  = isDark ? "text-white/25" : "text-[#0e1420]/30";
-  const dCard   = isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm";
-  const dBar    = isDark ? "bg-white/[0.07]" : "bg-black/[0.07]";
-  const dModBtn = isDark
-    ? "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
-    : "border-black/[0.08] bg-white shadow-sm hover:border-black/12 hover:shadow-md";
-  const dQkBtn  = isDark
-    ? "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
-    : "border-black/[0.08] bg-white shadow-sm hover:border-black/12 hover:shadow-md";
-  const dQkLbl  = isDark ? "text-white/50 group-hover:text-white/80" : "text-[#0e1420]/50 group-hover:text-[#0e1420]/80";
-  const dBadge  = isDark ? "border-white/[0.05] bg-white/[0.02]" : "border-black/5 bg-white/60";
+  /* Recommandations (prochains chapitres non terminés après nextChapter) */
+  const upcoming: { m: Module; ch: Chapter }[] = [];
+  let afterNext = false;
+  for (const m of COACHING_MODULES) {
+    for (const ch of m.chapters) {
+      if (ch.id === nextChapter?.id) { afterNext = true; continue; }
+      if (afterNext && !completed.has(ch.id) && upcoming.length < 3) upcoming.push({ m, ch });
+    }
+  }
+
+  const firstName = userName?.split(" ")[0] ?? "vous";
+
+  const dp = {
+    pri:  isDark ? "text-white"          : "text-[#0e1420]",
+    sec:  isDark ? "text-white/50"       : "text-[#0e1420]/55",
+    mut:  isDark ? "text-white/30"       : "text-[#0e1420]/35",
+    faint:isDark ? "text-white/20"       : "text-[#0e1420]/25",
+    card: isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-white shadow-sm",
+    bar:  isDark ? "bg-white/[0.07]"    : "bg-black/[0.07]",
+    lbl:  `text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`,
+  };
+
+  const LEVEL_ICONS: Record<string, React.ElementType> = {
+    "Novice":    Circle,
+    "Apprenti":  BookOpen,
+    "Praticien": Zap,
+    "Expert IA": Brain,
+    "Maître IA": Award,
+  };
+  const LevelIcon = LEVEL_ICONS[levelInfo.name] ?? Circle;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-8">
+    <div className="mx-auto max-w-4xl space-y-10 px-4 py-8 sm:px-8">
 
       {/* ── En-tête ── */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Tableau de bord</p>
-          <h1 className={`mt-1 text-2xl font-extrabold ${dPri}`}>
-            {userName ? `Bonjour, ${userName.split(" ")[0]}` : "Bienvenue dans votre espace"}
-          </h1>
-          <p className={`mt-1 text-sm ${dSec}`}>Votre progression Coaching IA DJAMA</p>
-        </div>
-        {/* Streak */}
-        <div className="flex items-center gap-2 rounded-2xl border border-[rgba(249,168,38,0.25)] bg-[rgba(249,168,38,0.07)] px-4 py-2.5">
-          <span className="text-xl">🔥</span>
-          <div>
-            <p className="text-sm font-extrabold text-[#f9a826]">{streak} jour{streak !== 1 ? "s" : ""}</p>
-            <p className={`text-[0.58rem] ${dMut}`}>Série en cours</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Niveau XP ── */}
-      <div className={`rounded-2xl border p-5 ${isDark ? "border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01]" : "border-black/[0.08] bg-white shadow-sm"}`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
-              style={{ background: levelInfo.color + "20", border: `1px solid ${levelInfo.color}35` }}>
-              {levelInfo.name === "Novice" ? "🌱" : levelInfo.name === "Apprenti" ? "📚" : levelInfo.name === "Praticien" ? "⚡" : levelInfo.name === "Expert IA" ? "🧠" : "🎓"}
-            </div>
-            <div>
-              <p className={`text-sm font-extrabold ${dPri}`}>{levelInfo.name}</p>
-              <p className={`text-[0.6rem] ${dMut}`}>{xp} XP total</p>
-            </div>
-          </div>
-          {levelInfo.nextName && (
-            <div className="text-right">
-              <p className={`text-[0.58rem] ${dMut}`}>Prochain niveau</p>
-              <p className="text-xs font-bold" style={{ color: levelInfo.color }}>{levelInfo.xpNext} XP → {levelInfo.nextName}</p>
-            </div>
-          )}
-        </div>
-        <div className={`h-2 overflow-hidden rounded-full ${dBar}`}>
-          <motion.div className="h-full rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${levelInfo.pct}%` }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            style={{ background: `linear-gradient(90deg, ${levelInfo.color}aa, ${levelInfo.color})` }} />
-        </div>
-        <p className={`mt-1.5 text-[0.58rem] ${dFaint}`}>{levelInfo.pct}% vers {levelInfo.nextName ?? "niveau maximum"}</p>
-      </div>
-
-      {/* ── Badges ── */}
       <div>
-        <p className={`mb-3 text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Badges & Récompenses</p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {BADGES.map((b) => (
-            <motion.div key={b.id}
-              whileHover={{ scale: 1.05 }}
-              className={`flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all ${
-                b.earned
-                  ? "border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.08)]"
-                  : `opacity-40 grayscale ${dBadge}`
-              }`}>
-              <span className="text-2xl">{b.icon}</span>
-              <p className={`text-[0.6rem] font-bold leading-tight ${dPri}`}>{b.label}</p>
-              <p className={`text-[0.52rem] leading-snug ${dMut}`}>{b.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Progression globale ── */}
-      <div className="rounded-2xl border border-[rgba(167,139,250,0.2)] bg-gradient-to-br from-[rgba(167,139,250,0.08)] to-[rgba(167,139,250,0.03)] p-5">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#a78bfa]">Progression globale</span>
-          <span className={`text-2xl font-extrabold ${dPri}`}>{overallPct}%</span>
-        </div>
-        <div className={`h-2.5 overflow-hidden rounded-full ${dBar}`}>
-          <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd]"
-            initial={{ width: 0 }}
-            animate={{ width: `${overallPct}%` }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          />
-        </div>
-        <p className={`mt-2 text-[0.65rem] ${dMut}`}>{completedCount} chapitres terminés sur {totalChapters} · {totalModules} modules</p>
-      </div>
-
-      {/* ── Stats ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {STATS.map(({ label, value, sub, color, icon: Icon }) => (
-          <motion.div
-            key={label}
-            whileHover={{ y: -2 }}
-            className={`rounded-2xl border p-4 ${dCard}`}
-          >
-            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl"
-              style={{ background: `rgba(${color === "#a78bfa" ? "167,139,250" : color === "#34d399" ? "52,211,153" : color === "#f9a826" ? "249,168,38" : "96,165,250"},0.12)` }}>
-              <Icon size={15} style={{ color }} />
-            </div>
-            <p className={`text-xl font-extrabold ${dPri}`}>{value}</p>
-            <p className={`mt-0.5 text-[0.62rem] font-semibold ${isDark ? "text-white/50" : "text-[#0e1420]/55"}`}>{label}</p>
-            <p className={`text-[0.6rem] ${dFaint}`}>{sub}</p>
-          </motion.div>
-        ))}
+        <p className={dp.lbl}>Centre de formation DJAMA</p>
+        <h1 className={`mt-2 text-3xl font-black leading-tight ${dp.pri}`}>
+          Bonjour, {firstName}
+        </h1>
+        <p className={`mt-1.5 text-sm ${dp.sec}`}>
+          {completedCount === 0
+            ? "Commencez votre parcours de formation."
+            : `Continuez votre progression · ${overallPct}% complété`}
+        </p>
       </div>
 
       {/* ── Continuer ── */}
       {nextChapter && nextModule && (
         <div>
-          <p className={`mb-3 text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Continuer là où vous étiez</p>
+          <p className={`mb-3 ${dp.lbl}`}>Continuer</p>
           <motion.button
-            whileHover={{ x: 4 }}
+            whileHover={{ y: -2 }}
             onClick={() => { onSelectChapter(nextModule!.id, nextChapter!.id); onSetView("chapter"); }}
-            className="group flex w-full items-center gap-5 rounded-2xl border border-[rgba(167,139,250,0.2)] bg-[rgba(167,139,250,0.05)] p-5 text-left transition-all hover:border-[rgba(167,139,250,0.35)] hover:bg-[rgba(167,139,250,0.09)]"
+            className={`group w-full text-left rounded-2xl border p-6 transition-all hover:border-[rgba(201,165,90,0.3)] ${dp.card}`}
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: `rgba(${nextModule.rgb},0.15)`, border: `1px solid rgba(${nextModule.rgb},0.25)` }}>
-              <Play size={20} style={{ color: `rgb(${nextModule.rgb})` }} fill={`rgb(${nextModule.rgb})`} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[0.62rem] font-bold uppercase tracking-widest" style={{ color: `rgb(${nextModule.rgb})` }}>
-                M{nextModule.id} · {nextModule.title}
-              </p>
-              <p className={`mt-0.5 truncate text-sm font-bold ${dPri}`}>{nextChapter.title}</p>
-              <div className={`mt-1 flex items-center gap-2 text-[0.6rem] ${dMut}`}>
-                <Clock size={9} /> {nextChapter.duration}
-                <span>·</span>
-                <span>{nextChapter.type === "exercise" ? "Exercice" : nextChapter.type === "quiz" ? "Quiz" : "Cours"}</span>
+            <div className="flex items-start gap-5">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
+                style={{ background: `rgba(${nextModule.rgb},0.12)`, border: `1px solid rgba(${nextModule.rgb},0.2)` }}>
+                <Play size={22} fill={`rgb(${nextModule.rgb})`} style={{ color: `rgb(${nextModule.rgb})`, marginLeft: 2 }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[0.6rem] font-bold uppercase tracking-widest mb-1"
+                  style={{ color: `rgb(${nextModule.rgb})` }}>{nextModule.title}</p>
+                <p className={`text-base font-bold truncate ${dp.pri}`}>{nextChapter.title}</p>
+                <div className={`mt-1 flex items-center gap-3 text-[0.65rem] ${dp.mut}`}>
+                  <span className="flex items-center gap-1"><Clock size={10} /> {nextChapter.duration}</span>
+                  <span>·</span>
+                  <span>{nextChapter.type === "quiz" ? "Quiz" : nextChapter.type === "exercise" ? "Exercice" : "Cours"}</span>
+                </div>
+                <div className="mt-3">
+                  <div className={`h-1 rounded-full overflow-hidden ${dp.bar}`}>
+                    <div className="h-full rounded-full transition-all"
+                      style={{ width: `${modulePct}%`, background: `rgb(${nextModule.rgb})` }} />
+                  </div>
+                  <p className={`mt-1 text-[0.58rem] ${dp.faint}`}>{modulePct}% du module terminé</p>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold transition ml-2"
+                style={{ background: "rgba(201,165,90,0.1)", border: "1px solid rgba(201,165,90,0.25)", color: GOLD }}>
+                Continuer <ArrowRight size={14} />
               </div>
             </div>
-            <ArrowRight size={18} className={`shrink-0 transition-transform group-hover:translate-x-1 group-hover:text-[#a78bfa] ${isDark ? "text-white/20" : "text-[#0e1420]/20"}`} />
           </motion.button>
         </div>
       )}
 
-      {overallPct === 100 && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          className="overflow-hidden rounded-2xl border border-[rgba(52,211,153,0.35)] bg-gradient-to-br from-[rgba(52,211,153,0.08)] to-[rgba(52,211,153,0.03)] p-7 text-center">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.1)] shadow-[0_0_40px_rgba(52,211,153,0.2)]">
-            <Award size={40} className="text-[#34d399]" />
-          </div>
-          <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#34d399] mb-2">Certificat de réussite</p>
-          <h3 className={`text-xl font-extrabold ${dPri}`}>Formation Coaching IA DJAMA</h3>
-          <p className={`mt-2 text-sm ${dSec}`}>Complétée le {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
-          <div className="mx-auto mt-5 flex w-fit flex-wrap justify-center gap-3">
-            {[`${totalChapters} chapitres validés`, `${xp} XP obtenu`, "Maître IA 🎓"].map((t) => (
-              <div key={t} className="rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] px-4 py-2 text-xs font-bold text-[#34d399]">{t}</div>
-            ))}
-          </div>
-          <button
-            onClick={() => {
-              const text = `🎓 Certificat Coaching IA DJAMA\n${userName ?? "Apprenant"} a terminé l'intégralité du programme Coaching IA DJAMA (${totalChapters} chapitres · ${xp} XP).\n\nFélicitations !`;
-              navigator.clipboard.writeText(text).catch(() => {});
-            }}
-            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#34d399] to-[#10b981] px-6 py-3 text-sm font-bold text-black transition hover:opacity-90"
-          >
-            <Trophy size={14} /> Partager mon certificat
-          </button>
-        </motion.div>
-      )}
-
-      {/* ── Modules ── */}
+      {/* ── Votre progression ── */}
       <div>
-        <p className={`mb-3 text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Tous les modules</p>
+        <p className={`mb-4 ${dp.lbl}`}>Votre progression</p>
+        {/* Niveau XP */}
+        <div className={`rounded-2xl border p-5 mb-3 ${dp.card}`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: `${levelInfo.color}18`, border: `1px solid ${levelInfo.color}30` }}>
+                <LevelIcon size={18} style={{ color: levelInfo.color }} />
+              </div>
+              <div>
+                <p className={`text-sm font-extrabold ${dp.pri}`}>{levelInfo.name}</p>
+                <p className={`text-[0.6rem] ${dp.mut}`}>{xp} XP total</p>
+              </div>
+            </div>
+            {levelInfo.nextName && (
+              <div className="text-right">
+                <p className={`text-[0.58rem] ${dp.mut}`}>Prochain niveau</p>
+                <p className="text-xs font-bold" style={{ color: levelInfo.color }}>
+                  {levelInfo.xpNext} XP → {levelInfo.nextName}
+                </p>
+              </div>
+            )}
+          </div>
+          <div className={`h-1.5 overflow-hidden rounded-full ${dp.bar}`}>
+            <motion.div className="h-full rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${levelInfo.pct}%` }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              style={{ background: `linear-gradient(90deg, ${levelInfo.color}aa, ${levelInfo.color})` }} />
+          </div>
+          <p className={`mt-1.5 text-[0.58rem] ${dp.faint}`}>{levelInfo.pct}% vers {levelInfo.nextName ?? "niveau maximum"}</p>
+        </div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {([
+            { label: "Modules terminés",  value: `${doneModules}/${totalModules}`, Icon: Award,      color: "#34d399" },
+            { label: "Chapitres validés", value: `${completedCount}/${totalChapters}`, Icon: CheckCircle2, color: "#60a5fa" },
+            { label: "Série actuelle",    value: `${streak}j`,                     Icon: Timer,      color: "#f59e0b" },
+            { label: "Progression",       value: `${overallPct}%`,                 Icon: TrendingUp, color: GOLD },
+          ] as { label: string; value: string; Icon: React.ElementType; color: string }[]).map(({ label, value, Icon, color }) => (
+            <div key={label} className={`rounded-xl border p-4 ${dp.card}`}>
+              <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg"
+                style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
+                <Icon size={13} style={{ color }} />
+              </div>
+              <p className={`text-lg font-extrabold ${dp.pri}`}>{value}</p>
+              <p className={`text-[0.6rem] ${dp.mut}`}>{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Parcours ── */}
+      <div>
+        <p className={`mb-4 ${dp.lbl}`}>Parcours</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {COACHING_MODULES.map((m) => {
             const done = m.chapters.filter((c) => completed.has(c.id)).length;
@@ -2192,84 +2292,58 @@ function DashboardPanel({
                 key={m.id}
                 whileHover={{ y: -2 }}
                 onClick={() => {
-                  const target = firstIncomplete ?? m.chapters[0];
+                  const target = firstIncomplete ?? m.chapters[0]!;
                   onSelectChapter(m.id, target.id);
                   onSetView("chapter");
                 }}
-                className={`group rounded-2xl border p-4 text-left transition-all ${dModBtn}`}
+                className={`group rounded-2xl border p-4 text-left transition-all hover:border-[rgba(201,165,90,0.25)] ${dp.card}`}
               >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: m.color }}>
-                    Module {m.id}
-                  </span>
-                  <span className={`text-[0.62rem] font-bold ${dSec}`}>{pct}%</span>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[0.58rem] font-bold uppercase tracking-widest" style={{ color: m.color }}>Module {m.id}</span>
+                  <span className={`text-[0.6rem] font-bold ${dp.sec}`}>{pct}%</span>
                 </div>
-                <p className={`mb-1 text-sm font-bold ${dPri}`}>{m.title}</p>
-                <p className={`mb-3 text-[0.65rem] leading-relaxed ${dMut}`}>{m.tagline}</p>
-                <div className={`h-1 overflow-hidden rounded-full ${dBar}`}>
-                  <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%`, background: m.color }} />
+                <p className={`mb-1 text-sm font-bold ${dp.pri}`}>{m.title}</p>
+                <p className={`mb-3 text-[0.62rem] leading-relaxed ${dp.mut}`}>{m.tagline}</p>
+                <div className={`h-1 overflow-hidden rounded-full ${dp.bar}`}>
+                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: m.color }} />
                 </div>
-                <p className={`mt-1.5 text-[0.58rem] ${dFaint}`}>{done}/{m.chapters.length} chapitres · {m.duration}</p>
+                <p className={`mt-1.5 text-[0.55rem] ${dp.faint}`}>{done}/{m.chapters.length} chapitres · {m.duration}</p>
               </motion.button>
             );
           })}
         </div>
       </div>
 
-      {/* ── Réserver un appel ── */}
-      <div className="overflow-hidden rounded-2xl border border-[rgba(167,139,250,0.2)] bg-gradient-to-br from-[rgba(167,139,250,0.07)] to-[rgba(96,165,250,0.04)]">
-        <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.12)]">
-            <Calendar size={26} className="text-[#a78bfa]" />
+      {/* ── Recommandé pour vous ── */}
+      {upcoming.length > 0 && (
+        <div>
+          <p className={`mb-4 ${dp.lbl}`}>Recommandé pour vous</p>
+          <div className="space-y-2">
+            {upcoming.map(({ m, ch }) => (
+              <motion.button
+                key={ch.id}
+                whileHover={{ x: 3 }}
+                onClick={() => { onSelectChapter(m.id, ch.id); onSetView("chapter"); }}
+                className={`group flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all hover:border-[rgba(201,165,90,0.25)] ${dp.card}`}
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: `rgba(${m.rgb},0.1)`, border: `1px solid rgba(${m.rgb},0.2)` }}>
+                  <BookOpen size={14} style={{ color: `rgb(${m.rgb})` }} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[0.58rem] font-bold uppercase tracking-widest mb-0.5"
+                    style={{ color: `rgb(${m.rgb})` }}>{m.title}</p>
+                  <p className={`text-sm font-semibold truncate ${dp.pri}`}>{ch.title}</p>
+                </div>
+                <div className={`flex items-center gap-1 text-[0.62rem] shrink-0 ${dp.faint}`}>
+                  <Clock size={10} /> {ch.duration}
+                </div>
+                <ChevronRight size={14} className={`shrink-0 transition group-hover:text-[${GOLD}] ${dp.faint}`} />
+              </motion.button>
+            ))}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[0.62rem] font-bold uppercase tracking-widest text-[#a78bfa]">Coaching individuel</p>
-            <h3 className={`mt-0.5 text-base font-extrabold ${dPri}`}>Réserver un appel vidéo avec un expert IA</h3>
-            <p className={`mt-1 text-sm ${dSec}`}>1 séance par semaine · 6 mois · Expert certifié DJAMA</p>
-            <div className={`mt-3 flex flex-wrap gap-2 text-[0.62rem] ${dMut}`}>
-              {["Google Meet / Zoom", "Enregistrement fourni", "Compte-rendu après séance", "Accès 6 mois"].map((item) => (
-                <span key={item} className="flex items-center gap-1">
-                  <CheckCircle2 size={9} className="text-[#34d399]" /> {item}
-                </span>
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={() => onSetView("booking")}
-            className="shrink-0 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd] px-5 py-3 text-sm font-bold text-white shadow-[0_4px_20px_rgba(167,139,250,0.25)] transition hover:shadow-[0_4px_30px_rgba(167,139,250,0.4)]"
-          >
-            Réserver <ArrowRight size={15} />
-          </button>
         </div>
-      </div>
-
-      {/* ── Accès rapide ── */}
-      <div>
-        <p className={`mb-3 text-[0.65rem] font-bold uppercase tracking-widest ${dMut}`}>Accès rapide</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: "Assistant IA",  icon: Bot,     color: "#a78bfa", view: "assistant" as View },
-            { label: "Jeux IA",       icon: Gamepad2,color: "#38bdf8", view: "jeux"      as View },
-            { label: "Favoris",       icon: Star,    color: "#f9a826", view: "favorites" as View, badge: favCount },
-            { label: "Réserver",      icon: Calendar,color: "#34d399", view: "booking"   as View },
-          ].map(({ label, icon: Icon, color, view: v, badge }) => (
-            <button key={label} onClick={() => onSetView(v)}
-              className={`group flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${dQkBtn}`}>
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
-                <Icon size={18} style={{ color }} />
-                {badge !== undefined && badge > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-[0.5rem] font-black text-black" style={{ background: color }}>
-                    {badge}
-                  </span>
-                )}
-              </div>
-              <span className={`text-[0.65rem] font-semibold ${dQkLbl}`}>{label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
     </div>
   );
@@ -2371,7 +2445,7 @@ export default function EspaceCoachingIA() {
   const eFocusIdle  = isDark ? "border-white/[0.08] text-white/30 hover:border-white/[0.15] hover:text-white/60" : "border-black/[0.08] text-[#0e1420]/30 hover:border-black/15 hover:text-[#0e1420]/60";
 
   const eSbShortcutAssistant = view === "assistant"
-    ? "bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
+    ? "bg-[rgba(201,165,90,0.1)] text-[#c9a55a]"
     : isDark ? "text-white/40 hover:bg-white/[0.04] hover:text-white/70" : "text-[#0e1420]/40 hover:bg-black/[0.04] hover:text-[#0e1420]/70";
   const eSbShortcutFavorites = view === "favorites"
     ? "bg-[rgba(249,168,38,0.1)] text-[#f9a826]"
@@ -2380,9 +2454,9 @@ export default function EspaceCoachingIA() {
   if (access === "loading") return (
     <div className={`flex min-h-screen flex-col items-center justify-center gap-5 ${eBg}`}>
       <div className="relative flex h-16 w-16 items-center justify-center">
-        <div className="absolute inset-0 animate-ping rounded-full bg-[rgba(167,139,250,0.15)]" />
-        <div className={`absolute inset-2 animate-spin rounded-full border-2 border-transparent border-t-[#a78bfa] ${isDark ? "" : "border-[#f0f2fb]"}`} />
-        <Brain size={22} className="relative text-[#a78bfa]" />
+        <div className="absolute inset-0 animate-ping rounded-full bg-[rgba(201,165,90,0.15)]" />
+        <div className="absolute inset-2 animate-spin rounded-full border-2 border-transparent border-t-[#c9a55a]" />
+        <Brain size={22} className="relative" style={{ color: GOLD }} />
       </div>
       <div className="text-center">
         <p className={`text-sm font-semibold ${isDark ? "text-white/60" : "text-[#0e1420]/60"}`}>Vérification de votre accès…</p>
@@ -2396,12 +2470,12 @@ export default function EspaceCoachingIA() {
   if (access === "preview" && !devBypass) return <PreviewGate user={user} />;
 
   const TAB_ITEMS: { key: View; icon: React.ElementType; label: string; badge?: number }[] = [
-    { key: "dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
-    { key: "chapter",   icon: BookOpen,        label: "Cours" },
-    { key: "assistant", icon: Bot,             label: "Assistant IA" },
-    { key: "jeux",      icon: Gamepad2,        label: "Jeux IA" },
-    { key: "favorites", icon: Star,            label: "Favoris", badge: favCount || undefined },
-    { key: "booking",   icon: Calendar,        label: "Réserver" },
+    { key: "dashboard",   icon: LayoutDashboard, label: "Accueil" },
+    { key: "chapter",     icon: BookOpen,         label: "Cours" },
+    { key: "assistant",   icon: Bot,              label: "Coach IA" },
+    { key: "jeux",        icon: Gamepad2,         label: "S'entraîner" },
+    { key: "favorites",   icon: Star,             label: "Révisions", badge: favCount || undefined },
+    { key: "progression", icon: TrendingUp,       label: "Progression" },
   ];
 
   return (
@@ -2424,11 +2498,12 @@ export default function EspaceCoachingIA() {
                 <span className={`text-[0.62rem] font-semibold uppercase tracking-widest ${eSbTxt}`}>
                   Progression globale
                 </span>
-                <span className="text-[0.65rem] font-bold text-[#a78bfa]">{overallPct}%</span>
+                <span className="text-[0.65rem] font-bold" style={{ color: GOLD }}>{overallPct}%</span>
               </div>
               <div className={`h-1.5 overflow-hidden rounded-full ${eSbBar}`}>
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-[#a78bfa] to-[#7c6fcd]"
+                  className="h-full rounded-full"
+                  style={{ background: `linear-gradient(90deg, ${GOLD}aa, ${GOLD})` }}
                   initial={{ width: 0 }}
                   animate={{ width: `${overallPct}%` }}
                   transition={{ duration: 0.6, ease }}
@@ -2506,7 +2581,7 @@ export default function EspaceCoachingIA() {
               onClick={() => setView(key)}
               className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 view === key
-                  ? "border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.1)] text-[#a78bfa]"
+                  ? "border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.1)] text-[#c9a55a]"
                   : eTabIdle
               }`}
             >
@@ -2525,12 +2600,12 @@ export default function EspaceCoachingIA() {
             <motion.div
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               onClick={() => setView("dashboard")}
-              className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-white/[0.08] cursor-pointer transition-all hover:border-violet-400/25"
-              style={{ background: "rgba(255,255,255,0.035)" }}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1 border border-[rgba(201,165,90,0.2)] cursor-pointer transition-all hover:border-[rgba(201,165,90,0.35)]"
+              style={{ background: "rgba(201,165,90,0.06)" }}
             >
-              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ACCENT }}/>
+              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: GOLD }}/>
               <div>
-                <p className="text-xs font-bold leading-none" style={{ color: ACCENT }}>{overallPct}%</p>
+                <p className="text-xs font-bold leading-none" style={{ color: GOLD }}>{overallPct}%</p>
                 <p className="text-[0.5rem] uppercase tracking-wide mt-0.5 whitespace-nowrap text-white/35">{completedCount}/{totalChapters}</p>
               </div>
             </motion.div>
@@ -2640,6 +2715,15 @@ export default function EspaceCoachingIA() {
                 exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
               >
                 <JeuxPanel />
+              </motion.div>
+            )}
+
+            {view === "progression" && (
+              <motion.div key="progression"
+                initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
+              >
+                <ProgressionPanel completed={completed} />
               </motion.div>
             )}
 
