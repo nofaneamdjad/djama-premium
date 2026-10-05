@@ -1935,88 +1935,514 @@ const VF_Q = [
   { q: "On peut partager des données clients dans ChatGPT sans risque.", ans: false, expl: "Non. Respectez le RGPD — ne partagez jamais de données personnelles de clients." },
 ];
 
-function JeuxPanel() {
+/* ─────────────────────────────────────────────────────────
+   DONNÉES — Flashcards (5 par module)
+───────────────────────────────────────────────────────── */
+const MODULE_FLASHCARDS: Record<string, { front: string; back: string }[]> = {
+  "1":  [
+    { front: "Qu'est-ce qu'un LLM ?",          back: "Large Language Model — modèle IA entraîné sur d'immenses corpus pour prédire le token suivant. GPT-4, Claude et Gemini en sont des exemples." },
+    { front: "Hallucination IA — définition ?", back: "Quand un LLM génère des informations fausses présentées avec confiance. Ex : inventer une citation, un fait ou une référence légale inexistante." },
+    { front: "Que signifie 'température' ?",    back: "Paramètre de créativité : faible (0.1) = prévisible ; élevée (1.0+) = créatif mais moins fiable. Par défaut ~0.7 dans la plupart des modèles." },
+    { front: "Qu'est-ce qu'un token ?",         back: "Unité de texte traitée par un LLM. ~0.75 mot en anglais, ~0.5-0.6 en français. 1 000 tokens ≈ 750 mots. Les limites contexte s'expriment en tokens." },
+    { front: "IA faible vs IA forte ?",         back: "IA faible (actuelle) : optimisée pour une tâche précise. IA forte/AGI (théorique) : raisonnement général comparable à l'humain — n'existe pas encore." },
+  ],
+  "2":  [
+    { front: "Méthode RCTC ?",                  back: "Rôle – Contexte – Tâche – Contraintes. Structure fondamentale d'un prompt efficace pour cadrer précisément le comportement du modèle." },
+    { front: "Chain-of-Thought prompting ?",    back: "Demander à l'IA de raisonner 'étape par étape'. Améliore drastiquement la précision sur les tâches complexes de raisonnement et de calcul." },
+    { front: "Few-shot vs Zero-shot ?",         back: "Zero-shot : aucun exemple. Few-shot : 2 à 5 exemples fournis dans le prompt. Few-shot améliore la cohérence du format et du style de sortie." },
+    { front: "Qu'est-ce que le context window ?", back: "Nombre max de tokens traités en une fois. Claude Sonnet : 200k tokens. GPT-4o : 128k. Au-delà, le modèle 'oublie' le début de la conversation." },
+    { front: "Prompt système vs utilisateur ?", back: "Système : instructions persistantes (rôle, règles, ton). Utilisateur : la demande en cours. Le système conditionne toute la conversation." },
+  ],
+  "3":  [
+    { front: "GPT-4o vs o1 — différence ?",    back: "GPT-4o : multimodal, rapide, usage courant. o1 : modèle de raisonnement lent — pense longuement avant de répondre, meilleur en maths/logique." },
+    { front: "Qu'est-ce qu'un GPT Custom ?",   back: "Assistant ChatGPT personnalisé avec instructions, fichiers et actions. Partageable via lien privé — idéal pour codifier un workflow récurrent." },
+    { front: "Code Interpreter ChatGPT ?",     back: "Sandbox Python intégré à ChatGPT. Analyse CSV, crée des graphiques, calculs complexes, génère des fichiers. Disponible avec ChatGPT Plus." },
+    { front: "ChatGPT Free vs Plus ?",         back: "Free : GPT-4o mini, limites de messages. Plus (20$/mois) : GPT-4o, o1, DALL-E, Code Interpreter, mémoire persistante, navigation web." },
+    { front: "Mémoire ChatGPT ?",              back: "ChatGPT retient des infos entre conversations (Paramètres > Personnalisation > Mémoire). Visualisable et modifiable à tout moment." },
+  ],
+  "4":  [
+    { front: "Claude vs ChatGPT — point fort de Claude ?", back: "Claude excelle sur : documents très longs (200k tokens), instructions complexes, rédaction nuancée, constance sur de longues conversations." },
+    { front: "Qu'est-ce qu'un Projet Claude ?", back: "Espace de travail persistant dans Claude.ai avec instructions et fichiers partagés entre toutes les conversations. Idéal pour les workflows répétitifs." },
+    { front: "Haiku vs Sonnet vs Opus ?",      back: "Haiku : rapide, économique. Sonnet : équilibre vitesse/intelligence (usage courant). Opus : le plus puissant (tâches très complexes)." },
+    { front: "Constitutional AI ?",            back: "Méthode Anthropic : Claude est entraîné avec un livre de règles éthiques, s'auto-évalue et corrige ses réponses pour être utile et honnête." },
+    { front: "Avantage API Claude vs web ?",   back: "API : system prompts custom, streaming, contrôle du modèle, intégration apps, automation à grande échelle, gestion fine des coûts." },
+  ],
+  "5":  [
+    { front: "Gemini Ultra vs Pro vs Flash ?", back: "Ultra : concurrent GPT-4o, multimodal avancé. Pro : usage général gratuit. Flash : ultrarapide et économique via API." },
+    { front: "Avantage unique de Perplexity ?", back: "Moteur de recherche IA avec sources citées en temps réel. Idéal pour veille, recherche de faits récents, synthèses documentées." },
+    { front: "Mistral — pourquoi l'utiliser ?", back: "Open-source, hébergeable localement, RGPD-friendly, européen. Mistral Large rivalise avec GPT-4 à coût réduit." },
+    { front: "Commande --ar dans Midjourney ?", back: "Définit le ratio d'aspect. --ar 16:9 (paysage), --ar 1:1 (carré), --ar 9:16 (vertical Stories). S'utilise en fin de prompt." },
+    { front: "Qu'est-ce qu'ElevenLabs ?",      back: "Outil IA de synthèse vocale ultra-réaliste. Clone de voix, audiobooks, voix-off vidéo. Référence du marché pour la génération audio." },
+  ],
+  "6":  [
+    { front: "Zapier vs Make ?",               back: "Zapier : débutants, 6000+ apps, rapide à mettre en place. Make : workflows complexes avec branchements, transformation de données et itérations." },
+    { front: "Qu'est-ce qu'un webhook ?",      back: "URL qui reçoit des données en temps réel lors d'un événement. Ex : formulaire → webhook → Zapier → CRM + email + Slack simultanément." },
+    { front: "n8n vs Zapier ?",                back: "n8n : open-source, auto-hébergeable, coût quasi-nul, logique avancée. Zapier : SaaS clé en main, abordable mais limité sur les cas complexes." },
+    { front: "Agent IA autonome ?",            back: "IA qui planifie et exécute des séquences d'actions pour atteindre un objectif sans intervention humaine à chaque étape." },
+    { front: "Top 3 workflows IA ROI PME ?",   back: "1) Qualification leads. 2) Réponse emails/support auto. 3) Création contenu hebdomadaire (LinkedIn + newsletter)." },
+  ],
+  "7":  [
+    { front: "IA + prospection ?",             back: "Personnalisation à l'échelle : analyser profil LinkedIn → générer message personnalisé → automatiser l'envoi. Résultat : taux de réponse ×2 à ×3." },
+    { front: "IA + service client — 3 usages ?", back: "1) Chatbot 24/7 (60-80% tickets simples). 2) Classification auto des urgences. 3) Suggestion de réponses aux agents avec contexte." },
+    { front: "Stack IA mensuel entrepreneur ?", back: "ChatGPT Plus (20$) + Claude Pro (20$) + Zapier Starter (20$) + image (10$) = ~70$/mois. ROI dès 2-4h économisées/semaine." },
+    { front: "Comment mesurer le ROI de l'IA ?", back: "(Heures économisées × taux horaire) + Revenus supplémentaires – Coût outils. Tracker avant/après sur les 3 tâches les plus chronophages." },
+    { front: "IA + RH — 3 cas ?",              back: "1) Fiches de poste optimisées. 2) Présélection CV automatique. 3) FAQ onboarding IA répondant aux nouvelles recrues 24/7." },
+  ],
+  "8":  [
+    { front: "Framework post LinkedIn IA ?",   back: "1 insight fort + story + enseignement actionnable + CTA. IA pour brainstorm et brouillon. Toi pour l'angle authentique." },
+    { front: "Content repurposing IA ?",       back: "1 article → 5 posts LinkedIn + newsletter + tweets + script vidéo. IA automatise la reformulation. Gain : ×5 de contenu pour le même effort." },
+    { front: "SEO + IA — 5 étapes ?",          back: "1) Mots-clés (Perplexity). 2) Plan IA optimisé. 3) Rédaction Claude/ChatGPT. 4) Meta-description. 5) Maillage interne suggéré par l'IA." },
+    { front: "Top 3 outils vidéo IA ?",        back: "HeyGen (avatar IA). Opus Clip (découpe auto longs formats). Captions.ai (sous-titres + édition). Descript (édition par texte)." },
+    { front: "Structure newsletter IA ?",      back: "1 insight principal + 3 outils/actus IA + 1 prompt de la semaine + 1 CTA simple. IA pour le fond, vous pour la voix." },
+  ],
+  "9":  [
+    { front: "Qu'est-ce que le RAG ?",         back: "Retrieval-Augmented Generation : recherche sémantique dans vos docs + génération LLM. Accès à vos données privées sans fine-tuning coûteux." },
+    { front: "Fine-tuning vs RAG ?",           back: "RAG : données changeantes, coût bas. Fine-tuning : adapter style/ton du modèle ou comportements très spécifiques et répétitifs." },
+    { front: "LangChain — à quoi ça sert ?",  back: "Framework Python pour chaîner LLMs + outils (recherche, DB, code). Facilite agents, chatbots RAG et pipelines IA complexes." },
+    { front: "Prompt injection ?",             back: "Attaque : texte malveillant dans les données traitées par l'IA modifie son comportement. Ex : email client contenant 'Ignore tes instructions...'." },
+    { front: "Vector database ?",             back: "DB stockant des embeddings (représentations vectorielles). Permet recherche sémantique. Ex : Pinecone, Weaviate, Supabase pgvector." },
+  ],
+  "10": [
+    { front: "3 critères bon projet final DJAMA ?", back: "1) Résout un vrai problème. 2) Utilise 2+ outils IA combinés. 3) Mesurable : KPIs chiffrés avant/après avec démo fonctionnelle." },
+    { front: "Structure présentation projet IA ?", back: "Problème → Solution IA → Architecture → Démo/prototype → Résultats → Prochaines étapes. 10-15 min, slides épurés." },
+    { front: "Certification DJAMA ?",          back: "Attestation interne DJAMA validant la maîtrise du programme. Preuve de compétences pour clients et partenaires. Non reconnue par l'État." },
+    { front: "Pitcher un projet IA à un client ?", back: "Angle ROI : 'Cette solution économise X h/semaine soit Y€/mois'. Montrez la démo en live. Anticipez : 'ça va remplacer mes équipes ?' (non)." },
+    { front: "Après la certification ?",       back: "Rejoindre la communauté DJAMA Alumni, partager sur LinkedIn (badge DJAMA), explorer agents avancés, RAG custom, formation équipe." },
+  ],
+};
+
+/* ─────────────────────────────────────────────────────────
+   DONNÉES — Études de cas (1 par module)
+───────────────────────────────────────────────────────── */
+const MODULE_CASES: Record<string, { scenario: string; question: string; hints: string[] }> = {
+  "1":  { scenario: "Vous êtes consultant RH. Un DG veut intégrer l'IA dans son process de recrutement (200 embauches/an). Sa crainte : 'L'IA va se tromper et les candidats vont le savoir.'", question: "Comment répondez-vous à ses objections et proposez-vous une intégration réaliste et responsable ?", hints: ["Quelles tâches RH sont répétitives vs à forte valeur humaine ?", "Que peut faire l'IA sans risque majeur ? Que doit rester humain ?"] },
+  "2":  { scenario: "Vous dirigez une agence conseil. En une heure vous devez envoyer des propositions commerciales personnalisées à 3 prospects : une boulangerie artisanale, une startup SaaS B2B, et un cabinet d'avocats.", question: "Construisez un prompt RCTC réutilisable qui génère ces 3 propositions avec le bon ton pour chaque cible.", hints: ["Comment définir le Rôle pour qu'il s'adapte à chaque cible ?", "Quelles Contraintes permettent de différencier les 3 versions ?"] },
+  "3":  { scenario: "Votre équipe de 5 commerciaux passe 2h/jour à rédiger des comptes-rendus de réunion manuellement. Vous voulez automatiser ça avec ChatGPT cette semaine.", question: "Décrivez le workflow complet : capture de l'info, traitement ChatGPT, format du CR en sortie.", hints: ["Comment les infos entrent dans le système (vocal ? formulaire ?) ?", "Quel format de CR est le plus utile pour le CRM et le manager ?"] },
+  "4":  { scenario: "Vous êtes coach business avec 150 pages de méthodes propriétaires. Vous voulez les rendre accessibles 24h/24 à vos clients entre les sessions.", question: "Claude Projets, API + RAG, ou GPT Custom ? Justifiez votre choix et décrivez l'architecture.", hints: ["Claude Projets peut ingérer vos docs directement dans l'interface", "Pour une vraie app multi-clients : pensez API + RAG sur vos PDF"] },
+  "5":  { scenario: "Vous lancez une marque de cosmétiques naturels. Budget marketing : 500€/mois. Vous devez créer des visuels, posts et vidéos pour Instagram et LinkedIn.", question: "Composez votre stack IA image/vidéo/contenu sous 80€/mois et décrivez l'usage au quotidien.", hints: ["DALL-E intégré à ChatGPT vs Midjourney — coût/qualité ?", "Quel outil pour transformer des photos en Reels courts ?"] },
+  "6":  { scenario: "Chaque semaine votre assistante collecte 20 devis fournisseurs par email, les copie dans Excel, calcule les totaux et vous envoie un résumé. Cela prend 4h (30€/h).", question: "Concevez un workflow no-code qui ramène ce travail à 30 minutes. Quel outil choisissez-vous et quel ROI ?", hints: ["Déclencheur : à quel moment le workflow commence-t-il ?", "Zapier, Make ou n8n : lequel convient ici et pourquoi ?"] },
+  "7":  { scenario: "Vous êtes PDG d'une PME de 12 personnes. Votre directeur commercial part dans 6 semaines. Vous devez maintenir le chiffre d'affaires pendant la transition.", question: "Quelles sont vos 3 actions prioritaires intégrant l'IA pour maintenir la performance commerciale ?", hints: ["Comment capturer les process du commercial sortant ?", "Quels outils IA peuvent couvrir certaines tâches en urgence ?"] },
+  "8":  { scenario: "Vous êtes coach bien-être indépendant. Vous avez 45 minutes/semaine pour votre présence digitale. Objectif : LinkedIn + newsletter mensuelle.", question: "Construisez votre machine à contenu IA : que produisez-vous, avec quels outils, en combien de temps ?", hints: ["Quel contenu peut être préparé en batch mensuel (1h) ?", "Comment recycler un sujet fort en plusieurs formats en 20 min ?"] },
+  "9":  { scenario: "Vous construisez un assistant IA pour une chaîne de 15 restaurants qui répond aux questions clients (horaires, allergènes, réservations). Le menu change chaque semaine.", question: "Quelle architecture (RAG, fine-tuning, GPT Custom) et pourquoi ? Listez les composants nécessaires.", hints: ["Les menus changent souvent — quel impact sur le choix technique ?", "Fine-tuning vs RAG pour des données fréquemment mises à jour ?"] },
+  "10": { scenario: "Vous avez terminé le programme DJAMA. Votre manager vous demande de présenter en 15 min comment l'IA va transformer votre département l'année prochaine, avec un plan chiffré.", question: "Structurez votre présentation : points clés, outils concrets, KPIs attendus, budget.", hints: ["Structure : problème → opportunité IA → 3 cas prioritaires → ROI → plan 90 jours", "Préparez la question : 'Quel risque si on ne fait rien ?'"] },
+};
+
+/* ─────────────────────────────────────────────────────────
+   DONNÉES — Questions réponse libre (1 par module)
+───────────────────────────────────────────────────────── */
+const MODULE_LIBRE_QUESTIONS: Record<string, string> = {
+  "1":  "Expliquez pourquoi un LLM peut 'halluciner' dans vos propres mots. Donnez un exemple concret et proposez une approche pour détecter ou limiter ce risque en contexte professionnel.",
+  "2":  "Rédigez un prompt complet en méthode RCTC pour une tâche réelle de votre quotidien. Expliquez chaque section et justifiez vos choix.",
+  "3":  "Décrivez un workflow ChatGPT concret qui vous ferait gagner 30 minutes/jour. Soyez précis : entrées, traitement, sorties attendues.",
+  "4":  "Un client demande un assistant basé sur 500 pages de documentation interne. Proposez une solution Claude avec avantages, limites et architecture.",
+  "5":  "Vous avez 50€/mois pour un stack IA dans une TPE consulting. Quels 3 outils choisissez-vous et comment les utiliseriez-vous au quotidien ?",
+  "6":  "Identifiez un processus répétitif dans votre activité et décrivez le workflow d'automatisation no-code : déclencheur → actions → sortie.",
+  "7":  "Rédigez un plan de transformation IA pour votre activité sur 90 jours. 3 cas d'usage prioritaires avec ROI estimé pour chacun.",
+  "8":  "Construisez un calendrier éditorial IA pour 4 semaines sur LinkedIn. Thèmes, formats, fréquence et comment l'IA intervient pour chaque contenu.",
+  "9":  "Comparez RAG vs Fine-tuning pour un cas d'usage de votre choix. Justifiez votre recommandation technique et estimez le coût de mise en place.",
+  "10": "Présentez votre projet final DJAMA en 200 mots : problème, solution IA choisie, architecture, métriques de succès et prochaines étapes.",
+};
+
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — FlashcardDeck
+───────────────────────────────────────────────────────── */
+function FlashcardDeck({ moduleId }: { moduleId: string }) {
   const { isDark } = useTheme();
-  const LEVELS = [
-    { emoji: "🧠", title: "Les Bases",    color: "#22c55e" },
-    { emoji: "⚡", title: "Les Modèles",  color: "#06b6d4" },
-    { emoji: "✍️", title: "Prompting",    color: "#8b5cf6" },
-    { emoji: "🔍", title: "RAG",          color: "#f59e0b" },
-    { emoji: "🤖", title: "Agents IA",    color: "#f97316" },
-    { emoji: "💼", title: "Business",     color: "#ec4899" },
-    { emoji: "📣", title: "Marketing",    color: "#f43f5e" },
-    { emoji: "⚙️", title: "Automation",   color: "#0ea5e9" },
-    { emoji: "🎯", title: "Stratégie",    color: "#6366f1" },
-    { emoji: "👑", title: "Maîtrise",     color: "#eab308" },
-  ];
+  const allCards = MODULE_FLASHCARDS[moduleId] ?? MODULE_FLASHCARDS["1"]!;
+  const [idx,     setIdx]     = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [known,   setKnown]   = useState<Set<number>>(new Set());
+  const [toRedo,  setToRedo]  = useState<Set<number>>(new Set());
+
+  const isDone = known.size + toRedo.size >= allCards.length;
+  const card   = allCards[idx];
+
+  function advance(verdict: "known" | "redo") {
+    const setter = verdict === "known" ? setKnown : setToRedo;
+    setter(prev => new Set([...prev, idx]));
+    setFlipped(false);
+    setTimeout(() => {
+      let next = -1;
+      for (let i = 1; i <= allCards.length; i++) {
+        const ni = (idx + i) % allCards.length;
+        if (!known.has(ni) && !toRedo.has(ni) && ni !== idx) { next = ni; break; }
+      }
+      if (next >= 0) setIdx(next);
+    }, 180);
+  }
+
+  function reset() { setKnown(new Set()); setToRedo(new Set()); setIdx(0); setFlipped(false); }
+
+  const fc = {
+    card: isDark ? "border-white/[0.08] bg-white/[0.04]" : "border-black/[0.08] bg-white shadow-md",
+    pri:  isDark ? "text-white" : "text-[#0e1420]",
+    sec:  isDark ? "text-white/55" : "text-[#0e1420]/60",
+    mut:  isDark ? "text-white/30" : "text-[#0e1420]/35",
+    idle: isDark ? "border-white/[0.09] text-white/40 hover:text-white/70" : "border-black/[0.09] text-[#0e1420]/40 hover:text-[#0e1420]/70",
+  };
+
+  if (isDone) return (
+    <div className="flex flex-col items-center gap-5 py-8 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.1)]">
+        <Award size={26} style={{ color: GOLD }} />
+      </div>
+      <div>
+        <p className={`text-sm font-bold ${fc.pri}`}>Deck terminé !</p>
+        <p className={`mt-1 text-xs ${fc.sec}`}>{known.size} maîtrisées · {toRedo.size} à retravailler</p>
+      </div>
+      <div className="flex gap-3">
+        <button onClick={reset} className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition ${fc.idle}`}>
+          <RotateCcw size={12} /> Recommencer
+        </button>
+        {toRedo.size > 0 && (
+          <button onClick={() => { setKnown(new Set()); setToRedo(new Set()); setIdx([...toRedo][0] ?? 0); setFlipped(false); }}
+            className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] px-4 py-2 text-xs font-semibold text-[#c9a55a]">
+            Retravailler les {toRedo.size} manquées
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.12)] border border-[rgba(167,139,250,0.2)]">
-          <Gamepad2 size={15} className="text-[#a78bfa]" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <span className={`text-xs ${fc.mut}`}>{idx + 1} / {allCards.length}</span>
+        <div className="flex gap-3 text-xs">
+          <span className="text-[#34d399] font-semibold">{known.size} ✓</span>
+          <span className="text-red-400 font-semibold">{toRedo.size} ✗</span>
         </div>
-        <div>
-          <h2 className={`text-base font-extrabold ${isDark ? "text-white" : "text-[#0e1420]"}`}>Jeux IA — 10 Niveaux</h2>
-          <p className={`text-xs ${isDark ? "text-white/35" : "text-[#0e1420]/40"}`}>100 étapes · 300 questions · Animations épiques</p>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+        <div className="h-full rounded-full transition-all duration-300" style={{ width: `${((known.size + toRedo.size) / allCards.length) * 100}%`, background: GOLD }} />
+      </div>
+
+      <motion.div
+        key={`${idx}-${flipped}`}
+        initial={{ rotateY: flipped ? -90 : 90, opacity: 0 }}
+        animate={{ rotateY: 0, opacity: 1 }}
+        transition={{ duration: 0.22 }}
+        onClick={() => setFlipped(f => !f)}
+        className={`relative min-h-[170px] cursor-pointer rounded-2xl border p-6 ${fc.card}`}
+      >
+        <span className={`absolute right-3 top-3 rounded-full px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-wider ${
+          flipped ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a]" : isDark ? "bg-white/[0.06] text-white/30" : "bg-black/[0.05] text-[#0e1420]/30"
+        }`}>{flipped ? "Réponse" : "Question"}</span>
+        <div className="flex min-h-[110px] items-center justify-center text-center">
+          <p className={`leading-relaxed ${flipped ? `text-sm ${fc.sec}` : `text-base font-semibold ${fc.pri}`}`}>
+            {flipped ? card?.back : card?.front}
+          </p>
+        </div>
+        {!flipped && <p className={`mt-2 text-center text-[0.6rem] ${fc.mut}`}>Cliquez pour voir la réponse</p>}
+      </motion.div>
+
+      {flipped ? (
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
+          <button onClick={() => advance("redo")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition hover:border-red-500/35">
+            <X size={14} /> À retravailler
+          </button>
+          <button onClick={() => advance("known")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.1)] py-3 text-sm font-semibold text-[#34d399] transition hover:border-[rgba(52,211,153,0.4)]">
+            <CheckCircle2 size={14} /> Je maîtrise
+          </button>
+        </motion.div>
+      ) : (
+        <button onClick={() => setFlipped(true)}
+          className={`w-full rounded-xl border py-3 text-sm font-semibold transition ${fc.idle}`}>
+          Retourner la carte
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — Réponse libre (évaluation IA)
+───────────────────────────────────────────────────────── */
+function LibreMode({ moduleId }: { moduleId: string }) {
+  const { isDark } = useTheme();
+  const question  = MODULE_LIBRE_QUESTIONS[moduleId] ?? MODULE_LIBRE_QUESTIONS["1"]!;
+  const module    = COACHING_MODULES.find(m => m.id === moduleId);
+  const [response,   setResponse]   = useState("");
+  const [evaluation, setEvaluation] = useState<string | null>(null);
+  const [loading,    setLoading]    = useState(false);
+
+  async function evaluate() {
+    if (response.trim().length < 30 || loading) return;
+    setLoading(true);
+    try {
+      const res  = await fetch("/api/coaching-ia/assistant", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          messages: [{ role: "user", content: `Évalue cette réponse d'apprenant.\n\nQuestion : "${question}"\n\nRéponse :\n"${response}"\n\nDonne une évaluation constructive : points forts, lacunes, et une version améliorée.` }],
+          mode:    "exercise",
+          context: module ? `Module ${moduleId} — ${module.title}` : undefined,
+        }),
+      });
+      const data = await res.json() as { reply?: string; error?: string };
+      setEvaluation(data.reply ?? data.error ?? "Erreur.");
+    } catch { setEvaluation("Erreur. Réessayez."); }
+    finally { setLoading(false); }
+  }
+
+  const lc = {
+    card:  isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm",
+    pri:   isDark ? "text-white" : "text-[#0e1420]",
+    sec:   isDark ? "text-white/55" : "text-[#0e1420]/60",
+    mut:   isDark ? "text-white/30" : "text-[#0e1420]/35",
+    input: isDark
+      ? "border-white/[0.09] bg-white/[0.04] text-white placeholder-white/25 focus:border-[rgba(201,165,90,0.4)]"
+      : "border-black/10 bg-white text-[#0e1420] placeholder-[#0e1420]/30 shadow-sm focus:border-[rgba(201,165,90,0.35)]",
+    idle:  isDark ? "border-white/[0.09] text-white/40 hover:text-white/70" : "border-black/[0.09] text-[#0e1420]/40 hover:text-[#0e1420]/70",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className={`rounded-2xl border p-5 ${lc.card}`}>
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.15)]">
+            <FileText size={12} style={{ color: GOLD }} />
+          </div>
+          <span className={`text-[0.6rem] font-bold uppercase tracking-wider ${lc.mut}`}>Question ouverte · Module {moduleId}</span>
+        </div>
+        <p className={`text-sm leading-relaxed ${lc.pri}`}>{question}</p>
+      </div>
+
+      {!evaluation ? (
+        <div className="space-y-3">
+          <textarea value={response} onChange={e => setResponse(e.target.value)} rows={6}
+            placeholder="Rédigez votre réponse ici (minimum 30 caractères)…"
+            className={`w-full resize-none rounded-2xl border px-4 py-3 text-sm outline-none transition ${lc.input}`} />
+          <button onClick={evaluate} disabled={response.trim().length < 30 || loading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition disabled:opacity-40"
+            style={{ background: `linear-gradient(135deg, ${GOLD}bb, ${GOLD})` }}>
+            {loading ? <><Loader2 size={14} className="animate-spin" /> Évaluation…</> : <><Sparkles size={14} /> Soumettre pour évaluation IA</>}
+          </button>
+        </div>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className={`rounded-2xl border p-5 ${lc.card}`}>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[rgba(52,211,153,0.15)]">
+                <CheckCircle2 size={12} className="text-[#34d399]" />
+              </div>
+              <span className={`text-[0.6rem] font-bold uppercase tracking-wider ${lc.mut}`}>Évaluation du Coach IA</span>
+            </div>
+            <p className={`whitespace-pre-wrap text-sm leading-relaxed ${lc.sec}`}>{evaluation}</p>
+          </div>
+          <button onClick={() => { setResponse(""); setEvaluation(null); }}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition ${lc.idle}`}>
+            <RotateCcw size={13} /> Nouvelle réponse
+          </button>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — Cas pratique (évaluation IA)
+───────────────────────────────────────────────────────── */
+function CasPratiqueMode({ moduleId }: { moduleId: string }) {
+  const { isDark }  = useTheme();
+  const cas         = MODULE_CASES[moduleId] ?? MODULE_CASES["1"]!;
+  const module      = COACHING_MODULES.find(m => m.id === moduleId);
+  const [response,   setResponse]   = useState("");
+  const [evaluation, setEvaluation] = useState<string | null>(null);
+  const [loading,    setLoading]    = useState(false);
+  const [showHints,  setShowHints]  = useState(false);
+
+  async function evaluate() {
+    if (response.trim().length < 50 || loading) return;
+    setLoading(true);
+    try {
+      const res  = await fetch("/api/coaching-ia/assistant", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          messages: [{ role: "user", content: `Évalue cette réponse à un cas pratique.\n\nScénario : "${cas.scenario}"\nQuestion : "${cas.question}"\n\nRéponse :\n"${response}"\n\nÉvalue point par point : ce qui est juste, ce qui manque, exemple de réponse complète.` }],
+          mode:    "exercise",
+          context: module ? `Module ${moduleId} — Cas pratique : ${module.title}` : undefined,
+        }),
+      });
+      const data = await res.json() as { reply?: string; error?: string };
+      setEvaluation(data.reply ?? data.error ?? "Erreur.");
+    } catch { setEvaluation("Erreur. Réessayez."); }
+    finally { setLoading(false); }
+  }
+
+  const cc = {
+    card:  isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-black/[0.08] bg-white shadow-sm",
+    gold:  "border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.06)]",
+    pri:   isDark ? "text-white" : "text-[#0e1420]",
+    sec:   isDark ? "text-white/55" : "text-[#0e1420]/60",
+    mut:   isDark ? "text-white/30" : "text-[#0e1420]/35",
+    input: isDark
+      ? "border-white/[0.09] bg-white/[0.04] text-white placeholder-white/25 focus:border-[rgba(201,165,90,0.4)]"
+      : "border-black/10 bg-white text-[#0e1420] placeholder-[#0e1420]/30 shadow-sm focus:border-[rgba(201,165,90,0.35)]",
+    idle:  isDark ? "border-white/[0.09] text-white/40 hover:text-white/70" : "border-black/[0.09] text-[#0e1420]/40 hover:text-[#0e1420]/70",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className={`rounded-2xl border p-5 ${cc.card}`}>
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.15)]">
+            <Lightbulb size={12} style={{ color: GOLD }} />
+          </div>
+          <span className={`text-[0.6rem] font-bold uppercase tracking-wider ${cc.mut}`}>Scénario</span>
+        </div>
+        <p className={`mb-4 text-sm leading-relaxed ${cc.sec}`}>{cas.scenario}</p>
+        <div className={`rounded-xl border p-3 ${cc.gold}`}>
+          <p className={`mb-1 text-[0.6rem] font-bold uppercase tracking-wide ${cc.mut}`}>Question</p>
+          <p className={`text-sm font-medium ${cc.pri}`}>{cas.question}</p>
         </div>
       </div>
 
-      {/* Big CTA */}
-      <a href="/client/coaching-ia/jeux">
-        <motion.div
-          whileHover={{ scale: 1.01, y: -2 }}
-          whileTap={{ scale: 0.99 }}
-          className="relative cursor-pointer overflow-hidden rounded-[1.75rem] border p-6"
-          style={{
-            borderColor: "rgba(167,139,250,0.4)",
-            background: "linear-gradient(135deg, rgba(167,139,250,0.15), rgba(99,102,241,0.08))",
-            boxShadow: "0 8px 40px rgba(167,139,250,0.15)",
-          }}>
-          <div className="absolute inset-x-0 top-0 h-px"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(167,139,250,0.8), transparent)" }} />
-          <div className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-7xl opacity-10 select-none">🎮</div>
-          <div className="relative flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[0.58rem] font-black uppercase tracking-widest text-violet-400/70 mb-1">Nouveau · Exclusif</p>
-              <p className={`text-lg font-black ${isDark ? "text-white" : "text-[#0e1420]"}`}>Lancer les Jeux IA</p>
-              <p className={`mt-0.5 text-xs ${isDark ? "text-white/45" : "text-[#0e1420]/50"}`}>Progressez niveau par niveau, gagnez des XP</p>
-            </div>
-            <motion.div
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="shrink-0 flex items-center gap-1.5 rounded-2xl px-5 py-3 text-sm font-black text-white"
-              style={{ background: "linear-gradient(135deg, #a78bfa, #7c3aed)", boxShadow: "0 4px 24px rgba(167,139,250,0.5)" }}>
-              Jouer <ArrowRight size={13} />
-            </motion.div>
-          </div>
-        </motion.div>
-      </a>
+      <button onClick={() => setShowHints(s => !s)}
+        className={`flex items-center gap-1.5 text-xs font-semibold transition ${isDark ? "text-white/35 hover:text-white/60" : "text-[#0e1420]/35 hover:text-[#0e1420]/60"}`}>
+        <HelpCircle size={12} />
+        {showHints ? "Masquer les indices" : "Voir les indices"}
+        <ChevronDown size={11} className={`transition-transform ${showHints ? "rotate-180" : ""}`} />
+      </button>
 
-      {/* Level grid */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        {LEVELS.map(({ emoji, title, color }, i) => (
-          <a key={i} href="/client/coaching-ia/jeux">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: i * 0.04 }}
-              whileHover={{ scale: 1.06, y: -4 }}
-              whileTap={{ scale: 0.97 }}
-              className="relative overflow-hidden rounded-xl border p-3 text-center cursor-pointer"
-              style={{
-                borderColor: color + "35",
-                background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${color}18, rgba(255,255,255,0.02))`,
-              }}>
-              <div className="absolute inset-x-0 top-0 h-px"
-                style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }} />
-              <p className="text-2xl mb-1">{emoji}</p>
-              <p className={`text-[0.55rem] font-black leading-tight ${isDark ? "text-white/60" : "text-[#0e1420]/60"}`}>{title}</p>
-              <p className="text-[0.45rem] mt-0.5 font-bold" style={{ color }}>Niv. {i + 1}</p>
-            </motion.div>
-          </a>
+      {showHints && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className={`rounded-xl border p-4 space-y-2 ${cc.card}`}>
+          {cas.hints.map((h, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className="mt-0.5 text-[0.62rem] font-black" style={{ color: GOLD }}>{i + 1}.</span>
+              <p className={`text-xs ${cc.sec}`}>{h}</p>
+            </div>
+          ))}
+        </motion.div>
+      )}
+
+      {!evaluation ? (
+        <div className="space-y-3">
+          <textarea value={response} onChange={e => setResponse(e.target.value)} rows={7}
+            placeholder="Développez votre approche, vos choix et votre justification…"
+            className={`w-full resize-none rounded-2xl border px-4 py-3 text-sm outline-none transition ${cc.input}`} />
+          <button onClick={evaluate} disabled={response.trim().length < 50 || loading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition disabled:opacity-40"
+            style={{ background: `linear-gradient(135deg, ${GOLD}bb, ${GOLD})` }}>
+            {loading ? <><Loader2 size={14} className="animate-spin" /> Analyse…</> : <><Sparkles size={14} /> Analyser ma réponse</>}
+          </button>
+        </div>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className={`rounded-2xl border p-5 ${cc.card}`}>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[rgba(52,211,153,0.15)]">
+                <CheckCircle2 size={12} className="text-[#34d399]" />
+              </div>
+              <span className={`text-[0.6rem] font-bold uppercase tracking-wider ${cc.mut}`}>Analyse du Coach IA</span>
+            </div>
+            <p className={`whitespace-pre-wrap text-sm leading-relaxed ${cc.sec}`}>{evaluation}</p>
+          </div>
+          <button onClick={() => { setResponse(""); setEvaluation(null); setShowHints(false); }}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition ${cc.idle}`}>
+            <RotateCcw size={13} /> Nouveau cas pratique
+          </button>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — ExercicesPanel (remplace JeuxPanel)
+───────────────────────────────────────────────────────── */
+function ExercicesPanel({ completed }: { completed: Set<string> }) {
+  type ExMode = "quiz" | "flashcards" | "libre" | "cas";
+  const { isDark }        = useTheme();
+  const [exMode,          setExMode]         = useState<ExMode>("quiz");
+  const [selectedModule,  setSelectedModule] = useState("1");
+
+  const module       = COACHING_MODULES.find(m => m.id === selectedModule);
+  const moduleProgress = module
+    ? Math.round((module.chapters.filter(c => completed.has(c.id)).length / module.chapters.length) * 100)
+    : 0;
+
+  const ep = {
+    pri:  isDark ? "text-white" : "text-[#0e1420]",
+    sec:  isDark ? "text-white/50" : "text-[#0e1420]/55",
+    mut:  isDark ? "text-white/30" : "text-[#0e1420]/35",
+    card: isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-white shadow-sm",
+    mod:  isDark ? "border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.04]" : "border-black/[0.07] hover:border-black/12 hover:bg-black/[0.02]",
+  };
+
+  const EX_MODES: { key: ExMode; label: string; icon: React.ElementType; desc: string }[] = [
+    { key: "quiz",       label: "Quiz",          icon: HelpCircle, desc: "QCM par module" },
+    { key: "flashcards", label: "Flashcards",    icon: BookMarked, desc: "Retenir les concepts" },
+    { key: "libre",      label: "Réponse libre", icon: FileText,   desc: "Évaluée par l'IA" },
+    { key: "cas",        label: "Cas pratique",  icon: Lightbulb,  desc: "Scénario réel" },
+  ];
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-5 px-4 py-6">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.1)]">
+          <Gamepad2 size={15} style={{ color: GOLD }} />
+        </div>
+        <div>
+          <h2 className={`text-base font-extrabold ${ep.pri}`}>S&apos;entraîner</h2>
+          <p className={`text-xs ${ep.sec}`}>4 formats · 10 modules · Évaluation IA</p>
+        </div>
+      </div>
+
+      {/* Sélecteur de format */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {EX_MODES.map(({ key, label, icon: Icon, desc }) => (
+          <button key={key} onClick={() => setExMode(key)}
+            className={`flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all ${
+              exMode === key ? "border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)]" : ep.mod
+            }`}>
+            <div className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${
+              exMode === key ? "bg-[rgba(201,165,90,0.2)]" : isDark ? "bg-white/[0.06]" : "bg-black/[0.04]"
+            }`}>
+              <Icon size={15}
+                style={{ color: exMode === key ? GOLD : undefined }}
+                className={exMode === key ? "" : isDark ? "text-white/40" : "text-[#0e1420]/40"} />
+            </div>
+            <span className={`text-[0.7rem] font-bold ${exMode === key ? "text-[#c9a55a]" : ep.sec}`}>{label}</span>
+            <span className={`text-[0.55rem] leading-tight ${ep.mut}`}>{desc}</span>
+          </button>
         ))}
+      </div>
+
+      {/* Sélecteur de module */}
+      <div>
+        <p className={`mb-2 text-[0.6rem] font-semibold uppercase tracking-wider ${ep.mut}`}>Module</p>
+        <div className="flex flex-wrap gap-1.5">
+          {COACHING_MODULES.map((m) => {
+            const pct = Math.round((m.chapters.filter(c => completed.has(c.id)).length / m.chapters.length) * 100);
+            return (
+              <button key={m.id} onClick={() => setSelectedModule(m.id)}
+                className={`flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
+                  selectedModule === m.id
+                    ? "border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] text-[#c9a55a]"
+                    : `${ep.mod} ${ep.sec}`
+                }`}>
+                {m.id}
+                {pct === 100 && <CheckCircle2 size={9} className="text-[#34d399]" />}
+              </button>
+            );
+          })}
+        </div>
+        {module && (
+          <p className={`mt-1.5 text-[0.62rem] ${ep.mut}`}>{module.title} · {moduleProgress}% complété</p>
+        )}
+      </div>
+
+      {/* Zone d'exercice */}
+      <div className={`rounded-2xl border p-5 ${ep.card}`}>
+        {exMode === "quiz"       && <InlineModuleQuiz key={selectedModule} moduleId={selectedModule} onComplete={() => {}} />}
+        {exMode === "flashcards" && <FlashcardDeck    key={selectedModule} moduleId={selectedModule} />}
+        {exMode === "libre"      && <LibreMode        key={selectedModule} moduleId={selectedModule} />}
+        {exMode === "cas"        && <CasPratiqueMode  key={selectedModule} moduleId={selectedModule} />}
       </div>
     </div>
   );
@@ -2809,7 +3235,7 @@ export default function EspaceCoachingIA() {
                 initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
               >
-                <JeuxPanel />
+                <ExercicesPanel completed={completed} />
               </motion.div>
             )}
 
