@@ -2732,7 +2732,210 @@ function ExercicesPanel({ completed }: { completed: Set<string> }) {
 /* ─────────────────────────────────────────────────────────
    COMPOSANT — Progression
 ───────────────────────────────────────────────────────── */
-function ProgressionPanel({ completed }: { completed: Set<string> }) {
+/* ─────────────────────────────────────────────────────────
+   HELPERS — Calcul du parcours adaptatif
+───────────────────────────────────────────────────────── */
+function computeParcours(completed: Set<string>) {
+  const stats = COACHING_MODULES.map((m) => {
+    const done     = m.chapters.filter((c) => completed.has(c.id)).length;
+    const pct      = m.chapters.length > 0 ? Math.round((done / m.chapters.length) * 100) : 0;
+    const firstTodo = m.chapters.find((c) => !completed.has(c.id)) ?? null;
+    return { module: m, done, pct, firstTodo };
+  });
+
+  // Modules en cours (au moins 1 fait, pas 100%)
+  const inProgress = stats.filter((s) => s.done > 0 && s.pct < 100).sort((a, b) => a.pct - b.pct);
+  // Modules non commencés
+  const notStarted = stats.filter((s) => s.done === 0).slice(0, 2);
+  // Modules les plus faibles (tri par % croissant, pas 100%)
+  const weak       = stats.filter((s) => s.pct < 100).sort((a, b) => a.pct - b.pct).slice(0, 3);
+
+  // Plan du jour : 3 chapitres recommandés
+  const plan: { chapter: { id: string; title: string; type: string }; moduleTitle: string; moduleColor: string; reason: string }[] = [];
+
+  // 1. Prochain chapitre du module en cours le plus avancé (momentum)
+  const momentum = inProgress.length > 0 ? inProgress[inProgress.length - 1] : null;
+  if (momentum?.firstTodo) {
+    plan.push({ chapter: momentum.firstTodo, moduleTitle: momentum.module.title, moduleColor: momentum.module.color, reason: "Continuer l'élan" });
+  }
+
+  // 2. Premier chapitre du module le plus faible non commencé
+  if (notStarted.length > 0 && plan.length < 3) {
+    const ns = notStarted[0];
+    const ch = ns.firstTodo;
+    if (ch) plan.push({ chapter: ch, moduleTitle: ns.module.title, moduleColor: ns.module.color, reason: "Nouveau module" });
+  }
+
+  // 3. Premier chapitre incomplet du module le plus faible en cours
+  if (inProgress.length > 1 && plan.length < 3) {
+    const wk = inProgress[0];
+    const ch = wk.firstTodo;
+    if (ch && !plan.find((p) => p.chapter.id === ch.id)) {
+      plan.push({ chapter: ch, moduleTitle: wk.module.title, moduleColor: wk.module.color, reason: "Renforcer les bases" });
+    }
+  }
+
+  return { stats, weak, plan, inProgress, notStarted };
+}
+
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — Parcours personnalisé (inséré dans ProgressionPanel)
+───────────────────────────────────────────────────────── */
+function ParcoursPersonnalise({
+  completed, onSelectChapter, onSetView,
+}: {
+  completed:       Set<string>;
+  onSelectChapter: (id: string) => void;
+  onSetView:       (v: View) => void;
+}) {
+  const { isDark } = useTheme();
+  const { plan, weak, inProgress, stats } = computeParcours(completed);
+  const [aiPlan,   setAiPlan]   = useState<string | null>(null);
+  const [loading,  setLoading]  = useState(false);
+
+  const totalDone = completed.size;
+  const total     = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
+
+  async function generateAiPlan() {
+    if (loading) return;
+    setLoading(true);
+    const progressSummary = stats.map((s) =>
+      `Module ${s.module.id} (${s.module.title}) : ${s.pct}% (${s.done}/${s.module.chapters.length} chapitres)`
+    ).join("\n");
+    const prompt = `Voici ma progression dans le Coaching IA DJAMA :\n\n${progressSummary}\n\nTotal : ${totalDone}/${total} chapitres complétés.\n\nGénère-moi un plan de travail personnalisé et motivant pour les 7 prochains jours. Inclus : objectifs journaliers réalistes (20-30 min/jour), l'ordre des modules à prioriser avec justification, des conseils spécifiques à mon niveau actuel. Sois concret et actionnable.`;
+    try {
+      const res  = await fetch("/api/coaching-ia/assistant", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+          mode:    "direct",
+        }),
+      });
+      const data = await res.json() as { reply?: string; error?: string };
+      setAiPlan(data.reply ?? null);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  }
+
+  const pp = {
+    card: isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-white shadow-sm",
+    pri:  isDark ? "text-white" : "text-[#0e1420]",
+    sec:  isDark ? "text-white/50" : "text-[#0e1420]/55",
+    mut:  isDark ? "text-white/30" : "text-[#0e1420]/35",
+    bar:  isDark ? "bg-white/[0.07]" : "bg-black/[0.07]",
+    lbl:  `text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`,
+    idle: isDark ? "border-white/[0.09] text-white/40 hover:text-white/70" : "border-black/[0.09] text-[#0e1420]/40 hover:text-[#0e1420]/70",
+  };
+
+  if (totalDone === 0) return (
+    <div className={`rounded-2xl border p-5 ${pp.card}`}>
+      <p className={pp.lbl}>Parcours personnalisé</p>
+      <p className={`mt-3 text-sm ${pp.sec}`}>Commencez votre premier chapitre pour activer les recommandations adaptatives.</p>
+      <button onClick={() => onSetView("chapter")}
+        className="mt-3 flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+        style={{ background: `linear-gradient(135deg, ${GOLD}bb, ${GOLD})` }}>
+        <Play size={13} /> Démarrer le programme
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      <p className={pp.lbl}>Parcours personnalisé</p>
+
+      {/* Plan du jour */}
+      {plan.length > 0 && (
+        <div className={`rounded-2xl border p-5 ${pp.card}`}>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[rgba(201,165,90,0.12)] border border-[rgba(201,165,90,0.2)]">
+                <Target size={13} style={{ color: GOLD }} />
+              </div>
+              <p className={`text-sm font-bold ${pp.pri}`}>Plan du jour</p>
+            </div>
+            <span className={`text-[0.58rem] font-semibold ${pp.mut}`}>{plan.length} chapitres · ~{plan.length * 12} min</span>
+          </div>
+          <div className="space-y-2">
+            {plan.map((item, i) => (
+              <motion.button key={item.chapter.id}
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                onClick={() => { onSelectChapter(item.chapter.id); onSetView("chapter"); }}
+                className={`group flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${pp.card} hover:border-[rgba(201,165,90,0.25)]`}>
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.58rem] font-black text-white"
+                  style={{ background: `linear-gradient(135deg, ${item.moduleColor}bb, ${item.moduleColor})` }}>
+                  {i + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-semibold truncate ${pp.pri}`}>{item.chapter.title}</p>
+                  <p className={`text-[0.58rem] ${pp.mut}`}>{item.moduleTitle}</p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="rounded-full px-2 py-0.5 text-[0.5rem] font-bold uppercase tracking-wider"
+                    style={{ background: item.moduleColor + "18", color: item.moduleColor }}>{item.reason}</span>
+                  <ChevronRight size={12} className={`transition-transform group-hover:translate-x-0.5 ${pp.mut}`} />
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modules à renforcer */}
+      {weak.length > 0 && (
+        <div className={`rounded-2xl border p-5 ${pp.card}`}>
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)]">
+              <Target size={13} className="text-red-400" />
+            </div>
+            <p className={`text-sm font-bold ${pp.pri}`}>Modules à renforcer</p>
+          </div>
+          <div className="space-y-3">
+            {weak.map((s) => (
+              <div key={s.module.id}>
+                <div className="mb-1 flex items-center justify-between">
+                  <p className={`text-xs font-semibold ${pp.pri}`}>{s.module.id}. {s.module.title}</p>
+                  <span className={`text-xs font-bold`} style={{ color: s.pct < 30 ? "#ef4444" : s.pct < 60 ? "#f59e0b" : s.module.color }}>
+                    {s.pct}%
+                  </span>
+                </div>
+                <div className={`h-1.5 overflow-hidden rounded-full ${pp.bar}`}>
+                  <div className="h-full rounded-full transition-all"
+                    style={{ width: `${s.pct}%`, background: s.pct < 30 ? "#ef4444" : s.pct < 60 ? "#f59e0b" : s.module.color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Plan IA personnalisé */}
+      {!aiPlan ? (
+        <button onClick={generateAiPlan} disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.06)] py-3 text-sm font-semibold text-[#c9a55a] transition hover:border-[rgba(201,165,90,0.4)] disabled:opacity-50">
+          {loading ? <><Loader2 size={14} className="animate-spin" /> Génération…</> : <><Sparkles size={14} /> Générer mon plan IA sur 7 jours</>}
+        </button>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`rounded-2xl border p-5 ${pp.card}`}>
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.15)]">
+                <Sparkles size={11} style={{ color: GOLD }} />
+              </div>
+              <span className={`text-[0.6rem] font-bold uppercase tracking-wider ${pp.mut}`}>Plan IA personnalisé — 7 jours</span>
+            </div>
+            <button onClick={() => setAiPlan(null)} className={`text-[0.6rem] ${pp.mut} hover:text-[${GOLD}] transition`}>
+              <RotateCcw size={11} />
+            </button>
+          </div>
+          <p className={`whitespace-pre-wrap text-xs leading-relaxed ${pp.sec}`}>{aiPlan}</p>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+function ProgressionPanel({ completed, onSelectChapter, onSetView }: { completed: Set<string>; onSelectChapter: (id: string) => void; onSetView: (v: View) => void }) {
   const { isDark } = useTheme();
   const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
   const completedCount = completed.size;
@@ -2779,6 +2982,13 @@ function ProgressionPanel({ completed }: { completed: Set<string> }) {
         <h2 className={`mt-2 text-2xl font-black ${dp.pri}`}>{overallPct}% complété</h2>
         <p className={`mt-1 text-sm ${dp.sec}`}>{completedCount} chapitres sur {totalChapters}</p>
       </div>
+
+      {/* Parcours personnalisé (Phase 7) */}
+      <ParcoursPersonnalise
+        completed={completed}
+        onSelectChapter={onSelectChapter}
+        onSetView={onSetView}
+      />
 
       {/* Niveau + XP */}
       <div className={`rounded-2xl border p-5 ${dp.card}`}>
@@ -3525,7 +3735,11 @@ export default function EspaceCoachingIA() {
                 initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
               >
-                <ProgressionPanel completed={completed} />
+                <ProgressionPanel
+                  completed={completed}
+                  onSelectChapter={(chapterId) => selectChapter(chapterId.split(".")[0] ?? "1", chapterId)}
+                  onSetView={setView}
+                />
               </motion.div>
             )}
 
