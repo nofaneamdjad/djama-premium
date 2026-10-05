@@ -10,7 +10,7 @@ import {
   CreditCard, Landmark, Brain, Lightbulb, Download,
   Star, Maximize2, Minimize2, Copy, Check, X,
   FileText, Zap, HelpCircle, BookMarked, Rocket,
-  Shield, RefreshCw, Gamepad2, Trophy, Timer, LayoutDashboard,
+  Shield, RefreshCw, Gamepad2, Trophy, Timer, LayoutDashboard, Users2, StopCircle,
 } from "lucide-react";
 import { COACHING_MODULES, getNextChapter, type Module, type Chapter } from "@/lib/coaching-content";
 import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
@@ -2353,10 +2353,289 @@ function CasPratiqueMode({ moduleId }: { moduleId: string }) {
 }
 
 /* ─────────────────────────────────────────────────────────
+   DONNÉES — Scénarios de simulation
+───────────────────────────────────────────────────────── */
+type SimScenario = "prospect" | "negociation" | "management" | "interview";
+
+const SIM_SCENARIOS: {
+  key:        SimScenario;
+  label:      string;
+  persona:    string;
+  role:       string;
+  desc:       string;
+  difficulty: "Intermédiaire" | "Avancé" | "Expert";
+  color:      string;
+  emoji:      string;
+}[] = [
+  {
+    key:        "prospect",
+    label:      "Prospection commerciale",
+    persona:    "Thomas Blanc, Directeur Commercial PME",
+    role:       "Vous êtes consultant IA en charge de le convaincre",
+    desc:       "Thomas est sceptique, a eu de mauvaises expériences et a des objections bien préparées. Votre objectif : obtenir un RDV de démonstration.",
+    difficulty: "Intermédiaire",
+    color:      "#06b6d4",
+    emoji:      "🤝",
+  },
+  {
+    key:        "negociation",
+    label:      "Négociation tarifaire",
+    persona:    "Sophie Ferrara, Responsable Achats Groupe",
+    role:       "Vous êtes le fournisseur — défendez votre offre à 18 000€/an",
+    desc:       "Sophie a un budget de 12 000€ et une offre concurrente à 14 000€. Elle connaît toutes les techniques de négociation.",
+    difficulty: "Avancé",
+    color:      "#f59e0b",
+    emoji:      "💼",
+  },
+  {
+    key:        "management",
+    label:      "Entretien de recadrage",
+    persona:    "Karim Benali, Développeur Senior",
+    role:       "Vous êtes son manager — 3 projets en retard ce trimestre",
+    desc:       "Karim est défensif mais cache une vraie frustration. Un bon manager découvrira la cause réelle et trouvera un plan d'action.",
+    difficulty: "Expert",
+    color:      "#8b5cf6",
+    emoji:      "👔",
+  },
+  {
+    key:        "interview",
+    label:      "Entretien d'embauche",
+    persona:    "Clara Moreau, DRH Scale-up Tech",
+    role:       "Vous postulez au poste de Responsable Marketing IA",
+    desc:       "Clara cherche authenticité et maîtrise réelle de l'IA. Elle creuse les généralités et ne se contente pas du discours.",
+    difficulty: "Avancé",
+    color:      "#ec4899",
+    emoji:      "🎯",
+  },
+];
+
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — Simulation jeu de rôle
+───────────────────────────────────────────────────────── */
+function SimulationMode() {
+  const { isDark } = useTheme();
+  type SimMsg = { role: "user" | "assistant"; content: string };
+
+  const [selected,   setSelected]   = useState<SimScenario | null>(null);
+  const [messages,   setMessages]   = useState<SimMsg[]>([]);
+  const [input,      setInput]      = useState("");
+  const [loading,    setLoading]    = useState(false);
+  const [debrief,    setDebrief]    = useState<string | null>(null);
+  const [briefing,   setBriefing]   = useState(false);
+  const scrollRef                   = useRef<HTMLDivElement>(null);
+
+  const scenario = SIM_SCENARIOS.find(s => s.key === selected);
+
+  async function sendMessage() {
+    if (!selected || !input.trim() || loading) return;
+    const userMsg: SimMsg = { role: "user", content: input.trim() };
+    const next = [...messages, userMsg];
+    setMessages(next);
+    setInput("");
+    setLoading(true);
+    try {
+      const res  = await fetch("/api/coaching-ia/simulation", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ scenario: selected, messages: next }),
+      });
+      const data = await res.json() as { reply?: string; error?: string };
+      if (data.reply) setMessages(m => [...m, { role: "assistant", content: data.reply! }]);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  }
+
+  async function requestDebrief() {
+    if (!selected || loading) return;
+    setLoading(true);
+    try {
+      const res  = await fetch("/api/coaching-ia/simulation", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ scenario: selected, messages, debrief: true }),
+      });
+      const data = await res.json() as { reply?: string; error?: string };
+      setDebrief(data.reply ?? null);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  }
+
+  function reset() { setSelected(null); setMessages([]); setInput(""); setDebrief(null); setBriefing(false); }
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, loading]);
+
+  const sm = {
+    card:  isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-white shadow-sm",
+    pri:   isDark ? "text-white" : "text-[#0e1420]",
+    sec:   isDark ? "text-white/55" : "text-[#0e1420]/60",
+    mut:   isDark ? "text-white/30" : "text-[#0e1420]/35",
+    input: isDark
+      ? "border-white/[0.09] bg-white/[0.04] text-white placeholder-white/25 focus:border-[rgba(201,165,90,0.4)]"
+      : "border-black/10 bg-white text-[#0e1420] placeholder-[#0e1420]/30 shadow-sm focus:border-[rgba(201,165,90,0.35)]",
+    idle:  isDark ? "border-white/[0.09] text-white/40 hover:text-white/70" : "border-black/[0.09] text-[#0e1420]/40 hover:text-[#0e1420]/70",
+    aiBg:  isDark ? "bg-white/[0.05] border border-white/[0.07]" : "bg-[#f4f5f7] border border-black/[0.05]",
+    uBg:   "bg-[rgba(201,165,90,0.12)] border border-[rgba(201,165,90,0.2)]",
+  };
+
+  /* ── Sélection scénario ── */
+  if (!selected) return (
+    <div className="space-y-4">
+      <p className={`text-xs font-semibold ${sm.mut}`}>Choisissez un scénario :</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {SIM_SCENARIOS.map((sc) => (
+          <motion.button key={sc.key} onClick={() => { setSelected(sc.key); setBriefing(true); }}
+            whileHover={{ scale: 1.015, y: -2 }} whileTap={{ scale: 0.99 }}
+            className={`relative overflow-hidden rounded-2xl border p-4 text-left transition-all ${sm.card}`}
+            style={{ borderColor: sc.color + "30" }}>
+            <div className="absolute inset-x-0 top-0 h-px"
+              style={{ background: `linear-gradient(90deg, transparent, ${sc.color}70, transparent)` }} />
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-2xl">{sc.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <span className={`text-xs font-bold ${sm.pri}`}>{sc.label}</span>
+                  <span className="rounded-full px-2 py-0.5 text-[0.5rem] font-black uppercase tracking-wider"
+                    style={{ background: sc.color + "20", color: sc.color }}>{sc.difficulty}</span>
+                </div>
+                <p className={`text-[0.65rem] font-semibold mb-1`} style={{ color: sc.color }}>{sc.persona}</p>
+                <p className={`text-[0.62rem] leading-relaxed ${sm.sec}`}>{sc.desc}</p>
+              </div>
+            </div>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+
+  /* ── Briefing ── */
+  if (briefing && messages.length === 0 && !debrief) return (
+    <div className="space-y-5">
+      <button onClick={reset} className={`flex items-center gap-1.5 text-xs ${sm.mut} hover:text-[${GOLD}] transition`}>
+        <ChevronLeft size={13} /> Changer de scénario
+      </button>
+      <div className={`rounded-2xl border p-5 ${sm.card}`}
+        style={{ borderColor: (scenario?.color ?? GOLD) + "30" }}>
+        <div className="mb-4 flex items-center gap-3">
+          <span className="text-3xl">{scenario?.emoji}</span>
+          <div>
+            <p className={`text-sm font-extrabold ${sm.pri}`}>{scenario?.label}</p>
+            <p className="text-[0.62rem] font-semibold" style={{ color: scenario?.color }}>{scenario?.persona}</p>
+          </div>
+        </div>
+        <div className={`mb-3 rounded-xl border p-3 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-black/[0.06] bg-black/[0.02]"}`}>
+          <p className={`mb-1 text-[0.58rem] font-bold uppercase tracking-wider ${sm.mut}`}>Votre rôle</p>
+          <p className={`text-sm font-semibold ${sm.pri}`}>{scenario?.role}</p>
+        </div>
+        <p className={`text-xs leading-relaxed ${sm.sec}`}>{scenario?.desc}</p>
+      </div>
+      <div className={`rounded-xl border p-4 ${isDark ? "border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.05)]" : "border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.04)]"}`}>
+        <p className={`text-[0.62rem] font-bold uppercase tracking-wide mb-1.5`} style={{ color: GOLD }}>Conseils</p>
+        <ul className={`space-y-1 text-xs ${sm.sec}`}>
+          <li>→ Répondez naturellement comme dans une vraie situation</li>
+          <li>→ L'IA reste en personnage — traitez-la comme une vraie personne</li>
+          <li>→ À la fin, cliquez "Débrief IA" pour une analyse détaillée</li>
+        </ul>
+      </div>
+      <button onClick={() => setBriefing(false)}
+        className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white"
+        style={{ background: `linear-gradient(135deg, ${scenario?.color ?? GOLD}bb, ${scenario?.color ?? GOLD})` }}>
+        <Play size={15} /> Démarrer la simulation
+      </button>
+    </div>
+  );
+
+  /* ── Interface de chat ── */
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{scenario?.emoji}</span>
+          <div>
+            <p className={`text-xs font-bold ${sm.pri}`}>{scenario?.label}</p>
+            <p className="text-[0.58rem]" style={{ color: scenario?.color }}>{scenario?.persona}</p>
+          </div>
+        </div>
+        <button onClick={reset} className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[0.62rem] font-semibold transition ${sm.idle}`}>
+          <RotateCcw size={10} /> Nouveau
+        </button>
+      </div>
+
+      {/* Messages */}
+      {!debrief ? (
+        <>
+          <div ref={scrollRef} className="max-h-[320px] min-h-[180px] overflow-y-auto space-y-2.5 pr-0.5">
+            {messages.length === 0 && (
+              <div className={`rounded-xl p-3 text-xs ${sm.sec} ${sm.aiBg}`}>
+                <p className="font-semibold mb-0.5" style={{ color: scenario?.color }}>{scenario?.persona}</p>
+                <p>Bonjour. Je vous écoute.</p>
+              </div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={`rounded-xl p-3 text-xs leading-relaxed ${m.role === "assistant" ? sm.aiBg : sm.uBg}`}>
+                {m.role === "assistant" && (
+                  <p className="font-semibold mb-0.5 text-[0.6rem] uppercase tracking-wide" style={{ color: scenario?.color }}>{scenario?.persona}</p>
+                )}
+                <p className={m.role === "assistant" ? sm.sec : sm.pri}>{m.content}</p>
+              </div>
+            ))}
+            {loading && (
+              <div className={`flex items-center gap-2 rounded-xl p-3 ${sm.aiBg}`}>
+                <Loader2 size={12} className="animate-spin" style={{ color: scenario?.color }} />
+                <span className={`text-xs ${sm.mut}`}>En train de réfléchir…</span>
+              </div>
+            )}
+          </div>
+
+          {/* Input */}
+          <div className="flex gap-2">
+            <input value={input} onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMessage())}
+              placeholder="Votre réponse…"
+              className={`flex-1 rounded-xl border px-3 py-2.5 text-xs outline-none transition ${sm.input}`} />
+            <button onClick={sendMessage} disabled={!input.trim() || loading}
+              className="flex items-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-40 transition"
+              style={{ background: `linear-gradient(135deg, ${scenario?.color ?? GOLD}bb, ${scenario?.color ?? GOLD})` }}>
+              <Send size={12} />
+            </button>
+          </div>
+
+          {messages.length >= 4 && (
+            <button onClick={requestDebrief} disabled={loading}
+              className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-semibold transition disabled:opacity-40 ${sm.idle}`}>
+              <StopCircle size={12} /> Terminer et obtenir le débrief IA
+            </button>
+          )}
+        </>
+      ) : (
+        /* ── Débrief ── */
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className={`rounded-2xl border p-5 ${sm.card}`}>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[rgba(201,165,90,0.15)]">
+                <Award size={12} style={{ color: GOLD }} />
+              </div>
+              <span className={`text-[0.6rem] font-bold uppercase tracking-wider ${sm.mut}`}>Débrief du Coach IA</span>
+            </div>
+            <p className={`whitespace-pre-wrap text-xs leading-relaxed ${sm.sec}`}>{debrief}</p>
+          </div>
+          <button onClick={reset}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition ${sm.idle}`}>
+            <RotateCcw size={13} /> Nouvelle simulation
+          </button>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    COMPOSANT — ExercicesPanel (remplace JeuxPanel)
 ───────────────────────────────────────────────────────── */
 function ExercicesPanel({ completed }: { completed: Set<string> }) {
-  type ExMode = "quiz" | "flashcards" | "libre" | "cas";
+  type ExMode = "quiz" | "flashcards" | "libre" | "cas" | "simulation";
   const { isDark }        = useTheme();
   const [exMode,          setExMode]         = useState<ExMode>("quiz");
   const [selectedModule,  setSelectedModule] = useState("1");
@@ -2379,6 +2658,7 @@ function ExercicesPanel({ completed }: { completed: Set<string> }) {
     { key: "flashcards", label: "Flashcards",    icon: BookMarked, desc: "Retenir les concepts" },
     { key: "libre",      label: "Réponse libre", icon: FileText,   desc: "Évaluée par l'IA" },
     { key: "cas",        label: "Cas pratique",  icon: Lightbulb,  desc: "Scénario réel" },
+    { key: "simulation", label: "Jeu de rôle",   icon: Users2,     desc: "4 simulations pro" },
   ];
 
   return (
@@ -2394,7 +2674,7 @@ function ExercicesPanel({ completed }: { completed: Set<string> }) {
       </div>
 
       {/* Sélecteur de format */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {EX_MODES.map(({ key, label, icon: Icon, desc }) => (
           <button key={key} onClick={() => setExMode(key)}
             className={`flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all ${
@@ -2413,8 +2693,8 @@ function ExercicesPanel({ completed }: { completed: Set<string> }) {
         ))}
       </div>
 
-      {/* Sélecteur de module */}
-      <div>
+      {/* Sélecteur de module — masqué en mode simulation */}
+      <div className={exMode === "simulation" ? "hidden" : ""}>
         <p className={`mb-2 text-[0.6rem] font-semibold uppercase tracking-wider ${ep.mut}`}>Module</p>
         <div className="flex flex-wrap gap-1.5">
           {COACHING_MODULES.map((m) => {
@@ -2443,6 +2723,7 @@ function ExercicesPanel({ completed }: { completed: Set<string> }) {
         {exMode === "flashcards" && <FlashcardDeck    key={selectedModule} moduleId={selectedModule} />}
         {exMode === "libre"      && <LibreMode        key={selectedModule} moduleId={selectedModule} />}
         {exMode === "cas"        && <CasPratiqueMode  key={selectedModule} moduleId={selectedModule} />}
+        {exMode === "simulation" && <SimulationMode />}
       </div>
     </div>
   );
