@@ -1,18 +1,31 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BookOpen, Plus, Trash2, Save, X, Search, Loader2,
-  Tag, Eye, EyeOff, Check, Edit3, Hash, Sparkles, Globe,
-  FileText, ArrowLeft, Copy, ExternalLink,
+  Plus, Search, X, Sparkles, Send, Edit3, Trash2, Globe,
+  ExternalLink, MoreHorizontal, ChevronDown, Copy, Check,
+  FileText, Calendar, Lightbulb, BarChart2, Settings,
+  Clock, Tag, Eye, ArrowUpRight, AlertCircle, Loader2,
+  CheckCircle2, BookOpen, Filter, ArrowUpDown,
 } from "lucide-react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
-import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
-type ArticleStatus = "draft" | "published";
+/* ── constants ──────────────────────────────────────────────────────── */
+const GOLD = "#c9a55a";
+
+type ArticleStatus = "draft" | "en_redaction" | "a_valider" | "planifie" | "published" | "archive";
+
+const STATUS_META: Record<ArticleStatus, { label: string; color: string; bg: string }> = {
+  draft:        { label: "Brouillon",   color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
+  en_redaction: { label: "En rédaction",color: "#60a5fa", bg: "rgba(96,165,250,0.12)"  },
+  a_valider:    { label: "À valider",   color: "#f59e0b", bg: "rgba(245,158,11,0.12)"  },
+  planifie:     { label: "Planifié",    color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
+  published:    { label: "Publié",      color: "#22c55e", bg: "rgba(34,197,94,0.12)"   },
+  archive:      { label: "Archivé",     color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
+};
 
 interface Article {
   id: string;
@@ -29,542 +42,931 @@ interface Article {
   updated_at: string;
 }
 
-type Draft = Partial<Omit<Article, "id" | "user_id" | "created_at" | "updated_at">>;
-
-const GOLD = "#c9a55a";
+type Tab = "articles" | "calendrier" | "idees" | "seo" | "analytics" | "parametres";
+const TABS: { key: Tab; label: string; Icon: typeof FileText }[] = [
+  { key: "articles",   label: "Articles",   Icon: FileText   },
+  { key: "calendrier", label: "Calendrier", Icon: Calendar   },
+  { key: "idees",      label: "Idées",      Icon: Lightbulb  },
+  { key: "seo",        label: "SEO",        Icon: BarChart2  },
+  { key: "analytics",  label: "Analytics",  Icon: Eye        },
+  { key: "parametres", label: "Paramètres", Icon: Settings   },
+];
 
 function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+  return text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+}
+function readTime(text: string) { return Math.max(1, Math.ceil((text.trim().split(/\s+/).length) / 200)); }
+function fmtDate(iso: string | null) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
 
-function wordCount(text: string) {
-  return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+/* ── design tokens ──────────────────────────────────────────────────── */
+function tok(isDark: boolean) {
+  return {
+    bg:         isDark ? "#111111"                  : "#f8f8f5",
+    surface:    isDark ? "#191919"                  : "#ffffff",
+    glass:      isDark ? "rgba(255,255,255,0.04)"   : "rgba(0,0,0,0.025)",
+    border:     isDark ? "rgba(255,255,255,0.08)"   : "rgba(0,0,0,0.07)",
+    borderSoft: isDark ? "rgba(255,255,255,0.05)"   : "rgba(0,0,0,0.04)",
+    text:       isDark ? "#e8e2d6"                  : "#1a1a1a",
+    text2:      isDark ? "#a09880"                  : "#4a4a4a",
+    text3:      isDark ? "#6b6256"                  : "#7a7a7a",
+    text4:      isDark ? "#4a4540"                  : "#9a9a9a",
+  };
 }
 
-function readTime(text: string) {
-  return Math.max(1, Math.ceil(wordCount(text) / 200));
-}
-
-export default function BlogPage() {
+/* ── markdown toolbar button ────────────────────────────────────────── */
+function MdBtn({ label, onClick }: { label: string; onClick: () => void }) {
   const { isDark } = useTheme();
-  const router = useRouter();
+  const t = tok(isDark);
+  return (
+    <button
+      onMouseDown={e => { e.preventDefault(); onClick(); }}
+      className="px-2 py-1 rounded text-xs font-semibold transition hover:opacity-70"
+      style={{ color: t.text2, background: t.glass, border: `1px solid ${t.border}` }}
+    >
+      {label}
+    </button>
+  );
+}
 
-  const [userId,      setUserId]      = useState<string | null>(null);
-  const [articles,    setArticles]    = useState<Article[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [search,      setSearch]      = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | ArticleStatus>("all");
-  const [selected,    setSelected]    = useState<Article | null>(null);
-  const [draft,       setDraft]       = useState<Draft>({});
-  const [mobileView,  setMobileView]  = useState<"list" | "editor">("list");
-  const [tagInput,    setTagInput]    = useState("");
-  const [saving,      setSaving]      = useState(false);
-  const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null);
-  const [deleting,    setDeleting]    = useState<string | null>(null);
-  const [aiLoading,   setAiLoading]   = useState(false);
-  const [aiContent,   setAiContent]   = useState(false);
-  const [copied,      setCopied]      = useState(false);
+/* ══════════════════════════════════════════════════════════════════════
+   ARTICLE EDITOR MODAL
+══════════════════════════════════════════════════════════════════════ */
+function ArticleEditor({
+  article, userId, isDark,
+  onClose, onSaved,
+}: {
+  article: Partial<Article> | null;
+  userId: string;
+  isDark: boolean;
+  onClose: () => void;
+  onSaved: (a: Article) => void;
+}) {
+  const t = tok(isDark);
+  const isNew = !article?.id;
+  const [title,   setTitle]   = useState(article?.title   ?? "");
+  const [slug,    setSlug]    = useState(article?.slug    ?? "");
+  const [content, setContent] = useState(article?.content ?? "");
+  const [excerpt, setExcerpt] = useState(article?.excerpt ?? "");
+  const [tags,    setTags]    = useState<string[]>(article?.tags ?? []);
+  const [status,  setStatus]  = useState<ArticleStatus>((article?.status as ArticleStatus) ?? "draft");
+  const [tagInput, setTagInput] = useState("");
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+  const [aiTask,  setAiTask]  = useState<"excerpt" | "content" | null>(null);
+  const [copyPanel, setCopyPanel] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* ── Theme vars ─────────────────────────────────────── */
-  const bg      = isDark ? "bg-[#07080e]"                               : "bg-[#f4f5f9]";
-  const sidebar  = isDark ? "bg-[#0d0e14] border-white/[0.06]"          : "bg-white border-black/[0.07]";
-  const card     = isDark ? "border-white/[0.06] bg-white/[0.04]"       : "border-black/[0.07] bg-white shadow-sm";
-  const cardHov  = isDark ? "hover:bg-white/[0.06]"                     : "hover:bg-black/[0.03]";
-  const cardSel  = isDark ? "bg-amber-500/10 border-amber-500/25"       : "bg-amber-50 border-amber-200";
-  const pri      = isDark ? "text-white"                                 : "text-[#0e1420]";
-  const sec      = isDark ? "text-white/60"                              : "text-[#0e1420]/60";
-  const mut      = isDark ? "text-white/35"                              : "text-[#0e1420]/40";
-  const inp      = isDark
-    ? "bg-white/[0.05] border-white/[0.08] text-white/70 placeholder-white/20 focus:border-amber-500/40"
-    : "bg-black/[0.04] border-black/[0.08] text-[#0e1420]/80 placeholder-[#0e1420]/20 focus:border-amber-500/50";
-  const toolbar  = isDark ? "bg-[#0d0e14]/80 border-white/[0.06]"       : "bg-white/90 border-black/[0.07] shadow-sm";
-  const divider  = isDark ? "border-white/[0.06]"                       : "border-black/[0.07]";
-  const editorBg = isDark ? "bg-[#07080e]"                              : "bg-[#f4f5f9]";
+  const slugAuto = useRef(isNew);
 
-  const showToast = (msg: string, ok = true) => {
-    setToast({ msg, ok });
-    setTimeout(() => setToast(null), 3000);
-  };
+  useEffect(() => {
+    if (slugAuto.current) setSlug(slugify(title));
+  }, [title]);
 
-  const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
-    setUserId(user.id);
-    const { data } = await supabase
-      .from("blog_articles")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    setArticles(data ?? []);
-    setLoading(false);
-  }, [router]);
-
-  useEffect(() => { void load(); }, [load]);
-
-  const openNew = () => {
-    setSelected(null);
-    setDraft({ title: "", content: "", excerpt: "", tags: [], status: "draft", slug: "" });
-    setTagInput("");
-    setMobileView("editor");
-  };
-
-  const openArticle = (a: Article) => {
-    setSelected(a);
-    setDraft({ title: a.title, content: a.content, excerpt: a.excerpt, tags: a.tags, status: a.status, slug: a.slug });
-    setTagInput("");
-    setMobileView("editor");
-  };
-
-  const closeEditor = () => {
-    setSelected(null);
-    setDraft({});
-    setMobileView("list");
-  };
-
-  const autoSave = (updated: Draft) => {
+  /* autosave */
+  useEffect(() => {
+    if (isNew || !article?.id) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void doSave(updated, true), 2000);
-  };
+    setSaved(false);
+    saveTimer.current = setTimeout(() => doSave(false), 2000);
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, slug, content, excerpt, tags, status]);
 
-  const updateDraft = (patch: Partial<Draft>) => {
-    const updated = { ...draft, ...patch };
-    setDraft(updated);
-    if (selected) autoSave(updated);
-  };
-
-  const doSave = async (d: Draft = draft, silent = false) => {
-    if (!userId || !d.title?.trim()) return;
-    if (!silent) setSaving(true);
-    const slug = d.slug?.trim() || slugify(d.title ?? "");
-    const payload = {
-      user_id:      userId,
-      title:        d.title ?? "",
-      slug,
-      content:      d.content ?? "",
-      excerpt:      d.excerpt ?? "",
-      tags:         d.tags ?? [],
-      status:       d.status ?? "draft",
-      published_at: d.status === "published" ? new Date().toISOString() : null,
-      updated_at:   new Date().toISOString(),
+  async function doSave(close = false) {
+    if (!title.trim()) return;
+    setSaving(true);
+    const payload: Partial<Article> = {
+      title, slug: slug || slugify(title), content, excerpt,
+      tags, status,
+      published_at: status === "published" ? (article?.published_at ?? new Date().toISOString()) : null,
+      updated_at: new Date().toISOString(),
     };
-    if (selected) {
-      const { error } = await supabase.from("blog_articles").update(payload).eq("id", selected.id);
-      if (!error) {
-        setArticles(prev => prev.map(a => a.id === selected.id ? { ...a, ...payload } : a));
-        setSelected(prev => prev ? { ...prev, ...payload } : prev);
-        if (!silent) showToast("Article sauvegardé");
-      } else if (!silent) showToast(error.message, false);
+    let result: Article | null = null;
+    if (isNew) {
+      const { data, error } = await supabase.from("blog_articles")
+        .insert({ ...payload, user_id: userId, created_at: new Date().toISOString() })
+        .select().single();
+      if (!error) result = data as Article;
     } else {
-      const { data, error } = await supabase.from("blog_articles").insert(payload).select().single();
-      if (!error && data) {
-        setArticles(prev => [data, ...prev]);
-        setSelected(data);
-        if (!silent) showToast("Article créé");
-      } else if (!silent) showToast(error?.message ?? "Erreur", false);
+      const { data, error } = await supabase.from("blog_articles")
+        .update(payload).eq("id", article!.id!).select().single();
+      if (!error) result = data as Article;
     }
-    if (!silent) setSaving(false);
-  };
+    setSaving(false);
+    if (result) { setSaved(true); onSaved(result); if (close) onClose(); }
+  }
 
-  const deleteArticle = async (id: string) => {
-    setDeleting(id);
-    await supabase.from("blog_articles").delete().eq("id", id);
-    setArticles(prev => prev.filter(a => a.id !== id));
-    if (selected?.id === id) closeEditor();
-    setDeleting(null);
-  };
-
-  const addTag = () => {
-    const t = tagInput.trim().toLowerCase();
-    if (!t || draft.tags?.includes(t)) return;
-    updateDraft({ tags: [...(draft.tags ?? []), t] });
-    setTagInput("");
-  };
-
-  const removeTag = (t: string) => updateDraft({ tags: draft.tags?.filter(x => x !== t) ?? [] });
-
-  const generateExcerpt = async () => {
-    if (!draft.content?.trim()) return;
-    setAiLoading(true);
+  async function generateAI(type: "excerpt" | "content") {
+    setAiTask(type);
     try {
-      const res  = await fetch("/api/blog/generate", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "excerpt", title: draft.title, content: draft.content }),
+      const res = await fetch("/api/blog/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, title, content, tags }),
       });
-      const json = await res.json() as { result?: string };
-      if (json.result) updateDraft({ excerpt: json.result });
-      else showToast("Erreur lors de la génération", false);
-    } catch { showToast("Erreur réseau", false); }
-    setAiLoading(false);
-  };
+      const json = await res.json();
+      if (type === "excerpt") setExcerpt(json.result ?? "");
+      else setContent(json.result ?? "");
+    } finally { setAiTask(null); }
+  }
 
-  const generateContent = async () => {
-    if (!draft.title?.trim()) return;
-    setAiContent(true);
+  function insertMd(before: string, after = "") {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const sel = content.slice(start, end);
+    const next = content.slice(0, start) + before + sel + after + content.slice(end);
+    setContent(next);
+    setTimeout(() => { ta.focus(); ta.setSelectionRange(start + before.length, end + before.length); }, 0);
+  }
+
+  function addTag(e: React.KeyboardEvent) {
+    if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+      e.preventDefault();
+      const tag = tagInput.trim().replace(/,/g, "");
+      if (!tags.includes(tag)) setTags(t => [...t, tag]);
+      setTagInput("");
+    }
+  }
+
+  const wc = content.trim() === "" ? 0 : content.trim().split(/\s+/).length;
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: t.bg }}>
+      {/* top bar */}
+      <div className="flex items-center gap-3 px-4 sm:px-6 py-3 shrink-0"
+        style={{ borderBottom: `1px solid ${t.border}`, background: t.surface }}>
+        <button onClick={onClose} className="flex items-center justify-center w-8 h-8 rounded-xl transition hover:opacity-70"
+          style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+          <X size={14} style={{ color: t.text2 }} />
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 text-xs" style={{ color: t.text3 }}>
+            <span>{isNew ? "Nouvel article" : "Modifier l'article"}</span>
+            <span>·</span>
+            <span>{wc} mots</span>
+            <span>·</span>
+            <span>{readTime(content)} min</span>
+            {!isNew && (
+              <>
+                <span>·</span>
+                {saving
+                  ? <span className="flex items-center gap-1"><Loader2 size={10} className="animate-spin" />Enregistrement…</span>
+                  : saved ? <span className="flex items-center gap-1 text-emerald-500"><CheckCircle2 size={10} />Enregistré</span>
+                  : null}
+              </>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Status dropdown */}
+          <div className="relative">
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value as ArticleStatus)}
+              className="appearance-none rounded-xl text-xs font-semibold px-3 py-1.5 pr-6 cursor-pointer outline-none"
+              style={{
+                background: STATUS_META[status].bg,
+                color: STATUS_META[status].color,
+                border: `1px solid ${STATUS_META[status].color}30`,
+              }}
+            >
+              {(Object.entries(STATUS_META) as [ArticleStatus, typeof STATUS_META[ArticleStatus]][]).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: STATUS_META[status].color }} />
+          </div>
+          <button
+            onClick={() => doSave(false)}
+            disabled={saving || !title.trim()}
+            className="flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold transition active:scale-95 disabled:opacity-40"
+            style={{ background: GOLD, color: "#111" }}
+          >
+            {saving ? <Loader2 size={12} className="animate-spin" /> : null}
+            {isNew ? "Créer" : "Enregistrer"}
+          </button>
+        </div>
+      </div>
+
+      {/* editor body */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* main */}
+        <div className="flex-1 flex flex-col overflow-y-auto px-4 sm:px-8 lg:px-16 py-8 max-w-4xl mx-auto w-full">
+          {/* title */}
+          <textarea
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Titre de l'article…"
+            rows={2}
+            className="w-full resize-none bg-transparent text-2xl sm:text-3xl font-bold leading-tight outline-none placeholder:opacity-30"
+            style={{ color: t.text, border: "none" }}
+          />
+          {/* slug */}
+          <div className="flex items-center gap-2 mt-2 mb-6 text-xs" style={{ color: t.text4 }}>
+            <Globe size={11} />
+            <span>/blogs/{userId?.slice(0, 8)}…/</span>
+            <input
+              value={slug}
+              onChange={e => { slugAuto.current = false; setSlug(e.target.value); }}
+              className="bg-transparent outline-none flex-1 min-w-0"
+              style={{ color: t.text3 }}
+              placeholder="slug-de-l-article"
+            />
+          </div>
+
+          {/* markdown toolbar */}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            <MdBtn label="H1" onClick={() => insertMd("# ")} />
+            <MdBtn label="H2" onClick={() => insertMd("## ")} />
+            <MdBtn label="H3" onClick={() => insertMd("### ")} />
+            <MdBtn label="G" onClick={() => insertMd("**", "**")} />
+            <MdBtn label="I" onClick={() => insertMd("_", "_")} />
+            <MdBtn label='""' onClick={() => insertMd("> ")} />
+            <MdBtn label="—" onClick={() => insertMd("\n---\n")} />
+            <MdBtn label="• liste" onClick={() => insertMd("- ")} />
+            <MdBtn label="1. liste" onClick={() => insertMd("1. ")} />
+            <MdBtn label="lien" onClick={() => insertMd("[", "](url)")} />
+            <MdBtn label="`code`" onClick={() => insertMd("`", "`")} />
+            <MdBtn label="tableau" onClick={() => insertMd("\n| Col 1 | Col 2 |\n|-------|-------|\n| Val   | Val   |\n")} />
+            <button
+              disabled={!!aiTask}
+              onMouseDown={e => { e.preventDefault(); generateAI("content"); }}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition hover:opacity-70 disabled:opacity-40"
+              style={{ color: GOLD, background: `${GOLD}12`, border: `1px solid ${GOLD}25` }}
+            >
+              {aiTask === "content" ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+              Générer avec DJAMA
+            </button>
+          </div>
+
+          {/* content textarea */}
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            placeholder="Commencez à écrire… (Markdown supporté)"
+            className="flex-1 w-full resize-none bg-transparent text-sm leading-relaxed outline-none font-mono placeholder:opacity-30"
+            style={{ color: t.text, minHeight: "400px", border: "none" }}
+          />
+        </div>
+
+        {/* right sidebar metadata */}
+        <div className="hidden lg:flex flex-col w-72 shrink-0 overflow-y-auto p-5 gap-5"
+          style={{ borderLeft: `1px solid ${t.border}`, background: t.surface }}>
+
+          {/* excerpt */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold" style={{ color: t.text2 }}>Extrait SEO</span>
+              <button
+                disabled={!!aiTask}
+                onClick={() => generateAI("excerpt")}
+                className="flex items-center gap-1 text-xs transition hover:opacity-70 disabled:opacity-40"
+                style={{ color: GOLD }}
+              >
+                {aiTask === "excerpt" ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                Auto
+              </button>
+            </div>
+            <textarea
+              value={excerpt}
+              onChange={e => setExcerpt(e.target.value)}
+              rows={3}
+              placeholder="Description courte pour les moteurs de recherche…"
+              className="w-full resize-none rounded-xl p-3 text-xs leading-relaxed outline-none"
+              style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+            />
+            <p className="text-[10px] mt-1" style={{ color: t.text4 }}>{excerpt.length}/160 caractères</p>
+          </div>
+
+          {/* tags */}
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Tags</p>
+            <div className="flex flex-wrap gap-1 mb-2">
+              {tags.map(tag => (
+                <span key={tag} className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
+                  style={{ background: `${GOLD}15`, color: GOLD, border: `1px solid ${GOLD}25` }}>
+                  {tag}
+                  <button onClick={() => setTags(t => t.filter(x => x !== tag))}>
+                    <X size={9} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input
+              value={tagInput}
+              onChange={e => setTagInput(e.target.value)}
+              onKeyDown={addTag}
+              placeholder="Ajouter un tag (Entrée)"
+              className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+              style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+            />
+          </div>
+
+          {/* public link */}
+          {!isNew && article?.id && (
+            <div>
+              <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Lien public</p>
+              <div className="flex items-center gap-2 rounded-xl p-2"
+                style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                <span className="flex-1 text-xs truncate" style={{ color: t.text4 }}>
+                  /blogs/…/{slug || "—"}
+                </span>
+                <Link href={`/blogs/${userId}/${slug}`} target="_blank">
+                  <ExternalLink size={12} style={{ color: t.text3 }} />
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CREATE WITH DJAMA MODAL
+══════════════════════════════════════════════════════════════════════ */
+function CreateWithDjama({
+  isDark, userId,
+  onClose, onCreated,
+}: {
+  isDark: boolean;
+  userId: string;
+  onClose: () => void;
+  onCreated: (a: Article) => void;
+}) {
+  const t = tok(isDark);
+  const [prompt, setPrompt] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<"prompt" | "generating" | "done">("prompt");
+  const [draft, setDraft] = useState<Partial<Article> | null>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+
+  const EXAMPLES = [
+    "Écris un article de 1 200 mots sur l'automatisation des petites entreprises avec l'IA. Inclus 5 parties, un tableau comparatif et une FAQ.",
+    "Guide complet sur la facturation pour auto-entrepreneurs en France : règles, délais, TVA, outils recommandés.",
+    "7 façons concrètes d'utiliser l'IA pour gagner du temps dans la gestion quotidienne d'une PME.",
+    "Comment créer une stratégie de contenu efficace pour attirer des clients B2B en 2025 ?",
+  ];
+
+  async function generate() {
+    if (!prompt.trim()) return;
+    setStep("generating");
+    setLoading(true);
     try {
-      const res  = await fetch("/api/blog/generate", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "content", title: draft.title, tags: draft.tags }),
+      const res = await fetch("/api/blog/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "content", title: prompt.trim(), content: "", tags: [] }),
       });
-      const json = await res.json() as { result?: string };
-      if (json.result) { updateDraft({ content: json.result }); showToast("Article généré !"); }
-      else showToast("Erreur lors de la génération", false);
-    } catch { showToast("Erreur réseau", false); }
-    setAiContent(false);
-  };
+      const json = await res.json();
+      if (json.result) {
+        const firstLine = json.result.split("\n").find((l: string) => l.trim()) ?? prompt;
+        const titleClean = firstLine.replace(/^#+\s*/, "").slice(0, 120);
+        setDraft({
+          title:   titleClean,
+          slug:    slugify(titleClean),
+          content: json.result,
+          excerpt: "",
+          tags:    [],
+          status:  "draft",
+        });
+        setStep("done");
+      }
+    } finally { setLoading(false); }
+  }
 
-  const filtered = articles.filter(a => {
-    const matchStatus = filterStatus === "all" || a.status === filterStatus;
-    const matchSearch = !search || a.title.toLowerCase().includes(search.toLowerCase()) ||
-      a.tags.some(t => t.includes(search.toLowerCase()));
-    return matchStatus && matchSearch;
-  });
+  /* done: auto-open editor */
+  if (step === "done" && draft) {
+    return (
+      <ArticleEditor
+        article={draft}
+        userId={userId}
+        isDark={isDark}
+        onClose={onClose}
+        onSaved={a => { onCreated(a); onClose(); }}
+      />
+    );
+  }
 
-  const isEditing      = draft.title !== undefined;
-  const publishedCount = articles.filter(a => a.status === "published").length;
-  const draftCount     = articles.filter(a => a.status === "draft").length;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 16 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 16 }} transition={{ duration: 0.24 }}
+        className="w-full max-w-xl rounded-2xl p-6 flex flex-col gap-5"
+        style={{ background: isDark ? "#1a1a1a" : "#fff", border: `1px solid ${t.border}` }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}30` }}>
+              <Sparkles size={16} style={{ color: GOLD }} />
+            </div>
+            <div>
+              <p className="font-semibold text-sm" style={{ color: t.text }}>Créer avec DJAMA</p>
+              <p className="text-xs" style={{ color: t.text3 }}>Décrivez l&apos;article que vous souhaitez</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: t.glass }}>
+            <X size={14} style={{ color: t.text2 }} />
+          </button>
+        </div>
+
+        {/* prompt */}
+        <div className="rounded-2xl p-4" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+          <textarea
+            ref={textRef}
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate(); }}
+            placeholder="Décrivez l'article : sujet, audience, longueur, ton, structure souhaitée…"
+            rows={4}
+            className="w-full bg-transparent text-sm resize-none outline-none placeholder:opacity-40 leading-relaxed"
+            style={{ color: t.text }}
+            autoFocus
+            disabled={loading}
+          />
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs" style={{ color: t.text4 }}>Ctrl+Entrée pour générer</span>
+            <button
+              onClick={generate}
+              disabled={!prompt.trim() || loading}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition active:scale-95 disabled:opacity-40"
+              style={{ background: GOLD, color: "#111" }}
+            >
+              {loading
+                ? <><Loader2 size={12} className="animate-spin" />Génération…</>
+                : <><Send size={12} />Générer l&apos;article</>}
+            </button>
+          </div>
+        </div>
+
+        {/* generating state */}
+        {loading && (
+          <div className="flex items-center gap-3 rounded-xl p-4" style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}20` }}>
+            <Loader2 size={16} style={{ color: GOLD }} className="animate-spin shrink-0" />
+            <div>
+              <p className="text-sm font-medium" style={{ color: GOLD }}>DJAMA rédige votre article…</p>
+              <p className="text-xs mt-0.5" style={{ color: t.text3 }}>Cela prend généralement 10 à 20 secondes</p>
+            </div>
+          </div>
+        )}
+
+        {/* examples */}
+        {!loading && (
+          <div>
+            <p className="text-xs font-semibold mb-2.5" style={{ color: t.text3 }}>Exemples de prompts</p>
+            <div className="flex flex-col gap-1.5">
+              {EXAMPLES.map((ex, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setPrompt(ex); textRef.current?.focus(); }}
+                  className="text-left text-xs rounded-xl px-3 py-2 transition hover:opacity-80 line-clamp-2"
+                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                >
+                  {ex}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STATUS BADGE
+══════════════════════════════════════════════════════════════════════ */
+function StatusBadge({ status }: { status: ArticleStatus }) {
+  const m = STATUS_META[status] ?? STATUS_META.draft;
+  return (
+    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
+      style={{ background: m.bg, color: m.color }}>
+      {m.label}
+    </span>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   COMING SOON TAB
+══════════════════════════════════════════════════════════════════════ */
+function ComingSoon({ label, Icon, isDark }: { label: string; Icon: typeof FileText; isDark: boolean }) {
+  const t = tok(isDark);
+  return (
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: `${GOLD}14` }}>
+        <Icon size={24} style={{ color: GOLD }} />
+      </div>
+      <div className="text-center">
+        <p className="font-semibold text-sm" style={{ color: t.text }}>{label}</p>
+        <p className="text-xs mt-1" style={{ color: t.text3 }}>Cette section sera disponible prochainement</p>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ARTICLES TABLE
+══════════════════════════════════════════════════════════════════════ */
+function ArticlesTable({
+  articles, loading, isDark, userId,
+  onEdit, onDelete,
+}: {
+  articles: Article[];
+  loading: boolean;
+  isDark: boolean;
+  userId: string;
+  onEdit: (a: Article) => void;
+  onDelete: (id: string) => void;
+}) {
+  const t = tok(isDark);
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
 
   if (loading) {
     return (
-      <div className={`flex items-center justify-center min-h-screen ${bg}`}>
-        <Loader2 className="animate-spin" size={28} style={{ color: GOLD }} />
+      <div className="flex flex-col gap-2">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: t.glass }} />
+        ))}
+      </div>
+    );
+  }
+
+  if (articles.length === 0) {
+    return (
+      <div className="py-20 flex flex-col items-center gap-4">
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: t.glass }}>
+          <FileText size={22} style={{ color: t.text4 }} />
+        </div>
+        <p className="text-sm" style={{ color: t.text3 }}>Aucun article trouvé</p>
       </div>
     );
   }
 
   return (
-    <div className={`flex h-[calc(100vh-56px)] overflow-hidden ${bg}`}>
+    <div className="overflow-x-auto -mx-1">
+      <table className="w-full min-w-[640px]">
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+            {["Titre", "Statut", "Publication", "Tags", ""].map(h => (
+              <th key={h} className="px-3 pb-2 text-left text-xs font-semibold" style={{ color: t.text3 }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {articles.map(a => (
+            <tr
+              key={a.id}
+              className="group transition"
+              style={{ borderBottom: `1px solid ${t.borderSoft}` }}
+            >
+              {/* title */}
+              <td className="px-3 py-3.5">
+                <button
+                  onClick={() => onEdit(a)}
+                  className="flex flex-col items-start gap-0.5 text-left"
+                >
+                  <span className="text-sm font-medium line-clamp-1 transition group-hover:opacity-70" style={{ color: t.text }}>
+                    {a.title || "Sans titre"}
+                  </span>
+                  {a.excerpt && (
+                    <span className="text-xs line-clamp-1" style={{ color: t.text4 }}>{a.excerpt}</span>
+                  )}
+                </button>
+              </td>
+              {/* status */}
+              <td className="px-3 py-3.5">
+                <StatusBadge status={a.status} />
+              </td>
+              {/* date */}
+              <td className="px-3 py-3.5">
+                <span className="text-xs tabular-nums" style={{ color: t.text3 }}>
+                  {a.status === "published" ? fmtDate(a.published_at) : fmtDate(a.created_at)}
+                </span>
+              </td>
+              {/* tags */}
+              <td className="px-3 py-3.5">
+                <div className="flex flex-wrap gap-1">
+                  {a.tags.slice(0, 2).map(tag => (
+                    <span key={tag} className="rounded-full px-1.5 py-0.5 text-[10px]"
+                      style={{ background: `${GOLD}12`, color: GOLD }}>
+                      {tag}
+                    </span>
+                  ))}
+                  {a.tags.length > 2 && (
+                    <span className="text-[10px]" style={{ color: t.text4 }}>+{a.tags.length - 2}</span>
+                  )}
+                </div>
+              </td>
+              {/* actions */}
+              <td className="px-3 py-3.5">
+                <div className="flex items-center gap-1 justify-end">
+                  <button
+                    onClick={() => onEdit(a)}
+                    className="flex items-center justify-center w-7 h-7 rounded-lg transition opacity-0 group-hover:opacity-100 hover:opacity-70"
+                    style={{ background: t.glass }}>
+                    <Edit3 size={12} style={{ color: t.text2 }} />
+                  </button>
+                  {a.status === "published" && (
+                    <Link href={`/blogs/${userId}/${a.slug}`} target="_blank"
+                      className="flex items-center justify-center w-7 h-7 rounded-lg transition opacity-0 group-hover:opacity-100 hover:opacity-70"
+                      style={{ background: t.glass }}>
+                      <ExternalLink size={12} style={{ color: t.text2 }} />
+                    </Link>
+                  )}
+                  <div className="relative">
+                    <button
+                      onClick={() => setMenuOpen(menuOpen === a.id ? null : a.id)}
+                      className="flex items-center justify-center w-7 h-7 rounded-lg transition opacity-0 group-hover:opacity-100 hover:opacity-70"
+                      style={{ background: t.glass }}>
+                      <MoreHorizontal size={12} style={{ color: t.text2 }} />
+                    </button>
+                    <AnimatePresence>
+                      {menuOpen === a.id && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.12 }}
+                          className="absolute right-0 top-full mt-1 z-30 rounded-xl overflow-hidden w-36"
+                          style={{ background: isDark ? "#1a1a1a" : "#fff", border: `1px solid ${t.border}`, boxShadow: "0 8px 24px rgba(0,0,0,0.18)" }}>
+                          <button
+                            onClick={() => { onEdit(a); setMenuOpen(null); }}
+                            className="flex items-center gap-2 w-full px-3 py-2.5 text-xs transition hover:opacity-70"
+                            style={{ color: t.text2 }}>
+                            <Edit3 size={11} /> Modifier
+                          </button>
+                          <button
+                            onClick={() => { onDelete(a.id); setMenuOpen(null); }}
+                            className="flex items-center gap-2 w-full px-3 py-2.5 text-xs transition hover:opacity-70"
+                            style={{ color: "#ef4444" }}>
+                            <Trash2 size={11} /> Supprimer
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-      {/* ══ SIDEBAR ══════════════════════════════════════════ */}
-      <div className={`flex-shrink-0 flex flex-col border-r w-full md:w-72 transition-all ${sidebar} ${mobileView === "editor" ? "hidden md:flex" : "flex"}`}>
+/* ══════════════════════════════════════════════════════════════════════
+   MAIN PAGE
+══════════════════════════════════════════════════════════════════════ */
+export default function BlogPage() {
+  const { isDark } = useTheme();
+  const t = tok(isDark);
 
-        {/* Header */}
-        <div className={`p-5 border-b ${divider}`}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <ModuleHeaderIcon icon={BookOpen} color="#c9a55a" />
-              <div>
-                <h1 className={`text-sm font-black ${pri}`}>Blog</h1>
-                <p className={`text-[10px] ${mut}`}>{publishedCount} publié · {draftCount} brouillon</p>
+  const [userId,   setUserId]   = useState("");
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>("articles");
+
+  /* filters */
+  const [search,       setSearch]       = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | ArticleStatus>("all");
+  const [sortOrder,    setSortOrder]    = useState<"newest" | "oldest" | "alpha">("newest");
+
+  /* modals */
+  const [showDjama,  setShowDjama]  = useState(false);
+  const [editingArt, setEditingArt] = useState<Article | Partial<Article> | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+
+  /* load */
+  const load = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    setUserId(user.id);
+    const { data } = await supabase.from("blog_articles")
+      .select("id, user_id, title, slug, content, excerpt, cover_url, tags, status, published_at, created_at, updated_at")
+      .order("created_at", { ascending: false });
+    setArticles((data ?? []) as Article[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  /* computed */
+  const filtered = articles
+    .filter(a => filterStatus === "all" || a.status === filterStatus)
+    .filter(a => !search || a.title.toLowerCase().includes(search.toLowerCase()) || a.excerpt.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (sortOrder === "alpha") return a.title.localeCompare(b.title);
+      if (sortOrder === "oldest") return a.created_at.localeCompare(b.created_at);
+      return b.created_at.localeCompare(a.created_at);
+    });
+
+  const counts = {
+    published: articles.filter(a => a.status === "published").length,
+    draft:     articles.filter(a => a.status === "draft" || a.status === "en_redaction").length,
+  };
+
+  function openNew() {
+    setEditingArt({ title: "", slug: "", content: "", excerpt: "", tags: [], status: "draft" });
+    setEditorOpen(true);
+  }
+
+  function openEdit(a: Article) {
+    setEditingArt(a);
+    setEditorOpen(true);
+  }
+
+  async function deleteArticle(id: string) {
+    if (!confirm("Supprimer cet article définitivement ?")) return;
+    await supabase.from("blog_articles").delete().eq("id", id);
+    setArticles(prev => prev.filter(a => a.id !== id));
+  }
+
+  function onSaved(a: Article) {
+    setArticles(prev => {
+      const idx = prev.findIndex(x => x.id === a.id);
+      if (idx >= 0) { const next = [...prev]; next[idx] = a; return next; }
+      return [a, ...prev];
+    });
+  }
+
+  /* ── render ─────────────────────────────────────────────────────── */
+  return (
+    <div className="min-h-screen pb-24" style={{ background: t.bg }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
+
+        {/* ── header ──────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: t.text }}>Blog</h1>
+            <p className="text-sm mt-1" style={{ color: t.text3 }}>
+              Gérez votre contenu et développez votre audience.
+              <span className="ml-3 text-xs" style={{ color: t.text4 }}>
+                {counts.published} publié · {counts.draft} brouillon
+              </span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShowDjama(true)}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition active:scale-95"
+              style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}28`, color: GOLD }}
+            >
+              <Sparkles size={14} />
+              Créer avec DJAMA
+            </button>
+            <button
+              onClick={openNew}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition active:scale-95"
+              style={{ background: GOLD, color: "#111" }}
+            >
+              <Plus size={14} />
+              Nouvel article
+            </button>
+          </div>
+        </div>
+
+        {/* ── tabs ────────────────────────────────────────────────── */}
+        <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
+          {TABS.map(tab => {
+            const Icon = tab.Icon;
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition whitespace-nowrap"
+                style={{
+                  background: active ? `${GOLD}14` : "transparent",
+                  color: active ? GOLD : t.text3,
+                  border: `1px solid ${active ? GOLD + "28" : "transparent"}`,
+                }}
+              >
+                <Icon size={14} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── tab content ──────────────────────────────────────────── */}
+        {activeTab === "articles" && (
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+            {/* toolbar */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-5">
+              {/* search */}
+              <div className="flex items-center gap-2 flex-1 rounded-xl px-3 py-2"
+                style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                <Search size={14} style={{ color: t.text4, flexShrink: 0 }} />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Rechercher un article…"
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:opacity-40"
+                  style={{ color: t.text }}
+                />
+                {search && (
+                  <button onClick={() => setSearch("")}><X size={12} style={{ color: t.text4 }} /></button>
+                )}
+              </div>
+
+              {/* status filter */}
+              <div className="relative">
+                <select
+                  value={filterStatus}
+                  onChange={e => setFilterStatus(e.target.value as typeof filterStatus)}
+                  className="appearance-none rounded-xl px-3 py-2 text-sm outline-none cursor-pointer pr-8"
+                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                >
+                  <option value="all">Tous les statuts</option>
+                  {(Object.entries(STATUS_META) as [ArticleStatus, typeof STATUS_META[ArticleStatus]][]).map(([k, v]) => (
+                    <option key={k} value={k}>{v.label}</option>
+                  ))}
+                </select>
+                <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: t.text3 }} />
+              </div>
+
+              {/* sort */}
+              <div className="relative">
+                <select
+                  value={sortOrder}
+                  onChange={e => setSortOrder(e.target.value as typeof sortOrder)}
+                  className="appearance-none rounded-xl px-3 py-2 text-sm outline-none cursor-pointer pr-8"
+                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                >
+                  <option value="newest">Plus récents</option>
+                  <option value="oldest">Plus anciens</option>
+                  <option value="alpha">Alphabétique</option>
+                </select>
+                <ArrowUpDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: t.text3 }} />
               </div>
             </div>
-          </div>
-          <button onClick={openNew}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl text-xs font-black transition-all hover:brightness-110 active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a" }}>
-            <Plus size={13} /> Nouvel article
-          </button>
-        </div>
 
-        {/* Search + filters */}
-        <div className={`p-3 space-y-2.5 border-b ${divider}`}>
-          <div className="relative">
-            <Search size={12} className={`absolute left-3 top-1/2 -translate-y-1/2 ${mut}`} />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher..."
-              className={`w-full rounded-xl border pl-8 pr-3 py-2 text-xs outline-none transition ${inp}`}
-            />
-          </div>
-          <div className="flex gap-1.5">
-            {(["all", "published", "draft"] as const).map(s => (
-              <button key={s} onClick={() => setFilterStatus(s)}
-                className="flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-all"
-                style={filterStatus === s
-                  ? { background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a" }
-                  : { background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
-                      color: isDark ? "rgba(255,255,255,0.3)" : "rgba(14,20,32,0.35)" }}>
-                {s === "all" ? "Tous" : s === "published" ? "Publié" : "Brouillon"}
-              </button>
-            ))}
-          </div>
-        </div>
+            {/* results count */}
+            {!loading && (
+              <p className="text-xs mb-3" style={{ color: t.text4 }}>
+                {filtered.length} article{filtered.length !== 1 ? "s" : ""}
+                {filterStatus !== "all" ? ` · ${STATUS_META[filterStatus as ArticleStatus]?.label}` : ""}
+              </p>
+            )}
 
-        {/* Public blog share link */}
-        {userId && (
-          <div className={`p-3 border-b ${divider}`}>
-            <p className={`text-[10px] font-semibold mb-2 flex items-center gap-1.5 ${mut}`}>
-              <Globe size={10} /> Lien public du blog
-            </p>
-            <div className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-black/[0.03]"}`}>
-              <span className={`flex-1 text-[10px] truncate font-mono ${mut}`}>
-                {typeof window !== "undefined" ? window.location.origin : ""}/blogs/{userId}
-              </span>
-              <button
-                onClick={() => {
-                  const url = `${window.location.origin}/blogs/${userId}`;
-                  void navigator.clipboard.writeText(url);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-                title="Copier le lien"
-                className={`flex-shrink-0 p-1 rounded-lg transition-all ${isDark ? "hover:bg-white/[0.08]" : "hover:bg-black/[0.07]"}`}>
-                {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} style={{ color: GOLD }} />}
-              </button>
-              <a href={`/blogs/${userId}`} target="_blank" rel="noreferrer"
-                title="Ouvrir le blog"
-                className={`flex-shrink-0 p-1 rounded-lg transition-all ${isDark ? "hover:bg-white/[0.08]" : "hover:bg-black/[0.07]"}`}>
-                <ExternalLink size={11} style={{ color: GOLD }} />
-              </a>
+            {/* table */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: t.surface, border: `1px solid ${t.border}` }}>
+              <ArticlesTable
+                articles={filtered}
+                loading={loading}
+                isDark={isDark}
+                userId={userId}
+                onEdit={openEdit}
+                onDelete={deleteArticle}
+              />
             </div>
-          </div>
+          </motion.div>
         )}
 
-        {/* Article list */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {filtered.length === 0 ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-16 gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl"
-                style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}25` }}>
-                <FileText size={20} style={{ color: GOLD, opacity: 0.6 }} />
-              </div>
-              <p className={`text-xs text-center ${mut}`}>
-                {search ? "Aucun résultat" : "Aucun article pour l'instant"}
-              </p>
-            </motion.div>
-          ) : filtered.map((a, i) => (
-            <motion.button key={a.id}
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-              onClick={() => openArticle(a)}
-              className={`w-full text-left p-3 rounded-2xl border transition-all ${selected?.id === a.id ? cardSel : `border-transparent ${cardHov}`}`}>
-              <div className="flex items-start justify-between gap-1.5 mb-1">
-                <span className={`text-xs font-semibold line-clamp-2 leading-snug ${pri}`}>
-                  {a.title || "Sans titre"}
-                </span>
-                <span className={`flex-shrink-0 mt-0.5 text-[9px] px-1.5 py-0.5 rounded-lg font-bold ${
-                  a.status === "published"
-                    ? "bg-emerald-500/15 text-emerald-500"
-                    : isDark ? "bg-amber-500/10 text-amber-400/70" : "bg-amber-100 text-amber-600"
-                }`}>
-                  {a.status === "published" ? "Pub." : "Draft"}
-                </span>
-              </div>
-              <div className={`flex items-center gap-1.5 text-[10px] ${mut}`}>
-                <span>{new Date(a.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</span>
-                {a.tags.length > 0 && <><span>·</span><span>{a.tags.slice(0, 2).join(", ")}</span></>}
-              </div>
-            </motion.button>
-          ))}
-        </div>
+        {activeTab === "calendrier" && <ComingSoon label="Calendrier éditorial" Icon={Calendar} isDark={isDark} />}
+        {activeTab === "idees"      && <ComingSoon label="Idées de contenu"     Icon={Lightbulb} isDark={isDark} />}
+        {activeTab === "seo"        && <ComingSoon label="Analyse SEO"          Icon={BarChart2} isDark={isDark} />}
+        {activeTab === "analytics"  && <ComingSoon label="Analytics"            Icon={Eye}       isDark={isDark} />}
+        {activeTab === "parametres" && <ComingSoon label="Paramètres du blog"   Icon={Settings}  isDark={isDark} />}
+
       </div>
 
-      {/* ══ EDITOR ═══════════════════════════════════════════ */}
-      <div className={`flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden md:flex" : "flex"}`}>
-        <AnimatePresence mode="wait">
-
-          {/* Empty state */}
-          {!isEditing && (
-            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className={`flex-1 flex flex-col items-center justify-center text-center p-8 ${editorBg}`}>
-              <div className="flex h-20 w-20 items-center justify-center rounded-3xl mb-6"
-                style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}25` }}>
-                <BookOpen size={36} style={{ color: GOLD, opacity: 0.7 }} />
-              </div>
-              <h2 className={`text-lg font-black mb-2 ${pri}`}>Votre blog</h2>
-              <p className={`text-sm max-w-xs mb-6 ${mut}`}>
-                Créez et gérez vos articles. Partagez votre expertise, attirez des clients.
-              </p>
-              <button onClick={openNew}
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black hover:brightness-110 transition-all"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a" }}>
-                <Plus size={15} /> Nouvel article
-              </button>
-            </motion.div>
-          )}
-
-          {/* Editor */}
-          {isEditing && (
-            <motion.div key="editor" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className={`flex-1 flex flex-col overflow-hidden ${editorBg}`}>
-
-              {/* Toolbar */}
-              <div className={`flex items-center justify-between px-5 py-3 border-b backdrop-blur-sm ${toolbar}`}>
-                <div className="flex items-center gap-3">
-                  <button onClick={closeEditor}
-                    className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs transition-all ${mut} ${isDark ? "hover:bg-white/[0.07]" : "hover:bg-black/[0.05]"}`}>
-                    <ArrowLeft size={13} /> <span className="hidden sm:inline">Retour</span>
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-lg font-bold ${
-                      draft.status === "published"
-                        ? "bg-emerald-500/15 text-emerald-500"
-                        : isDark ? "bg-amber-500/10 text-amber-400" : "bg-amber-100 text-amber-600"
-                    }`}>
-                      {draft.status === "published" ? "Publié" : "Brouillon"}
-                    </span>
-                    {draft.content && (
-                      <span className={`hidden sm:block text-[10px] ${mut}`}>
-                        {wordCount(draft.content ?? "")} mots · {readTime(draft.content ?? "")} min
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {draft.status === "draft" ? (
-                    <button onClick={() => updateDraft({ status: "published" })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/12 text-emerald-500 hover:bg-emerald-500/20 transition-all">
-                      <Globe size={12} /> Publier
-                    </button>
-                  ) : (
-                    <button onClick={() => updateDraft({ status: "draft" })}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${mut} ${isDark ? "bg-white/[0.05] hover:bg-white/[0.09]" : "bg-black/[0.05] hover:bg-black/[0.09]"}`}>
-                      <EyeOff size={12} /> Dépublier
-                    </button>
-                  )}
-
-                  <button onClick={() => void doSave()} disabled={saving || !draft.title?.trim()}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black disabled:opacity-40 hover:brightness-110 transition-all"
-                    style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a" }}>
-                    {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-                    {saving ? "…" : "Sauvegarder"}
-                  </button>
-
-                  {selected && (
-                    <button
-                      onClick={() => { if (confirm("Supprimer cet article ?")) void deleteArticle(selected.id); }}
-                      disabled={deleting === selected.id}
-                      className={`p-1.5 rounded-xl transition-all ${mut} ${isDark ? "hover:bg-red-500/10 hover:text-red-400" : "hover:bg-red-50 hover:text-red-500"}`}>
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Content area */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
-
-                  {/* Title */}
-                  <textarea
-                    value={draft.title ?? ""}
-                    onChange={e => updateDraft({ title: e.target.value, slug: slugify(e.target.value) })}
-                    placeholder="Titre de l'article…"
-                    rows={1}
-                    className={`w-full bg-transparent text-2xl font-black placeholder-opacity-20 outline-none resize-none leading-tight ${pri} ${isDark ? "placeholder-white/15" : "placeholder-[#0e1420]/15"}`}
-                    onInput={e => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = `${t.scrollHeight}px`; }}
-                  />
-
-                  {/* Slug */}
-                  <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-black/[0.06] bg-black/[0.02]"}`}>
-                    <Hash size={11} className={mut} />
-                    <input
-                      value={draft.slug ?? ""}
-                      onChange={e => updateDraft({ slug: e.target.value })}
-                      placeholder="url-de-l-article"
-                      className={`flex-1 bg-transparent text-xs outline-none font-mono ${mut}`}
-                    />
-                  </div>
-
-                  <div className={`border-t ${divider}`} />
-
-                  {/* Excerpt */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className={`text-[10px] font-bold uppercase tracking-widest ${mut}`}>Extrait SEO</label>
-                      <button onClick={generateExcerpt} disabled={aiLoading || !draft.content?.trim()}
-                        className="flex items-center gap-1 text-[10px] font-semibold transition-all disabled:opacity-30"
-                        style={{ color: GOLD }}>
-                        {aiLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                        Générer avec IA
-                      </button>
-                    </div>
-                    <textarea
-                      value={draft.excerpt ?? ""}
-                      onChange={e => updateDraft({ excerpt: e.target.value })}
-                      placeholder="Court résumé affiché dans les résultats de recherche…"
-                      rows={2}
-                      className={`w-full rounded-xl border px-4 py-3 text-sm outline-none resize-none transition ${inp}`}
-                    />
-                  </div>
-
-                  {/* Tags */}
-                  <div className="space-y-2">
-                    <label className={`text-[10px] font-bold uppercase tracking-widest ${mut}`}>Tags</label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {(draft.tags ?? []).map(t => (
-                        <span key={t} className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-semibold ${isDark ? "bg-amber-500/10 text-amber-400" : "bg-amber-100 text-amber-700"}`}>
-                          #{t}
-                          <button onClick={() => removeTag(t)} className="ml-0.5 opacity-50 hover:opacity-100">
-                            <X size={9} />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        value={tagInput}
-                        onChange={e => setTagInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTag(); } }}
-                        placeholder="Ajouter un tag…"
-                        className={`flex-1 rounded-xl border px-3 py-2 text-xs outline-none transition ${inp}`}
-                      />
-                      <button onClick={addTag}
-                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${isDark ? "bg-white/[0.06] text-white/40 hover:bg-white/[0.1]" : "bg-black/[0.05] text-[#0e1420]/40 hover:bg-black/[0.09]"}`}>
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className={`border-t ${divider}`} />
-
-                  {/* Content */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className={`text-[10px] font-bold uppercase tracking-widest ${mut}`}>Contenu</label>
-                      <button onClick={generateContent} disabled={aiContent || !draft.title?.trim()}
-                        className="flex items-center gap-1 text-[10px] font-semibold transition-all disabled:opacity-30"
-                        style={{ color: GOLD }}>
-                        {aiContent ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                        {aiContent ? "Génération…" : "Générer avec IA"}
-                      </button>
-                    </div>
-
-                    {aiContent && (
-                      <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border ${isDark ? "bg-amber-500/5 border-amber-500/15 text-amber-400/70" : "bg-amber-50 border-amber-200 text-amber-600"} text-xs`}>
-                        <Loader2 size={12} className="animate-spin" />
-                        Rédaction de l&apos;article en cours…
-                      </div>
-                    )}
-
-                    <textarea
-                      value={draft.content ?? ""}
-                      onChange={e => updateDraft({ content: e.target.value })}
-                      placeholder="Rédigez votre article ici… Markdown supporté."
-                      className={`w-full min-h-[380px] bg-transparent text-sm outline-none resize-none leading-relaxed ${sec} ${isDark ? "placeholder-white/12" : "placeholder-[#0e1420]/15"}`}
-                    />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Toast */}
+      {/* ── modals ──────────────────────────────────────────────────── */}
       <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.95 }}
-            className={`fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold shadow-xl border ${
-              toast.ok
-                ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/20"
-                : "bg-red-500/15 text-red-400 border-red-500/20"
-            }`}>
-            {toast.ok ? <Check size={14} /> : <X size={14} />}
-            {toast.msg}
-          </motion.div>
+        {showDjama && (
+          <CreateWithDjama
+            isDark={isDark}
+            userId={userId}
+            onClose={() => setShowDjama(false)}
+            onCreated={a => { onSaved(a); }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editorOpen && editingArt !== null && (
+          <ArticleEditor
+            article={editingArt}
+            userId={userId}
+            isDark={isDark}
+            onClose={() => { setEditorOpen(false); setEditingArt(null); }}
+            onSaved={a => { onSaved(a); setEditingArt(a); }}
+          />
         )}
       </AnimatePresence>
     </div>

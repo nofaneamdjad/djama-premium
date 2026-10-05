@@ -1,852 +1,920 @@
-﻿"use client";
+"use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ChevronRight, Crown, AlertCircle, X,
-  Sparkles, Check, FileText, CreditCard, Users,
-  TrendingUp, TrendingDown, AlertTriangle, Clock,
-  CheckCircle2, Calendar, ArrowRight, Send,
+  ArrowUpRight, X, Sparkles, Send, ChevronDown,
+  ReceiptText, Users, CreditCard, CheckCircle2,
+  AlertCircle, FileBarChart2, FileText, Briefcase, ChevronRight,
+  RefreshCw, AlertTriangle, Calendar, BarChart3, Lock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
 import { useSubscription } from "@/lib/use-require-subscription";
-import { APP_REGISTRY } from "@/lib/app-registry";
 import { useTheme } from "@/lib/theme-context";
 
+const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
 
-const APP_BY_ROUTE = Object.fromEntries(APP_REGISTRY.map(a => [a.route, a]));
+const AI_SUGGESTIONS = [
+  "Analyse mon activité",
+  "Prépare mon rapport mensuel",
+  "Que dois-je faire aujourd'hui ?",
+  "Créer un document",
+] as const;
 
-interface QuickAction { href: string; label: string }
+const QUICK_ACTIONS = [
+  { label: "Créer une facture",   href: "/client/factures",  Icon: ReceiptText },
+  { label: "Ajouter un client",   href: "/client/crm",       Icon: Users       },
+  { label: "Ajouter une dépense", href: "/client/depenses",  Icon: CreditCard  },
+  { label: "Créer un projet",     href: "/client/projets",   Icon: Briefcase   },
+  { label: "Créer avec DJAMA",    href: "/client/assistant", Icon: Sparkles    },
+] as const;
 
-const DEFAULT_QA: QuickAction[] = [
-  { href: "/client/factures",   label: "Factures"     },
-  { href: "/client/depenses",   label: "Dépenses"     },
-  { href: "/client/tresorerie", label: "Trésorerie"   },
-  { href: "/client/crm",        label: "CRM"          },
-  { href: "/client/bloc-notes", label: "Notes"        },
-  { href: "/client/chrono",     label: "Chronomètre"  },
-];
-
-const AI_CHIPS = [
-  "Rédige une offre commerciale",
-  "Génère un rapport mensuel",
-  "Analyse mes dépenses",
-  "Crée une présentation",
-];
-
-interface TodayTask   { id: string; title: string; priority: string; due_date: string }
-interface NextEvent   { id: string; title: string; start_at: string; event_type: string }
-interface LastExpense { id: string; description: string; amount: number; date: string; category: string }
-interface LastContact { id: string; nom: string; created_at: string }
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Bonjour";
-  if (h < 18) return "Bon après-midi";
-  return "Bonsoir";
-}
-function getDay() {
-  return new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-}
-function todayStr() { return new Date().toISOString().slice(0, 10); }
-function fmtEventTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-}
-function fmtEventDate(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = Math.round(
-    (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() -
-     new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / 86_400_000
-  );
-  if (diff === 0) return "Aujourd'hui";
-  if (diff === 1) return "Demain";
-  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
-}
-function priorityColor(p: string) {
-  if (p === "urgent") return "#ef4444";
-  if (p === "high")   return "#f97316";
-  if (p === "low")    return "#94a3b8";
-  return "#c9a55a";
-}
+const PINNED_APPS = [
+  { label: "Factures",     href: "/client/factures",    Icon: ReceiptText },
+  { label: "CRM",          href: "/client/crm",         Icon: Users       },
+  { label: "Dépenses",     href: "/client/depenses",    Icon: CreditCard  },
+  { label: "Trésorerie",   href: "/client/tresorerie",  Icon: BarChart3   },
+  { label: "Projets",      href: "/client/projets",     Icon: Briefcase   },
+  { label: "Planning",     href: "/client/planning",    Icon: Calendar    },
+  { label: "Assistant IA", href: "/client/assistant",   Icon: Sparkles    },
+  { label: "Contrats",     href: "/client/contrats",    Icon: FileText    },
+] as const;
 
 function tok(isDark: boolean) {
   return {
-    bg:         isDark ? "#111111"                : "#ffffff",
-    bgSoft:     isDark ? "#181818"                : "#f8f8f8",
-    bgSubtle:   isDark ? "#212121"                : "#f0f0f0",
+    bg:         isDark ? "#111111"                : "#f8f8f5",
     glass:      isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.025)",
-    border:     isDark ? "rgba(255,255,255,0.08)" : "#e5e5e5",
-    borderSoft: isDark ? "rgba(255,255,255,0.05)" : "#ececec",
-    text:       isDark ? "rgba(255,255,255,0.92)" : "#111111",
-    text2:      isDark ? "rgba(255,255,255,0.65)" : "#444444",
-    text3:      isDark ? "rgba(255,255,255,0.42)" : "#707070",
-    text4:      isDark ? "rgba(255,255,255,0.28)" : "#999999",
+    glassMd:    isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+    border:     isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)",
+    borderSoft: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+    text:       isDark ? "#e8e2d6"                : "#1a1a1a",
+    text2:      isDark ? "#a09880"                : "#4a4a4a",
+    text3:      isDark ? "#6b6256"                : "#7a7a7a",
+    text4:      isDark ? "#4a4540"                : "#9a9a9a",
   };
 }
 
-function Skeleton({ w, h }: { w?: string; h?: number }) {
+type PeriodKey = "ce-mois" | "mois-dernier" | "ce-trimestre" | "cette-annee" | "12-mois" | "personnalise";
+const PERIODS: { key: PeriodKey; label: string }[] = [
+  { key: "ce-mois",      label: "Ce mois"         },
+  { key: "mois-dernier", label: "Mois dernier"     },
+  { key: "ce-trimestre", label: "Ce trimestre"     },
+  { key: "cette-annee",  label: "Cette année"      },
+  { key: "12-mois",      label: "12 derniers mois" },
+  { key: "personnalise", label: "Personnalisé"     },
+];
+
+function getPeriodDates(key: PeriodKey, cf?: string, ct?: string): { from: string; to: string } {
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  switch (key) {
+    case "ce-mois":      return { from: iso(new Date(y, m, 1)),     to: iso(new Date(y, m + 1, 0)) };
+    case "mois-dernier": return { from: iso(new Date(y, m - 1, 1)), to: iso(new Date(y, m, 0))     };
+    case "ce-trimestre": { const q = Math.floor(m / 3) * 3; return { from: iso(new Date(y, q, 1)), to: iso(new Date(y, q + 3, 0)) }; }
+    case "cette-annee":  return { from: iso(new Date(y, 0, 1)),     to: iso(new Date(y, 11, 31))   };
+    case "12-mois":      { const f = new Date(now); f.setMonth(f.getMonth() - 12); return { from: iso(f), to: iso(now) }; }
+    case "personnalise": return { from: cf || iso(new Date(y, m, 1)), to: ct || iso(new Date(y, m + 1, 0)) };
+  }
+}
+
+function getPrevPeriod(from: string, to: string) {
+  const f = new Date(from), t = new Date(to);
+  const diff = t.getTime() - f.getTime() + 86400000;
+  const pf = new Date(f.getTime() - diff), pt = new Date(f.getTime() - 86400000);
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  return { from: iso(pf), to: iso(pt) };
+}
+
+function pctChange(val: number, prev: number) {
+  if (prev === 0) return val > 0 ? 100 : 0;
+  return Math.round(((val - prev) / prev) * 100);
+}
+
+function localDateStr(offset = 0): string {
+  const d = new Date(Date.now() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function formatRelativeDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const today     = localDateStr(0);
+  const yesterday = localDateStr(-86400000);
+  const dateOnly  = dateStr.slice(0, 10);
+  if (dateOnly === today)     return "Aujourd'hui";
+  if (dateOnly === yesterday) return "Hier";
+  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" })
+    .format(new Date(`${dateOnly}T12:00:00`));
+}
+
+function formatTime(isoStr: string): string {
+  if (!isoStr) return "";
+  return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" })
+    .format(new Date(isoStr));
+}
+
+function Skel({ w = "100%", h = 14 }: { w?: string | number; h?: number }) {
   const { isDark } = useTheme();
   return (
-    <div
-      className="rounded animate-pulse"
-      style={{ width: w ?? "100%", height: h ?? 12, background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}
-    />
+    <div className="animate-pulse rounded-md" style={{
+      width: w, height: h,
+      background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
+    }} />
   );
 }
 
-export default function CockpitPage() {
-  const { isPremium, isFree } = useSubscription();
-  const { isDark } = useTheme();
+function TrendBadge({ pct }: { pct: number | null }) {
+  if (pct === null) return null;
+  const abs = Math.abs(pct);
+  if (abs < 0.5) return <span className="text-[9px] font-bold" style={{ color: "rgba(150,150,150,0.8)" }}>→ =</span>;
+  const up = pct > 0;
+  return (
+    <span className="text-[9px] font-bold" style={{ color: up ? "#4ade80" : "#f87171" }}>
+      {up ? "↑ +" : "↓ "}{Math.round(pct)}%
+    </span>
+  );
+}
+
+type Rapport = {
+  mois: string; score_sante: number; resume_executif: string;
+  kpis: { revenu_total: number; depenses_totales: number; resultat_net: number; taux_recouvrement: string; nb_factures: number; nb_clients: number };
+  top_clients: { nom: string; montant: number }[];
+  top_depenses: { categorie: string; montant: number }[];
+  points_forts: string[]; alertes: string[]; recommandations: string[]; objectif_mois_prochain: string;
+};
+
+function RapportModal({ open, onClose, isDark }: { open: boolean; onClose: () => void; isDark: boolean }) {
   const t = tok(isDark);
-  const router = useRouter();
-
-  const [firstName,       setFirstName]       = useState("");
-  const [kpiLoading,      setKpiLoading]      = useState(true);
-  const [caMonth,         setCaMonth]         = useState(0);
-  const [depensesMonth,   setDepensesMonth]   = useState(0);
-  const [nbContacts,      setNbContacts]      = useState(0);
-  const [nbFacturesPend,  setNbFacturesPend]  = useState(0);
-  const [caEvo,           setCaEvo]           = useState<number | null>(null);
-  const [overdueInv,      setOverdueInv]      = useState(0);
-
-  const [todayLoading,    setTodayLoading]    = useState(true);
-  const [todayTasks,      setTodayTasks]      = useState<TodayTask[]>([]);
-  const [nextEvent,       setNextEvent]       = useState<NextEvent | null>(null);
-  const [overdueTaskCount,setOverdueTaskCount]= useState(0);
-  const [nbTasks,         setNbTasks]         = useState(0);
-  const [lastFac,         setLastFac]         = useState<{ numero: string; montant_ttc: number; date_emission: string; client_nom: string } | null>(null);
-  const [lastExpense,     setLastExpense]     = useState<LastExpense | null>(null);
-  const [lastContact,     setLastContact]     = useState<LastContact | null>(null);
-
-  const [quickActions,    setQuickActions]    = useState<QuickAction[]>(DEFAULT_QA);
-  const [editingQA,       setEditingQA]       = useState(false);
-  const [pickerDraft,     setPickerDraft]     = useState<QuickAction[]>(DEFAULT_QA);
-  const [aiQuery,         setAiQuery]         = useState("");
-  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [rapport, setRapport] = useState<Rapport | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!open || rapport) return;
+    setLoading(true); setErr(null);
+    fetch("/api/rapport-mensuel", { method: "POST" })
+      .then(r => r.json())
+      .then(d => setRapport(d))
+      .catch(() => setErr("Erreur lors de la génération du rapport."))
+      .finally(() => setLoading(false));
+  }, [open]);
 
-      const metaCompany  = ((user.user_metadata?.company_name as string | undefined) || (user.user_metadata?.company as string | undefined) || "").trim();
-      const metaFullName = ((user.user_metadata?.full_name as string | undefined) || (user.user_metadata?.name as string | undefined) || "").trim();
-
-      const [qaPrefRes, uaRow] = await Promise.all([
-        supabase.from("user_preferences").select("value").eq("user_id", user.id).eq("key", "quick_actions").maybeSingle(),
-        supabase.from("user_access").select("name").eq("email", user.email!).maybeSingle(),
-      ]);
-
-      if (Array.isArray(qaPrefRes.data?.value) && (qaPrefRes.data?.value as QuickAction[]).length > 0) {
-        const loaded = qaPrefRes.data!.value as QuickAction[];
-        setQuickActions(loaded);
-        setPickerDraft(loaded);
-      }
-
-      const accessName = ((uaRow.data as { name?: string } | null)?.name ?? "").trim();
-      const emailSlug  = user.email?.split("@")[0] ?? "";
-      const emailFmt   = emailSlug.replace(/[._-]/g, " ").split(" ").map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
-      setFirstName(metaCompany || accessName || metaFullName || emailFmt);
-
-      const now   = new Date();
-      const y     = now.getFullYear();
-      const m     = String(now.getMonth() + 1).padStart(2, "0");
-      const start = `${y}-${m}-01`;
-      const end   = `${y}-${m}-31`;
-      const prevM = now.getMonth() === 0 ? 12 : now.getMonth();
-      const prevY = now.getMonth() === 0 ? y - 1 : y;
-      const pS    = `${prevY}-${String(prevM).padStart(2, "0")}-01`;
-      const pE    = `${prevY}-${String(prevM).padStart(2, "0")}-31`;
-      const today = todayStr();
-
-      const [facRes, prevRes, crmRes, pendRes, expRes, overdueInvRes] = await Promise.all([
-        supabase.from("factures").select("montant_ttc").eq("user_id", user.id).gte("date_emission", start).lte("date_emission", end),
-        supabase.from("factures").select("montant_ttc").eq("user_id", user.id).gte("date_emission", pS).lte("date_emission", pE),
-        supabase.from("clients_crm").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-        supabase.from("factures").select("id", { count: "exact", head: true }).eq("user_id", user.id).in("statut", ["envoyée", "en_attente"]),
-        supabase.from("expenses").select("amount").eq("user_id", user.id).gte("date", start).lte("date", end),
-        supabase.from("documents").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("type", "facture").eq("statut", "envoyée").lt("due_date", today),
-      ]);
-
-      const ca     = (facRes.data  ?? []).reduce((s, f) => s + (f.montant_ttc ?? 0), 0);
-      const caPrev = (prevRes.data ?? []).reduce((s, f) => s + (f.montant_ttc ?? 0), 0);
-      const exp    = (expRes.data  ?? []).reduce((s, e) => s + (e.amount    ?? 0), 0);
-
-      setCaMonth(ca);
-      setDepensesMonth(exp);
-      setNbContacts(crmRes.count ?? 0);
-      setNbFacturesPend(pendRes.count ?? 0);
-      setOverdueInv(overdueInvRes.count ?? 0);
-      if (caPrev > 0) setCaEvo(Math.round(((ca - caPrev) / caPrev) * 100));
-      setKpiLoading(false);
-
-      const [taskRes, eventRes, overdueTaskRes, allTasksRes, lastFacRes, lastExpRes, lastContactRes] = await Promise.all([
-        supabase.from("productivity_tasks").select("id, title, priority, due_date").eq("user_id", user.id).neq("status", "done").lte("due_date", today).order("due_date", { ascending: true }).limit(5),
-        supabase.from("planning_events").select("id, title, start_at, event_type").eq("user_id", user.id).gte("start_at", now.toISOString()).order("start_at", { ascending: true }).limit(1).maybeSingle(),
-        supabase.from("productivity_tasks").select("id", { count: "exact", head: true }).eq("user_id", user.id).neq("status", "done").lte("due_date", today),
-        supabase.from("productivity_tasks").select("id", { count: "exact", head: true }).eq("user_id", user.id).neq("status", "done"),
-        supabase.from("factures").select("numero, montant_ttc, date_emission, client_nom").eq("user_id", user.id).order("date_emission", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("expenses").select("id, description, amount, date, category").eq("user_id", user.id).order("date", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("clients_crm").select("id, nom, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      ]);
-
-      setTodayTasks((taskRes.data ?? []) as TodayTask[]);
-      setNextEvent(eventRes.data as NextEvent | null);
-      setOverdueTaskCount(overdueTaskRes.count ?? 0);
-      setNbTasks(allTasksRes.count ?? 0);
-      setLastFac(lastFacRes.data as typeof lastFac ?? null);
-      setLastExpense(lastExpRes.data as LastExpense | null);
-      setLastContact(lastContactRes.data as LastContact | null);
-      setTodayLoading(false);
-    })();
-  }, []);
-
-  const saveQuickActions = useCallback(async (actions: QuickAction[]) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from("user_preferences").upsert(
-      { user_id: user.id, key: "quick_actions", value: actions, updated_at: new Date().toISOString() },
-      { onConflict: "user_id,key" }
-    );
-  }, []);
-
-  const isNewUser = !kpiLoading && caMonth === 0 && nbContacts === 0;
-
-  const alerts = [
-    overdueInv > 0 && !dismissedAlerts.includes("overdue_inv") && {
-      id: "overdue_inv",
-      icon: AlertCircle,
-      color: "#ef4444",
-      bg: "rgba(239,68,68,0.06)",
-      border: "rgba(239,68,68,0.18)",
-      text: `${overdueInv} facture${overdueInv > 1 ? "s" : ""} en retard de paiement`,
-      href: "/client/factures?statut=retard",
-    },
-    overdueTaskCount > 0 && !dismissedAlerts.includes("overdue_tasks") && {
-      id: "overdue_tasks",
-      icon: AlertTriangle,
-      color: "#f97316",
-      bg: "rgba(249,115,22,0.06)",
-      border: "rgba(249,115,22,0.18)",
-      text: `${overdueTaskCount} tâche${overdueTaskCount > 1 ? "s" : ""} en retard`,
-      href: "/client/productivite",
-    },
-  ].filter(Boolean) as { id: string; icon: typeof AlertCircle; color: string; bg: string; border: string; text: string; href: string }[];
-
-  const kpis = [
-    { label: "CA du mois", value: kpiLoading ? null : fmtEurInt(caMonth), sub: caEvo !== null ? `${caEvo >= 0 ? "+" : ""}${caEvo}% vs préc.` : "ce mois", trend: caEvo, href: "/client/factures", empty: !kpiLoading && caMonth === 0 },
-    { label: "Dépenses",   value: kpiLoading ? null : fmtEurInt(depensesMonth), sub: "ce mois", trend: null, href: "/client/depenses", empty: !kpiLoading && depensesMonth === 0 },
-    { label: "En attente", value: kpiLoading ? null : String(nbFacturesPend), sub: nbFacturesPend === 1 ? "facture" : "factures", trend: null, href: "/client/factures", empty: !kpiLoading && nbFacturesPend === 0 },
-    { label: "Contacts",   value: kpiLoading ? null : String(nbContacts), sub: "dans la base", trend: null, href: "/client/crm", empty: !kpiLoading && nbContacts === 0 },
-  ];
-
-  const hasSomeData = !kpiLoading && (caMonth > 0 || nbContacts > 0 || nbFacturesPend > 0);
-  const hasResumeItems = !todayLoading && (lastFac || lastExpense || lastContact);
-
-  function sendAiQuery(q: string) {
-    const trimmed = q.trim();
-    if (!trimmed) return;
-    router.push(`/client/assistant?q=${encodeURIComponent(trimmed)}`);
-  }
-
-  /* ── Picker candidates (all APP_REGISTRY except accueil) ── */
-  const pickerApps = APP_REGISTRY.filter(a => a.route !== "/client");
+  if (!open) return null;
+  const score = rapport?.score_sante ?? 0;
+  const scoreColor = score >= 70 ? "#22c55e" : score >= 40 ? GOLD : "#ef4444";
 
   return (
-    <div className="min-h-full" style={{ background: t.bgSoft }}>
-      <div className="mx-auto max-w-6xl px-5 pt-6 pb-16 lg:px-8">
-
-        {/* ── Header ── */}
-        <div className="mb-6">
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] capitalize" style={{ color: t.text3 }}>
-            {getDay()}
-          </p>
-          <h1 className="text-2xl font-semibold leading-tight tracking-tight" style={{ color: t.text }}>
-            {getGreeting()}
-            {firstName && <span style={{ color: GOLD }}>{`, ${firstName.split(" ")[0]}`}</span>}
-          </h1>
-          <p className="mt-1.5 text-sm" style={{ color: t.text3 }}>
-            Voici ce qui mérite votre attention aujourd&apos;hui
-          </p>
-        </div>
-
-        {/* ── DJAMA AI bar ── */}
-        <div className="mb-5">
-          <div
-            className="flex items-center gap-2.5 rounded-xl px-4 py-3"
-            style={{ background: t.glass, border: `1px solid ${t.border}` }}
-          >
-            <Sparkles size={15} style={{ color: GOLD, flexShrink: 0 }} />
-            <input
-              type="text"
-              value={aiQuery}
-              onChange={e => setAiQuery(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") sendAiQuery(aiQuery); }}
-              placeholder="Demander à DJAMA…"
-              className="flex-1 bg-transparent text-sm outline-none placeholder:opacity-40"
-              style={{ color: t.text }}
-            />
-            {aiQuery && (
-              <button
-                onClick={() => sendAiQuery(aiQuery)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition hover:opacity-80"
-                style={{ background: GOLD }}
-              >
-                <Send size={12} color="#0a0a0a" />
-              </button>
-            )}
-          </div>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {AI_CHIPS.map((chip) => (
-              <button
-                key={chip}
-                onClick={() => sendAiQuery(chip)}
-                className="rounded-full px-3 py-1 text-xs font-medium transition hover:opacity-80"
-                style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text3 }}
-              >
-                {chip}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── PRO banner ── */}
-        {isFree && (
-          <Link href="/client/abonnements" className="block mb-4">
-            <div className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition hover:opacity-90"
-              style={{ background: "rgba(201,165,90,0.05)", border: "1px solid rgba(201,165,90,0.18)" }}>
-              <Crown size={13} style={{ color: GOLD }} />
-              <span className="text-sm font-semibold" style={{ color: GOLD }}>Passez à DJAMA PRO</span>
-              <span className="text-xs" style={{ color: t.text4 }}>· Débloquez tous les modules · 11,90€/mois</span>
-              <ChevronRight size={12} className="ml-auto shrink-0" style={{ color: GOLD, opacity: 0.5 }} />
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+        onClick={onClose}
+      >
+        <motion.div
+          className="relative w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-2xl p-6"
+          style={{ background: isDark ? "#1a1a1a" : "#fff", border: `1px solid ${t.border}` }}
+          initial={{ scale: 0.94, opacity: 0, y: 16 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.94, opacity: 0, y: 16 }} transition={{ ease, duration: 0.28 }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileBarChart2 size={18} style={{ color: GOLD }} />
+              <span className="font-semibold text-sm" style={{ color: t.text }}>Rapport IA mensuel</span>
             </div>
-          </Link>
-        )}
+            <button onClick={onClose} className="rounded-full p-1.5" style={{ background: t.glass }}>
+              <X size={14} style={{ color: t.text2 }} />
+            </button>
+          </div>
 
-        {/* ── À votre attention ── */}
+          {loading && (
+            <div className="flex flex-col gap-3">
+              {[...Array(5)].map((_, i) => <Skel key={i} h={i === 0 ? 40 : 20} />)}
+            </div>
+          )}
+          {err && <p className="text-sm text-center py-8" style={{ color: "#ef4444" }}>{err}</p>}
+          {rapport && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-full border-2 shrink-0" style={{ borderColor: scoreColor }}>
+                  <span className="text-lg font-black" style={{ color: scoreColor }}>{score}</span>
+                  <span className="text-[8px]" style={{ color: t.text3 }}>/100</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold mb-1" style={{ color: t.text }}>{rapport.mois}</div>
+                  <p className="text-xs leading-relaxed line-clamp-3" style={{ color: t.text2 }}>{rapport.resume_executif}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "CA",           val: fmtEurInt(rapport.kpis.revenu_total)      },
+                  { label: "Dépenses",     val: fmtEurInt(rapport.kpis.depenses_totales)  },
+                  { label: "Résultat",     val: fmtEurInt(rapport.kpis.resultat_net)      },
+                  { label: "Recouvrement", val: rapport.kpis.taux_recouvrement            },
+                  { label: "Factures",     val: String(rapport.kpis.nb_factures)          },
+                  { label: "Clients",      val: String(rapport.kpis.nb_clients)           },
+                ].map(({ label, val }) => (
+                  <div key={label} className="p-2 rounded-lg text-center" style={{ background: t.glass, border: `1px solid ${t.borderSoft}` }}>
+                    <div className="text-xs mb-0.5" style={{ color: t.text3 }}>{label}</div>
+                    <div className="text-xs font-semibold" style={{ color: t.text }}>{val}</div>
+                  </div>
+                ))}
+              </div>
+              {rapport.points_forts.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold mb-1.5" style={{ color: "#22c55e" }}>Points forts</div>
+                  <ul className="flex flex-col gap-1">
+                    {rapport.points_forts.map((p, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: t.text2 }}>
+                        <CheckCircle2 size={10} className="mt-0.5 shrink-0" style={{ color: "#22c55e" }} />{p}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {rapport.alertes.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold mb-1.5" style={{ color: "#f87171" }}>Alertes</div>
+                  <ul className="flex flex-col gap-1">
+                    {rapport.alertes.map((a, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: t.text2 }}>
+                        <AlertTriangle size={10} className="mt-0.5 shrink-0" style={{ color: "#f87171" }} />{a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {rapport.recommandations.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold mb-1.5" style={{ color: GOLD }}>Recommandations</div>
+                  <ul className="flex flex-col gap-1">
+                    {rapport.recommandations.map((r, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: t.text2 }}>
+                        <ChevronRight size={10} className="mt-0.5 shrink-0" style={{ color: GOLD }} />{r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {rapport.objectif_mois_prochain && (
+                <div className="p-3 rounded-xl" style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}20` }}>
+                  <div className="text-xs font-semibold mb-0.5" style={{ color: GOLD }}>Objectif mois prochain</div>
+                  <p className="text-xs" style={{ color: t.text2 }}>{rapport.objectif_mois_prochain}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+type TodayEvent = { id: string; title: string; start_at: string; end_at?: string };
+type TodayTask  = { id: string; title: string; due_date: string; status: string; priority?: string };
+type RecentItem = {
+  id: string;
+  label: string;
+  sub: string;
+  date: string;
+  href: string;
+  itemType: "facture" | "devis" | "expense";
+};
+
+export default function AccueilPage() {
+  const router = useRouter();
+  const { isDark } = useTheme();
+  const { isPremium } = useSubscription();
+  const t = tok(isDark);
+
+  const [userName, setUserName] = useState("");
+
+  const [period, setPeriod]           = useState<PeriodKey>("ce-mois");
+  const [customFrom, setCustomFrom]   = useState("");
+  const [customTo, setCustomTo]       = useState("");
+  const [periodOpen, setPeriodOpen]   = useState(false);
+  const periodRef = useRef<HTMLDivElement>(null);
+
+  const { from: dateFrom, to: dateTo } = getPeriodDates(period, customFrom, customTo);
+  const { from: prevFrom, to: prevTo } = getPrevPeriod(dateFrom, dateTo);
+
+  const [loading, setLoading]     = useState(true);
+  const [aiQuery, setAiQuery]     = useState("");
+
+  const [ca, setCa]               = useState(0);
+  const [caPrev, setCaPrev]       = useState(0);
+  const [depenses, setDepenses]   = useState(0);
+  const [depPrev, setDepPrev]     = useState(0);
+  const [resultat, setResultat]   = useState(0);
+  const [resultatPrev, setResultatPrev] = useState(0);
+  const [aEncaisser, setAEncaisser] = useState(0);
+  const [enRetard, setEnRetard]   = useState(0);
+
+  const [todayEvents, setTodayEvents] = useState<TodayEvent[]>([]);
+  const [todayTasks, setTodayTasks]   = useState<TodayTask[]>([]);
+  const [recentActivity, setRecentActivity] = useState<RecentItem[]>([]);
+
+  const [rapportOpen, setRapportOpen] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const raw = (user.user_metadata?.prenom as string | undefined)
+        || ((user.user_metadata?.nom as string | undefined)?.split(" ")[0])
+        || user.email?.split("@")[0]?.split(".")[0]
+        || "";
+      if (raw) setUserName(raw.charAt(0).toUpperCase() + raw.slice(1));
+    });
+  }, []);
+
+  useEffect(() => {
+    try {
+      setOnboardingDismissed(localStorage.getItem("djama_onboarding_v1") === "dismissed");
+    } catch { setOnboardingDismissed(true); }
+  }, []);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    const today      = localDateStr(0);
+    const todayStart = `${today}T00:00:00`;
+    const todayEnd   = `${today}T23:59:59`;
+
+    const [
+      docsRes, prevDocsRes,
+      expRes, prevExpRes,
+      tasksRes,
+      todayEventsRes,
+      recentDocsRes,
+      recentExpRes,
+    ] = await Promise.all([
+      supabase.from("documents")
+        .select("id, total_ttc, statut, date_document, date_echeance")
+        .eq("type", "facture")
+        .gte("date_document", dateFrom)
+        .lte("date_document", dateTo),
+      supabase.from("documents")
+        .select("total_ttc, statut")
+        .eq("type", "facture")
+        .gte("date_document", prevFrom)
+        .lte("date_document", prevTo),
+      supabase.from("expenses")
+        .select("amount")
+        .gte("date", dateFrom)
+        .lte("date", dateTo),
+      supabase.from("expenses")
+        .select("amount")
+        .gte("date", prevFrom)
+        .lte("date", prevTo),
+      supabase.from("productivity_tasks")
+        .select("id, title, status, due_date, priority")
+        .lte("due_date", today)
+        .neq("status", "done")
+        .order("due_date")
+        .limit(8),
+      supabase.from("planning_events")
+        .select("id, title, start_at, end_at")
+        .gte("start_at", todayStart)
+        .lte("start_at", todayEnd)
+        .order("start_at")
+        .limit(10),
+      supabase.from("documents")
+        .select("id, numero, client_nom, statut, total_ttc, type, date_document")
+        .in("type", ["facture", "devis"])
+        .order("date_document", { ascending: false })
+        .limit(6),
+      supabase.from("expenses")
+        .select("id, amount, category, date")
+        .order("date", { ascending: false })
+        .limit(4),
+    ]);
+
+    const docs     = docsRes.data     ?? [];
+    const prevDocs = prevDocsRes.data ?? [];
+    const exps     = expRes.data      ?? [];
+    const prevExps = prevExpRes.data  ?? [];
+
+    const newCA   = docs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
+    const prevCA  = prevDocs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
+    const newDep  = exps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
+    const prevDep = prevExps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
+
+    setCa(newCA); setCaPrev(prevCA);
+    setDepenses(newDep); setDepPrev(prevDep);
+    setResultat(newCA - newDep); setResultatPrev(prevCA - prevDep);
+
+    const aEnc    = docs.filter(d => d.statut === "envoyé" || d.statut === "en_attente");
+    const retards = docs.filter(d =>
+      d.statut === "en_retard" ||
+      (d.date_echeance && d.date_echeance < today && d.statut !== "payé")
+    );
+    setAEncaisser(aEnc.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
+    setEnRetard(retards.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
+
+    setTodayEvents((todayEventsRes.data ?? []) as TodayEvent[]);
+    setTodayTasks((tasksRes.data ?? []) as TodayTask[]);
+
+    const recentDocs = recentDocsRes.data ?? [];
+    const recentExps = recentExpRes.data  ?? [];
+    const activity: RecentItem[] = [
+      ...recentDocs.map(d => ({
+        id:       d.id,
+        label:    `${d.type === "facture" ? "Facture" : "Devis"} ${d.numero || ""}`.trim(),
+        sub:      d.client_nom || "",
+        date:     d.date_document || "",
+        href:     "/client/factures",
+        itemType: d.type as RecentItem["itemType"],
+      })),
+      ...recentExps.map(e => ({
+        id:       e.id,
+        label:    e.category || "Dépense",
+        sub:      fmtEurInt(e.amount ?? 0),
+        date:     e.date || "",
+        href:     "/client/depenses",
+        itemType: "expense" as const,
+      })),
+    ]
+      .filter(i => i.date)
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 8);
+    setRecentActivity(activity);
+
+    setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFrom, dateTo, prevFrom, prevTo]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (periodRef.current && !periodRef.current.contains(e.target as Node)) setPeriodOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const resultatPositif    = resultat >= 0;
+  const currentPeriodLabel = PERIODS.find(p => p.key === period)?.label ?? "Ce mois";
+
+  function sendAiQuery(q?: string) {
+    const query = (q ?? aiQuery).trim();
+    if (!query) return;
+    router.push(`/client/assistant?q=${encodeURIComponent(query)}`);
+  }
+
+  function dismissOnboarding() {
+    try { localStorage.setItem("djama_onboarding_v1", "dismissed"); } catch {}
+    setOnboardingDismissed(true);
+  }
+
+  return (
+    <div className="min-h-screen pb-24" style={{ background: t.bg }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
+
+        {/* ── Onboarding strip ─────────────────────────────────────────────── */}
         <AnimatePresence>
-          {alerts.length > 0 && (
+          {!onboardingDismissed && (
             <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="mb-5 space-y-2"
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}
+              className="flex items-center justify-between rounded-xl px-4 py-3 mb-6 gap-3"
+              style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}25` }}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>
-                À votre attention
-              </p>
-              {alerts.map((alert) => {
-                const Icon = alert.icon;
-                return (
-                  <motion.div
-                    key={alert.id}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5"
-                      style={{ background: alert.bg, border: `1px solid ${alert.border}` }}>
-                      <Icon size={13} className="shrink-0" style={{ color: alert.color }} />
-                      <p className="flex-1 text-sm font-semibold" style={{ color: alert.color }}>
-                        {alert.text}
-                      </p>
-                      <Link href={alert.href}
-                        className="shrink-0 text-xs font-bold underline underline-offset-2"
-                        style={{ color: alert.color }}>
-                        Voir →
-                      </Link>
-                      <button
-                        onClick={() => setDismissedAlerts(d => [...d, alert.id])}
-                        className="shrink-0 transition hover:opacity-70"
-                        style={{ color: alert.color }}
-                      >
-                        <X size={11} />
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: GOLD }} />
+                <span className="text-sm font-medium truncate" style={{ color: t.text }}>
+                  Terminer la configuration de DJAMA — étape 1 sur 4
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href="/client/abonnement"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                  style={{ background: GOLD, color: "#111" }}
+                >
+                  Continuer →
+                </Link>
+                <button onClick={dismissOnboarding} className="p-1.5 rounded-lg transition-opacity hover:opacity-70" style={{ color: t.text3 }}>
+                  <X size={14} />
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── Main 2-column layout (desktop) ── */}
-        <div className="lg:grid lg:grid-cols-12 lg:gap-6">
+        {/* ── Greeting ─────────────────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease }}
+          className="mb-7"
+        >
+          <h1 className="text-3xl font-bold tracking-tight" style={{ color: t.text }}>
+            Bonjour{userName ? `, ${userName}` : ""}
+          </h1>
+          <p className="text-sm mt-1.5" style={{ color: t.text3 }}>
+            Voici l&apos;essentiel de votre activité aujourd&apos;hui.
+          </p>
+        </motion.div>
 
-          {/* Left column */}
-          <div className="lg:col-span-7 space-y-5">
-
-            {/* ── Aujourd'hui ── */}
-            <div>
-              <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Aujourd&apos;hui</span>
-                <Link href="/client/planning" className="text-xs font-medium transition hover:opacity-70" style={{ color: t.text3 }}>
-                  Agenda →
-                </Link>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                {/* Tâches */}
-                <div className="overflow-hidden rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                  <div className="flex items-center justify-between px-3.5 pt-3 pb-2"
-                    style={{ borderBottom: `1px solid ${t.borderSoft}` }}>
-                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: t.text2 }}>
-                      <Clock size={12} style={{ color: t.text3 }} /> Tâches
-                    </span>
-                    <Link href="/client/productivite"
-                      className="text-xs font-medium" style={{ color: t.text4 }}>
-                      {nbTasks > 0 ? `${nbTasks} au total` : ""}
-                    </Link>
-                  </div>
-                  {todayLoading ? (
-                    <div className="space-y-2 p-3">
-                      <Skeleton h={10} w="70%" />
-                      <Skeleton h={10} w="50%" />
-                    </div>
-                  ) : todayTasks.length > 0 ? (
-                    <div className="p-1">
-                      {todayTasks.slice(0, 4).map((task) => (
-                        <Link key={task.id} href="/client/productivite">
-                          <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition hover:bg-white/5">
-                            <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: priorityColor(task.priority) }} />
-                            <span className="flex-1 truncate text-sm" style={{ color: t.text2 }}>{task.title}</span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 px-3.5 py-3">
-                      <CheckCircle2 size={12} className="shrink-0 text-emerald-500" />
-                      <span className="text-sm text-emerald-600">Aucun retard</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Prochain événement */}
-                <div className="overflow-hidden rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                  <div className="flex items-center justify-between px-3.5 pt-3 pb-2"
-                    style={{ borderBottom: `1px solid ${t.borderSoft}` }}>
-                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: t.text2 }}>
-                      <Calendar size={12} style={{ color: t.text3 }} /> Événements
-                    </span>
-                  </div>
-                  {todayLoading ? (
-                    <div className="space-y-2 p-3">
-                      <Skeleton h={10} w="60%" />
-                      <Skeleton h={10} w="40%" />
-                    </div>
-                  ) : nextEvent ? (
-                    <Link href="/client/planning">
-                      <div className="flex items-center gap-3 px-3.5 py-3 transition hover:bg-white/5">
-                        <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg"
-                          style={{ background: "rgba(79,70,229,0.10)" }}>
-                          <span className="text-[10px] font-bold uppercase leading-none" style={{ color: "#c9a55a" }}>
-                            {new Date(nextEvent.start_at).toLocaleDateString("fr-FR", { month: "short" })}
-                          </span>
-                          <span className="text-sm font-semibold leading-tight tabular-nums" style={{ color: "#c9a55a" }}>
-                            {new Date(nextEvent.start_at).getDate()}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold" style={{ color: t.text }}>{nextEvent.title}</p>
-                          <p className="text-xs" style={{ color: t.text4 }}>
-                            {fmtEventDate(nextEvent.start_at)} · {fmtEventTime(nextEvent.start_at)}
-                          </p>
-                        </div>
-                      </div>
-                    </Link>
-                  ) : (
-                    <div className="flex items-center justify-between px-3.5 py-3.5">
-                      <span className="text-sm" style={{ color: t.text3 }}>Journée libre</span>
-                      <Link href="/client/planning"
-                        className="text-xs font-semibold transition hover:opacity-80"
-                        style={{ color: GOLD }}>
-                        + Planifier
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
+        {/* ── DJAMA AI ─────────────────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.04, ease }}
+          className="mb-8"
+        >
+          <div
+            className="flex items-center gap-3 rounded-2xl px-5 py-4"
+            style={{
+              background: t.glass,
+              border: `1px solid ${t.border}`,
+              boxShadow: isDark ? "0 4px 28px rgba(0,0,0,0.25)" : "0 4px 28px rgba(0,0,0,0.06)",
+            }}
+          >
+            <div
+              className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0"
+              style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}30` }}
+            >
+              <Sparkles size={16} style={{ color: GOLD }} />
             </div>
+            <input
+              value={aiQuery}
+              onChange={e => setAiQuery(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && sendAiQuery()}
+              placeholder="Demander à DJAMA…"
+              className="flex-1 bg-transparent text-sm outline-none"
+              style={{ color: t.text }}
+            />
+            <button
+              onClick={() => sendAiQuery()}
+              disabled={!aiQuery.trim()}
+              className="flex items-center justify-center w-8 h-8 rounded-xl transition-all active:scale-90 disabled:opacity-25"
+              style={{ background: GOLD }}
+            >
+              <Send size={13} style={{ color: "#111" }} />
+            </button>
+          </div>
+          <div className="flex gap-2 mt-2.5 flex-wrap">
+            {AI_SUGGESTIONS.map(s => (
+              <button
+                key={s}
+                onClick={() => sendAiQuery(s)}
+                className="text-xs px-3 py-1.5 rounded-full transition-all hover:opacity-75 active:scale-95"
+                style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text3 }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </motion.div>
 
-            {/* ── Reprendre ── */}
-            {hasResumeItems && (
-              <div>
-                <div className="mb-2.5 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Reprendre</span>
-                  <span className="text-xs" style={{ color: t.text4 }}>Activité récente</span>
-                </div>
-                <div className="overflow-hidden rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                  {lastFac && (
-                    <Link href="/client/factures">
-                      <div className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/5"
-                        style={{ borderBottom: (lastExpense || lastContact) ? `1px solid ${t.borderSoft}` : "none" }}>
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                          style={{ background: "rgba(34,197,94,0.08)" }}>
-                          <FileText size={13} style={{ color: "#22c55e" }} />
+        {/* ── Votre activité ───────────────────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.08, ease }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold" style={{ color: t.text }}>Votre activité</h2>
+            <div className="flex items-center gap-2">
+              <div ref={periodRef} className="relative">
+                <button
+                  onClick={() => setPeriodOpen(p => !p)}
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all"
+                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text3 }}
+                >
+                  {currentPeriodLabel}
+                  <ChevronDown size={11} style={{ opacity: 0.5 }} />
+                </button>
+                <AnimatePresence>
+                  {periodOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.97 }} transition={{ duration: 0.14 }}
+                      className="absolute right-0 top-full mt-1 z-40 rounded-xl overflow-hidden w-44"
+                      style={{ background: isDark ? "#1a1a1a" : "#fff", border: `1px solid ${t.border}`, boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
+                    >
+                      {PERIODS.map(p => (
+                        <button key={p.key} onClick={() => { setPeriod(p.key); setPeriodOpen(false); }}
+                          className="w-full text-left px-3 py-2 text-xs transition-colors hover:opacity-80"
+                          style={{ color: period === p.key ? GOLD : t.text2, background: period === p.key ? `${GOLD}10` : "transparent" }}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                      {period === "personnalise" && (
+                        <div className="px-3 pb-2 flex flex-col gap-1.5 border-t mt-1 pt-2" style={{ borderColor: t.borderSoft }}>
+                          <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                            className="rounded-lg px-2 py-1 text-xs w-full"
+                            style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text }} />
+                          <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                            className="rounded-lg px-2 py-1 text-xs w-full"
+                            style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text }} />
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold" style={{ color: t.text }}>
-                            {lastFac.client_nom || "—"}
-                            <span className="ml-2 font-normal text-xs" style={{ color: t.text4 }}>{lastFac.numero}</span>
-                          </p>
-                          <p className="text-xs" style={{ color: t.text4 }}>
-                            Facture · {new Date(lastFac.date_emission).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-sm font-bold tabular-nums" style={{ color: t.text }}>{fmtEurInt(lastFac.montant_ttc)}</span>
-                      </div>
-                    </Link>
+                      )}
+                    </motion.div>
                   )}
-                  {lastExpense && (
-                    <Link href="/client/depenses">
-                      <div className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/5"
-                        style={{ borderBottom: lastContact ? `1px solid ${t.borderSoft}` : "none" }}>
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                          style={{ background: "rgba(239,68,68,0.08)" }}>
-                          <CreditCard size={13} style={{ color: "#ef4444" }} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold" style={{ color: t.text }}>
-                            {lastExpense.description || lastExpense.category || "Dépense"}
-                          </p>
-                          <p className="text-xs" style={{ color: t.text4 }}>
-                            Dépense · {new Date(lastExpense.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-sm font-bold tabular-nums text-red-400">−{fmtEurInt(lastExpense.amount)}</span>
-                      </div>
-                    </Link>
-                  )}
-                  {lastContact && (
-                    <Link href="/client/crm">
-                      <div className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                          style={{ background: "rgba(96,165,250,0.08)" }}>
-                          <Users size={13} style={{ color: "#60a5fa" }} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold" style={{ color: t.text }}>{lastContact.nom}</p>
-                          <p className="text-xs" style={{ color: t.text4 }}>
-                            Contact · {new Date(lastContact.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                          </p>
-                        </div>
-                        <ChevronRight size={13} style={{ color: t.text4 }} />
-                      </div>
-                    </Link>
-                  )}
-                </div>
+                </AnimatePresence>
               </div>
-            )}
-
-            {/* Empty state — new user */}
-            {isNewUser && !todayLoading && (
-              <div className="overflow-hidden rounded-xl"
-                style={{ background: t.glass, border: "1px solid rgba(201,165,90,0.20)" }}>
-                <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${t.borderSoft}` }}>
-                  <Sparkles size={12} style={{ color: GOLD }} />
-                  <span className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: GOLD }}>Démarrage rapide</span>
-                  <div className="ml-2 flex-1 h-1 overflow-hidden rounded-full" style={{ background: t.bgSubtle }}>
-                    <div className="h-full rounded-full" style={{ width: `${([true, false, nbContacts > 0, nbFacturesPend > 0].filter(Boolean).length / 4) * 100}%`, background: GOLD, transition: "width 0.6s ease" }} />
-                  </div>
-                  <span className="text-[11px] font-bold" style={{ color: GOLD }}>
-                    {[true, false, nbContacts > 0, nbFacturesPend > 0].filter(Boolean).length}/4
-                  </span>
-                </div>
-                {([
-                  { done: true,              label: "Créer votre compte DJAMA",    href: null,               sub: "C'est fait !" },
-                  { done: false,             label: "Personnaliser votre profil",   href: "/client/profil",   sub: "Logo, SIRET, RIB" },
-                  { done: nbContacts > 0,    label: "Ajouter votre premier client", href: "/client/crm",      sub: "Base clients CRM" },
-                  { done: nbFacturesPend > 0,label: "Envoyer votre 1ère facture",   href: "/client/factures", sub: "Commencez à facturer" },
-                ] as { done: boolean; label: string; href: string | null; sub: string }[]).map((step, i) => (
-                  <Link key={i} href={step.done || !step.href ? "#" : step.href}
-                    onClick={e => { if (step.done || !step.href) e.preventDefault(); }}>
-                    <div className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-white/5"
-                      style={{ borderTop: i > 0 ? `1px solid ${t.borderSoft}` : "none" }}>
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                        style={{ background: step.done ? "rgba(34,197,94,0.12)" : "rgba(201,165,90,0.10)" }}>
-                        {step.done
-                          ? <CheckCircle2 size={11} className="text-emerald-500" />
-                          : <span className="text-[10px] font-bold" style={{ color: GOLD }}>{i + 1}</span>}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold leading-tight"
-                          style={{ color: step.done ? t.text4 : t.text, textDecoration: step.done ? "line-through" : "none" }}>
-                          {step.label}
-                        </p>
-                        <p className="text-xs" style={{ color: t.text4 }}>{step.sub}</p>
-                      </div>
-                      {!step.done && step.href && <ChevronRight size={11} style={{ color: t.text4 }} />}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+              <button
+                onClick={() => isPremium ? setRapportOpen(true) : router.push("/client/abonnement")}
+                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all active:scale-95"
+                style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}25`, color: GOLD }}
+              >
+                <FileBarChart2 size={12} />
+                Rapport IA
+                {!isPremium && <Lock size={9} />}
+              </button>
+              <button onClick={fetchAll} disabled={loading}
+                className="flex items-center justify-center w-7 h-7 rounded-xl transition-all"
+                style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                <RefreshCw size={12} style={{ color: t.text3 }} className={loading ? "animate-spin" : ""} />
+              </button>
+            </div>
           </div>
 
-          {/* Right column */}
-          <div className="mt-5 lg:col-span-5 lg:mt-0 space-y-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              {
+                label:   "Chiffre d'affaires",
+                val:     ca,
+                prev:    caPrev,
+                color:   GOLD,
+                Icon:    ReceiptText,
+                href:    "/client/factures",
+                sub:     ca === 0 ? "Aucune facture payée" : "Payé sur la période",
+              },
+              {
+                label:   "Dépenses",
+                val:     depenses,
+                prev:    depPrev,
+                color:   "#ef4444",
+                Icon:    CreditCard,
+                href:    "/client/depenses",
+                sub:     depenses === 0 ? "Aucune dépense" : "Sur la période",
+              },
+              {
+                label:      "Résultat",
+                val:        resultat,
+                prev:       resultatPrev,
+                color:      resultatPositif ? "#22c55e" : "#f87171",
+                Icon:       BarChart3,
+                href:       "/client/tresorerie",
+                sub:        resultatPositif ? "Bénéficiaire" : "Déficitaire",
+                isResultat: true,
+              },
+              {
+                label:    "En attente",
+                val:      aEncaisser,
+                prev:     0,
+                color:    enRetard > 0 ? "#f97316" : GOLD,
+                Icon:     AlertCircle,
+                href:     "/client/factures",
+                sub:      enRetard > 0 ? `${fmtEurInt(enRetard)} en retard` : "À encaisser",
+                noTrend:  true,
+              },
+            ].map((kpi) => {
+              const KpiIcon = kpi.Icon;
+              const displayVal = (kpi as { isResultat?: boolean }).isResultat
+                ? (resultatPositif ? "+" : "−") + fmtEurInt(Math.abs(resultat))
+                : fmtEurInt(kpi.val);
+              return (
+                <Link
+                  key={kpi.label}
+                  href={kpi.href}
+                  className="group relative flex flex-col rounded-2xl p-4 transition-all hover:scale-[1.02]"
+                  style={{ background: t.glass, border: `1px solid ${t.border}` }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center"
+                      style={{ background: `${kpi.color}15` }}
+                    >
+                      <KpiIcon size={15} style={{ color: kpi.color }} />
+                    </div>
+                    {!(kpi as { noTrend?: boolean }).noTrend && !loading && kpi.prev > 0 && (
+                      <TrendBadge pct={pctChange(Math.abs(kpi.val), Math.abs(kpi.prev))} />
+                    )}
+                  </div>
+                  {loading ? (
+                    <Skel w="75%" h={26} />
+                  ) : (
+                    <div className="text-xl font-bold tabular-nums leading-none" style={{ color: kpi.color }}>
+                      {displayVal}
+                    </div>
+                  )}
+                  <div className="text-xs font-medium mt-2" style={{ color: t.text2 }}>{kpi.label}</div>
+                  <div className="text-[11px] mt-0.5" style={{ color: t.text4 }}>{kpi.sub}</div>
+                  <ArrowUpRight
+                    size={12}
+                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-30 transition-opacity"
+                    style={{ color: t.text3 }}
+                  />
+                </Link>
+              );
+            })}
+          </div>
+        </motion.section>
 
-            {/* ── Aperçu entreprise ── */}
-            <div>
-              <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Aperçu</span>
-                <Link href="/client/dashboard" className="text-xs font-medium transition hover:opacity-70" style={{ color: t.text3 }}>
-                  Dashboard →
+        {/* ── Aujourd'hui ──────────────────────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.12, ease }}
+          className="mb-8"
+        >
+          <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Aujourd&apos;hui</h2>
+          <div className="grid lg:grid-cols-2 gap-4">
+
+            <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Calendar size={15} style={{ color: GOLD }} />
+                  <span className="text-sm font-semibold" style={{ color: t.text }}>Agenda</span>
+                </div>
+                <Link href="/client/planning" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
+                  Voir tout <ChevronRight size={10} />
                 </Link>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {kpis.map((kpi) => (
-                  <Link key={kpi.label} href={kpi.href}>
-                    <div className="rounded-xl p-3 transition hover:opacity-90"
-                      style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: t.text3 }}>
-                        {kpi.label}
-                      </p>
-                      {kpi.value === null ? (
-                        <Skeleton h={22} w="65%" />
-                      ) : kpi.empty ? (
-                        <p className="text-xl font-semibold leading-none" style={{ color: t.text4 }}>—</p>
-                      ) : (
-                        <p className="text-xl font-semibold leading-none tabular-nums" style={{ color: t.text }}>{kpi.value}</p>
-                      )}
-                      <div className="mt-2 flex items-center gap-1">
-                        {kpi.trend !== null && !kpi.empty && (
-                          kpi.trend >= 0
-                            ? <TrendingUp size={10} className="text-emerald-500" />
-                            : <TrendingDown size={10} className="text-red-400" />
-                        )}
-                        <p className="text-xs font-medium"
-                          style={{ color: kpi.empty ? t.text4 : (kpi.trend !== null ? (kpi.trend >= 0 ? "#22c55e" : "#ef4444") : t.text4) }}>
-                          {kpi.empty ? "Aucune donnée" : kpi.sub}
-                        </p>
-                      </div>
-                    </div>
+              {loading ? (
+                <div className="flex flex-col gap-2">{[...Array(3)].map((_, i) => <Skel key={i} h={40} />)}</div>
+              ) : todayEvents.length === 0 ? (
+                <div className="py-7 text-center">
+                  <p className="text-sm" style={{ color: t.text3 }}>Aucun événement aujourd&apos;hui</p>
+                  <Link href="/client/planning" className="text-xs mt-2 inline-block" style={{ color: GOLD }}>
+                    Ajouter un événement
                   </Link>
-                ))}
-              </div>
-              {!hasSomeData && !kpiLoading && (
-                <div className="mt-2 rounded-xl px-3.5 py-2.5 text-center"
-                  style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                  <p className="text-xs" style={{ color: t.text4 }}>
-                    Les données apparaîtront dès votre première facture ou dépense
-                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  {todayEvents.map((ev, i) => (
+                    <div
+                      key={ev.id}
+                      className="flex items-center gap-3 py-2.5"
+                      style={{ borderBottom: i < todayEvents.length - 1 ? `1px solid ${t.borderSoft}` : "none" }}
+                    >
+                      <span className="text-xs font-semibold shrink-0 tabular-nums w-11 text-right" style={{ color: GOLD }}>
+                        {formatTime(ev.start_at)}
+                      </span>
+                      <span className="text-sm truncate" style={{ color: t.text }}>{ev.title}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* ── Raccourcis ── */}
-            <div>
-              <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Raccourcis</span>
-                <button
-                  onClick={() => { setPickerDraft(quickActions); setEditingQA(true); }}
-                  className="text-xs font-medium transition hover:opacity-70"
-                  style={{ color: t.text3 }}
-                >
-                  Modifier
-                </button>
-              </div>
-              <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${Math.min(quickActions.length, 6)}, 1fr)` }}>
-                {quickActions.map((qa) => {
-                  const app = APP_BY_ROUTE[qa.href];
-                  if (!app) return null;
-                  const Icon = app.icon;
-                  return (
-                    <Link key={qa.href} href={qa.href}>
-                      <div className="group flex flex-col items-center gap-1 transition hover:opacity-80">
-                        <div
-                          className="flex items-center justify-center rounded-[13px] transition group-hover:border-[--gold]"
-                          style={{
-                            width: 48, height: 48,
-                            background: t.glass,
-                            border: `1px solid ${t.border}`,
-                          }}
-                        >
-                          <Icon size={20} style={{ color: t.text3 }} strokeWidth={1.6} />
-                        </div>
-                        <span className="w-full truncate text-center text-xs font-semibold" style={{ color: t.text3 }}>
-                          {qa.label}
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ── Accès rapide modules ── */}
-            <div>
-              <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: t.text3 }}>Applications</span>
-                <Link href="/client/apps" className="flex items-center gap-1 text-xs font-medium transition hover:opacity-70" style={{ color: t.text3 }}>
-                  Tout voir <ArrowRight size={10} />
+            <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} style={{ color: GOLD }} />
+                  <span className="text-sm font-semibold" style={{ color: t.text }}>Tâches</span>
+                </div>
+                <Link href="/client/productivite" className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
+                  Voir tout <ChevronRight size={10} />
                 </Link>
               </div>
-              <div className="overflow-hidden rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                {[
-                  { href: "/client/factures",   icon: FileText, label: "Factures",    sub: nbFacturesPend > 0 ? `${nbFacturesPend} en attente` : "Facturation" },
-                  { href: "/client/depenses",   icon: CreditCard, label: "Dépenses",  sub: "Charges & notes de frais" },
-                  { href: "/client/crm",        icon: Users, label: "CRM",            sub: nbContacts > 0 ? `${nbContacts} contacts` : "Base clients" },
-                  { href: "/client/productivite",icon: CheckCircle2, label: "Productivité", sub: nbTasks > 0 ? `${nbTasks} tâches` : "Tâches & projets" },
-                ].map((item, i) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <div className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/5"
-                        style={{ borderTop: i > 0 ? `1px solid ${t.borderSoft}` : "none" }}>
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                          style={{ background: t.bgSubtle }}>
-                          <Icon size={15} style={{ color: t.text3 }} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold" style={{ color: t.text }}>{item.label}</p>
-                          <p className="text-xs" style={{ color: t.text4 }}>{item.sub}</p>
-                        </div>
-                        <ChevronRight size={13} style={{ color: t.text4 }} />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Footer ── */}
-        {isFree && (
-          <div className="mt-10 flex justify-center">
-            <Link
-              href="/client/abonnements"
-              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition hover:opacity-90"
-              style={{ background: GOLD, color: "#0a0a0a" }}
-            >
-              <Crown size={12} /> Passer à DJAMA PRO — 11,90€/mois
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* ══ MODAL PICKER RACCOURCIS ══ */}
-      <AnimatePresence>
-        {editingQA && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-            style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)" }}
-            onClick={(e) => { if (e.target === e.currentTarget) setEditingQA(false); }}
-          >
-            <motion.div
-              initial={{ y: 60, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 60, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 340, damping: 30 }}
-              className="w-full rounded-t-2xl p-5 pb-8 sm:max-w-lg sm:rounded-2xl"
-              style={{ background: isDark ? "#181818" : "#ffffff", border: `1px solid ${t.border}` }}
-            >
-              <div className="mb-1 flex items-center justify-between">
-                <h3 className="text-[1rem] font-bold" style={{ color: t.text }}>Mes raccourcis</h3>
-                <button onClick={() => setEditingQA(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full transition hover:opacity-70"
-                  style={{ background: t.bgSubtle }}>
-                  <X size={13} style={{ color: t.text3 }} />
-                </button>
-              </div>
-              <p className="mb-4 text-xs" style={{ color: t.text3 }}>
-                Choisissez jusqu&apos;à <strong>6 modules</strong> à afficher en accès rapide
-              </p>
-
-              <div className="grid max-h-[52vh] grid-cols-4 gap-2 overflow-y-auto pr-1">
-                {pickerApps.map((app) => {
-                  const selected = pickerDraft.some(a => a.href === app.route);
-                  const atMax    = pickerDraft.length >= 6;
-                  const Icon     = app.icon;
-                  return (
-                    <motion.button
-                      key={app.route}
-                      whileTap={{ scale: 0.88 }}
-                      onClick={() => {
-                        if (selected) setPickerDraft(d => d.filter(a => a.href !== app.route));
-                        else if (!atMax) setPickerDraft(d => [...d, { href: app.route, label: app.name }]);
-                      }}
-                      className="relative flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 transition"
-                      style={{
-                        opacity: !selected && atMax ? 0.28 : 1,
-                        background: selected ? t.bgSubtle : "transparent",
-                        cursor: !selected && atMax ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      <div className="relative">
-                        <div
-                          className="relative flex items-center justify-center overflow-hidden rounded-[13px]"
-                          style={{
-                            width: 48, height: 48,
-                            background: selected ? `${GOLD}18` : t.bgSubtle,
-                            border: selected ? `1px solid ${GOLD}40` : `1px solid ${t.border}`,
-                            boxShadow: selected ? `0 0 0 2px ${GOLD}50` : "none",
-                          }}
-                        >
-                          <Icon size={20} style={{ color: selected ? GOLD : t.text3 }} strokeWidth={1.7} />
-                        </div>
-                        {selected && (
-                          <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full"
-                            style={{ background: "#22c55e", border: `1.5px solid ${isDark ? "#181818" : "#ffffff"}` }}>
-                            <Check size={8} color="white" strokeWidth={3} />
-                          </div>
+              {loading ? (
+                <div className="flex flex-col gap-2">{[...Array(3)].map((_, i) => <Skel key={i} h={40} />)}</div>
+              ) : todayTasks.length === 0 ? (
+                <div className="py-7 text-center">
+                  <p className="text-sm" style={{ color: t.text3 }}>Aucune tâche urgente</p>
+                  <Link href="/client/productivite" className="text-xs mt-2 inline-block" style={{ color: GOLD }}>
+                    Créer une tâche
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  {todayTasks.map((task, i) => {
+                    const isLate = task.due_date < localDateStr(0);
+                    return (
+                      <div
+                        key={task.id}
+                        className="flex items-center gap-3 py-2.5"
+                        style={{ borderBottom: i < todayTasks.length - 1 ? `1px solid ${t.borderSoft}` : "none" }}
+                      >
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ background: isLate ? "#ef4444" : GOLD }} />
+                        <span className="text-sm flex-1 truncate" style={{ color: t.text }}>{task.title}</span>
+                        {isLate && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "#ef44441a", color: "#ef4444" }}>
+                            Retard
+                          </span>
                         )}
                       </div>
-                      <span className="line-clamp-2 px-0.5 text-center text-[11px] font-semibold leading-tight"
-                        style={{ color: selected ? t.text : t.text3 }}>
-                        {app.name}
-                      </span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 flex items-center gap-2">
-                <div className="flex gap-1">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-1.5 w-1.5 rounded-full transition-all"
-                      style={{ background: i < pickerDraft.length ? "#22c55e" : t.bgSubtle }} />
-                  ))}
+                    );
+                  })}
                 </div>
-                <span className="text-xs font-bold" style={{ color: t.text4 }}>{pickerDraft.length}/6</span>
-              </div>
+              )}
+            </div>
+          </div>
+        </motion.section>
 
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => setPickerDraft(DEFAULT_QA)}
-                  className="flex-1 rounded-xl py-2.5 text-sm font-semibold transition hover:opacity-80"
-                  style={{ background: t.bgSubtle, border: `1px solid ${t.border}`, color: t.text3 }}
+        {/* ── Actions rapides ───────────────────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.16, ease }}
+          className="mb-8"
+        >
+          <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Actions rapides</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {QUICK_ACTIONS.map(({ label, href, Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group flex flex-col items-center gap-3 rounded-2xl p-5 text-center transition-all hover:scale-[1.03] active:scale-[0.97]"
+                style={{ background: t.glass, border: `1px solid ${t.border}` }}
+              >
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+                  style={{ background: `${GOLD}14` }}
                 >
-                  Réinitialiser
-                </button>
-                <button
-                  onClick={async () => {
-                    setQuickActions(pickerDraft);
-                    setEditingQA(false);
-                    await saveQuickActions(pickerDraft);
-                  }}
-                  disabled={pickerDraft.length === 0}
-                  className="flex-[2] rounded-xl py-2.5 text-sm font-bold text-white transition"
-                  style={{ background: pickerDraft.length === 0 ? "rgba(34,197,94,0.18)" : "#22c55e" }}
+                  <Icon size={20} style={{ color: GOLD }} />
+                </div>
+                <span className="text-xs font-medium leading-snug" style={{ color: t.text2 }}>{label}</span>
+              </Link>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ── Activité récente ──────────────────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.20, ease }}
+          className="mb-8"
+        >
+          <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Activité récente</h2>
+          {loading ? (
+            <div className="flex flex-col gap-1">{[...Array(5)].map((_, i) => <Skel key={i} h={52} />)}</div>
+          ) : recentActivity.length === 0 ? (
+            <div className="py-10 text-center rounded-2xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+              <p className="text-sm" style={{ color: t.text3 }}>Aucune activité récente</p>
+              <p className="text-xs mt-1" style={{ color: t.text4 }}>Vos actions apparaîtront ici</p>
+            </div>
+          ) : (
+            <div style={{ borderTop: `1px solid ${t.borderSoft}` }}>
+              {recentActivity.map((item, i) => {
+                const itemColors: Record<string, string> = { facture: GOLD, devis: "#3b82f6", expense: "#ef4444" };
+                const ItemIcon = item.itemType === "expense" ? CreditCard : ReceiptText;
+                const color    = itemColors[item.itemType] ?? GOLD;
+                return (
+                  <Link
+                    key={`${item.id}-${i}`}
+                    href={item.href}
+                    className="flex items-center gap-4 py-3.5 transition-all hover:opacity-70"
+                    style={{ borderBottom: `1px solid ${t.borderSoft}` }}
+                  >
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${color}12` }}>
+                      <ItemIcon size={15} style={{ color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate" style={{ color: t.text }}>{item.label}</div>
+                      {item.sub && <div className="text-xs truncate mt-0.5" style={{ color: t.text3 }}>{item.sub}</div>}
+                    </div>
+                    <div className="text-xs shrink-0 tabular-nums" style={{ color: t.text4 }}>
+                      {formatRelativeDate(item.date)}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </motion.section>
+
+        {/* ── Vos applications ──────────────────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.24, ease }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold" style={{ color: t.text }}>Vos applications</h2>
+            <Link href="/client/applications" className="text-xs flex items-center gap-0.5 transition-opacity hover:opacity-70" style={{ color: t.text3 }}>
+              Toutes les applications <ChevronRight size={10} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-4 lg:grid-cols-8 gap-3">
+            {PINNED_APPS.map(({ label, href, Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group flex flex-col items-center gap-2 py-4 px-1 rounded-2xl text-center transition-all hover:scale-[1.05] active:scale-[0.96]"
+                style={{ background: t.glass, border: `1px solid ${t.border}` }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+                  style={{ background: `${GOLD}12` }}
                 >
-                  Enregistrer
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  <Icon size={18} style={{ color: GOLD }} />
+                </div>
+                <span className="text-[11px] font-medium leading-snug" style={{ color: t.text3 }}>{label}</span>
+              </Link>
+            ))}
+          </div>
+        </motion.section>
+
+      </div>
+
+      <RapportModal open={rapportOpen} onClose={() => setRapportOpen(false)} isDark={isDark} />
     </div>
   );
 }
