@@ -131,7 +131,10 @@ function ArticleEditor({
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [aiTask,  setAiTask]  = useState<"excerpt" | "content" | null>(null);
-  const [coverUrl,     setCoverUrl]     = useState((article as Article | null)?.cover_url ?? "");
+  const [coverUrl,       setCoverUrl]       = useState((article as Article | null)?.cover_url ?? "");
+  const [focusKeyword,   setFocusKeyword]   = useState("");
+  const [seoTips,        setSeoTips]        = useState<string[]>([]);
+  const [seoTipsLoading, setSeoTipsLoading] = useState(false);
   const [selInfo,      setSelInfo]      = useState<{ start: number; end: number; text: string } | null>(null);
   const [aiSelTask,    setAiSelTask]    = useState<string | null>(null);
   const [imgPanel,     setImgPanel]     = useState(false);
@@ -720,81 +723,241 @@ function ArticleEditor({
               )}
             </>}
 
-            {sideTab === "seo" && <>
-              {/* SEO title */}
-              <div>
-                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Titre SEO</p>
-                <input
-                  value={seoTitle}
-                  onChange={e => setSeoTitle(e.target.value)}
-                  placeholder={title || "Titre pour les moteurs de recherche…"}
-                  className="w-full rounded-xl px-3 py-2 text-xs outline-none"
-                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
-                />
-                <p className="text-[10px] mt-1" style={{ color: (seoTitle || title).length > 60 ? "#ef4444" : t.text4 }}>
-                  {(seoTitle || title).length}/60 caractères
-                </p>
-              </div>
+            {sideTab === "seo" && (() => {
+              /* ── calculs SEO en ligne ─────────────────────────────────── */
+              const words = content.trim() === "" ? [] : content.trim().split(/\s+/);
+              const wc = words.length;
+              const h2s  = (content.match(/^##\s.+$/gm)  ?? []);
+              const h3s  = (content.match(/^###\s.+$/gm) ?? []);
+              const allH = (content.match(/^#{1,3}\s.+$/gm) ?? []);
+              const extLinks = (content.match(/\[.+?\]\(https?:\/\//g) ?? []);
+              const sentences = content.split(/[.!?]+/).filter(s => s.trim().split(/\s+/).length > 3);
+              const avgWPS = sentences.length ? wc / sentences.length : 0;
+              const kw = focusKeyword.trim().toLowerCase();
+              const kwCount = kw ? words.filter(w => w.toLowerCase().replace(/[^a-zàâäéèêëîïôùûüç]/g, "").includes(kw)).length : 0;
+              const kwDensity = kw && wc > 0 ? (kwCount / wc) * 100 : null;
 
-              {/* Meta description */}
-              <div>
-                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Meta description</p>
-                <textarea
-                  value={seoDesc}
-                  onChange={e => setSeoDesc(e.target.value)}
-                  rows={3}
-                  placeholder={excerpt || "Description pour Google…"}
-                  className="w-full resize-none rounded-xl p-3 text-xs leading-relaxed outline-none"
-                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
-                />
-                <p className="text-[10px] mt-1" style={{ color: (seoDesc || excerpt).length > 160 ? "#ef4444" : t.text4 }}>
-                  {(seoDesc || excerpt).length}/160 caractères
-                </p>
-              </div>
+              /* score 0-100 */
+              let score = 0;
+              if (title.trim())                                                                     score += 10;
+              if ((seoTitle||title).length > 0 && (seoTitle||title).length <= 60)                  score += 10;
+              if ((seoDesc||excerpt).length > 0 && (seoDesc||excerpt).length <= 160)               score += 10;
+              if (excerpt.trim())                                                                    score +=  5;
+              if (wc > 300)                                                                          score += 10;
+              if (wc > 600)                                                                          score +=  5;
+              if (tags.length > 0)                                                                   score +=  5;
+              if (category && category !== "Non classé")                                             score +=  5;
+              if (coverUrl)                                                                          score += 10;
+              if (kw)                                                                                score +=  5;
+              if (kwDensity !== null && kwDensity >= 0.5 && kwDensity <= 3)                         score += 10;
+              if (h2s.length >= 1)                                                                   score +=  5;
+              if (h2s.length >= 2)                                                                   score +=  5;
+              if (extLinks.length >= 1)                                                              score +=  5;
+              score = Math.min(score, 100);
 
-              {/* Aperçu Google */}
-              <div>
-                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Aperçu Google</p>
-                <div className="rounded-xl p-3" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                  <p className="text-[11px] mb-0.5" style={{ color: t.text4 }}>djama.space › blogs</p>
-                  <p className="text-sm font-semibold leading-snug line-clamp-2" style={{ color: "#1a73e8" }}>
-                    {seoTitle || title || "Titre de l'article"}
-                  </p>
-                  <p className="text-xs mt-1 line-clamp-2 leading-relaxed" style={{ color: "#4d5156" }}>
-                    {seoDesc || excerpt || "La description de l'article apparaîtra ici dans les résultats de recherche."}
-                  </p>
+              const scoreColor = score >= 80 ? "#22c55e" : score >= 50 ? "#f59e0b" : "#ef4444";
+              const scoreLabel = score >= 80 ? "Excellent" : score >= 50 ? "À améliorer" : "Insuffisant";
+
+              const readLabel = avgWPS === 0 ? "—" : avgWPS < 15 ? "Excellent" : avgWPS < 20 ? "Bon" : avgWPS < 25 ? "Moyen" : "Difficile";
+              const readColor = avgWPS === 0 ? t.text4 : avgWPS < 20 ? "#22c55e" : avgWPS < 25 ? "#f59e0b" : "#ef4444";
+
+              const kwDensLabel = kwDensity === null ? "—" : kwDensity < 0.5 ? "Trop faible" : kwDensity <= 3 ? "Optimal" : "Trop élevé";
+              const kwDensColor = kwDensity === null ? t.text4 : kwDensity >= 0.5 && kwDensity <= 3 ? "#22c55e" : "#ef4444";
+
+              /* arc SVG */
+              const R = 28, C = 2 * Math.PI * R;
+              const dash = (score / 100) * C;
+
+              return <>
+                {/* Score global */}
+                <div className="flex items-center gap-4 p-4 rounded-xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                  <svg width="72" height="72" viewBox="0 0 72 72">
+                    <circle cx="36" cy="36" r={R} fill="none" stroke={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"} strokeWidth="6" />
+                    <circle cx="36" cy="36" r={R} fill="none" stroke={scoreColor} strokeWidth="6"
+                      strokeDasharray={`${dash} ${C}`} strokeLinecap="round"
+                      transform="rotate(-90 36 36)" style={{ transition: "stroke-dasharray .4s" }} />
+                    <text x="36" y="40" textAnchor="middle" fontSize="16" fontWeight="700" fill={scoreColor}>{score}</text>
+                  </svg>
+                  <div>
+                    <p className="text-sm font-bold" style={{ color: scoreColor }}>{scoreLabel}</p>
+                    <p className="text-xs mt-0.5" style={{ color: t.text3 }}>Score SEO global</p>
+                    <p className="text-[10px] mt-1" style={{ color: t.text4 }}>{wc} mots · {allH.length} titres · {extLinks.length} lien{extLinks.length !== 1 ? "s" : ""}</p>
+                  </div>
                 </div>
-                <p className="text-[10px] mt-1.5" style={{ color: t.text4 }}>
-                  Aperçu indicatif — rendu non garanti par Google
-                </p>
-              </div>
 
-              {/* Checklist SEO basique */}
-              <div>
-                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Checklist SEO</p>
-                <div className="flex flex-col gap-1.5">
-                  {[
-                    { label: "Titre renseigné",        ok: !!title.trim()                       },
-                    { label: "Titre SEO ≤ 60 car.",    ok: (seoTitle||title).length > 0 && (seoTitle||title).length <= 60 },
-                    { label: "Meta desc. ≤ 160 car.",  ok: (seoDesc||excerpt).length > 0 && (seoDesc||excerpt).length <= 160 },
-                    { label: "Extrait renseigné",      ok: !!excerpt.trim()                     },
-                    { label: "Contenu > 300 mots",     ok: content.trim().split(/\s+/).length > 300 },
-                    { label: "Tags définis",            ok: tags.length > 0                      },
-                    { label: "Catégorie définie",       ok: !!category && category !== "Non classé" },
-                  ].map(({ label, ok }) => (
-                    <div key={label} className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                        style={{ background: ok ? "rgba(34,197,94,0.15)" : "rgba(148,163,184,0.12)" }}>
-                        {ok
-                          ? <CheckCircle2 size={10} style={{ color: "#22c55e" }} />
-                          : <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#94a3b8" }} />}
-                      </div>
-                      <span className="text-xs" style={{ color: ok ? t.text2 : t.text4 }}>{label}</span>
+                {/* Mot-clé cible */}
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Mot-clé cible</p>
+                  <input
+                    value={focusKeyword}
+                    onChange={e => setFocusKeyword(e.target.value)}
+                    placeholder="Ex : facturation auto-entrepreneur"
+                    className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+                    style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                  />
+                  {kw && (
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-[10px]" style={{ color: t.text4 }}>
+                        {kwCount} occurrence{kwCount !== 1 ? "s" : ""} — densité {kwDensity?.toFixed(1)}%
+                      </span>
+                      <span className="text-[10px] font-semibold" style={{ color: kwDensColor }}>{kwDensLabel}</span>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-            </>}
+
+                {/* Titre SEO */}
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Titre SEO</p>
+                  <input
+                    value={seoTitle}
+                    onChange={e => setSeoTitle(e.target.value)}
+                    placeholder={title || "Titre pour les moteurs de recherche…"}
+                    className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+                    style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                  />
+                  <p className="text-[10px] mt-1" style={{ color: (seoTitle||title).length > 60 ? "#ef4444" : t.text4 }}>
+                    {(seoTitle||title).length}/60 caractères
+                  </p>
+                </div>
+
+                {/* Meta description */}
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Meta description</p>
+                  <textarea
+                    value={seoDesc}
+                    onChange={e => setSeoDesc(e.target.value)}
+                    rows={3}
+                    placeholder={excerpt || "Description pour Google…"}
+                    className="w-full resize-none rounded-xl p-3 text-xs leading-relaxed outline-none"
+                    style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                  />
+                  <p className="text-[10px] mt-1" style={{ color: (seoDesc||excerpt).length > 160 ? "#ef4444" : t.text4 }}>
+                    {(seoDesc||excerpt).length}/160 caractères
+                  </p>
+                </div>
+
+                {/* Aperçu Google */}
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Aperçu Google</p>
+                  <div className="rounded-xl p-3" style={{ background: isDark ? "#1e2433" : "#fff", border: `1px solid ${t.border}` }}>
+                    <p className="text-[10px] mb-0.5" style={{ color: "#5f6368" }}>djama.space › blogs</p>
+                    <p className="text-[13px] font-medium leading-snug line-clamp-2" style={{ color: "#1a73e8" }}>
+                      {seoTitle || title || "Titre de l'article"}
+                    </p>
+                    <p className="text-xs mt-1 line-clamp-2 leading-relaxed" style={{ color: "#4d5156" }}>
+                      {seoDesc || excerpt || "La description apparaîtra ici dans les résultats de recherche."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Lisibilité + structure */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl p-3 text-center" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                    <p className="text-[10px] mb-1" style={{ color: t.text4 }}>Lisibilité</p>
+                    <p className="text-xs font-bold" style={{ color: readColor }}>{readLabel}</p>
+                    <p className="text-[9px] mt-0.5" style={{ color: t.text4 }}>{avgWPS > 0 ? `~${avgWPS.toFixed(0)} mots/phrase` : "—"}</p>
+                  </div>
+                  <div className="rounded-xl p-3 text-center" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                    <p className="text-[10px] mb-1" style={{ color: t.text4 }}>Structure</p>
+                    <p className="text-xs font-bold" style={{ color: t.text }}>
+                      {h2s.length} H2 · {h3s.length} H3
+                    </p>
+                    <p className="text-[9px] mt-0.5" style={{ color: h2s.length >= 2 ? "#22c55e" : "#f59e0b" }}>
+                      {h2s.length >= 2 ? "Bien structuré" : h2s.length === 1 ? "Ajouter des H2" : "Aucun H2"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Plan du contenu */}
+                {allH.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Plan du contenu</p>
+                    <div className="flex flex-col gap-1 rounded-xl p-3 overflow-y-auto max-h-36"
+                      style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                      {allH.map((h, i) => {
+                        const level = (h.match(/^#+/) ?? [""])[0].length;
+                        return (
+                          <p key={i} className="text-[10px] truncate leading-relaxed"
+                            style={{ color: level === 2 ? t.text2 : t.text3, paddingLeft: level === 2 ? 0 : level === 3 ? 8 : 0 }}>
+                            {level === 2 ? "▸ " : level === 3 ? "  · " : ""}{h.replace(/^#+\s/, "")}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Checklist */}
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Checklist</p>
+                  <div className="flex flex-col gap-1.5">
+                    {[
+                      { label: "Titre renseigné",       ok: !!title.trim() },
+                      { label: "Titre SEO ≤ 60 car.",   ok: (seoTitle||title).length > 0 && (seoTitle||title).length <= 60 },
+                      { label: "Meta desc. ≤ 160 car.", ok: (seoDesc||excerpt).length > 0 && (seoDesc||excerpt).length <= 160 },
+                      { label: "Contenu > 300 mots",    ok: wc > 300 },
+                      { label: "Image de couverture",   ok: !!coverUrl },
+                      { label: "Au moins 2 sections H2",ok: h2s.length >= 2 },
+                      { label: "Lien externe",          ok: extLinks.length >= 1 },
+                      { label: "Tags définis",          ok: tags.length > 0 },
+                      ...(kw ? [{ label: `Densité "${kw}" (0.5-3%)`, ok: kwDensity !== null && kwDensity >= 0.5 && kwDensity <= 3 }] : []),
+                    ].map(({ label, ok }) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                          style={{ background: ok ? "rgba(34,197,94,0.15)" : "rgba(148,163,184,0.1)" }}>
+                          {ok
+                            ? <CheckCircle2 size={10} style={{ color: "#22c55e" }} />
+                            : <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#94a3b8" }} />}
+                        </div>
+                        <span className="text-xs" style={{ color: ok ? t.text2 : t.text4 }}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Suggestions IA SEO */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold" style={{ color: t.text2 }}>Suggestions IA</p>
+                    <button
+                      disabled={seoTipsLoading || (!content.trim() && !title.trim())}
+                      onClick={async () => {
+                        setSeoTipsLoading(true);
+                        try {
+                          const res = await fetch("/api/blog/generate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ type: "seo_tips", title, content, seoTitle, seoDesc, focusKeyword }),
+                          });
+                          const json = await res.json();
+                          setSeoTips(json.tips ?? []);
+                        } finally { setSeoTipsLoading(false); }
+                      }}
+                      className="flex items-center gap-1 text-xs transition hover:opacity-70 disabled:opacity-40"
+                      style={{ color: GOLD }}
+                    >
+                      {seoTipsLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                      Analyser
+                    </button>
+                  </div>
+                  {seoTips.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {seoTips.map((tip, i) => (
+                        <div key={i} className="flex gap-2 rounded-xl p-2.5"
+                          style={{ background: `${GOLD}0a`, border: `1px solid ${GOLD}20` }}>
+                          <span className="text-[10px] font-bold shrink-0 mt-0.5" style={{ color: GOLD }}>{i + 1}.</span>
+                          <p className="text-[11px] leading-relaxed" style={{ color: t.text2 }}>{tip}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px]" style={{ color: t.text4 }}>
+                      Clique sur "Analyser" pour obtenir des recommandations personnalisées.
+                    </p>
+                  )}
+                </div>
+              </>;
+            })()}
           </div>
         </div>
       </div>

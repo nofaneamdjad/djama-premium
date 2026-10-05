@@ -29,12 +29,15 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) return NextResponse.json({ error: "IA non configurée" }, { status: 503 });
 
-  const { type, title, content, tags, selectedText } = await req.json() as {
-    type: "content" | "excerpt" | "improve" | "rewrite" | "expand" | "summarize" | "simplify" | "translate_en";
+  const { type, title, content, tags, selectedText, seoTitle, seoDesc, focusKeyword } = await req.json() as {
+    type: "content" | "excerpt" | "improve" | "rewrite" | "expand" | "summarize" | "simplify" | "translate_en" | "seo_tips";
     title?: string;
     content?: string;
     tags?: string[];
     selectedText?: string;
+    seoTitle?: string;
+    seoDesc?: string;
+    focusKeyword?: string;
   };
 
   try {
@@ -96,6 +99,33 @@ Utilise le Markdown. Écris en français. Ton : professionnel mais accessible.`,
       });
       const result = res.content[0].type === "text" ? res.content[0].text.trim() : "";
       return NextResponse.json({ result });
+    }
+
+    /* ── Analyse SEO ────────────────────────────────────────────────────── */
+    if (type === "seo_tips") {
+      if (!content?.trim() && !title?.trim()) return NextResponse.json({ error: "Contenu ou titre requis" }, { status: 400 });
+      const kwLine = focusKeyword ? `\nMot-clé cible : "${focusKeyword}"` : "";
+      const res = await ai.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 600,
+        system: "Tu es un expert SEO pour les entrepreneurs francophones. Tu donnes des recommandations concrètes, brèves et actionnables.",
+        messages: [{
+          role: "user",
+          content: `Analyse le SEO de cet article et donne exactement 5 recommandations courtes et actionnables (1-2 phrases chacune). Réponds en JSON : { "tips": ["...", "...", "...", "...", "..."] }${kwLine}
+
+Titre : ${title ?? ""}
+Titre SEO : ${seoTitle ?? ""}
+Meta desc. : ${seoDesc ?? ""}
+Contenu (extrait) : ${(content ?? "").slice(0, 2000)}`,
+        }],
+      });
+      try {
+        const raw = res.content[0].type === "text" ? res.content[0].text.trim() : "{}";
+        const json = JSON.parse(raw.replace(/^```json\n?/, "").replace(/\n?```$/, ""));
+        return NextResponse.json({ tips: json.tips ?? [] });
+      } catch {
+        return NextResponse.json({ tips: [] });
+      }
     }
 
     return NextResponse.json({ error: "Type invalide" }, { status: 400 });
