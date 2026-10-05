@@ -131,6 +131,61 @@ function getUpcomingItems(days = 7): { day: number; count: number }[] {
 }
 
 /* ─────────────────────────────────────────────────────────
+   STORAGE — Objectifs quotidiens (Phase 9)
+───────────────────────────────────────────────────────── */
+const DAILY_GOAL_KEY  = "djama_daily_goal";
+const DAILY_STATS_KEY = "djama_daily_stats";
+
+function loadDailyGoal(): number {
+  if (typeof window === "undefined") return 2;
+  try { return Number(localStorage.getItem(DAILY_GOAL_KEY) ?? "2"); } catch { return 2; }
+}
+function saveDailyGoal(n: number) {
+  try { localStorage.setItem(DAILY_GOAL_KEY, String(n)); } catch {}
+}
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
+interface DailyStats { date: string; count: number }
+
+function loadDailyStats(): DailyStats {
+  if (typeof window === "undefined") return { date: getTodayKey(), count: 0 };
+  try {
+    const raw = localStorage.getItem(DAILY_STATS_KEY);
+    const data = raw ? JSON.parse(raw) as DailyStats : null;
+    if (data?.date === getTodayKey()) return data;
+    return { date: getTodayKey(), count: 0 };
+  } catch { return { date: getTodayKey(), count: 0 }; }
+}
+function bumpDailyStats() {
+  const s = loadDailyStats();
+  try { localStorage.setItem(DAILY_STATS_KEY, JSON.stringify({ date: getTodayKey(), count: s.count + 1 })); } catch {}
+}
+
+/* ─────────────────────────────────────────────────────────
+   DONNÉES — Domaines de compétences transversales (Phase 9)
+───────────────────────────────────────────────────────── */
+const SKILL_DOMAINS = [
+  { id: "fondamentaux", label: "Fondamentaux IA",      moduleIds: ["1"],         color: "#06b6d4", icon: Brain },
+  { id: "prompting",    label: "Prompt Engineering",   moduleIds: ["2"],         color: "#8b5cf6", icon: Zap },
+  { id: "outils",       label: "Maîtrise des outils",  moduleIds: ["3","4","5"], color: "#f59e0b", icon: Sparkles },
+  { id: "automation",   label: "Automatisation",       moduleIds: ["6"],         color: "#10b981", icon: RefreshCw },
+  { id: "business",     label: "IA pour le Business",  moduleIds: ["7","8"],     color: "#ec4899", icon: Target },
+  { id: "avance",       label: "IA Avancée & Projet",  moduleIds: ["9","10"],    color: "#f97316", icon: Award },
+] as const;
+
+function getSkillLevel(pct: number): { label: string; color: string } {
+  if (pct === 0)   return { label: "Non commencé",  color: "#6b7280" };
+  if (pct < 25)    return { label: "Débutant",       color: "#ef4444" };
+  if (pct < 50)    return { label: "Intermédiaire",  color: "#f59e0b" };
+  if (pct < 75)    return { label: "Avancé",          color: "#3b82f6" };
+  if (pct < 100)   return { label: "Expert",          color: "#8b5cf6" };
+  return           { label: "Certifié",              color: "#34d399" };
+}
+
+/* ─────────────────────────────────────────────────────────
    TYPES
 ───────────────────────────────────────────────────────── */
 type View      = "dashboard" | "chapter" | "assistant" | "booking" | "favorites" | "jeux" | "progression";
@@ -3100,6 +3155,171 @@ function ExercicesPanel({ completed }: { completed: Set<string> }) {
    COMPOSANT — Progression
 ───────────────────────────────────────────────────────── */
 /* ─────────────────────────────────────────────────────────
+   COMPOSANT — Compétences & Objectifs (Phase 9)
+───────────────────────────────────────────────────────── */
+function CompetencesObjectifs({ completed }: { completed: Set<string> }) {
+  const { isDark } = useTheme();
+  const [showModules,  setShowModules]  = useState(false);
+  const [dailyGoal,    setDailyGoalSt]  = useState(() => loadDailyGoal());
+  const [dailyDone,    setDailyDone]    = useState(() => loadDailyStats().count);
+
+  function changeGoal(n: number) {
+    setDailyGoalSt(n);
+    saveDailyGoal(n);
+  }
+
+  const co = {
+    card:  isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-white shadow-sm",
+    gold:  "border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.06)]",
+    pri:   isDark ? "text-white"    : "text-[#0e1420]",
+    sec:   isDark ? "text-white/50" : "text-[#0e1420]/55",
+    mut:   isDark ? "text-white/30" : "text-[#0e1420]/35",
+    bar:   isDark ? "bg-white/[0.07]" : "bg-black/[0.07]",
+    lbl:   `text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`,
+    idle:  isDark ? "border-white/[0.07] text-white/40 hover:text-white/70" : "border-black/[0.07] text-[#0e1420]/40 hover:text-[#0e1420]/70",
+  };
+
+  // Calcul des domaines de compétences
+  const domainStats = SKILL_DOMAINS.map((domain) => {
+    const ids      = domain.moduleIds as readonly string[];
+    const modules  = COACHING_MODULES.filter((m) => ids.includes(m.id));
+    const total    = modules.reduce((a, m) => a + m.chapters.length, 0);
+    const done     = modules.reduce((a, m) => a + m.chapters.filter((c) => completed.has(c.id)).length, 0);
+    const pct      = total > 0 ? Math.round((done / total) * 100) : 0;
+    const level    = getSkillLevel(pct);
+    return { domain, total, done, pct, level };
+  });
+
+  const todayPct = Math.min(100, Math.round((dailyDone / dailyGoal) * 100));
+  const weekPct  = Math.min(100, Math.round((dailyDone / (dailyGoal * 5)) * 100));
+
+  return (
+    <div className="space-y-5">
+      <p className={co.lbl}>Compétences & Objectifs</p>
+
+      {/* Carte compétences transversales */}
+      <div className={`rounded-2xl border p-5 ${co.card}`}>
+        <p className={`mb-4 text-xs font-bold ${co.pri}`}>Compétences transversales</p>
+        <div className="space-y-3">
+          {domainStats.map(({ domain, pct, level, done, total }) => {
+            const Icon = domain.icon;
+            return (
+              <div key={domain.id}>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
+                      style={{ background: domain.color + "18", border: `1px solid ${domain.color}28` }}>
+                      <Icon size={11} style={{ color: domain.color }} />
+                    </div>
+                    <span className={`text-xs font-semibold ${co.pri}`}>{domain.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="rounded-full px-2 py-0.5 text-[0.5rem] font-black uppercase tracking-wide"
+                      style={{ background: level.color + "20", color: level.color }}>{level.label}</span>
+                    <span className={`text-xs font-bold tabular-nums`} style={{ color: level.color }}>{pct}%</span>
+                  </div>
+                </div>
+                <div className={`relative h-2 overflow-hidden rounded-full ${co.bar}`}>
+                  <motion.div className="absolute inset-y-0 left-0 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ background: `linear-gradient(90deg, ${domain.color}88, ${domain.color})` }} />
+                </div>
+                <p className={`mt-0.5 text-[0.55rem] ${co.mut}`}>
+                  {domain.moduleIds.map((id) => `M${id}`).join(", ")} · {done}/{total} ch.
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Toggle détail par module */}
+        <button onClick={() => setShowModules((s) => !s)}
+          className={`mt-4 flex items-center gap-1.5 text-[0.62rem] font-semibold transition ${co.sec} hover:text-[${GOLD}]`}>
+          <ChevronDown size={11} className={`transition-transform ${showModules ? "rotate-180" : ""}`} />
+          {showModules ? "Masquer" : "Voir le détail par module"}
+        </button>
+        {showModules && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 space-y-2">
+            {COACHING_MODULES.map((m) => {
+              const done = m.chapters.filter((c) => completed.has(c.id)).length;
+              const pct  = Math.round((done / m.chapters.length) * 100);
+              return (
+                <div key={m.id} className="flex items-center gap-3">
+                  <span className={`w-5 text-center text-[0.55rem] font-black ${co.mut}`}>{m.id}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className={`h-1 overflow-hidden rounded-full ${co.bar}`}>
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: m.color }} />
+                    </div>
+                  </div>
+                  <span className={`w-8 text-right text-[0.55rem] font-bold tabular-nums ${co.sec}`}>{pct}%</span>
+                </div>
+              );
+            })}
+          </motion.div>
+        )}
+      </div>
+
+      {/* Objectifs quotidiens */}
+      <div className={`rounded-2xl border p-5 ${co.card}`}>
+        <div className="mb-4 flex items-center justify-between">
+          <p className={`text-xs font-bold ${co.pri}`}>Objectif du jour</p>
+          <div className="flex items-center gap-1">
+            {[1, 2, 3].map((n) => (
+              <button key={n} onClick={() => changeGoal(n)}
+                className={`rounded-lg border px-2.5 py-1 text-[0.62rem] font-bold transition-all ${
+                  dailyGoal === n
+                    ? "border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.1)] text-[#c9a55a]"
+                    : co.idle
+                }`}>
+                {n} {n === 1 ? "ch." : "ch."}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Barre aujourd'hui */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className={`text-[0.62rem] ${co.mut}`}>Aujourd&apos;hui</span>
+            <span className={`text-[0.62rem] font-semibold ${dailyDone >= dailyGoal ? "text-[#34d399]" : co.sec}`}>
+              {dailyDone} / {dailyGoal} chapitres
+              {dailyDone >= dailyGoal && " ✓"}
+            </span>
+          </div>
+          <div className={`h-2.5 overflow-hidden rounded-full ${co.bar}`}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${todayPct}%` }}
+              transition={{ duration: 0.6 }}
+              className="h-full rounded-full"
+              style={{ background: dailyDone >= dailyGoal ? "#34d399" : `linear-gradient(90deg, ${GOLD}88, ${GOLD})` }} />
+          </div>
+        </div>
+
+        {/* Rythme hebdo estimé */}
+        <div className={`mt-4 flex items-center justify-between rounded-xl border p-3 ${isDark ? "border-white/[0.05] bg-white/[0.02]" : "border-black/[0.05] bg-black/[0.01]"}`}>
+          <div>
+            <p className={`text-[0.6rem] font-bold uppercase tracking-wider ${co.mut}`}>Rythme sur 5 jours</p>
+            <p className={`mt-0.5 text-xs font-semibold ${co.pri}`}>{dailyGoal * 5} chapitres / semaine</p>
+          </div>
+          <div className="text-right">
+            <p className={`text-[0.6rem] ${co.mut}`}>Programme en</p>
+            <p className="text-xs font-bold" style={{ color: GOLD }}>
+              {completed.size === 0
+                ? `~${Math.ceil(COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0) / (dailyGoal * 5))} sem.`
+                : `~${Math.ceil((COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0) - completed.size) / (dailyGoal * 5))} sem. restantes`
+              }
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    HELPERS — Calcul du parcours adaptatif
 ───────────────────────────────────────────────────────── */
 function computeParcours(completed: Set<string>) {
@@ -3408,33 +3628,8 @@ function ProgressionPanel({ completed, onSelectChapter, onSetView }: { completed
         </div>
       </div>
 
-      {/* Modules */}
-      <div>
-        <p className={`mb-4 ${dp.lbl}`}>Modules</p>
-        <div className="space-y-2">
-          {COACHING_MODULES.map((m) => {
-            const done = m.chapters.filter((c) => completed.has(c.id)).length;
-            const pct  = Math.round((done / m.chapters.length) * 100);
-            return (
-              <div key={m.id} className={`flex items-center gap-4 rounded-xl border p-3 ${dp.card}`}>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                  style={{ background: `${m.color}15`, border: `1px solid ${m.color}25` }}>
-                  {pct === 100
-                    ? <CheckCircle2 size={14} style={{ color: m.color }} />
-                    : <Circle size={14} style={{ color: m.color }} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-semibold truncate ${dp.pri}`}>{m.title}</p>
-                  <div className={`mt-1 h-1 rounded-full overflow-hidden ${dp.bar}`}>
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: m.color }} />
-                  </div>
-                </div>
-                <span className={`text-xs font-bold shrink-0 ${dp.sec}`}>{done}/{m.chapters.length}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Compétences & Objectifs (Phase 9) */}
+      <CompetencesObjectifs completed={completed} />
 
       {/* Certificat si 100% */}
       {overallPct === 100 && (
@@ -3777,6 +3972,7 @@ export default function EspaceCoachingIA() {
     setCompleted(next);
     saveProgress(next);
     bumpStreak();
+    bumpDailyStats();              // Phase 9 — objectif quotidien
     enqueueForReview(selectedChapterId); // Phase 8 — répétition espacée
     fetch("/api/coaching-ia/progress", {
       method: "POST",
