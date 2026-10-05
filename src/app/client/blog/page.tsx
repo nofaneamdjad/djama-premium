@@ -1395,6 +1395,200 @@ function ArticlesTable({
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   EDITORIAL CALENDAR
+══════════════════════════════════════════════════════════════════════ */
+const DAYS_FR  = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+
+function artCalDate(a: Article): string | null {
+  if (a.status === "published"  && a.published_at)  return a.published_at.slice(0, 10);
+  if (a.status === "planifie"   && a.scheduled_at)  return a.scheduled_at.slice(0, 10);
+  if (a.status === "archive") return null;
+  return a.created_at.slice(0, 10);
+}
+
+function CalendarView({
+  articles, isDark,
+  onEdit, onNew,
+}: {
+  articles: Article[];
+  isDark: boolean;
+  onEdit: (a: Article) => void;
+  onNew: (date: string) => void;
+}) {
+  const t = tok(isDark);
+  const today = new Date();
+  const [cur, setCur] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+
+  const year  = cur.getFullYear();
+  const month = cur.getMonth();
+
+  /* build calendar grid (Mon-first, 6 rows max) */
+  const firstDay = new Date(year, month, 1);
+  const lastDay  = new Date(year, month + 1, 0);
+  const startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
+  const totalCells = Math.ceil((startDow + lastDay.getDate()) / 7) * 7;
+
+  const cells: Date[] = [];
+  for (let i = 0; i < totalCells; i++) {
+    const d = new Date(year, month, 1 - startDow + i);
+    cells.push(d);
+  }
+
+  /* articles indexed by date string */
+  const byDate = new Map<string, Article[]>();
+  articles.forEach(a => {
+    const key = artCalDate(a);
+    if (!key) return;
+    if (!byDate.has(key)) byDate.set(key, []);
+    byDate.get(key)!.push(a);
+  });
+
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const todayStr = fmt(today);
+
+  function prev() { setCur(new Date(year, month - 1, 1)); }
+  function next() { setCur(new Date(year, month + 1, 1)); }
+  function goToday() { setCur(new Date(today.getFullYear(), today.getMonth(), 1)); }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={prev}
+            className="flex items-center justify-center w-8 h-8 rounded-xl transition hover:opacity-70"
+            style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <ChevronDown size={14} style={{ color: t.text2, transform: "rotate(90deg)" }} />
+          </button>
+          <h2 className="text-base font-bold min-w-[160px] text-center" style={{ color: t.text }}>
+            {MONTHS_FR[month]} {year}
+          </h2>
+          <button onClick={next}
+            className="flex items-center justify-center w-8 h-8 rounded-xl transition hover:opacity-70"
+            style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <ChevronDown size={14} style={{ color: t.text2, transform: "rotate(-90deg)" }} />
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={goToday}
+            className="px-3 py-1.5 rounded-xl text-xs font-medium transition hover:opacity-70"
+            style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}>
+            Aujourd'hui
+          </button>
+        </div>
+      </div>
+
+      {/* légende */}
+      <div className="flex flex-wrap gap-3">
+        {(Object.entries(STATUS_META) as [ArticleStatus, typeof STATUS_META[ArticleStatus]][])
+          .filter(([k]) => k !== "archive")
+          .map(([, v]) => (
+            <div key={v.label} className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: v.color }} />
+              <span className="text-[11px]" style={{ color: t.text3 }}>{v.label}</span>
+            </div>
+          ))}
+      </div>
+
+      {/* grid */}
+      <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${t.border}` }}>
+        {/* day headers */}
+        <div className="grid grid-cols-7" style={{ background: t.surface, borderBottom: `1px solid ${t.border}` }}>
+          {DAYS_FR.map(d => (
+            <div key={d} className="py-2.5 text-center text-xs font-semibold" style={{ color: t.text3 }}>{d}</div>
+          ))}
+        </div>
+
+        {/* weeks */}
+        {Array.from({ length: totalCells / 7 }).map((_, wi) => (
+          <div key={wi} className="grid grid-cols-7" style={{ borderBottom: wi < totalCells / 7 - 1 ? `1px solid ${t.border}` : "none" }}>
+            {cells.slice(wi * 7, wi * 7 + 7).map((date, di) => {
+              const dateStr  = fmt(date);
+              const inMonth  = date.getMonth() === month;
+              const isToday  = dateStr === todayStr;
+              const dayArts  = byDate.get(dateStr) ?? [];
+
+              return (
+                <div
+                  key={di}
+                  className="min-h-[90px] p-1.5 relative group"
+                  style={{
+                    borderLeft: di > 0 ? `1px solid ${t.border}` : "none",
+                    background: isToday ? (isDark ? "rgba(201,165,90,0.07)" : "rgba(201,165,90,0.05)") : "transparent",
+                    opacity: inMonth ? 1 : 0.35,
+                  }}
+                >
+                  {/* date number */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span
+                      className="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold"
+                      style={{
+                        background: isToday ? GOLD : "transparent",
+                        color: isToday ? "#111" : inMonth ? t.text2 : t.text4,
+                      }}
+                    >
+                      {date.getDate()}
+                    </span>
+                    {inMonth && (
+                      <button
+                        onClick={() => onNew(dateStr)}
+                        className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-5 h-5 rounded-md transition"
+                        style={{ background: t.glass }}
+                        title="Nouvel article"
+                      >
+                        <Plus size={10} style={{ color: GOLD }} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* articles du jour */}
+                  <div className="flex flex-col gap-0.5">
+                    {dayArts.slice(0, 3).map(a => (
+                      <button
+                        key={a.id}
+                        onClick={() => onEdit(a)}
+                        className="flex items-center gap-1 w-full rounded px-1 py-0.5 text-left text-[10px] truncate transition hover:opacity-75"
+                        style={{ background: `${STATUS_META[a.status].color}18`, color: STATUS_META[a.status].color }}
+                        title={a.title}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: STATUS_META[a.status].color }} />
+                        <span className="truncate">{a.title || "Sans titre"}</span>
+                      </button>
+                    ))}
+                    {dayArts.length > 3 && (
+                      <span className="text-[9px] pl-1" style={{ color: t.text4 }}>+{dayArts.length - 3} autre{dayArts.length - 3 > 1 ? "s" : ""}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* résumé du mois */}
+      {(() => {
+        const monthStr = `${year}-${String(month+1).padStart(2,"0")}`;
+        const monthArts = articles.filter(a => { const d = artCalDate(a); return d?.startsWith(monthStr); });
+        if (monthArts.length === 0) return null;
+        const pub = monthArts.filter(a => a.status === "published").length;
+        const plan = monthArts.filter(a => a.status === "planifie").length;
+        const wip = monthArts.filter(a => ["draft","en_redaction","a_valider"].includes(a.status)).length;
+        return (
+          <div className="flex gap-3 text-xs" style={{ color: t.text3 }}>
+            <span><b style={{ color: t.text }}>{monthArts.length}</b> article{monthArts.length > 1 ? "s" : ""} ce mois</span>
+            {pub  > 0 && <span>· <b style={{ color: "#22c55e" }}>{pub}</b> publié{pub > 1 ? "s" : ""}</span>}
+            {plan > 0 && <span>· <b style={{ color: "#a78bfa" }}>{plan}</b> planifié{plan > 1 ? "s" : ""}</span>}
+            {wip  > 0 && <span>· <b style={{ color: t.text2 }}>{wip}</b> en cours</span>}
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    CATEGORIES PANEL
 ══════════════════════════════════════════════════════════════════════ */
 function CategoriesPanel({
@@ -1653,6 +1847,11 @@ export default function BlogPage() {
     setEditorOpen(true);
   }
 
+  function openNewForDate(dateStr: string) {
+    setEditingArt({ title: "", slug: "", content: "", excerpt: "", tags: [], status: "planifie", scheduled_at: `${dateStr}T09:00:00` });
+    setEditorOpen(true);
+  }
+
   function openEdit(a: Article) {
     setEditingArt(a);
     setEditorOpen(true);
@@ -1823,7 +2022,16 @@ export default function BlogPage() {
           </motion.div>
         )}
 
-        {activeTab === "calendrier" && <ComingSoon label="Calendrier éditorial" Icon={Calendar} isDark={isDark} />}
+        {activeTab === "calendrier" && (
+          <div className="px-2 py-4">
+            <CalendarView
+              articles={articles}
+              isDark={isDark}
+              onEdit={openEdit}
+              onNew={openNewForDate}
+            />
+          </div>
+        )}
         {activeTab === "idees"      && <ComingSoon label="Idées de contenu"     Icon={Lightbulb} isDark={isDark} />}
         {activeTab === "seo"        && <ComingSoon label="Analyse SEO"          Icon={BarChart2} isDark={isDark} />}
         {activeTab === "analytics"  && <ComingSoon label="Analytics"            Icon={Eye}       isDark={isDark} />}
