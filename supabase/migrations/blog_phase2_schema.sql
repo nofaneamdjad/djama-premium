@@ -5,19 +5,24 @@
 
 -- ── 1. Colonnes additionnelles sur blog_articles ───────────────────────────
 ALTER TABLE blog_articles
-  ADD COLUMN IF NOT EXISTS category       text    DEFAULT 'Non classé',
-  ADD COLUMN IF NOT EXISTS seo_title      text    DEFAULT '',
-  ADD COLUMN IF NOT EXISTS seo_description text   DEFAULT '',
-  ADD COLUMN IF NOT EXISTS seo_image_url  text,
-  ADD COLUMN IF NOT EXISTS scheduled_at   timestamptz,
-  ADD COLUMN IF NOT EXISTS read_count     integer DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS word_count     integer DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS status          text    DEFAULT 'draft',
+  ADD COLUMN IF NOT EXISTS excerpt         text    DEFAULT '',
+  ADD COLUMN IF NOT EXISTS cover_url       text,
+  ADD COLUMN IF NOT EXISTS tags            text[]  DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS published_at    timestamptz,
+  ADD COLUMN IF NOT EXISTS category        text    DEFAULT 'Non classé',
+  ADD COLUMN IF NOT EXISTS seo_title       text    DEFAULT '',
+  ADD COLUMN IF NOT EXISTS seo_description text    DEFAULT '',
+  ADD COLUMN IF NOT EXISTS seo_image_url   text,
+  ADD COLUMN IF NOT EXISTS scheduled_at    timestamptz,
+  ADD COLUMN IF NOT EXISTS read_count      integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS word_count      integer DEFAULT 0;
 
 -- ── 2. Index performance ───────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS blog_articles_status    ON blog_articles(user_id, status);
 CREATE INDEX IF NOT EXISTS blog_articles_category  ON blog_articles(user_id, category);
-CREATE INDEX IF NOT EXISTS blog_articles_scheduled ON blog_articles(scheduled_at) WHERE status = 'planifie';
-CREATE INDEX IF NOT EXISTS blog_articles_published_public ON blog_articles(status, published_at DESC) WHERE status = 'published';
+CREATE INDEX IF NOT EXISTS blog_articles_scheduled ON blog_articles(scheduled_at) WHERE scheduled_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS blog_articles_published_public ON blog_articles(status, published_at DESC);
 
 -- ── 3. Trigger updated_at (idempotent) ────────────────────────────────────
 CREATE OR REPLACE FUNCTION set_blog_articles_updated_at()
