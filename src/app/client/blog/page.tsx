@@ -9,6 +9,7 @@ import {
   Clock, Tag, Eye, ArrowUpRight, AlertCircle, Loader2,
   CheckCircle2, BookOpen, Filter, ArrowUpDown,
   Wand2, RefreshCw, Minimize2, Expand, Feather,
+  ImageIcon, Link2, Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -130,9 +131,16 @@ function ArticleEditor({
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [aiTask,  setAiTask]  = useState<"excerpt" | "content" | null>(null);
-  const [selInfo, setSelInfo] = useState<{ start: number; end: number; text: string } | null>(null);
-  const [aiSelTask, setAiSelTask] = useState<string | null>(null);
-  const [copyPanel, setCopyPanel] = useState(false);
+  const [coverUrl,     setCoverUrl]     = useState((article as Article | null)?.cover_url ?? "");
+  const [selInfo,      setSelInfo]      = useState<{ start: number; end: number; text: string } | null>(null);
+  const [aiSelTask,    setAiSelTask]    = useState<string | null>(null);
+  const [imgPanel,     setImgPanel]     = useState(false);
+  const [imgTab,       setImgTab]       = useState<"upload" | "url">("upload");
+  const [imgUrl,       setImgUrl]       = useState("");
+  const [imgAlt,       setImgAlt]       = useState("");
+  const [imgUploading, setImgUploading] = useState(false);
+  const [copyPanel,    setCopyPanel]    = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -158,6 +166,7 @@ function ArticleEditor({
     const payload: Partial<Article> = {
       title, slug: slug || slugify(title), content, excerpt,
       tags, status, category,
+      cover_url: coverUrl || null,
       seo_title: seoTitle, seo_description: seoDesc,
       scheduled_at: status === "planifie" && scheduledAt ? new Date(scheduledAt).toISOString() : null,
       published_at: status === "published" ? (article?.published_at ?? new Date().toISOString()) : null,
@@ -220,6 +229,44 @@ function ArticleEditor({
     const { selectionStart: s, selectionEnd: e } = ta;
     if (s !== e) setSelInfo({ start: s, end: e, text: content.slice(s, e) });
     else setSelInfo(null);
+  }
+
+  async function uploadImageFile(file: File): Promise<string | null> {
+    setImgUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await fetch("/api/blog/upload-image", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error ?? "Erreur upload"); return null; }
+      return json.url as string;
+    } finally { setImgUploading(false); }
+  }
+
+  function insertImageMd(url: string, alt = "") {
+    const ta = textareaRef.current;
+    const md = `![${alt || "image"}](${url})`;
+    if (!ta) { setContent(c => c + "\n" + md + "\n"); return; }
+    const pos = ta.selectionStart;
+    const next = content.slice(0, pos) + "\n" + md + "\n" + content.slice(pos);
+    setContent(next);
+    setTimeout(() => { ta.focus(); ta.setSelectionRange(pos + md.length + 2, pos + md.length + 2); }, 0);
+  }
+
+  async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await uploadImageFile(file);
+    if (url) { insertImageMd(url, imgAlt); setImgPanel(false); setImgAlt(""); }
+    e.target.value = "";
+  }
+
+  async function handleImageDrop(e: React.DragEvent<HTMLTextAreaElement>) {
+    e.preventDefault();
+    const file = [...e.dataTransfer.files].find(f => f.type.startsWith("image/"));
+    if (!file) return;
+    const url = await uploadImageFile(file);
+    if (url) insertImageMd(url);
   }
 
   function insertMd(before: string, after = "") {
@@ -351,7 +398,106 @@ function ArticleEditor({
               {aiTask === "content" ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
               Générer avec DJAMA
             </button>
+            <button
+              onMouseDown={e => { e.preventDefault(); setImgPanel(p => !p); }}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition hover:opacity-70"
+              style={{ color: t.text2, background: t.glass, border: `1px solid ${t.border}` }}
+            >
+              <ImageIcon size={10} />
+              Image
+            </button>
           </div>
+
+          {/* panneau insertion image */}
+          <AnimatePresence>
+            {imgPanel && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="mb-3 rounded-xl overflow-hidden"
+                style={{ border: `1px solid ${t.border}`, background: t.surface }}
+              >
+                {/* tabs */}
+                <div className="flex" style={{ borderBottom: `1px solid ${t.border}` }}>
+                  {(["upload", "url"] as const).map(tab => (
+                    <button key={tab}
+                      onMouseDown={e => { e.preventDefault(); setImgTab(tab); }}
+                      className="flex-1 py-2 text-xs font-semibold transition"
+                      style={{
+                        color: imgTab === tab ? GOLD : t.text3,
+                        borderBottom: imgTab === tab ? `2px solid ${GOLD}` : "2px solid transparent",
+                        background: "transparent",
+                      }}
+                    >
+                      {tab === "upload" ? "Uploader" : "Par URL"}
+                    </button>
+                  ))}
+                  <button onMouseDown={e => { e.preventDefault(); setImgPanel(false); }}
+                    className="px-3 transition hover:opacity-70" style={{ color: t.text4 }}>
+                    <X size={12} />
+                  </button>
+                </div>
+
+                <div className="p-3 flex flex-col gap-2">
+                  {/* champ alt commun */}
+                  <input
+                    value={imgAlt}
+                    onChange={e => setImgAlt(e.target.value)}
+                    placeholder="Texte alternatif (optionnel)"
+                    className="w-full rounded-lg px-3 py-1.5 text-xs outline-none"
+                    style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                  />
+
+                  {imgTab === "upload" && (
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                        className="hidden"
+                        onChange={handleImageFileChange}
+                      />
+                      <button
+                        disabled={imgUploading}
+                        onMouseDown={e => { e.preventDefault(); fileInputRef.current?.click(); }}
+                        className="flex items-center justify-center gap-2 w-full rounded-lg py-5 text-xs transition hover:opacity-80 disabled:opacity-40"
+                        style={{ border: `2px dashed ${t.border}`, color: t.text3 }}
+                      >
+                        {imgUploading
+                          ? <><Loader2 size={14} className="animate-spin" /> Envoi en cours…</>
+                          : <><Upload size={14} /> Cliquer ou glisser une image (max 5 Mo)</>}
+                      </button>
+                    </div>
+                  )}
+
+                  {imgTab === "url" && (
+                    <div className="flex gap-2">
+                      <input
+                        value={imgUrl}
+                        onChange={e => setImgUrl(e.target.value)}
+                        placeholder="https://…"
+                        className="flex-1 rounded-lg px-3 py-1.5 text-xs outline-none"
+                        style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                      />
+                      <button
+                        disabled={!imgUrl.trim()}
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          if (imgUrl.trim()) { insertImageMd(imgUrl.trim(), imgAlt); setImgPanel(false); setImgUrl(""); setImgAlt(""); }
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40"
+                        style={{ background: GOLD, color: "#111" }}
+                      >
+                        <Link2 size={10} /> Insérer
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* barre IA contextuelle — apparaît quand du texte est sélectionné */}
           <AnimatePresence>
@@ -407,7 +553,9 @@ function ArticleEditor({
             onChange={e => setContent(e.target.value)}
             onMouseUp={checkSelection}
             onKeyUp={checkSelection}
-            placeholder="Commencez à écrire… (Markdown supporté)"
+            onDragOver={e => e.preventDefault()}
+            onDrop={handleImageDrop}
+            placeholder="Commencez à écrire… (Markdown supporté) — glissez une image ici"
             className="flex-1 w-full resize-none bg-transparent text-sm leading-relaxed outline-none font-mono placeholder:opacity-30"
             style={{ color: t.text, minHeight: "400px", border: "none" }}
           />
@@ -437,6 +585,50 @@ function ArticleEditor({
           <div className="flex flex-col gap-5 p-5 overflow-y-auto">
 
             {sideTab === "meta" && <>
+              {/* cover image */}
+              <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Image de couverture</p>
+                {coverUrl ? (
+                  <div className="relative rounded-xl overflow-hidden mb-2" style={{ aspectRatio: "16/9" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={coverUrl} alt="couverture" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => setCoverUrl("")}
+                      className="absolute top-1.5 right-1.5 flex items-center justify-center w-6 h-6 rounded-lg transition hover:opacity-80"
+                      style={{ background: "rgba(0,0,0,0.6)" }}
+                    >
+                      <Trash2 size={11} style={{ color: "#fff" }} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-1.5 w-full rounded-xl py-5 cursor-pointer transition hover:opacity-80"
+                    style={{ border: `2px dashed ${t.border}`, color: t.text4 }}>
+                    {imgUploading
+                      ? <Loader2 size={16} className="animate-spin" style={{ color: GOLD }} />
+                      : <><ImageIcon size={16} /><span className="text-xs">Ajouter une couverture</span></>}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                      className="hidden"
+                      onChange={async e => {
+                        const file = e.target.files?.[0];
+                        if (file) { const url = await uploadImageFile(file); if (url) setCoverUrl(url); }
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+                {coverUrl && (
+                  <input
+                    value={coverUrl}
+                    onChange={e => setCoverUrl(e.target.value)}
+                    placeholder="URL de l'image…"
+                    className="w-full rounded-xl px-3 py-2 text-xs outline-none mt-1"
+                    style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text3 }}
+                  />
+                )}
+              </div>
+
               {/* category */}
               <div>
                 <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Catégorie</p>
