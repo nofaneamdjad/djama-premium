@@ -3612,7 +3612,205 @@ function ParcoursPersonnalise({
   );
 }
 
-function ProgressionPanel({ completed, onSelectChapter, onSetView }: { completed: Set<string>; onSelectChapter: (id: string) => void; onSetView: (v: View) => void }) {
+/* ─────────────────────────────────────────────────────────
+   CERTIFICAT DJAMA (Phase 11)
+   Rendu visuel CSS + export PNG via Canvas API
+───────────────────────────────────────────────────────── */
+function CertificatDJAMA({
+  userName, completedCount, totalChapters, xp, doneModules, overallPct,
+}: {
+  userName:       string;
+  completedCount: number;
+  totalChapters:  number;
+  xp:             number;
+  doneModules:    number;
+  overallPct:     number;
+}) {
+  const dateStr  = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const isFull   = overallPct === 100;
+  const certName = userName || "Apprenant DJAMA";
+
+  function downloadPNG() {
+    const W = 800, H = 560;
+    const canvas = document.createElement("canvas");
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Fond
+    ctx.fillStyle = "#07080e";
+    ctx.fillRect(0, 0, W, H);
+
+    // Gradient overlay
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, "rgba(201,165,90,0.06)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Bordures
+    ctx.strokeStyle = "#c9a55a";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(18, 18, W - 36, H - 36);
+    ctx.strokeStyle = "rgba(201,165,90,0.3)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(26, 26, W - 52, H - 52);
+
+    // Coins décoratifs
+    const corner = (x: number, y: number, sx: number, sy: number) => {
+      ctx.strokeStyle = "rgba(201,165,90,0.7)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + sx * 22, y); ctx.lineTo(x, y); ctx.lineTo(x, y + sy * 22);
+      ctx.stroke();
+    };
+    corner(33, 33, 1, 1); corner(W - 33, 33, -1, 1);
+    corner(33, H - 33, 1, -1); corner(W - 33, H - 33, -1, -1);
+
+    // DJAMA
+    ctx.fillStyle = "#c9a55a";
+    ctx.font = "bold 11px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("D J A M A", W / 2, 72);
+
+    // Séparateur
+    ctx.strokeStyle = "rgba(201,165,90,0.35)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W / 2 - 60, 82); ctx.lineTo(W / 2 + 60, 82); ctx.stroke();
+
+    // Titre
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 30px Georgia, serif";
+    ctx.fillText(isFull ? "Certificat de Formation" : "Attestation de Progression", W / 2, 125);
+
+    // Sous-titre
+    ctx.fillStyle = "#c9a55a";
+    ctx.font = "15px Arial";
+    ctx.fillText("Coaching IA DJAMA", W / 2, 156);
+
+    // "certifie que"
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.font = "13px Arial";
+    ctx.fillText("certifie que", W / 2, 200);
+
+    // Nom
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 34px Georgia, serif";
+    ctx.fillText(certName, W / 2, 246);
+
+    // Trait sous le nom
+    const nw = ctx.measureText(certName).width;
+    ctx.strokeStyle = "rgba(201,165,90,0.5)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W / 2 - nw / 2, 256); ctx.lineTo(W / 2 + nw / 2, 256); ctx.stroke();
+
+    // Corps
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.font = "13px Arial";
+    if (isFull) {
+      ctx.fillText("a complété avec succès les 10 modules du programme Coaching IA DJAMA,", W / 2, 292);
+      ctx.fillText(`soit ${completedCount} chapitres pour un total de ${xp} XP.`, W / 2, 312);
+    } else {
+      ctx.fillText(`a complété ${doneModules} module${doneModules > 1 ? "s" : ""} sur 10 du programme Coaching IA DJAMA,`, W / 2, 292);
+      ctx.fillText(`soit ${completedCount} chapitres (${overallPct}%) pour un total de ${xp} XP.`, W / 2, 312);
+    }
+
+    // Date
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.font = "12px Arial";
+    ctx.fillText(`Délivré le ${dateStr}`, W / 2, 356);
+
+    // Stats
+    ctx.fillStyle = "#c9a55a";
+    ctx.font = "bold 10px Arial";
+    ctx.fillText(`${doneModules}/10 MODULES  ·  ${completedCount}/${totalChapters} CHAPITRES  ·  ${xp} XP`, W / 2, 398);
+
+    // Disclaimer
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    ctx.font = "9px Arial";
+    ctx.fillText("Certificat de formation interne DJAMA — non accrédité par un organisme officiel de certification", W / 2, 440);
+
+    // Déclenchement téléchargement
+    const link    = document.createElement("a");
+    link.download = isFull ? "certificat-djama-coaching-ia.png" : "attestation-djama-progression.png";
+    link.href     = canvas.toDataURL("image/png");
+    link.click();
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+      className="overflow-hidden rounded-2xl border border-[rgba(201,165,90,0.3)]"
+      style={{ background: "linear-gradient(135deg, rgba(201,165,90,0.04), rgba(0,0,0,0))" }}>
+
+      {/* Preview visuel */}
+      <div className="relative p-8 text-center" style={{ background: "linear-gradient(135deg, #07080e, #0c0d13)" }}>
+        {/* Cadre décoratif */}
+        <div className="pointer-events-none absolute inset-4 rounded-xl border border-[rgba(201,165,90,0.18)]" />
+        <div className="pointer-events-none absolute inset-6 rounded-xl border border-[rgba(201,165,90,0.08)]" />
+        {/* Coins */}
+        {[["top-7 left-7", "border-t-2 border-l-2 rounded-tl"], ["top-7 right-7", "border-t-2 border-r-2 rounded-tr"], ["bottom-7 left-7", "border-b-2 border-l-2 rounded-bl"], ["bottom-7 right-7", "border-b-2 border-r-2 rounded-br"]].map(([pos, border]) => (
+          <div key={pos} className={`absolute ${pos} h-5 w-5 border-[rgba(201,165,90,0.55)] ${border}`} />
+        ))}
+
+        <p className="mb-4 text-[0.5rem] font-black uppercase tracking-[0.4em] text-[#c9a55a]">D&nbsp;J&nbsp;A&nbsp;M&nbsp;A</p>
+
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.1)]">
+          <Award size={28} className="text-[#c9a55a]" />
+        </div>
+
+        <h3 className="text-xl font-black text-white">
+          {isFull ? "Certificat de Formation" : "Attestation de Progression"}
+        </h3>
+        <p className="mt-0.5 text-xs font-semibold text-[#c9a55a]">Coaching IA DJAMA</p>
+
+        <p className="mt-5 text-[0.65rem] text-white/35">certifie que</p>
+        <p className="mt-1 text-xl font-black text-white">{certName}</p>
+        <div className="mx-auto my-3 h-px w-40" style={{ background: "linear-gradient(90deg, transparent, rgba(201,165,90,0.5), transparent)" }} />
+
+        <p className="text-xs text-white/50 leading-relaxed">
+          {isFull
+            ? <>a complété avec succès les 10 modules du programme,<br />{completedCount} chapitres · {xp} XP</>
+            : <>{doneModules} module{doneModules > 1 ? "s" : ""} complété{doneModules > 1 ? "s" : ""} sur 10 · {completedCount} chapitres ({overallPct}%) · {xp} XP</>
+          }
+        </p>
+
+        <p className="mt-4 text-[0.6rem] text-white/25">Délivré le {dateStr}</p>
+
+        {!isFull && (
+          <div className="mt-4">
+            <div className="mx-auto mb-1 h-1 w-48 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-[#c9a55a]" style={{ width: `${overallPct}%` }} />
+            </div>
+            <p className="text-[0.55rem] text-white/20">{overallPct}% du programme complété</p>
+          </div>
+        )}
+
+        <p className="mt-5 text-[0.5rem] text-white/15">
+          Certificat de formation interne DJAMA — non accrédité par un organisme officiel de certification
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between border-t border-[rgba(201,165,90,0.15)] px-5 py-4">
+        <div>
+          <p className="text-xs font-bold text-white">{isFull ? "Formation complète" : `${doneModules}/10 modules terminés`}</p>
+          <p className="text-[0.58rem] text-white/30">{xp} XP · {completedCount}/{totalChapters} chapitres</p>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+          onClick={downloadPNG}
+          className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-black"
+          style={{ background: "linear-gradient(135deg, #c9a55a, #a07840)" }}
+        >
+          <Download size={11} /> Télécharger PNG
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
+function ProgressionPanel({ completed, onSelectChapter, onSetView, userName }: { completed: Set<string>; onSelectChapter: (id: string) => void; onSetView: (v: View) => void; userName?: string }) {
   const { isDark } = useTheme();
   const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
   const completedCount = completed.size;
@@ -3719,22 +3917,19 @@ function ProgressionPanel({ completed, onSelectChapter, onSetView }: { completed
       {/* Compétences & Objectifs (Phase 9) */}
       <CompetencesObjectifs completed={completed} />
 
-      {/* Certificat si 100% */}
-      {overallPct === 100 && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          className="overflow-hidden rounded-2xl border border-[rgba(52,211,153,0.3)] bg-gradient-to-br from-[rgba(52,211,153,0.06)] to-[rgba(52,211,153,0.02)] p-7 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.08)]">
-            <Award size={32} className="text-[#34d399]" />
-          </div>
-          <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#34d399] mb-2">Certificat DJAMA</p>
-          <h3 className={`text-lg font-extrabold ${dp.pri}`}>Formation complétée</h3>
-          <p className={`mt-1 text-sm ${dp.sec}`}>
-            {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-          </p>
-          <p className={`mt-2 text-xs ${dp.mut}`}>
-            Certificat DJAMA · {totalChapters} chapitres · {xp} XP
-          </p>
-        </motion.div>
+      {/* Certificat DJAMA (Phase 11) — visible dès 1 module complété */}
+      {doneModules >= 1 && (
+        <div>
+          <p className={`mb-4 ${dp.lbl}`}>Certificat</p>
+          <CertificatDJAMA
+            userName={userName ?? ""}
+            completedCount={completedCount}
+            totalChapters={totalChapters}
+            xp={xp}
+            doneModules={doneModules}
+            overallPct={overallPct}
+          />
+        </div>
       )}
     </div>
   );
@@ -4423,6 +4618,7 @@ export default function EspaceCoachingIA() {
                   completed={completed}
                   onSelectChapter={(chapterId) => selectChapter(chapterId.split(".")[0] ?? "1", chapterId)}
                   onSetView={setView}
+                  userName={user?.name ?? user?.email}
                 />
               </motion.div>
             )}
