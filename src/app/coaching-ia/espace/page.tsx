@@ -2367,10 +2367,27 @@ export default function EspaceCoachingIA() {
   const [focusMode,         setFocusMode]         = useState(false);
   const [assistantInitMsg,  setAssistantInitMsg]  = useState<string | undefined>();
 
-  /* ── Load from localStorage ────────────────────────────── */
+  /* ── Load from localStorage + sync Supabase ───────────── */
   useEffect(() => {
-    setCompleted(loadProgress());
+    // 1. Instant hydration from localStorage
+    const local = loadProgress();
+    setCompleted(local);
     setFavorites(loadFavorites());
+
+    // 2. Enroll silently (idempotent)
+    fetch("/api/coaching-ia/enroll", { method: "POST" }).catch(() => {});
+
+    // 3. Merge Supabase progress → localStorage wins on conflict
+    fetch("/api/coaching-ia/progress")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { completed: string[] } | null) => {
+        if (!data?.completed?.length) return;
+        const merged = new Set([...local, ...data.completed]);
+        if (merged.size === local.size) return; // nothing new
+        setCompleted(merged);
+        saveProgress(merged);
+      })
+      .catch(() => {});
   }, []);
 
   /* ── Helpers ───────────────────────────────────────────── */
@@ -2403,6 +2420,12 @@ export default function EspaceCoachingIA() {
     setCompleted(next);
     saveProgress(next);
     bumpStreak();
+    // Sync vers Supabase (fire-and-forget, localStorage est le source de vérité offline)
+    fetch("/api/coaching-ia/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ legacy_id: selectedChapterId, completed: true }),
+    }).catch(() => {});
   }
 
   function toggleFavorite() {
