@@ -1016,10 +1016,12 @@ function AssistantPanel({
   initMessage?:    string;
   onInitConsumed:  () => void;
 }) {
+  type CoachMode = "direct" | "socratic" | "exercise";
   const { isDark } = useTheme();
+  const [mode,    setMode]    = useState<CoachMode>("direct");
   const [messages, setMessages] = useState<Msg[]>([{
     role:    "assistant",
-    content: "Bonjour ! Je suis votre assistant pédagogique IA. Posez-moi vos questions sur le programme, les concepts IA, ou demandez-moi de l'aide pour les exercices.",
+    content: "Bonjour ! Je suis votre Coach IA Pédagogique DJAMA. Choisissez un mode ci-dessus, puis posez vos questions sur les 10 modules ou demandez un exercice pratique.",
   }]);
   const [input,   setInput]   = useState(initMessage ?? "");
   const [loading, setLoading] = useState(false);
@@ -1048,7 +1050,7 @@ function AssistantPanel({
       const res = await fetch("/api/coaching-ia/assistant", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ messages: newMessages, context: currentContext }),
+        body:    JSON.stringify({ messages: newMessages, context: currentContext, mode }),
       });
       const data = await res.json() as { reply?: string; error?: string };
       setMessages([...newMessages, {
@@ -1062,12 +1064,26 @@ function AssistantPanel({
     }
   }
 
-  const SUGGESTIONS = [
-    "Explique-moi les tokens de façon simple",
-    "Donne-moi un exemple de prompt chain-of-thought",
-    "Quels outils IA pour un freelance ?",
-    "Comment mesurer le ROI de l'IA dans mon business ?",
-  ];
+  const SUGGESTIONS = mode === "socratic"
+    ? [
+        "Par où commencer pour comprendre les LLMs ?",
+        "Qu'est-ce que le prompting selon toi ?",
+        "Pourquoi mes prompts ne donnent pas les résultats voulus ?",
+        "Comment choisir entre ChatGPT et Claude ?",
+      ]
+    : mode === "exercise"
+    ? [
+        "Lance-moi un exercice sur le prompt engineering",
+        "Teste mes connaissances sur les agents IA",
+        "Exercice : rédige un prompt pour mon secteur",
+        "Donne-moi un défi d'automatisation",
+      ]
+    : [
+        "Explique-moi les tokens de façon simple",
+        "Donne-moi un exemple de prompt chain-of-thought",
+        "Quels outils IA pour un entrepreneur ?",
+        "Comment mesurer le ROI de l'IA ?",
+      ];
 
   const aDivider  = isDark ? "border-white/[0.07]"  : "border-black/6";
   const aTitleSec = isDark ? "text-white/30"         : "text-[#0e1420]/35";
@@ -1083,37 +1099,93 @@ function AssistantPanel({
     ? "border border-white/[0.07] bg-white/[0.04]"
     : "border border-black/[0.08] bg-white shadow-sm";
   const aInputWrap= isDark
-    ? "border-white/[0.09] bg-white/[0.04] focus-within:border-[rgba(167,139,250,0.4)]"
-    : "border-black/10 bg-white shadow-sm focus-within:border-[rgba(167,139,250,0.4)]";
+    ? "border-white/[0.09] bg-white/[0.04] focus-within:border-[rgba(201,165,90,0.4)]"
+    : "border-black/10 bg-white shadow-sm focus-within:border-[rgba(201,165,90,0.35)]";
   const aInputTxt = isDark ? "text-white placeholder-white/25" : "text-[#0e1420] placeholder-[#0e1420]/30";
   const aHintTxt  = isDark ? "text-white/15" : "text-[#0e1420]/20";
   const aTitlePri = isDark ? "text-white" : "text-[#0e1420]";
 
   return (
     <div className="flex h-[calc(100vh-56px)] flex-col">
-      <div className={`border-b px-6 py-4 ${aDivider}`}>
-        <div className="flex items-center gap-3">
+      <div className={`border-b ${aDivider}`}>
+        {/* Titre */}
+        <div className="flex items-center gap-3 px-6 pt-4 pb-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(167,139,250,0.15)]">
             <Bot size={17} className="text-[#a78bfa]" />
           </div>
           <div>
-            <h2 className={`text-sm font-bold ${aTitlePri}`}>Assistant Pédagogique IA</h2>
-            <p className={`text-[0.65rem] ${aTitleSec}`}>Spécialisé sur le programme Coaching IA DJAMA</p>
+            <h2 className={`text-sm font-bold ${aTitlePri}`}>Coach IA Pédagogique DJAMA</h2>
+            <p className={`text-[0.65rem] ${aTitleSec}`}>10 modules · 3 modes d&apos;apprentissage</p>
           </div>
-          <div className="ml-auto h-2 w-2 rounded-full bg-[#34d399] shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+          <div className="ml-auto flex items-center gap-1.5">
+            <div className="h-1.5 w-1.5 rounded-full bg-[#34d399] shadow-[0_0_5px_rgba(52,211,153,0.5)]" />
+            <span className={`text-[0.6rem] ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`}>En ligne</span>
+          </div>
+        </div>
+        {/* Sélecteur de mode */}
+        <div className="flex items-center gap-1 px-4 pb-3">
+          {([
+            { key: "direct",   label: "Expliquer",   icon: BookOpen,   desc: "Réponses directes" },
+            { key: "socratic", label: "Questionner",  icon: HelpCircle, desc: "Mode socratique" },
+            { key: "exercise", label: "S'entraîner",  icon: Zap,        desc: "Exercices pratiques" },
+          ] as { key: "direct"|"socratic"|"exercise"; label: string; icon: React.ElementType; desc: string }[]).map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setMode(key)}
+              title={label}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                mode === key
+                  ? "border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.1)] text-[#c9a55a]"
+                  : isDark
+                    ? "text-white/35 hover:bg-white/[0.05] hover:text-white/70"
+                    : "text-[#0e1420]/35 hover:bg-black/[0.04] hover:text-[#0e1420]/70"
+              }`}
+            >
+              <Icon size={12} />
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
         {messages.length === 1 && (
-          <div className="grid grid-cols-2 gap-2">
-            {SUGGESTIONS.map((s) => (
-              <button key={s} onClick={() => sendMessage(s)}
-                className={`rounded-xl border px-3 py-2.5 text-left text-xs transition ${aSugBtn}`}
-              >
-                {s}
-              </button>
-            ))}
+          <div className="space-y-3">
+            {/* Actions rapides contextuelles (si chapitre en cours) */}
+            {currentContext && (
+              <div>
+                <p className={`mb-2 text-[0.6rem] font-semibold uppercase tracking-wider ${aTitleSec}`}>
+                  Actions rapides — chapitre en cours
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    "Résume ce chapitre",
+                    "Donne-moi un exemple concret",
+                    "Crée un quiz rapide",
+                    "Propose-moi un exercice",
+                  ].map((s) => (
+                    <button key={s} onClick={() => sendMessage(s)}
+                      className={`rounded-lg border px-3 py-1.5 text-xs transition ${aSugBtn}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Suggestions selon le mode */}
+            <div>
+              <p className={`mb-2 text-[0.6rem] font-semibold uppercase tracking-wider ${aTitleSec}`}>
+                {mode === "socratic" ? "Sujets à explorer" : mode === "exercise" ? "Exercices disponibles" : "Questions fréquentes"}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {SUGGESTIONS.map((s) => (
+                  <button key={s} onClick={() => sendMessage(s)}
+                    className={`rounded-xl border px-3 py-2.5 text-left text-xs transition ${aSugBtn}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
         {messages.map((msg, i) => (
