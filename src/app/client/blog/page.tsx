@@ -38,6 +38,13 @@ interface Article {
   tags: string[];
   status: ArticleStatus;
   published_at: string | null;
+  scheduled_at: string | null;
+  category: string;
+  seo_title: string;
+  seo_description: string;
+  seo_image_url: string | null;
+  read_count: number;
+  word_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -107,13 +114,18 @@ function ArticleEditor({
 }) {
   const t = tok(isDark);
   const isNew = !article?.id;
-  const [title,   setTitle]   = useState(article?.title   ?? "");
-  const [slug,    setSlug]    = useState(article?.slug    ?? "");
-  const [content, setContent] = useState(article?.content ?? "");
-  const [excerpt, setExcerpt] = useState(article?.excerpt ?? "");
-  const [tags,    setTags]    = useState<string[]>(article?.tags ?? []);
-  const [status,  setStatus]  = useState<ArticleStatus>((article?.status as ArticleStatus) ?? "draft");
-  const [tagInput, setTagInput] = useState("");
+  const [title,       setTitle]       = useState(article?.title           ?? "");
+  const [slug,        setSlug]        = useState(article?.slug            ?? "");
+  const [content,     setContent]     = useState(article?.content         ?? "");
+  const [excerpt,     setExcerpt]     = useState(article?.excerpt         ?? "");
+  const [tags,        setTags]        = useState<string[]>(article?.tags  ?? []);
+  const [status,      setStatus]      = useState<ArticleStatus>((article?.status as ArticleStatus) ?? "draft");
+  const [category,    setCategory]    = useState((article as Article | null)?.category    ?? "Non classé");
+  const [seoTitle,    setSeoTitle]    = useState((article as Article | null)?.seo_title   ?? "");
+  const [seoDesc,     setSeoDesc]     = useState((article as Article | null)?.seo_description ?? "");
+  const [scheduledAt, setScheduledAt] = useState((article as Article | null)?.scheduled_at?.slice(0, 16) ?? "");
+  const [sideTab,     setSideTab]     = useState<"meta" | "seo">("meta");
+  const [tagInput,    setTagInput]    = useState("");
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [aiTask,  setAiTask]  = useState<"excerpt" | "content" | null>(null);
@@ -142,7 +154,9 @@ function ArticleEditor({
     setSaving(true);
     const payload: Partial<Article> = {
       title, slug: slug || slugify(title), content, excerpt,
-      tags, status,
+      tags, status, category,
+      seo_title: seoTitle, seo_description: seoDesc,
+      scheduled_at: status === "planifie" && scheduledAt ? new Date(scheduledAt).toISOString() : null,
       published_at: status === "published" ? (article?.published_at ?? new Date().toISOString()) : null,
       updated_at: new Date().toISOString(),
     };
@@ -318,73 +332,196 @@ function ArticleEditor({
         </div>
 
         {/* right sidebar metadata */}
-        <div className="hidden lg:flex flex-col w-72 shrink-0 overflow-y-auto p-5 gap-5"
+        <div className="hidden lg:flex flex-col w-72 shrink-0 overflow-y-auto"
           style={{ borderLeft: `1px solid ${t.border}`, background: t.surface }}>
 
-          {/* excerpt */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold" style={{ color: t.text2 }}>Extrait SEO</span>
+          {/* sidebar tabs */}
+          <div className="flex gap-0 shrink-0" style={{ borderBottom: `1px solid ${t.border}` }}>
+            {(["meta", "seo"] as const).map(tab => (
               <button
-                disabled={!!aiTask}
-                onClick={() => generateAI("excerpt")}
-                className="flex items-center gap-1 text-xs transition hover:opacity-70 disabled:opacity-40"
-                style={{ color: GOLD }}
+                key={tab}
+                onClick={() => setSideTab(tab)}
+                className="flex-1 py-3 text-xs font-semibold transition"
+                style={{
+                  color: sideTab === tab ? GOLD : t.text3,
+                  borderBottom: sideTab === tab ? `2px solid ${GOLD}` : "2px solid transparent",
+                }}
               >
-                {aiTask === "excerpt" ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                Auto
+                {tab === "meta" ? "Métadonnées" : "SEO"}
               </button>
-            </div>
-            <textarea
-              value={excerpt}
-              onChange={e => setExcerpt(e.target.value)}
-              rows={3}
-              placeholder="Description courte pour les moteurs de recherche…"
-              className="w-full resize-none rounded-xl p-3 text-xs leading-relaxed outline-none"
-              style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
-            />
-            <p className="text-[10px] mt-1" style={{ color: t.text4 }}>{excerpt.length}/160 caractères</p>
+            ))}
           </div>
 
-          {/* tags */}
-          <div>
-            <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Tags</p>
-            <div className="flex flex-wrap gap-1 mb-2">
-              {tags.map(tag => (
-                <span key={tag} className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
-                  style={{ background: `${GOLD}15`, color: GOLD, border: `1px solid ${GOLD}25` }}>
-                  {tag}
-                  <button onClick={() => setTags(t => t.filter(x => x !== tag))}>
-                    <X size={9} />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <input
-              value={tagInput}
-              onChange={e => setTagInput(e.target.value)}
-              onKeyDown={addTag}
-              placeholder="Ajouter un tag (Entrée)"
-              className="w-full rounded-xl px-3 py-2 text-xs outline-none"
-              style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
-            />
-          </div>
+          <div className="flex flex-col gap-5 p-5 overflow-y-auto">
 
-          {/* public link */}
-          {!isNew && article?.id && (
-            <div>
-              <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Lien public</p>
-              <div className="flex items-center gap-2 rounded-xl p-2"
-                style={{ background: t.glass, border: `1px solid ${t.border}` }}>
-                <span className="flex-1 text-xs truncate" style={{ color: t.text4 }}>
-                  /blogs/…/{slug || "—"}
-                </span>
-                <Link href={`/blogs/${userId}/${slug}`} target="_blank">
-                  <ExternalLink size={12} style={{ color: t.text3 }} />
-                </Link>
+            {sideTab === "meta" && <>
+              {/* category */}
+              <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Catégorie</p>
+                <input
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                  placeholder="Ex : Marketing, IA, Finance…"
+                  className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                />
               </div>
-            </div>
-          )}
+
+              {/* tags */}
+              <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Tags</p>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {tags.map(tag => (
+                    <span key={tag} className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
+                      style={{ background: `${GOLD}15`, color: GOLD, border: `1px solid ${GOLD}25` }}>
+                      {tag}
+                      <button onClick={() => setTags(prev => prev.filter(x => x !== tag))}>
+                        <X size={9} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <input
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={addTag}
+                  placeholder="Ajouter un tag (Entrée)"
+                  className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                />
+              </div>
+
+              {/* scheduled_at — visible uniquement si statut planifié */}
+              {status === "planifie" && (
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Date de publication</p>
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={e => setScheduledAt(e.target.value)}
+                    className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+                    style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                  />
+                </div>
+              )}
+
+              {/* excerpt */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold" style={{ color: t.text2 }}>Extrait</span>
+                  <button
+                    disabled={!!aiTask}
+                    onClick={() => generateAI("excerpt")}
+                    className="flex items-center gap-1 text-xs transition hover:opacity-70 disabled:opacity-40"
+                    style={{ color: GOLD }}
+                  >
+                    {aiTask === "excerpt" ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                    Auto
+                  </button>
+                </div>
+                <textarea
+                  value={excerpt}
+                  onChange={e => setExcerpt(e.target.value)}
+                  rows={3}
+                  placeholder="Résumé de l'article…"
+                  className="w-full resize-none rounded-xl p-3 text-xs leading-relaxed outline-none"
+                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                />
+              </div>
+
+              {/* public link */}
+              {!isNew && article?.id && (
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Lien public</p>
+                  <div className="flex items-center gap-2 rounded-xl p-2"
+                    style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                    <span className="flex-1 text-xs truncate" style={{ color: t.text4 }}>
+                      /blogs/…/{slug || "—"}
+                    </span>
+                    <Link href={`/blogs/${userId}/${slug}`} target="_blank">
+                      <ExternalLink size={12} style={{ color: t.text3 }} />
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </>}
+
+            {sideTab === "seo" && <>
+              {/* SEO title */}
+              <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Titre SEO</p>
+                <input
+                  value={seoTitle}
+                  onChange={e => setSeoTitle(e.target.value)}
+                  placeholder={title || "Titre pour les moteurs de recherche…"}
+                  className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                />
+                <p className="text-[10px] mt-1" style={{ color: (seoTitle || title).length > 60 ? "#ef4444" : t.text4 }}>
+                  {(seoTitle || title).length}/60 caractères
+                </p>
+              </div>
+
+              {/* Meta description */}
+              <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Meta description</p>
+                <textarea
+                  value={seoDesc}
+                  onChange={e => setSeoDesc(e.target.value)}
+                  rows={3}
+                  placeholder={excerpt || "Description pour Google…"}
+                  className="w-full resize-none rounded-xl p-3 text-xs leading-relaxed outline-none"
+                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                />
+                <p className="text-[10px] mt-1" style={{ color: (seoDesc || excerpt).length > 160 ? "#ef4444" : t.text4 }}>
+                  {(seoDesc || excerpt).length}/160 caractères
+                </p>
+              </div>
+
+              {/* Aperçu Google */}
+              <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Aperçu Google</p>
+                <div className="rounded-xl p-3" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                  <p className="text-[11px] mb-0.5" style={{ color: t.text4 }}>djama.space › blogs</p>
+                  <p className="text-sm font-semibold leading-snug line-clamp-2" style={{ color: "#1a73e8" }}>
+                    {seoTitle || title || "Titre de l'article"}
+                  </p>
+                  <p className="text-xs mt-1 line-clamp-2 leading-relaxed" style={{ color: "#4d5156" }}>
+                    {seoDesc || excerpt || "La description de l'article apparaîtra ici dans les résultats de recherche."}
+                  </p>
+                </div>
+                <p className="text-[10px] mt-1.5" style={{ color: t.text4 }}>
+                  Aperçu indicatif — rendu non garanti par Google
+                </p>
+              </div>
+
+              {/* Checklist SEO basique */}
+              <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Checklist SEO</p>
+                <div className="flex flex-col gap-1.5">
+                  {[
+                    { label: "Titre renseigné",        ok: !!title.trim()                       },
+                    { label: "Titre SEO ≤ 60 car.",    ok: (seoTitle||title).length > 0 && (seoTitle||title).length <= 60 },
+                    { label: "Meta desc. ≤ 160 car.",  ok: (seoDesc||excerpt).length > 0 && (seoDesc||excerpt).length <= 160 },
+                    { label: "Extrait renseigné",      ok: !!excerpt.trim()                     },
+                    { label: "Contenu > 300 mots",     ok: content.trim().split(/\s+/).length > 300 },
+                    { label: "Tags définis",            ok: tags.length > 0                      },
+                    { label: "Catégorie définie",       ok: !!category && category !== "Non classé" },
+                  ].map(({ label, ok }) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: ok ? "rgba(34,197,94,0.15)" : "rgba(148,163,184,0.12)" }}>
+                        {ok
+                          ? <CheckCircle2 size={10} style={{ color: "#22c55e" }} />
+                          : <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#94a3b8" }} />}
+                      </div>
+                      <span className="text-xs" style={{ color: ok ? t.text2 : t.text4 }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>}
+          </div>
         </div>
       </div>
     </div>
@@ -623,7 +760,7 @@ function ArticlesTable({
       <table className="w-full min-w-[640px]">
         <thead>
           <tr style={{ borderBottom: `1px solid ${t.border}` }}>
-            {["Titre", "Statut", "Publication", "Tags", ""].map(h => (
+            {["Titre", "Catégorie", "Statut", "Publication", "Vues", ""].map(h => (
               <th key={h} className="px-3 pb-2 text-left text-xs font-semibold" style={{ color: t.text3 }}>{h}</th>
             ))}
           </tr>
@@ -649,6 +786,13 @@ function ArticlesTable({
                   )}
                 </button>
               </td>
+              {/* category */}
+              <td className="px-3 py-3.5">
+                <span className="text-xs rounded-full px-2 py-0.5"
+                  style={{ background: t.glass, color: t.text3 }}>
+                  {a.category || "Non classé"}
+                </span>
+              </td>
               {/* status */}
               <td className="px-3 py-3.5">
                 <StatusBadge status={a.status} />
@@ -659,19 +803,11 @@ function ArticlesTable({
                   {a.status === "published" ? fmtDate(a.published_at) : fmtDate(a.created_at)}
                 </span>
               </td>
-              {/* tags */}
+              {/* read_count */}
               <td className="px-3 py-3.5">
-                <div className="flex flex-wrap gap-1">
-                  {a.tags.slice(0, 2).map(tag => (
-                    <span key={tag} className="rounded-full px-1.5 py-0.5 text-[10px]"
-                      style={{ background: `${GOLD}12`, color: GOLD }}>
-                      {tag}
-                    </span>
-                  ))}
-                  {a.tags.length > 2 && (
-                    <span className="text-[10px]" style={{ color: t.text4 }}>+{a.tags.length - 2}</span>
-                  )}
-                </div>
+                <span className="text-xs tabular-nums" style={{ color: t.text3 }}>
+                  {(a.read_count ?? 0).toLocaleString("fr-FR")}
+                </span>
               </td>
               {/* actions */}
               <td className="px-3 py-3.5">
@@ -757,7 +893,7 @@ export default function BlogPage() {
     if (!user) return;
     setUserId(user.id);
     const { data } = await supabase.from("blog_articles")
-      .select("id, user_id, title, slug, content, excerpt, cover_url, tags, status, published_at, created_at, updated_at")
+      .select("id, user_id, title, slug, content, excerpt, cover_url, tags, status, published_at, scheduled_at, category, seo_title, seo_description, seo_image_url, read_count, word_count, created_at, updated_at")
       .order("created_at", { ascending: false });
     setArticles((data ?? []) as Article[]);
     setLoading(false);
