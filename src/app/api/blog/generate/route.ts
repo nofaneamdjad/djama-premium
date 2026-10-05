@@ -1,7 +1,8 @@
 /**
  * POST /api/blog/generate
- * Génère du contenu de blog via Claude.
- * Body : { type: "content" | "excerpt", title?: string, content?: string, tags?: string[] }
+ * Génère ou transforme du contenu de blog via Claude.
+ * Body : { type, title?, content?, tags?, selectedText? }
+ * Types : "content" | "excerpt" | "improve" | "rewrite" | "expand" | "summarize" | "simplify" | "translate_en"
  * Retourne : { result: string }
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -28,11 +29,12 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) return NextResponse.json({ error: "IA non configurée" }, { status: 503 });
 
-  const { type, title, content, tags } = await req.json() as {
-    type: "content" | "excerpt";
+  const { type, title, content, tags, selectedText } = await req.json() as {
+    type: "content" | "excerpt" | "improve" | "rewrite" | "expand" | "summarize" | "simplify" | "translate_en";
     title?: string;
     content?: string;
     tags?: string[];
+    selectedText?: string;
   };
 
   try {
@@ -65,6 +67,31 @@ Utilise le Markdown. Écris en français. Ton : professionnel mais accessible.`,
         messages: [{
           role: "user",
           content: `Rédige un article de blog complet et détaillé (600-900 mots) sur ce sujet :\n\n**${title}**${tagHint}\n\nL'article doit apporter une vraie valeur ajoutée, avec des conseils concrets et actionnables.`,
+        }],
+      });
+      const result = res.content[0].type === "text" ? res.content[0].text.trim() : "";
+      return NextResponse.json({ result });
+    }
+
+    /* ── Transformations sur sélection ─────────────────────────────────── */
+    const SELECTION_PROMPTS: Record<string, string> = {
+      improve:      "Améliore ce passage pour le rendre plus percutant, professionnel et engageant, sans en changer le sens. Réponds uniquement avec le texte amélioré, sans introduction ni explication.",
+      rewrite:      "Reformule ce passage en conservant exactement le même sens mais avec des mots et une structure différents. Réponds uniquement avec le texte reformulé, sans introduction.",
+      expand:       "Développe et enrichis ce passage avec plus de détails, d'exemples concrets et d'explications. Garde le même style et le même sujet. Réponds uniquement avec le texte développé.",
+      summarize:    "Condense ce passage en 1-2 phrases en gardant uniquement l'essentiel. Réponds uniquement avec le texte condensé, sans introduction.",
+      simplify:     "Simplifie ce passage pour le rendre plus clair et accessible, en évitant le jargon complexe. Réponds uniquement avec le texte simplifié.",
+      translate_en: "Traduis ce passage en anglais professionnel et naturel. Réponds uniquement avec la traduction, sans introduction.",
+    };
+
+    if (SELECTION_PROMPTS[type]) {
+      if (!selectedText?.trim()) return NextResponse.json({ error: "Texte sélectionné requis" }, { status: 400 });
+      const res = await ai.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 800,
+        system: "Tu es un assistant d'écriture expert pour les entrepreneurs francophones.",
+        messages: [{
+          role: "user",
+          content: `${SELECTION_PROMPTS[type]}\n\n---\n${selectedText.slice(0, 4000)}`,
         }],
       });
       const result = res.content[0].type === "text" ? res.content[0].text.trim() : "";

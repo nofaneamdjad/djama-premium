@@ -8,6 +8,7 @@ import {
   FileText, Calendar, Lightbulb, BarChart2, Settings,
   Clock, Tag, Eye, ArrowUpRight, AlertCircle, Loader2,
   CheckCircle2, BookOpen, Filter, ArrowUpDown,
+  Wand2, RefreshCw, Minimize2, Expand, Feather,
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -129,6 +130,8 @@ function ArticleEditor({
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [aiTask,  setAiTask]  = useState<"excerpt" | "content" | null>(null);
+  const [selInfo, setSelInfo] = useState<{ start: number; end: number; text: string } | null>(null);
+  const [aiSelTask, setAiSelTask] = useState<string | null>(null);
   const [copyPanel, setCopyPanel] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,6 +190,36 @@ function ArticleEditor({
       if (type === "excerpt") setExcerpt(json.result ?? "");
       else setContent(json.result ?? "");
     } finally { setAiTask(null); }
+  }
+
+  async function transformSelection(action: string) {
+    if (!selInfo || aiSelTask) return;
+    setAiSelTask(action);
+    try {
+      const res = await fetch("/api/blog/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: action, selectedText: selInfo.text, title }),
+      });
+      const json = await res.json();
+      if (json.result) {
+        const next = content.slice(0, selInfo.start) + json.result + content.slice(selInfo.end);
+        setContent(next);
+        setSelInfo(null);
+        setTimeout(() => {
+          const ta = textareaRef.current;
+          if (ta) { ta.focus(); ta.setSelectionRange(selInfo.start, selInfo.start + json.result.length); }
+        }, 0);
+      }
+    } finally { setAiSelTask(null); }
+  }
+
+  function checkSelection() {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { selectionStart: s, selectionEnd: e } = ta;
+    if (s !== e) setSelInfo({ start: s, end: e, text: content.slice(s, e) });
+    else setSelInfo(null);
   }
 
   function insertMd(before: string, after = "") {
@@ -320,11 +353,60 @@ function ArticleEditor({
             </button>
           </div>
 
+          {/* barre IA contextuelle — apparaît quand du texte est sélectionné */}
+          <AnimatePresence>
+            {selInfo && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-wrap items-center gap-1.5 mb-3 px-3 py-2 rounded-xl"
+                style={{ background: `${GOLD}0d`, border: `1px solid ${GOLD}30` }}
+              >
+                <Sparkles size={11} style={{ color: GOLD }} />
+                <span className="text-xs font-semibold mr-1" style={{ color: GOLD }}>
+                  {selInfo.text.trim().split(/\s+/).length} mots sélectionnés —
+                </span>
+                {([
+                  { key: "improve",      label: "Améliorer",  Icon: Wand2      },
+                  { key: "rewrite",      label: "Reformuler", Icon: RefreshCw  },
+                  { key: "expand",       label: "Développer", Icon: Expand     },
+                  { key: "summarize",    label: "Résumer",    Icon: Minimize2  },
+                  { key: "simplify",     label: "Simplifier", Icon: Feather    },
+                  { key: "translate_en", label: "→ EN",       Icon: Globe      },
+                ] as const).map(({ key, label, Icon }) => (
+                  <button
+                    key={key}
+                    disabled={!!aiSelTask}
+                    onMouseDown={e => { e.preventDefault(); transformSelection(key); }}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition hover:opacity-80 disabled:opacity-40"
+                    style={{ background: t.glass, color: aiSelTask === key ? GOLD : t.text2, border: `1px solid ${t.border}` }}
+                  >
+                    {aiSelTask === key
+                      ? <Loader2 size={10} className="animate-spin" style={{ color: GOLD }} />
+                      : <Icon size={10} />}
+                    {label}
+                  </button>
+                ))}
+                <button
+                  onMouseDown={e => { e.preventDefault(); setSelInfo(null); }}
+                  className="ml-auto flex items-center justify-center w-5 h-5 rounded transition hover:opacity-70"
+                  style={{ color: t.text4 }}
+                >
+                  <X size={10} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* content textarea */}
           <textarea
             ref={textareaRef}
             value={content}
             onChange={e => setContent(e.target.value)}
+            onMouseUp={checkSelection}
+            onKeyUp={checkSelection}
             placeholder="Commencez à écrire… (Markdown supporté)"
             className="flex-1 w-full resize-none bg-transparent text-sm leading-relaxed outline-none font-mono placeholder:opacity-30"
             style={{ color: t.text, minHeight: "400px", border: "none" }}
