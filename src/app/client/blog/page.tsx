@@ -29,6 +29,20 @@ const STATUS_META: Record<ArticleStatus, { label: string; color: string; bg: str
   archive:      { label: "Archivé",     color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
 };
 
+interface Category {
+  id: string;
+  user_id: string;
+  name: string;
+  slug: string;
+  color: string;
+  created_at: string;
+}
+
+const CAT_COLORS = [
+  "#c9a55a","#22c55e","#60a5fa","#f59e0b","#a78bfa",
+  "#f43f5e","#14b8a6","#fb923c","#94a3b8","#ec4899",
+];
+
 interface Article {
   id: string;
   user_id: string;
@@ -105,14 +119,16 @@ function MdBtn({ label, onClick }: { label: string; onClick: () => void }) {
    ARTICLE EDITOR MODAL
 ══════════════════════════════════════════════════════════════════════ */
 function ArticleEditor({
-  article, userId, isDark,
-  onClose, onSaved,
+  article, userId, isDark, categories,
+  onClose, onSaved, onCategoryCreated,
 }: {
   article: Partial<Article> | null;
   userId: string;
   isDark: boolean;
+  categories: Category[];
   onClose: () => void;
   onSaved: (a: Article) => void;
+  onCategoryCreated: (c: Category) => void;
 }) {
   const t = tok(isDark);
   const isNew = !article?.id;
@@ -135,6 +151,9 @@ function ArticleEditor({
   const [focusKeyword,   setFocusKeyword]   = useState("");
   const [seoTips,        setSeoTips]        = useState<string[]>([]);
   const [seoTipsLoading, setSeoTipsLoading] = useState(false);
+  const [catOpen,        setCatOpen]        = useState(false);
+  const [catSearch,      setCatSearch]      = useState("");
+  const [catCreating,    setCatCreating]    = useState(false);
   const [selInfo,      setSelInfo]      = useState<{ start: number; end: number; text: string } | null>(null);
   const [aiSelTask,    setAiSelTask]    = useState<string | null>(null);
   const [imgPanel,     setImgPanel]     = useState(false);
@@ -632,16 +651,85 @@ function ArticleEditor({
                 )}
               </div>
 
-              {/* category */}
-              <div>
+              {/* category — sélecteur intelligent */}
+              <div className="relative">
                 <p className="text-xs font-semibold mb-2" style={{ color: t.text2 }}>Catégorie</p>
-                <input
-                  value={category}
-                  onChange={e => setCategory(e.target.value)}
-                  placeholder="Ex : Marketing, IA, Finance…"
-                  className="w-full rounded-xl px-3 py-2 text-xs outline-none"
-                  style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
-                />
+                <button
+                  onClick={() => { setCatOpen(p => !p); setCatSearch(""); }}
+                  className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs text-left outline-none transition"
+                  style={{ background: t.glass, border: `1px solid ${catOpen ? GOLD : t.border}`, color: t.text2 }}
+                >
+                  <span className="flex items-center gap-2">
+                    {(() => {
+                      const cat = categories.find(c => c.name === category);
+                      return cat ? <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} /> : null;
+                    })()}
+                    {category || "Sélectionner…"}
+                  </span>
+                  <ChevronDown size={10} style={{ color: t.text4 }} />
+                </button>
+
+                <AnimatePresence>
+                  {catOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                      className="absolute z-30 mt-1 w-full rounded-xl overflow-hidden shadow-xl"
+                      style={{ background: t.surface, border: `1px solid ${t.border}` }}
+                    >
+                      <div className="p-2">
+                        <input
+                          value={catSearch}
+                          onChange={e => setCatSearch(e.target.value)}
+                          placeholder="Rechercher ou créer…"
+                          autoFocus
+                          className="w-full rounded-lg px-2.5 py-1.5 text-xs outline-none"
+                          style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                        />
+                      </div>
+                      <div className="max-h-48 overflow-y-auto pb-1">
+                        {categories
+                          .filter(c => !catSearch || c.name.toLowerCase().includes(catSearch.toLowerCase()))
+                          .map(c => (
+                            <button key={c.id}
+                              onClick={() => { setCategory(c.name); setCatOpen(false); }}
+                              className="flex items-center gap-2.5 w-full px-3 py-2 text-xs text-left transition hover:opacity-70"
+                              style={{ color: category === c.name ? GOLD : t.text2 }}>
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.color }} />
+                              {c.name}
+                            </button>
+                          ))}
+                        {catSearch.trim() && !categories.some(c => c.name.toLowerCase() === catSearch.toLowerCase()) && (
+                          <button
+                            disabled={catCreating}
+                            onClick={async () => {
+                              setCatCreating(true);
+                              const sl = slugify(catSearch.trim());
+                              const { data, error } = await supabase.from("blog_categories")
+                                .insert({ user_id: userId, name: catSearch.trim(), slug: sl, color: CAT_COLORS[categories.length % CAT_COLORS.length] })
+                                .select().single();
+                              if (!error && data) {
+                                onCategoryCreated(data as Category);
+                                setCategory(catSearch.trim());
+                              }
+                              setCatCreating(false);
+                              setCatOpen(false);
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left transition hover:opacity-70"
+                            style={{ color: GOLD }}
+                          >
+                            {catCreating ? <Loader2 size={10} className="animate-spin" /> : <Plus size={10} />}
+                            Créer "{catSearch.trim()}"
+                          </button>
+                        )}
+                        {categories.length === 0 && !catSearch && (
+                          <p className="px-3 py-2 text-xs" style={{ color: t.text4 }}>
+                            Aucune catégorie — tapez pour en créer une
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* tags */}
@@ -969,13 +1057,15 @@ function ArticleEditor({
    CREATE WITH DJAMA MODAL
 ══════════════════════════════════════════════════════════════════════ */
 function CreateWithDjama({
-  isDark, userId,
-  onClose, onCreated,
+  isDark, userId, categories,
+  onClose, onCreated, onCategoryCreated,
 }: {
   isDark: boolean;
   userId: string;
+  categories: Category[];
   onClose: () => void;
   onCreated: (a: Article) => void;
+  onCategoryCreated: (c: Category) => void;
 }) {
   const t = tok(isDark);
   const [prompt, setPrompt] = useState("");
@@ -1025,8 +1115,10 @@ function CreateWithDjama({
         article={draft}
         userId={userId}
         isDark={isDark}
+        categories={categories}
         onClose={onClose}
         onSaved={a => { onCreated(a); onClose(); }}
+        onCategoryCreated={onCategoryCreated}
       />
     );
   }
@@ -1303,21 +1395,219 @@ function ArticlesTable({
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   CATEGORIES PANEL
+══════════════════════════════════════════════════════════════════════ */
+function CategoriesPanel({
+  categories, articles, userId, isDark,
+  onChanged,
+}: {
+  categories: Category[];
+  articles: { category: string }[];
+  userId: string;
+  isDark: boolean;
+  onChanged: (cats: Category[]) => void;
+}) {
+  const t = tok(isDark);
+  const [creating, setCreating] = useState(false);
+  const [editId,   setEditId]   = useState<string | null>(null);
+  const [name,     setName]     = useState("");
+  const [color,    setColor]    = useState(CAT_COLORS[0]);
+  const [saving,   setSaving]   = useState(false);
+  const [delId,    setDelId]    = useState<string | null>(null);
+
+  const countFor = (catName: string) => articles.filter(a => a.category === catName).length;
+
+  function startCreate() {
+    setCreating(true); setEditId(null);
+    setName(""); setColor(CAT_COLORS[0]);
+  }
+
+  function startEdit(c: Category) {
+    setEditId(c.id); setCreating(false);
+    setName(c.name); setColor(c.color);
+  }
+
+  function cancel() { setCreating(false); setEditId(null); setName(""); }
+
+  async function save() {
+    if (!name.trim()) return;
+    setSaving(true);
+    const sl = slugify(name);
+    if (editId) {
+      const { data, error } = await supabase.from("blog_categories")
+        .update({ name: name.trim(), slug: sl, color }).eq("id", editId).select().single();
+      if (!error && data) onChanged(categories.map(c => c.id === editId ? data as Category : c));
+    } else {
+      const { data, error } = await supabase.from("blog_categories")
+        .insert({ user_id: userId, name: name.trim(), slug: sl, color })
+        .select().single();
+      if (!error && data) onChanged([...categories, data as Category]);
+    }
+    setSaving(false);
+    cancel();
+  }
+
+  async function del(id: string) {
+    await supabase.from("blog_categories").delete().eq("id", id);
+    onChanged(categories.filter(c => c.id !== id));
+    setDelId(null);
+  }
+
+  return (
+    <div className="flex flex-col gap-6 max-w-2xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-bold" style={{ color: t.text }}>Catégories</h2>
+          <p className="text-xs mt-0.5" style={{ color: t.text3 }}>{categories.length} catégorie{categories.length !== 1 ? "s" : ""}</p>
+        </div>
+        <button
+          onClick={startCreate}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition hover:opacity-80"
+          style={{ background: GOLD, color: "#111" }}
+        >
+          <Plus size={12} /> Nouvelle catégorie
+        </button>
+      </div>
+
+      {/* Formulaire création / édition */}
+      <AnimatePresence>
+        {(creating || editId) && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            className="rounded-2xl p-4 flex flex-col gap-3"
+            style={{ background: t.glass, border: `1px solid ${GOLD}30` }}
+          >
+            <p className="text-xs font-semibold" style={{ color: GOLD }}>
+              {editId ? "Modifier la catégorie" : "Nouvelle catégorie"}
+            </p>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Nom de la catégorie…"
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+              style={{ background: t.surface, border: `1px solid ${t.border}`, color: t.text }}
+              onKeyDown={e => { if (e.key === "Enter") save(); if (e.key === "Escape") cancel(); }}
+              autoFocus
+            />
+            {name.trim() && (
+              <p className="text-[10px]" style={{ color: t.text4 }}>
+                Slug : <span style={{ color: t.text3 }}>{slugify(name)}</span>
+              </p>
+            )}
+            {/* color picker */}
+            <div>
+              <p className="text-[10px] mb-2" style={{ color: t.text4 }}>Couleur</p>
+              <div className="flex flex-wrap gap-2">
+                {CAT_COLORS.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setColor(c)}
+                    className="w-6 h-6 rounded-full transition"
+                    style={{
+                      background: c,
+                      outline: color === c ? `2px solid ${c}` : "none",
+                      outlineOffset: 2,
+                      transform: color === c ? "scale(1.2)" : "scale(1)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-1">
+              <button
+                onClick={save}
+                disabled={saving || !name.trim()}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-40"
+                style={{ background: GOLD, color: "#111" }}
+              >
+                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                {editId ? "Enregistrer" : "Créer"}
+              </button>
+              <button onClick={cancel} className="px-4 py-1.5 rounded-xl text-xs transition hover:opacity-70"
+                style={{ color: t.text3 }}>
+                Annuler
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Liste des catégories */}
+      {categories.length === 0 && !creating ? (
+        <div className="py-16 flex flex-col items-center gap-3">
+          <Tag size={28} style={{ color: t.text4 }} />
+          <p className="text-sm" style={{ color: t.text3 }}>Aucune catégorie — créez-en une !</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {categories.map(cat => {
+            const cnt = countFor(cat.name);
+            const isEdit = editId === cat.id;
+            if (isEdit) return null;
+            return (
+              <div key={cat.id} className="flex items-center gap-3 rounded-xl px-4 py-3"
+                style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ background: cat.color }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: t.text }}>{cat.name}</p>
+                  <p className="text-[10px]" style={{ color: t.text4 }}>
+                    /{cat.slug} · {cnt} article{cnt !== 1 ? "s" : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => startEdit(cat)}
+                    className="flex items-center justify-center w-7 h-7 rounded-lg transition hover:opacity-70"
+                    style={{ background: t.surface }}>
+                    <Edit3 size={12} style={{ color: t.text3 }} />
+                  </button>
+                  {delId === cat.id ? (
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => del(cat.id)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold"
+                        style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>
+                        <Check size={10} /> Confirmer
+                      </button>
+                      <button onClick={() => setDelId(null)} className="px-2 py-1 rounded-lg text-xs"
+                        style={{ color: t.text4 }}>
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => cnt === 0 ? del(cat.id) : setDelId(cat.id)}
+                      className="flex items-center justify-center w-7 h-7 rounded-lg transition hover:opacity-70"
+                      style={{ background: t.surface }}>
+                      <Trash2 size={12} style={{ color: t.text4 }} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════════════════════════════════ */
 export default function BlogPage() {
   const { isDark } = useTheme();
   const t = tok(isDark);
 
-  const [userId,   setUserId]   = useState("");
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("articles");
+  const [userId,     setUserId]     = useState("");
+  const [articles,   setArticles]   = useState<Article[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [activeTab,  setActiveTab]  = useState<Tab>("articles");
 
   /* filters */
-  const [search,       setSearch]       = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | ArticleStatus>("all");
-  const [sortOrder,    setSortOrder]    = useState<"newest" | "oldest" | "alpha">("newest");
+  const [search,          setSearch]          = useState("");
+  const [filterStatus,    setFilterStatus]    = useState<"all" | ArticleStatus>("all");
+  const [filterCategory,  setFilterCategory]  = useState<string>("all");
+  const [sortOrder,       setSortOrder]       = useState<"newest" | "oldest" | "alpha">("newest");
 
   /* modals */
   const [showDjama,  setShowDjama]  = useState(false);
@@ -1329,10 +1619,14 @@ export default function BlogPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setUserId(user.id);
-    const { data } = await supabase.from("blog_articles")
-      .select("id, user_id, title, slug, content, excerpt, cover_url, tags, status, published_at, scheduled_at, category, seo_title, seo_description, seo_image_url, read_count, word_count, created_at, updated_at")
-      .order("created_at", { ascending: false });
-    setArticles((data ?? []) as Article[]);
+    const [{ data: arts }, { data: cats }] = await Promise.all([
+      supabase.from("blog_articles")
+        .select("id, user_id, title, slug, content, excerpt, cover_url, tags, status, published_at, scheduled_at, category, seo_title, seo_description, seo_image_url, read_count, word_count, created_at, updated_at")
+        .order("created_at", { ascending: false }),
+      supabase.from("blog_categories").select("*").order("name"),
+    ]);
+    setArticles((arts ?? []) as Article[]);
+    setCategories((cats ?? []) as Category[]);
     setLoading(false);
   }, []);
 
@@ -1341,6 +1635,7 @@ export default function BlogPage() {
   /* computed */
   const filtered = articles
     .filter(a => filterStatus === "all" || a.status === filterStatus)
+    .filter(a => filterCategory === "all" || a.category === filterCategory)
     .filter(a => !search || a.title.toLowerCase().includes(search.toLowerCase()) || a.excerpt.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       if (sortOrder === "alpha") return a.title.localeCompare(b.title);
@@ -1473,6 +1768,22 @@ export default function BlogPage() {
                 <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: t.text3 }} />
               </div>
 
+              {/* category filter */}
+              {categories.length > 0 && (
+                <div className="relative">
+                  <select
+                    value={filterCategory}
+                    onChange={e => setFilterCategory(e.target.value)}
+                    className="appearance-none rounded-xl px-3 py-2 text-sm outline-none cursor-pointer pr-8"
+                    style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
+                  >
+                    <option value="all">Toutes les catégories</option>
+                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: t.text3 }} />
+                </div>
+              )}
+
               {/* sort */}
               <div className="relative">
                 <select
@@ -1494,6 +1805,7 @@ export default function BlogPage() {
               <p className="text-xs mb-3" style={{ color: t.text4 }}>
                 {filtered.length} article{filtered.length !== 1 ? "s" : ""}
                 {filterStatus !== "all" ? ` · ${STATUS_META[filterStatus as ArticleStatus]?.label}` : ""}
+                {filterCategory !== "all" ? ` · ${filterCategory}` : ""}
               </p>
             )}
 
@@ -1515,7 +1827,17 @@ export default function BlogPage() {
         {activeTab === "idees"      && <ComingSoon label="Idées de contenu"     Icon={Lightbulb} isDark={isDark} />}
         {activeTab === "seo"        && <ComingSoon label="Analyse SEO"          Icon={BarChart2} isDark={isDark} />}
         {activeTab === "analytics"  && <ComingSoon label="Analytics"            Icon={Eye}       isDark={isDark} />}
-        {activeTab === "parametres" && <ComingSoon label="Paramètres du blog"   Icon={Settings}  isDark={isDark} />}
+        {activeTab === "parametres" && (
+          <div className="px-2 py-4">
+            <CategoriesPanel
+              categories={categories}
+              articles={articles}
+              userId={userId}
+              isDark={isDark}
+              onChanged={setCategories}
+            />
+          </div>
+        )}
 
       </div>
 
@@ -1525,8 +1847,10 @@ export default function BlogPage() {
           <CreateWithDjama
             isDark={isDark}
             userId={userId}
+            categories={categories}
             onClose={() => setShowDjama(false)}
             onCreated={a => { onSaved(a); }}
+            onCategoryCreated={c => setCategories(prev => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)))}
           />
         )}
       </AnimatePresence>
@@ -1537,8 +1861,10 @@ export default function BlogPage() {
             article={editingArt}
             userId={userId}
             isDark={isDark}
+            categories={categories}
             onClose={() => { setEditorOpen(false); setEditingArt(null); }}
             onSaved={a => { onSaved(a); setEditingArt(a); }}
+            onCategoryCreated={c => setCategories(prev => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)))}
           />
         )}
       </AnimatePresence>
