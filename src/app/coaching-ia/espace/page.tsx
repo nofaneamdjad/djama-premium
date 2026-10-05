@@ -265,6 +265,96 @@ function bumpStreak() {
 }
 
 /* ─────────────────────────────────────────────────────────
+   GAMIFICATION — Badges persistants + Toasts (Phase 10)
+───────────────────────────────────────────────────────── */
+const EARNED_BADGES_KEY = "djama_earned_badges";
+
+function loadEarnedBadges(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(EARNED_BADGES_KEY);
+    return new Set(raw ? JSON.parse(raw) as string[] : []);
+  } catch { return new Set(); }
+}
+function saveEarnedBadges(s: Set<string>) {
+  try { localStorage.setItem(EARNED_BADGES_KEY, JSON.stringify([...s])); } catch {}
+}
+
+type BadgeDef = { id: string; label: string; Icon: React.ElementType; color: string; desc: string };
+
+const ALL_BADGES: BadgeDef[] = [
+  { id: "first",     label: "Premier pas",      Icon: CheckCircle2, color: "#34d399", desc: "1er chapitre terminé" },
+  { id: "week",      label: "7 jours de suite", Icon: Timer,        color: "#f59e0b", desc: "Série de 7 jours" },
+  { id: "halfway",   label: "Mi-parcours",       Icon: Zap,          color: "#60a5fa", desc: "50% du programme" },
+  { id: "module",    label: "Module Expert",     Icon: Brain,        color: GOLD,      desc: "1 module à 100%" },
+  { id: "quiz",      label: "Quiz Master",       Icon: Trophy,       color: GOLD,      desc: "5 quiz validés" },
+  { id: "certified", label: "Certifié DJAMA",    Icon: Award,        color: "#34d399", desc: "100% du programme" },
+];
+
+function checkBadgeEarned(id: string, s: {
+  completedCount: number; streak: number; overallPct: number;
+  doneModules: number; quizDone: number;
+}): boolean {
+  switch (id) {
+    case "first":     return s.completedCount >= 1;
+    case "week":      return s.streak >= 7;
+    case "halfway":   return s.overallPct >= 50;
+    case "module":    return s.doneModules >= 1;
+    case "quiz":      return s.quizDone >= 5;
+    case "certified": return s.overallPct === 100;
+    default:          return false;
+  }
+}
+
+function LevelUpToast({ name, color }: { name: string; color: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 60, scale: 0.85 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -24, scale: 0.9 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border px-6 py-4 shadow-xl backdrop-blur-sm"
+      style={{ borderColor: `${color}40`, background: "linear-gradient(135deg, #07080eee, #12141aee)", boxShadow: `0 0 40px ${color}28` }}
+    >
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: `${color}22`, border: `1px solid ${color}35` }}>
+        <Trophy size={20} style={{ color }} />
+      </div>
+      <div>
+        <p className="text-[0.58rem] font-bold uppercase tracking-[0.18em] text-white/40">Nouveau niveau !</p>
+        <p className="text-base font-extrabold" style={{ color }}>{name}</p>
+      </div>
+      <motion.div animate={{ rotate: [0, 15, -15, 10, -10, 0] }} transition={{ delay: 0.3, duration: 0.6 }}>
+        <Sparkles size={15} style={{ color }} />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function BadgeToast({ label, Icon, color }: { label: string; Icon: React.ElementType; color: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 60, scale: 0.85 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -24, scale: 0.9 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border px-6 py-4 shadow-xl backdrop-blur-sm"
+      style={{ borderColor: `${color}40`, background: "linear-gradient(135deg, #07080eee, #12141aee)", boxShadow: `0 0 40px ${color}28` }}
+    >
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: `${color}22`, border: `1px solid ${color}35` }}>
+        <Icon size={20} style={{ color }} />
+      </div>
+      <div>
+        <p className="text-[0.58rem] font-bold uppercase tracking-[0.18em] text-white/40">Badge débloqué !</p>
+        <p className="text-base font-extrabold" style={{ color }}>{label}</p>
+      </div>
+      <motion.div animate={{ scale: [1, 1.3, 1, 1.2, 1] }} transition={{ delay: 0.3, duration: 0.5 }}>
+        <Star size={14} fill={color} style={{ color }} />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    VIDEO PLAYER
 ───────────────────────────────────────────────────────── */
 function VideoPlayer({ title, color, isDark = true }: { title: string; color: string; isDark?: boolean }) {
@@ -3532,6 +3622,7 @@ function ProgressionPanel({ completed, onSelectChapter, onSetView }: { completed
   const levelInfo      = getLevel(xp);
   const { streak }     = loadStreak();
   const quizDone       = COACHING_MODULES.flatMap((m) => m.chapters).filter((c) => c.type === "quiz" && completed.has(c.id)).length;
+  const bState         = { completedCount, streak, overallPct, doneModules, quizDone };
 
   const dp = {
     pri:  isDark ? "text-white"          : "text-[#0e1420]",
@@ -3552,14 +3643,11 @@ function ProgressionPanel({ completed, onSelectChapter, onSetView }: { completed
   };
   const LevelIcon = LEVEL_ICONS[levelInfo.name] ?? Circle;
 
-  const BADGES = [
-    { id: "first",     label: "Premier pas",      Icon: CheckCircle2, color: "#34d399", desc: "1er chapitre terminé",    earned: completedCount >= 1 },
-    { id: "week",      label: "7 jours de suite",  Icon: Timer,        color: "#f59e0b", desc: `Série : ${streak}j`,      earned: streak >= 7 },
-    { id: "halfway",   label: "Mi-parcours",        Icon: Zap,          color: "#60a5fa", desc: "50% du programme",       earned: overallPct >= 50 },
-    { id: "module",    label: "Module Expert",      Icon: Brain,        color: GOLD,      desc: "1 module à 100%",        earned: doneModules >= 1 },
-    { id: "quiz",      label: "Quiz Master",        Icon: Trophy,       color: GOLD,      desc: "5 quiz validés",          earned: quizDone >= 5 },
-    { id: "certified", label: "Certifié DJAMA",     Icon: Award,        color: "#34d399", desc: "100% du programme",      earned: overallPct === 100 },
-  ];
+  const BADGES = ALL_BADGES.map((b) => ({
+    ...b,
+    desc:   b.id === "week" ? `Série : ${streak}j` : b.desc,
+    earned: checkBadgeEarned(b.id, bState),
+  }));
 
   return (
     <div className="mx-auto max-w-3xl space-y-10 px-4 py-8 sm:px-8">
@@ -3917,6 +4005,8 @@ export default function EspaceCoachingIA() {
   const [sidebarOpen,       setSidebarOpen]       = useState(true);
   const [focusMode,         setFocusMode]         = useState(false);
   const [assistantInitMsg,  setAssistantInitMsg]  = useState<string | undefined>();
+  const [levelUpToast,      setLevelUpToast]      = useState<{ name: string; color: string } | null>(null);
+  const [badgeToast,        setBadgeToast]        = useState<{ label: string; Icon: React.ElementType; color: string } | null>(null);
 
   /* ── Load from localStorage + sync Supabase ───────────── */
   useEffect(() => {
@@ -3967,13 +4057,43 @@ export default function EspaceCoachingIA() {
 
   function markCompleted() {
     if (!selectedChapterId) return;
+
+    const xpBefore    = completed.size * XP_PER_CHAPTER;
+    const levelBefore = getLevel(xpBefore).name;
+
     const next = new Set(completed);
     next.add(selectedChapterId);
     setCompleted(next);
     saveProgress(next);
     bumpStreak();
-    bumpDailyStats();              // Phase 9 — objectif quotidien
-    enqueueForReview(selectedChapterId); // Phase 8 — répétition espacée
+    bumpDailyStats();
+    enqueueForReview(selectedChapterId);
+
+    // Level-up toast
+    const xpAfter    = next.size * XP_PER_CHAPTER;
+    const levelAfter = getLevel(xpAfter);
+    if (levelAfter.name !== levelBefore) {
+      setLevelUpToast({ name: levelAfter.name, color: levelAfter.color });
+      setTimeout(() => setLevelUpToast(null), 3500);
+    }
+
+    // Badge unlock toast (premier badge non encore déclenché)
+    const earned      = loadEarnedBadges();
+    const { streak }  = loadStreak();
+    const newPct      = Math.round((next.size / totalChapters) * 100);
+    const newDoneMods = COACHING_MODULES.filter((m) => m.chapters.every((c) => next.has(c.id))).length;
+    const newQuizDone = COACHING_MODULES.flatMap((m) => m.chapters).filter((c) => c.type === "quiz" && next.has(c.id)).length;
+    const bs          = { completedCount: next.size, streak, overallPct: newPct, doneModules: newDoneMods, quizDone: newQuizDone };
+    for (const badge of ALL_BADGES) {
+      if (checkBadgeEarned(badge.id, bs) && !earned.has(badge.id)) {
+        earned.add(badge.id);
+        saveEarnedBadges(earned);
+        setBadgeToast({ label: badge.label, Icon: badge.Icon, color: badge.color });
+        setTimeout(() => setBadgeToast(null), 3500);
+        break;
+      }
+    }
+
     fetch("/api/coaching-ia/progress", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -4310,6 +4430,14 @@ export default function EspaceCoachingIA() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Toasts gamification (Phase 10) */}
+      <AnimatePresence>
+        {levelUpToast && <LevelUpToast name={levelUpToast.name} color={levelUpToast.color} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {badgeToast && <BadgeToast label={badgeToast.label} Icon={badgeToast.Icon} color={badgeToast.color} />}
+      </AnimatePresence>
     </div>
   );
 }
