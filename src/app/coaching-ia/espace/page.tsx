@@ -47,6 +47,90 @@ function saveFavorites(s: Set<string>) {
 }
 
 /* ─────────────────────────────────────────────────────────
+   STORAGE — Répétition espacée (SM-2 simplifié)
+───────────────────────────────────────────────────────── */
+const SR_KEY = "djama_sr_items";
+
+interface SRItem {
+  id:          string;
+  nextReview:  number; // timestamp ms
+  interval:    number; // jours
+  easeFactor:  number; // 1.3 – 3.0
+  repetitions: number;
+}
+
+function loadSRItems(): Record<string, SRItem> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(SR_KEY);
+    return raw ? JSON.parse(raw) as Record<string, SRItem> : {};
+  } catch { return {}; }
+}
+function saveSRItems(items: Record<string, SRItem>) {
+  try { localStorage.setItem(SR_KEY, JSON.stringify(items)); } catch {}
+}
+
+function enqueueForReview(chapterId: string) {
+  const items = loadSRItems();
+  if (items[chapterId]) return;
+  items[chapterId] = {
+    id:          chapterId,
+    nextReview:  Date.now() + 24 * 60 * 60 * 1000,
+    interval:    1,
+    easeFactor:  2.5,
+    repetitions: 0,
+  };
+  saveSRItems(items);
+}
+
+function updateSRItem(chapterId: string, quality: 0 | 3 | 5): SRItem {
+  const items = loadSRItems();
+  const prev  = items[chapterId] ?? {
+    id: chapterId, nextReview: Date.now(), interval: 1, easeFactor: 2.5, repetitions: 0,
+  };
+  let { interval, easeFactor, repetitions } = prev;
+
+  if (quality === 0) {
+    interval = 1; repetitions = 0;
+  } else {
+    if      (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.max(1, Math.round(interval * easeFactor));
+    easeFactor = Math.max(1.3, easeFactor + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    repetitions++;
+  }
+
+  const next: SRItem = {
+    id:          chapterId,
+    nextReview:  Date.now() + interval * 24 * 60 * 60 * 1000,
+    interval,
+    easeFactor,
+    repetitions,
+  };
+  items[chapterId] = next;
+  saveSRItems(items);
+  return next;
+}
+
+function getDueItems(): SRItem[] {
+  const items = loadSRItems();
+  const now   = Date.now() + 60 * 60 * 1000; // +1h buffer
+  return Object.values(items).filter((i) => i.nextReview <= now);
+}
+
+function getUpcomingItems(days = 7): { day: number; count: number }[] {
+  const items = Object.values(loadSRItems());
+  const now   = Date.now();
+  const result: Record<number, number> = {};
+  for (let d = 1; d <= days; d++) result[d] = 0;
+  for (const item of items) {
+    const daysDiff = Math.ceil((item.nextReview - now) / (24 * 60 * 60 * 1000));
+    if (daysDiff >= 1 && daysDiff <= days) result[daysDiff]++;
+  }
+  return Object.entries(result).map(([d, c]) => ({ day: Number(d), count: c })).filter((x) => x.count > 0);
+}
+
+/* ─────────────────────────────────────────────────────────
    TYPES
 ───────────────────────────────────────────────────────── */
 type View      = "dashboard" | "chapter" | "assistant" | "booking" | "favorites" | "jeux" | "progression";
@@ -1248,6 +1332,289 @@ function AssistantPanel({
 /* ─────────────────────────────────────────────────────────
    COMPOSANT — Panneau Favoris
 ───────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — Révisions (SM-2 + Favoris)
+───────────────────────────────────────────────────────── */
+const CHAPTER_KEY_POINTS: Record<string, string[]> = {
+  lesson:   ["Définition des concepts principaux", "Exemples concrets", "Cas d'usage métier"],
+  exercise: ["Méthode ou technique appliquée", "Erreurs fréquentes à éviter", "Comment l'appliquer dans mon contexte"],
+  quiz:     ["Réponses aux questions du quiz", "Points de confusion identifiés", "À mettre en pratique"],
+};
+
+function RevisionsPanel({
+  favorites, onSelectChapter,
+}: {
+  favorites:       Set<string>;
+  onSelectChapter: (moduleId: string, chapterId: string) => void;
+}) {
+  const { isDark } = useTheme();
+  type RevTab = "sr" | "favorites";
+
+  const [tab,         setTab]         = useState<RevTab>("sr");
+  const [srItems,     setSrItems]     = useState<SRItem[]>(() => getDueItems());
+  const [idx,         setIdx]         = useState(0);
+  const [revealed,    setRevealed]    = useState(false);
+  const [sessionDone, setSessionDone] = useState(0);
+  const [sessionFail, setSessionFail] = useState(0);
+
+  const upcoming = getUpcomingItems(7);
+  const totalSR  = Object.keys(loadSRItems()).length;
+
+  function handleVerdict(quality: 0 | 3 | 5) {
+    const item = srItems[idx];
+    if (!item) return;
+    updateSRItem(item.id, quality);
+    if (quality === 0) setSessionFail((n) => n + 1);
+    else setSessionDone((n) => n + 1);
+    setRevealed(false);
+    setIdx((i) => i + 1);
+  }
+
+  function restartSession() {
+    setSrItems(getDueItems());
+    setIdx(0);
+    setRevealed(false);
+    setSessionDone(0);
+    setSessionFail(0);
+  }
+
+  const rv = {
+    card:    isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-white shadow-sm",
+    pri:     isDark ? "text-white"    : "text-[#0e1420]",
+    sec:     isDark ? "text-white/50" : "text-[#0e1420]/55",
+    mut:     isDark ? "text-white/30" : "text-[#0e1420]/35",
+    bar:     isDark ? "bg-white/[0.07]" : "bg-black/[0.07]",
+    lbl:     `text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`,
+    tabAct:  "border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] text-[#c9a55a]",
+    tabIdle: isDark ? "border-white/[0.07] text-white/40 hover:text-white/70" : "border-black/[0.07] text-[#0e1420]/40 hover:text-[#0e1420]/70",
+    fCard:   isDark
+      ? "border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.05]"
+      : "border-black/[0.08] bg-white shadow-sm hover:border-black/12 hover:shadow-md",
+  };
+
+  const currentItem = srItems[idx];
+  const isDone      = idx >= srItems.length;
+
+  // Résoudre chapter + module pour l'item courant
+  const resolveChapter = (id: string) => {
+    for (const m of COACHING_MODULES) {
+      const ch = m.chapters.find((c) => c.id === id);
+      if (ch) return { module: m, chapter: ch };
+    }
+    return null;
+  };
+
+  const currentResolved = currentItem ? resolveChapter(currentItem.id) : null;
+  const keyPoints       = CHAPTER_KEY_POINTS[currentResolved?.chapter.type ?? "lesson"] ?? CHAPTER_KEY_POINTS.lesson!;
+
+  const favChapters = COACHING_MODULES.flatMap((m) =>
+    m.chapters.filter((c) => favorites.has(c.id)).map((c) => ({ module: m, chapter: c }))
+  );
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      {/* Tabs */}
+      <div className="mb-6 flex gap-2">
+        {([
+          { key: "sr"        as RevTab, label: `À réviser${srItems.length > 0 ? ` (${srItems.length - idx > 0 ? srItems.length - idx : 0})` : ""}` },
+          { key: "favorites" as RevTab, label: `Favoris (${favChapters.length})` },
+        ]).map(({ key, label }) => (
+          <button key={key} onClick={() => setTab(key)}
+            className={`rounded-xl border px-4 py-2 text-xs font-bold transition-all ${tab === key ? rv.tabAct : rv.tabIdle}`}>
+            {label}
+          </button>
+        ))}
+        {totalSR > 0 && (
+          <span className={`ml-auto text-[0.6rem] ${rv.mut}`}>{totalSR} ch. suivies</span>
+        )}
+      </div>
+
+      {/* ── Tab SR ── */}
+      {tab === "sr" && (
+        <div className="space-y-5">
+
+          {/* Queue vide */}
+          {srItems.length === 0 && (
+            <div className={`rounded-2xl border p-8 text-center ${rv.card}`}>
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.08)]">
+                <CheckCircle2 size={24} className="text-[#34d399]" />
+              </div>
+              <p className={`text-sm font-bold ${rv.pri}`}>Aucune révision aujourd&apos;hui</p>
+              <p className={`mt-1 text-xs ${rv.sec}`}>
+                {totalSR === 0
+                  ? "Terminez des chapitres pour activer la répétition espacée."
+                  : `${totalSR} chapitres suivis — la prochaine révision est planifiée.`}
+              </p>
+              {upcoming.length > 0 && (
+                <div className={`mt-5 space-y-1.5 text-left rounded-xl border p-4 ${rv.card}`}>
+                  <p className={`mb-2 text-[0.6rem] font-bold uppercase tracking-wider ${rv.mut}`}>Prochaines révisions</p>
+                  {upcoming.map(({ day, count }) => (
+                    <div key={day} className="flex items-center justify-between">
+                      <span className={`text-xs ${rv.sec}`}>Dans {day === 1 ? "1 jour" : `${day} jours`}</span>
+                      <span className="rounded-full px-2 py-0.5 text-[0.55rem] font-bold"
+                        style={{ background: "rgba(201,165,90,0.15)", color: GOLD }}>{count} ch.</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Session terminée */}
+          {srItems.length > 0 && isDone && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className={`rounded-2xl border p-8 text-center ${rv.card}`}>
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.1)]">
+                <Award size={24} style={{ color: GOLD }} />
+              </div>
+              <p className={`text-sm font-bold ${rv.pri}`}>Session terminée !</p>
+              <div className="mt-3 flex justify-center gap-6 text-xs">
+                <div>
+                  <p className="font-black text-[#34d399] text-base">{sessionDone}</p>
+                  <p className={rv.mut}>Maîtrisés</p>
+                </div>
+                <div>
+                  <p className="font-black text-red-400 text-base">{sessionFail}</p>
+                  <p className={rv.mut}>À retravailler</p>
+                </div>
+              </div>
+              <button onClick={restartSession}
+                className={`mt-5 flex items-center justify-center gap-1.5 w-full rounded-xl border py-2.5 text-sm font-semibold transition ${rv.tabIdle}`}>
+                <RotateCcw size={13} /> Relancer les révisions
+              </button>
+              {upcoming.length > 0 && (
+                <div className={`mt-4 space-y-1.5 text-left rounded-xl border p-4 ${rv.card}`}>
+                  <p className={`mb-2 text-[0.6rem] font-bold uppercase tracking-wider ${rv.mut}`}>Prochaines révisions planifiées</p>
+                  {upcoming.map(({ day, count }) => (
+                    <div key={day} className="flex items-center justify-between">
+                      <span className={`text-xs ${rv.sec}`}>Dans {day === 1 ? "1 jour" : `${day} jours`}</span>
+                      <span className="rounded-full px-2 py-0.5 text-[0.55rem] font-bold"
+                        style={{ background: "rgba(201,165,90,0.15)", color: GOLD }}>{count} ch.</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Carte de révision active */}
+          {srItems.length > 0 && !isDone && currentResolved && (
+            <div className="space-y-4">
+              {/* Progression */}
+              <div className="flex items-center justify-between">
+                <span className={`text-xs ${rv.mut}`}>{idx + 1} / {srItems.length}</span>
+                <div className="flex gap-3 text-xs">
+                  <span className="text-[#34d399] font-semibold">{sessionDone} ✓</span>
+                  <span className="text-red-400 font-semibold">{sessionFail} ✗</span>
+                </div>
+              </div>
+              <div className={`h-1.5 overflow-hidden rounded-full ${rv.bar}`}>
+                <div className="h-full rounded-full transition-all"
+                  style={{ width: `${(idx / srItems.length) * 100}%`, background: GOLD }} />
+              </div>
+
+              {/* Carte */}
+              <motion.div key={idx}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className={`rounded-2xl border p-6 ${rv.card}`}>
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="rounded-full px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wider"
+                    style={{ background: currentResolved.module.color + "20", color: currentResolved.module.color }}>
+                    M{currentResolved.module.id} · {currentResolved.module.title}
+                  </span>
+                  <span className={`text-[0.55rem] ${rv.mut}`}>
+                    Rép. {currentItem.repetitions} · Prochain dans {currentItem.interval}j
+                  </span>
+                </div>
+                <h3 className={`mt-3 text-base font-bold ${rv.pri}`}>{currentResolved.chapter.title}</h3>
+                <p className={`mt-1 text-xs ${rv.sec}`}>
+                  {currentResolved.chapter.type === "quiz" ? "Quiz" : currentResolved.chapter.type === "exercise" ? "Exercice" : "Cours"} · {currentResolved.chapter.duration}
+                </p>
+
+                {!revealed ? (
+                  <button onClick={() => setRevealed(true)}
+                    className="mt-5 w-full rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.07)] py-2.5 text-sm font-semibold text-[#c9a55a] transition hover:border-[rgba(201,165,90,0.4)]">
+                    Rappeler les points clés
+                  </button>
+                ) : (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 space-y-3">
+                    <div className={`rounded-xl border p-4 space-y-2 ${isDark ? "border-white/[0.06] bg-white/[0.03]" : "border-black/[0.06] bg-black/[0.02]"}`}>
+                      <p className={`text-[0.58rem] font-bold uppercase tracking-wider mb-2 ${rv.mut}`}>Vérifiez que vous savez :</p>
+                      {keyPoints.map((pt, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span style={{ color: currentResolved.module.color }} className="text-[0.65rem] font-black mt-0.5">{i + 1}.</span>
+                          <p className={`text-xs ${rv.sec}`}>{pt}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className={`text-center text-[0.6rem] ${rv.mut}`}>Comment avez-vous retenu ce chapitre ?</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button onClick={() => handleVerdict(0)}
+                        className="flex flex-col items-center gap-1 rounded-xl border border-red-500/20 bg-red-500/10 py-3 text-xs font-semibold text-red-400 transition hover:border-red-500/35">
+                        <X size={14} /> Oublié
+                      </button>
+                      <button onClick={() => handleVerdict(3)}
+                        className={`flex flex-col items-center gap-1 rounded-xl border py-3 text-xs font-semibold transition ${rv.tabIdle}`}>
+                        <HelpCircle size={14} /> Difficile
+                      </button>
+                      <button onClick={() => handleVerdict(5)}
+                        className="flex flex-col items-center gap-1 rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.1)] py-3 text-xs font-semibold text-[#34d399] transition hover:border-[rgba(52,211,153,0.4)]">
+                        <CheckCircle2 size={14} /> Maîtrisé
+                      </button>
+                    </div>
+                    <button onClick={() => onSelectChapter(currentResolved.module.id, currentResolved.chapter.id)}
+                      className={`flex w-full items-center justify-center gap-1.5 text-xs py-2 ${rv.mut} hover:text-[${GOLD}] transition`}>
+                      <BookOpen size={11} /> Revoir le cours
+                    </button>
+                  </motion.div>
+                )}
+              </motion.div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab Favoris ── */}
+      {tab === "favorites" && (
+        <div>
+          {favChapters.length === 0 ? (
+            <div className={`rounded-2xl border p-8 text-center ${rv.card}`}>
+              <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border ${rv.card}`}>
+                <Star size={22} className={rv.mut} />
+              </div>
+              <p className={`text-sm font-semibold ${rv.sec}`}>Aucun favori</p>
+              <p className={`mt-1 text-xs ${rv.mut}`}>Cliquez sur l&apos;étoile dans un cours pour le sauvegarder ici.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {favChapters.map(({ module, chapter }) => (
+                <motion.button key={chapter.id}
+                  onClick={() => onSelectChapter(module.id, chapter.id)}
+                  whileHover={{ x: 4 }} transition={{ duration: 0.18 }}
+                  className={`group flex w-full items-start gap-4 rounded-2xl border p-5 text-left transition-all ${rv.fCard}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="mb-0.5 text-[0.62rem] font-bold uppercase tracking-widest" style={{ color: module.color }}>
+                      M{module.id} · {module.title}
+                    </p>
+                    <p className={`truncate font-semibold ${rv.pri}`}>{chapter.title}</p>
+                    <div className={`mt-1 flex items-center gap-2 text-[0.6rem] ${rv.mut}`}>
+                      <Clock size={9} /> {chapter.duration}
+                      <span>·</span>
+                      <span>{chapter.type === "exercise" ? "Exercice" : chapter.type === "quiz" ? "Quiz" : "Cours"}</span>
+                    </div>
+                  </div>
+                  <ArrowRight size={14} className={`mt-1 shrink-0 transition-transform group-hover:translate-x-0.5 ${rv.mut}`} />
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FavoritesPanel({
   favorites, onSelectChapter,
 }: {
@@ -3387,6 +3754,7 @@ export default function EspaceCoachingIA() {
   const completedCount = completed.size;
   const overallPct     = Math.round((completedCount / totalChapters) * 100);
   const favCount       = favorites.size;
+  const srDueCount     = getDueItems().length;
 
   function toggleModule(id: string) {
     setExpandedModules((prev) => {
@@ -3409,7 +3777,7 @@ export default function EspaceCoachingIA() {
     setCompleted(next);
     saveProgress(next);
     bumpStreak();
-    // Sync vers Supabase (fire-and-forget, localStorage est le source de vérité offline)
+    enqueueForReview(selectedChapterId); // Phase 8 — répétition espacée
     fetch("/api/coaching-ia/progress", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -3486,7 +3854,7 @@ export default function EspaceCoachingIA() {
     { key: "chapter",     icon: BookOpen,         label: "Cours" },
     { key: "assistant",   icon: Bot,              label: "Coach IA" },
     { key: "jeux",        icon: Gamepad2,         label: "S'entraîner" },
-    { key: "favorites",   icon: Star,             label: "Révisions", badge: favCount || undefined },
+    { key: "favorites",   icon: Star,             label: "Révisions", badge: (srDueCount + favCount) || undefined },
     { key: "progression", icon: TrendingUp,       label: "Progression" },
   ];
 
@@ -3705,7 +4073,7 @@ export default function EspaceCoachingIA() {
                 initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22, ease }}
               >
-                <FavoritesPanel
+                <RevisionsPanel
                   favorites={favorites}
                   onSelectChapter={selectChapter}
                 />
