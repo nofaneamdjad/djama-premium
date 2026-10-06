@@ -4433,6 +4433,7 @@ export default function EspaceCoachingIA() {
   const [assistantInitMsg,  setAssistantInitMsg]  = useState<string | undefined>();
   const [levelUpToast,      setLevelUpToast]      = useState<{ name: string; color: string } | null>(null);
   const [badgeToast,        setBadgeToast]        = useState<{ label: string; Icon: React.ElementType; color: string } | null>(null);
+  const [isMobile,          setIsMobile]          = useState(false);
 
   /* ── Load from localStorage + sync Supabase ───────────── */
   useEffect(() => {
@@ -4443,6 +4444,11 @@ export default function EspaceCoachingIA() {
 
     // 2. Enroll silently (idempotent)
     fetch("/api/coaching-ia/enroll", { method: "POST" }).catch(() => {});
+
+    // Mobile detection
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
 
     // 3. Merge Supabase progress → localStorage wins on conflict
     fetch("/api/coaching-ia/progress")
@@ -4455,6 +4461,8 @@ export default function EspaceCoachingIA() {
         saveProgress(merged);
       })
       .catch(() => {});
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   /* ── Helpers ───────────────────────────────────────────── */
@@ -4606,13 +4614,25 @@ export default function EspaceCoachingIA() {
       {/* ── SIDEBAR ─────────────────────────────────────────── */}
       <AnimatePresence>
         {sidebarOpen && !focusMode && (
+          <>
+            {/* Mobile backdrop */}
+            {isMobile && (
+              <motion.div
+                className="fixed inset-0 z-40"
+                style={{ background: "rgba(0,0,0,0.55)" }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setSidebarOpen(false)}
+              />
+            )}
           <motion.aside
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 248, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease }}
-            className={`flex shrink-0 flex-col overflow-hidden border-r ${eSbBg}`}
-            style={{ width: 248 }}
+            initial={isMobile ? { x: -280 } : { width: 0, opacity: 0 }}
+            animate={isMobile ? { x: 0 }   : { width: 248, opacity: 1 }}
+            exit={isMobile   ? { x: -280 } : { width: 0, opacity: 0 }}
+            transition={isMobile ? { type: "spring", stiffness: 320, damping: 32 } : { duration: 0.25, ease }}
+            className={`flex flex-col overflow-hidden border-r ${eSbBg} ${
+              isMobile ? "fixed bottom-0 left-0 z-50 w-[280px]" : "shrink-0"
+            }`}
+            style={isMobile ? { top: "56px" } : { width: 248 }}
           >
             {/* Progress global */}
             <div className={`border-b px-4 py-4 ${isDark ? "border-white/[0.06]" : "border-black/[0.08]"}`}>
@@ -4673,6 +4693,7 @@ export default function EspaceCoachingIA() {
               </button>
             </div>
           </motion.aside>
+          </>
         )}
       </AnimatePresence>
 
@@ -4694,9 +4715,10 @@ export default function EspaceCoachingIA() {
             }
           </button>
 
-          <div className={`h-4 w-px ${eTbDiv}`} />
+          <div className={`hidden sm:block h-4 w-px ${eTbDiv}`} />
 
-          {/* Tabs */}
+          {/* Tabs — desktop uniquement */}
+          <div className="hidden sm:flex items-center gap-1">
           {TAB_ITEMS.map(({ key, icon: Icon, label, badge }) => (
             <button
               key={key}
@@ -4715,6 +4737,12 @@ export default function EspaceCoachingIA() {
               )}
             </button>
           ))}
+          </div>
+
+          {/* Mobile : titre de la vue active */}
+          <span className="flex sm:hidden text-xs font-semibold truncate" style={{ color: GOLD }}>
+            {TAB_ITEMS.find((t) => t.key === view)?.label ?? ""}
+          </span>
 
           {/* Spacer + KPI chip progression */}
           <div className="flex-1" />
@@ -4759,7 +4787,7 @@ export default function EspaceCoachingIA() {
         </div>
 
         {/* Vue principale */}
-        <div className={`flex-1 overflow-y-auto ${focusMode ? eBg : ""}`}>
+        <div className={`flex-1 overflow-y-auto pb-[60px] sm:pb-0 ${focusMode ? eBg : ""}`}>
           <AnimatePresence mode="wait">
 
             {view === "dashboard" && (
@@ -4865,6 +4893,36 @@ export default function EspaceCoachingIA() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* ── NAVIGATION BAS — mobile uniquement ───────────────── */}
+      {!focusMode && (
+        <nav
+          className={`fixed bottom-0 left-0 right-0 z-30 flex items-stretch border-t sm:hidden ${
+            isDark ? "bg-[#07080e] border-white/[0.06]" : "bg-white border-black/[0.08]"
+          }`}
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        >
+          {TAB_ITEMS.map(({ key, icon: Icon, label, badge }) => (
+            <button
+              key={key}
+              onClick={() => { setView(key); setSidebarOpen(false); }}
+              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.58rem] font-medium transition-all ${
+                view === key
+                  ? "text-[#c9a55a]"
+                  : isDark ? "text-white/35" : "text-[#0e1420]/40"
+              }`}
+            >
+              <Icon size={18} />
+              <span>{label}</span>
+              {badge !== undefined && badge > 0 && (
+                <span className="absolute right-[calc(50%-14px)] top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#f9a826] text-[0.5rem] font-black text-black">
+                  {badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {/* Toasts gamification (Phase 10) */}
       <AnimatePresence>
