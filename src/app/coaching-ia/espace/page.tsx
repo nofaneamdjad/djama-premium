@@ -3996,8 +3996,256 @@ function CertificatDJAMA({
   );
 }
 
+/* ─────────────────────────────────────────────────────────
+   COMPOSANT — Historique (Phase 17)
+───────────────────────────────────────────────────────── */
+interface HistoryEntry {
+  id:         string;
+  legacy_id:  string | null;
+  action:     string;
+  created_at: string;
+}
+
+function HistoriquePanel({ completed }: { completed: Set<string> }) {
+  const { isDark } = useTheme();
+  const [entries,   setEntries]   = useState<HistoryEntry[]>([]);
+  const [loading,   setLoading]   = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/coaching-ia/history")
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled) setEntries(d.entries ?? []); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const dp = {
+    pri:  isDark ? "text-white"        : "text-[#0e1420]",
+    sec:  isDark ? "text-white/50"     : "text-[#0e1420]/55",
+    mut:  isDark ? "text-white/30"     : "text-[#0e1420]/35",
+    card: isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-white shadow-sm",
+    bar:  isDark ? "bg-white/[0.07]"   : "bg-black/[0.07]",
+    lbl:  `text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`,
+    cell0:isDark ? "bg-white/[0.05]"   : "bg-black/[0.06]",
+  };
+
+  /* ── Heatmap : 12 semaines × 7 jours ── */
+  const TODAY = new Date();
+  TODAY.setHours(23, 59, 59, 999);
+  const CELLS = 84; // 12 semaines
+
+  const dayMap = new Map<string, number>();
+  entries.forEach((e) => {
+    const d = e.created_at.slice(0, 10);
+    dayMap.set(d, (dayMap.get(d) ?? 0) + 1);
+  });
+
+  const cells: { date: string; count: number }[] = [];
+  for (let i = CELLS - 1; i >= 0; i--) {
+    const d = new Date(TODAY);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    cells.push({ date: key, count: dayMap.get(key) ?? 0 });
+  }
+
+  function cellColor(count: number): string {
+    if (count === 0) return isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)";
+    if (count === 1) return isDark ? "rgba(201,165,90,0.35)" : "rgba(201,165,90,0.40)";
+    if (count === 2) return isDark ? "rgba(201,165,90,0.65)" : "rgba(201,165,90,0.70)";
+    return GOLD;
+  }
+
+  /* ── Stats mensuelles ── */
+  const thisMonth = TODAY.toISOString().slice(0, 7);
+  const monthCount = entries.filter((e) => e.created_at.startsWith(thisMonth)).length;
+
+  /* ── Semaines : 8 dernières ── */
+  interface WeekBar { label: string; count: number }
+  const weekBars: WeekBar[] = [];
+  for (let w = 7; w >= 0; w--) {
+    const start = new Date(TODAY);
+    start.setDate(start.getDate() - (w + 1) * 7);
+    const end   = new Date(TODAY);
+    end.setDate(end.getDate() - w * 7);
+    const startStr = start.toISOString().slice(0, 10);
+    const endStr   = end.toISOString().slice(0, 10);
+    const count = entries.filter((e) => e.created_at.slice(0, 10) >= startStr && e.created_at.slice(0, 10) < endStr).length;
+    const label = `S${8 - w}`;
+    weekBars.push({ label, count });
+  }
+  const maxWeek = Math.max(1, ...weekBars.map((b) => b.count));
+  const bestWeekCount = Math.max(...weekBars.map((b) => b.count));
+
+  /* ── Heure estimée (15 min/chapitre) ── */
+  const estHours = Math.round((completed.size * 15) / 60);
+
+  /* ── Titre chapitre depuis legacy_id ── */
+  function resolveChapter(legacyId: string | null) {
+    if (!legacyId) return null;
+    const [mId, cId] = legacyId.split(".");
+    const mod = COACHING_MODULES.find((m) => m.id === mId);
+    if (!mod) return null;
+    const chap = mod.chapters.find((c) => c.id === legacyId);
+    return chap ? { modTitle: mod.title, chapTitle: chap.title } : null;
+  }
+
+  function relativeDate(iso: string): string {
+    const d = new Date(iso);
+    const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (diff < 60)   return "À l'instant";
+    if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
+    if (diff < 86400)return `Il y a ${Math.floor(diff / 3600)} h`;
+    if (diff < 172800) return "Hier";
+    const days = Math.floor(diff / 86400);
+    if (days < 30)   return `Il y a ${days} j`;
+    const months = Math.floor(days / 30);
+    return `Il y a ${months} mois`;
+  }
+
+  if (loading) return (
+    <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-8">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className={`h-32 animate-pulse rounded-2xl ${isDark ? "bg-white/[0.04]" : "bg-black/[0.04]"}`} />
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-8">
+      {/* En-tête */}
+      <div>
+        <p className={dp.lbl}>Historique</p>
+        <h2 className={`mt-2 text-2xl font-black ${dp.pri}`}>Votre parcours</h2>
+        <p className={`mt-1 text-sm ${dp.sec}`}>{entries.length} chapitres enregistrés côté serveur</p>
+      </div>
+
+      {/* Stats tuiles */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "Ce mois", value: monthCount, unit: "ch." },
+          { label: "Meilleure semaine", value: bestWeekCount, unit: "ch." },
+          { label: "Total", value: completed.size, unit: "ch." },
+          { label: "Temps estimé", value: estHours, unit: "h" },
+        ].map(({ label, value, unit }) => (
+          <div key={label} className={`rounded-2xl border p-4 ${dp.card}`}>
+            <p className={dp.lbl}>{label}</p>
+            <p className={`mt-2 text-2xl font-black ${dp.pri}`}>
+              {value}<span className={`ml-1 text-sm font-medium ${dp.sec}`}>{unit}</span>
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Heatmap d'activité */}
+      <div className={`rounded-2xl border p-5 ${dp.card}`}>
+        <p className={`mb-4 ${dp.lbl}`}>Activité — 12 dernières semaines</p>
+        {entries.length === 0 ? (
+          <p className={`text-sm ${dp.sec}`}>
+            Aucune donnée serveur pour le moment.{" "}
+            {completed.size > 0
+              ? "Votre progression locale est bien enregistrée."
+              : "Terminez un chapitre pour commencer."}
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="flex gap-[3px]">
+              {Array.from({ length: 12 }, (_, w) => (
+                <div key={w} className="flex flex-col gap-[3px]">
+                  {Array.from({ length: 7 }, (_, d) => {
+                    const idx = w * 7 + d;
+                    const cell = cells[idx];
+                    if (!cell) return <div key={d} className="h-[12px] w-[12px]" />;
+                    return (
+                      <div
+                        key={d}
+                        className="h-[12px] w-[12px] rounded-[2px] transition-colors"
+                        style={{ background: cellColor(cell.count) }}
+                        title={`${cell.date} — ${cell.count} chapitre${cell.count > 1 ? "s" : ""}`}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className={`text-[0.6rem] ${dp.mut}`}>Moins</span>
+              {[0, 1, 2, 3].map((v) => (
+                <div key={v} className="h-[10px] w-[10px] rounded-[2px]" style={{ background: cellColor(v) }} />
+              ))}
+              <span className={`text-[0.6rem] ${dp.mut}`}>Plus</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Graphe semaines (barres SVG) */}
+      {entries.length > 0 && (
+        <div className={`rounded-2xl border p-5 ${dp.card}`}>
+          <p className={`mb-4 ${dp.lbl}`}>Chapitres par semaine — 8 dernières</p>
+          <div className="flex h-28 items-end gap-1.5">
+            {weekBars.map(({ label, count }) => {
+              const pct = (count / maxWeek) * 100;
+              return (
+                <div key={label} className="flex flex-1 flex-col items-center gap-1">
+                  <span className={`text-[0.58rem] font-bold ${dp.sec}`}>{count > 0 ? count : ""}</span>
+                  <div className={`w-full rounded-t-sm ${dp.bar} relative overflow-hidden`} style={{ height: "72px" }}>
+                    <motion.div
+                      className="absolute bottom-0 w-full rounded-t-sm"
+                      style={{ background: `linear-gradient(to top, ${GOLD}dd, ${GOLD}88)` }}
+                      initial={{ height: 0 }}
+                      animate={{ height: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.05 * weekBars.indexOf({ label, count }) }}
+                    />
+                  </div>
+                  <span className={`text-[0.58rem] ${dp.mut}`}>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Timeline des 20 dernières complétions */}
+      <div className={`rounded-2xl border p-5 ${dp.card}`}>
+        <p className={`mb-4 ${dp.lbl}`}>Dernières complétions</p>
+        {entries.length === 0 ? (
+          <p className={`text-sm ${dp.sec}`}>Aucune complétion enregistrée côté serveur.</p>
+        ) : (
+          <div className="space-y-3">
+            {entries.slice(0, 20).map((e) => {
+              const info = resolveChapter(e.legacy_id);
+              return (
+                <div key={e.id} className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: `${GOLD}20`, border: `1px solid ${GOLD}40` }}>
+                    <CheckCircle2 size={12} style={{ color: GOLD }} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {info ? (
+                      <>
+                        <p className={`truncate text-sm font-semibold ${dp.pri}`}>{info.chapTitle}</p>
+                        <p className={`text-[0.7rem] ${dp.sec}`}>{info.modTitle}</p>
+                      </>
+                    ) : (
+                      <p className={`text-sm ${dp.sec}`}>{e.legacy_id ?? "Chapitre inconnu"}</p>
+                    )}
+                  </div>
+                  <span className={`shrink-0 text-[0.65rem] ${dp.mut}`}>{relativeDate(e.created_at)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ProgressionPanel({ completed, onSelectChapter, onSetView, userName }: { completed: Set<string>; onSelectChapter: (id: string) => void; onSetView: (v: View) => void; userName?: string }) {
   const { isDark } = useTheme();
+  const [progTab, setProgTab] = useState<"parcours" | "historique">("parcours");
   const totalChapters  = TOTAL_CHAPTERS;
   const completedCount = completed.size;
   const overallPct     = Math.round((completedCount / totalChapters) * 100);
@@ -4033,8 +4281,38 @@ function ProgressionPanel({ completed, onSelectChapter, onSetView, userName }: {
     earned: checkBadgeEarned(b.id, bState),
   }));
 
+  /* ── Sélecteur de sous-onglet ── */
+  const SubTabs = (
+    <div className={`sticky top-0 z-10 flex gap-1 border-b px-4 py-2 sm:px-8 ${
+      isDark ? "bg-[#07080e] border-white/[0.06]" : "bg-white border-black/[0.07]"
+    }`}>
+      {(["parcours", "historique"] as const).map((t) => (
+        <button
+          key={t}
+          onClick={() => setProgTab(t)}
+          className={`rounded-lg px-3 py-1.5 text-[0.72rem] font-semibold capitalize transition-all ${
+            progTab === t
+              ? "text-[#c9a55a] bg-[rgba(201,165,90,0.12)]"
+              : isDark ? "text-white/40 hover:text-white/60" : "text-[#0e1420]/40 hover:text-[#0e1420]/60"
+          }`}
+        >
+          {t === "parcours" ? "Parcours" : "Historique"}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (progTab === "historique") return (
+    <>
+      {SubTabs}
+      <HistoriquePanel completed={completed} />
+    </>
+  );
+
   return (
-    <div className="mx-auto max-w-3xl space-y-10 px-4 py-8 sm:px-8">
+    <>
+      {SubTabs}
+      <div className="mx-auto max-w-3xl space-y-10 px-4 py-8 sm:px-8">
       {/* En-tête */}
       <div>
         <p className={dp.lbl}>Progression</p>
@@ -4118,6 +4396,7 @@ function ProgressionPanel({ completed, onSelectChapter, onSetView, userName }: {
         </div>
       )}
     </div>
+    </>
   );
 }
 
