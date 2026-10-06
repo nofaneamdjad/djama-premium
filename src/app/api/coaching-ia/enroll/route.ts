@@ -7,6 +7,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { checkRateLimitAsync as checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,8 @@ export async function POST() {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  const { allowed } = await checkRateLimit(user.id + ":enroll", 10, 60 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "Trop de requêtes." }, { status: 429 });
 
   /* Vérifier accès coaching */
   const { data: access } = await supabase

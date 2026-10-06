@@ -9,8 +9,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { checkRateLimitAsync as checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+const LEGACY_ID_RE = /^\d{1,2}\.\d{1,2}$/;
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -26,6 +29,8 @@ export async function GET() {
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  const { allowed } = await checkRateLimit(user.id + ":progress:get", 60, 60 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "Trop de requêtes." }, { status: 429 });
 
   /* Progression via les IDs catalog */
   const { data: progRows } = await supabase
@@ -57,6 +62,8 @@ export async function POST(req: NextRequest) {
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  const { allowed } = await checkRateLimit(user.id + ":progress:post", 30, 60 * 60 * 1000);
+  if (!allowed) return NextResponse.json({ error: "Trop de requêtes." }, { status: 429 });
 
   const body = await req.json() as {
     legacy_id:  string;
@@ -64,8 +71,14 @@ export async function POST(req: NextRequest) {
     quiz_score?: number;
   };
 
-  if (!body.legacy_id) {
-    return NextResponse.json({ error: "legacy_id requis" }, { status: 400 });
+  if (!body.legacy_id || !LEGACY_ID_RE.test(body.legacy_id)) {
+    return NextResponse.json({ error: "legacy_id invalide" }, { status: 400 });
+  }
+  if (typeof body.completed !== "boolean") {
+    return NextResponse.json({ error: "completed doit être un booléen" }, { status: 400 });
+  }
+  if (body.quiz_score !== undefined && (typeof body.quiz_score !== "number" || body.quiz_score < 0 || body.quiz_score > 100)) {
+    return NextResponse.json({ error: "quiz_score invalide" }, { status: 400 });
   }
 
   /* Résoudre le chapter_id depuis le legacy_id */
