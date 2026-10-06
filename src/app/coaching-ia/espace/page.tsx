@@ -165,6 +165,159 @@ function bumpDailyStats() {
 }
 
 /* ─────────────────────────────────────────────────────────
+   CONTEXTE PROFESSIONNEL (Phase 12)
+   Stocké en localStorage — injecté dans chaque appel IA
+───────────────────────────────────────────────────────── */
+const CTX_KEY = "djama_user_context";
+
+interface UserCtx { role: string; objective: string; level: "debutant" | "intermediaire" | "avance" }
+
+function loadUserCtx(): UserCtx {
+  if (typeof window === "undefined") return { role: "", objective: "", level: "debutant" };
+  try {
+    const raw = localStorage.getItem(CTX_KEY);
+    return raw ? JSON.parse(raw) as UserCtx : { role: "", objective: "", level: "debutant" };
+  } catch { return { role: "", objective: "", level: "debutant" }; }
+}
+function saveUserCtx(ctx: UserCtx) {
+  try { localStorage.setItem(CTX_KEY, JSON.stringify(ctx)); } catch {}
+}
+function formatUserCtxForPrompt(ctx: UserCtx): string | undefined {
+  const parts: string[] = [];
+  if (ctx.role)      parts.push(`Secteur / rôle : ${ctx.role}`);
+  const lvlLabel = ctx.level === "intermediaire" ? "Intermédiaire" : ctx.level === "avance" ? "Avancé" : "Débutant";
+  parts.push(`Niveau IA déclaré : ${lvlLabel}`);
+  if (ctx.objective) parts.push(`Objectif principal : ${ctx.objective}`);
+  return parts.length > 1 ? parts.join("\n") : undefined;
+}
+
+function ContexteProCard() {
+  const { isDark } = useTheme();
+  const [ctx,     setCtx]     = useState<UserCtx>({ role: "", objective: "", level: "debutant" });
+  const [editing, setEditing] = useState(false);
+  const [draft,   setDraft]   = useState<UserCtx>(ctx);
+
+  useEffect(() => { const c = loadUserCtx(); setCtx(c); setDraft(c); }, []);
+
+  function save() { saveUserCtx(draft); setCtx(draft); setEditing(false); }
+
+  const isEmpty = !ctx.role && !ctx.objective;
+  const lvlLabels = { debutant: "Débutant", intermediaire: "Intermédiaire", avance: "Avancé" };
+  const lvlColors = { debutant: "#60a5fa", intermediaire: "#f59e0b", avance: "#8b5cf6" };
+
+  const cp = {
+    pri:   isDark ? "text-white"        : "text-[#0e1420]",
+    sec:   isDark ? "text-white/50"     : "text-[#0e1420]/55",
+    mut:   isDark ? "text-white/30"     : "text-[#0e1420]/35",
+    card:  isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.07] bg-white shadow-sm",
+    input: isDark
+      ? "border-white/[0.1] bg-white/[0.04] text-white placeholder:text-white/20 focus:border-white/[0.2]"
+      : "border-black/[0.1] bg-black/[0.02] text-[#0e1420] placeholder:text-[#0e1420]/25 focus:border-black/[0.2]",
+    lbl: `text-[0.62rem] font-bold uppercase tracking-widest ${isDark ? "text-white/25" : "text-[#0e1420]/30"}`,
+  };
+
+  return (
+    <div className={`rounded-2xl border p-5 ${cp.card}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgba(201,165,90,0.12)] border border-[rgba(201,165,90,0.2)]">
+            <User size={14} className="text-[#c9a55a]" />
+          </div>
+          <p className={`text-sm font-extrabold ${cp.pri}`}>Mon profil professionnel</p>
+        </div>
+        {!editing && (
+          <button onClick={() => { setDraft(ctx); setEditing(true); }}
+            className={`rounded-lg border px-3 py-1 text-[0.62rem] font-bold transition-colors ${
+              isDark ? "border-white/10 bg-white/[0.04] text-white/50 hover:text-white" : "border-black/10 bg-black/[0.03] text-[#0e1420]/50 hover:text-[#0e1420]"
+            }`}>
+            {isEmpty ? "Configurer" : "Modifier"}
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        isEmpty ? (
+          <div className="rounded-xl border border-dashed border-[rgba(201,165,90,0.2)] p-4 text-center">
+            <p className={`text-xs ${cp.mut}`}>Personnalisez le Coach IA avec votre contexte professionnel.</p>
+            <p className={`mt-0.5 text-[0.6rem] ${cp.mut} opacity-60`}>Secteur, objectif, niveau — les réponses seront adaptées à votre réalité.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {ctx.role && (
+              <div className="flex items-center gap-2">
+                <span className={`text-[0.6rem] w-20 shrink-0 ${cp.mut}`}>Secteur</span>
+                <span className={`text-xs font-semibold ${cp.sec}`}>{ctx.role}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <span className={`text-[0.6rem] w-20 shrink-0 ${cp.mut}`}>Niveau IA</span>
+              <span className="text-xs font-bold" style={{ color: lvlColors[ctx.level] }}>{lvlLabels[ctx.level]}</span>
+            </div>
+            {ctx.objective && (
+              <div className="flex items-start gap-2">
+                <span className={`text-[0.6rem] w-20 shrink-0 mt-0.5 ${cp.mut}`}>Objectif</span>
+                <span className={`text-xs leading-relaxed ${cp.sec}`}>{ctx.objective}</span>
+              </div>
+            )}
+          </div>
+        )
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <p className={`mb-1.5 ${cp.lbl}`}>Secteur / rôle professionnel</p>
+            <input
+              value={draft.role}
+              onChange={(e) => setDraft({ ...draft, role: e.target.value })}
+              placeholder="Ex: Gérant d'épicerie à Mayotte, importateur-exportateur, consultant…"
+              className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition-all ${cp.input}`}
+            />
+          </div>
+          <div>
+            <p className={`mb-2 ${cp.lbl}`}>Niveau en IA</p>
+            <div className="flex gap-2">
+              {(["debutant", "intermediaire", "avance"] as const).map((l) => (
+                <button key={l}
+                  onClick={() => setDraft({ ...draft, level: l })}
+                  className="flex-1 rounded-xl border py-2 text-[0.62rem] font-bold transition-all"
+                  style={draft.level === l
+                    ? { borderColor: `${lvlColors[l]}50`, background: `${lvlColors[l]}15`, color: lvlColors[l] }
+                    : { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)", color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)" }}>
+                  {lvlLabels[l]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className={`mb-1.5 ${cp.lbl}`}>Objectif principal avec l'IA</p>
+            <textarea
+              value={draft.objective}
+              onChange={(e) => setDraft({ ...draft, objective: e.target.value })}
+              placeholder="Ex: Automatiser mes devis et relances clients, créer du contenu pour mon e-commerce…"
+              rows={2}
+              className={`w-full resize-none rounded-xl border px-4 py-2.5 text-xs outline-none transition-all ${cp.input}`}
+            />
+          </div>
+          <div className="flex gap-2">
+            <motion.button whileTap={{ scale: 0.97 }}
+              onClick={save}
+              className="flex-1 rounded-xl py-2 text-xs font-bold text-black"
+              style={{ background: "linear-gradient(135deg, #c9a55a, #a07840)" }}>
+              Enregistrer
+            </motion.button>
+            <button onClick={() => setEditing(false)}
+              className={`rounded-xl border px-4 py-2 text-xs font-bold transition-colors ${
+                isDark ? "border-white/10 text-white/50 hover:text-white" : "border-black/10 text-[#0e1420]/50"
+              }`}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    DONNÉES — Domaines de compétences transversales (Phase 9)
 ───────────────────────────────────────────────────────── */
 const SKILL_DOMAINS = [
@@ -1276,10 +1429,11 @@ function AssistantPanel({
     setLoading(true);
 
     try {
+      const userContext = formatUserCtxForPrompt(loadUserCtx());
       const res = await fetch("/api/coaching-ia/assistant", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ messages: newMessages, context: currentContext, mode }),
+        body:    JSON.stringify({ messages: newMessages, context: currentContext, mode, userContext }),
       });
       const data = await res.json() as { reply?: string; error?: string };
       setMessages([...newMessages, {
@@ -4146,6 +4300,12 @@ function DashboardPanel({
             );
           })}
         </div>
+      </div>
+
+      {/* ── Profil professionnel (Phase 12) ── */}
+      <div>
+        <p className={`mb-4 ${dp.lbl}`}>Personnaliser votre expérience</p>
+        <ContexteProCard />
       </div>
 
       {/* ── Recommandé pour vous ── */}

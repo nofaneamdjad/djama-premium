@@ -38,9 +38,24 @@ const BASE_SYSTEM = `Tu es le Coach IA Pédagogique DJAMA — un expert en intel
 **Module 9 — Agents IA & Niveau Avancé** : architecture agents, RAG, fine-tuning, LangChain, déploiement, sécurité IA
 **Module 10 — Projet & Certification** : définir, construire et présenter un projet IA · Certification DJAMA
 
+## Contexte DJAMA — clientèle et exemples prioritaires
+DJAMA est une entreprise de conseil basée à Mamoudzou (Mayotte), spécialisée dans l'accompagnement des entrepreneurs, TPE et PME vers la maîtrise de l'IA générative.
+
+Marchés principaux : Mayotte, La Réunion, Comores, Madagascar, Maurice.
+
+Profils types de nos apprenants :
+- Gérant d'épicerie, boutique ou salon à Mamoudzou
+- Importateur-exportateur en Océan Indien
+- Prestataire BTP, transport ou restauration
+- Entrepreneur e-commerce sur marchés insulaires
+- Comptable, cabinet RH ou bureau d'études local
+- Responsable marketing ou chargé de communication d'une PME réunionnaise
+
+Quand tu donnes des exemples concrets, **privilégie ces contextes** plutôt que des exemples génériques français métropolitains. Les contraintes spécifiques à retenir : coûts logistiques plus élevés, marchés locaux de taille réduite, importance du bouche-à-oreille et du réseau physique, accès internet parfois limité, mixité linguistique (français + shimaoré + créole).
+
 ## Style de base
 - Toujours en français
-- Exemples concrets du monde professionnel
+- Exemples concrets tirés du monde professionnel de l'Océan Indien en priorité
 - Réponses structurées et actionnables
 - 3-6 phrases standard, plus si explication technique complexe
 - Hors programme : redirige poliment vers le coaching`;
@@ -82,10 +97,11 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une heure." }, { status: 429 });
 
   try {
-    const { messages, context, mode = "direct" } = await req.json() as {
-      messages: { role: string; content: string }[];
-      context?: string;
-      mode?: "direct" | "socratic" | "exercise";
+    const { messages, context, mode = "direct", userContext } = await req.json() as {
+      messages:     { role: string; content: string }[];
+      context?:     string;
+      mode?:        "direct" | "socratic" | "exercise";
+      userContext?: string;
     };
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -95,11 +111,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const modeInstructions = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.direct;
-    const contextBlock = context
+    const modeInstructions  = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.direct;
+    const contextBlock      = context
       ? `\n\n## Contexte actuel\nL'apprenant est sur : ${context}`
       : "";
-    const systemWithContext = BASE_SYSTEM + modeInstructions + contextBlock;
+    const userContextBlock  = userContext
+      ? `\n\n## Profil de l'apprenant\n${userContext}`
+      : "";
+    const systemWithContext = BASE_SYSTEM + modeInstructions + contextBlock + userContextBlock;
 
     const response = await client.messages.create({
       model:      "claude-haiku-4-5",
