@@ -15,9 +15,14 @@ import {
 import { COACHING_MODULES, getNextChapter, type Module, type Chapter } from "@/lib/coaching-content";
 import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
 import { useTheme } from "@/lib/theme-context";
+import {
+  XP_PER_CHAPTER, LEVEL_DATA, getLevel,
+  checkBadgeEarned, extractModuleRefs,
+} from "@/lib/coaching-utils";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD = "#c9a55a";
+const TOTAL_CHAPTERS = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
 
 /* ─────────────────────────────────────────────────────────
    STORAGE — Progress
@@ -377,23 +382,7 @@ function CopyButton({ text, className = "" }: { text: string; className?: string
 ───────────────────────────────────────────────────────── */
 const STREAK_KEY     = "djama_coaching_streak";
 const STREAK_DAY_KEY = "djama_coaching_streak_day";
-const XP_PER_CHAPTER = 50;
-
-const LEVEL_DATA = [
-  { name: "Novice",    min: 0,    color: "#94a3b8" },
-  { name: "Apprenti",  min: 300,  color: "#60a5fa" },
-  { name: "Praticien", min: 700,  color: "#a78bfa" },
-  { name: "Expert IA", min: 1400, color: "#f59e0b" },
-  { name: "Maître IA", min: 2500, color: "#c9a55a" },
-];
-
-function getLevel(xp: number) {
-  let idx = 0;
-  for (let i = 0; i < LEVEL_DATA.length; i++) { if (xp >= LEVEL_DATA[i].min) idx = i; }
-  const next = LEVEL_DATA[idx + 1];
-  const pct  = next ? Math.min(100, Math.round(((xp - LEVEL_DATA[idx].min) / (next.min - LEVEL_DATA[idx].min)) * 100)) : 100;
-  return { ...LEVEL_DATA[idx], pct, xpNext: next ? next.min - xp : 0, nextName: next?.name };
-}
+// XP_PER_CHAPTER, LEVEL_DATA, getLevel → importés depuis @/lib/coaching-utils
 
 function loadStreak(): { streak: number; updatedToday: boolean } {
   if (typeof window === "undefined") return { streak: 0, updatedToday: false };
@@ -444,20 +433,7 @@ const ALL_BADGES: BadgeDef[] = [
   { id: "certified", label: "Certifié DJAMA",    Icon: Award,        color: "#34d399", desc: "100% du programme" },
 ];
 
-function checkBadgeEarned(id: string, s: {
-  completedCount: number; streak: number; overallPct: number;
-  doneModules: number; quizDone: number;
-}): boolean {
-  switch (id) {
-    case "first":     return s.completedCount >= 1;
-    case "week":      return s.streak >= 7;
-    case "halfway":   return s.overallPct >= 50;
-    case "module":    return s.doneModules >= 1;
-    case "quiz":      return s.quizDone >= 5;
-    case "certified": return s.overallPct === 100;
-    default:          return false;
-  }
-}
+// checkBadgeEarned → importée depuis @/lib/coaching-utils
 
 function LevelUpToast({ name, color }: { name: string; color: string }) {
   return (
@@ -1423,22 +1399,7 @@ function ChapterViewer({
 ───────────────────────────────────────────────────────── */
 type Msg = { role: "user" | "assistant"; content: string };
 
-function extractModuleRefs(text: string): string[] {
-  const refs = new Set<string>();
-  const patterns: RegExp[] = [
-    /\bmodule\s+(\d{1,2})\b/gi,
-    /\bM(\d{1,2})\b/g,
-    /\b(\d{1,2})\.\d+\b/g,
-  ];
-  for (const re of patterns) {
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(text)) !== null) {
-      const id = m[1];
-      if (id && parseInt(id) >= 1 && parseInt(id) <= 10) refs.add(id);
-    }
-  }
-  return [...refs].slice(0, 5);
-}
+// extractModuleRefs → importée depuis @/lib/coaching-utils
 
 function AssistantPanel({
   currentContext, initMessage, onInitConsumed, onNavigateToModule,
@@ -4037,7 +3998,7 @@ function CertificatDJAMA({
 
 function ProgressionPanel({ completed, onSelectChapter, onSetView, userName }: { completed: Set<string>; onSelectChapter: (id: string) => void; onSetView: (v: View) => void; userName?: string }) {
   const { isDark } = useTheme();
-  const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
+  const totalChapters  = TOTAL_CHAPTERS;
   const completedCount = completed.size;
   const overallPct     = Math.round((completedCount / totalChapters) * 100);
   const doneModules    = COACHING_MODULES.filter((m) => m.chapters.every((c) => completed.has(c.id))).length;
@@ -4173,7 +4134,7 @@ function DashboardPanel({
   userName?:       string;
 }) {
   const { isDark } = useTheme();
-  const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
+  const totalChapters  = TOTAL_CHAPTERS;
   const completedCount = completed.size;
   const overallPct     = Math.round((completedCount / totalChapters) * 100);
   const totalModules   = COACHING_MODULES.length;
@@ -4469,7 +4430,7 @@ export default function EspaceCoachingIA() {
   const currentModule  = COACHING_MODULES.find((m) => m.id === selectedModuleId)!;
   const currentChapter = currentModule?.chapters.find((c) => c.id === selectedChapterId) ?? currentModule?.chapters[0];
 
-  const totalChapters  = COACHING_MODULES.reduce((a, m) => a + m.chapters.length, 0);
+  const totalChapters  = TOTAL_CHAPTERS;
   const completedCount = completed.size;
   const overallPct     = Math.round((completedCount / totalChapters) * 100);
   const favCount       = favorites.size;
