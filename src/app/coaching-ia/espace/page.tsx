@@ -1366,6 +1366,38 @@ function ChapterViewer({
         <InlineModuleQuiz moduleId={module.id} onComplete={onComplete} />
       )}
 
+      {/* ── Passerelle Coach IA (Phase 13) ── */}
+      <div className={`mb-6 rounded-2xl border p-5 ${
+        isDark ? "border-white/[0.07] bg-white/[0.02]" : "border-black/[0.07] bg-black/[0.015]"
+      }`}>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(167,139,250,0.12)] border border-[rgba(167,139,250,0.2)]">
+            <Bot size={13} className="text-[#a78bfa]" />
+          </div>
+          <p className={`text-[0.62rem] font-bold uppercase tracking-widest ${cFaint}`}>Approfondir avec le Coach IA</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            `Explique-moi "${chapter.title}" avec un exemple concret adapté à mon secteur.`,
+            `Quelles erreurs fréquentes dois-je éviter sur "${chapter.title}" ?`,
+            `Crée un exercice pratique pour maîtriser "${chapter.title}" dans mon activité.`,
+          ].map((q) => (
+            <motion.button
+              key={q.slice(0, 30)}
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+              onClick={() => onAskAssistant(q)}
+              className={`rounded-xl border px-3 py-1.5 text-left text-[0.65rem] font-medium transition-all ${
+                isDark
+                  ? "border-white/[0.09] bg-white/[0.04] text-white/55 hover:border-[rgba(167,139,250,0.35)] hover:text-[#a78bfa]"
+                  : "border-black/[0.09] bg-black/[0.02] text-[#0e1420]/55 hover:border-[rgba(167,139,250,0.4)] hover:text-[#a78bfa]"
+              }`}
+            >
+              {q.length > 70 ? q.slice(0, 68) + "…" : q}
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
       {/* ── Actions nav ── */}
       <div className={`flex flex-col gap-3 border-t pt-6 sm:flex-row ${cDivider}`}>
         {!isCompleted ? (
@@ -1391,12 +1423,30 @@ function ChapterViewer({
 ───────────────────────────────────────────────────────── */
 type Msg = { role: "user" | "assistant"; content: string };
 
+function extractModuleRefs(text: string): string[] {
+  const refs = new Set<string>();
+  const patterns: RegExp[] = [
+    /\bmodule\s+(\d{1,2})\b/gi,
+    /\bM(\d{1,2})\b/g,
+    /\b(\d{1,2})\.\d+\b/g,
+  ];
+  for (const re of patterns) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      const id = m[1];
+      if (id && parseInt(id) >= 1 && parseInt(id) <= 10) refs.add(id);
+    }
+  }
+  return [...refs].slice(0, 5);
+}
+
 function AssistantPanel({
-  currentContext, initMessage, onInitConsumed,
+  currentContext, initMessage, onInitConsumed, onNavigateToModule,
 }: {
-  currentContext?: string;
-  initMessage?:    string;
-  onInitConsumed:  () => void;
+  currentContext?:     string;
+  initMessage?:        string;
+  onInitConsumed:      () => void;
+  onNavigateToModule?: (moduleId: string) => void;
 }) {
   type CoachMode = "direct" | "socratic" | "exercise";
   const { isDark } = useTheme();
@@ -1585,6 +1635,27 @@ function AssistantPanel({
               msg.role === "user" ? aMsgUser : aMsgBot
             }`} style={{ whiteSpace: "pre-wrap" }}>
               {msg.content}
+              {msg.role === "assistant" && i === messages.length - 1 && onNavigateToModule && (() => {
+                const refs = extractModuleRefs(msg.content);
+                if (!refs.length) return null;
+                return (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {refs.map((id) => {
+                      const mod = COACHING_MODULES.find((m) => m.id === id);
+                      if (!mod) return null;
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => onNavigateToModule(id)}
+                          className="rounded-full border border-[rgba(167,139,250,0.3)] bg-[rgba(167,139,250,0.08)] px-2 py-0.5 text-[0.65rem] text-[#a78bfa] transition hover:bg-[rgba(167,139,250,0.18)]"
+                        >
+                          → {mod.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         ))}
@@ -4735,6 +4806,14 @@ export default function EspaceCoachingIA() {
                   currentContext={currentContext}
                   initMessage={assistantInitMsg}
                   onInitConsumed={() => setAssistantInitMsg(undefined)}
+                  onNavigateToModule={(moduleId) => {
+                    const mod = COACHING_MODULES.find((m) => m.id === moduleId);
+                    const firstChap = mod?.chapters[0];
+                    if (firstChap) {
+                      selectChapter(moduleId, firstChap.id);
+                      setView("chapter");
+                    }
+                  }}
                 />
               </motion.div>
             )}
