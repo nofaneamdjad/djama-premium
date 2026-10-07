@@ -42,6 +42,11 @@
       "name": "Dashboard",
       "url": "/client/dashboard",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Rendez-vous",
+      "url": "/client/rendez-vous",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "categories": ["productivity", "finance", "business"],
