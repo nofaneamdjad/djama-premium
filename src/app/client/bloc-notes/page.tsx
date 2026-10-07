@@ -9,11 +9,11 @@ import TaskItem from "@tiptap/extension-task-item";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
-  Plus, Search, Star, Trash2, Clock, Archive, ArchiveRestore,
+  Plus, Search, Star, Trash2, Archive, ArchiveRestore,
   Folder, Bold, Italic, Underline as UnderlineIcon, List,
   ListOrdered, CheckSquare, Code2, Quote, Link2,
   Heading1, Heading2, Heading3, MoreVertical, FileText,
-  ChevronLeft, Pin, PinOff,
+  Pin, PinOff, Check, AlertCircle,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useTheme } from "@/lib/theme-context";
@@ -148,6 +148,7 @@ export default function BlocNotes() {
   const [mobileView, setMobileView] = useState<"list" | "editor">("editor");
   const [toast,      setToast]      = useState<ToastData | null>(null);
   const [ctxMenuId,  setCtxMenuId]  = useState<string | null>(null);
+  const [wordCount,  setWordCount]  = useState(0);
 
   const saveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedIdRef = useRef<string | null>(null);
@@ -175,6 +176,8 @@ export default function BlocNotes() {
     },
     onUpdate: ({ editor }) => {
       scheduleAutosave(selectedIdRef.current, titleRef.current, editor.getHTML());
+      const txt = editor.getText().trim();
+      setWordCount(txt ? txt.split(/\s+/).length : 0);
     },
   });
 
@@ -207,11 +210,35 @@ export default function BlocNotes() {
         e.preventDefault();
         searchRef.current?.focus();
       }
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (selectedIdRef.current && editor) {
+          if (saveTimerRef.current) {
+            clearTimeout(saveTimerRef.current);
+            saveTimerRef.current = null;
+          }
+          void doSave(selectedIdRef.current, titleRef.current, editor.getHTML());
+        }
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Flush save when tab goes to background
+  useEffect(() => {
+    function onHide() {
+      if (document.visibilityState === "hidden" && selectedIdRef.current && editor && saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+        void doSave(selectedIdRef.current, titleRef.current, editor.getHTML());
+      }
+    }
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
 
   // Close ctx menu on outside click
   useEffect(() => {
@@ -237,6 +264,7 @@ export default function BlocNotes() {
       editor.commands.setContent("", false);
       setTitleValue("");
       titleRef.current = "";
+      setWordCount(0);
       return;
     }
     const note = notes.find((n) => n.id === selectedId);
@@ -245,6 +273,8 @@ export default function BlocNotes() {
     titleRef.current = note.title;
     setTitleValue(note.title);
     editor.commands.setContent(note.content || "", false);
+    const txt = editor.getText().trim();
+    setWordCount(txt ? txt.split(/\s+/).length : 0);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
@@ -447,13 +477,6 @@ export default function BlocNotes() {
   const textMuted   = isDark ? "rgba(255,255,255,0.35)" : "#9ca3af";
   const inputBg     = isDark ? "rgba(255,255,255,0.04)" : "#f3f4f6";
   const toolbarBg   = isDark ? "#09121f" : "#f9fafb";
-
-  // Save status text
-  const saveLabel =
-    saveStatus === "saving" ? "Enregistrement…"
-    : saveStatus === "saved"  ? "Enregistré"
-    : saveStatus === "error"  ? "Erreur d'enregistrement"
-    : "";
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -835,15 +858,28 @@ export default function BlocNotes() {
                 )}
 
                 {/* Save status */}
-                <div className="ml-auto shrink-0">
-                  <span className="text-[10px]" style={{
-                    color: saveStatus === "error" ? "#ef4444"
-                      : saveStatus === "saved" ? (isDark ? "rgba(255,255,255,0.3)" : "#9ca3af")
-                      : saveStatus === "saving" ? GOLD
-                      : "transparent",
-                  }}>
-                    {saveLabel}
-                  </span>
+                <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                  {saveStatus === "saving" && (
+                    <>
+                      <div className="w-3 h-3 rounded-full border animate-spin shrink-0"
+                        style={{ borderColor: `${GOLD}40`, borderTopColor: GOLD }} />
+                      <span className="text-[10px]" style={{ color: GOLD }}>Enregistrement…</span>
+                    </>
+                  )}
+                  {saveStatus === "saved" && (
+                    <>
+                      <Check size={11} style={{ color: isDark ? "rgba(255,255,255,0.3)" : "#9ca3af" }} />
+                      <span className="text-[10px]" style={{ color: isDark ? "rgba(255,255,255,0.3)" : "#9ca3af" }}>
+                        Enregistré
+                      </span>
+                    </>
+                  )}
+                  {saveStatus === "error" && (
+                    <>
+                      <AlertCircle size={11} style={{ color: "#ef4444" }} />
+                      <span className="text-[10px]" style={{ color: "#ef4444" }}>Erreur</span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -867,11 +903,31 @@ export default function BlocNotes() {
                         e.preventDefault();
                         editor?.commands.focus();
                       }
+                      if (e.key === "Tab") {
+                        e.preventDefault();
+                        editor?.commands.focus("end");
+                      }
                     }}
                   />
                   {/* Editor */}
                   <EditorContent editor={editor} />
                 </div>
+              </div>
+
+              {/* Status bar */}
+              <div
+                className="flex items-center justify-between px-6 py-1.5 border-t shrink-0"
+                style={{ borderColor: border }}
+              >
+                <span className="text-[10px]" style={{ color: textMuted }}>
+                  {wordCount > 0 ? `${wordCount} mot${wordCount > 1 ? "s" : ""}` : ""}
+                </span>
+                <span className="text-[10px]" style={{ color: isDark ? "rgba(255,255,255,0.15)" : "#d1d5db" }}>
+                  {(() => {
+                    const n = notes.find((n) => n.id === selectedId);
+                    return n ? `Modifié ${fmtDate(n.updated_at)}` : "";
+                  })()}
+                </span>
               </div>
             </>
           ) : (
