@@ -103,6 +103,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   };
 
   // Validation
+  if (body.doc_type !== undefined && !["note", "document", "template"].includes(body.doc_type)) {
+    return err("doc_type invalide", 422);
+  }
   if (body.page_format && !["A4", "A3", "Letter"].includes(body.page_format)) {
     return err("page_format invalide", 422);
   }

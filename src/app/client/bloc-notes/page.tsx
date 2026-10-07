@@ -182,13 +182,10 @@ export default function BlocNotes() {
   const loadNotes = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/notes/document?section=all&sort=updated&limit=200");
+      const res = await fetch("/api/notes/document?section=all&sort=updated&limit=200&doc_type=note");
       if (!res.ok) throw new Error();
       const { documents, folders: f } = await res.json();
-      const filtered = ((documents ?? []) as Note[]).filter(
-        (n) => n.doc_type !== "document" && n.doc_type !== "template",
-      );
-      setNotes(filtered);
+      setNotes((documents ?? []) as Note[]);
       setFolders(f ?? []);
     } catch {
       showToast("error", "Erreur lors du chargement des notes.");

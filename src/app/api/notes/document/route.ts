@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
   const search     = searchParams.get("q")          ?? "";
   const sortBy     = searchParams.get("sort")       ?? "updated"; // updated|alpha|type
   const folderId   = searchParams.get("folder_id")  ?? null;
+  const docTypeFilter = searchParams.get("doc_type") ?? null;   // note|document|template — null = tous
   const limit      = Math.min(parseInt(searchParams.get("limit") ?? "50", 10), 200);
 
   const admin = createSupabaseAdmin();
@@ -108,6 +109,9 @@ export async function GET(req: NextRequest) {
     query = query.eq("is_archived", false);
   }
 
+  if (docTypeFilter && ["note", "document", "template"].includes(docTypeFilter)) {
+    query = query.eq("doc_type", docTypeFilter);
+  }
   if (folderId) query = query.eq("folder_id", folderId);
   if (search) query = query.ilike("title", `%${search}%`);
 
