@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -54,6 +54,17 @@ function stripHtml(html: string) {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return parts.map((part, i) =>
+    part.toLowerCase() === query.toLowerCase()
+      ? <mark key={i} style={{ background: "rgba(201,165,90,0.28)", color: "inherit", borderRadius: 2, padding: "0 1px" }}>{part}</mark>
+      : part,
+  );
+}
+
 // ── ToolbarBtn ────────────────────────────────────────────────────────────────
 function ToolbarBtn({
   onClick, active = false, title, children, isDark,
@@ -80,10 +91,10 @@ function ToolbarBtn({
 
 // ── NoteItem ──────────────────────────────────────────────────────────────────
 function NoteItem({
-  note, selected, onClick, onStar, isDark,
+  note, selected, onClick, onStar, isDark, searchQuery = "",
 }: {
   note: Note; selected: boolean; onClick: () => void;
-  onStar: (e: React.MouseEvent) => void; isDark: boolean;
+  onStar: (e: React.MouseEvent) => void; isDark: boolean; searchQuery?: string;
 }) {
   const preview = stripHtml(note.content).slice(0, 90) || "Note vide";
   const tc = isDark ? "rgba(255,255,255,0.88)" : "#111827";
@@ -105,21 +116,28 @@ function NoteItem({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium truncate mb-0.5 leading-tight"
-            style={{ color: selected ? GOLD : tc }}>
-            {note.title || "Sans titre"}
-          </p>
+          {/* Title row avec badge épingle */}
+          <div className="flex items-center gap-1 mb-0.5">
+            {note.is_pinned && (
+              <Pin size={9} style={{ color: GOLD, opacity: 0.65, flexShrink: 0 }} />
+            )}
+            <p className="text-sm font-medium truncate leading-tight"
+              style={{ color: selected ? GOLD : tc }}>
+              {highlightText(note.title || "Sans titre", searchQuery)}
+            </p>
+          </div>
           <p className="text-[11px] leading-relaxed line-clamp-2"
             style={{ color: tm }}>
-            {preview}
+            {highlightText(preview, searchQuery)}
           </p>
           <p className="text-[10px] mt-1" style={{ color: isDark ? "rgba(255,255,255,0.2)" : "#d1d5db" }}>
             {fmtDate(note.updated_at)}
           </p>
         </div>
+        {/* Étoile : toujours visible si favorite, sinon visible au hover */}
         <button
           onClick={onStar}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 shrink-0 mt-0.5 rounded"
+          className={`${note.is_favorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity p-1 shrink-0 mt-0.5 rounded`}
           title={note.is_favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
         >
           <Star size={11}
@@ -261,7 +279,7 @@ export default function BlocNotes() {
     }
     setSaveStatus("idle");
     if (!selectedId) {
-      editor.commands.setContent("", false);
+      editor.commands.setContent("", { emitUpdate: false });
       setTitleValue("");
       titleRef.current = "";
       setWordCount(0);
@@ -272,7 +290,7 @@ export default function BlocNotes() {
     // Update refs BEFORE setContent to avoid onUpdate saving to wrong note
     titleRef.current = note.title;
     setTitleValue(note.title);
-    editor.commands.setContent(note.content || "", false);
+    editor.commands.setContent(note.content || "", { emitUpdate: false });
     const txt = editor.getText().trim();
     setWordCount(txt ? txt.split(/\s+/).length : 0);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -646,14 +664,28 @@ export default function BlocNotes() {
               </div>
             ) : (
               <div className="space-y-0.5 mt-1">
-                {filteredNotes.map((note) => (
-                  <div key={note.id} className="relative group/row">
+                {/* Compteur de résultats */}
+                {search.trim() && (
+                  <p className="text-[10px] px-1 pb-1 pt-0.5" style={{ color: textMuted }}>
+                    {filteredNotes.length} résultat{filteredNotes.length !== 1 ? "s" : ""}
+                  </p>
+                )}
+                {filteredNotes.map((note, idx) => {
+                  const prev = filteredNotes[idx - 1];
+                  const showDivider = idx > 0 && prev.is_pinned && !note.is_pinned;
+                  return (
+                  <Fragment key={note.id}>
+                    {showDivider && (
+                      <div className="mx-1 my-1 border-t" style={{ borderColor: border }} />
+                    )}
+                  <div className="relative group/row">
                     <NoteItem
                       note={note}
                       selected={selectedId === note.id}
                       onClick={() => selectNote(note.id)}
                       onStar={(e) => void toggleFavorite(note, e)}
                       isDark={isDark}
+                      searchQuery={search}
                     />
                     {/* Context menu trigger */}
                     <button
@@ -766,7 +798,9 @@ export default function BlocNotes() {
                       </div>
                     )}
                   </div>
-                ))}
+                  </Fragment>
+                  );
+                })}
               </div>
             )}
           </div>
