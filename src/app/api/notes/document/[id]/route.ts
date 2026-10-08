@@ -99,6 +99,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     linked_project_id?:  string | null;
     linked_contact_id?:  string | null;
     linked_task_id?:     string | null;
+    linked_entity?:      string | null;
     save_version?:    boolean; // sauvegarder une version snapshot
   };
 
@@ -135,6 +136,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (body.linked_project_id  !== undefined) update.linked_project_id  = body.linked_project_id;
   if (body.linked_contact_id  !== undefined) update.linked_contact_id  = body.linked_contact_id;
   if (body.linked_task_id     !== undefined) update.linked_task_id     = body.linked_task_id;
+  if (body.linked_entity      !== undefined) update.linked_entity      = body.linked_entity;
   if (body.content !== undefined && body.content) {
     update.word_count = body.content.trim().split(/\s+/).filter(Boolean).length;
   }

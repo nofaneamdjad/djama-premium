@@ -14,6 +14,7 @@ import {
   ListOrdered, CheckSquare, Code2, Quote, Link2,
   Heading1, Heading2, Heading3, MoreVertical, FileText,
   Pin, PinOff, Check, AlertCircle, X, FolderPlus, Tag,
+  Link2 as LinkIcon, User, Briefcase, Unlink,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useTheme } from "@/lib/theme-context";
@@ -34,11 +35,14 @@ interface Note {
   tags: string[];
   note_type?: string;
   doc_type?: string;
+  linked_entity?: string | null;
   created_at: string;
   updated_at: string;
 }
 
-interface NoteFolder { id: string; name: string; color: string; }
+interface NoteFolder  { id: string; name: string; color: string; }
+interface EntityItem  { id: string; label: string; sub: string; }
+interface LinkedEntity { type: "contact" | "project"; id: string; label: string; }
 
 type Section = "all" | "recent" | "favorites" | "archived" | "checklists" | `folder:${string}`;
 
@@ -202,6 +206,11 @@ export default function BlocNotes() {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [folderCtxId,    setFolderCtxId]    = useState<string | null>(null);
   const [moveMenuId,     setMoveMenuId]     = useState<string | null>(null);
+  const [showLinkPicker, setShowLinkPicker] = useState(false);
+  const [linkPickerTab,  setLinkPickerTab]  = useState<"contact" | "project">("contact");
+  const [entitySearch,   setEntitySearch]   = useState("");
+  const [entityList,     setEntityList]     = useState<{ contacts: EntityItem[]; projects: EntityItem[] } | null>(null);
+  const [loadingEntities, setLoadingEntities] = useState(false);
 
   const saveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedIdRef = useRef<string | null>(null);
@@ -212,6 +221,7 @@ export default function BlocNotes() {
   const ctxRef        = useRef<HTMLDivElement>(null);
   const tagInputRef   = useRef<HTMLInputElement>(null);
   const folderCtxRef  = useRef<HTMLDivElement>(null);
+  const linkPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
@@ -315,10 +325,14 @@ export default function BlocNotes() {
       if (folderCtxId && folderCtxRef.current && !folderCtxRef.current.contains(e.target as Node)) {
         setFolderCtxId(null);
       }
+      if (showLinkPicker && linkPickerRef.current && !linkPickerRef.current.contains(e.target as Node)) {
+        setShowLinkPicker(false);
+        setEntitySearch("");
+      }
     }
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
-  }, [ctxMenuId, folderCtxId]);
+  }, [ctxMenuId, folderCtxId, showLinkPicker]);
 
   // ── Switch note into editor ───────────────────────────────────────────────
   useEffect(() => {
@@ -611,6 +625,48 @@ export default function BlocNotes() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tags: next }),
     }).catch(() => showToast("error", "Erreur sauvegarde tag."));
+  }
+
+  // ── Liens CRM/Projet ─────────────────────────────────────────────────────
+  async function loadEntityList(q = "") {
+    setLoadingEntities(true);
+    try {
+      const res = await fetch(`/api/notes/entities${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setEntityList(data as { contacts: EntityItem[]; projects: EntityItem[] });
+    } catch {
+      showToast("error", "Erreur chargement des entités.");
+    } finally {
+      setLoadingEntities(false);
+    }
+  }
+
+  async function linkEntity(type: "contact" | "project", id: string, label: string) {
+    if (!selectedId) return;
+    const payload: LinkedEntity = { type, id, label };
+    setNotes((prev) =>
+      prev.map((n) => n.id === selectedId ? { ...n, linked_entity: JSON.stringify(payload) } : n),
+    );
+    setShowLinkPicker(false);
+    setEntitySearch("");
+    await fetch(`/api/notes/document/${selectedId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ linked_entity: JSON.stringify(payload) }),
+    }).catch(() => showToast("error", "Erreur sauvegarde lien."));
+  }
+
+  async function unlinkEntity() {
+    if (!selectedId) return;
+    setNotes((prev) =>
+      prev.map((n) => n.id === selectedId ? { ...n, linked_entity: null } : n),
+    );
+    await fetch(`/api/notes/document/${selectedId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ linked_entity: null }),
+    }).catch(() => showToast("error", "Erreur suppression lien."));
   }
 
   // ── Filtered list ─────────────────────────────────────────────────────────
@@ -1248,6 +1304,135 @@ export default function BlocNotes() {
                       style={{ color: textMuted }}
                     />
                   </div>
+
+                  {/* Lien CRM/Projet */}
+                  {(() => {
+                    const note = notes.find((n) => n.id === selectedId);
+                    const linked: LinkedEntity | null = (() => {
+                      try { return note?.linked_entity ? JSON.parse(note.linked_entity) as LinkedEntity : null; }
+                      catch { return null; }
+                    })();
+                    return (
+                      <div className="relative mb-3 flex items-center gap-2 flex-wrap">
+                        {linked ? (
+                          <span
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border"
+                            style={{
+                              background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+                              borderColor: border, color: textPrimary,
+                            }}
+                          >
+                            {linked.type === "contact"
+                              ? <User size={10} style={{ color: "#60a5fa" }} />
+                              : <Briefcase size={10} style={{ color: "#a78bfa" }} />}
+                            <span>{linked.label}</span>
+                            <button
+                              onClick={() => void unlinkEntity()}
+                              className="ml-0.5 opacity-50 hover:opacity-100 transition-opacity"
+                            >
+                              <Unlink size={9} />
+                            </button>
+                          </span>
+                        ) : null}
+
+                        <div className="relative">
+                          <button
+                            onClick={() => {
+                              if (!showLinkPicker) {
+                                setLinkPickerTab("contact");
+                                setEntitySearch("");
+                                void loadEntityList();
+                              }
+                              setShowLinkPicker((v) => !v);
+                            }}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition-colors"
+                            style={{
+                              background: showLinkPicker
+                                ? isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"
+                                : "transparent",
+                              color: textMuted,
+                              border: `1px dashed ${border}`,
+                            }}
+                          >
+                            <LinkIcon size={9} />
+                            {linked ? "Changer" : "Lier à…"}
+                          </button>
+
+                          {showLinkPicker && (
+                            <div
+                              ref={linkPickerRef}
+                              className="absolute left-0 top-full mt-1.5 z-40 rounded-xl border shadow-xl"
+                              style={{
+                                background: isDark ? "#16213e" : "#fff",
+                                borderColor: border, width: 260,
+                                boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.5)" : "0 8px 24px rgba(0,0,0,0.12)",
+                              }}
+                            >
+                              {/* Tabs */}
+                              <div className="flex border-b" style={{ borderColor: border }}>
+                                {(["contact", "project"] as const).map((t) => (
+                                  <button
+                                    key={t}
+                                    onClick={() => { setLinkPickerTab(t); setEntitySearch(""); void loadEntityList(); }}
+                                    className="flex-1 py-2 text-[11px] flex items-center justify-center gap-1.5 transition-colors"
+                                    style={{
+                                      color: linkPickerTab === t ? GOLD : textMuted,
+                                      borderBottom: linkPickerTab === t ? `2px solid ${GOLD}` : "2px solid transparent",
+                                      fontWeight: linkPickerTab === t ? 600 : 400,
+                                    }}
+                                  >
+                                    {t === "contact" ? <User size={10} /> : <Briefcase size={10} />}
+                                    {t === "contact" ? "Contact" : "Projet"}
+                                  </button>
+                                ))}
+                              </div>
+                              {/* Search */}
+                              <div className="px-2 pt-2 pb-1">
+                                <input
+                                  autoFocus
+                                  value={entitySearch}
+                                  onChange={(e) => {
+                                    setEntitySearch(e.target.value);
+                                    void loadEntityList(e.target.value);
+                                  }}
+                                  placeholder="Rechercher…"
+                                  className="w-full rounded-lg px-2.5 py-1.5 text-[11px] outline-none"
+                                  style={{ background: inputBg, color: textPrimary, border: `1px solid ${border}` }}
+                                />
+                              </div>
+                              {/* List */}
+                              <div className="overflow-y-auto max-h-44 pb-1">
+                                {loadingEntities ? (
+                                  <p className="text-center py-4 text-[11px]" style={{ color: textMuted }}>Chargement…</p>
+                                ) : (() => {
+                                  const items = linkPickerTab === "contact"
+                                    ? (entityList?.contacts ?? [])
+                                    : (entityList?.projects ?? []);
+                                  if (items.length === 0) return (
+                                    <p className="text-center py-4 text-[11px]" style={{ color: textMuted }}>
+                                      Aucun résultat
+                                    </p>
+                                  );
+                                  return items.map((item) => (
+                                    <button
+                                      key={item.id}
+                                      onClick={() => void linkEntity(linkPickerTab, item.id, item.label)}
+                                      className="w-full flex flex-col items-start px-3 py-2 text-left transition-colors"
+                                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"; }}
+                                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                                    >
+                                      <span className="text-[12px]" style={{ color: textPrimary }}>{item.label}</span>
+                                      {item.sub && <span className="text-[10px]" style={{ color: textMuted }}>{item.sub}</span>}
+                                    </button>
+                                  ));
+                                })()}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Editor */}
                   <EditorContent editor={editor} />
