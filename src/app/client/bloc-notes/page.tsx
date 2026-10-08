@@ -13,13 +13,14 @@ import {
   Folder, Bold, Italic, Underline as UnderlineIcon, List,
   ListOrdered, CheckSquare, Code2, Quote, Link2,
   Heading1, Heading2, Heading3, MoreVertical, FileText,
-  Pin, PinOff, Check, AlertCircle,
+  Pin, PinOff, Check, AlertCircle, X, FolderPlus, Tag,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useTheme } from "@/lib/theme-context";
 import Toast, { type ToastData, type ToastType } from "@/components/ui/Toast";
 
 const GOLD = "#c9a55a";
+const FOLDER_COLORS = ["#c9a55a", "#a78bfa", "#34d399", "#60a5fa", "#f87171", "#fb923c"];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Note {
@@ -166,7 +167,15 @@ export default function BlocNotes() {
   const [mobileView, setMobileView] = useState<"list" | "editor">("editor");
   const [toast,      setToast]      = useState<ToastData | null>(null);
   const [ctxMenuId,  setCtxMenuId]  = useState<string | null>(null);
-  const [wordCount,  setWordCount]  = useState(0);
+  const [wordCount,      setWordCount]      = useState(0);
+  const [noteTags,       setNoteTags]       = useState<string[]>([]);
+  const [tagInput,       setTagInput]       = useState("");
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [newFolderName,  setNewFolderName]  = useState("");
+  const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [folderCtxId,    setFolderCtxId]    = useState<string | null>(null);
+  const [moveMenuId,     setMoveMenuId]     = useState<string | null>(null);
 
   const saveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedIdRef = useRef<string | null>(null);
@@ -175,8 +184,16 @@ export default function BlocNotes() {
   const searchRef     = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const ctxRef        = useRef<HTMLDivElement>(null);
+  const tagInputRef   = useRef<HTMLInputElement>(null);
+  const folderCtxRef  = useRef<HTMLDivElement>(null);
 
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+
+  useEffect(() => {
+    const note = notes.find((n) => n.id === selectedId);
+    setNoteTags(note?.tags ?? []);
+    setTagInput("");
+  }, [selectedId, notes]);
 
   // ── Tiptap ────────────────────────────────────────────────────────────────
   const editor = useEditor({
@@ -258,16 +275,20 @@ export default function BlocNotes() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
-  // Close ctx menu on outside click
+  // Close ctx menus on outside click
   useEffect(() => {
     function onDown(e: MouseEvent) {
       if (ctxMenuId && ctxRef.current && !ctxRef.current.contains(e.target as Node)) {
         setCtxMenuId(null);
+        setMoveMenuId(null);
+      }
+      if (folderCtxId && folderCtxRef.current && !folderCtxRef.current.contains(e.target as Node)) {
+        setFolderCtxId(null);
       }
     }
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
-  }, [ctxMenuId]);
+  }, [ctxMenuId, folderCtxId]);
 
   // ── Switch note into editor ───────────────────────────────────────────────
   useEffect(() => {
@@ -283,6 +304,8 @@ export default function BlocNotes() {
       setTitleValue("");
       titleRef.current = "";
       setWordCount(0);
+      setNoteTags([]);
+      setTagInput("");
       return;
     }
     const note = notes.find((n) => n.id === selectedId);
@@ -290,6 +313,8 @@ export default function BlocNotes() {
     // Update refs BEFORE setContent to avoid onUpdate saving to wrong note
     titleRef.current = note.title;
     setTitleValue(note.title);
+    setNoteTags(note.tags ?? []);
+    setTagInput("");
     editor.commands.setContent(note.content || "", { emitUpdate: false });
     const txt = editor.getText().trim();
     setWordCount(txt ? txt.split(/\s+/).length : 0);
@@ -440,6 +465,84 @@ export default function BlocNotes() {
 
   // ── Toast ─────────────────────────────────────────────────────────────────
   function showToast(type: ToastType, msg: string) { setToast({ type, msg }); }
+
+  // ── Dossiers ──────────────────────────────────────────────────────────────
+  async function createFolder() {
+    if (!newFolderName.trim() || creatingFolder) return;
+    setCreatingFolder(true);
+    try {
+      const res = await fetch("/api/notes/folder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newFolderName.trim(), color: newFolderColor }),
+      });
+      if (!res.ok) throw new Error();
+      const { folder } = await res.json();
+      setFolders((prev) => [...prev, folder].sort((a, b) => a.name.localeCompare(b.name)));
+      setShowFolderModal(false);
+      setNewFolderName("");
+      setNewFolderColor(FOLDER_COLORS[0]);
+      showToast("success", `Dossier "${folder.name}" créé.`);
+    } catch {
+      showToast("error", "Erreur lors de la création du dossier.");
+    } finally {
+      setCreatingFolder(false);
+    }
+  }
+
+  async function deleteFolder(folderId: string) {
+    const folder = folders.find((f) => f.id === folderId);
+    setFolders((prev) => prev.filter((f) => f.id !== folderId));
+    setFolderCtxId(null);
+    if (section === `folder:${folderId}`) setSection("all");
+    // Notes du dossier → folder_id = NULL via ON DELETE SET NULL côté DB
+    setNotes((prev) => prev.map((n) => n.folder_id === folderId ? { ...n, folder_id: null } : n));
+    const res = await fetch(`/api/notes/folder/${folderId}`, { method: "DELETE" });
+    if (!res.ok) {
+      if (folder) setFolders((prev) => [...prev, folder].sort((a, b) => a.name.localeCompare(b.name)));
+      showToast("error", "Erreur lors de la suppression du dossier.");
+    } else {
+      showToast("success", "Dossier supprimé.");
+    }
+  }
+
+  async function moveNote(noteId: string, folderId: string | null) {
+    setNotes((prev) => prev.map((n) => n.id === noteId ? { ...n, folder_id: folderId } : n));
+    setCtxMenuId(null);
+    setMoveMenuId(null);
+    await fetch(`/api/notes/document/${noteId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder_id: folderId }),
+    }).catch(() => showToast("error", "Erreur déplacement."));
+  }
+
+  // ── Tags ──────────────────────────────────────────────────────────────────
+  async function addTag(raw: string) {
+    const tag = raw.trim().toLowerCase().replace(/[^a-z0-9àâäéèêëîïôùûüç\-_]/g, "").slice(0, 32);
+    if (!tag || !selectedId || noteTags.includes(tag)) { setTagInput(""); return; }
+    const next = [...noteTags, tag];
+    setNoteTags(next);
+    setTagInput("");
+    setNotes((prev) => prev.map((n) => n.id === selectedId ? { ...n, tags: next } : n));
+    await fetch(`/api/notes/document/${selectedId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tags: next }),
+    }).catch(() => showToast("error", "Erreur sauvegarde tag."));
+  }
+
+  async function removeTag(tag: string) {
+    if (!selectedId) return;
+    const next = noteTags.filter((t) => t !== tag);
+    setNoteTags(next);
+    setNotes((prev) => prev.map((n) => n.id === selectedId ? { ...n, tags: next } : n));
+    await fetch(`/api/notes/document/${selectedId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tags: next }),
+    }).catch(() => showToast("error", "Erreur sauvegarde tag."));
+  }
 
   // ── Filtered list ─────────────────────────────────────────────────────────
   const filteredNotes = useMemo(() => {
@@ -596,21 +699,62 @@ export default function BlocNotes() {
               const key = `folder:${f.id}` as Section;
               const active = section === key;
               return (
-                <button
-                  key={f.id}
-                  onClick={() => setSection(key)}
-                  className="shrink-0 px-2 py-1 rounded-md text-[11px] transition-colors flex items-center gap-1"
-                  style={{
-                    background: active ? "rgba(201,165,90,0.12)" : "transparent",
-                    color: active ? GOLD : textMuted,
-                    fontWeight: active ? 600 : 400,
-                  }}
-                >
-                  <Folder size={10} style={{ color: f.color || GOLD }} />
-                  {f.name}
-                </button>
+                <div key={f.id} className="relative shrink-0">
+                  <button
+                    onClick={() => setSection(key)}
+                    onContextMenu={(e) => { e.preventDefault(); setFolderCtxId(f.id); }}
+                    className="px-2 py-1 rounded-md text-[11px] transition-colors flex items-center gap-1 pr-5"
+                    style={{
+                      background: active ? "rgba(201,165,90,0.12)" : "transparent",
+                      color: active ? GOLD : textMuted,
+                      fontWeight: active ? 600 : 400,
+                    }}
+                  >
+                    <Folder size={10} style={{ color: f.color || GOLD }} />
+                    {f.name}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setFolderCtxId(folderCtxId === f.id ? null : f.id); }}
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 hover:opacity-100
+                      transition-opacity p-0.5 rounded"
+                    style={{ color: textMuted }}
+                    title="Options dossier"
+                  >
+                    <X size={9} />
+                  </button>
+                  {folderCtxId === f.id && (
+                    <div
+                      ref={folderCtxRef}
+                      className="absolute left-0 top-full mt-1 z-50 rounded-lg border shadow-xl py-1"
+                      style={{
+                        background: isDark ? "#16213e" : "#fff",
+                        borderColor: border, minWidth: 150,
+                        boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.5)" : "0 8px 24px rgba(0,0,0,0.12)",
+                      }}
+                    >
+                      <button
+                        onClick={() => void deleteFolder(f.id)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs"
+                        style={{ color: "#ef4444" }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(239,68,68,0.1)" : "rgba(239,68,68,0.06)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                      >
+                        <Trash2 size={11} /> Supprimer le dossier
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             })}
+            {/* Bouton nouveau dossier */}
+            <button
+              onClick={() => setShowFolderModal(true)}
+              className="shrink-0 px-2 py-1 rounded-md text-[11px] transition-colors flex items-center gap-1"
+              style={{ color: textMuted }}
+              title="Nouveau dossier"
+            >
+              <FolderPlus size={11} />
+            </button>
           </div>
 
           {/* Search */}
@@ -745,6 +889,39 @@ export default function BlocNotes() {
                             {label}
                           </button>
                         ))}
+
+                        {/* Déplacer vers */}
+                        {folders.length > 0 && (
+                          <>
+                            <div className="my-1 border-t" style={{ borderColor: border }} />
+                            <p className="px-3 py-1 text-[10px] uppercase tracking-wide" style={{ color: textMuted }}>
+                              Déplacer vers
+                            </p>
+                            {note.folder_id !== null && (
+                              <button
+                                onClick={() => { void moveNote(note.id, null); setCtxMenuId(null); }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs"
+                                style={{ color: textPrimary }}
+                                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
+                                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                              >
+                                <Folder size={12} /> Aucun dossier
+                              </button>
+                            )}
+                            {folders.filter(f => f.id !== note.folder_id).map(f => (
+                              <button
+                                key={f.id}
+                                onClick={() => { void moveNote(note.id, f.id); setCtxMenuId(null); }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs"
+                                style={{ color: textPrimary }}
+                                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
+                                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                              >
+                                <Folder size={12} style={{ color: f.color }} /> {f.name}
+                              </button>
+                            ))}
+                          </>
+                        )}
 
                         <div className="my-1 border-t" style={{ borderColor: border }} />
 
@@ -943,6 +1120,47 @@ export default function BlocNotes() {
                       }
                     }}
                   />
+                  {/* Tags */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                    {noteTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]"
+                        style={{
+                          background: isDark ? "rgba(201,165,90,0.15)" : "rgba(201,165,90,0.1)",
+                          color: GOLD,
+                          border: `1px solid rgba(201,165,90,0.3)`,
+                        }}
+                      >
+                        <Tag size={9} />
+                        {tag}
+                        <button
+                          onClick={() => void removeTag(tag)}
+                          className="ml-0.5 opacity-60 hover:opacity-100 transition-opacity"
+                          style={{ lineHeight: 1 }}
+                        >
+                          <X size={9} />
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      ref={tagInputRef}
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === ",") {
+                          e.preventDefault();
+                          void addTag(tagInput);
+                        } else if (e.key === "Backspace" && !tagInput && noteTags.length > 0) {
+                          void removeTag(noteTags[noteTags.length - 1]);
+                        }
+                      }}
+                      placeholder={noteTags.length === 0 ? "Ajouter un tag…" : "+"}
+                      className="bg-transparent border-none outline-none text-[11px] min-w-[80px]"
+                      style={{ color: textMuted }}
+                    />
+                  </div>
+
                   {/* Editor */}
                   <EditorContent editor={editor} />
                 </div>
@@ -997,6 +1215,67 @@ export default function BlocNotes() {
           )}
         </div>
       </div>
+
+      {/* Modal : nouveau dossier */}
+      {showFolderModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowFolderModal(false); setNewFolderName(""); } }}
+        >
+          <div
+            className="w-80 rounded-2xl border p-6 flex flex-col gap-4"
+            style={{ background: isDark ? "#16213e" : "#fff", borderColor: border }}
+            onKeyDown={(e) => { if (e.key === "Escape") { setShowFolderModal(false); setNewFolderName(""); } }}
+          >
+            <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Nouveau dossier</h3>
+            <input
+              autoFocus
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void createFolder(); }}
+              placeholder="Nom du dossier"
+              className="w-full rounded-lg px-3 py-2 text-sm border bg-transparent outline-none"
+              style={{ borderColor: border, color: textPrimary }}
+            />
+            <div>
+              <p className="text-[11px] mb-2" style={{ color: textMuted }}>Couleur</p>
+              <div className="flex gap-2 flex-wrap">
+                {FOLDER_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setNewFolderColor(c)}
+                    className="w-6 h-6 rounded-full transition-transform"
+                    style={{
+                      background: c,
+                      transform: newFolderColor === c ? "scale(1.25)" : "scale(1)",
+                      outline: newFolderColor === c ? `2px solid ${c}` : "none",
+                      outlineOffset: 2,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end mt-2">
+              <button
+                onClick={() => { setShowFolderModal(false); setNewFolderName(""); }}
+                className="px-4 py-2 text-xs rounded-lg"
+                style={{ color: textMuted }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => void createFolder()}
+                disabled={!newFolderName.trim() || creatingFolder}
+                className="px-4 py-2 text-xs rounded-lg font-semibold text-white disabled:opacity-50"
+                style={{ background: newFolderColor }}
+              >
+                {creatingFolder ? "Création…" : "Créer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {toast && <Toast key={`${toast.type}-${toast.msg}`} toast={toast} onClose={() => setToast(null)} />}
