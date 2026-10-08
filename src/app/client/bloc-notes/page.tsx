@@ -11,10 +11,11 @@ import Placeholder from "@tiptap/extension-placeholder";
 import {
   Plus, Search, Star, Trash2, Archive, ArchiveRestore,
   Folder, Bold, Italic, Underline as UnderlineIcon, List,
-  ListOrdered, CheckSquare, Code2, Quote, Link2,
+  ListOrdered, CheckSquare, Code2, Quote,
   Heading1, Heading2, Heading3, MoreVertical, FileText,
   Pin, PinOff, Check, AlertCircle, X, FolderPlus, Tag,
   Link2 as LinkIcon, User, Briefcase, Unlink,
+  Wand2, Sparkles, ChevronLeft,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useTheme } from "@/lib/theme-context";
@@ -80,15 +81,16 @@ function highlightText(text: string, query: string): React.ReactNode {
 
 // ── ToolbarBtn ────────────────────────────────────────────────────────────────
 function ToolbarBtn({
-  onClick, active = false, title, children, isDark,
+  onClick, active = false, title, children, isDark, "aria-label": ariaLabel,
 }: {
   onClick: () => void; active?: boolean; title?: string;
-  children: React.ReactNode; isDark: boolean;
+  children: React.ReactNode; isDark: boolean; "aria-label"?: string;
 }) {
   return (
     <button
       onMouseDown={(e) => { e.preventDefault(); onClick(); }}
       title={title}
+      aria-label={ariaLabel ?? title}
       className="w-7 h-7 flex items-center justify-center rounded transition-colors shrink-0"
       style={{
         background: active
@@ -206,11 +208,17 @@ export default function BlocNotes() {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [folderCtxId,    setFolderCtxId]    = useState<string | null>(null);
   const [moveMenuId,     setMoveMenuId]     = useState<string | null>(null);
-  const [showLinkPicker, setShowLinkPicker] = useState(false);
-  const [linkPickerTab,  setLinkPickerTab]  = useState<"contact" | "project">("contact");
-  const [entitySearch,   setEntitySearch]   = useState("");
-  const [entityList,     setEntityList]     = useState<{ contacts: EntityItem[]; projects: EntityItem[] } | null>(null);
+  const [showLinkPicker,  setShowLinkPicker]  = useState(false);
+  const [linkPickerTab,   setLinkPickerTab]   = useState<"contact" | "project">("contact");
+  const [entitySearch,    setEntitySearch]    = useState("");
+  const [entityList,      setEntityList]      = useState<{ contacts: EntityItem[]; projects: EntityItem[] } | null>(null);
   const [loadingEntities, setLoadingEntities] = useState(false);
+  // Phase 8 — Transform
+  const [showTransformMenu, setShowTransformMenu] = useState(false);
+  // Phase 9 — AI
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiLoading,   setAiLoading]   = useState(false);
+  const [aiResult,    setAiResult]    = useState<{ action: string; text: string } | null>(null);
 
   const saveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedIdRef = useRef<string | null>(null);
@@ -221,7 +229,8 @@ export default function BlocNotes() {
   const ctxRef        = useRef<HTMLDivElement>(null);
   const tagInputRef   = useRef<HTMLInputElement>(null);
   const folderCtxRef  = useRef<HTMLDivElement>(null);
-  const linkPickerRef = useRef<HTMLDivElement>(null);
+  const linkPickerRef    = useRef<HTMLDivElement>(null);
+  const transformMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
@@ -256,7 +265,7 @@ export default function BlocNotes() {
   const loadNotes = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/notes/document?section=all&sort=updated&limit=200&doc_type=note");
+      const res = await fetch("/api/notes/document?section=all&sort=updated&limit=100&doc_type=note");
       if (!res.ok) throw new Error();
       const { documents, folders: f } = await res.json();
       setNotes((documents ?? []) as Note[]);
@@ -295,6 +304,15 @@ export default function BlocNotes() {
         e.preventDefault();
         editor?.chain().focus().toggleTaskList().run();
       }
+      if (e.key === "Escape") {
+        setCtxMenuId(null);
+        setFolderCtxId(null);
+        setShowLinkPicker(false);
+        setEntitySearch("");
+        setShowTransformMenu(false);
+        setShowAiPanel(false);
+        setAiResult(null);
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -329,10 +347,13 @@ export default function BlocNotes() {
         setShowLinkPicker(false);
         setEntitySearch("");
       }
+      if (showTransformMenu && transformMenuRef.current && !transformMenuRef.current.contains(e.target as Node)) {
+        setShowTransformMenu(false);
+      }
     }
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
-  }, [ctxMenuId, folderCtxId, showLinkPicker]);
+  }, [ctxMenuId, folderCtxId, showLinkPicker, showTransformMenu]);
 
   // ── Switch note into editor ───────────────────────────────────────────────
   useEffect(() => {
@@ -627,6 +648,64 @@ export default function BlocNotes() {
     }).catch(() => showToast("error", "Erreur sauvegarde tag."));
   }
 
+  // ── Transform (Phase 8) ──────────────────────────────────────────────────
+  function convertToChecklist() {
+    if (!editor || !selectedId) return;
+    const lines = editor.getText().split("\n").map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+    const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const html = `<ul data-type="taskList">${lines.map((l) =>
+      `<li data-type="taskItem" data-checked="false"><p>${esc(l)}</p></li>`,
+    ).join("")}</ul>`;
+    editor.commands.setContent(html, { emitUpdate: false });
+    scheduleAutosave(selectedId, titleRef.current, editor.getHTML());
+    setShowTransformMenu(false);
+    showToast("success", "Contenu converti en checklist.");
+  }
+
+  async function convertToDocument() {
+    if (!selectedId) return;
+    setNotes((prev) => prev.map((n) => n.id === selectedId ? { ...n, doc_type: "document" } : n));
+    setShowTransformMenu(false);
+    await fetch(`/api/notes/document/${selectedId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ doc_type: "document" }),
+    }).catch(() => showToast("error", "Erreur conversion."));
+    showToast("success", "Note convertie en Document.");
+  }
+
+  // ── IA légère (Phase 9) ───────────────────────────────────────────────────
+  async function runAiAction(action: "summarize" | "improve" | "extract") {
+    if (!selectedId || !editor) return;
+    setAiLoading(true);
+    setAiResult(null);
+    try {
+      const res = await fetch("/api/notes/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, content: editor.getText() }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "IA");
+      const { result } = await res.json();
+      setAiResult({ action, text: result as string });
+    } catch (e) {
+      showToast("error", (e as Error).message || "Erreur IA.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function applyAiResult() {
+    if (!aiResult || !editor || !selectedId) return;
+    const html = aiResult.text
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .split("\n").map((l) => `<p>${l}</p>`).join("");
+    editor.commands.setContent(html, { emitUpdate: false });
+    scheduleAutosave(selectedId, titleRef.current, editor.getHTML());
+    setAiResult(null);
+  }
+
   // ── Liens CRM/Projet ─────────────────────────────────────────────────────
   async function loadEntityList(q = "") {
     setLoadingEntities(true);
@@ -777,7 +856,7 @@ export default function BlocNotes() {
 
         {/* ── Note list ───────────────────────────────────────────────── */}
         <div
-          className="flex flex-col shrink-0 border-r overflow-hidden"
+          className={`flex flex-col shrink-0 border-r overflow-hidden ${mobileView === "editor" ? "hidden md:flex" : "flex"}`}
           style={{ width: 240, background: listBg, borderColor: border }}
         >
           {/* Header: title + creation buttons */}
@@ -1129,7 +1208,7 @@ export default function BlocNotes() {
 
         {/* ── Editor ──────────────────────────────────────────────────── */}
         <div
-          className="flex-1 flex flex-col min-w-0 overflow-hidden"
+          className={`flex-1 flex flex-col min-w-0 overflow-hidden ${mobileView === "list" ? "hidden md:flex" : "flex"}`}
           style={{ background: editorBg }}
         >
           {selectedId ? (
@@ -1139,8 +1218,17 @@ export default function BlocNotes() {
                 className="flex items-center gap-2 px-4 py-2 border-b shrink-0"
                 style={{ borderColor: border, background: toolbarBg }}
               >
-                {/* Mobile back */}
-                {/* back button for narrow viewports — Phase 10 */}
+                {/* Mobile back (Phase 10) */}
+                <button
+                  className="md:hidden flex items-center justify-center w-7 h-7 rounded-lg shrink-0 transition-colors"
+                  style={{ color: textMuted }}
+                  aria-label="Retour à la liste"
+                  onClick={() => setMobileView("list")}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                >
+                  <ChevronLeft size={16} />
+                </button>
 
                 {/* Toolbar */}
                 {editor && (
@@ -1207,7 +1295,64 @@ export default function BlocNotes() {
                         if (url) editor.chain().focus().setLink({ href: url }).run();
                         else editor.chain().focus().unsetLink().run();
                       }}>
-                      <Link2 size={13} />
+                      <LinkIcon size={13} />
+                    </ToolbarBtn>
+
+                    <div className="w-px h-4 mx-1 shrink-0" style={{ background: border }} />
+
+                    {/* Transform (Phase 8) */}
+                    <div className="relative" ref={transformMenuRef}>
+                      <ToolbarBtn
+                        isDark={isDark}
+                        active={showTransformMenu}
+                        title="Transformer"
+                        onClick={() => setShowTransformMenu((v) => !v)}
+                        aria-label="Transformer la note"
+                      >
+                        <Wand2 size={13} />
+                      </ToolbarBtn>
+                      {showTransformMenu && (
+                        <div
+                          className="absolute left-0 top-full mt-1 z-40 rounded-xl border shadow-xl"
+                          style={{
+                            background: isDark ? "#16213e" : "#fff",
+                            borderColor: border, width: 190,
+                            boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.5)" : "0 8px 24px rgba(0,0,0,0.12)",
+                          }}
+                        >
+                          <button
+                            onClick={() => convertToChecklist()}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[12px] rounded-t-xl transition-colors"
+                            style={{ color: textPrimary }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                          >
+                            <CheckSquare size={12} style={{ color: GOLD }} />
+                            Convertir en checklist
+                          </button>
+                          <button
+                            onClick={() => void convertToDocument()}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[12px] rounded-b-xl transition-colors"
+                            style={{ color: textPrimary }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                          >
+                            <FileText size={12} style={{ color: "#60a5fa" }} />
+                            Convertir en Document
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* AI actions (Phase 9) */}
+                    <ToolbarBtn
+                      isDark={isDark}
+                      active={showAiPanel}
+                      title="Actions IA"
+                      onClick={() => { setShowAiPanel((v) => !v); setAiResult(null); }}
+                      aria-label="Actions IA"
+                    >
+                      <Sparkles size={13} />
                     </ToolbarBtn>
                   </div>
                 )}
@@ -1238,6 +1383,85 @@ export default function BlocNotes() {
                 </div>
               </div>
 
+              {/* AI panel (Phase 9) */}
+              {showAiPanel && selectedId && (
+                <div
+                  className="px-4 py-3 border-b shrink-0 flex flex-col gap-2"
+                  style={{ background: isDark ? "rgba(201,165,90,0.05)" : "rgba(201,165,90,0.03)", borderColor: border }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: GOLD }}>
+                      <Sparkles size={11} /> Actions IA
+                    </span>
+                    <button
+                      onClick={() => { setShowAiPanel(false); setAiResult(null); }}
+                      className="p-0.5 rounded transition-opacity opacity-50 hover:opacity-100"
+                      aria-label="Fermer le panneau IA"
+                    >
+                      <X size={11} style={{ color: textMuted }} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {(["summarize", "improve", "extract"] as const).map((action) => {
+                      const labels = { summarize: "Résumer", improve: "Améliorer", extract: "Extraire tâches" };
+                      return (
+                        <button
+                          key={action}
+                          onClick={() => void runAiAction(action)}
+                          disabled={aiLoading}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all"
+                          style={{
+                            background: isDark ? "rgba(201,165,90,0.15)" : "rgba(201,165,90,0.1)",
+                            color: GOLD,
+                            border: `1px solid rgba(201,165,90,0.3)`,
+                            opacity: aiLoading ? 0.5 : 1,
+                            cursor: aiLoading ? "wait" : "pointer",
+                          }}
+                        >
+                          {labels[action]}
+                        </button>
+                      );
+                    })}
+                    {aiLoading && (
+                      <div className="flex items-center gap-1" style={{ color: textMuted }}>
+                        <div className="w-3 h-3 rounded-full border animate-spin"
+                          style={{ borderColor: `${GOLD}40`, borderTopColor: GOLD }} />
+                        <span className="text-[10px]">Traitement…</span>
+                      </div>
+                    )}
+                  </div>
+                  {aiResult && (
+                    <div
+                      className="rounded-lg px-3 py-2 text-[11px] whitespace-pre-wrap"
+                      style={{
+                        background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+                        color: textPrimary, border: `1px solid ${border}`, maxHeight: 160, overflowY: "auto",
+                      }}
+                    >
+                      {aiResult.text}
+                    </div>
+                  )}
+                  {aiResult && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => applyAiResult()}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-white transition-opacity"
+                        style={{ background: `linear-gradient(135deg, ${GOLD}, #a8821f)` }}
+                      >
+                        Appliquer
+                      </button>
+                      <button
+                        onClick={() => setAiResult(null)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] transition-opacity opacity-60 hover:opacity-100"
+                        style={{ color: textMuted }}
+                      >
+                        Ignorer
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Title + content */}
               <div className="flex-1 overflow-y-auto">
                 <div className="max-w-2xl mx-auto px-6 py-6">
@@ -1246,7 +1470,13 @@ export default function BlocNotes() {
                     ref={titleInputRef}
                     value={titleValue}
                     onChange={(e) => handleTitleChange(e.target.value)}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const plain = e.clipboardData.getData("text/plain");
+                      handleTitleChange((titleValue + plain).slice(0, 255));
+                    }}
                     placeholder="Titre de la note"
+                    aria-label="Titre de la note"
                     className="w-full bg-transparent border-none outline-none font-bold mb-4"
                     style={{
                       fontSize: "1.6rem",
