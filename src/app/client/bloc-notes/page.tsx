@@ -32,14 +32,15 @@ interface Note {
   is_pinned: boolean;
   folder_id: string | null;
   tags: string[];
+  note_type?: string;
+  doc_type?: string;
   created_at: string;
   updated_at: string;
-  doc_type?: string;
 }
 
 interface NoteFolder { id: string; name: string; color: string; }
 
-type Section = "all" | "recent" | "favorites" | "archived" | `folder:${string}`;
+type Section = "all" | "recent" | "favorites" | "archived" | "checklists" | `folder:${string}`;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmtDate(iso: string) {
@@ -53,6 +54,13 @@ function fmtDate(iso: string) {
 
 function stripHtml(html: string) {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function checklistStats(html: string): { checked: number; total: number } {
+  if (!html.includes('data-type="taskItem"')) return { checked: 0, total: 0 };
+  const total   = (html.match(/data-type="taskItem"/g)  ?? []).length;
+  const checked = (html.match(/data-checked="true"/g)   ?? []).length;
+  return { checked, total };
 }
 
 function highlightText(text: string, query: string): React.ReactNode {
@@ -100,6 +108,7 @@ function NoteItem({
   const preview = stripHtml(note.content).slice(0, 90) || "Note vide";
   const tc = isDark ? "rgba(255,255,255,0.88)" : "#111827";
   const tm = isDark ? "rgba(255,255,255,0.35)" : "#9ca3af";
+  const { checked, total } = checklistStats(note.content);
 
   return (
     <div
@@ -131,9 +140,26 @@ function NoteItem({
             style={{ color: tm }}>
             {highlightText(preview, searchQuery)}
           </p>
-          <p className="text-[10px] mt-1" style={{ color: isDark ? "rgba(255,255,255,0.2)" : "#d1d5db" }}>
-            {fmtDate(note.updated_at)}
-          </p>
+          {total > 0 ? (
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <div className="flex-1 h-1 rounded-full overflow-hidden"
+                style={{ background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }}>
+                <div style={{
+                  width: `${Math.round((checked / total) * 100)}%`,
+                  height: "100%",
+                  background: checked === total ? "#34d399" : GOLD,
+                  transition: "width 0.3s",
+                }} />
+              </div>
+              <span className="text-[10px] shrink-0" style={{ color: checked === total ? "#34d399" : tm }}>
+                {checked}/{total}
+              </span>
+            </div>
+          ) : (
+            <p className="text-[10px] mt-1" style={{ color: isDark ? "rgba(255,255,255,0.2)" : "#d1d5db" }}>
+              {fmtDate(note.updated_at)}
+            </p>
+          )}
         </div>
         {/* Étoile : toujours visible si favorite, sinon visible au hover */}
         <button
@@ -254,6 +280,10 @@ export default function BlocNotes() {
           }
           void doSave(selectedIdRef.current, titleRef.current, editor.getHTML());
         }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "L") {
+        e.preventDefault();
+        editor?.chain().focus().toggleTaskList().run();
       }
     }
     window.addEventListener("keydown", onKey);
@@ -392,6 +422,45 @@ export default function BlocNotes() {
       setTimeout(() => titleInputRef.current?.focus(), 60);
     } catch {
       showToast("error", "Impossible de créer la note.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  // ── Create checklist ─────────────────────────────────────────────────────
+  async function handleNewChecklist() {
+    if (creating) return;
+    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
+    setCreating(true);
+    const defaultContent = [
+      '<ul data-type="taskList">',
+      '<li data-type="taskItem" data-checked="false"><p>Élément 1</p></li>',
+      '<li data-type="taskItem" data-checked="false"><p>Élément 2</p></li>',
+      '<li data-type="taskItem" data-checked="false"><p>Élément 3</p></li>',
+      '</ul>',
+    ].join("");
+    try {
+      const res = await fetch("/api/notes/document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Nouvelle checklist", content: defaultContent, doc_type: "note", note_type: "checklist" }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const id = data.document?.id ?? data.id;
+      const newNote: Note = {
+        id, title: "Nouvelle checklist", content: defaultContent,
+        is_favorite: false, is_archived: false, is_pinned: false,
+        folder_id: null, tags: [], note_type: "checklist", doc_type: "note",
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      };
+      setNotes((prev) => [newNote, ...prev]);
+      setSelectedId(id);
+      setSection("checklists");
+      setMobileView("editor");
+      setTimeout(() => titleInputRef.current?.select(), 60);
+    } catch {
+      showToast("error", "Impossible de créer la checklist.");
     } finally {
       setCreating(false);
     }
@@ -556,6 +625,8 @@ export default function BlocNotes() {
         r = r.filter((n) => new Date(n.updated_at).getTime() > cut);
       } else if (section === "favorites") {
         r = r.filter((n) => n.is_favorite);
+      } else if (section === "checklists") {
+        r = r.filter((n) => n.content.includes('data-type="taskItem"'));
       } else if (section.startsWith("folder:")) {
         const fid = section.replace("folder:", "");
         r = r.filter((n) => n.folder_id === fid);
@@ -577,10 +648,11 @@ export default function BlocNotes() {
   }, [notes, section, search]);
 
   const sectionLabel = (() => {
-    if (section === "all")       return "Toutes les notes";
-    if (section === "recent")    return "Récentes";
-    if (section === "favorites") return "Favoris";
-    if (section === "archived")  return "Archivées";
+    if (section === "all")        return "Toutes les notes";
+    if (section === "recent")     return "Récentes";
+    if (section === "favorites")  return "Favoris";
+    if (section === "archived")   return "Archivées";
+    if (section === "checklists") return "Checklists";
     if (section.startsWith("folder:")) {
       const fid = section.replace("folder:", "");
       return folders.find((f) => f.id === fid)?.name ?? "Dossier";
@@ -652,31 +724,47 @@ export default function BlocNotes() {
           className="flex flex-col shrink-0 border-r overflow-hidden"
           style={{ width: 240, background: listBg, borderColor: border }}
         >
-          {/* Header: title + new note button */}
+          {/* Header: title + creation buttons */}
           <div className="flex items-center justify-between px-3 pt-3 pb-2 shrink-0">
             <p className="text-xs font-bold" style={{ color: textPrimary }}>Bloc-notes</p>
-            <button
-              onClick={() => void handleNewNote()}
-              disabled={creating}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity"
-              style={{
-                background: `linear-gradient(135deg, ${GOLD}, #a8821f)`,
-                opacity: creating ? 0.6 : 1,
-              }}
-            >
-              <Plus size={12} />
-              Nouvelle
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => void handleNewChecklist()}
+                disabled={creating}
+                title="Nouvelle checklist (Ctrl+Shift+L)"
+                className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                style={{
+                  background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                  color: textMuted,
+                  opacity: creating ? 0.6 : 1,
+                }}
+              >
+                <CheckSquare size={13} />
+              </button>
+              <button
+                onClick={() => void handleNewNote()}
+                disabled={creating}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity"
+                style={{
+                  background: `linear-gradient(135deg, ${GOLD}, #a8821f)`,
+                  opacity: creating ? 0.6 : 1,
+                }}
+              >
+                <Plus size={12} />
+                Nouvelle
+              </button>
+            </div>
           </div>
 
           {/* Section tabs */}
           <div className="flex items-center gap-0.5 px-2 pb-2 shrink-0 overflow-x-auto">
             {(
               [
-                { id: "all",       label: "Toutes" },
-                { id: "recent",    label: "Récentes" },
-                { id: "favorites", label: "Favoris" },
-                { id: "archived",  label: "Archivées" },
+                { id: "all",        label: "Toutes" },
+                { id: "recent",     label: "Récentes" },
+                { id: "favorites",  label: "Favoris" },
+                { id: "checklists", label: "Checklists" },
+                { id: "archived",   label: "Archivées" },
               ] as const
             ).map(({ id, label }) => {
               const active = section === id;
@@ -1171,9 +1259,28 @@ export default function BlocNotes() {
                 className="flex items-center justify-between px-6 py-1.5 border-t shrink-0"
                 style={{ borderColor: border }}
               >
-                <span className="text-[10px]" style={{ color: textMuted }}>
-                  {wordCount > 0 ? `${wordCount} mot${wordCount > 1 ? "s" : ""}` : ""}
-                </span>
+                <div className="flex items-center gap-3">
+                  {wordCount > 0 && (
+                    <span className="text-[10px]" style={{ color: textMuted }}>
+                      {wordCount} mot{wordCount > 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {(() => {
+                    const n = notes.find((n) => n.id === selectedId);
+                    if (!n) return null;
+                    const { checked: ck, total: tot } = checklistStats(n.content);
+                    if (tot === 0) return null;
+                    const done = ck === tot;
+                    return (
+                      <span className="text-[10px] flex items-center gap-1"
+                        style={{ color: done ? "#34d399" : textMuted }}>
+                        <CheckSquare size={10} />
+                        {ck}/{tot} tâche{tot > 1 ? "s" : ""}
+                        {done && " ✓"}
+                      </span>
+                    );
+                  })()}
+                </div>
                 <span className="text-[10px]" style={{ color: isDark ? "rgba(255,255,255,0.15)" : "#d1d5db" }}>
                   {(() => {
                     const n = notes.find((n) => n.id === selectedId);
