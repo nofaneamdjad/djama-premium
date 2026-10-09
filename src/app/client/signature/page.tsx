@@ -6,7 +6,7 @@ import {
   PenLine, Plus, X, Check, Clock, Trash2, Send, FileText,
   ChevronRight, Loader2, Users, Calendar,
   CheckCircle2, XCircle, RefreshCw, Download, BookTemplate,
-  Wifi, WifiOff,
+  Wifi, WifiOff, Sparkles,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -118,6 +118,8 @@ export default function SignaturePage() {
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [downloadingProof, setDownloadingProof] = useState<string | null>(null);
+  const [aiContext, setAiContext] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   const channelRef = useRef<ReturnType<typeof getSupabase>["channel"] extends (...a: never[]) => infer R ? R : never | null>(null);
 
@@ -198,6 +200,25 @@ export default function SignaturePage() {
   }, [fetchRequests]);
 
   const selected = requests.find(r => r.id === selectedId) ?? null;
+
+  async function generateWithAI() {
+    if (!aiContext.trim()) return;
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/signature/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ context: aiContext.trim(), action: "full" }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error ?? "Erreur IA", false); return; }
+      if (data.title) setForm(f => ({ ...f, title: data.title }));
+      if (data.message) setForm(f => ({ ...f, message: data.message }));
+      showToast("Contenu généré par IA");
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   async function createRequest() {
     if (!form.title.trim()) return;
@@ -665,6 +686,31 @@ export default function SignaturePage() {
               </div>
 
               <div className="space-y-3">
+                {/* Phase 12 — IA assistance */}
+                <div className={`rounded-xl border p-3 ${isDark ? "border-[#c9a55a]/20 bg-[#c9a55a]/5" : "border-[#c9a55a]/20 bg-[#c9a55a]/5"}`}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Sparkles size={12} style={{ color: GOLD }} />
+                    <span className="text-[11px] font-bold" style={{ color: GOLD }}>Générer avec DJAMA IA</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      className={s.input}
+                      value={aiContext}
+                      onChange={e => setAiContext(e.target.value)}
+                      placeholder="ex : Contrat de développement site vitrine pour Martin SARL"
+                      maxLength={200}
+                    />
+                    <button
+                      onClick={generateWithAI}
+                      disabled={aiLoading || !aiContext.trim()}
+                      className="flex-shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-bold text-black disabled:opacity-40"
+                      style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                    >
+                      {aiLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className={`text-[11px] font-bold uppercase tracking-wider ${s.muted} block mb-1`}>Titre *</label>
                   <input className={s.input} value={form.title} maxLength={255}
