@@ -19,6 +19,6 @@ CREATE POLICY "sig_req_org_member" ON signature_requests
       SELECT 1 FROM organization_members om
       WHERE om.organization_id = signature_requests.organization_id
         AND om.user_id = auth.uid()
-        AND om.status = 'active'
+        AND om.suspended_at IS NULL
     )
   );
