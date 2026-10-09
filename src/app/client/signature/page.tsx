@@ -1,186 +1,580 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PenLine, Plus, X, Check, Clock, Trash2, Send, FileText, Mail, AlertCircle } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import {
+  PenLine, Plus, X, Check, Clock, Trash2, Send, FileText,
+  AlertCircle, ChevronRight, Loader2, Users, Calendar,
+  CheckCircle2, XCircle, RefreshCw, Eye,
+} from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 
+const GOLD = "#c9a55a";
 const ease = [0.22, 1, 0.36, 1] as const;
-function uid() { return Math.random().toString(36).slice(2, 10); }
 
-type SigStatus = "en_attente" | "signe" | "refuse" | "expire";
-interface Doc { id: string; name: string; signataire: string; email: string; sentAt: string; signedAt?: string; status: SigStatus }
+type RequestStatus = "draft" | "sent" | "partially_signed" | "completed" | "refused" | "expired" | "cancelled";
 
-const STATUS_CFG: Record<SigStatus, { label: string; color: string; icon: LucideIcon }> = {
-  en_attente: { label: "En attente",  color: "#f59e0b", icon: Clock },
-  signe:      { label: "Signé",       color: "#10b981", icon: Check },
-  refuse:     { label: "Refusé",      color: "#ef4444", icon: X },
-  expire:     { label: "Expiré",      color: "#6b7280", icon: AlertCircle },
+interface Signer {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  order_index: number;
+  status: "pending" | "sent" | "viewed" | "signed" | "refused";
+  signed_at: string | null;
+  viewed_at: string | null;
+}
+
+interface SignatureRequest {
+  id: string;
+  title: string;
+  message: string;
+  status: RequestStatus;
+  sign_order: "parallel" | "sequential";
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+  signers: Signer[];
+}
+
+const STATUS_CFG: Record<RequestStatus, { label: string; color: string; bg: string }> = {
+  draft:            { label: "Brouillon",       color: "#9ca3af", bg: "rgba(156,163,175,0.1)" },
+  sent:             { label: "Envoyé",           color: "#3b82f6", bg: "rgba(59,130,246,0.1)" },
+  partially_signed: { label: "En cours",        color: GOLD,      bg: "rgba(201,165,90,0.1)" },
+  completed:        { label: "Signé",            color: "#10b981", bg: "rgba(16,185,129,0.1)" },
+  refused:          { label: "Refusé",           color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
+  expired:          { label: "Expiré",           color: "#6b7280", bg: "rgba(107,114,128,0.1)" },
+  cancelled:        { label: "Annulé",           color: "#6b7280", bg: "rgba(107,114,128,0.1)" },
 };
 
-const DEMO: Doc[] = [
-  { id: "1", name: "Contrat de prestation — Durand",   signataire: "Thomas Durand",  email: "t.durand@mail.fr",   sentAt: "2026-08-01", signedAt: "2026-08-02", status: "signe" },
-  { id: "2", name: "Devis site vitrine 2026",           signataire: "Marie Lefevre",  email: "m.lefevre@mail.fr",  sentAt: "2026-08-06", status: "en_attente" },
-  { id: "3", name: "Convention de formation — Martin", signataire: "Sophie Martin",  email: "s.martin@mail.fr",   sentAt: "2026-07-20", status: "expire" },
-];
+const SIGNER_STATUS_CFG = {
+  pending:  { label: "En attente", color: "#9ca3af" },
+  sent:     { label: "Envoyé",     color: "#3b82f6" },
+  viewed:   { label: "Consulté",   color: GOLD },
+  signed:   { label: "Signé",      color: "#10b981" },
+  refused:  { label: "Refusé",     color: "#ef4444" },
+};
+
+function fmtDate(d: string | null) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function showToast(msg: string, ok = true) {
+  const el = globalThis.document?.createElement("div");
+  if (!el) return;
+  el.textContent = msg;
+  Object.assign(el.style, {
+    position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)",
+    background: ok ? "#10b981" : "#ef4444", color: "#fff",
+    padding: "0.6rem 1.2rem", borderRadius: "12px", fontWeight: "700",
+    fontSize: "0.82rem", zIndex: "9999", boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+    pointerEvents: "none",
+  });
+  globalThis.document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+interface SignerFormRow { name: string; email: string; role: string; }
 
 export default function SignaturePage() {
   const { isDark } = useTheme();
-  const [docs, setDocs]     = useState<Doc[]>(DEMO);
+
+  const [requests, setRequests] = useState<SignatureRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | RequestStatus>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
   const [creating, setCreating] = useState(false);
-  const [form, setForm]     = useState({ name: "", signataire: "", email: "", message: "" });
+  const [form, setForm] = useState({
+    title: "", message: "", sign_order: "parallel" as "parallel" | "sequential",
+    expires_at: "",
+  });
+  const [signers, setSigners] = useState<SignerFormRow[]>([{ name: "", email: "", role: "signataire" }]);
+  const [saving, setSaving] = useState(false);
+
+  const [sending, setSending] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const s = {
-    card:  isDark ? "bg-white/[0.03] border-white/[0.07]"  : "bg-white border-black/[0.07] shadow-sm",
-    text:  isDark ? "text-white/85"                          : "text-gray-800",
-    muted: isDark ? "text-white/35"                          : "text-gray-400",
-    input: `w-full rounded-xl px-3 py-2.5 text-[12.5px] outline-none border ${isDark ? "bg-white/[0.05] border-white/[0.10] text-white placeholder:text-white/25" : "bg-black/[0.03] border-black/[0.08] text-gray-800 placeholder:text-gray-400"}`,
+    card:   isDark ? "bg-white/[0.03] border-white/[0.07]"   : "bg-white border-black/[0.07] shadow-sm",
+    text:   isDark ? "text-white/85"                           : "text-gray-800",
+    muted:  isDark ? "text-white/35"                           : "text-gray-400",
+    sub:    isDark ? "text-white/55"                           : "text-gray-500",
+    divider: isDark ? "border-white/[0.07]"                   : "border-gray-100",
+    input:  `w-full rounded-xl px-3 py-2.5 text-[12.5px] outline-none border transition-colors ${
+      isDark
+        ? "bg-white/[0.05] border-white/[0.10] text-white placeholder:text-white/25 focus:border-[#c9a55a]/50"
+        : "bg-black/[0.03] border-black/[0.08] text-gray-800 placeholder:text-gray-400 focus:border-[#c9a55a]/60"
+    }`,
+    bg: isDark ? "bg-[#07080e]" : "bg-[#f0f2f5]",
   };
 
-  function send() {
-    if (!form.name.trim() || !form.signataire.trim() || !form.email.trim()) return;
-    setDocs(prev => [{ id: uid(), name: form.name.trim(), signataire: form.signataire.trim(), email: form.email.trim(), sentAt: new Date().toISOString().slice(0, 10), status: "en_attente" }, ...prev]);
-    setForm({ name: "", signataire: "", email: "", message: "" });
-    setCreating(false);
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = filter !== "all" ? `?status=${filter}` : "";
+      const res = await fetch(`/api/signature/requests${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRequests(data.requests ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [filter]);
+
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+
+  const selected = requests.find(r => r.id === selectedId) ?? null;
+
+  async function createRequest() {
+    if (!form.title.trim()) return;
+    const validSigners = signers.filter(s => s.name.trim() && s.email.trim());
+    setSaving(true);
+    try {
+      const res = await fetch("/api/signature/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title:      form.title.trim(),
+          message:    form.message.trim(),
+          sign_order: form.sign_order,
+          expires_at: form.expires_at || null,
+          signers:    validSigners.map((s, i) => ({ ...s, order_index: i })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error ?? "Erreur", false); return; }
+      setRequests(prev => [data.request, ...prev]);
+      setCreating(false);
+      setForm({ title: "", message: "", sign_order: "parallel", expires_at: "" });
+      setSigners([{ name: "", email: "", role: "signataire" }]);
+      showToast("Demande créée");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const signedCount = docs.filter(d => d.status === "signe").length;
-  const pendingCount = docs.filter(d => d.status === "en_attente").length;
+  async function sendRequest(id: string) {
+    setSending(id);
+    try {
+      const res = await fetch(`/api/signature/requests/${id}/send`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error ?? "Erreur d'envoi", false); return; }
+      showToast(`${data.sent?.length ?? 0} email(s) envoyé(s)`);
+      await fetchRequests();
+    } finally {
+      setSending(null);
+    }
+  }
+
+  async function cancelRequest(id: string) {
+    setCancelling(id);
+    try {
+      const res = await fetch(`/api/signature/requests/${id}/cancel`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error ?? "Erreur", false); return; }
+      showToast("Demande annulée");
+      await fetchRequests();
+      if (selectedId === id) setSelectedId(null);
+    } finally {
+      setCancelling(null);
+    }
+  }
+
+  async function deleteRequest(id: string) {
+    if (!confirm("Supprimer cette demande définitivement ?")) return;
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/signature/requests/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error ?? "Erreur", false); return; }
+      showToast("Demande supprimée");
+      setRequests(prev => prev.filter(r => r.id !== id));
+      if (selectedId === id) setSelectedId(null);
+    } finally {
+      setDeleting(null);
+    }
+  }
+
+  const counts = {
+    total:     requests.length,
+    signed:    requests.filter(r => r.status === "completed").length,
+    pending:   requests.filter(r => r.status === "sent" || r.status === "partially_signed").length,
+    draft:     requests.filter(r => r.status === "draft").length,
+  };
+
+  const FILTERS: { key: "all" | RequestStatus; label: string }[] = [
+    { key: "all",             label: "Tous" },
+    { key: "draft",           label: "Brouillons" },
+    { key: "sent",            label: "Envoyés" },
+    { key: "partially_signed",label: "En cours" },
+    { key: "completed",       label: "Signés" },
+    { key: "refused",         label: "Refusés" },
+  ];
 
   return (
-    <div className={`min-h-full pb-20 ${isDark ? "bg-[#07080e]" : "bg-[#f0f2f5]"}`}>
+    <div className={`min-h-full pb-20 ${s.bg}`}>
 
+      {/* ── Header ── */}
       <div className="px-4 pt-5 pb-4">
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
           className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ModuleHeaderIcon icon={PenLine} color="#059669" />
             <div>
-              <h1 className={`text-[17px] font-black ${s.text}`}>Signature électronique</h1>
-              <p className={`text-[10px] ${s.muted}`}>{signedCount} signés · {pendingCount} en attente</p>
+              <h1 className={`text-[15px] font-extrabold leading-tight ${s.text}`}>Signature électronique</h1>
+              <p className={`text-[11px] ${s.muted}`}>{counts.total} demande{counts.total !== 1 ? "s" : ""}</p>
             </div>
           </div>
-          <button onClick={() => setCreating(true)}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold text-white"
-            style={{ background: "linear-gradient(135deg,#059669,#047857)" }}>
-            <Send size={13} /> Envoyer
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchRequests}
+              className={`p-2 rounded-xl border transition-colors ${s.card} ${s.muted} hover:opacity-80`}
+            >
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            </button>
+            <button
+              onClick={() => setCreating(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-black"
+              style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+            >
+              <Plus size={13} /> Nouvelle demande
+            </button>
+          </div>
         </motion.div>
+      </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          {[
-            { label: "Total",        val: docs.length,  color: "#0ea5e9" },
-            { label: "Signés",       val: signedCount,  color: "#10b981" },
-            { label: "En attente",   val: pendingCount, color: "#f59e0b" },
-          ].map(k => (
-            <div key={k.label} className={`rounded-xl border p-3 text-center ${s.card}`}>
-              <p className="text-[18px] font-black" style={{ color: k.color }}>{k.val}</p>
-              <p className={`text-[9px] mt-0.5 ${s.muted}`}>{k.label}</p>
+      {/* ── Stats ── */}
+      <div className="px-4 mb-4 grid grid-cols-3 gap-2">
+        {[
+          { label: "Signés",   value: counts.signed,  icon: CheckCircle2, color: "#10b981" },
+          { label: "En cours", value: counts.pending,  icon: Clock,        color: GOLD },
+          { label: "Brouillon",value: counts.draft,    icon: FileText,     color: "#6b7280" },
+        ].map(({ label, value, icon: Icon, color }) => (
+          <div key={label} className={`rounded-2xl border p-3 ${s.card}`}>
+            <Icon size={14} style={{ color }} className="mb-1" />
+            <p className={`text-[17px] font-extrabold ${s.text}`}>{value}</p>
+            <p className={`text-[10px] font-semibold ${s.muted}`}>{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Filters ── */}
+      <div className="px-4 mb-4 flex gap-2 overflow-x-auto pb-1">
+        {FILTERS.map(f => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
+              filter === f.key
+                ? "text-black border-transparent"
+                : `${s.muted} ${s.card}`
+            }`}
+            style={filter === f.key ? { background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, borderColor: "transparent" } : {}}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-4 flex gap-3">
+        {/* ── List ── */}
+        <div className="flex-1 min-w-0 space-y-2">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 size={24} style={{ color: GOLD }} className="animate-spin" />
             </div>
-          ))}
+          ) : requests.length === 0 ? (
+            <div className={`rounded-2xl border p-8 text-center ${s.card}`}>
+              <PenLine size={32} className={`${s.muted} mx-auto mb-2`} />
+              <p className={`text-[13px] font-semibold ${s.text}`}>Aucune demande de signature</p>
+              <p className={`text-[11px] ${s.muted} mt-1`}>Créez votre première demande ci-dessus</p>
+            </div>
+          ) : (
+            requests.map(req => {
+              const cfg = STATUS_CFG[req.status];
+              const isSelected = req.id === selectedId;
+              return (
+                <motion.div
+                  key={req.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`rounded-2xl border cursor-pointer transition-all ${s.card} ${isSelected ? "ring-1 ring-[#c9a55a]/40" : ""}`}
+                  onClick={() => setSelectedId(isSelected ? null : req.id)}
+                >
+                  <div className="p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-[13px] font-bold truncate ${s.text}`}>{req.title}</p>
+                        <p className={`text-[11px] ${s.muted} mt-0.5`}>{fmtDate(req.created_at)}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: cfg.color, background: cfg.bg }}>
+                          {cfg.label}
+                        </span>
+                        <ChevronRight size={12} className={`${s.muted} transition-transform ${isSelected ? "rotate-90" : ""}`} />
+                      </div>
+                    </div>
+
+                    {/* Signers preview */}
+                    {req.signers && req.signers.length > 0 && (
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <Users size={11} className={s.muted} />
+                        <p className={`text-[11px] ${s.muted}`}>
+                          {req.signers.map(s => s.name).slice(0, 3).join(", ")}
+                          {req.signers.length > 3 && ` +${req.signers.length - 3}`}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Expanded detail */}
+                  <AnimatePresence>
+                    {isSelected && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease }}
+                        className="overflow-hidden"
+                      >
+                        <div className={`border-t px-3 pb-3 pt-2 ${s.divider}`}>
+                          {/* Signers list */}
+                          {req.signers && req.signers.length > 0 && (
+                            <div className="mb-3">
+                              <p className={`text-[10px] font-bold uppercase tracking-wider ${s.muted} mb-1.5`}>Signataires</p>
+                              <div className="space-y-1.5">
+                                {req.signers.map(sg => {
+                                  const sc = SIGNER_STATUS_CFG[sg.status] ?? SIGNER_STATUS_CFG.pending;
+                                  return (
+                                    <div key={sg.id} className="flex items-center justify-between">
+                                      <div>
+                                        <p className={`text-[11.5px] font-semibold ${s.text}`}>{sg.name}</p>
+                                        <p className={`text-[10px] ${s.muted}`}>{sg.email}</p>
+                                      </div>
+                                      <span className="text-[10px] font-bold" style={{ color: sc.color }}>{sc.label}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Actions */}
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {(req.status === "draft" || req.status === "sent" || req.status === "partially_signed") && (
+                              <button
+                                onClick={e => { e.stopPropagation(); sendRequest(req.id); }}
+                                disabled={sending === req.id}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold text-black transition-opacity disabled:opacity-60"
+                                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                              >
+                                {sending === req.id
+                                  ? <Loader2 size={11} className="animate-spin" />
+                                  : <Send size={11} />
+                                }
+                                {req.status === "draft" ? "Envoyer" : "Relancer"}
+                              </button>
+                            )}
+                            {(req.status === "draft" || req.status === "sent" || req.status === "partially_signed") && (
+                              <button
+                                onClick={e => { e.stopPropagation(); cancelRequest(req.id); }}
+                                disabled={cancelling === req.id}
+                                className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors ${s.card} disabled:opacity-60`}
+                                style={{ color: "#ef4444" }}
+                              >
+                                {cancelling === req.id ? <Loader2 size={11} className="animate-spin" /> : <XCircle size={11} />}
+                                Annuler
+                              </button>
+                            )}
+                            {req.status !== "completed" && (
+                              <button
+                                onClick={e => { e.stopPropagation(); deleteRequest(req.id); }}
+                                disabled={deleting === req.id}
+                                className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors ${s.card} disabled:opacity-60`}
+                                style={{ color: "#9ca3af" }}
+                              >
+                                {deleting === req.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                                Supprimer
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Expiry */}
+                          {req.expires_at && (
+                            <div className="flex items-center gap-1 mt-2">
+                              <Calendar size={10} className={s.muted} />
+                              <p className={`text-[10px] ${s.muted}`}>Expire le {fmtDate(req.expires_at)}</p>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })
+          )}
         </div>
       </div>
 
-      <div className="px-4 space-y-2.5">
-        <AnimatePresence mode="popLayout">
-          {docs.map((doc, i) => {
-            const cfg = STATUS_CFG[doc.status];
-            return (
-              <motion.div key={doc.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25, ease, delay: i * 0.04 }}
-                className={`rounded-2xl border p-4 ${s.card}`}>
-                <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 shrink-0 rounded-xl flex items-center justify-center"
-                    style={{ background: cfg.color + "18", border: `1px solid ${cfg.color}30` }}>
-                    <FileText size={16} style={{ color: cfg.color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={`text-[13px] font-bold truncate ${s.text}`}>{doc.name}</p>
-                      <span className="text-[9.5px] font-bold rounded-full px-2 py-0.5 shrink-0"
-                        style={{ background: cfg.color + "18", color: cfg.color, border: `1px solid ${cfg.color}30` }}>
-                        <cfg.icon size={9} className="inline mr-0.5" />{cfg.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <p className={`text-[11px] ${s.muted}`}>{doc.signataire}</p>
-                      <p className={`text-[10px] font-mono ${s.muted}`}>{doc.email}</p>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <div className="flex items-center gap-1">
-                        <Send size={9} className={s.muted} />
-                        <p className={`text-[10px] ${s.muted}`}>Envoyé le {doc.sentAt}</p>
-                      </div>
-                      {doc.signedAt && (
-                        <div className="flex items-center gap-1">
-                          <Check size={9} style={{ color: "#10b981" }} />
-                          <p className="text-[10px] text-emerald-400">Signé le {doc.signedAt}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <button onClick={() => setDocs(p => p.filter(d => d.id !== doc.id))}
-                    className={`rounded-lg p-1.5 hover:text-red-400 transition-colors ${s.muted}`}>
-                    <Trash2 size={11} />
-                  </button>
-                </div>
-                {doc.status === "en_attente" && (
-                  <button onClick={() => setDocs(p => p.map(d => d.id === doc.id ? { ...d, status: "signe", signedAt: new Date().toISOString().slice(0, 10) } : d))}
-                    className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl py-1.5 text-[11px] font-bold"
-                    style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.25)", color: "#10b981" }}>
-                    <Check size={11} /> Marquer comme signé (test)
-                  </button>
-                )}
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-      </div>
-
+      {/* ── Create modal ── */}
       <AnimatePresence>
         {creating && (
-          <motion.div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setCreating(false)} />
-            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
-              className={`relative z-10 w-full max-w-md rounded-3xl p-6 space-y-4 ${isDark ? "bg-[#0e1420] border border-white/[0.09]" : "bg-white border border-black/[0.07]"}`}>
-              <div className="flex items-center justify-between">
-                <h2 className={`text-[15px] font-black ${s.text}`}>Envoyer pour signature</h2>
-                <button onClick={() => setCreating(false)} className={`rounded-xl p-2 ${s.muted}`}><X size={16} /></button>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { key: "name",       label: "Nom du document *", placeholder: "Contrat de prestation — Client",  icon: FileText },
-                  { key: "signataire", label: "Signataire *",       placeholder: "Nom complet du signataire",       icon: PenLine },
-                  { key: "email",      label: "Email du signataire *", placeholder: "client@email.com",             icon: Mail },
-                ].map(f => (
-                  <div key={f.key}>
-                    <label className={`block text-[10.5px] font-semibold mb-1 ${s.muted}`}>{f.label}</label>
-                    <div className="relative">
-                      <f.icon size={13} className={`absolute left-3 top-1/2 -translate-y-1/2 ${s.muted}`} />
-                      <input className={s.input + " pl-8"} placeholder={f.placeholder}
-                        value={(form as Record<string, string>)[f.key]}
-                        onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
-                    </div>
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ ease }}
+              className={`relative w-full max-w-lg rounded-2xl border p-5 max-h-[90vh] overflow-y-auto ${isDark ? "bg-[#0d1120] border-white/[0.09]" : "bg-white border-gray-200"}`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}30` }}>
+                    <PenLine size={13} style={{ color: GOLD }} />
                   </div>
-                ))}
+                  <h2 className={`text-[14px] font-extrabold ${s.text}`}>Nouvelle demande</h2>
+                </div>
+                <button onClick={() => setCreating(false)} className={`p-1.5 rounded-lg ${s.muted} hover:opacity-70`}><X size={15} /></button>
+              </div>
+
+              <div className="space-y-3">
+                {/* Title */}
                 <div>
-                  <label className={`block text-[10.5px] font-semibold mb-1 ${s.muted}`}>Message (optionnel)</label>
-                  <textarea className={s.input} rows={2} placeholder="Bonjour, merci de signer ce document…" value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))} />
+                  <label className={`text-[11px] font-bold uppercase tracking-wider ${s.muted} block mb-1`}>
+                    Titre du document *
+                  </label>
+                  <input
+                    className={s.input}
+                    value={form.title}
+                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="ex : Contrat de prestation 2026"
+                    maxLength={255}
+                  />
+                </div>
+
+                {/* Message */}
+                <div>
+                  <label className={`text-[11px] font-bold uppercase tracking-wider ${s.muted} block mb-1`}>Message (optionnel)</label>
+                  <textarea
+                    className={`${s.input} resize-none`}
+                    rows={2}
+                    value={form.message}
+                    onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+                    placeholder="Message pour les signataires…"
+                  />
+                </div>
+
+                {/* Sign order */}
+                <div>
+                  <label className={`text-[11px] font-bold uppercase tracking-wider ${s.muted} block mb-1`}>Ordre de signature</label>
+                  <div className="flex gap-2">
+                    {(["parallel", "sequential"] as const).map(opt => (
+                      <button
+                        key={opt}
+                        onClick={() => setForm(f => ({ ...f, sign_order: opt }))}
+                        className={`flex-1 py-2 rounded-xl text-[11px] font-bold border transition-all ${
+                          form.sign_order === opt
+                            ? "text-black border-transparent"
+                            : `${s.muted} ${s.card}`
+                        }`}
+                        style={form.sign_order === opt ? { background: `${GOLD}20`, borderColor: GOLD, color: GOLD } : {}}
+                      >
+                        {opt === "parallel" ? "Simultané" : "Séquentiel"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Expiry */}
+                <div>
+                  <label className={`text-[11px] font-bold uppercase tracking-wider ${s.muted} block mb-1`}>Date d&apos;expiration (optionnel)</label>
+                  <input
+                    type="date"
+                    className={s.input}
+                    value={form.expires_at}
+                    onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
+                    min={new Date().toISOString().slice(0, 10)}
+                  />
+                </div>
+
+                {/* Signers */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={`text-[11px] font-bold uppercase tracking-wider ${s.muted}`}>Signataires</label>
+                    <button
+                      onClick={() => setSigners(prev => [...prev, { name: "", email: "", role: "signataire" }])}
+                      className="text-[11px] font-bold flex items-center gap-1"
+                      style={{ color: GOLD }}
+                    >
+                      <Plus size={11} /> Ajouter
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {signers.map((sg, i) => (
+                      <div key={i} className="flex gap-2 items-start">
+                        <div className="flex-1 space-y-1.5">
+                          <input
+                            className={s.input}
+                            value={sg.name}
+                            onChange={e => setSigners(prev => prev.map((s, j) => j === i ? { ...s, name: e.target.value } : s))}
+                            placeholder="Nom complet"
+                          />
+                          <input
+                            className={s.input}
+                            type="email"
+                            value={sg.email}
+                            onChange={e => setSigners(prev => prev.map((s, j) => j === i ? { ...s, email: e.target.value } : s))}
+                            placeholder="Email"
+                          />
+                        </div>
+                        {signers.length > 1 && (
+                          <button
+                            onClick={() => setSigners(prev => prev.filter((_, j) => j !== i))}
+                            className={`mt-1 p-1.5 rounded-lg ${s.muted}`}
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <button onClick={send} disabled={!form.name.trim() || !form.signataire.trim() || !form.email.trim()}
-                className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-black text-white disabled:opacity-40 transition"
-                style={{ background: "linear-gradient(135deg,#059669,#047857)" }}>
-                <Send size={15} /> Envoyer pour signature
-              </button>
+
+              <div className="flex gap-2 mt-5">
+                <button
+                  onClick={() => setCreating(false)}
+                  className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold border ${s.card} ${s.muted}`}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={createRequest}
+                  disabled={saving || !form.title.trim()}
+                  className="flex-1 py-2.5 rounded-xl text-[12px] font-bold text-black disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                >
+                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                  Créer
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }
