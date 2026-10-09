@@ -251,8 +251,7 @@ export default function SignaturePage() {
   async function saveAsTemplate() {
     if (!form.title.trim()) return;
     const validSigners = signers.filter(s => s.name.trim() && s.email.trim());
-    const name = prompt("Nom du modèle :");
-    if (!name?.trim()) return;
+    const name = form.title.trim();
     setSavingTpl(true);
     try {
       const res = await fetch("/api/signature/templates", {

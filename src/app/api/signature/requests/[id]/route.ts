@@ -37,7 +37,7 @@ export async function GET(
     .select(`
       *,
       signers:signature_request_signers(*),
-      events:signature_events(* ORDER BY created_at DESC)
+      events:signature_events(*)
     `)
     .eq("id", id)
     .eq("user_id", user.id)

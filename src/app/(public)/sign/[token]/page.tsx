@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   robots: "noindex, nofollow",
 };
 
-export default function SignPage({ params }: { params: { token: string } }) {
-  return <SigningForm token={params.token} />;
+export default async function SignPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  return <SigningForm token={token} />;
 }
