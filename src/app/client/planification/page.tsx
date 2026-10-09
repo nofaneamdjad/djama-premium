@@ -28,7 +28,7 @@ interface Plan {
 type FormData = Omit<Plan, "id" | "user_id" | "created_at" | "updated_at">;
 
 const GOLD   = "#c9a55a";
-const COLORS = ["#c9a55a", "#c9a55a", "#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#06b6d4"];
+const COLORS = ["#c9a55a", "#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#06b6d4"];
 
 const HORIZON_CFG: Record<Horizon, { label: string; icon: typeof Target; desc: string }> = {
   quarter:  { label: "Trimestre", icon: Zap,      desc: "3 mois" },
@@ -226,14 +226,18 @@ export default function PlanificationPage() {
   };
 
   const updateStatus = async (id: string, status: PlanStatus) => {
-    await supabase.from("strategic_plans").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
+    const { error } = await supabase.from("strategic_plans")
+      .update({ status, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) { showToast(error.message, false); return; }
     setPlans(prev => prev.map(p => p.id === id ? { ...p, status } : p));
   };
 
   const deletePlan = async (id: string) => {
     if (!confirm("Supprimer ce plan ?")) return;
-    await supabase.from("strategic_plans").delete().eq("id", id);
+    const { error } = await supabase.from("strategic_plans").delete().eq("id", id);
+    if (error) { showToast(error.message, false); return; }
     setPlans(prev => prev.filter(p => p.id !== id));
+    showToast("Plan supprimé");
   };
 
   const updateObj = (i: number, patch: Partial<Objective>) =>
@@ -388,7 +392,7 @@ export default function PlanificationPage() {
                   <div className="flex-1">
                     <label className={`mb-1.5 block text-[10px] font-semibold uppercase tracking-wider ${mut}`}>Titre *</label>
                     <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                      placeholder="Ex : Croissance Q3 2025"
+                      placeholder="Ex : Croissance Q3 2025" maxLength={255}
                       className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-all ${inp}`} />
                   </div>
                   <div>
