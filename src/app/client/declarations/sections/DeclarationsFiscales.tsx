@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { tok, fmt, fmtDate, GOLD, DECL_STATUT_CFG } from "../decl-utils";
+import { generateDeclPDF } from "../decl-pdf";
 import type { Declaration, FiscalProfile, TvaKpis, TvaBreakdownRow } from "../decl-types";
 
 interface Props {
@@ -107,27 +108,8 @@ export default function DeclarationsFiscalesSection({ userId, isDark, profile, a
     setDecls(prev => prev.map(d => d.id === id ? { ...d, statut } : d));
   }
 
-  function exportTvaTxt(d: Declaration) {
-    const data = d.donnees as Record<string, number>;
-    const lines = [
-      `EXPORT TVA — ${d.libelle}`,
-      `Période : ${fmtDate(d.periode_debut)} au ${fmtDate(d.periode_fin)}`,
-      `Échéance : ${d.date_echeance ? fmtDate(d.date_echeance) : "—"}`,
-      "",
-      `CA HT               : ${fmt(data.ca_ht ?? 0)}`,
-      `TVA collectée        : ${fmt(data.tva_collectee ?? 0)}`,
-      `TVA déductible       : ${fmt(data.tva_deductible ?? 0)}`,
-      `Solde à payer        : ${fmt(d.montant_principal ?? 0)}`,
-      "",
-      "⚠ Ce document est un export de préparation DJAMA.",
-      "  Il ne constitue pas une déclaration officielle.",
-      "  Déposez sur impots.gouv.fr après vérification.",
-    ].join("\n");
-    const blob = new Blob([lines], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url;
-    a.download = `TVA_${monthKey(year, month)}.txt`;
-    a.click(); URL.revokeObjectURL(url);
+  function exportTvaPDF(d: Declaration) {
+    generateDeclPDF(d, profile?.raison_sociale ?? undefined);
   }
 
   const solde = tvaKpis ? Math.max(0, tvaKpis.tva_collectee - tvaKpis.tva_deductible) : 0;
@@ -288,11 +270,11 @@ export default function DeclarationsFiscalesSection({ userId, isDark, profile, a
                     </button>
                   )}
                   <button
-                    onClick={() => exportTvaTxt(d)}
+                    onClick={() => exportTvaPDF(d)}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95"
                     style={{ background: t.glass, border: `1px solid ${t.border}`, color: t.text2 }}
                   >
-                    <Download size={11} /> Export .txt
+                    <Download size={11} /> Export PDF
                   </button>
                   {["validee","deposee"].includes(d.statut) && (
                     <a

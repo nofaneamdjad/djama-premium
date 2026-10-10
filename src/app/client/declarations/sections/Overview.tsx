@@ -88,27 +88,36 @@ export default function OverviewSection({ userId, isDark, profile, onNavigate }:
   }
 
   return (
-    <div className="space-y-6">
-      {/* KPIs */}
+    <div className="space-y-5">
+      {/* KPIs — cards avec barre d'accent gradient */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {kpis.map(({ label, value, color, icon: Icon, section }) => (
           <button
             key={label}
             onClick={() => onNavigate(section)}
-            className="group relative flex flex-col rounded-2xl p-4 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="group relative flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
             style={{ background: t.glass, border: `1px solid ${t.border}` }}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${color}15` }}>
-                <Icon size={15} style={{ color }} />
+            {/* Accent gradient bar */}
+            <div className="h-0.5 w-full" style={{
+              background: `linear-gradient(90deg, ${color}00 0%, ${color} 50%, ${color}00 100%)`
+            }} />
+            <div className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${color}15` }}>
+                  <Icon size={14} style={{ color }} />
+                </div>
+                <ArrowRight size={11} className="opacity-0 group-hover:opacity-50 transition-opacity mt-1.5" style={{ color: t.text3 }} />
               </div>
+              {loading ? (
+                <div className="animate-pulse h-7 w-10 rounded" style={{ background: t.border }} />
+              ) : (
+                <div className="text-2xl font-black tabular-nums leading-none" style={{ color }}>
+                  {value}
+                </div>
+              )}
+              <div className="text-[11px] font-medium mt-2" style={{ color: t.text3 }}>{label}</div>
             </div>
-            {loading ? (
-              <div className="animate-pulse h-6 w-12 rounded" style={{ background: t.border }} />
-            ) : (
-              <div className="text-xl font-bold tabular-nums" style={{ color }}>{value}</div>
-            )}
-            <div className="text-xs font-medium mt-2" style={{ color: t.text2 }}>{label}</div>
           </button>
         ))}
       </div>
@@ -116,9 +125,13 @@ export default function OverviewSection({ userId, isDark, profile, onNavigate }:
       {/* TVA du mois depuis la comptabilité */}
       {tvaKpis?.has_data && (
         <div
-          className="rounded-2xl p-5"
+          className="rounded-2xl overflow-hidden"
           style={{ background: t.glass, border: `1px solid ${t.border}` }}
         >
+          <div className="h-px w-full" style={{
+            background: `linear-gradient(90deg, transparent 0%, ${GOLD}60 30%, ${GOLD} 50%, ${GOLD}60 70%, transparent 100%)`
+          }} />
+          <div className="p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp size={15} style={{ color: GOLD }} />
@@ -144,6 +157,7 @@ export default function OverviewSection({ userId, isDark, profile, onNavigate }:
                 <div className="text-[11px] mt-1" style={{ color: t.text3 }}>{label}</div>
               </div>
             ))}
+          </div>
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, ListChecks, Calendar, TrendingUp, Users,
-  Paperclip, History, Bot, Settings, CheckCircle2, X,
+  Paperclip, History, UserCheck, Bot, Settings, CheckCircle2, X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { tok, GOLD } from "./decl-utils";
@@ -18,6 +18,7 @@ import DeclarationsSocialesSection from "./sections/DeclarationsSociales";
 import DocumentsSection           from "./sections/Documents";
 import HistoriqueSection          from "./sections/Historique";
 import AssistantIASection         from "./sections/AssistantIA";
+import CollaborationSection        from "./sections/Collaboration";
 import ParametresSection          from "./sections/Parametres";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -29,7 +30,8 @@ const NAV_ITEMS: { id: SectionId; label: string; icon: React.ElementType }[] = [
   { id: "fiscales",     label: "Déclarations fiscales",  icon: TrendingUp      },
   { id: "sociales",     label: "Déclarations sociales",  icon: Users           },
   { id: "documents",    label: "Documents",              icon: Paperclip       },
-  { id: "historique",   label: "Historique",             icon: History         },
+  { id: "historique",    label: "Historique",             icon: History         },
+  { id: "collaboration", label: "Collaboration",          icon: UserCheck       },
   { id: "ia",           label: "DJAMA IA",               icon: Bot             },
   { id: "parametres",   label: "Paramètres",             icon: Settings        },
 ];
@@ -82,7 +84,13 @@ export default function DeclarationsPage() {
 
   return (
     <div className="min-h-screen pb-24" style={{ background: t.bg, color: t.text }}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
+
+      {/* Gradient strip accent */}
+      <div className="h-0.5 w-full" style={{
+        background: `linear-gradient(90deg, transparent 0%, ${GOLD}60 30%, ${GOLD} 50%, ${GOLD}60 70%, transparent 100%)`
+      }} />
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-7">
 
         {/* Header */}
         <div className="mb-7">
@@ -92,6 +100,9 @@ export default function DeclarationsPage() {
               style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}30`, letterSpacing: "0.15em" }}
             >
               DJAMA
+            </span>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: t.text4 }}>
+              Gestion déclarative
             </span>
           </div>
           <div className="flex items-end justify-between gap-4">
@@ -194,6 +205,13 @@ export default function DeclarationsPage() {
             )}
             {section === "historique" && (
               <HistoriqueSection
+                userId={userId}
+                isDark={isDark}
+                add={addToast}
+              />
+            )}
+            {section === "collaboration" && (
+              <CollaborationSection
                 userId={userId}
                 isDark={isDark}
                 add={addToast}

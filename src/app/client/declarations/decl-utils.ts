@@ -120,7 +120,29 @@ export function periodeLabel(debut: string, fin: string): string {
   return `${d.getFullYear()}–${f.getFullYear()}`;
 }
 
-// Obligations par défaut pour un profil FR assujetti TVA mensuelle
+// ── Phase 16 — Multi-devises ─────────────────────────────────────────────────
+// Taux de référence indicatifs vs EUR (source : BCE approximative)
+// À NE PAS utiliser pour des calculs fiscaux officiels — uniquement pour l'affichage
+export const REF_RATES_VS_EUR: Record<string, number> = {
+  EUR: 1,
+  USD: 1.08, GBP: 0.86, CHF: 0.94, CAD: 1.47, AUD: 1.65,
+  JPY: 159,  CNY: 7.8,  INR: 89.5, SGD: 1.45, AED: 3.97,
+  SAR: 4.05, MAD: 10.8, XOF: 655,  XAF: 655,  MGA: 4700,
+  KMF: 492,  MUR: 48.5, ZAR: 20.2, BRL: 5.6,  MXN: 18.5,
+  TRY: 34.5, SEK: 11.2, NOK: 11.4, DKK: 7.46,
+};
+
+export function convertToEUR(amount: number, fromDevise: string): number {
+  const rate = REF_RATES_VS_EUR[fromDevise] ?? 1;
+  return amount / rate;
+}
+
+export function convertFromEUR(amount: number, toDevise: string): number {
+  const rate = REF_RATES_VS_EUR[toDevise] ?? 1;
+  return amount * rate;
+}
+
+// ── Obligations par défaut pour un profil FR assujetti TVA mensuelle ─────────
 export function getDefaultObligations(profile: {
   pays_constitution: string;
   regime_tva: string;

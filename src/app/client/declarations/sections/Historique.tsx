@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileCheck2, RefreshCw, Search, Download, Filter } from "lucide-react";
+import { FileCheck2, RefreshCw, Search, Download, Filter, FileText } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { tok, fmt, fmtDate, periodeLabel, GOLD, DECL_STATUT_CFG } from "../decl-utils";
+import { generateDeclPDF } from "../decl-pdf";
 import type { Declaration, DeclStatut } from "../decl-types";
 
 interface Props {
@@ -186,13 +187,22 @@ export default function HistoriqueSection({ userId, isDark, add }: Props) {
                       {d.notes && (
                         <p className="text-xs mb-3" style={{ color: t.text2 }}>{d.notes}</p>
                       )}
-                      <button
-                        onClick={() => deleteDecl(d.id)}
-                        className="text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95"
-                        style={{ color: "#ef4444", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)" }}
-                      >
-                        Supprimer
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => generateDeclPDF(d)}
+                          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                          style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}30`, color: GOLD }}
+                        >
+                          <FileText size={11} /> PDF
+                        </button>
+                        <button
+                          onClick={() => deleteDecl(d.id)}
+                          className="text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                          style={{ color: "#ef4444", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)" }}
+                        >
+                          Supprimer
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

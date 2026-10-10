@@ -8,6 +8,7 @@ export type SectionId =
   | "sociales"
   | "documents"
   | "historique"
+  | "collaboration"
   | "ia"
   | "parametres";
 
@@ -134,7 +135,42 @@ export interface Echeance {
   created_at: string;
 }
 
-// Types données TVA depuis les RPCs comptabilité
+// ── Phase 13 — Collaboration ─────────────────────────────────────────────────
+
+export type CollaborateurRole =
+  | "consultation"
+  | "preparation"
+  | "verification"
+  | "validation"
+  | "export"
+  | "transmission";
+
+export type CollaborateurStatut = "invite" | "actif" | "revoque";
+
+export interface Collaborateur {
+  id: string;
+  owner_user_id: string;
+  collaborateur_email: string;
+  collaborateur_user_id: string | null;
+  role: CollaborateurRole;
+  statut: CollaborateurStatut;
+  message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Commentaire {
+  id: string;
+  owner_user_id: string;
+  declaration_id: string;
+  auteur_user_id: string;
+  auteur_email: string;
+  auteur_role: string | null;
+  contenu: string;
+  created_at: string;
+}
+
+// ── Types données TVA depuis les RPCs comptabilité ───────────────────────────
 export interface TvaKpis {
   ca_ht: number;
   tva_collectee: number;
