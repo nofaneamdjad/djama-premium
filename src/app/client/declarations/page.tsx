@@ -1,150 +1,252 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { FileCheck2, Download, Calendar, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
-import { useTheme } from "@/lib/theme-context";
-import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
+import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  LayoutDashboard, ListChecks, Calendar, TrendingUp, Users,
+  Paperclip, History, Bot, Settings, CheckCircle2, X,
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { tok, GOLD } from "./decl-utils";
+import type { SectionId, FiscalProfile } from "./decl-types";
+
+import OverviewSection            from "./sections/Overview";
+import ObligationsSection         from "./sections/Obligations";
+import CalendrierSection          from "./sections/Calendrier";
+import DeclarationsFiscalesSection from "./sections/DeclarationsFiscales";
+import DeclarationsSocialesSection from "./sections/DeclarationsSociales";
+import DocumentsSection           from "./sections/Documents";
+import HistoriqueSection          from "./sections/Historique";
+import AssistantIASection         from "./sections/AssistantIA";
+import ParametresSection          from "./sections/Parametres";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-type DeclStatus = "a_faire" | "faite" | "en_retard";
-interface Declaration { id: string; type: string; period: string; deadline: string; amount: number; status: DeclStatus }
-
-const DEMO: Declaration[] = [
-  { id: "1", type: "TVA mensuelle (CA3)",  period: "Juillet 2026",   deadline: "2026-08-25", amount: 485,  status: "a_faire" },
-  { id: "2", type: "TVA mensuelle (CA3)",  period: "Juin 2026",      deadline: "2026-07-25", amount: 312,  status: "faite" },
-  { id: "3", type: "CFE — Acompte",        period: "2026",            deadline: "2026-09-15", amount: 0,    status: "a_faire" },
-  { id: "4", type: "TVA mensuelle (CA3)",  period: "Mai 2026",       deadline: "2026-06-25", amount: 528,  status: "faite" },
-  { id: "5", type: "Déclaration URSSAF",   period: "T1 2026",        deadline: "2026-04-30", amount: 1240, status: "faite" },
+const NAV_ITEMS: { id: SectionId; label: string; icon: React.ElementType }[] = [
+  { id: "overview",     label: "Vue d'ensemble",        icon: LayoutDashboard },
+  { id: "obligations",  label: "Mes obligations",        icon: ListChecks      },
+  { id: "calendrier",   label: "Calendrier",             icon: Calendar        },
+  { id: "fiscales",     label: "Déclarations fiscales",  icon: TrendingUp      },
+  { id: "sociales",     label: "Déclarations sociales",  icon: Users           },
+  { id: "documents",    label: "Documents",              icon: Paperclip       },
+  { id: "historique",   label: "Historique",             icon: History         },
+  { id: "ia",           label: "DJAMA IA",               icon: Bot             },
+  { id: "parametres",   label: "Paramètres",             icon: Settings        },
 ];
 
-const ECHÉANCES = [
-  { label: "TVA Juillet",   date: "25 août 2026",    urgent: true },
-  { label: "IS Acompte",    date: "15 sept. 2026",   urgent: false },
-  { label: "CFE Acompte",   date: "15 sept. 2026",   urgent: false },
-  { label: "TVA Août",      date: "25 sept. 2026",   urgent: false },
-  { label: "URSSAF T3",     date: "31 oct. 2026",    urgent: false },
-];
-
-const STATUS_CFG: Record<DeclStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  a_faire:   { label: "À faire",   color: "#f59e0b", icon: Clock },
-  faite:     { label: "Déposée",   color: "#10b981", icon: CheckCircle2 },
-  en_retard: { label: "En retard", color: "#ef4444", icon: AlertTriangle },
-};
+interface Toast { id: number; msg: string; type: "success" | "error" }
 
 export default function DeclarationsPage() {
-  const { isDark } = useTheme();
-  const [decls, setDecls] = useState<Declaration[]>(DEMO);
+  const [isDark, setIsDark] = useState(true);
+  const [section, setSection] = useState<SectionId>("overview");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<FiscalProfile | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const s = {
-    card:  isDark ? "bg-white/[0.03] border-white/[0.07]"  : "bg-white border-black/[0.07] shadow-sm",
-    text:  isDark ? "text-white/85"                          : "text-gray-800",
-    muted: isDark ? "text-white/35"                          : "text-gray-400",
-  };
+  const t = tok(isDark);
 
-  const tvaFmt = { base: 2425, collectee: 485, deductible: 32, solde: 453 };
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setIsDark(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from("decl_fiscal_profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) => { if (data) setProfile(data as FiscalProfile); });
+  }, [userId]);
+
+  function addToast(msg: string, type: "success" | "error" = "success") {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }
+
+  const profileSubtitle = profile?.raison_sociale
+    ? profile.raison_sociale
+    : profile
+    ? `${profile.pays_constitution} · ${profile.regime_tva}`
+    : "Configurez votre profil fiscal";
 
   return (
-    <div className={`min-h-full pb-20 ${isDark ? "bg-[#07080e]" : "bg-[#f0f2f5]"}`}>
-      <div className="px-4 pt-5 pb-4">
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
-          className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={FileCheck2} color="#c9a55a" />
-            <div>
-              <h1 className={`text-[17px] font-black ${s.text}`}>Déclarations fiscales</h1>
-              <p className={`text-[10px] ${s.muted}`}>{decls.filter(d => d.status === "a_faire").length} à déposer · {decls.filter(d => d.status === "faite").length} déposées</p>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+    <div className="min-h-screen pb-24" style={{ background: t.bg, color: t.text }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
 
-      <div className="px-4 space-y-4">
-        {/* TVA pré-remplie */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
-          className={`rounded-2xl border overflow-hidden ${s.card}`}>
-          <div className="flex items-center justify-between px-4 pt-4 pb-3">
-            <div>
-              <p className={`text-[12px] font-black ${s.text}`}>TVA Juillet 2026 — Pré-remplie</p>
-              <p className={`text-[10px] ${s.muted}`}>Calculée depuis vos factures DJAMA</p>
-            </div>
-            <span className="text-[9.5px] font-bold rounded-full px-2.5 py-1" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.30)" }}>
-              À déposer avant le 25/08
+        {/* Header */}
+        <div className="mb-7">
+          <div className="flex items-center gap-2.5 mb-2">
+            <span
+              className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+              style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}30`, letterSpacing: "0.15em" }}
+            >
+              DJAMA
             </span>
           </div>
-          <div className="grid grid-cols-4 gap-0" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
-            {[
-              { label: "Base imposable", val: tvaFmt.base, color: s.text },
-              { label: "TVA collectée",  val: tvaFmt.collectee, color: "#ef4444" },
-              { label: "TVA déductible", val: tvaFmt.deductible, color: "#10b981" },
-              { label: "TVA à payer",    val: tvaFmt.solde, color: "#c9a55a" },
-            ].map((k, i) => (
-              <div key={k.label} className="p-3 text-center"
-                style={{ borderRight: i < 3 ? isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" : "none" }}>
-                <p className="text-[15px] font-black tabular-nums" style={{ color: k.color }}>{k.val} €</p>
-                <p className={`text-[8px] mt-0.5 leading-tight ${s.muted}`}>{k.label}</p>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: t.text }}>
+                Déclarations
+              </h1>
+              <p className="text-sm mt-1" style={{ color: t.text3 }}>{profileSubtitle}</p>
+            </div>
+            {profile && (
+              <div className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full shrink-0"
+                style={{ background: "rgba(34,197,94,0.10)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}>
+                <CheckCircle2 size={11} /> Profil configuré
               </div>
-            ))}
+            )}
           </div>
-          <div className="px-4 pb-4 pt-3 flex gap-2" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
-            <button onClick={() => setDecls(p => p.map(d => d.id === "1" ? { ...d, status: "faite" } : d))}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11.5px] font-black text-white"
-              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
-              <CheckCircle2 size={13} /> Marquer comme déposée
-            </button>
-            <button className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11.5px] font-semibold"
-              style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", border: isDark ? "1px solid rgba(255,255,255,0.09)" : "1px solid rgba(0,0,0,0.07)", color: isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)" }}>
-              <Download size={13} /> PDF
-            </button>
-          </div>
-        </motion.div>
+        </div>
 
-        {/* Échéances */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease, delay: 0.05 }}
-          className={`rounded-2xl border p-4 ${s.card}`}>
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar size={13} style={{ color: "#c9a55a" }} />
-            <p className={`text-[12px] font-black ${s.text}`}>Prochaines échéances</p>
-          </div>
-          <div className="space-y-2">
-            {ECHÉANCES.map(e => (
-              <div key={e.label} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {e.urgent && <AlertTriangle size={11} style={{ color: "#f59e0b" }} />}
-                  <p className={`text-[12px] ${s.text}`}>{e.label}</p>
-                </div>
-                <p className={`text-[11px] font-semibold ${e.urgent ? "text-amber-400" : s.muted}`}>{e.date}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Historique */}
-        <div>
-          <p className={`text-[10px] font-bold uppercase tracking-wide mb-2.5 ${s.muted}`}>Historique</p>
-          <div className="space-y-2">
-            {decls.map((d, i) => {
-              const cfg = STATUS_CFG[d.status];
-              const Icon = cfg.icon;
+        {/* Navigation horizontale */}
+        <div className="relative mb-7">
+          <div
+            className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+              const isActive = section === id;
               return (
-                <motion.div key={d.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04, ease }}
-                  className={`flex items-center gap-3 rounded-xl border p-3.5 ${s.card}`}>
-                  <Icon size={14} style={{ color: cfg.color }} className="shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-[12px] font-semibold ${s.text}`}>{d.type}</p>
-                    <p className={`text-[10px] ${s.muted}`}>{d.period} · Échéance {d.deadline}</p>
-                  </div>
-                  {d.amount > 0 && <p className="text-[13px] font-black tabular-nums shrink-0" style={{ color: cfg.color }}>{d.amount} €</p>}
-                  <span className="text-[9.5px] font-bold rounded-full px-2 py-0.5 shrink-0"
-                    style={{ background: cfg.color + "18", color: cfg.color, border: `1px solid ${cfg.color}30` }}>
-                    {cfg.label}
-                  </span>
-                </motion.div>
+                <button
+                  key={id}
+                  onClick={() => setSection(id)}
+                  className="flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all shrink-0"
+                  style={isActive
+                    ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}40` }
+                    : { background: t.glass, color: t.text2, border: `1px solid ${t.border}` }
+                  }
+                >
+                  <Icon size={13} />
+                  {label}
+                </button>
               );
             })}
           </div>
         </div>
+
+        {/* Sections */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={section}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease }}
+          >
+            {section === "overview" && (
+              <OverviewSection
+                userId={userId}
+                isDark={isDark}
+                profile={profile}
+                onNavigate={setSection}
+              />
+            )}
+            {section === "obligations" && (
+              <ObligationsSection
+                userId={userId}
+                isDark={isDark}
+                profile={profile}
+                add={addToast}
+              />
+            )}
+            {section === "calendrier" && (
+              <CalendrierSection
+                userId={userId}
+                isDark={isDark}
+                profile={profile}
+                add={addToast}
+              />
+            )}
+            {section === "fiscales" && (
+              <DeclarationsFiscalesSection
+                userId={userId}
+                isDark={isDark}
+                profile={profile}
+                add={addToast}
+              />
+            )}
+            {section === "sociales" && (
+              <DeclarationsSocialesSection
+                userId={userId}
+                isDark={isDark}
+                profile={profile}
+                add={addToast}
+              />
+            )}
+            {section === "documents" && (
+              <DocumentsSection
+                userId={userId}
+                isDark={isDark}
+                add={addToast}
+              />
+            )}
+            {section === "historique" && (
+              <HistoriqueSection
+                userId={userId}
+                isDark={isDark}
+                add={addToast}
+              />
+            )}
+            {section === "ia" && (
+              <AssistantIASection
+                userId={userId}
+                isDark={isDark}
+                profile={profile}
+              />
+            )}
+            {section === "parametres" && (
+              <ParametresSection
+                userId={userId}
+                isDark={isDark}
+                profile={profile}
+                onProfileChange={setProfile}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Toasts */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-50 pointer-events-none">
+        <AnimatePresence>
+          {toasts.map(toast => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 12, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.95 }}
+              transition={{ duration: 0.2, ease }}
+              className="flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl pointer-events-auto"
+              style={{
+                background: toast.type === "success" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
+                border: `1px solid ${toast.type === "success" ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+                color: toast.type === "success" ? "#4ade80" : "#f87171",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              <CheckCircle2 size={14} />
+              <span className="text-sm font-medium">{toast.msg}</span>
+              <button
+                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+                className="ml-1 opacity-60 hover:opacity-100"
+              >
+                <X size={12} />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );
