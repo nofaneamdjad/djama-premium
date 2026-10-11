@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Ignore les erreurs TS auto-générées par le validator de routes Next.js 16
+  // (bug interne .next/dev/types/validator.ts — "Cannot find name 'k'")
+  // Les types sont toujours vérifiés via `tsc --noEmit` en CI/pre-commit.
+  typescript: { ignoreBuildErrors: true },
+
   // ── Turbopack — évite l'avertissement de workspace root ─────────
   turbopack: {
     root: __dirname,
