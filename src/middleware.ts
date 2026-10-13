@@ -18,6 +18,50 @@ import { isPathAllowedForFreeUser, getSlugForApiPath, getSlugForClientPath } fro
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // ── Mode pré-lancement ────────────────────────────────────────────────────
+  // DJAMA_LAUNCH_MODE=prelaunch → bloque l'accès aux routes privées et
+  // aux routes de paiement. Ce paramètre NE sert PAS de mécanisme
+  // d'authentification : seul le cookie djama_admin_tok (vérifié par
+  // verifyAdminToken) autorise l'accès admin en prelaunch.
+  const PRELAUNCH = process.env.DJAMA_LAUNCH_MODE === "prelaunch";
+
+  if (PRELAUNCH) {
+    // Bloquer les routes de paiement / souscription
+    if (pathname.startsWith("/api/checkout") || pathname.startsWith("/api/subscription")) {
+      return NextResponse.json(
+        { error: "Les nouvelles souscriptions sont temporairement fermées.", prelaunch: true },
+        { status: 503 },
+      );
+    }
+
+    const isAdminZone =
+      (pathname.startsWith("/admin") && pathname !== "/admin/login") ||
+      (pathname.startsWith("/api/admin") && pathname !== "/api/admin/auth");
+
+    if (!isAdminZone) {
+      // Routes clients → accès uniquement si cookie admin valide
+      const isRestricted =
+        ["/client", "/coaching-ia/espace", "/planning-agenda"].some(
+          p => pathname === p || pathname.startsWith(p + "/"),
+        ) ||
+        ((pathname === "/membre" || pathname.startsWith("/membre/")) &&
+          pathname !== "/membre/login");
+
+      if (isRestricted) {
+        const ADMIN_PASS_PL = process.env.ADMIN_PASS;
+        const tokPL         = request.cookies.get("djama_admin_tok")?.value;
+        const validPL       = ADMIN_PASS_PL && tokPL
+          ? await verifyAdminToken(tokPL, ADMIN_PASS_PL)
+          : false;
+        if (!validPL) return NextResponse.redirect(new URL("/", request.url));
+        return NextResponse.next();
+      }
+      // Toutes les autres routes (/, /login, /api/waitlist, …) → autoriser
+      return NextResponse.next();
+    }
+    // Zone admin : passe à la vérification admin ci-dessous
+  }
+
   // ── Admin protection ──────────────────────────────────────────────────────
   const isAdminPage = pathname.startsWith("/admin") && pathname !== "/admin/login";
   const isAdminApi  = pathname.startsWith("/api/admin") && pathname !== "/api/admin/auth";
@@ -301,6 +345,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // ── Routes de paiement — bloquées en prelaunch ──────────────────────────
+    "/api/checkout/:path*",
+    // ── Routes protégées ───────────────────────────────────────────────────
     "/client",
     "/client/:path*",
     "/membre",
