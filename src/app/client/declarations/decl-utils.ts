@@ -52,11 +52,16 @@ export const ECHEANCE_STATUT_CFG: Record<EcheanceStatut, { label: string; color:
 
 // Couverture obligations
 export const COUVERTURE_CFG: Record<StatutCouverture, { label: string; color: string }> = {
+  non_disponible:       { label: "Non disponible",        color: "#9ca3af" },
   information:          { label: "Information",           color: "#6b7280" },
+  calendrier_verifie:   { label: "Calendrier vérifié",    color: "#3b82f6" },
   preparation_assistee: { label: "Préparation assistée",  color: GOLD      },
+  export_officiel:      { label: "Export officiel",       color: "#8b5cf6" },
+  depot_integre:        { label: "Dépôt intégré",         color: "#22c55e" },
+  non_pris_en_charge:   { label: "Non pris en charge",    color: "#9ca3af" },
+  // anciens libellés (rétrocompatibilité)
   export:               { label: "Export disponible",     color: "#3b82f6" },
   transmission:         { label: "Transmission intégrée", color: "#22c55e" },
-  non_pris_en_charge:   { label: "Non pris en charge",    color: "#9ca3af" },
 };
 
 // Pays disponibles (architecture cible, pas couverture réglementaire complète)

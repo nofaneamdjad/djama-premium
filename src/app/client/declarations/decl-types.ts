@@ -21,11 +21,16 @@ export type DeclStatut =
 export type EcheanceStatut = "a_faire" | "faite" | "en_retard" | "reportee";
 
 export type StatutCouverture =
+  | "non_disponible"
   | "information"
+  | "calendrier_verifie"
   | "preparation_assistee"
+  | "export_officiel"
+  | "depot_integre"
+  | "non_pris_en_charge"
+  // anciens libellés conservés pour rétrocompatibilité
   | "export"
-  | "transmission"
-  | "non_pris_en_charge";
+  | "transmission";
 
 export interface FiscalProfile {
   id: string;
