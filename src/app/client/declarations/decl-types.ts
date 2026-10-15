@@ -4,12 +4,9 @@ export type SectionId =
   | "overview"
   | "obligations"
   | "calendrier"
-  | "fiscales"
-  | "sociales"
+  | "preparer"
   | "documents"
   | "historique"
-  | "collaboration"
-  | "ia"
   | "parametres";
 
 export type DeclStatut =

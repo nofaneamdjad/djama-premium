@@ -3,47 +3,42 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  LayoutDashboard, ListChecks, Calendar, TrendingUp, Users,
-  Paperclip, History, UserCheck, Bot, Settings, CheckCircle2, X,
+  LayoutDashboard, ListChecks, Calendar,
+  FilePen, Paperclip, History, Settings,
+  CheckCircle2, X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { tok, GOLD } from "./decl-utils";
 import type { SectionId, FiscalProfile } from "./decl-types";
 
-import OverviewSection            from "./sections/Overview";
-import ObligationsSection         from "./sections/Obligations";
-import CalendrierSection          from "./sections/Calendrier";
-import DeclarationsFiscalesSection from "./sections/DeclarationsFiscales";
-import DeclarationsSocialesSection from "./sections/DeclarationsSociales";
-import DocumentsSection           from "./sections/Documents";
-import HistoriqueSection          from "./sections/Historique";
-import AssistantIASection         from "./sections/AssistantIA";
-import CollaborationSection        from "./sections/Collaboration";
-import ParametresSection          from "./sections/Parametres";
+import OverviewSection    from "./sections/Overview";
+import ObligationsSection from "./sections/Obligations";
+import CalendrierSection  from "./sections/Calendrier";
+import PreparerSection    from "./sections/Preparer";
+import DocumentsSection   from "./sections/Documents";
+import HistoriqueSection  from "./sections/Historique";
+import ParametresWrapper  from "./sections/ParametresWrapper";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const NAV_ITEMS: { id: SectionId; label: string; icon: React.ElementType }[] = [
-  { id: "overview",     label: "Vue d'ensemble",        icon: LayoutDashboard },
-  { id: "obligations",  label: "Mes obligations",        icon: ListChecks      },
-  { id: "calendrier",   label: "Calendrier",             icon: Calendar        },
-  { id: "fiscales",     label: "Déclarations fiscales",  icon: TrendingUp      },
-  { id: "sociales",     label: "Déclarations sociales",  icon: Users           },
-  { id: "documents",    label: "Documents",              icon: Paperclip       },
-  { id: "historique",    label: "Historique",             icon: History         },
-  { id: "collaboration", label: "Collaboration",          icon: UserCheck       },
-  { id: "ia",           label: "DJAMA IA",               icon: Bot             },
-  { id: "parametres",   label: "Paramètres",             icon: Settings        },
+  { id: "overview",    label: "Vue d'ensemble",  icon: LayoutDashboard },
+  { id: "obligations", label: "Obligations",      icon: ListChecks      },
+  { id: "calendrier",  label: "Calendrier",       icon: Calendar        },
+  { id: "preparer",    label: "Préparer",         icon: FilePen         },
+  { id: "documents",   label: "Documents",        icon: Paperclip       },
+  { id: "historique",  label: "Historique",       icon: History         },
+  { id: "parametres",  label: "Paramètres",       icon: Settings        },
 ];
 
 interface Toast { id: number; msg: string; type: "success" | "error" }
 
 export default function DeclarationsPage() {
-  const [isDark, setIsDark] = useState(true);
-  const [section, setSection] = useState<SectionId>("overview");
-  const [userId, setUserId] = useState<string | null>(null);
-  const [profile, setProfile] = useState<FiscalProfile | null>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isDark, setIsDark]       = useState(true);
+  const [section, setSection]     = useState<SectionId>("overview");
+  const [userId, setUserId]       = useState<string | null>(null);
+  const [profile, setProfile]     = useState<FiscalProfile | null>(null);
+  const [toasts, setToasts]       = useState<Toast[]>([]);
 
   const t = tok(isDark);
 
@@ -63,7 +58,8 @@ export default function DeclarationsPage() {
 
   useEffect(() => {
     if (!userId) return;
-    supabase.from("decl_fiscal_profiles")
+    supabase
+      .from("decl_fiscal_profiles")
       .select("*")
       .eq("user_id", userId)
       .maybeSingle()
@@ -113,18 +109,20 @@ export default function DeclarationsPage() {
               <p className="text-sm mt-1" style={{ color: t.text3 }}>{profileSubtitle}</p>
             </div>
             {profile && (
-              <div className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full shrink-0"
-                style={{ background: "rgba(34,197,94,0.10)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}>
+              <div
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full shrink-0"
+                style={{ background: "rgba(34,197,94,0.10)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}
+              >
                 <CheckCircle2 size={11} /> Profil configuré
               </div>
             )}
           </div>
         </div>
 
-        {/* Navigation horizontale */}
+        {/* Navigation horizontale — 7 onglets */}
         <div className="relative mb-7">
           <div
-            className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none"
+            className="flex gap-1.5 overflow-x-auto pb-1"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
@@ -180,16 +178,8 @@ export default function DeclarationsPage() {
                 add={addToast}
               />
             )}
-            {section === "fiscales" && (
-              <DeclarationsFiscalesSection
-                userId={userId}
-                isDark={isDark}
-                profile={profile}
-                add={addToast}
-              />
-            )}
-            {section === "sociales" && (
-              <DeclarationsSocialesSection
+            {section === "preparer" && (
+              <PreparerSection
                 userId={userId}
                 isDark={isDark}
                 profile={profile}
@@ -210,22 +200,8 @@ export default function DeclarationsPage() {
                 add={addToast}
               />
             )}
-            {section === "collaboration" && (
-              <CollaborationSection
-                userId={userId}
-                isDark={isDark}
-                add={addToast}
-              />
-            )}
-            {section === "ia" && (
-              <AssistantIASection
-                userId={userId}
-                isDark={isDark}
-                profile={profile}
-              />
-            )}
             {section === "parametres" && (
-              <ParametresSection
+              <ParametresWrapper
                 userId={userId}
                 isDark={isDark}
                 profile={profile}

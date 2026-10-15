@@ -61,7 +61,7 @@ export default function OverviewSection({ userId, isDark, profile, onNavigate }:
 
   const kpis = [
     { label: "En retard",      value: enRetard.length,  color: "#ef4444", icon: AlertTriangle, section: "historique" as SectionId },
-    { label: "En préparation", value: enCours.length,   color: GOLD,      icon: Clock,         section: "fiscales"  as SectionId },
+    { label: "En préparation", value: enCours.length,   color: GOLD,      icon: Clock,         section: "preparer"  as SectionId},
     { label: "Déposées",       value: deposees.length,  color: "#22c55e", icon: CheckCircle2,  section: "historique" as SectionId },
     { label: "Échéances",      value: prochaines.length,color: "#3b82f6", icon: Calendar,      section: "calendrier" as SectionId },
   ];
@@ -142,7 +142,7 @@ export default function OverviewSection({ userId, isDark, profile, onNavigate }:
                 Depuis la comptabilité
               </span>
             </div>
-            <button onClick={() => onNavigate("fiscales")} className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
+            <button onClick={() => onNavigate("preparer")} className="text-xs flex items-center gap-0.5" style={{ color: t.text3 }}>
               Préparer <ArrowRight size={10} />
             </button>
           </div>
