@@ -1,139 +1,195 @@
 ﻿"use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Landmark, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, RefreshCw, Link2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Landmark, LayoutDashboard, Wallet, ArrowLeftRight, Link2,
+  BarChart2, Zap, Sparkles, ChevronRight,
+} from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
+import { supabase } from "@/lib/supabase";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
+import { tok, GOLD } from "./banque-utils";
 
-const ease = [0.22, 1, 0.36, 1] as const;
+import Overview       from "./sections/Overview";
+import Comptes        from "./sections/Comptes";
+import Transactions   from "./sections/Transactions";
+import Rapprochement  from "./sections/Rapprochement";
+import Connexions     from "./sections/Connexions";
+import Analyse        from "./sections/Analyse";
+import Regles         from "./sections/Regles";
+import AssistantIA    from "./sections/AssistantIA";
 
-type TxType = "credit" | "debit";
-interface Transaction { id: string; label: string; amount: number; type: TxType; date: string; category: string }
+type Section =
+  | "overview" | "comptes" | "transactions" | "rapprochement"
+  | "connexions" | "analyse" | "regles" | "assistant";
 
-const DEMO_TX: Transaction[] = [
-  { id: "1",  label: "Virement client — Durand SARL",     amount: 1200,  type: "credit", date: "2026-08-08", category: "Recette" },
-  { id: "2",  label: "Abonnement Canva Pro",               amount: 15.99, type: "debit",  date: "2026-08-07", category: "Marketing" },
-  { id: "3",  label: "Paiement Lien — Formation Excel",    amount: 149,   type: "credit", date: "2026-08-06", category: "Recette" },
-  { id: "4",  label: "SFR Mobile Pro",                     amount: 35,    type: "debit",  date: "2026-08-05", category: "Télécoms" },
-  { id: "5",  label: "Virement client — Martin Sophie",    amount: 450,   type: "credit", date: "2026-08-03", category: "Recette" },
-  { id: "6",  label: "OVH Hébergement",                    amount: 12.99, type: "debit",  date: "2026-08-01", category: "Informatique" },
-  { id: "7",  label: "Virement client — Lefevre EURL",    amount: 2400,  type: "credit", date: "2026-07-31", category: "Recette" },
-  { id: "8",  label: "URSSAF — Cotisations T2 2026",       amount: 620,   type: "debit",  date: "2026-07-28", category: "Charges sociales" },
-  { id: "9",  label: "Freelance.com — Commission",         amount: 48,    type: "debit",  date: "2026-07-25", category: "Frais plateforme" },
-  { id: "10", label: "Virement client — Bouchard",         amount: 890,   type: "credit", date: "2026-07-22", category: "Recette" },
+interface Toast { id: number; msg: string; type: "success" | "error" }
+
+const NAV: { id: Section; label: string; icon: React.ElementType; badge?: string }[] = [
+  { id: "overview",      label: "Vue d'ensemble",   icon: LayoutDashboard },
+  { id: "comptes",       label: "Comptes",           icon: Wallet },
+  { id: "transactions",  label: "Transactions",      icon: ArrowLeftRight },
+  { id: "rapprochement", label: "Rapprochement",     icon: Link2 },
+  { id: "connexions",    label: "Connexions",        icon: Landmark },
+  { id: "analyse",       label: "Analyse",           icon: BarChart2 },
+  { id: "regles",        label: "Règles auto",       icon: Zap },
+  { id: "assistant",     label: "Assistant IA",      icon: Sparkles },
 ];
-
-const CAT_COLORS: Record<string, string> = {
-  Recette:            "#10b981",
-  Marketing:          "#e1306c",
-  Télécoms:           "#6366f1",
-  Informatique:       "#0ea5e9",
-  "Charges sociales": "#f59e0b",
-  "Frais plateforme": "#c9a55a",
-};
 
 export default function BanquePage() {
   const { isDark } = useTheme();
-  const [connected, setConnected] = useState(false);
-  const [txs] = useState<Transaction[]>(DEMO_TX);
+  const t = tok(isDark);
 
-  const s = {
-    card:  isDark ? "bg-white/[0.03] border-white/[0.07]"  : "bg-white border-black/[0.07] shadow-sm",
-    text:  isDark ? "text-white/85"                          : "text-gray-800",
-    muted: isDark ? "text-white/35"                          : "text-gray-400",
-  };
+  const [section, setSection] = useState<Section>("overview");
+  const [userId, setUserId]   = useState<string | null>(null);
+  const [orgId, setOrgId]     = useState<string | null>(null);
+  const [toasts, setToasts]   = useState<Toast[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  let toastId = 0;
 
-  const credits = txs.filter(t => t.type === "credit").reduce((s2, t) => s2 + t.amount, 0);
-  const debits  = txs.filter(t => t.type === "debit").reduce((s2, t) => s2 + t.amount, 0);
-  const balance = credits - debits;
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUserId(data.user.id);
+        // Récupérer org_id depuis le profil
+        supabase.from("profiles").select("organization_id")
+          .eq("user_id", data.user.id).single()
+          .then(({ data: p }) => { if (p?.organization_id) setOrgId(p.organization_id); });
+      }
+    });
+  }, []);
+
+  function add(msg: string, type: "success" | "error" = "success") {
+    const id = ++toastId;
+    setToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  }
+
+  function goTo(s: string) {
+    setSection(s as Section);
+    setMenuOpen(false);
+  }
+
+  const current = NAV.find(n => n.id === section)!;
 
   return (
-    <div className={`min-h-full pb-20 ${isDark ? "bg-[#07080e]" : "bg-[#f0f2f5]"}`}>
-      <div className="px-4 pt-5 pb-4">
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
-          className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={Landmark} color="#c9a55a" />
-            <div>
-              <h1 className={`text-[17px] font-black ${s.text}`}>Connexion bancaire</h1>
-              <p className={`text-[10px] ${s.muted}`}>{connected ? "BNP Paribas · synchronisé" : "Aucun compte connecté"}</p>
-            </div>
+    <div className="min-h-dvh flex flex-col" style={{ background: isDark ? "#0d0d14" : "#f8f8fc" }}>
+
+      {/* Header */}
+      <div className="sticky top-0 z-30 px-4 pt-4 pb-3"
+        style={{ background: isDark ? "rgba(13,13,20,0.9)" : "rgba(248,248,252,0.9)", backdropFilter: "blur(12px)" }}>
+        <div className="flex items-center gap-3 max-w-5xl mx-auto">
+          <ModuleHeaderIcon icon={Landmark} color={GOLD} />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-black tracking-tight" style={{ color: t.text }}>Banque</h1>
+            <p className="text-xs" style={{ color: t.text3 }}>Gestion bancaire professionnelle</p>
           </div>
-          <button onClick={() => setConnected(v => !v)}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold text-white"
-            style={{ background: connected ? "rgba(16,185,129,0.20)" : "linear-gradient(135deg,#c9a55a,#0284c7)", color: connected ? "#10b981" : "white", border: connected ? "1px solid rgba(16,185,129,0.35)" : "none" }}>
-            {connected ? <><RefreshCw size={13} /> Synchroniser</> : <><Link2 size={13} /> Connecter</>}
-          </button>
-        </motion.div>
-
-        {/* Solde + stats */}
-        <div className="mt-4 space-y-3">
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
-            className={`rounded-2xl border p-5 ${s.card}`}>
-            <p className={`text-[10px] font-semibold mb-2 ${s.muted}`}>SOLDE ESTIMÉ (30 jours)</p>
-            <p className="text-[32px] font-black tabular-nums" style={{ color: balance >= 0 ? "#10b981" : "#ef4444" }}>
-              {balance >= 0 ? "+" : ""}{balance.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €
-            </p>
-            <div className="flex gap-6 mt-3">
-              <div className="flex items-center gap-1.5">
-                <ArrowUpRight size={13} style={{ color: "#10b981" }} />
-                <div>
-                  <p className={`text-[9px] ${s.muted}`}>Encaissé</p>
-                  <p className="text-[13px] font-bold tabular-nums" style={{ color: "#10b981" }}>+{credits.toLocaleString("fr-FR")} €</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <ArrowDownRight size={13} style={{ color: "#ef4444" }} />
-                <div>
-                  <p className={`text-[9px] ${s.muted}`}>Dépensé</p>
-                  <p className="text-[13px] font-bold tabular-nums" style={{ color: "#ef4444" }}>-{debits.toLocaleString("fr-FR")} €</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {!connected && (
-            <div className={`rounded-2xl border p-4 text-center ${s.card}`} style={{ border: "1px dashed rgba(3,105,161,0.35)" }}>
-              <Landmark size={28} className="mx-auto mb-2" style={{ color: "#c9a55a" }} />
-              <p className={`text-[12px] font-bold ${s.text}`}>Connectez votre banque</p>
-              <p className={`text-[10.5px] mt-1 ${s.muted}`}>Import automatique des mouvements via Open Banking. Les transactions ci-dessous sont des données de démonstration.</p>
-            </div>
-          )}
+          {/* Breadcrumb section actuelle */}
+          <div className="hidden sm:flex items-center gap-1.5">
+            <current.icon size={13} style={{ color: GOLD }} />
+            <span className="text-xs font-medium" style={{ color: GOLD }}>{current.label}</span>
+          </div>
         </div>
       </div>
 
-      {/* Transactions */}
-      <div className="px-4">
-        <p className={`text-[10px] font-bold uppercase tracking-wide mb-2.5 ${s.muted}`}>Dernières transactions</p>
-        <div className="space-y-1.5">
-          {txs.map((tx, i) => {
-            const catColor = CAT_COLORS[tx.category] ?? "#6b7280";
+      <div className="flex flex-1 max-w-5xl mx-auto w-full px-4 pb-8 gap-6 mt-2">
+
+        {/* Nav latérale — desktop */}
+        <nav className="hidden md:flex flex-col gap-1 w-44 flex-shrink-0 pt-1">
+          {NAV.map(item => {
+            const active = section === item.id;
             return (
-              <motion.div key={tx.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03, ease }}
-                className={`flex items-center gap-3 rounded-xl border p-3 ${s.card}`}>
-                <div className="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center"
-                  style={{ background: (tx.type === "credit" ? "#10b981" : "#ef4444") + "18" }}>
-                  {tx.type === "credit"
-                    ? <TrendingUp size={13} style={{ color: "#10b981" }} />
-                    : <TrendingDown size={13} style={{ color: "#ef4444" }} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-[12px] font-semibold truncate ${s.text}`}>{tx.label}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[9.5px] font-bold rounded px-1.5 py-0.5"
-                      style={{ background: catColor + "18", color: catColor }}>{tx.category}</span>
-                    <span className={`text-[9.5px] ${s.muted}`}>{tx.date}</span>
-                  </div>
-                </div>
-                <p className="font-black tabular-nums text-[13px] shrink-0"
-                  style={{ color: tx.type === "credit" ? "#10b981" : "#ef4444" }}>
-                  {tx.type === "credit" ? "+" : "-"}{tx.amount.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €
-                </p>
-              </motion.div>
+              <button key={item.id}
+                onClick={() => setSection(item.id)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left transition-all"
+                style={{
+                  background: active ? `${GOLD}14` : "transparent",
+                  border: `1px solid ${active ? GOLD + "40" : "transparent"}`,
+                  color: active ? GOLD : t.text2,
+                  fontWeight: active ? 600 : 400,
+                }}>
+                <item.icon size={14} />
+                {item.label}
+                {active && <ChevronRight size={11} className="ml-auto" style={{ color: GOLD }} />}
+              </button>
             );
           })}
+        </nav>
+
+        {/* Nav mobile — barre horizontale */}
+        <div className="md:hidden w-full">
+          <div className="overflow-x-auto pb-2 -mx-4 px-4">
+            <div className="flex gap-2 min-w-max">
+              {NAV.map(item => {
+                const active = section === item.id;
+                return (
+                  <button key={item.id}
+                    onClick={() => setSection(item.id)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs flex-shrink-0"
+                    style={{
+                      background: active ? `${GOLD}14` : t.glass,
+                      border: `1px solid ${active ? GOLD + "40" : t.border}`,
+                      color: active ? GOLD : t.text2,
+                      fontWeight: active ? 600 : 400,
+                    }}>
+                    <item.icon size={13} />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
+
+        {/* Contenu principal */}
+        <main className="flex-1 min-w-0">
+          <div className="rounded-2xl p-5" style={{ background: t.glassMd, border: `1px solid ${t.border}` }}>
+            {section === "overview" && (
+              <Overview userId={userId} isDark={isDark} orgId={orgId} onGoTo={goTo} />
+            )}
+            {section === "comptes" && (
+              <Comptes userId={userId} isDark={isDark} orgId={orgId} add={add} />
+            )}
+            {section === "transactions" && (
+              <Transactions userId={userId} isDark={isDark} orgId={orgId} add={add} />
+            )}
+            {section === "rapprochement" && (
+              <Rapprochement userId={userId} isDark={isDark} add={add} />
+            )}
+            {section === "connexions" && (
+              <Connexions userId={userId} isDark={isDark} orgId={orgId} add={add} />
+            )}
+            {section === "analyse" && (
+              <Analyse userId={userId} isDark={isDark} orgId={orgId} />
+            )}
+            {section === "regles" && (
+              <Regles userId={userId} isDark={isDark} add={add} />
+            )}
+            {section === "assistant" && (
+              <AssistantIA userId={userId} isDark={isDark} />
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* Toasts */}
+      <div className="fixed bottom-6 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        {toasts.map(toast => (
+          <div key={toast.id}
+            className="flex items-center gap-2.5 px-4 py-3 rounded-2xl text-sm font-medium shadow-lg pointer-events-auto"
+            style={{
+              background: toast.type === "success"
+                ? (isDark ? "rgba(16,185,129,0.15)" : "rgba(16,185,129,0.12)")
+                : (isDark ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.12)"),
+              border: `1px solid ${toast.type === "success" ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)"}`,
+              color: toast.type === "success" ? "#10b981" : "#ef4444",
+              backdropFilter: "blur(8px)",
+            }}>
+            <div className="w-1.5 h-1.5 rounded-full"
+              style={{ background: toast.type === "success" ? "#10b981" : "#ef4444" }} />
+            {toast.msg}
+          </div>
+        ))}
       </div>
     </div>
   );
