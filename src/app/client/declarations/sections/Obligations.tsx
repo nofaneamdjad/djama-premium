@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { tok, GOLD, PAYS_LABELS } from "../decl-utils";
 import type { Obligation, FiscalProfile, StatutCouverture } from "../decl-types";
 import { computeObligations, type ObligationApplicable, type CoverageLevel } from "@/lib/declarations/obligations-engine";
+import CouvertureMondiale from "./CouvertureMondiale";
 
 interface Props {
   userId: string | null;
@@ -29,8 +30,8 @@ const COVERAGE_CFG: Record<CoverageLevel, { label: string; color: string }> = {
 export default function ObligationsSection({ userId, isDark, profile, add }: Props) {
   const t = tok(isDark);
 
-  // Vue : "catalogue" (moteur) ou "mes_obligations" (Supabase)
-  const [view, setView]           = useState<"catalogue" | "mes_obligations">("catalogue");
+  // Vue : "catalogue" (moteur) | "mes_obligations" (Supabase) | "mondial" (couverture monde)
+  const [view, setView]           = useState<"catalogue" | "mes_obligations" | "mondial">("catalogue");
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [loading, setLoading]     = useState(true);
   const [cat, setCat]             = useState<typeof CATEGORIES[number]>("toutes");
@@ -413,8 +414,9 @@ export default function ObligationsSection({ userId, isDark, profile, add }: Pro
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex gap-1.5 rounded-xl p-1" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
           {([
-            { id: "catalogue",       label: "Catalogue calculé" },
-            { id: "mes_obligations", label: "Mes obligations"   },
+            { id: "catalogue",       label: "Catalogue calculé"    },
+            { id: "mes_obligations", label: "Mes obligations"      },
+            { id: "mondial",         label: "Couverture mondiale"  },
           ] as const).map(({ id, label }) => (
             <button
               key={id}
@@ -450,7 +452,14 @@ export default function ObligationsSection({ userId, isDark, profile, add }: Pro
         </div>
       </div>
 
-      {view === "catalogue"       ? renderCatalogue()       : renderMesObligations()}
+      {view === "catalogue"       && renderCatalogue()}
+      {view === "mes_obligations" && renderMesObligations()}
+      {view === "mondial"         && (
+        <CouvertureMondiale
+          isDark={isDark}
+          currentCountry={profile?.pays_constitution ?? undefined}
+        />
+      )}
     </div>
   );
 }
