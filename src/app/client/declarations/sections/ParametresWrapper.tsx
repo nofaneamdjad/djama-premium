@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, UserCheck } from "lucide-react";
+import { Settings, UserCheck, Building2 } from "lucide-react";
 import { tok, GOLD } from "../decl-utils";
 import type { FiscalProfile } from "../decl-types";
 
-import ParametresSection  from "./Parametres";
+import ParametresSection    from "./Parametres";
 import CollaborationSection from "./Collaboration";
+import EtablissementsSection from "./Etablissements";
 
 interface Props {
   userId: string | null;
@@ -15,11 +16,12 @@ interface Props {
   onProfileChange: (p: FiscalProfile) => void;
 }
 
-type SubTab = "profil" | "collaboration";
+type SubTab = "profil" | "collaboration" | "etablissements";
 
 const SUB_TABS: { id: SubTab; label: string; icon: React.ElementType }[] = [
-  { id: "profil",        label: "Profil fiscal",  icon: Settings   },
-  { id: "collaboration", label: "Collaboration",   icon: UserCheck  },
+  { id: "profil",          label: "Profil fiscal",    icon: Settings   },
+  { id: "collaboration",   label: "Collaboration",    icon: UserCheck  },
+  { id: "etablissements",  label: "Établissements",   icon: Building2  },
 ];
 
 export default function ParametresWrapper({ userId, isDark, profile, onProfileChange }: Props) {
@@ -69,6 +71,14 @@ export default function ParametresWrapper({ userId, isDark, profile, onProfileCh
         <CollaborationSection
           userId={userId}
           isDark={isDark}
+          add={addToast}
+        />
+      )}
+      {sub === "etablissements" && (
+        <EtablissementsSection
+          userId={userId}
+          isDark={isDark}
+          profile={profile}
           add={addToast}
         />
       )}

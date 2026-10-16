@@ -62,6 +62,29 @@ export interface FiscalProfile {
   updated_at: string;
 }
 
+export interface DeclEtablissement {
+  id:                    string;
+  user_id:               string;
+  profile_id:            string | null;
+  nom:                   string;
+  pays:                  string;
+  territoire_fiscal:     string | null;
+  adresse:               string | null;
+  identifiant_local:     string | null;
+  numero_tva_local:      string | null;
+  devise_locale:         string;
+  forme_juridique_locale: string | null;
+  regime_fiscal_local:   string | null;
+  assujetti_tva_local:   boolean;
+  regime_tva_local:      string | null;
+  a_salaries_local:      boolean;
+  date_debut_activite:   string | null;
+  actif:                 boolean;
+  notes:                 string | null;
+  created_at:            string;
+  updated_at:            string;
+}
+
 export interface Obligation {
   id: string;
   user_id: string;
