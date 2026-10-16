@@ -30,7 +30,7 @@ export interface ObligationRule {
   autorite:              string;
   url_autorite?:         string;
   formulaire?:           string;
-  periodicite:           "mensuelle" | "trimestrielle" | "semestrielle" | "annuelle" | "ponctuelle";
+  periodicite:           "mensuelle" | "bimestrielle" | "trimestrielle" | "semestrielle" | "annuelle" | "ponctuelle";
   description:           string;
   source_reglementaire:  string;
   date_verifiee:         string;        // ISO date — doit être maintenu

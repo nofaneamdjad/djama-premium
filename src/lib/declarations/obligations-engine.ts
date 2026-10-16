@@ -63,6 +63,13 @@ function currentPeriod(periodicite: string): { debut: Date; fin: Date } {
       fin:   new Date(y, m + 1, 0),
     };
   }
+  if (periodicite === "bimestrielle") {
+    const b = Math.floor(m / 2);
+    return {
+      debut: new Date(y, b * 2, 1),
+      fin:   new Date(y, b * 2 + 2, 0),
+    };
+  }
   if (periodicite === "trimestrielle") {
     const q     = Math.floor(m / 3);
     return {
@@ -89,6 +96,7 @@ function currentPeriod(periodicite: string): { debut: Date; fin: Date } {
 export interface ProfileWarning {
   field:   string;
   message: string;
+  level?:  "warning" | "error";
 }
 
 /**

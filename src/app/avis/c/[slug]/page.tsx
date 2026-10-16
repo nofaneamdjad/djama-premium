@@ -17,7 +17,7 @@ interface Campaign {
   id: string; name: string; question: string;
   collect_name: boolean; collect_email: boolean;
   org_id: string;
-  organizations?: { name: string; logo_url?: string };
+  organizations?: { name: string; logo_url?: string } | { name: string; logo_url?: string }[];
 }
 
 function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
