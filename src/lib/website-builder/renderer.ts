@@ -584,6 +584,11 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
   <meta name="twitter:description" content="${descStr}" />
   ${imageStr ? `<meta name="twitter:image" content="${imageStr}" />` : ""}` : "";
 
+  // Scripts injectés depuis le thème (headerCode / footerCode)
+  const themeExt = theme as unknown as Record<string, unknown>;
+  const headerCode = String(themeExt.headerCode ?? "");
+  const footerCode = String(themeExt.footerCode ?? "");
+
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -596,6 +601,7 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
   ${ogTags}
   ${canonical ? buildJsonLd(opts, page) : ""}
   ${font}
+  ${headerCode ? `<!-- Header scripts -->\n  ${headerCode}` : ""}
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -612,6 +618,7 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
 </head>
 <body>
 ${sections}
+${footerCode ? `<!-- Footer scripts -->\n${footerCode}` : ""}
 </body>
 </html>`;
 }

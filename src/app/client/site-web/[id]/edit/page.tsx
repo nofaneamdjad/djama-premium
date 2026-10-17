@@ -7,7 +7,8 @@ import {
   Globe, Save, Eye, ArrowLeft, Plus, Trash2, ChevronUp,
   ChevronDown, EyeOff, Settings, Layers, Monitor, Tablet,
   Smartphone, CheckCircle, Loader2, GripVertical, X, PanelLeft,
-  Bot, Send, History, RotateCcw, Palette
+  Bot, Send, History, RotateCcw, Palette, Search, Code2,
+  Image as ImageIcon, Upload, Link2, SlidersHorizontal
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
@@ -17,10 +18,11 @@ import { DEFAULT_THEME } from "@/lib/website-builder/types";
 
 type PreviewWidth = "desktop" | "tablet" | "mobile";
 const PREVIEW_WIDTHS: Record<PreviewWidth, number> = { desktop: 1200, tablet: 768, mobile: 375 };
-type RightPanel = "props" | "ai" | "versions" | "theme" | null;
+type RightPanel = "props" | "ai" | "versions" | "theme" | "seo" | "code" | "settings" | null;
 
 interface ChatMsg { role: "user" | "assistant"; text: string }
 interface SiteVersion { id: string; label: string | null; created_at: string }
+interface MediaItem { id: string; filename: string; public_url: string; mime_type: string; size: number; alt: string | null }
 
 export default function EditSitePage() {
   const { isDark } = useTheme();
@@ -61,6 +63,25 @@ export default function EditSitePage() {
   // Theme editor
   const [localTheme, setLocalTheme] = useState<Partial<WebsiteTheme>>({});
 
+  // SEO par page
+  const [seoTitle,       setSeoTitle]       = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
+  const [seoOgImage,     setSeoOgImage]     = useState("");
+  const [seoSaving,      setSeoSaving]      = useState(false);
+
+  // Code injection
+  const [headerCode, setHeaderCode] = useState("");
+  const [footerCode, setFooterCode] = useState("");
+  const [codeSaving, setCodeSaving] = useState(false);
+
+  // Settings du site
+  const [siteTitleEdit, setSiteTitleEdit]  = useState("");
+  const [siteDescEdit,  setSiteDescEdit]   = useState("");
+  const [siteSeoTitle,  setSiteSeoTitle]   = useState("");
+  const [siteSeoDesc,   setSiteSeoDesc]    = useState("");
+  const [siteFavicon,   setSiteFavicon]    = useState("");
+  const [settingsSaving, setSettingsSaving] = useState(false);
+
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
 
   // Charger site + pages
@@ -69,8 +90,17 @@ export default function EditSitePage() {
       .then(r => r.json())
       .then(d => {
         if (d.website) {
-          setSite(d.website as Website);
-          setLocalTheme((d.website as Website).theme as Partial<WebsiteTheme>);
+          const ws = d.website as Website;
+          setSite(ws);
+          const th = ws.theme as Partial<WebsiteTheme> & { headerCode?: string; footerCode?: string };
+          setLocalTheme(th);
+          setHeaderCode(th.headerCode ?? "");
+          setFooterCode(th.footerCode ?? "");
+          setSiteTitleEdit(ws.name ?? "");
+          setSiteDescEdit((ws as { description?: string }).description ?? "");
+          setSiteSeoTitle((ws as { seo_title?: string }).seo_title ?? "");
+          setSiteSeoDesc((ws as { seo_description?: string }).seo_description ?? "");
+          setSiteFavicon((ws as { favicon_url?: string }).favicon_url ?? "");
           const pg = (d.pages ?? []) as WebsitePage[];
           setPages(pg);
           const home = pg.find(p => p.is_homepage) ?? pg[0];
@@ -80,7 +110,7 @@ export default function EditSitePage() {
       .finally(() => setLoading(false));
   }, [siteId]);
 
-  // Charger sections
+  // Charger sections + SEO de la page courante
   useEffect(() => {
     if (!currentPageId) return;
     fetch(`/api/websites/${siteId}/pages/${currentPageId}`)
@@ -89,6 +119,11 @@ export default function EditSitePage() {
         const secs = ((d.page?.sections ?? []) as WebsiteSection[]).sort((a, b) => a.position - b.position);
         setSections(secs);
         setPreviewKey(k => k + 1);
+        // Charger SEO de la page
+        const pg = d.page as { seo_title?: string; seo_description?: string; og_image_url?: string } | undefined;
+        setSeoTitle(pg?.seo_title ?? "");
+        setSeoDescription(pg?.seo_description ?? "");
+        setSeoOgImage(pg?.og_image_url ?? "");
       });
   }, [currentPageId, siteId]);
 
@@ -175,6 +210,48 @@ export default function EditSitePage() {
     const data = await res.json() as { website?: Website };
     if (data.website) setSite(data.website);
     setPublishing(false);
+  }
+
+  // ── Sauvegarder SEO par page ───────────────────────────────────────────────
+  async function saveSeo() {
+    if (!currentPageId) return;
+    setSeoSaving(true);
+    await fetch(`/api/websites/${siteId}/pages/${currentPageId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seo_title: seoTitle, seo_description: seoDescription, og_image_url: seoOgImage }),
+    });
+    setSeoSaving(false);
+  }
+
+  // ── Sauvegarder code injection ──────────────────────────────────────────────
+  async function saveCode() {
+    if (!site) return;
+    setCodeSaving(true);
+    const newTheme = { ...localTheme, headerCode, footerCode };
+    setLocalTheme(newTheme);
+    await fetch(`/api/websites/${siteId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ theme: newTheme }),
+    });
+    setCodeSaving(false);
+  }
+
+  // ── Sauvegarder paramètres du site ─────────────────────────────────────────
+  async function saveSettings() {
+    if (!site) return;
+    setSettingsSaving(true);
+    await fetch(`/api/websites/${siteId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name:            siteTitleEdit,
+        description:     siteDescEdit,
+        seo_title:       siteSeoTitle,
+        seo_description: siteSeoDesc,
+        favicon_url:     siteFavicon,
+      }),
+    });
+    setSite(prev => prev ? { ...prev, name: siteTitleEdit } : prev);
+    setSettingsSaving(false);
   }
 
   // ── Chat IA ───────────────────────────────────────────────────────────────
@@ -364,10 +441,13 @@ export default function EditSitePage() {
           {/* Icônes de navigation */}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", padding: "0.5rem 0.4rem", borderBottom: `1px solid ${t.border}` }}>
             {([
-              { id: "props" as RightPanel, icon: <Settings size={15} />, label: "Props" },
-              { id: "ai" as RightPanel, icon: <Bot size={15} />, label: "IA" },
-              { id: "theme" as RightPanel, icon: <Palette size={15} />, label: "Thème" },
-              { id: "versions" as RightPanel, icon: <History size={15} />, label: "Hist." },
+              { id: "props"     as RightPanel, icon: <Settings size={15} />,          label: "Props" },
+              { id: "ai"        as RightPanel, icon: <Bot size={15} />,                label: "IA" },
+              { id: "theme"     as RightPanel, icon: <Palette size={15} />,            label: "Thème" },
+              { id: "seo"       as RightPanel, icon: <Search size={15} />,             label: "SEO" },
+              { id: "code"      as RightPanel, icon: <Code2 size={15} />,              label: "Code" },
+              { id: "settings"  as RightPanel, icon: <SlidersHorizontal size={15} />, label: "Régl." },
+              { id: "versions"  as RightPanel, icon: <History size={15} />,            label: "Hist." },
             ]).map(btn => (
               <button key={String(btn.id)} onClick={() => { setRightPanel(rightPanel === btn.id ? null : btn.id); if (btn.id === "versions") loadVersions(); }}
                 title={btn.label}
@@ -385,7 +465,7 @@ export default function EditSitePage() {
               style={{ borderLeft: `1px solid ${t.border}`, display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.65rem 0.85rem", borderBottom: `1px solid ${t.border}` }}>
                 <span style={{ fontWeight: 700, fontSize: "0.82rem" }}>
-                  {rightPanel === "props" ? "Propriétés" : rightPanel === "ai" ? "Assistant IA" : rightPanel === "theme" ? "Thème" : "Historique"}
+                  {rightPanel === "props" ? "Propriétés" : rightPanel === "ai" ? "Assistant IA" : rightPanel === "theme" ? "Thème" : rightPanel === "seo" ? "SEO page" : rightPanel === "code" ? "Code" : rightPanel === "settings" ? "Paramètres" : "Historique"}
                 </span>
                 <button onClick={() => setRightPanel(null)} style={{ background: "none", border: "none", cursor: "pointer", color: t.text, opacity: 0.45 }}><X size={13} /></button>
               </div>
@@ -472,6 +552,132 @@ export default function EditSitePage() {
                   </div>
                 )}
 
+                {/* ── SEO par page ── */}
+                {rightPanel === "seo" && (
+                  <div style={{ padding: "0.75rem", display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+                    <p style={{ margin: 0, fontSize: "0.7rem", opacity: 0.45, lineHeight: 1.5 }}>
+                      Ces métadonnées s'appliquent à <strong>{pages.find(p => p.id === currentPageId)?.title ?? "cette page"}</strong>.
+                    </p>
+                    {([
+                      { label: "Titre SEO", val: seoTitle, set: setSeoTitle, hint: "~60 caractères", max: 80 },
+                      { label: "Description", val: seoDescription, set: setSeoDescription, hint: "~155 caractères", max: 200 },
+                      { label: "Image OG (URL)", val: seoOgImage, set: setSeoOgImage, hint: "1200×630px recommandé", max: 500 },
+                    ] as { label: string; val: string; set: (v: string) => void; hint: string; max: number }[]).map(f => (
+                      <div key={f.label}>
+                        <label style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.65 }}>
+                          <span>{f.label}</span>
+                          <span style={{ opacity: 0.5, fontWeight: 400 }}>{f.hint}</span>
+                        </label>
+                        {f.label === "Description" ? (
+                          <textarea value={f.val} onChange={e => f.set(e.target.value)} rows={3}
+                            style={{ width: "100%", padding: "0.4rem 0.55rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem", resize: "vertical", fontFamily: "inherit" }} />
+                        ) : (
+                          <input value={f.val} onChange={e => f.set(e.target.value)} maxLength={f.max}
+                            style={{ width: "100%", padding: "0.4rem 0.55rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem" }} />
+                        )}
+                        {f.label === "Titre SEO" && f.val && (
+                          <div style={{ marginTop: "0.25rem", fontSize: "0.65rem", color: f.val.length > 60 ? "#EF4444" : "#10B981", opacity: 0.8 }}>
+                            {f.val.length}/60 caractères
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {seoOgImage && (
+                      <img src={seoOgImage} alt="OG preview" style={{ width: "100%", borderRadius: "0.45rem", border: `1px solid ${t.border}` }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    )}
+                    <button onClick={saveSeo} disabled={seoSaving}
+                      style={{ background: "#2563EB", color: "#fff", border: "none", borderRadius: "0.6rem", padding: "0.6rem", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+                      {seoSaving ? <Loader2 size={13} /> : <Search size={13} />} Sauvegarder SEO
+                    </button>
+                    <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: "0.75rem" }}>
+                      <p style={{ fontSize: "0.72rem", opacity: 0.5, margin: "0 0 0.5rem" }}>Liens SEO du site :</p>
+                      {[
+                        { label: "Sitemap", href: `/api/websites/${siteId}/sitemap.xml` },
+                        { label: "Robots.txt", href: `/api/websites/${siteId}/robots.txt` },
+                      ].map(l => (
+                        <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
+                          style={{ display: "block", fontSize: "0.72rem", color: "#2563EB", marginBottom: "0.25rem" }}>
+                          ↗ {l.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Code injection ── */}
+                {rightPanel === "code" && (
+                  <div style={{ padding: "0.75rem", display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+                    <p style={{ margin: 0, fontSize: "0.7rem", opacity: 0.45, lineHeight: 1.5 }}>
+                      Injectez du code HTML/JS dans le <code>&lt;head&gt;</code> ou avant <code>&lt;/body&gt;</code> de toutes vos pages (Google Analytics, pixels, chat…).
+                    </p>
+                    {([
+                      { label: "Code en-tête <head>", val: headerCode, set: setHeaderCode, hint: "Scripts analytics, polices, meta custom…" },
+                      { label: "Code pied <body>", val: footerCode, set: setFooterCode, hint: "Chat, widgets, scripts de conversion…" },
+                    ] as { label: string; val: string; set: (v: string) => void; hint: string }[]).map(f => (
+                      <div key={f.label}>
+                        <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.25rem", opacity: 0.65 }}>{f.label}</label>
+                        <p style={{ fontSize: "0.65rem", opacity: 0.45, margin: "0 0 0.3rem" }}>{f.hint}</p>
+                        <textarea value={f.val} onChange={e => f.set(e.target.value)} rows={6}
+                          style={{ width: "100%", padding: "0.5rem", background: isDark ? "#0d1117" : "#f6f8fa", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: isDark ? "#e2e8f0" : "#1e293b", fontSize: "0.72rem", resize: "vertical", fontFamily: "monospace" }}
+                          spellCheck={false} placeholder={`<!-- ex: Google Analytics -->\n<script>...</script>`} />
+                      </div>
+                    ))}
+                    <button onClick={saveCode} disabled={codeSaving}
+                      style={{ background: "#2563EB", color: "#fff", border: "none", borderRadius: "0.6rem", padding: "0.6rem", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+                      {codeSaving ? <Loader2 size={13} /> : <Code2 size={13} />} Sauvegarder le code
+                    </button>
+                    <p style={{ fontSize: "0.65rem", opacity: 0.4, margin: 0 }}>
+                      ⚠️ Le code injecté est exécuté sur votre site public. Vérifiez les scripts avant de les ajouter.
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Paramètres du site ── */}
+                {rightPanel === "settings" && (
+                  <div style={{ padding: "0.75rem", display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+                    {([
+                      { label: "Nom du site", val: siteTitleEdit, set: setSiteTitleEdit },
+                      { label: "Description", val: siteDescEdit, set: setSiteDescEdit },
+                      { label: "Titre SEO global", val: siteSeoTitle, set: setSiteSeoTitle },
+                      { label: "Description SEO globale", val: siteSeoDesc, set: setSiteSeoDesc },
+                      { label: "URL Favicon", val: siteFavicon, set: setSiteFavicon },
+                    ] as { label: string; val: string; set: (v: string) => void }[]).map(f => (
+                      <div key={f.label}>
+                        <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.65 }}>{f.label}</label>
+                        {f.label === "Description" || f.label === "Description SEO globale" ? (
+                          <textarea value={f.val} onChange={e => f.set(e.target.value)} rows={2}
+                            style={{ width: "100%", padding: "0.4rem 0.55rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem", resize: "vertical", fontFamily: "inherit" }} />
+                        ) : (
+                          <input value={f.val} onChange={e => f.set(e.target.value)}
+                            style={{ width: "100%", padding: "0.4rem 0.55rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem" }} />
+                        )}
+                      </div>
+                    ))}
+                    {site?.subdomain && (
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.65 }}>URL publique</label>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <code style={{ flex: 1, padding: "0.4rem 0.55rem", background: isDark ? "#ffffff05" : "#f3f4f6", borderRadius: "0.45rem", fontSize: "0.72rem" }}>{site.subdomain}.djama.site</code>
+                          <button onClick={() => window.open(`https://${site.subdomain}.djama.site`, "_blank")}
+                            style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: "0.45rem", padding: "0.35rem 0.6rem", cursor: "pointer", color: t.text, fontSize: "0.7rem" }}>
+                            ↗
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <button onClick={saveSettings} disabled={settingsSaving}
+                      style={{ background: "#2563EB", color: "#fff", border: "none", borderRadius: "0.6rem", padding: "0.6rem", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+                      {settingsSaving ? <Loader2 size={13} /> : <SlidersHorizontal size={13} />} Enregistrer
+                    </button>
+                    <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: "0.75rem" }}>
+                      <a href={`/client/site-web/${siteId}/domains`}
+                        style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "#2563EB", fontSize: "0.78rem", fontWeight: 600, textDecoration: "none" }}>
+                        <Link2 size={13} /> Gérer les domaines →
+                      </a>
+                    </div>
+                  </div>
+                )}
+
                 {/* ── Versions ── */}
                 {rightPanel === "versions" && (
                   <div style={{ padding: "0.75rem" }}>
@@ -518,6 +724,10 @@ export default function EditSitePage() {
 
 // ── Éditeur de props ───────────────────────────────────────────────────────────
 
+const IS_IMAGE_KEY = (k: string) => /url|image|img|photo|avatar|logo|thumbnail|banner|background/i.test(k);
+const IS_LONG_TEXT = (k: string) => /content|text|body|description|extrait|message|bio|about/i.test(k);
+const IS_URL_FIELD = (k: string) => /href|link|url/i.test(k) && !/image|img|photo|avatar|thumbnail/i.test(k);
+
 function PropsEditor({ section, isDark, t, siteId, onUpdate }: {
   section: WebsiteSection;
   isDark: boolean;
@@ -525,7 +735,12 @@ function PropsEditor({ section, isDark, t, siteId, onUpdate }: {
   siteId: string;
   onUpdate: (s: WebsiteSection) => void;
 }) {
-  const [props, setProps] = useState(section.props);
+  const [props, setProps]         = useState(section.props);
+  const [mediaPicker, setMediaPicker] = useState<string | null>(null); // key en cours de sélection
+  const [mediaItems,  setMediaItems]  = useState<MediaItem[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [uploading,   setUploading]   = useState(false);
+
   useEffect(() => setProps(section.props), [section.id, section.props]);
 
   async function save(newProps: Record<string, unknown>) {
@@ -541,11 +756,37 @@ function PropsEditor({ section, isDark, t, siteId, onUpdate }: {
     setProps(u); save(u);
   }
 
+  async function openMediaPicker(key: string) {
+    setMediaPicker(key);
+    if (mediaItems.length === 0) {
+      setMediaLoading(true);
+      const res = await fetch(`/api/websites/${siteId}/media`);
+      const d = await res.json() as { media?: MediaItem[] };
+      setMediaItems(d.media ?? []);
+      setMediaLoading(false);
+    }
+  }
+
+  async function uploadMedia(key: string, file: File) {
+    setUploading(true);
+    const fd = new FormData(); fd.append("file", file);
+    const res = await fetch(`/api/websites/${siteId}/media`, { method: "POST", body: fd });
+    const d = await res.json() as { media?: MediaItem };
+    if (d.media) {
+      setMediaItems(prev => [d.media!, ...prev]);
+      update(key, d.media.public_url);
+      setMediaPicker(null);
+    }
+    setUploading(false);
+  }
+
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "0.4rem 0.55rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem" };
+
   const entries = Object.entries(props).filter(([, v]) => typeof v !== "object" || v === null);
   const meta = SECTIONS_LIBRARY.find(s => s.type === section.type);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", position: "relative" }}>
       <p style={{ margin: "0 0 0.35rem", fontSize: "0.7rem", fontWeight: 700, opacity: 0.45, textTransform: "uppercase" }}>
         {meta?.label ?? section.type}
       </p>
@@ -553,15 +794,78 @@ function PropsEditor({ section, isDark, t, siteId, onUpdate }: {
       {entries.map(([key, value]) => (
         <div key={key}>
           <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.25rem", opacity: 0.6 }}>{key}</label>
+
           {typeof value === "boolean" ? (
-            <input type="checkbox" checked={value} onChange={e => update(key, e.target.checked)} />
+            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+              <input type="checkbox" checked={value} onChange={e => update(key, e.target.checked)} />
+              <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>{value ? "Activé" : "Désactivé"}</span>
+            </label>
           ) : typeof value === "number" ? (
-            <input type="number" value={value} onChange={e => update(key, Number(e.target.value))} style={{ width: "100%", padding: "0.4rem 0.55rem", background: t.glass, border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem" }} />
+            <input type="number" value={value} onChange={e => update(key, Number(e.target.value))} style={inputStyle} />
+          ) : IS_IMAGE_KEY(key) ? (
+            <div>
+              <div style={{ display: "flex", gap: "0.35rem" }}>
+                <input type="text" value={String(value ?? "")} onChange={e => update(key, e.target.value)} placeholder="https://..." style={{ ...inputStyle, flex: 1 }} />
+                <button onClick={() => openMediaPicker(key)} title="Médiathèque"
+                  style={{ background: "#2563EB20", border: "none", borderRadius: "0.45rem", padding: "0 0.5rem", cursor: "pointer", color: "#2563EB" }}>
+                  <ImageIcon size={13} />
+                </button>
+              </div>
+              {typeof value === "string" && value.startsWith("http") && (
+                <img src={value} alt="" style={{ width: "100%", marginTop: "0.4rem", borderRadius: "0.35rem", border: `1px solid ${t.border}`, maxHeight: 80, objectFit: "cover" }}
+                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              )}
+            </div>
+          ) : IS_LONG_TEXT(key) ? (
+            <textarea value={String(value ?? "")} onChange={e => update(key, e.target.value)} rows={3}
+              style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }} />
+          ) : IS_URL_FIELD(key) ? (
+            <input type="url" value={String(value ?? "")} onChange={e => update(key, e.target.value)} placeholder="https://..." style={inputStyle} />
           ) : (
-            <input type="text" value={String(value ?? "")} onChange={e => update(key, e.target.value)} style={{ width: "100%", padding: "0.4rem 0.55rem", background: t.glass, border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem" }} />
+            <input type="text" value={String(value ?? "")} onChange={e => update(key, e.target.value)} style={inputStyle} />
           )}
         </div>
       ))}
+
+      {/* Modal médiathèque */}
+      {mediaPicker && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={e => { if (e.target === e.currentTarget) setMediaPicker(null); }}>
+          <div style={{ background: isDark ? "#1a1f2e" : "#fff", borderRadius: "1rem", padding: "1.25rem", width: 480, maxWidth: "90vw", maxHeight: "70vh", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: 700 }}>Médiathèque</span>
+              <button onClick={() => setMediaPicker(null)} style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.5 }}>✕</button>
+            </div>
+
+            {/* Upload zone */}
+            <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", border: `2px dashed ${t.border}`, borderRadius: "0.65rem", padding: "1rem", cursor: uploading ? "wait" : "pointer", opacity: uploading ? 0.6 : 1 }}>
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadMedia(mediaPicker, f); }} disabled={uploading} />
+              {uploading ? <Loader2 size={16} /> : <Upload size={16} />}
+              <span style={{ fontSize: "0.82rem", fontWeight: 600 }}>{uploading ? "Upload en cours…" : "Uploader une image"}</span>
+            </label>
+
+            {/* Grille médias */}
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              {mediaLoading ? (
+                <div style={{ textAlign: "center", padding: "2rem", opacity: 0.4 }}><Loader2 size={24} /></div>
+              ) : mediaItems.length === 0 ? (
+                <p style={{ textAlign: "center", opacity: 0.4, fontSize: "0.82rem", padding: "2rem 0" }}>Aucune image uploadée</p>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+                  {mediaItems.map(m => (
+                    <div key={m.id} onClick={() => { update(mediaPicker, m.public_url); setMediaPicker(null); }}
+                      style={{ cursor: "pointer", borderRadius: "0.45rem", overflow: "hidden", aspectRatio: "1", border: `2px solid transparent`, transition: "border-color 0.15s" }}
+                      onMouseOver={e => (e.currentTarget.style.borderColor = "#2563EB")}
+                      onMouseOut={e => (e.currentTarget.style.borderColor = "transparent")}>
+                      <img src={m.public_url} alt={m.alt ?? m.filename} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
