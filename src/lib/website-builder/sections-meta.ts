@@ -438,6 +438,58 @@ export const SECTIONS_LIBRARY: SectionMeta[] = [
     },
   },
 
+  // ── Contenu enrichi ─────────────────────────────────────
+  {
+    type: "image_text",
+    label: "Image + Texte",
+    description: "Bloc image et texte côte-à-côte avec CTA optionnel",
+    category: "contenu",
+    icon: "PanelLeftOpen",
+    defaultProps: {
+      title: "Un titre accrocheur",
+      content: "Décrivez ici votre produit, service ou valeur ajoutée en quelques phrases percutantes. Mettez en avant ce qui vous différencie.",
+      imageUrl: "",
+      imageAlt: "",
+      layout: "image-right",
+      ctaText: "En savoir plus",
+      ctaHref: "/contact",
+    },
+  },
+  {
+    type: "steps",
+    label: "Étapes / Processus",
+    description: "Processus numéroté — comment ça marche",
+    category: "contenu",
+    icon: "ListOrdered",
+    defaultProps: {
+      title: "Comment ça marche ?",
+      subtitle: "En seulement quelques étapes simples",
+      layout: "horizontal",
+      items: [
+        { id: "s1", title: "Contactez-nous", desc: "Envoyez-nous votre demande en quelques clics." },
+        { id: "s2", title: "Étude du projet", desc: "Nous analysons vos besoins et établissons un devis." },
+        { id: "s3", title: "Réalisation", desc: "Nous mettons en œuvre votre projet avec soin." },
+        { id: "s4", title: "Livraison", desc: "Vous recevez un résultat clé en main dans les délais." },
+      ],
+    },
+  },
+  {
+    type: "before_after",
+    label: "Avant / Après",
+    description: "Comparaison visuelle avant/après avec curseur interactif",
+    category: "contenu",
+    icon: "SplitSquareHorizontal",
+    defaultProps: {
+      title: "Avant / Après",
+      subtitle: "Glissez le curseur pour comparer",
+      beforeImage: "",
+      afterImage: "",
+      beforeLabel: "Avant",
+      afterLabel: "Après",
+      height: 420,
+    },
+  },
+
   // ── Structure (pied de page) ──────────────────────────────
   {
     type: "footer",

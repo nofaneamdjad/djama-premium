@@ -906,8 +906,165 @@ function renderSection(
     case "timeline":      return renderTimeline(sec, theme);
     case "comparison":    return renderComparison(sec, theme);
     case "alert_bar":     return renderAlertBar(sec, theme);
+    case "image_text":    return renderImageText(sec, theme);
+    case "steps":         return renderSteps(sec, theme);
+    case "before_after":  return renderBeforeAfter(sec, theme);
     default:              return "";
   }
+}
+
+// ── Image + Texte ─────────────────────────────────────────────────────────────
+
+function renderImageText(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:    string;
+    content?:  string;
+    imageUrl?: string;
+    imageAlt?: string;
+    layout?:   "image-left" | "image-right";
+    ctaText?:  string;
+    ctaHref?:  string;
+  };
+  const s   = sec.styles;
+  const r   = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const rev = (p.layout ?? "image-right") === "image-left";
+
+  const imgCol = p.imageUrl
+    ? `<div style="border-radius:${r};overflow:hidden;"><img src="${p.imageUrl}" alt="${p.imageAlt ?? ""}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
+    : `<div style="border-radius:${r};background:${theme.primaryColor}18;min-height:280px;display:flex;align-items:center;justify-content:center;color:${theme.primaryColor};font-size:0.85rem;opacity:0.6;">Image</div>`;
+
+  const textCol = `
+<div style="display:flex;flex-direction:column;justify-content:center;gap:1.25rem;">
+  ${p.title ? `<h2 style="font-size:2rem;font-weight:700;line-height:1.2;margin:0;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+  ${p.content ? `<p style="margin:0;font-size:1rem;line-height:1.75;opacity:0.8;">${p.content}</p>` : ""}
+  ${p.ctaText && p.ctaHref ? `<div><a href="${p.ctaHref}" style="background:${theme.primaryColor};color:#fff;display:inline-block;padding:0.7rem 1.75rem;text-decoration:none;font-weight:700;font-size:0.95rem;border-radius:${r};">${p.ctaText}</a></div>` : ""}
+</div>`;
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+      ${rev ? `${imgCol}${textCol}` : `${textCol}${imgCol}`}
+    </div>
+  </div>
+</section>`;
+}
+
+// ── Étapes / Processus ────────────────────────────────────────────────────────
+
+function renderSteps(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:    string;
+    subtitle?: string;
+    layout?:   "horizontal" | "vertical";
+    items?:    { id: string; title: string; desc: string }[];
+  };
+  const s     = sec.styles;
+  const r     = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const items = p.items ?? [];
+  const isH   = (p.layout ?? "horizontal") === "horizontal";
+
+  const stepHtml = (item: { id: string; title: string; desc: string }, idx: number) => `
+<div style="display:flex;flex-direction:column;align-items:center;text-align:center;${isH ? "flex:1;min-width:160px;" : "flex-direction:row;text-align:left;gap:1.25rem;align-items:flex-start;"}">
+  <div style="width:52px;height:52px;border-radius:50%;background:${theme.primaryColor};color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;flex-shrink:0;">${idx + 1}</div>
+  <div style="${isH ? "padding-top:0.75rem;" : ""}">
+    <h3 style="margin:0 0 0.35rem;font-size:1rem;font-weight:700;">${item.title}</h3>
+    <p style="margin:0;font-size:0.875rem;opacity:0.65;line-height:1.6;">${item.desc}</p>
+  </div>
+</div>`;
+
+  const connectorH = `<div style="flex-shrink:0;height:2px;flex:0 1 3rem;background:${theme.primaryColor}40;margin-top:26px;"></div>`;
+
+  const innerH = items.flatMap((item, idx) => [stepHtml(item, idx), ...(idx < items.length - 1 ? [connectorH] : [])]).join("\n");
+  const innerV = items.map((item, idx) => `<div style="display:flex;flex-direction:row;gap:1.25rem;align-items:flex-start;">${stepHtml(item, idx)}</div>`).join(`<div style="width:2px;height:2rem;background:${theme.primaryColor}40;margin-left:25px;"></div>`);
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:0.5rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="${textAlign(s)}opacity:0.6;margin-bottom:2.5rem;font-size:1rem;">${p.subtitle}</p>` : ""}
+    <div style="display:flex;${isH ? "flex-direction:row;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:0;" : "flex-direction:column;gap:0;"}">
+${isH ? innerH : innerV}
+    </div>
+  </div>
+  <style>@media(max-width:600px){#steps_${sec.id.replace(/-/g,"")} .connector{display:none!important;} #steps_${sec.id.replace(/-/g,"")} .step{flex:0 0 100%!important;}}</style>
+</section>`;
+}
+
+// ── Avant / Après ─────────────────────────────────────────────────────────────
+
+function renderBeforeAfter(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:       string;
+    subtitle?:    string;
+    beforeImage?: string;
+    afterImage?:  string;
+    beforeLabel?: string;
+    afterLabel?:  string;
+    height?:      number;
+  };
+  const s   = sec.styles;
+  const r   = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const uid = `ba_${sec.id.replace(/-/g, "")}`;
+  const h   = p.height ?? 420;
+
+  const placeholder = (label: string) => `<div style="width:100%;height:${h}px;display:flex;align-items:center;justify-content:center;background:${theme.primaryColor}18;border-radius:${r};color:${theme.primaryColor};font-size:0.85rem;opacity:0.6;">${label}</div>`;
+
+  if (!p.beforeImage || !p.afterImage) return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:0.75rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    ${placeholder("Ajoutez les images avant / après dans les propriétés")}
+  </div>
+</section>`;
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:0.5rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="${textAlign(s)}opacity:0.55;margin-bottom:1.5rem;">${p.subtitle}</p>` : ""}
+    <div id="${uid}" style="position:relative;width:100%;max-width:860px;margin:0 auto;height:${h}px;border-radius:${r};overflow:hidden;cursor:ew-resize;user-select:none;">
+      <img src="${p.afterImage}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt="${p.afterLabel ?? "Après"}" />
+      <div id="${uid}_before" style="position:absolute;inset:0;width:50%;overflow:hidden;">
+        <img src="${p.beforeImage}" style="position:absolute;inset:0;width:${h * 2}px;max-width:none;height:100%;object-fit:cover;" alt="${p.beforeLabel ?? "Avant"}" />
+      </div>
+      <div id="${uid}_line" style="position:absolute;top:0;bottom:0;left:50%;width:3px;background:#fff;box-shadow:0 0 8px rgba(0,0,0,0.35);transform:translateX(-50%);pointer-events:none;"></div>
+      <div id="${uid}_handle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${theme.primaryColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 21 12 15 6"/><polyline points="9 6 3 12 9 18"/></svg>
+      </div>
+      <div style="position:absolute;bottom:0.75rem;left:0.75rem;background:rgba(0,0,0,0.5);color:#fff;padding:0.25rem 0.65rem;border-radius:9999px;font-size:0.78rem;font-weight:600;">${p.beforeLabel ?? "Avant"}</div>
+      <div style="position:absolute;bottom:0.75rem;right:0.75rem;background:rgba(0,0,0,0.5);color:#fff;padding:0.25rem 0.65rem;border-radius:9999px;font-size:0.78rem;font-weight:600;">${p.afterLabel ?? "Après"}</div>
+    </div>
+  </div>
+</section>
+<script>
+(function(){
+  var el=document.getElementById('${uid}');
+  if(!el)return;
+  var before=document.getElementById('${uid}_before');
+  var line=document.getElementById('${uid}_line');
+  var handle=document.getElementById('${uid}_handle');
+  function setPos(x){
+    var rect=el.getBoundingClientRect();
+    var pct=Math.max(0,Math.min(1,(x-rect.left)/rect.width));
+    var w=Math.round(pct*rect.width);
+    before.style.width=w+'px';
+    line.style.left=w+'px';
+    handle.style.left=w+'px';
+  }
+  el.addEventListener('mousedown',function(e){
+    e.preventDefault();
+    function move(ev){setPos(ev.clientX);}
+    document.addEventListener('mousemove',move);
+    document.addEventListener('mouseup',function(){document.removeEventListener('mousemove',move);},{once:true});
+  });
+  el.addEventListener('touchstart',function(e){
+    function move(ev){setPos(ev.touches[0].clientX);}
+    document.addEventListener('touchmove',move,{passive:false});
+    document.addEventListener('touchend',function(){document.removeEventListener('touchmove',move);},{once:true});
+  },{passive:true});
+})();
+</script>`;
 }
 
 // ── Intégrations Jalon C ──────────────────────────────────────────────────────

@@ -9,11 +9,12 @@ import {
   Smartphone, CheckCircle, Loader2, GripVertical, X, PanelLeft,
   Bot, Send, History, RotateCcw, Palette, Search, Code2,
   Image as ImageIcon, Upload, Link2, SlidersHorizontal,
-  ClipboardList, Download, CornerUpRight
+  ClipboardList, Download, CornerUpRight, Copy, LayoutTemplate
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
 import { SECTIONS_LIBRARY, SECTION_CATEGORIES } from "@/lib/website-builder/sections-meta";
+import { PAGE_TEMPLATES, type PageTemplate } from "@/lib/website-builder/page-templates";
 import type { Website, WebsitePage, WebsiteSection, SectionType, WebsiteTheme } from "@/lib/website-builder/types";
 import { DEFAULT_THEME } from "@/lib/website-builder/types";
 
@@ -88,6 +89,10 @@ export default function EditSitePage() {
   const [passwordEnabled, setPasswordEnabled]         = useState(false);
   const [passwordInput, setPasswordInput]             = useState("");
   const [scrollAnimations, setScrollAnimations]       = useState(false);
+
+  // Templates de page
+  const [showTemplateModal, setShowTemplateModal]     = useState(false);
+  const [applyingTemplate,  setApplyingTemplate]      = useState(false);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
 
@@ -201,6 +206,51 @@ export default function EditSitePage() {
         });
       }
     }
+  }
+
+  async function duplicateSection(sec: WebsiteSection) {
+    if (!currentPageId) return;
+    const meta = SECTIONS_LIBRARY.find(s => s.type === sec.type);
+    const res = await fetch(`/api/websites/${siteId}/sections`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        page_id:  currentPageId,
+        type:     sec.type,
+        props:    sec.props,
+        styles:   sec.styles,
+        position: sec.position + 1,
+      }),
+    });
+    const data = await res.json() as { section?: WebsiteSection };
+    if (data.section) {
+      setSections(prev => {
+        const copy = [...prev];
+        const idx = copy.findIndex(s => s.id === sec.id);
+        copy.splice(idx + 1, 0, data.section!);
+        return copy.map((s, i) => ({ ...s, position: i }));
+      });
+      refreshPreview();
+    }
+    void meta;
+  }
+
+  async function applyTemplate(tpl: PageTemplate) {
+    if (!currentPageId) return;
+    setApplyingTemplate(true);
+    setShowTemplateModal(false);
+    for (let i = 0; i < tpl.sections.length; i++) {
+      const s = tpl.sections[i];
+      await fetch(`/api/websites/${siteId}/sections`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page_id: currentPageId, type: s.type, props: s.props ?? {}, styles: s.styles ?? {}, position: sections.length + i }),
+      });
+    }
+    // Recharger les sections
+    const res = await fetch(`/api/websites/${siteId}/pages/${currentPageId}`);
+    const d = await res.json() as { page?: { sections?: WebsiteSection[] } };
+    if (d.page?.sections) setSections((d.page.sections as WebsiteSection[]).sort((a, b) => a.position - b.position));
+    setApplyingTemplate(false);
+    refreshPreview();
   }
 
   // ── Sauvegarder ───────────────────────────────────────────────────────────
@@ -357,6 +407,9 @@ export default function EditSitePage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.4rem" }}>
+          <button onClick={() => setShowTemplateModal(true)} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
+            {applyingTemplate ? <Loader2 size={13} /> : <LayoutTemplate size={13} />} Templates
+          </button>
           <button onClick={() => router.push(`/client/site-web/${siteId}/domains`)} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
             <Globe size={13} /> Domaines
           </button>
@@ -474,6 +527,7 @@ export default function EditSitePage() {
                 <button onClick={e => { e.stopPropagation(); moveSection(idx, -1); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><ChevronUp size={11} /></button>
                 <button onClick={e => { e.stopPropagation(); moveSection(idx, 1); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><ChevronDown size={11} /></button>
                 <button onClick={e => { e.stopPropagation(); toggleVisibility(sec); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}>{sec.visible ? <Eye size={11} /> : <EyeOff size={11} />}</button>
+                <button onClick={e => { e.stopPropagation(); duplicateSection(sec); }} title="Dupliquer" style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><Copy size={11} /></button>
                 <button onClick={e => { e.stopPropagation(); deleteSection(sec.id); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", color: "#EF4444", opacity: 0.65 }}><Trash2 size={11} /></button>
               </div>
             ))}
@@ -823,6 +877,39 @@ export default function EditSitePage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* ── Modal Templates ── */}
+      {showTemplateModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}
+          onClick={() => setShowTemplateModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: isDark ? "#0f172a" : "#fff", borderRadius: "1rem", width: "100%", maxWidth: 760, maxHeight: "85vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderBottom: `1px solid ${t.border}` }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700 }}>Templates de page</h2>
+                <p style={{ margin: "0.2rem 0 0", fontSize: "0.78rem", opacity: 0.5 }}>Ajoutez des sections prédéfinies à votre page courante</p>
+              </div>
+              <button onClick={() => setShowTemplateModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: t.text, opacity: 0.5 }}><X size={18} /></button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", padding: "1.25rem 1.5rem" }}>
+              {PAGE_TEMPLATES.map(tpl => (
+                <div key={tpl.id} onClick={() => applyTemplate(tpl)}
+                  style={{ border: `1px solid ${t.border}`, borderRadius: "0.75rem", padding: "1.25rem", cursor: "pointer", transition: "all 0.15s" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.border = `1px solid ${tpl.color}`; (e.currentTarget as HTMLElement).style.background = isDark ? "#ffffff06" : "#f8faff"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.border = `1px solid ${t.border}`; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "0.5rem", background: tpl.color + "22", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "0.75rem" }}>
+                    <span style={{ fontSize: "1.25rem" }}>
+                      {tpl.icon === "Zap" ? "⚡" : tpl.icon === "Briefcase" ? "💼" : tpl.icon === "UtensilsCrossed" ? "🍽️" : tpl.icon === "Building2" ? "🏢" : tpl.icon === "Hammer" ? "🔨" : "📅"}
+                    </span>
+                  </div>
+                  <p style={{ margin: "0 0 0.3rem", fontWeight: 700, fontSize: "0.9rem" }}>{tpl.label}</p>
+                  <p style={{ margin: "0 0 0.75rem", fontSize: "0.75rem", opacity: 0.55, lineHeight: 1.4 }}>{tpl.desc}</p>
+                  <p style={{ margin: 0, fontSize: "0.7rem", opacity: 0.4 }}>{tpl.sections.length} sections</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

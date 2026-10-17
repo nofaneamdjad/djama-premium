@@ -10,7 +10,8 @@ export type SectionType   =
   | "custom_form" | "popup"
   | "footer" | "newsletter" | "countdown"
   | "tabs" | "accordion" | "map"
-  | "timeline" | "comparison" | "alert_bar";
+  | "timeline" | "comparison" | "alert_bar"
+  | "image_text" | "steps" | "before_after";
 
 // ── Website ────────────────────────────────────────────────────────────────
 
