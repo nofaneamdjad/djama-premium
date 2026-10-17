@@ -340,6 +340,116 @@ function renderSpacer(sec: WebsiteSection): string {
   return `<div style="height:${p.height ?? 60}px;"></div>`;
 }
 
+// ── Formulaire avancé (Jalon F) ───────────────────────────────────────────────
+
+interface CustomFormField {
+  id:          string;
+  type:        "text" | "email" | "tel" | "number" | "textarea" | "select" | "radio" | "checkbox";
+  label:       string;
+  placeholder?: string;
+  required?:   boolean;
+  options?:    string[];
+}
+
+function renderCustomForm(sec: WebsiteSection, theme: WebsiteTheme, websiteId: string): string {
+  const p = sec.props as {
+    title?:          string;
+    subtitle?:       string;
+    fields?:         CustomFormField[];
+    submitText?:     string;
+    successMessage?: string;
+    formId?:         string;
+  };
+  const s = sec.styles;
+  const r = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const baseInput = `padding:0.75rem;border:1px solid rgba(0,0,0,0.2);border-radius:${r};font-family:inherit;width:100%;font-size:0.95rem;box-sizing:border-box;`;
+
+  const fields = (p.fields ?? []).map(f => {
+    const label = `<label style="font-weight:600;font-size:0.875rem;margin-bottom:0.25rem;display:block;">${f.label}${f.required ? " *" : ""}</label>`;
+    let input = "";
+    if (f.type === "textarea") {
+      input = `<textarea name="${f.id}" placeholder="${f.placeholder ?? ""}" rows="4" style="${baseInput}resize:vertical;" ${f.required ? "required" : ""}></textarea>`;
+    } else if (f.type === "select") {
+      const opts = (f.options ?? []).map(o => `<option value="${o}">${o}</option>`).join("");
+      input = `<select name="${f.id}" style="${baseInput}" ${f.required ? "required" : ""}><option value="">-- Choisir --</option>${opts}</select>`;
+    } else if (f.type === "radio") {
+      input = (f.options ?? []).map(o =>
+        `<label style="display:flex;align-items:center;gap:0.5rem;font-weight:normal;cursor:pointer;"><input type="radio" name="${f.id}" value="${o}" ${f.required ? "required" : ""} /> ${o}</label>`
+      ).join("");
+    } else if (f.type === "checkbox") {
+      input = `<label style="display:flex;align-items:center;gap:0.5rem;font-weight:normal;cursor:pointer;"><input type="checkbox" name="${f.id}" ${f.required ? "required" : ""} /> ${f.placeholder ?? f.label}</label>`;
+    } else {
+      input = `<input type="${f.type}" name="${f.id}" placeholder="${f.placeholder ?? ""}" style="${baseInput}" ${f.required ? "required" : ""} />`;
+    }
+    return `<div style="display:flex;flex-direction:column;gap:0.25rem;">${label}${input}</div>`;
+  }).join("");
+
+  const formId = p.formId ?? sec.id ?? "form";
+  const submitHandler = websiteId
+    ? `(function(e){e.preventDefault();var btn=e.target.querySelector('button[type=submit]'),f=e.target;btn.disabled=true;btn.textContent='Envoi…';var d={__formId:'${formId}'};f.querySelectorAll('[name]').forEach(function(i){if(i.type==='checkbox'){d[i.name]=i.checked}else if(i.type==='radio'){if(i.checked)d[i.name]=i.value}else{d[i.name]=i.value}});fetch('/api/websites/${websiteId}/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){if(j.ok){f.innerHTML='<div style=\\'text-align:center;padding:2rem;\\'><div style=\\'font-size:2.5rem;margin-bottom:0.75rem;\\'>✅</div><p style=\\'font-weight:700;margin:0;\\'>Merci !</p><p style=\\'opacity:0.6;margin-top:0.5rem;\\'>${p.successMessage ?? "Votre message a bien été envoyé."}</p></div>'}else{btn.disabled=false;btn.textContent='${p.submitText ?? "Envoyer"}';alert(j.error||'Erreur');}}).catch(function(){btn.disabled=false;btn.textContent='${p.submitText ?? "Envoyer"}';alert('Erreur réseau');})})(event)`
+    : `event.preventDefault();alert('Formulaire actif après publication.')`;
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}max-width:640px;margin:0 auto;">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:0.5rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="${textAlign(s)}opacity:0.7;margin-bottom:2rem;">${p.subtitle}</p>` : ""}
+    <form style="display:flex;flex-direction:column;gap:1rem;" onsubmit="${submitHandler}">
+      ${fields || '<p style="opacity:0.5;text-align:center;padding:2rem;">Ajoutez des champs à votre formulaire</p>'}
+      <input name="website" type="text" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;" aria-hidden="true" />
+      <button type="submit" style="background:${theme.primaryColor};color:#fff;border:none;padding:0.85rem;border-radius:${r};font-weight:700;font-size:1rem;cursor:pointer;">${p.submitText ?? "Envoyer"}</button>
+    </form>
+  </div>
+</section>`;
+}
+
+// ── Popup (Jalon F) ────────────────────────────────────────────────────────────
+
+function renderPopup(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:    string;
+    content?:  string;
+    trigger?:  "delay" | "scroll" | "exit";
+    delay?:    number;
+    scroll?:   number;
+    ctaText?:  string;
+    ctaHref?:  string;
+    showOnce?: boolean;
+  };
+  const r  = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const id = `popup_${sec.id}`;
+
+  const triggerScript = p.trigger === "scroll"
+    ? `window.addEventListener('scroll',function(){if(window.scrollY/document.body.scrollHeight>=${(p.scroll ?? 50) / 100})show()},{once:true});`
+    : p.trigger === "exit"
+    ? `document.addEventListener('mouseleave',function(e){if(e.clientY<=0)show()},{once:true});`
+    : `setTimeout(show,${(p.delay ?? 5) * 1000});`;
+
+  const onceKey = `djama_popup_${id}`;
+
+  return `
+<div id="${id}" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:#fff;color:#111;border-radius:${r};padding:2rem;max-width:480px;width:100%;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.3);">
+    <button onclick="document.getElementById('${id}').style.display='none'" style="position:absolute;top:0.75rem;right:0.75rem;background:none;border:none;cursor:pointer;font-size:1.5rem;opacity:0.4;line-height:1;" aria-label="Fermer">×</button>
+    ${p.title ? `<h3 style="font-size:1.5rem;font-weight:700;margin:0 0 0.75rem;color:${theme.primaryColor};">${p.title}</h3>` : ""}
+    ${p.content ? `<p style="line-height:1.7;opacity:0.8;margin:0 0 1.5rem;">${p.content}</p>` : ""}
+    ${p.ctaText && p.ctaHref ? `<a href="${p.ctaHref}" style="display:inline-block;background:${theme.primaryColor};color:#fff;padding:0.75rem 2rem;border-radius:${r};text-decoration:none;font-weight:700;">${p.ctaText}</a>` : ""}
+  </div>
+</div>
+<script>
+(function(){
+  var id='${id}',once=${p.showOnce ? "true" : "false"},key='${onceKey}';
+  function show(){
+    if(once&&localStorage.getItem(key))return;
+    var el=document.getElementById(id);
+    el.style.display='flex';
+    if(once)localStorage.setItem(key,'1');
+  }
+  ${triggerScript}
+})();
+</script>`;
+}
+
 // ── Dispatch ──────────────────────────────────────────────────────────────────
 
 function renderSection(
@@ -371,6 +481,8 @@ function renderSection(
     case "blog_feed":     return renderBlogFeed(sec, theme, opts.embeds?.blogPosts ?? []);
     case "products":      return renderProducts(sec, theme, opts.embeds?.products ?? []);
     case "booking":       return renderBooking(sec, theme, websiteId);
+    case "custom_form":   return renderCustomForm(sec, theme, websiteId);
+    case "popup":         return renderPopup(sec, theme);
     default:              return "";
   }
 }

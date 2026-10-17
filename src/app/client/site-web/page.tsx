@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Globe, Plus, Pencil, Trash2, ExternalLink, Eye,
-  Clock, CheckCircle, Archive, MoreVertical, Layers, BarChart2, Link2
+  Clock, CheckCircle, Archive, MoreVertical, Layers, BarChart2, Link2,
+  ClipboardList, Download
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
@@ -101,6 +102,8 @@ export default function SiteWebPage() {
                 onEdit={() => router.push(`/client/site-web/${site.id}/edit`)}
                 onStats={() => router.push(`/client/site-web/${site.id}/stats`)}
                 onDomains={() => router.push(`/client/site-web/${site.id}/domains`)}
+                onSubmissions={() => router.push(`/client/site-web/${site.id}/submissions`)}
+                onExport={() => window.open(`/api/websites/${site.id}/export`, "_blank")}
                 onDelete={() => handleDelete(site.id)}
               />
             ))}
@@ -114,7 +117,7 @@ export default function SiteWebPage() {
 // ── Carte site ─────────────────────────────────────────────────────────────────
 
 function SiteCard({
-  site, isDark, t, isDeleting, menuOpen, onMenuToggle, onEdit, onStats, onDomains, onDelete
+  site, isDark, t, isDeleting, menuOpen, onMenuToggle, onEdit, onStats, onDomains, onSubmissions, onExport, onDelete
 }: {
   site: Website;
   isDark: boolean;
@@ -125,6 +128,8 @@ function SiteCard({
   onEdit: () => void;
   onStats: () => void;
   onDomains: () => void;
+  onSubmissions: () => void;
+  onExport: () => void;
   onDelete: () => void;
 }) {
   const statusColor = STATUS_COLOR[site.status] ?? "#6B7280";
@@ -189,6 +194,8 @@ function SiteCard({
                   { icon: <Eye size={14} />, label: "Aperçu", action: () => window.open(`/api/websites/${site.id}/preview`, "_blank") },
                   { icon: <BarChart2 size={14} />, label: "Statistiques", action: onStats },
                   { icon: <Link2 size={14} />, label: "Domaines", action: onDomains },
+                  { icon: <ClipboardList size={14} />, label: "Soumissions", action: onSubmissions },
+                  { icon: <Download size={14} />, label: "Exporter HTML", action: onExport },
                   { icon: <Trash2 size={14} />, label: "Supprimer", action: onDelete, danger: true },
                 ].map(item => (
                   <button

@@ -269,6 +269,42 @@ export const SECTIONS_LIBRARY: SectionMeta[] = [
       formFields: ["name", "email", "phone", "message"],
     },
   },
+  {
+    type: "custom_form",
+    label: "Formulaire avancé",
+    description: "Formulaire personnalisé avec champs configurables",
+    category: "conversion",
+    icon: "ClipboardList",
+    defaultProps: {
+      title: "Formulaire de demande",
+      subtitle: "",
+      submitText: "Envoyer",
+      successMessage: "Votre demande a bien été envoyée. Nous vous répondons rapidement.",
+      formId: "custom_form_1",
+      fields: [
+        { id: "field_nom",     type: "text",     label: "Nom",          placeholder: "Votre nom",     required: true },
+        { id: "field_email",   type: "email",    label: "E-mail",       placeholder: "Votre e-mail",  required: true },
+        { id: "field_message", type: "textarea", label: "Message",      placeholder: "Votre message", required: true },
+      ],
+    },
+  },
+  {
+    type: "popup",
+    label: "Popup / Notification",
+    description: "Fenêtre surgissante avec déclencheur configurable",
+    category: "conversion",
+    icon: "Bell",
+    defaultProps: {
+      title: "Offre spéciale !",
+      content: "Profitez de notre promotion en cours. N'attendez pas !",
+      trigger: "delay",
+      delay: 5,
+      scroll: 50,
+      ctaText: "En profiter",
+      ctaHref: "/contact",
+      showOnce: true,
+    },
+  },
 
   // ── Social ───────────────────────────────────────────────────
   {

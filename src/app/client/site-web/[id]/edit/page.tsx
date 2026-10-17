@@ -8,7 +8,8 @@ import {
   ChevronDown, EyeOff, Settings, Layers, Monitor, Tablet,
   Smartphone, CheckCircle, Loader2, GripVertical, X, PanelLeft,
   Bot, Send, History, RotateCcw, Palette, Search, Code2,
-  Image as ImageIcon, Upload, Link2, SlidersHorizontal
+  Image as ImageIcon, Upload, Link2, SlidersHorizontal,
+  ClipboardList, Download
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
@@ -324,6 +325,12 @@ export default function EditSitePage() {
         <div style={{ display: "flex", gap: "0.4rem" }}>
           <button onClick={() => router.push(`/client/site-web/${siteId}/domains`)} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
             <Globe size={13} /> Domaines
+          </button>
+          <button onClick={() => router.push(`/client/site-web/${siteId}/submissions`)} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
+            <ClipboardList size={13} /> Soumissions
+          </button>
+          <button onClick={() => window.open(`/api/websites/${siteId}/export`, "_blank")} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
+            <Download size={13} /> Export
           </button>
           <button onClick={() => window.open(`/api/websites/${siteId}/preview`, "_blank")} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
             <Eye size={13} /> Aperçu

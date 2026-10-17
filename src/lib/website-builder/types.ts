@@ -6,7 +6,8 @@ export type SectionType   =
   | "nav" | "hero" | "services" | "about" | "features" | "gallery"
   | "testimonials" | "faq" | "contact" | "pricing" | "team" | "cta"
   | "stats" | "logos" | "blog_feed" | "products" | "booking"
-  | "rich_text" | "divider" | "spacer" | "video";
+  | "rich_text" | "divider" | "spacer" | "video"
+  | "custom_form" | "popup";
 
 // ── Website ────────────────────────────────────────────────────────────────
 
