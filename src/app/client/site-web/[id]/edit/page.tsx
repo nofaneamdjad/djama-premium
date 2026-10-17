@@ -9,13 +9,14 @@ import {
   Smartphone, CheckCircle, Loader2, GripVertical, X, PanelLeft,
   Bot, Send, History, RotateCcw, Palette, Search, Code2,
   Image as ImageIcon, Upload, Link2, SlidersHorizontal,
-  ClipboardList, Download, CornerUpRight, Copy, LayoutTemplate
+  ClipboardList, Download, CornerUpRight, Copy, LayoutTemplate,
+  AlignLeft, AlignCenter, AlignRight
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
 import { SECTIONS_LIBRARY, SECTION_CATEGORIES } from "@/lib/website-builder/sections-meta";
 import { PAGE_TEMPLATES, type PageTemplate } from "@/lib/website-builder/page-templates";
-import type { Website, WebsitePage, WebsiteSection, SectionType, WebsiteTheme } from "@/lib/website-builder/types";
+import type { Website, WebsitePage, WebsiteSection, SectionType, WebsiteTheme, SectionStyles } from "@/lib/website-builder/types";
 import { DEFAULT_THEME } from "@/lib/website-builder/types";
 
 type PreviewWidth = "desktop" | "tablet" | "mobile";
@@ -996,13 +997,15 @@ function PropsEditor({ section, isDark, t, siteId, onUpdate }: {
   siteId: string;
   onUpdate: (s: WebsiteSection) => void;
 }) {
-  const [props, setProps]         = useState(section.props);
-  const [mediaPicker, setMediaPicker] = useState<string | null>(null); // key en cours de sélection
+  const [props, setProps]             = useState(section.props);
+  const [localStyles, setLocalStyles] = useState<SectionStyles>(section.styles ?? {});
+  const [stylesOpen,  setStylesOpen]  = useState(false);
+  const [mediaPicker, setMediaPicker] = useState<string | null>(null);
   const [mediaItems,  setMediaItems]  = useState<MediaItem[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [uploading,   setUploading]   = useState(false);
 
-  useEffect(() => setProps(section.props), [section.id, section.props]);
+  useEffect(() => { setProps(section.props); setLocalStyles(section.styles ?? {}); }, [section.id, section.props, section.styles]);
 
   async function save(newProps: Record<string, unknown>) {
     await fetch(`/api/websites/${siteId}/sections`, {
@@ -1010,6 +1013,20 @@ function PropsEditor({ section, isDark, t, siteId, onUpdate }: {
       body: JSON.stringify({ section_id: section.id, props: newProps }),
     });
     onUpdate({ ...section, props: newProps });
+  }
+
+  async function saveStyles(newStyles: SectionStyles) {
+    await fetch(`/api/websites/${siteId}/sections`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ section_id: section.id, styles: newStyles }),
+    });
+    onUpdate({ ...section, styles: newStyles });
+  }
+
+  function updateStyle(key: keyof SectionStyles, value: unknown) {
+    const u = { ...localStyles, [key]: value } as SectionStyles;
+    setLocalStyles(u);
+    void saveStyles(u);
   }
 
   function update(key: string, value: unknown) {
@@ -1051,6 +1068,56 @@ function PropsEditor({ section, isDark, t, siteId, onUpdate }: {
       <p style={{ margin: "0 0 0.35rem", fontSize: "0.7rem", fontWeight: 700, opacity: 0.45, textTransform: "uppercase" }}>
         {meta?.label ?? section.type}
       </p>
+
+      {/* ── Style de section ── */}
+      <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: "0.65rem" }}>
+        <button onClick={() => setStylesOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: "0.35rem", background: "none", border: "none", cursor: "pointer", color: t.text, fontSize: "0.72rem", fontWeight: 700, opacity: 0.6, padding: 0 }}>
+          <span style={{ fontSize: "0.6rem" }}>{stylesOpen ? "▾" : "▸"}</span> Style de section
+        </button>
+        {stylesOpen && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem", marginTop: "0.6rem", paddingLeft: "0.7rem", borderLeft: `2px solid ${t.border}` }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.55 }}>Fond</label>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <input type="color" value={localStyles.bg ?? "#ffffff"} onChange={e => updateStyle("bg", e.target.value)}
+                  style={{ width: 30, height: 26, border: "none", borderRadius: "0.3rem", cursor: "pointer", padding: 0, background: "transparent" }} />
+                <button onClick={() => updateStyle("bg", undefined)} style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: "0.3rem", padding: "0.15rem 0.45rem", cursor: "pointer", fontSize: "0.65rem", color: t.text, opacity: 0.6 }}>Auto</button>
+              </div>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.55 }}>Couleur texte</label>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <input type="color" value={localStyles.textColor ?? "#000000"} onChange={e => updateStyle("textColor", e.target.value)}
+                  style={{ width: 30, height: 26, border: "none", borderRadius: "0.3rem", cursor: "pointer", padding: 0, background: "transparent" }} />
+                <button onClick={() => updateStyle("textColor", undefined)} style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: "0.3rem", padding: "0.15rem 0.45rem", cursor: "pointer", fontSize: "0.65rem", color: t.text, opacity: 0.6 }}>Auto</button>
+              </div>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.55 }}>Padding</label>
+              <div style={{ display: "flex", gap: "0.25rem" }}>
+                {(["none", "sm", "md", "lg", "xl"] as const).map(v => (
+                  <button key={v} onClick={() => { const u = { ...localStyles, paddingTop: v, paddingBot: v }; setLocalStyles(u); void saveStyles(u); }}
+                    style={{ background: (localStyles.paddingTop ?? "md") === v ? "#2563EB" : (isDark ? "#ffffff0f" : "#f3f4f6"), color: (localStyles.paddingTop ?? "md") === v ? "#fff" : t.text, border: "none", borderRadius: "0.3rem", padding: "0.2rem 0.45rem", fontSize: "0.68rem", fontWeight: 600, cursor: "pointer" }}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.55 }}>Alignement</label>
+              <div style={{ display: "flex", gap: "0.25rem" }}>
+                {(["left", "center", "right"] as const).map(v => (
+                  <button key={v} onClick={() => updateStyle("alignment", v)}
+                    style={{ background: (localStyles.alignment ?? "center") === v ? "#2563EB" : (isDark ? "#ffffff0f" : "#f3f4f6"), color: (localStyles.alignment ?? "center") === v ? "#fff" : t.text, border: "none", borderRadius: "0.3rem", padding: "0.3rem 0.5rem", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                    {v === "left" ? <AlignLeft size={11} /> : v === "center" ? <AlignCenter size={11} /> : <AlignRight size={11} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {entries.length === 0 && <p style={{ opacity: 0.35, fontSize: "0.78rem", textAlign: "center", padding: "2rem 0" }}>Pas de propriétés simples.</p>}
       {entries.map(([key, value]) => (
         <div key={key}>

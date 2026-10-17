@@ -912,10 +912,13 @@ function renderSection(
     case "table":         return renderTable(sec, theme);
     case "progress_bars": return renderProgressBars(sec, theme);
     case "embed":         return renderEmbed(sec, theme);
-    case "carousel":      return renderCarousel(sec, theme);
-    case "icon_grid":     return renderIconGrid(sec, theme);
-    case "video_bg":      return renderVideoBg(sec, theme);
-    default:              return "";
+    case "carousel":       return renderCarousel(sec, theme);
+    case "icon_grid":      return renderIconGrid(sec, theme);
+    case "video_bg":       return renderVideoBg(sec, theme);
+    case "quote":          return renderQuote(sec, theme);
+    case "number_counter": return renderNumberCounter(sec, theme);
+    case "split_screen":   return renderSplitScreen(sec, theme);
+    default:               return "";
   }
 }
 
@@ -1325,6 +1328,120 @@ function renderBooking(sec: WebsiteSection, theme: WebsiteTheme, websiteId: stri
       <button type="submit" style="background:${theme.primaryColor};color:#fff;border:none;padding:0.9rem;border-radius:${r};font-weight:700;font-size:1rem;cursor:pointer;">Envoyer la demande</button>
     </form>
   </div>
+</section>`;
+}
+
+// ── Quote ─────────────────────────────────────────────────────────────────────
+
+function renderQuote(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as { text?: string; author?: string; role?: string; variant?: "minimal" | "card" | "accent" };
+  const color   = sectionColor(sec.styles, theme);
+  const text    = p.text ?? "Insérez ici votre citation percutante.";
+  const variant = p.variant ?? "card";
+
+  const body = `
+    <div style="font-size:4.5rem;line-height:0.7;color:${theme.primaryColor};opacity:0.22;font-family:Georgia,serif;margin-bottom:0.4rem;">&ldquo;</div>
+    <blockquote style="margin:0 0 1.5rem;font-size:1.3rem;font-weight:600;line-height:1.7;color:${color};font-style:italic;">${text}</blockquote>
+    ${p.author || p.role ? `<div style="display:flex;align-items:center;gap:0.75rem;">
+      <div style="width:32px;height:2px;background:${theme.primaryColor};flex-shrink:0;"></div>
+      <div>
+        ${p.author ? `<p style="margin:0;font-weight:700;font-size:0.9rem;color:${color};">${p.author}</p>` : ""}
+        ${p.role ? `<p style="margin:0;font-size:0.78rem;opacity:0.5;color:${color};">${p.role}</p>` : ""}
+      </div>
+    </div>` : ""}`;
+
+  if (variant === "accent") {
+    return `<section style="${sectionBg(sec.styles, theme)}${sectionPad(sec.styles)}">
+  <div style="max-width:780px;margin:0 auto;padding-left:2rem;border-left:5px solid ${theme.primaryColor};">${body}</div>
+</section>`;
+  }
+  if (variant === "card") {
+    return `<section style="${sectionBg(sec.styles, theme)}${sectionPad(sec.styles)}">
+  <div style="max-width:780px;margin:0 auto;background:${theme.primaryColor}10;border-radius:1.25rem;padding:2.5rem 3rem;">${body}</div>
+</section>`;
+  }
+  return `<section style="${sectionBg(sec.styles, theme)}${sectionPad(sec.styles)}">
+  <div style="max-width:780px;margin:0 auto;text-align:center;">${body}</div>
+</section>`;
+}
+
+// ── Number Counter ────────────────────────────────────────────────────────────
+
+function renderNumberCounter(sec: WebsiteSection, theme: WebsiteTheme): string {
+  interface Counter { value: number; label: string; prefix?: string; suffix?: string }
+  const p = sec.props as { title?: string; subtitle?: string; counters?: Counter[] };
+  const counters: Counter[] = p.counters ?? [
+    { value: 1500, label: "Clients satisfaits", suffix: "+" },
+    { value: 98,   label: "Taux de satisfaction", suffix: "%" },
+    { value: 12,   label: "Années d'expérience",  suffix: "" },
+    { value: 50,   label: "Projets livrés",       suffix: "+" },
+  ];
+  const uid   = sec.id.replace(/-/g, "");
+  const color = sectionColor(sec.styles, theme);
+  const cols  = Math.min(counters.length, 4);
+
+  const cells = counters.map((c, i) => `<div style="text-align:center;padding:1rem;">
+    <div style="font-size:3rem;font-weight:900;color:${theme.primaryColor};line-height:1;" id="cnt_${uid}_${i}">${c.prefix ?? ""}0${c.suffix ?? ""}</div>
+    <p style="margin:0.55rem 0 0;font-size:0.875rem;opacity:0.6;color:${color};">${c.label}</p>
+  </div>`).join("");
+
+  const countersJson = JSON.stringify(counters);
+  const js = `<script>(function(){
+  var done=false,cs=${countersJson},uid="${uid}";
+  function anim(i,target,pre,suf){
+    var el=document.getElementById('cnt_'+uid+'_'+i);if(!el)return;
+    var dur=1800,t0=null;
+    function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/dur,1),e=p*p*(3-2*p);
+      el.textContent=(pre||'')+Math.round(e*target)+(suf||'');if(p<1)requestAnimationFrame(step);}
+    requestAnimationFrame(step);
+  }
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){if(e.isIntersecting&&!done){done=true;cs.forEach(function(c,i){anim(i,c.value,c.prefix,c.suffix);});io.disconnect();}});
+    },{threshold:0.3});
+    var el=document.getElementById('ncounters_${uid}');if(el)io.observe(el);
+  } else {cs.forEach(function(c,i){var el=document.getElementById('cnt_'+uid+'_'+i);if(el)el.textContent=(c.prefix||'')+c.value+(c.suffix||'');});}
+})();</script>`;
+
+  return `<section style="${sectionBg(sec.styles, theme)}${sectionPad(sec.styles)}">
+  <div style="max-width:960px;margin:0 auto;text-align:center;">
+    ${p.title ? `<h2 style="font-size:2rem;font-weight:800;color:${color};margin:0 0 0.6rem;">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="font-size:1.05rem;opacity:0.65;color:${color};margin:0 0 2.5rem;">${p.subtitle}</p>` : ""}
+    <div id="ncounters_${uid}" style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:1.5rem;">${cells}</div>
+  </div>
+  ${js}
+</section>`;
+}
+
+// ── Split Screen ──────────────────────────────────────────────────────────────
+
+function renderSplitScreen(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    leftBg?: string; leftImage?: string; leftTitle?: string; leftText?: string; leftCta?: string; leftCtaUrl?: string;
+    rightBg?: string; rightImage?: string; rightTitle?: string; rightText?: string; rightCta?: string; rightCtaUrl?: string;
+    height?: number; reversed?: boolean;
+  };
+  const h = (p.height as number | undefined) ?? 420;
+
+  function half(bg?: string, img?: string, title?: string, text?: string, cta?: string, ctaUrl?: string): string {
+    const hasImg = !!img;
+    const tc     = hasImg ? "#fff" : theme.textColor;
+    const bgCss  = img ? `background:url(${img}) center/cover no-repeat;` : bg ? `background:${bg};` : `background:${theme.primaryColor}10;`;
+    return `<div style="flex:1;min-width:280px;min-height:${h}px;display:flex;align-items:center;justify-content:center;padding:3rem 2.5rem;box-sizing:border-box;position:relative;${bgCss}">
+      ${hasImg ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.42);"></div>` : ""}
+      <div style="position:relative;max-width:380px;">
+        ${title ? `<h2 style="margin:0 0 0.85rem;font-size:1.8rem;font-weight:800;color:${tc};">${title}</h2>` : ""}
+        ${text ? `<p style="margin:0 0 1.5rem;opacity:0.88;line-height:1.65;color:${tc};">${text}</p>` : ""}
+        ${cta ? `<a href="${ctaUrl ?? "#"}" style="display:inline-block;padding:0.75rem 2rem;background:${theme.primaryColor};color:#fff;text-decoration:none;border-radius:0.5rem;font-weight:700;font-size:0.9rem;">${cta}</a>` : ""}
+      </div>
+    </div>`;
+  }
+
+  const left  = half(p.leftBg,  p.leftImage,  p.leftTitle,  p.leftText,  p.leftCta,  p.leftCtaUrl);
+  const right = half(p.rightBg, p.rightImage, p.rightTitle, p.rightText, p.rightCta, p.rightCtaUrl);
+
+  return `<section style="${sectionPad(sec.styles)}overflow:hidden;">
+  <div style="display:flex;flex-wrap:wrap;">${p.reversed ? right + left : left + right}</div>
 </section>`;
 }
 

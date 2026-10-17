@@ -13,7 +13,8 @@ export type SectionType   =
   | "timeline" | "comparison" | "alert_bar"
   | "image_text" | "steps" | "before_after"
   | "table" | "progress_bars" | "embed"
-  | "carousel" | "icon_grid" | "video_bg";
+  | "carousel" | "icon_grid" | "video_bg"
+  | "quote" | "number_counter" | "split_screen";
 
 // ── Website ────────────────────────────────────────────────────────────────
 
