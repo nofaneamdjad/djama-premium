@@ -21,6 +21,12 @@ import { DEFAULT_THEME } from "@/lib/website-builder/types";
 
 type PreviewWidth = "desktop" | "tablet" | "mobile";
 const PREVIEW_WIDTHS: Record<PreviewWidth, number> = { desktop: 1200, tablet: 768, mobile: 375 };
+
+const POPULAR_FONTS = [
+  "Inter", "Playfair Display", "Roboto", "Lato", "Montserrat",
+  "Poppins", "Raleway", "Open Sans", "Nunito", "DM Sans",
+  "Space Grotesk", "Source Serif 4",
+];
 type RightPanel = "props" | "ai" | "versions" | "theme" | "seo" | "code" | "settings" | null;
 
 interface ChatMsg { role: "user" | "assistant"; text: string }
@@ -91,6 +97,13 @@ export default function EditSitePage() {
   const [passwordInput, setPasswordInput]             = useState("");
   const [scrollAnimations, setScrollAnimations]       = useState(false);
 
+  // Intégrations marketing
+  const [gtmId,     setGtmId]     = useState("");
+  const [ga4Id,     setGa4Id]     = useState("");
+  const [fbPixelId, setFbPixelId] = useState("");
+  const [hotjarId,  setHotjarId]  = useState("");
+  const [clarityId, setClarityId] = useState("");
+
   // Templates de page
   const [showTemplateModal, setShowTemplateModal]     = useState(false);
   const [applyingTemplate,  setApplyingTemplate]      = useState(false);
@@ -136,7 +149,7 @@ export default function EditSitePage() {
         if (d.website) {
           const ws = d.website as Website;
           setSite(ws);
-          const th = ws.theme as Partial<WebsiteTheme> & { headerCode?: string; footerCode?: string; notificationEmail?: string; cookieBanner?: { enabled?: boolean; text?: string }; passwordEnabled?: boolean; scrollAnimations?: boolean };
+          const th = ws.theme as Partial<WebsiteTheme> & { headerCode?: string; footerCode?: string; notificationEmail?: string; cookieBanner?: { enabled?: boolean; text?: string }; passwordEnabled?: boolean; scrollAnimations?: boolean; gtmId?: string; ga4Id?: string; fbPixelId?: string; hotjarId?: string; clarityId?: string };
           setLocalTheme(th);
           setHeaderCode(th.headerCode ?? "");
           setFooterCode(th.footerCode ?? "");
@@ -145,6 +158,11 @@ export default function EditSitePage() {
           setCookieBannerText(th.cookieBanner?.text ?? "");
           setPasswordEnabled(th.passwordEnabled ?? false);
           setScrollAnimations(th.scrollAnimations ?? false);
+          setGtmId(th.gtmId ?? "");
+          setGa4Id(th.ga4Id ?? "");
+          setFbPixelId(th.fbPixelId ?? "");
+          setHotjarId(th.hotjarId ?? "");
+          setClarityId(th.clarityId ?? "");
           setSiteTitleEdit(ws.name ?? "");
           setSiteDescEdit((ws as { description?: string }).description ?? "");
           setSiteSeoTitle((ws as { seo_title?: string }).seo_title ?? "");
@@ -369,6 +387,11 @@ export default function EditSitePage() {
       cookieBanner: { enabled: cookieBannerEnabled, text: cookieBannerText || undefined },
       passwordEnabled,
       scrollAnimations,
+      gtmId:     gtmId.trim()     || undefined,
+      ga4Id:     ga4Id.trim()     || undefined,
+      fbPixelId: fbPixelId.trim() || undefined,
+      hotjarId:  hotjarId.trim()  || undefined,
+      clarityId: clarityId.trim() || undefined,
       ...(passwordHash ? { passwordHash } : {}),
     };
     setLocalTheme(newTheme);
@@ -714,6 +737,24 @@ export default function EditSitePage() {
                         {["none", "sm", "md", "lg", "xl", "full"].map(v => <option key={v} value={v}>{v}</option>)}
                       </select>
                     </div>
+                    <div>
+                      <p style={{ margin: "0 0 0.5rem", fontSize: "0.7rem", fontWeight: 700, opacity: 0.45, textTransform: "uppercase" }}>Polices</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                        {([
+                          { key: "fontHeading" as const, label: "Titres" },
+                          { key: "fontBody" as const, label: "Corps" },
+                        ]).map(({ key, label }) => (
+                          <div key={key}>
+                            <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.65 }}>{label}</label>
+                            <select value={String(localTheme[key] ?? DEFAULT_THEME[key])}
+                              onChange={e => setLocalTheme(prev => ({ ...prev, [key]: e.target.value }))}
+                              style={{ width: "100%", padding: "0.45rem 0.5rem", background: t.glass, border: `1px solid ${t.border}`, borderRadius: "0.5rem", color: t.text, fontSize: "0.78rem" }}>
+                              {POPULAR_FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <button onClick={handleSave} style={{ background: "#2563EB", color: "#fff", border: "none", borderRadius: "0.65rem", padding: "0.6rem", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>
                       Appliquer le thème
                     </button>
@@ -894,6 +935,27 @@ export default function EditSitePage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Intégrations marketing */}
+                    <div>
+                      <p style={{ margin: "0 0 0.6rem", fontSize: "0.7rem", fontWeight: 700, opacity: 0.45, textTransform: "uppercase" }}>Intégrations marketing</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
+                        {([
+                          { label: "Google Tag Manager ID", val: gtmId, set: setGtmId, placeholder: "GTM-XXXXXXX" },
+                          { label: "Google Analytics 4 ID", val: ga4Id, set: setGa4Id, placeholder: "G-XXXXXXXXXX" },
+                          { label: "Facebook Pixel ID", val: fbPixelId, set: setFbPixelId, placeholder: "123456789012345" },
+                          { label: "Hotjar ID", val: hotjarId, set: setHotjarId, placeholder: "1234567" },
+                          { label: "Microsoft Clarity ID", val: clarityId, set: setClarityId, placeholder: "xxxxxxxxxx" },
+                        ] as { label: string; val: string; set: (v: string) => void; placeholder: string }[]).map(f => (
+                          <div key={f.label}>
+                            <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.25rem", opacity: 0.6 }}>{f.label}</label>
+                            <input value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
+                              style={{ width: "100%", padding: "0.4rem 0.55rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem" }} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <button onClick={saveSettings} disabled={settingsSaving}
                       style={{ background: "#2563EB", color: "#fff", border: "none", borderRadius: "0.6rem", padding: "0.6rem", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
                       {settingsSaving ? <Loader2 size={13} /> : <SlidersHorizontal size={13} />} Enregistrer

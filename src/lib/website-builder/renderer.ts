@@ -1641,10 +1641,12 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
   const sections = (page.sections ?? [])
     .sort((a, b) => a.position - b.position)
     .map(s => renderSection(s, theme, opts))
-    .join("\n");
+    .join("\n")
+    .replace(/<img\b(?![^>]*\bloading=)/gi, '<img loading="lazy"');
 
-  const font = theme.fontHeading === "Inter" ? "" :
-    `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(theme.fontHeading)}:wght@400;600;700;800&display=swap" />`;
+  const fontsToLoad = [...new Set([theme.fontHeading, theme.fontBody].filter(f => f && f !== "Inter"))] as string[];
+  const font = fontsToLoad.length === 0 ? "" :
+    fontsToLoad.map(f => `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(f)}:wght@400;500;600;700;800&display=swap" />`).join("\n  ");
 
   const titleStr  = esc(opts.title ?? page.title ?? "");
   const descStr   = esc(opts.description ?? "");
@@ -1664,12 +1666,13 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
   <meta name="twitter:description" content="${descStr}" />
   ${imageStr ? `<meta name="twitter:image" content="${imageStr}" />` : ""}` : "";
 
-  // Scripts injectés depuis le thème (headerCode / footerCode / cookieBanner)
+  // Scripts injectés depuis le thème (headerCode / footerCode / cookieBanner / intégrations)
   const themeExt = theme as unknown as Record<string, unknown>;
   const headerCode = String(themeExt.headerCode ?? "");
   const footerCode = String(themeExt.footerCode ?? "");
   const cookieBannerCfg = themeExt.cookieBanner as { enabled?: boolean; text?: string; acceptText?: string; declineText?: string } | undefined;
   const cookieBannerHtml = cookieBannerCfg?.enabled ? renderCookieBanner(cookieBannerCfg) : "";
+  const integrationScripts = renderIntegrationScripts(themeExt);
 
   const scrollAnimHtml = themeExt.scrollAnimations === true ? `
 <script>
@@ -1701,13 +1704,14 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
   ${ogTags}
   ${canonical ? buildJsonLd(opts, page) : ""}
   ${font}
+  ${integrationScripts ? `<!-- Intégrations marketing -->\n  ${integrationScripts}` : ""}
   ${headerCode ? `<!-- Header scripts -->\n  ${headerCode}` : ""}
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { margin: 0; font-family: '${theme.fontHeading}', system-ui, -apple-system, sans-serif; background: ${theme.bgColor}; color: ${theme.textColor}; }
+    body { margin: 0; font-family: '${theme.fontBody || theme.fontHeading}', system-ui, -apple-system, sans-serif; background: ${theme.bgColor}; color: ${theme.textColor}; }
+    h1, h2, h3, h4, h5, h6 { margin: 0 0 0.5em; font-family: '${theme.fontHeading}', system-ui, -apple-system, sans-serif; }
     img { max-width: 100%; height: auto; display: block; }
-    h1, h2, h3, h4, h5, h6 { margin: 0 0 0.5em; }
     p { margin: 0 0 1em; }
     details > summary { user-select: none; }
     @media (max-width: 768px) {
@@ -1723,4 +1727,50 @@ ${cookieBannerHtml}
 ${scrollAnimHtml}
 </body>
 </html>`;
+}
+
+// ── Intégrations marketing ─────────────────────────────────────────────────────
+
+function renderIntegrationScripts(themeExt: Record<string, unknown>): string {
+  const scripts: string[] = [];
+
+  const gtmId = themeExt.gtmId as string | undefined;
+  if (gtmId?.trim()) {
+    const id = gtmId.trim();
+    scripts.push(`<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${id}');</script>
+<!-- End Google Tag Manager -->`);
+  }
+
+  const ga4Id = themeExt.ga4Id as string | undefined;
+  if (ga4Id?.trim()) {
+    const id = ga4Id.trim();
+    scripts.push(`<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${id}');</script>`);
+  }
+
+  const fbPixelId = themeExt.fbPixelId as string | undefined;
+  if (fbPixelId?.trim()) {
+    const id = fbPixelId.trim();
+    scripts.push(`<!-- Facebook Pixel -->
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${id}');fbq('track','PageView');</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${id}&ev=PageView&noscript=1" /></noscript>`);
+  }
+
+  const hotjarId = themeExt.hotjarId as string | undefined;
+  if (hotjarId?.trim()) {
+    const id = hotjarId.trim();
+    scripts.push(`<!-- Hotjar -->
+<script>(function(h,o,t,j,a,r){h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};h._hjSettings={hjid:${id},hjsv:6};a=o.getElementsByTagName('head')[0];r=o.createElement('script');r.async=1;r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;a.appendChild(r);})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');</script>`);
+  }
+
+  const clarityId = themeExt.clarityId as string | undefined;
+  if (clarityId?.trim()) {
+    const id = clarityId.trim();
+    scripts.push(`<!-- Microsoft Clarity -->
+<script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${id}");</script>`);
+  }
+
+  return scripts.join("\n  ");
 }
