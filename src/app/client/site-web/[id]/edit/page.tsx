@@ -245,6 +245,9 @@ export default function EditSitePage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.4rem" }}>
+          <button onClick={() => router.push(`/client/site-web/${siteId}/domains`)} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
+            <Globe size={13} /> Domaines
+          </button>
           <button onClick={() => window.open(`/api/websites/${siteId}/preview`, "_blank")} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
             <Eye size={13} /> Aperçu
           </button>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Globe, Plus, Pencil, Trash2, ExternalLink, Eye,
-  Clock, CheckCircle, Archive, MoreVertical, Layers, BarChart2
+  Clock, CheckCircle, Archive, MoreVertical, Layers, BarChart2, Link2
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
@@ -100,6 +100,7 @@ export default function SiteWebPage() {
                 onMenuToggle={() => setMenuOpen(menuOpen === site.id ? null : site.id)}
                 onEdit={() => router.push(`/client/site-web/${site.id}/edit`)}
                 onStats={() => router.push(`/client/site-web/${site.id}/stats`)}
+                onDomains={() => router.push(`/client/site-web/${site.id}/domains`)}
                 onDelete={() => handleDelete(site.id)}
               />
             ))}
@@ -113,7 +114,7 @@ export default function SiteWebPage() {
 // ── Carte site ─────────────────────────────────────────────────────────────────
 
 function SiteCard({
-  site, isDark, t, isDeleting, menuOpen, onMenuToggle, onEdit, onStats, onDelete
+  site, isDark, t, isDeleting, menuOpen, onMenuToggle, onEdit, onStats, onDomains, onDelete
 }: {
   site: Website;
   isDark: boolean;
@@ -123,6 +124,7 @@ function SiteCard({
   onMenuToggle: () => void;
   onEdit: () => void;
   onStats: () => void;
+  onDomains: () => void;
   onDelete: () => void;
 }) {
   const statusColor = STATUS_COLOR[site.status] ?? "#6B7280";
@@ -186,6 +188,7 @@ function SiteCard({
                   { icon: <Pencil size={14} />, label: "Modifier", action: onEdit },
                   { icon: <Eye size={14} />, label: "Aperçu", action: () => window.open(`/api/websites/${site.id}/preview`, "_blank") },
                   { icon: <BarChart2 size={14} />, label: "Statistiques", action: onStats },
+                  { icon: <Link2 size={14} />, label: "Domaines", action: onDomains },
                   { icon: <Trash2 size={14} />, label: "Supprimer", action: onDelete, danger: true },
                 ].map(item => (
                   <button

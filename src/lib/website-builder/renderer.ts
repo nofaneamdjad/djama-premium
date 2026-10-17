@@ -72,7 +72,7 @@ function renderHero(sec: WebsiteSection, theme: WebsiteTheme): string {
     <h1 style="font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1.15;margin-bottom:1rem;">${p.title ?? ""}</h1>
     <p style="font-size:1.2rem;opacity:0.75;max-width:680px;margin:0 auto 2rem;">${p.subtitle ?? ""}</p>
     <div>${btn(p.cta1Text ?? "", p.cta1Href ?? "#", true, theme)}${btn(p.cta2Text ?? "", p.cta2Href ?? "#", false, theme)}</div>
-    ${p.imageUrl ? `<img src="${p.imageUrl}" style="max-width:100%;margin-top:3rem;border-radius:1rem;" alt="" />` : ""}
+    ${p.imageUrl ? `<img src="${p.imageUrl}" style="max-width:100%;margin-top:3rem;border-radius:1rem;" alt="" loading="lazy" />` : ""}
   </div>
 </section>`;
 }
@@ -84,7 +84,7 @@ function renderAbout(sec: WebsiteSection, theme: WebsiteTheme): string {
   return `
 <section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
   <div style="${sectionAlign(s)}display:flex;flex-wrap:wrap;gap:3rem;align-items:center;flex-direction:${reverse};">
-    ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:45%;min-width:280px;border-radius:1rem;flex:1;" alt="" />` : ""}
+    ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:45%;min-width:280px;border-radius:1rem;flex:1;" alt="" loading="lazy" />` : ""}
     <div style="flex:1;min-width:280px;">
       <h2 style="font-size:2rem;font-weight:700;margin-bottom:1rem;color:${theme.primaryColor};">${p.title ?? ""}</h2>
       <p style="line-height:1.8;opacity:0.85;">${p.content ?? ""}</p>
@@ -499,6 +499,7 @@ function renderBooking(sec: WebsiteSection, theme: WebsiteTheme, websiteId: stri
       </div>
       <input name="phone" type="tel" placeholder="Téléphone" style="padding:0.7rem 1rem;border:1px solid rgba(0,0,0,0.2);border-radius:${r};font-family:inherit;font-size:0.9rem;" />
       <textarea name="message" placeholder="Précisez vos disponibilités et l'objet du rendez-vous" rows="3" style="padding:0.7rem 1rem;border:1px solid rgba(0,0,0,0.2);border-radius:${r};font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      <input name="website" type="text" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;" aria-hidden="true" />
       <button type="submit" style="background:${theme.primaryColor};color:#fff;border:none;padding:0.9rem;border-radius:${r};font-weight:700;font-size:1rem;cursor:pointer;">Envoyer la demande</button>
     </form>
   </div>
@@ -508,16 +509,52 @@ function renderBooking(sec: WebsiteSection, theme: WebsiteTheme, websiteId: stri
 // ── Page renderer ─────────────────────────────────────────────────────────────
 
 export interface RenderOptions {
-  title?:      string;
+  title?:       string;
   description?: string;
-  favicon?:    string;
-  customCss?:  string;
-  fontsUrl?:   string;
-  websiteId?:  string;
+  favicon?:     string;
+  customCss?:   string;
+  fontsUrl?:    string;
+  websiteId?:   string;
+  // SEO avancé (Jalon D)
+  canonical?:   string;
+  siteUrl?:     string;
+  ogImage?:     string;
+  siteName?:    string;
+  allPages?:    { id: string; title: string; slug: string; is_homepage: boolean; in_nav: boolean; updated_at: string }[];
   embeds?: {
     blogPosts?: BlogArticle[];
     products?:  ShopProduct[];
   };
+}
+
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function buildJsonLd(opts: RenderOptions, page: WebsitePage): string {
+  const name = esc(opts.siteName ?? opts.title ?? page.title ?? "");
+  const url  = opts.canonical ?? opts.siteUrl ?? "";
+  const desc = esc(opts.description ?? "");
+
+  const org = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": name,
+    "url": opts.siteUrl ?? url,
+    "description": desc,
+    ...(opts.ogImage ? { "image": opts.ogImage } : {}),
+  });
+
+  const breadcrumb = opts.allPages ? JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": opts.siteName ?? "Accueil", "item": opts.siteUrl ?? "/" },
+      ...(page.is_homepage ? [] : [{ "@type": "ListItem", "position": 2, "name": page.title, "item": url }]),
+    ],
+  }) : null;
+
+  return `<script type="application/ld+json">${org}</script>${breadcrumb ? `\n  <script type="application/ld+json">${breadcrumb}</script>` : ""}`;
 }
 
 export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderOptions = {}): string {
@@ -529,14 +566,35 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
   const font = theme.fontHeading === "Inter" ? "" :
     `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(theme.fontHeading)}:wght@400;600;700;800&display=swap" />`;
 
+  const titleStr  = esc(opts.title ?? page.title ?? "");
+  const descStr   = esc(opts.description ?? "");
+  const imageStr  = esc(opts.ogImage ?? "");
+  const siteNameStr = esc(opts.siteName ?? opts.title ?? page.title ?? "");
+  const canonical = opts.canonical ?? "";
+
+  const ogTags = canonical ? `
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="${esc(canonical)}" />
+  <meta property="og:title"       content="${titleStr}" />
+  <meta property="og:description" content="${descStr}" />
+  <meta property="og:site_name"   content="${siteNameStr}" />
+  ${imageStr ? `<meta property="og:image" content="${imageStr}" />` : ""}
+  <meta name="twitter:card"       content="${imageStr ? "summary_large_image" : "summary"}" />
+  <meta name="twitter:title"      content="${titleStr}" />
+  <meta name="twitter:description" content="${descStr}" />
+  ${imageStr ? `<meta name="twitter:image" content="${imageStr}" />` : ""}` : "";
+
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${opts.title ?? page.title}</title>
-  ${opts.description ? `<meta name="description" content="${opts.description}" />` : ""}
-  ${opts.favicon ? `<link rel="icon" href="${opts.favicon}" />` : ""}
+  <title>${titleStr}</title>
+  ${descStr ? `<meta name="description" content="${descStr}" />` : ""}
+  ${canonical ? `<link rel="canonical" href="${esc(canonical)}" />` : ""}
+  ${opts.favicon ? `<link rel="icon" href="${esc(opts.favicon)}" />` : ""}
+  ${ogTags}
+  ${canonical ? buildJsonLd(opts, page) : ""}
   ${font}
   <style>
     *, *::before, *::after { box-sizing: border-box; }
