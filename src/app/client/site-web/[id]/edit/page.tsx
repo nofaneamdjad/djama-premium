@@ -94,6 +94,13 @@ export default function EditSitePage() {
   const [showTemplateModal, setShowTemplateModal]     = useState(false);
   const [applyingTemplate,  setApplyingTemplate]      = useState(false);
 
+  // Drag & drop sections
+  const dragIdxRef = useRef<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  // Recherche bibliothèque
+  const [libSearch, setLibSearch] = useState("");
+
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
 
   // Charger site + pages
@@ -205,6 +212,22 @@ export default function EditSitePage() {
           body: JSON.stringify({ section_id: sec.id, position: i }),
         });
       }
+    }
+  }
+
+  async function reorderSections(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    const updated = [...sections];
+    const [moved] = updated.splice(fromIdx, 1);
+    updated.splice(toIdx, 0, moved);
+    const reindexed = updated.map((s, i) => ({ ...s, position: i }));
+    setSections(reindexed);
+    refreshPreview();
+    for (let i = 0; i < reindexed.length; i++) {
+      await fetch(`/api/websites/${siteId}/sections`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section_id: reindexed[i].id, position: i }),
+      });
     }
   }
 
@@ -468,14 +491,31 @@ export default function EditSitePage() {
                 )}
                 {leftPanel === "library" && (
                   <>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.2rem", marginBottom: "0.65rem" }}>
-                      {SECTION_CATEGORIES.map(cat => (
-                        <button key={cat.id} onClick={() => setLibCategory(cat.id)} style={{ background: libCategory === cat.id ? "#2563EB" : (isDark ? "#ffffff0f" : "#f3f4f6"), color: libCategory === cat.id ? "#fff" : t.text, border: "none", borderRadius: 9999, padding: "0.2rem 0.6rem", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
-                          {cat.label}
-                        </button>
-                      ))}
+                    <div style={{ marginBottom: "0.55rem", position: "relative" }}>
+                      <Search size={11} style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", opacity: 0.4, pointerEvents: "none" }} />
+                      <input
+                        value={libSearch}
+                        onChange={e => setLibSearch(e.target.value)}
+                        placeholder="Rechercher un bloc…"
+                        style={{ width: "100%", padding: "0.45rem 0.65rem 0.45rem 1.9rem", background: t.glass, border: `1px solid ${t.border}`, borderRadius: "0.5rem", color: t.text, fontSize: "0.75rem", outline: "none", boxSizing: "border-box" }}
+                      />
                     </div>
-                    {SECTIONS_LIBRARY.filter(s => s.category === libCategory).map(sec => (
+                    {!libSearch.trim() && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.2rem", marginBottom: "0.65rem" }}>
+                        {SECTION_CATEGORIES.map(cat => (
+                          <button key={cat.id} onClick={() => setLibCategory(cat.id)} style={{ background: libCategory === cat.id ? "#2563EB" : (isDark ? "#ffffff0f" : "#f3f4f6"), color: libCategory === cat.id ? "#fff" : t.text, border: "none", borderRadius: 9999, padding: "0.2rem 0.6rem", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {(libSearch.trim()
+                      ? SECTIONS_LIBRARY.filter(s =>
+                          s.label.toLowerCase().includes(libSearch.toLowerCase()) ||
+                          s.description.toLowerCase().includes(libSearch.toLowerCase())
+                        )
+                      : SECTIONS_LIBRARY.filter(s => s.category === libCategory)
+                    ).map(sec => (
                       <div key={sec.type} onClick={() => addSection(sec.type)} style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", padding: "0.6rem 0.7rem", borderRadius: "0.55rem", cursor: "pointer", border: `1px solid ${t.border}`, marginBottom: "0.35rem" }}
                         onMouseEnter={e => (e.currentTarget.style.background = isDark ? "#ffffff08" : "#eff4ff")}
                         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
@@ -519,10 +559,15 @@ export default function EditSitePage() {
             {sections.length === 0 && <p style={{ opacity: 0.35, fontSize: "0.78rem", textAlign: "center", padding: "1rem 0" }}>Ajoutez des blocs depuis la bibliothèque.</p>}
             {sections.map((sec, idx) => (
               <div key={sec.id}
+                draggable
+                onDragStart={() => { dragIdxRef.current = idx; }}
+                onDragOver={e => { e.preventDefault(); setDragOverIdx(idx); }}
+                onDrop={() => { if (dragIdxRef.current !== null) { reorderSections(dragIdxRef.current, idx); dragIdxRef.current = null; setDragOverIdx(null); } }}
+                onDragEnd={() => { dragIdxRef.current = null; setDragOverIdx(null); }}
                 onClick={() => { setSelectedSectionId(sec.id === selectedSectionId ? null : sec.id); setRightPanel("props"); }}
-                style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.55rem", borderRadius: "0.45rem", cursor: "pointer", background: selectedSectionId === sec.id ? "#2563EB1a" : "transparent", border: selectedSectionId === sec.id ? "1px solid #2563EB35" : "1px solid transparent", marginBottom: "0.15rem", opacity: sec.visible ? 1 : 0.4 }}
+                style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.55rem", borderRadius: "0.45rem", cursor: "pointer", background: selectedSectionId === sec.id ? "#2563EB1a" : dragOverIdx === idx ? (isDark ? "#ffffff0a" : "#eff4ff") : "transparent", border: selectedSectionId === sec.id ? "1px solid #2563EB35" : dragOverIdx === idx ? "1px solid #2563EB55" : "1px solid transparent", marginBottom: "0.15rem", opacity: sec.visible ? 1 : 0.4 }}
               >
-                <GripVertical size={11} style={{ opacity: 0.35, flexShrink: 0 }} />
+                <GripVertical size={11} style={{ opacity: 0.35, flexShrink: 0, cursor: "grab" }} />
                 <span style={{ flex: 1, fontSize: "0.8rem", fontWeight: 500 }}>{SECTIONS_LIBRARY.find(s => s.type === sec.type)?.label ?? sec.type}</span>
                 <button onClick={e => { e.stopPropagation(); moveSection(idx, -1); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><ChevronUp size={11} /></button>
                 <button onClick={e => { e.stopPropagation(); moveSection(idx, 1); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><ChevronDown size={11} /></button>

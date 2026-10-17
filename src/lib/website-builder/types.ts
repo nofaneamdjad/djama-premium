@@ -11,7 +11,8 @@ export type SectionType   =
   | "footer" | "newsletter" | "countdown"
   | "tabs" | "accordion" | "map"
   | "timeline" | "comparison" | "alert_bar"
-  | "image_text" | "steps" | "before_after";
+  | "image_text" | "steps" | "before_after"
+  | "table" | "progress_bars" | "embed";
 
 // ── Website ────────────────────────────────────────────────────────────────
 

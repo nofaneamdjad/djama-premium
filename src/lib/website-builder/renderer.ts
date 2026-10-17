@@ -909,8 +909,135 @@ function renderSection(
     case "image_text":    return renderImageText(sec, theme);
     case "steps":         return renderSteps(sec, theme);
     case "before_after":  return renderBeforeAfter(sec, theme);
+    case "table":         return renderTable(sec, theme);
+    case "progress_bars": return renderProgressBars(sec, theme);
+    case "embed":         return renderEmbed(sec, theme);
     default:              return "";
   }
+}
+
+// ── Tableau de données ────────────────────────────────────────────────────────
+
+function renderTable(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:   string;
+    caption?: string;
+    striped?: boolean;
+    headers?: string[];
+    rows?:    string[][];
+  };
+  const s       = sec.styles;
+  const headers = p.headers ?? [];
+  const rows    = p.rows ?? [];
+
+  const thead = headers.length
+    ? `<thead><tr>${headers.map(h => `<th style="padding:0.75rem 1rem;text-align:left;font-size:0.82rem;font-weight:700;background:${theme.primaryColor};color:#fff;white-space:nowrap;">${h}</th>`).join("")}</tr></thead>`
+    : "";
+
+  const tbody = `<tbody>${rows.map((row, ri) => `<tr style="background:${p.striped !== false && ri % 2 === 1 ? (theme.bgColor === "#ffffff" ? "#f9fafb" : "rgba(255,255,255,0.04)") : "transparent"};">${(headers.length ? row.slice(0, headers.length) : row).map(cell => `<td style="padding:0.65rem 1rem;font-size:0.875rem;border-bottom:1px solid ${theme.primaryColor}18;">${cell}</td>`).join("")}</tr>`).join("")}</tbody>`;
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:1.5rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    <div style="overflow-x:auto;border-radius:8px;border:1px solid ${theme.primaryColor}20;">
+      <table style="width:100%;border-collapse:collapse;min-width:400px;">
+        ${thead}
+        ${tbody}
+      </table>
+      ${p.caption ? `<p style="text-align:center;font-size:0.75rem;opacity:0.5;padding:0.5rem;">${p.caption}</p>` : ""}
+    </div>
+  </div>
+</section>`;
+}
+
+// ── Barres de progression ─────────────────────────────────────────────────────
+
+function renderProgressBars(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:       string;
+    subtitle?:    string;
+    items?:       { id: string; label: string; value: number }[];
+    showPercent?: boolean;
+    animated?:    boolean;
+  };
+  const s     = sec.styles;
+  const items = p.items ?? [];
+  const uid   = `pb_${sec.id.replace(/-/g, "")}`;
+
+  const bars = items.map((item, i) => {
+    const pct = Math.max(0, Math.min(100, item.value));
+    return `
+<div style="margin-bottom:${i < items.length - 1 ? "1.5rem" : "0"};">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.45rem;">
+    <span style="font-size:0.9rem;font-weight:600;">${item.label}</span>
+    ${p.showPercent !== false ? `<span id="${uid}_pct_${i}" style="font-size:0.82rem;font-weight:700;color:${theme.primaryColor};">${p.animated !== false ? "0%" : `${pct}%`}</span>` : ""}
+  </div>
+  <div style="height:10px;background:${theme.primaryColor}22;border-radius:9999px;overflow:hidden;">
+    <div id="${uid}_bar_${i}" style="height:100%;width:${p.animated !== false ? "0" : `${pct}%`};background:${theme.primaryColor};border-radius:9999px;transition:width 1.2s cubic-bezier(.4,0,.2,1);"></div>
+  </div>
+</div>`;
+  }).join("");
+
+  const animScript = p.animated !== false ? `
+<script>
+(function(){
+  var obs=new IntersectionObserver(function(entries){
+    if(!entries[0].isIntersecting)return;
+    obs.disconnect();
+    var targets=${JSON.stringify(items.map((it,i)=>({i,pct:Math.max(0,Math.min(100,it.value))})))};
+    targets.forEach(function(t){
+      var bar=document.getElementById('${uid}_bar_'+t.i);
+      var pct=document.getElementById('${uid}_pct_'+t.i);
+      if(bar)setTimeout(function(){bar.style.width=t.pct+'%';},100);
+      if(pct){var v=0;var interval=setInterval(function(){v+=2;pct.textContent=Math.min(v,t.pct)+'%';if(v>=t.pct)clearInterval(interval);},20);}
+    });
+  },{threshold:0.3});
+  var el=document.getElementById('${uid}');
+  if(el)obs.observe(el);
+})();
+</script>` : "";
+
+  return `
+<section id="${uid}" style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}max-width:700px;margin-left:auto;margin-right:auto;">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:0.5rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="${textAlign(s)}opacity:0.6;margin-bottom:2rem;">${p.subtitle}</p>` : ""}
+    ${bars}
+  </div>
+</section>
+${animScript}`;
+}
+
+// ── Embed HTML ────────────────────────────────────────────────────────────────
+
+function renderEmbed(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:     string;
+    html?:      string;
+    height?:    number;
+    scrolling?: boolean;
+  };
+  const s = sec.styles;
+  const h = p.height ?? 500;
+
+  if (!p.html?.trim()) return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}text-align:center;padding:3rem 1rem;opacity:0.4;border:2px dashed ${theme.primaryColor}40;border-radius:8px;">
+    <p style="margin:0;font-size:0.9rem;">Ajoutez du code HTML / un iframe dans les propriétés</p>
+    <p style="margin:0.4rem 0 0;font-size:0.78rem;opacity:0.6;">Compatible : Calendly, Typeform, Google Maps, YouTube, etc.</p>
+  </div>
+</section>`;
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:1.5rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    <div style="width:100%;min-height:${h}px;overflow:${p.scrolling ? "auto" : "hidden"};">
+      ${p.html}
+    </div>
+  </div>
+</section>`;
 }
 
 // ── Image + Texte ─────────────────────────────────────────────────────────────

@@ -438,6 +438,58 @@ export const SECTIONS_LIBRARY: SectionMeta[] = [
     },
   },
 
+  // ── Données & embed ──────────────────────────────────────
+  {
+    type: "table",
+    label: "Tableau de données",
+    description: "Tableau HTML avec en-têtes et lignes configurables",
+    category: "contenu",
+    icon: "Table",
+    defaultProps: {
+      title: "",
+      caption: "",
+      striped: true,
+      headers: ["Colonne 1", "Colonne 2", "Colonne 3"],
+      rows: [
+        ["Ligne 1 - A", "Ligne 1 - B", "Ligne 1 - C"],
+        ["Ligne 2 - A", "Ligne 2 - B", "Ligne 2 - C"],
+        ["Ligne 3 - A", "Ligne 3 - B", "Ligne 3 - C"],
+      ],
+    },
+  },
+  {
+    type: "progress_bars",
+    label: "Barres de progression",
+    description: "Barres de compétences ou indicateurs avec pourcentage",
+    category: "contenu",
+    icon: "BarChart",
+    defaultProps: {
+      title: "Nos compétences",
+      subtitle: "",
+      items: [
+        { id: "p1", label: "Développement web", value: 90 },
+        { id: "p2", label: "Design graphique", value: 75 },
+        { id: "p3", label: "Référencement SEO", value: 85 },
+        { id: "p4", label: "Marketing digital", value: 70 },
+      ],
+      showPercent: true,
+      animated: true,
+    },
+  },
+  {
+    type: "embed",
+    label: "Bloc embed",
+    description: "Intégrez n'importe quel contenu externe : Calendly, Typeform, vidéo, carte…",
+    category: "intégration",
+    icon: "Code",
+    defaultProps: {
+      title: "",
+      html: "",
+      height: 500,
+      scrolling: false,
+    },
+  },
+
   // ── Contenu enrichi ─────────────────────────────────────
   {
     type: "image_text",
