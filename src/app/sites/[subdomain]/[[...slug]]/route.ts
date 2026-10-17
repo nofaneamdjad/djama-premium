@@ -54,6 +54,22 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const websiteId = site.id as string;
 
+  // Vérifier si une redirection active correspond à ce slug
+  const requestPath = `/${pageSlug}`;
+  const { data: redirect } = await admin
+    .from("website_redirections")
+    .select("to_url, status_code")
+    .eq("website_id", websiteId)
+    .eq("from_path", requestPath)
+    .eq("enabled", true)
+    .maybeSingle();
+
+  if (redirect) {
+    return NextResponse.redirect(redirect.to_url as string, {
+      status: redirect.status_code as number,
+    });
+  }
+
   // Trouver la bonne page par slug
   let pageQuery = admin
     .from("website_pages")

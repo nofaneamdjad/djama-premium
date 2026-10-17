@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { createHash } from "crypto";
+import { Resend } from "resend";
 
 export const dynamic = "force-dynamic";
 
@@ -66,10 +67,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const admin = createSupabaseAdmin();
 
-  // Retrouver le propriétaire du site
+  // Retrouver le propriétaire du site (theme pour notificationEmail)
   const { data: site } = await admin
     .from("websites")
-    .select("id, user_id, name")
+    .select("id, user_id, name, theme")
     .eq("id", websiteId)
     .eq("status", "published")
     .single();
@@ -132,6 +133,36 @@ export async function POST(req: NextRequest, { params }: Params) {
     page_slug:  "/contact",
     ip_hash:    ipHash,
   });
+
+  // Notification e-mail à l'owner si configurée
+  const themeData = (site.theme ?? {}) as Record<string, unknown>;
+  const notifEmail = String(themeData.notificationEmail ?? "").trim();
+  if (notifEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notifEmail)) {
+    const resendKey = process.env.RESEND_API_KEY;
+    if (resendKey) {
+      const resend = new Resend(resendKey);
+      const isNewsletter = body.__type === "newsletter";
+      const subject = isNewsletter
+        ? `[${site.name}] Nouvel abonné newsletter`
+        : `[${site.name}] Nouvelle soumission de formulaire`;
+
+      const rows = Object.entries(body)
+        .filter(([k]) => !["__formId", "__type", "website"].includes(k))
+        .map(([k, v]) => `<tr><td style="padding:6px 12px;font-weight:600;background:#f9fafb;">${k}</td><td style="padding:6px 12px;">${String(v ?? "")}</td></tr>`)
+        .join("");
+
+      void resend.emails.send({
+        from:    "DJAMA Notifications <noreply@djama.pro>",
+        to:      notifEmail,
+        subject,
+        html:    `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;padding:2rem;">
+          <h2 style="margin:0 0 1rem;font-size:1.1rem;color:#1f2937;">${subject}</h2>
+          <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">${rows}</table>
+          <p style="margin-top:1.5rem;font-size:0.75rem;color:#9ca3af;">Reçu depuis votre site <strong>${site.name}</strong> via DJAMA</p>
+        </div>`,
+      }).catch(() => {});
+    }
+  }
 
   return NextResponse.json({ ok: true, contactId }, { headers: CORS });
 }

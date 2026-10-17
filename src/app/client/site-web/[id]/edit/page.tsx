@@ -9,7 +9,7 @@ import {
   Smartphone, CheckCircle, Loader2, GripVertical, X, PanelLeft,
   Bot, Send, History, RotateCcw, Palette, Search, Code2,
   Image as ImageIcon, Upload, Link2, SlidersHorizontal,
-  ClipboardList, Download
+  ClipboardList, Download, CornerUpRight
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
@@ -81,7 +81,8 @@ export default function EditSitePage() {
   const [siteSeoTitle,  setSiteSeoTitle]   = useState("");
   const [siteSeoDesc,   setSiteSeoDesc]    = useState("");
   const [siteFavicon,   setSiteFavicon]    = useState("");
-  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsSaving, setSettingsSaving]   = useState(false);
+  const [notificationEmail, setNotifEmail]    = useState("");
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
 
@@ -93,10 +94,11 @@ export default function EditSitePage() {
         if (d.website) {
           const ws = d.website as Website;
           setSite(ws);
-          const th = ws.theme as Partial<WebsiteTheme> & { headerCode?: string; footerCode?: string };
+          const th = ws.theme as Partial<WebsiteTheme> & { headerCode?: string; footerCode?: string; notificationEmail?: string };
           setLocalTheme(th);
           setHeaderCode(th.headerCode ?? "");
           setFooterCode(th.footerCode ?? "");
+          setNotifEmail(th.notificationEmail ?? "");
           setSiteTitleEdit(ws.name ?? "");
           setSiteDescEdit((ws as { description?: string }).description ?? "");
           setSiteSeoTitle((ws as { seo_title?: string }).seo_title ?? "");
@@ -241,6 +243,8 @@ export default function EditSitePage() {
   async function saveSettings() {
     if (!site) return;
     setSettingsSaving(true);
+    const newTheme = { ...localTheme, notificationEmail };
+    setLocalTheme(newTheme);
     await fetch(`/api/websites/${siteId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -249,6 +253,7 @@ export default function EditSitePage() {
         seo_title:       siteSeoTitle,
         seo_description: siteSeoDesc,
         favicon_url:     siteFavicon,
+        theme:           newTheme,
       }),
     });
     setSite(prev => prev ? { ...prev, name: siteTitleEdit } : prev);
@@ -328,6 +333,9 @@ export default function EditSitePage() {
           </button>
           <button onClick={() => router.push(`/client/site-web/${siteId}/submissions`)} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
             <ClipboardList size={13} /> Soumissions
+          </button>
+          <button onClick={() => router.push(`/client/site-web/${siteId}/redirections`)} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
+            <CornerUpRight size={13} /> Redirections
           </button>
           <button onClick={() => window.open(`/api/websites/${siteId}/export`, "_blank")} style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "none", border: `1px solid ${t.border}`, borderRadius: "0.55rem", padding: "0.4rem 0.75rem", cursor: "pointer", color: t.text, fontSize: "0.78rem", fontWeight: 600 }}>
             <Download size={13} /> Export
@@ -660,6 +668,17 @@ export default function EditSitePage() {
                         )}
                       </div>
                     ))}
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.65 }}>E-mail de notification</label>
+                      <input
+                        type="email"
+                        value={notificationEmail}
+                        onChange={e => setNotifEmail(e.target.value)}
+                        placeholder="vous@email.com"
+                        style={{ width: "100%", padding: "0.4rem 0.55rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem" }}
+                      />
+                      <p style={{ fontSize: "0.65rem", opacity: 0.5, margin: "0.2rem 0 0" }}>Reçoit un e-mail à chaque soumission de formulaire</p>
+                    </div>
                     {site?.subdomain && (
                       <div>
                         <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.65 }}>URL publique</label>

@@ -7,7 +7,8 @@ export type SectionType   =
   | "testimonials" | "faq" | "contact" | "pricing" | "team" | "cta"
   | "stats" | "logos" | "blog_feed" | "products" | "booking"
   | "rich_text" | "divider" | "spacer" | "video"
-  | "custom_form" | "popup";
+  | "custom_form" | "popup"
+  | "footer" | "newsletter" | "countdown";
 
 // ── Website ────────────────────────────────────────────────────────────────
 

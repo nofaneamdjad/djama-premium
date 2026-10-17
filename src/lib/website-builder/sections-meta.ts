@@ -306,6 +306,55 @@ export const SECTIONS_LIBRARY: SectionMeta[] = [
     },
   },
 
+  {
+    type: "newsletter",
+    label: "Newsletter",
+    description: "Formulaire d'inscription e-mail",
+    category: "conversion",
+    icon: "Rss",
+    defaultProps: {
+      title: "Restez informé",
+      subtitle: "Inscrivez-vous à notre newsletter pour recevoir nos actualités.",
+      placeholder: "Votre adresse e-mail",
+      buttonText: "S'inscrire",
+      successMessage: "Merci pour votre inscription !",
+    },
+  },
+  {
+    type: "countdown",
+    label: "Compte à rebours",
+    description: "Minuteur vers une date cible",
+    category: "conversion",
+    icon: "Timer",
+    defaultProps: {
+      title: "Offre limitée",
+      subtitle: "Ne ratez pas cette opportunité !",
+      targetDate: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split("T")[0] + "T00:00:00",
+      expiredLabel: "Offre expirée",
+      showSeconds: true,
+    },
+  },
+
+  // ── Structure (pied de page) ──────────────────────────────
+  {
+    type: "footer",
+    label: "Pied de page",
+    description: "Footer avec colonnes, réseaux sociaux et copyright",
+    category: "structure",
+    icon: "LayoutTemplate",
+    defaultProps: {
+      logoText: "Mon Site",
+      description: "Une description courte de votre entreprise ou activité.",
+      columns: [
+        { title: "Navigation", links: [{ label: "Accueil", href: "/" }, { label: "Services", href: "/services" }, { label: "Contact", href: "/contact" }] },
+        { title: "Légal", links: [{ label: "Mentions légales", href: "/mentions" }, { label: "CGV", href: "/cgv" }] },
+      ],
+      social: { facebook: "", instagram: "", twitter: "", linkedin: "" },
+      copyright: `© ${new Date().getFullYear()} — Tous droits réservés`,
+      newsletter: false,
+    },
+  },
+
   // ── Social ───────────────────────────────────────────────────
   {
     type: "blog_feed",

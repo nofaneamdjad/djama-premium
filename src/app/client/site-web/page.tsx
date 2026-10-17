@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   Globe, Plus, Pencil, Trash2, ExternalLink, Eye,
   Clock, CheckCircle, Archive, MoreVertical, Layers, BarChart2, Link2,
-  ClipboardList, Download
+  ClipboardList, Download, CornerUpRight
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
@@ -103,6 +103,7 @@ export default function SiteWebPage() {
                 onStats={() => router.push(`/client/site-web/${site.id}/stats`)}
                 onDomains={() => router.push(`/client/site-web/${site.id}/domains`)}
                 onSubmissions={() => router.push(`/client/site-web/${site.id}/submissions`)}
+                onRedirections={() => router.push(`/client/site-web/${site.id}/redirections`)}
                 onExport={() => window.open(`/api/websites/${site.id}/export`, "_blank")}
                 onDelete={() => handleDelete(site.id)}
               />
@@ -117,7 +118,7 @@ export default function SiteWebPage() {
 // ── Carte site ─────────────────────────────────────────────────────────────────
 
 function SiteCard({
-  site, isDark, t, isDeleting, menuOpen, onMenuToggle, onEdit, onStats, onDomains, onSubmissions, onExport, onDelete
+  site, isDark, t, isDeleting, menuOpen, onMenuToggle, onEdit, onStats, onDomains, onSubmissions, onRedirections, onExport, onDelete
 }: {
   site: Website;
   isDark: boolean;
@@ -129,6 +130,7 @@ function SiteCard({
   onStats: () => void;
   onDomains: () => void;
   onSubmissions: () => void;
+  onRedirections: () => void;
   onExport: () => void;
   onDelete: () => void;
 }) {
@@ -195,6 +197,7 @@ function SiteCard({
                   { icon: <BarChart2 size={14} />, label: "Statistiques", action: onStats },
                   { icon: <Link2 size={14} />, label: "Domaines", action: onDomains },
                   { icon: <ClipboardList size={14} />, label: "Soumissions", action: onSubmissions },
+                  { icon: <CornerUpRight size={14} />, label: "Redirections", action: onRedirections },
                   { icon: <Download size={14} />, label: "Exporter HTML", action: onExport },
                   { icon: <Trash2 size={14} />, label: "Supprimer", action: onDelete, danger: true },
                 ].map(item => (

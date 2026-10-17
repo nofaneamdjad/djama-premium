@@ -340,6 +340,178 @@ function renderSpacer(sec: WebsiteSection): string {
   return `<div style="height:${p.height ?? 60}px;"></div>`;
 }
 
+// ── Footer (Jalon G) ─────────────────────────────────────────────────────────
+
+const SOCIAL_SVG: Record<string, string> = {
+  facebook:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>`,
+  instagram: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>`,
+  twitter:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+  linkedin:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>`,
+  youtube:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.4a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon fill="#fff" points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>`,
+  tiktok:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V9.07a8.16 8.16 0 004.77 1.52V7.14a4.85 4.85 0 01-1-.45z"/></svg>`,
+};
+
+function renderFooter(sec: WebsiteSection, theme: WebsiteTheme, websiteId: string): string {
+  const p = sec.props as {
+    logo?:        string;
+    logoText?:    string;
+    description?: string;
+    columns?:     Array<{ title: string; links: Array<{ label: string; href: string }> }>;
+    social?:      Record<string, string>;
+    copyright?:   string;
+    newsletter?:  boolean;
+  };
+  const s = sec.styles;
+  const r = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const bgColor = s.bg ?? (theme.darkMode ? "#111827" : "#1F2937");
+  const textColor = "#e5e7eb";
+  const year = new Date().getFullYear();
+
+  const logoHtml = p.logo
+    ? `<img src="${p.logo}" style="max-height:40px;margin-bottom:0.75rem;" alt="${p.logoText ?? ""}" />`
+    : p.logoText
+    ? `<div style="font-size:1.25rem;font-weight:800;color:#fff;margin-bottom:0.75rem;">${p.logoText}</div>`
+    : "";
+
+  const cols = (p.columns ?? []).map(col => `
+    <div>
+      <h4 style="color:#fff;font-size:0.875rem;font-weight:700;margin:0 0 1rem;text-transform:uppercase;letter-spacing:0.08em;">${col.title}</h4>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.5rem;">
+        ${(col.links ?? []).map(l => `<li><a href="${l.href}" style="color:${textColor};text-decoration:none;font-size:0.875rem;opacity:0.75;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">${l.label}</a></li>`).join("")}
+      </ul>
+    </div>`).join("");
+
+  const socialLinks = Object.entries(p.social ?? {})
+    .filter(([, url]) => url)
+    .map(([net, url]) => `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:${textColor};opacity:0.65;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.65'" aria-label="${net}">${SOCIAL_SVG[net] ?? net}</a>`)
+    .join("");
+
+  const newsletterHtml = p.newsletter ? `
+    <div style="margin-top:1.25rem;">
+      <p style="font-size:0.8rem;font-weight:600;color:${textColor};opacity:0.75;margin:0 0 0.5rem;">Newsletter</p>
+      <form onsubmit="(function(e){e.preventDefault();var i=e.target.querySelector('input'),btn=e.target.querySelector('button');btn.disabled=true;fetch('/api/websites/${websiteId}/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Abonné',email:i.value,__type:'newsletter'})}).then(function(r){return r.json()}).then(function(){e.target.innerHTML='<span style=\\'font-size:0.8rem;color:#6EE7B7;\\'>✓ Merci !</span>'}).catch(function(){btn.disabled=false})})(event)" style="display:flex;gap:0.5rem;">
+        <input type="email" placeholder="Votre e-mail" required style="flex:1;padding:0.5rem 0.75rem;border:1px solid rgba(255,255,255,0.2);border-radius:${r};background:rgba(255,255,255,0.08);color:#fff;font-size:0.875rem;min-width:0;" />
+        <button type="submit" style="background:${theme.primaryColor};color:#fff;border:none;padding:0.5rem 1rem;border-radius:${r};font-weight:600;font-size:0.875rem;cursor:pointer;white-space:nowrap;">OK</button>
+      </form>
+    </div>` : "";
+
+  const hasCols = (p.columns ?? []).length > 0;
+
+  return `
+<footer style="background:${bgColor};color:${textColor};padding:3rem 1.5rem 1.5rem;">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div style="display:grid;grid-template-columns:${hasCols ? `1fr ${(p.columns ?? []).map(() => "1fr").join(" ")}` : "1fr"};gap:3rem;margin-bottom:2.5rem;">
+      <div>
+        ${logoHtml}
+        ${p.description ? `<p style="font-size:0.875rem;opacity:0.65;line-height:1.7;margin:0;">${p.description}</p>` : ""}
+        ${socialLinks ? `<div style="display:flex;gap:0.875rem;margin-top:1.25rem;align-items:center;">${socialLinks}</div>` : ""}
+        ${newsletterHtml}
+      </div>
+      ${cols}
+    </div>
+    <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:1.25rem;display:flex;align-items:center;justify-content:center;">
+      <p style="font-size:0.78rem;opacity:0.4;margin:0;text-align:center;">${p.copyright ?? `© ${year} — Tous droits réservés`}</p>
+    </div>
+  </div>
+</footer>`;
+}
+
+// ── Newsletter (Jalon G) ──────────────────────────────────────────────────────
+
+function renderNewsletter(sec: WebsiteSection, theme: WebsiteTheme, websiteId: string): string {
+  const p = sec.props as {
+    title?:          string;
+    subtitle?:       string;
+    placeholder?:    string;
+    buttonText?:     string;
+    successMessage?: string;
+  };
+  const s = sec.styles;
+  const r = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+
+  const submitHandler = websiteId
+    ? `(function(e){e.preventDefault();var i=e.target.querySelector('input[type=email]'),btn=e.target.querySelector('button');btn.disabled=true;btn.textContent='…';fetch('/api/websites/${websiteId}/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Abonné',email:i.value,__type:'newsletter'})}).then(function(r){return r.json()}).then(function(j){if(j.ok){e.target.closest('.nl-wrap').innerHTML='<div style=\\'text-align:center;padding:1.5rem;\\'><div style=\\'font-size:2rem;margin-bottom:0.5rem;\\'>✅</div><p style=\\'font-weight:700;margin:0;\\'>${p.successMessage ?? "Merci pour votre inscription !"}</p></div>'}else{btn.disabled=false;btn.textContent='${p.buttonText ?? "S'inscrire"}'}}).catch(function(){btn.disabled=false;btn.textContent='${p.buttonText ?? "S'inscrire"}'})})(event)`
+    : `event.preventDefault();alert('Newsletter active après publication.')`;
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div class="nl-wrap" style="${sectionAlign(s)}max-width:560px;margin:0 auto;text-align:center;">
+    ${p.title ? `<h2 style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="opacity:0.65;margin-bottom:1.75rem;">${p.subtitle}</p>` : ""}
+    <form onsubmit="${submitHandler}" style="display:flex;gap:0.5rem;max-width:440px;margin:0 auto;">
+      <input type="email" placeholder="${p.placeholder ?? "Votre adresse e-mail"}" required
+        style="flex:1;padding:0.75rem 1rem;border:1px solid rgba(0,0,0,0.2);border-radius:${r};font-family:inherit;font-size:0.95rem;min-width:0;" />
+      <button type="submit" style="background:${theme.primaryColor};color:#fff;border:none;padding:0.75rem 1.5rem;border-radius:${r};font-weight:700;font-size:0.95rem;cursor:pointer;white-space:nowrap;">${p.buttonText ?? "S'inscrire"}</button>
+    </form>
+  </div>
+</section>`;
+}
+
+// ── Countdown (Jalon G) ───────────────────────────────────────────────────────
+
+function renderCountdown(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:       string;
+    subtitle?:    string;
+    targetDate?:  string;
+    expiredLabel?: string;
+    showSeconds?: boolean;
+  };
+  const s = sec.styles;
+  const id = `cd_${sec.id.replace(/-/g, "")}`;
+  const target = p.targetDate ?? "";
+  const showSec = p.showSeconds !== false;
+
+  const box = (unit: string, labelFr: string, elId: string) => `
+    <div style="text-align:center;min-width:80px;">
+      <div id="${elId}" style="font-size:3.5rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:${theme.primaryColor};">00</div>
+      <div style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;opacity:0.55;margin-top:0.25rem;">${labelFr}</div>
+    </div>`;
+
+  const sep = `<div style="font-size:3rem;font-weight:800;opacity:0.3;padding:0 0.25rem;line-height:1;align-self:flex-start;padding-top:0.1rem;">:</div>`;
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}text-align:center;">
+    ${p.title ? `<h2 style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="opacity:0.65;margin-bottom:2rem;">${p.subtitle}</p>` : ""}
+    <div id="${id}" style="display:inline-flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;">
+      ${box("days", "Jours", `${id}_d`)}${sep}
+      ${box("hours", "Heures", `${id}_h`)}${sep}
+      ${box("minutes", "Minutes", `${id}_m`)}
+      ${showSec ? `${sep}${box("seconds", "Secondes", `${id}_s`)}` : ""}
+    </div>
+    <div id="${id}_exp" style="display:none;font-size:1.5rem;font-weight:700;color:${theme.primaryColor};">${p.expiredLabel ?? "Événement terminé"}</div>
+  </div>
+</section>
+<script>
+(function(){
+  var target=${target ? JSON.stringify(new Date(target).getTime()) : "0"};
+  if(!target){return;}
+  function pad(n){return String(n).padStart(2,'0');}
+  function tick(){
+    var diff=Math.max(0,target-Date.now());
+    var d=Math.floor(diff/86400000);
+    var h=Math.floor((diff%86400000)/3600000);
+    var m=Math.floor((diff%3600000)/60000);
+    var sec=Math.floor((diff%60000)/1000);
+    var eld=document.getElementById('${id}_d');
+    var elh=document.getElementById('${id}_h');
+    var elm=document.getElementById('${id}_m');
+    var els=document.getElementById('${id}_s');
+    var exp=document.getElementById('${id}_exp');
+    if(diff===0&&exp){document.getElementById('${id}').style.display='none';exp.style.display='block';return;}
+    if(eld)eld.textContent=pad(d);
+    if(elh)elh.textContent=pad(h);
+    if(elm)elm.textContent=pad(m);
+    if(els)els.textContent=pad(sec);
+    setTimeout(tick,1000);
+  }
+  tick();
+})();
+</script>`;
+}
+
 // ── Formulaire avancé (Jalon F) ───────────────────────────────────────────────
 
 interface CustomFormField {
@@ -483,6 +655,9 @@ function renderSection(
     case "booking":       return renderBooking(sec, theme, websiteId);
     case "custom_form":   return renderCustomForm(sec, theme, websiteId);
     case "popup":         return renderPopup(sec, theme);
+    case "footer":        return renderFooter(sec, theme, websiteId);
+    case "newsletter":    return renderNewsletter(sec, theme, websiteId);
+    case "countdown":     return renderCountdown(sec, theme);
     default:              return "";
   }
 }
