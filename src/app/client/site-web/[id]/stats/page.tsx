@@ -103,28 +103,64 @@ export default function SiteStatsPage() {
               ))}
             </div>
 
-            {/* Graphique */}
+            {/* Graphique SVG en courbe */}
             <div style={{ background: t.glass, border: `1px solid ${t.border}`, borderRadius: "0.85rem", padding: "1.5rem", marginBottom: "2rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
                 <BarChart2 size={16} color="#2563EB" />
                 <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>Visites par jour</span>
+                {stats.totalVisits > 0 && (
+                  <span style={{ marginLeft: "auto", fontSize: "0.72rem", opacity: 0.45 }}>
+                    {stats.visitsChart[0]?.date} — {stats.visitsChart[stats.visitsChart.length - 1]?.date}
+                  </span>
+                )}
               </div>
-              <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: 120 }}>
-                {stats.visitsChart.map((d, i) => {
-                  const pct = maxViews > 0 ? (d.views / maxViews) * 100 : 0;
-                  const isToday = d.date === new Date().toISOString().slice(0, 10);
-                  return (
-                    <div key={i} title={`${d.date}: ${d.views} visite${d.views !== 1 ? "s" : ""}`}
-                      style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", cursor: "default" }}>
-                      <div style={{ width: "100%", background: isToday ? "#2563EB" : (isDark ? "#2563EB60" : "#2563EB40"), borderRadius: "2px 2px 0 0", height: `${Math.max(pct, d.views > 0 ? 4 : 0)}%`, minHeight: d.views > 0 ? 2 : 0, transition: "height 0.3s" }} />
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.5rem", fontSize: "0.68rem", opacity: 0.4 }}>
-                <span>{stats.visitsChart[0]?.date}</span>
-                <span>{stats.visitsChart[stats.visitsChart.length - 1]?.date}</span>
-              </div>
+              {stats.visitsChart.length === 0 ? (
+                <div style={{ height: 140, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.3 }}>
+                  <span style={{ fontSize: "0.875rem" }}>Aucune donnée</span>
+                </div>
+              ) : (() => {
+                const data = stats.visitsChart;
+                const n = data.length;
+                const W = 880, H = 120, PL = 28, PR = 8, PT = 8, PB = 24;
+                const cW = W - PL - PR, cH = H - PT - PB;
+                const xStep = n > 1 ? cW / (n - 1) : cW;
+                const maxV = Math.max(maxViews, 1);
+                const px = (i: number) => PL + i * xStep;
+                const py = (v: number) => PT + cH - (v / maxV) * cH;
+                const polyPts = data.map((d, i) => `${px(i).toFixed(1)},${py(d.views).toFixed(1)}`).join(" ");
+                const areaPath = `M ${px(0).toFixed(1)} ${py(data[0]?.views ?? 0).toFixed(1)} ` + data.slice(1).map((d, i) => `L ${px(i+1).toFixed(1)} ${py(d.views).toFixed(1)}`).join(" ") + ` L ${px(n-1).toFixed(1)} ${(PT+cH).toFixed(1)} L ${px(0).toFixed(1)} ${(PT+cH).toFixed(1)} Z`;
+                const labelIdxs = n <= 7 ? data.map((_, i) => i) : [0, Math.floor(n/4), Math.floor(n/2), Math.floor(n*3/4), n-1];
+                const gridY = [0.25, 0.5, 0.75, 1].map(f => PT + cH - f * cH);
+                return (
+                  <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", overflow: "visible", display: "block" }} aria-hidden="true">
+                    <defs>
+                      <linearGradient id={`cg_${siteId}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#2563EB" stopOpacity="0.22" />
+                        <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    {gridY.map((y, i) => (
+                      <line key={i} x1={PL} y1={y} x2={W - PR} y2={y}
+                        stroke={isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"} strokeDasharray="3 4" />
+                    ))}
+                    <path d={areaPath} fill={`url(#cg_${siteId})`} />
+                    <polyline points={polyPts} fill="none" stroke="#2563EB" strokeWidth="2"
+                      strokeLinejoin="round" strokeLinecap="round" />
+                    {data.map((d, i) => d.views > 0 ? (
+                      <circle key={i} cx={px(i)} cy={py(d.views)} r={3}
+                        fill="#2563EB" stroke={isDark ? "#1e2330" : "#fff"} strokeWidth="1.5">
+                        <title>{d.date}: {d.views} visite{d.views !== 1 ? "s" : ""}</title>
+                      </circle>
+                    ) : null)}
+                    {labelIdxs.map(i => data[i] ? (
+                      <text key={i} x={px(i)} y={H - 4} textAnchor={i === 0 ? "start" : i === n-1 ? "end" : "middle"}
+                        fontSize={9} fill={isDark ? "rgba(255,255,255,0.38)" : "rgba(0,0,0,0.38)"}>
+                        {data[i]!.date.slice(5)}
+                      </text>
+                    ) : null)}
+                  </svg>
+                );
+              })()}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>

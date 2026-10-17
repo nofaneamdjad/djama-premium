@@ -335,6 +335,62 @@ export const SECTIONS_LIBRARY: SectionMeta[] = [
     },
   },
 
+  // ── Contenu supplémentaire ───────────────────────────────
+  {
+    type: "timeline",
+    label: "Chronologie",
+    description: "Frise chronologique d'événements ou d'étapes",
+    category: "contenu",
+    icon: "GitBranch",
+    defaultProps: {
+      title: "Notre histoire",
+      layout: "alternating",
+      items: [
+        { id: "ev_1", date: "2020", title: "Création", content: "Fondation de l'entreprise avec une vision claire et une ambition forte." },
+        { id: "ev_2", date: "2021", title: "Premier client", content: "Signature de notre premier contrat majeur et début de l'aventure." },
+        { id: "ev_3", date: "2022", title: "Expansion", content: "Ouverture de nouveaux marchés et renforcement de l'équipe." },
+        { id: "ev_4", date: "2023", title: "Croissance", content: "Doublement du chiffre d'affaires et reconnaissance sectorielle." },
+      ],
+    },
+  },
+  {
+    type: "comparison",
+    label: "Tableau comparatif",
+    description: "Comparez des plans ou offres avec des caractéristiques",
+    category: "conversion",
+    icon: "Table2",
+    defaultProps: {
+      title: "Comparez nos offres",
+      subtitle: "",
+      features: [
+        "Caractéristique principale",
+        "Fonctionnalité avancée",
+        "Support dédié",
+        "Accès illimité",
+        "Mises à jour incluses",
+      ],
+      plans: [
+        { name: "Starter", values: [true, false, false, false, true], highlighted: false },
+        { name: "Pro", values: [true, true, false, true, true], highlighted: true },
+        { name: "Entreprise", values: [true, true, true, true, true], highlighted: false },
+      ],
+    },
+  },
+  {
+    type: "alert_bar",
+    label: "Barre d'annonce",
+    description: "Bandeau d'information ou de promotion en haut de page",
+    category: "conversion",
+    icon: "Megaphone",
+    defaultProps: {
+      text: "🎉 Nouvelle offre ! Profitez de -20 % sur tous nos services jusqu'au 31 décembre.",
+      ctaText: "En profiter",
+      ctaHref: "/contact",
+      closeable: true,
+      bgColor: "",
+    },
+  },
+
   // ── Interactif ───────────────────────────────────────────
   {
     type: "tabs",

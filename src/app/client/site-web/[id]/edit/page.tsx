@@ -87,6 +87,7 @@ export default function EditSitePage() {
   const [cookieBannerText, setCookieBannerText]       = useState("");
   const [passwordEnabled, setPasswordEnabled]         = useState(false);
   const [passwordInput, setPasswordInput]             = useState("");
+  const [scrollAnimations, setScrollAnimations]       = useState(false);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
 
@@ -98,7 +99,7 @@ export default function EditSitePage() {
         if (d.website) {
           const ws = d.website as Website;
           setSite(ws);
-          const th = ws.theme as Partial<WebsiteTheme> & { headerCode?: string; footerCode?: string; notificationEmail?: string; cookieBanner?: { enabled?: boolean; text?: string }; passwordEnabled?: boolean };
+          const th = ws.theme as Partial<WebsiteTheme> & { headerCode?: string; footerCode?: string; notificationEmail?: string; cookieBanner?: { enabled?: boolean; text?: string }; passwordEnabled?: boolean; scrollAnimations?: boolean };
           setLocalTheme(th);
           setHeaderCode(th.headerCode ?? "");
           setFooterCode(th.footerCode ?? "");
@@ -106,6 +107,7 @@ export default function EditSitePage() {
           setCookieBannerEnabled(th.cookieBanner?.enabled ?? false);
           setCookieBannerText(th.cookieBanner?.text ?? "");
           setPasswordEnabled(th.passwordEnabled ?? false);
+          setScrollAnimations(th.scrollAnimations ?? false);
           setSiteTitleEdit(ws.name ?? "");
           setSiteDescEdit((ws as { description?: string }).description ?? "");
           setSiteSeoTitle((ws as { seo_title?: string }).seo_title ?? "");
@@ -268,6 +270,7 @@ export default function EditSitePage() {
       notificationEmail,
       cookieBanner: { enabled: cookieBannerEnabled, text: cookieBannerText || undefined },
       passwordEnabled,
+      scrollAnimations,
       ...(passwordHash ? { passwordHash } : {}),
     };
     setLocalTheme(newTheme);
@@ -724,6 +727,15 @@ export default function EditSitePage() {
                           <p style={{ fontSize: "0.65rem", opacity: 0.5, margin: "0.2rem 0 0" }}>Boutons "Accepter" et "Refuser" inclus automatiquement</p>
                         </div>
                       )}
+                    </div>
+
+                    {/* ── Animations au scroll ── */}
+                    <div>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600 }}>
+                        <input type="checkbox" checked={scrollAnimations} onChange={e => setScrollAnimations(e.target.checked)} style={{ cursor: "pointer" }} />
+                        Animations au scroll
+                      </label>
+                      <p style={{ fontSize: "0.65rem", opacity: 0.5, margin: "0.2rem 0 0" }}>Les sections apparaissent progressivement lors du défilement</p>
                     </div>
 
                     {/* ── Protection par mot de passe ── */}

@@ -9,7 +9,8 @@ export type SectionType   =
   | "rich_text" | "divider" | "spacer" | "video"
   | "custom_form" | "popup"
   | "footer" | "newsletter" | "countdown"
-  | "tabs" | "accordion" | "map";
+  | "tabs" | "accordion" | "map"
+  | "timeline" | "comparison" | "alert_bar";
 
 // ── Website ────────────────────────────────────────────────────────────────
 

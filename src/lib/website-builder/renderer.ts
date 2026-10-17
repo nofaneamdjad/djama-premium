@@ -622,6 +622,119 @@ function renderPopup(sec: WebsiteSection, theme: WebsiteTheme): string {
 </script>`;
 }
 
+// ── Timeline ──────────────────────────────────────────────────────────────────
+
+function renderTimeline(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:  string;
+    layout?: "alternating" | "left";
+    items?:  { id: string; date: string; title: string; content: string }[];
+  };
+  const s      = sec.styles;
+  const r      = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const items  = p.items ?? [];
+  const isAlt  = p.layout !== "left";
+
+  if (!items.length) return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}${textAlign(s)}"><p style="opacity:0.4;">Ajoutez des événements à la chronologie</p></div>
+</section>`;
+
+  const rows = items.map((item, i) => {
+    const isRight = isAlt && i % 2 === 0;
+    const card = `<div style="background:${theme.bgColor};border:1px solid ${theme.primaryColor}22;border-radius:${r};padding:1.25rem 1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);max-width:420px;${isAlt ? (isRight ? "margin-left:auto;" : "margin-right:auto;") : ""}"><p style="font-size:0.78rem;font-weight:700;color:${theme.primaryColor};margin:0 0 0.4rem;text-transform:uppercase;letter-spacing:0.08em;">${item.date}</p><h3 style="font-weight:700;font-size:1.05rem;margin:0 0 0.5rem;color:${theme.textColor};">${item.title}</h3><p style="opacity:0.7;line-height:1.6;margin:0;font-size:0.9rem;">${item.content}</p></div>`;
+    const dot = `<div style="position:absolute;left:50%;transform:translateX(-50%);width:14px;height:14px;background:${theme.primaryColor};border-radius:50%;top:50%;transform:translate(-50%,-50%);border:3px solid ${theme.bgColor};box-shadow:0 0 0 2px ${theme.primaryColor};"></div>`;
+
+    if (isAlt) {
+      return `<div style="position:relative;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;padding:0.75rem 0;">
+      ${dot}
+      ${isRight ? `<div></div>${card}` : `${card}<div></div>`}
+    </div>`;
+    } else {
+      return `<div style="position:relative;display:grid;grid-template-columns:40px 1fr;gap:1.5rem;align-items:flex-start;padding:0.75rem 0;">
+      <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.25rem;"><div style="width:14px;height:14px;background:${theme.primaryColor};border-radius:50%;border:3px solid ${theme.bgColor};box-shadow:0 0 0 2px ${theme.primaryColor};flex-shrink:0;"></div>${i < items.length - 1 ? `<div style="flex:1;width:2px;background:${theme.primaryColor}30;margin-top:0.4rem;min-height:40px;"></div>` : ""}</div>
+      ${card}
+    </div>`;
+    }
+  }).join("\n");
+
+  const lineStyle = isAlt ? `position:absolute;left:50%;transform:translateX(-50%);top:0;bottom:0;width:2px;background:${theme.primaryColor}30;` : "";
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:3rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    <div style="position:relative;${isAlt ? "max-width:900px;margin:0 auto;" : ""}">
+      ${isAlt ? `<div style="${lineStyle}"></div>` : ""}
+${rows}
+    </div>
+  </div>
+</section>`;
+}
+
+// ── Comparison ────────────────────────────────────────────────────────────────
+
+function renderComparison(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:    string;
+    subtitle?: string;
+    features?: string[];
+    plans?:    { name: string; values: unknown[]; highlighted?: boolean }[];
+  };
+  const s        = sec.styles;
+  const r        = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const features = p.features ?? [];
+  const plans    = p.plans    ?? [];
+
+  const valCell = (v: unknown, bg?: string) => {
+    const base = `${bg ? `background:${bg};` : ""}text-align:center;padding:0.85rem 1rem;`;
+    if (v === true)  return `<td style="${base}font-size:1.1rem;color:#10B981;">✓</td>`;
+    if (v === false) return `<td style="${base}font-size:1rem;opacity:0.3;">✕</td>`;
+    return `<td style="${base}font-size:0.875rem;font-weight:600;">${String(v ?? "")}</td>`;
+  };
+
+  const thead = `<tr><th style="padding:1rem;text-align:left;font-size:0.8rem;font-weight:700;opacity:0.5;text-transform:uppercase;letter-spacing:0.07em;">Fonctionnalité</th>${plans.map(pl => `<th style="padding:1rem;text-align:center;font-size:1rem;font-weight:800;color:${pl.highlighted ? "#fff" : theme.textColor};background:${pl.highlighted ? theme.primaryColor : "transparent"};border-radius:${r} ${r} 0 0;">${pl.name}${pl.highlighted ? `<br/><span style="font-size:0.7rem;font-weight:600;opacity:0.85;display:block;margin-top:0.2rem;">⭐ Populaire</span>` : ""}</th>`).join("")}</tr>`;
+  const tbody = features.map((feat, fi) => `<tr style="border-top:1px solid ${theme.primaryColor}15;"><td style="padding:0.85rem 1rem;font-size:0.9rem;font-weight:500;">${feat}</td>${plans.map(pl => valCell((pl.values ?? [])[fi], pl.highlighted ? `${theme.primaryColor}08` : undefined)).join("")}</tr>`).join("");
+
+  const tfoot = `<tr style="border-top:2px solid ${theme.primaryColor}20;"><td></td>${plans.map(pl => `<td style="padding:1.25rem 1rem;text-align:center;background:${pl.highlighted ? theme.primaryColor : "transparent"};border-radius:0 0 ${r} ${r};"><a href="/contact" style="display:inline-block;padding:0.6rem 1.5rem;background:${pl.highlighted ? "#fff" : theme.primaryColor};color:${pl.highlighted ? theme.primaryColor : "#fff"};border-radius:${r};text-decoration:none;font-weight:700;font-size:0.875rem;">Choisir</a></td>`).join("")}</tr>`;
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:0.75rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="${textAlign(s)}opacity:0.65;margin-bottom:2.5rem;">${p.subtitle}</p>` : ""}
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <table style="width:100%;border-collapse:collapse;min-width:480px;">
+        <thead>${thead}</thead>
+        <tbody>${tbody}</tbody>
+        <tfoot>${tfoot}</tfoot>
+      </table>
+    </div>
+  </div>
+</section>`;
+}
+
+// ── Alert Bar ─────────────────────────────────────────────────────────────────
+
+function renderAlertBar(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    text?:      string;
+    ctaText?:   string;
+    ctaHref?:   string;
+    closeable?: boolean;
+    bgColor?:   string;
+  };
+  const bg  = p.bgColor || theme.primaryColor;
+  const uid = `alert_${sec.id.replace(/-/g, "")}`;
+
+  return `
+<div id="${uid}" style="background:${bg};color:#fff;padding:0.6rem 1.5rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;font-size:0.875rem;font-weight:500;position:relative;z-index:100;">
+  <span>${p.text ?? ""}</span>
+  ${p.ctaText && p.ctaHref ? `<a href="${p.ctaHref}" style="background:rgba(255,255,255,0.2);color:#fff;text-decoration:none;padding:0.3rem 0.85rem;border-radius:999px;font-weight:700;font-size:0.82rem;white-space:nowrap;border:1px solid rgba(255,255,255,0.35);">${p.ctaText}</a>` : ""}
+  ${p.closeable !== false ? `<button onclick="document.getElementById('${uid}').style.display='none'" style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#fff;opacity:0.7;font-size:1.1rem;line-height:1;padding:0.25rem;" aria-label="Fermer">×</button>` : ""}
+</div>`;
+}
+
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
 function renderTabs(sec: WebsiteSection, theme: WebsiteTheme): string {
@@ -790,6 +903,9 @@ function renderSection(
     case "tabs":          return renderTabs(sec, theme);
     case "accordion":     return renderAccordion(sec, theme);
     case "map":           return renderMap(sec, theme);
+    case "timeline":      return renderTimeline(sec, theme);
+    case "comparison":    return renderComparison(sec, theme);
+    case "alert_bar":     return renderAlertBar(sec, theme);
     default:              return "";
   }
 }
@@ -1038,6 +1154,24 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
   const cookieBannerCfg = themeExt.cookieBanner as { enabled?: boolean; text?: string; acceptText?: string; declineText?: string } | undefined;
   const cookieBannerHtml = cookieBannerCfg?.enabled ? renderCookieBanner(cookieBannerCfg) : "";
 
+  const scrollAnimHtml = themeExt.scrollAnimations === true ? `
+<script>
+(function(){
+  if(!('IntersectionObserver' in window))return;
+  var style=document.createElement('style');
+  style.textContent='[data-djama-anim]{opacity:0;transform:translateY(28px);transition:opacity 0.55s ease,transform 0.55s ease;}';
+  document.head.appendChild(style);
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){if(e.isIntersecting){e.target.removeAttribute('data-djama-anim');io.unobserve(e.target);}});
+  },{threshold:0.06,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('section').forEach(function(s,i){
+    if(i===0)return;
+    s.setAttribute('data-djama-anim','1');
+    io.observe(s);
+  });
+})();
+</script>` : "";
+
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1069,6 +1203,7 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
 ${sections}
 ${footerCode ? `<!-- Footer scripts -->\n${footerCode}` : ""}
 ${cookieBannerHtml}
+${scrollAnimHtml}
 </body>
 </html>`;
 }
