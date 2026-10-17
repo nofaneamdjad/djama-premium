@@ -103,6 +103,30 @@ export default function EditSitePage() {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
 
+  // Raccourcis clavier : Delete = supprimer, Ctrl+D = dupliquer, Escape = désélectionner
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedSectionId) {
+        e.preventDefault();
+        void deleteSection(selectedSectionId);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "d" && selectedSectionId) {
+        e.preventDefault();
+        const sec = sections.find(s => s.id === selectedSectionId);
+        if (sec) void duplicateSection(sec);
+      }
+      if (e.key === "Escape") {
+        setSelectedSectionId(null);
+        setRightPanel(null);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSectionId, sections]);
+
   // Charger site + pages
   useEffect(() => {
     fetch(`/api/websites/${siteId}`)

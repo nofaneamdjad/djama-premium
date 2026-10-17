@@ -912,6 +912,9 @@ function renderSection(
     case "table":         return renderTable(sec, theme);
     case "progress_bars": return renderProgressBars(sec, theme);
     case "embed":         return renderEmbed(sec, theme);
+    case "carousel":      return renderCarousel(sec, theme);
+    case "icon_grid":     return renderIconGrid(sec, theme);
+    case "video_bg":      return renderVideoBg(sec, theme);
     default:              return "";
   }
 }
@@ -1321,6 +1324,119 @@ function renderBooking(sec: WebsiteSection, theme: WebsiteTheme, websiteId: stri
       <input name="website" type="text" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;" aria-hidden="true" />
       <button type="submit" style="background:${theme.primaryColor};color:#fff;border:none;padding:0.9rem;border-radius:${r};font-weight:700;font-size:1rem;cursor:pointer;">Envoyer la demande</button>
     </form>
+  </div>
+</section>`;
+}
+
+// ── Carousel ──────────────────────────────────────────────────────────────────
+
+function renderCarousel(sec: WebsiteSection, theme: WebsiteTheme): string {
+  interface Slide { title?: string; subtitle?: string; cta?: string; ctaUrl?: string; image?: string }
+  const p = sec.props as { slides?: Slide[]; autoplay?: boolean; interval?: number; showArrows?: boolean; showDots?: boolean };
+  const slides: Slide[] = p.slides ?? [
+    { title: "Slide 1", subtitle: "Description courte et percutante", cta: "En savoir plus" },
+    { title: "Slide 2", subtitle: "Un autre message fort", cta: "Découvrir" },
+  ];
+  const uid         = sec.id.replace(/-/g, "");
+  const showArrows  = p.showArrows !== false;
+  const showDots    = p.showDots !== false;
+  const doAutoplay  = p.autoplay !== false;
+  const interval    = p.interval ?? 4000;
+  const n           = slides.length;
+
+  const slidesHtml = slides.map(s => {
+    const hasBg = !!s.image;
+    const textColor = hasBg ? "#fff" : theme.textColor;
+    return `<div style="min-width:100%;display:flex;align-items:center;justify-content:center;${hasBg ? `background:url(${s.image}) center/cover no-repeat;` : `background:${theme.primaryColor}12;`}padding:5rem 2rem;box-sizing:border-box;position:relative;">
+      ${hasBg ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.45);"></div>` : ""}
+      <div style="position:relative;text-align:center;max-width:700px;">
+        ${s.title ? `<h2 style="margin:0 0 0.85rem;font-size:2.2rem;font-weight:800;color:${textColor};">${s.title}</h2>` : ""}
+        ${s.subtitle ? `<p style="margin:0 0 1.75rem;font-size:1.05rem;opacity:0.88;color:${textColor};">${s.subtitle}</p>` : ""}
+        ${s.cta ? `<a href="${s.ctaUrl ?? "#"}" style="display:inline-block;padding:0.8rem 2.2rem;background:${theme.primaryColor};color:#fff;text-decoration:none;border-radius:0.5rem;font-weight:700;font-size:0.95rem;">${s.cta}</a>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+
+  const dotsHtml = showDots ? `<div style="display:flex;justify-content:center;gap:0.55rem;padding:1rem 0 0.25rem;">
+    ${slides.map((_, i) => `<button id="dot_${uid}_${i}" onclick="djCarousel_${uid}.goto(${i})" style="width:9px;height:9px;border-radius:50%;border:none;cursor:pointer;background:${theme.primaryColor};opacity:${i === 0 ? 1 : 0.3};transition:opacity 0.2s;padding:0;"></button>`).join("")}
+  </div>` : "";
+
+  const js = `<script>(function(){
+  var cur=0,n=${n},t=document.getElementById('ctrack_${uid}');
+  function go(i){cur=(i%n+n)%n;t.style.transform='translateX(-'+(cur*100)+'%)';${showDots ? `for(var j=0;j<n;j++){var d=document.getElementById('dot_${uid}_'+j);if(d)d.style.opacity=j===cur?'1':'0.3';}` : ""}}
+  window.djCarousel_${uid}={goto:go};
+  ${showArrows ? `document.getElementById('cprev_${uid}').onclick=function(){go(cur-1);};document.getElementById('cnext_${uid}').onclick=function(){go(cur+1);};` : ""}
+  ${doAutoplay ? `setInterval(function(){go(cur+1);},${interval});` : ""}
+})();</script>`;
+
+  return `<section style="${sectionBg(sec.styles, theme)}${sectionPad(sec.styles)}">
+  <div style="position:relative;overflow:hidden;">
+    <div id="ctrack_${uid}" style="display:flex;transition:transform 0.4s ease;">${slidesHtml}</div>
+    ${showArrows ? `<button id="cprev_${uid}" style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.38);color:#fff;border:none;border-radius:50%;width:44px;height:44px;cursor:pointer;font-size:1.4rem;line-height:1;">&#8249;</button>
+    <button id="cnext_${uid}" style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.38);color:#fff;border:none;border-radius:50%;width:44px;height:44px;cursor:pointer;font-size:1.4rem;line-height:1;">&#8250;</button>` : ""}
+  </div>
+  ${dotsHtml}
+  ${js}
+</section>`;
+}
+
+// ── Icon Grid ─────────────────────────────────────────────────────────────────
+
+function renderIconGrid(sec: WebsiteSection, theme: WebsiteTheme): string {
+  interface IconItem { icon?: string; label: string; desc?: string }
+  const p = sec.props as { title?: string; subtitle?: string; columns?: number; items?: IconItem[] };
+  const items: IconItem[] = p.items ?? [
+    { icon: "⚡", label: "Rapide",       desc: "Performances optimales" },
+    { icon: "🔒", label: "Sécurisé",     desc: "Protection maximale" },
+    { icon: "📱", label: "Mobile first", desc: "Compatible tous écrans" },
+    { icon: "🎯", label: "Précis",       desc: "Résultats mesurables" },
+    { icon: "🤝", label: "Support",      desc: "Équipe disponible" },
+    { icon: "🌍", label: "Global",       desc: "Présence internationale" },
+  ];
+  const cols = Math.max(1, Math.min(6, (p.columns as number | undefined) ?? 3));
+  const color = sectionColor(sec.styles, theme);
+
+  const cells = items.map(item => `<div style="text-align:center;padding:1.75rem 1rem;">
+    <div style="font-size:2.6rem;margin-bottom:0.75rem;">${item.icon ?? "✦"}</div>
+    <h3 style="margin:0 0 0.45rem;font-size:1rem;font-weight:700;color:${color};">${item.label}</h3>
+    ${item.desc ? `<p style="margin:0;font-size:0.875rem;opacity:0.6;line-height:1.55;color:${color};">${item.desc}</p>` : ""}
+  </div>`).join("");
+
+  return `<section style="${sectionBg(sec.styles, theme)}${sectionPad(sec.styles)}">
+  <div style="max-width:960px;margin:0 auto;${sectionAlign(sec.styles)}">
+    ${p.title ? `<h2 style="font-size:2rem;font-weight:800;color:${color};margin:0 0 0.6rem;">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="font-size:1.05rem;opacity:0.65;color:${color};margin:0 0 2.5rem;">${p.subtitle}</p>` : ""}
+    <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:1.25rem;">${cells}</div>
+  </div>
+</section>`;
+}
+
+// ── Video Background ──────────────────────────────────────────────────────────
+
+function renderVideoBg(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as { videoUrl?: string; title?: string; subtitle?: string; cta?: string; ctaUrl?: string; overlay?: boolean; height?: number };
+  const height  = (p.height as number | undefined) ?? 500;
+  const overlay = p.overlay !== false;
+  const url     = p.videoUrl ?? "";
+
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]+)/);
+  let videoHtml: string;
+  if (ytMatch) {
+    const vid = ytMatch[1];
+    videoHtml = `<iframe src="https://www.youtube.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=0&rel=0&modestbranding=1" style="position:absolute;inset:0;width:100%;height:100%;border:none;pointer-events:none;" allow="autoplay; encrypted-media" title="bg"></iframe>`;
+  } else if (url) {
+    videoHtml = `<video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"><source src="${url}"></video>`;
+  } else {
+    videoHtml = `<div style="position:absolute;inset:0;background:linear-gradient(135deg,${theme.primaryColor},${theme.secondaryColor ?? theme.primaryColor}cc);"></div>`;
+  }
+
+  return `<section style="${sectionPad(sec.styles)}position:relative;height:${height}px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+  ${videoHtml}
+  ${overlay ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);"></div>` : ""}
+  <div style="position:relative;text-align:center;padding:2rem;max-width:740px;z-index:1;">
+    ${p.title ? `<h2 style="margin:0 0 1rem;font-size:2.5rem;font-weight:900;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.4);">${p.title}</h2>` : ""}
+    ${p.subtitle ? `<p style="margin:0 0 2rem;font-size:1.15rem;color:rgba(255,255,255,0.92);text-shadow:0 1px 5px rgba(0,0,0,0.3);">${p.subtitle}</p>` : ""}
+    ${p.cta ? `<a href="${p.ctaUrl ?? "#"}" style="display:inline-block;padding:0.9rem 2.5rem;background:${theme.primaryColor};color:#fff;text-decoration:none;border-radius:0.5rem;font-weight:700;font-size:1rem;">${p.cta}</a>` : ""}
   </div>
 </section>`;
 }

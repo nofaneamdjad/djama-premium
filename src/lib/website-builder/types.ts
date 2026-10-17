@@ -12,7 +12,8 @@ export type SectionType   =
   | "tabs" | "accordion" | "map"
   | "timeline" | "comparison" | "alert_bar"
   | "image_text" | "steps" | "before_after"
-  | "table" | "progress_bars" | "embed";
+  | "table" | "progress_bars" | "embed"
+  | "carousel" | "icon_grid" | "video_bg";
 
 // ── Website ────────────────────────────────────────────────────────────────
 
