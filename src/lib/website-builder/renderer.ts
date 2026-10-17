@@ -250,22 +250,30 @@ function renderCta(sec: WebsiteSection, theme: WebsiteTheme): string {
 </section>`;
 }
 
-function renderContact(sec: WebsiteSection, theme: WebsiteTheme): string {
+function renderContact(sec: WebsiteSection, theme: WebsiteTheme, websiteId: string): string {
   const p = sec.props as { title?: string; subtitle?: string; formFields?: string[] };
   const s = sec.styles;
+  const r = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
   const fields = (p.formFields ?? ["name","email","message"]).map(f => {
     const label = f === "name" ? "Nom" : f === "email" ? "E-mail" : f === "phone" ? "Téléphone" : "Message";
-    if (f === "message") return `<textarea name="${f}" placeholder="${label}" rows="4" style="width:100%;padding:0.75rem;border:1px solid rgba(0,0,0,0.2);border-radius:0.5rem;font-family:inherit;resize:vertical;"></textarea>`;
-    return `<input type="${f === "email" ? "email" : "text"}" name="${f}" placeholder="${label}" style="width:100%;padding:0.75rem;border:1px solid rgba(0,0,0,0.2);border-radius:0.5rem;font-family:inherit;" />`;
+    const base = `padding:0.75rem;border:1px solid rgba(0,0,0,0.2);border-radius:${r};font-family:inherit;width:100%;font-size:0.95rem;`;
+    if (f === "message") return `<textarea name="${f}" placeholder="${label}" rows="4" style="${base}resize:vertical;"></textarea>`;
+    return `<input type="${f === "email" ? "email" : "text"}" name="${f}" placeholder="${label} ${["name","email"].includes(f) ? "*" : ""}" style="${base}" ${["name","email"].includes(f) ? "required" : ""} />`;
   }).join("");
+
+  // Si websiteId fourni → vrai AJAX vers /api/websites/[id]/contact
+  const submitHandler = websiteId
+    ? `(function(e){e.preventDefault();var btn=e.target.querySelector('button[type=submit]'),f=e.target;btn.disabled=true;btn.textContent='Envoi…';var d={};f.querySelectorAll('[name]').forEach(function(i){d[i.name]=i.value});fetch('/api/websites/${websiteId}/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){if(j.ok){f.innerHTML='<div style=\\'text-align:center;padding:2rem;\\'><div style=\\'font-size:2.5rem;margin-bottom:0.75rem;\\'>✅</div><p style=\\'font-weight:700;margin:0;\\'>Message envoyé !</p><p style=\\'opacity:0.6;margin-top:0.5rem;\\'>Nous vous répondons sous 24h.</p></div>'}else{btn.disabled=false;btn.textContent='Envoyer';alert(j.error||'Erreur');}}).catch(function(){btn.disabled=false;btn.textContent='Envoyer';alert('Erreur réseau');})})(event)`
+    : `event.preventDefault();alert('Formulaire actif après publication.')`;
+
   return `
 <section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
   <div style="${sectionAlign(s)}max-width:600px;margin:0 auto;">
     <h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:0.5rem;color:${theme.primaryColor};">${p.title ?? ""}</h2>
     ${p.subtitle ? `<p style="${textAlign(s)}opacity:0.7;margin-bottom:2rem;">${p.subtitle}</p>` : ""}
-    <form style="display:flex;flex-direction:column;gap:1rem;" onsubmit="event.preventDefault();alert('Formulaire soumis !');">
+    <form style="display:flex;flex-direction:column;gap:1rem;" onsubmit="${submitHandler}">
       ${fields}
-      <button type="submit" style="background:${theme.primaryColor};color:#fff;border:none;padding:0.85rem;border-radius:0.5rem;font-weight:700;font-size:1rem;cursor:pointer;">Envoyer</button>
+      <button type="submit" style="background:${theme.primaryColor};color:#fff;border:none;padding:0.85rem;border-radius:${r};font-weight:700;font-size:1rem;cursor:pointer;">Envoyer</button>
     </form>
   </div>
 </section>`;
@@ -334,8 +342,13 @@ function renderSpacer(sec: WebsiteSection): string {
 
 // ── Dispatch ──────────────────────────────────────────────────────────────────
 
-function renderSection(sec: WebsiteSection, theme: WebsiteTheme): string {
+function renderSection(
+  sec: WebsiteSection,
+  theme: WebsiteTheme,
+  opts: RenderOptions,
+): string {
   if (!sec.visible) return "";
+  const websiteId = opts.websiteId ?? "";
   switch (sec.type) {
     case "nav":           return renderNav(sec, theme);
     case "hero":          return renderHero(sec, theme);
@@ -348,34 +361,169 @@ function renderSection(sec: WebsiteSection, theme: WebsiteTheme): string {
     case "stats":         return renderStats(sec, theme);
     case "team":          return renderTeam(sec, theme);
     case "cta":           return renderCta(sec, theme);
-    case "contact":       return renderContact(sec, theme);
+    case "contact":       return renderContact(sec, theme, websiteId);
     case "gallery":       return renderGallery(sec, theme);
     case "logos":         return renderLogos(sec, theme);
     case "rich_text":     return renderRichText(sec, theme);
     case "video":         return renderVideo(sec, theme);
     case "divider":       return renderDivider(sec, theme);
     case "spacer":        return renderSpacer(sec);
-    case "blog_feed":     return `<section style="padding:4rem 1.5rem;text-align:center;opacity:0.5;">Module Blog — disponible en Jalon C</section>`;
-    case "products":      return `<section style="padding:4rem 1.5rem;text-align:center;opacity:0.5;">Module Boutique — disponible en Jalon C</section>`;
-    case "booking":       return `<section style="padding:4rem 1.5rem;text-align:center;opacity:0.5;">Module Rendez-vous — disponible en Jalon C</section>`;
+    case "blog_feed":     return renderBlogFeed(sec, theme, opts.embeds?.blogPosts ?? []);
+    case "products":      return renderProducts(sec, theme, opts.embeds?.products ?? []);
+    case "booking":       return renderBooking(sec, theme, websiteId);
     default:              return "";
   }
+}
+
+// ── Intégrations Jalon C ──────────────────────────────────────────────────────
+
+interface BlogArticle {
+  id: string;
+  titre: string;
+  slug: string;
+  extrait: string;
+  image_url: string | null;
+  categorie: string;
+  published_at: string;
+}
+
+interface ShopProduct {
+  id: string;
+  name: string;
+  slug: string | null;
+  sale_price: number;
+  compare_price?: number | null;
+  image_url: string | null;
+  short_description?: string;
+  category?: string;
+  stock_current?: number;
+  featured?: boolean;
+}
+
+function renderBlogFeed(sec: WebsiteSection, theme: WebsiteTheme, articles: BlogArticle[]): string {
+  const p = sec.props as { title?: string; count?: number; showDate?: boolean };
+  const s = sec.styles;
+  if (!articles.length) {
+    return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}${textAlign(s)}">
+    <h2 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:${theme.primaryColor};">${p.title ?? "Notre blog"}</h2>
+    <p style="opacity:0.5;">Aucun article publié pour l'instant.</p>
+  </div>
+</section>`;
+  }
+  const r = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const cards = articles.slice(0, p.count ?? 3).map(a => {
+    const date = p.showDate !== false ? `<p style="font-size:0.78rem;opacity:0.5;margin:0 0 0.5rem;">${new Date(a.published_at).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}</p>` : "";
+    const img = a.image_url ? `<img src="${a.image_url}" style="width:100%;height:180px;object-fit:cover;border-radius:${r} ${r} 0 0;" alt="${a.titre}" />` : `<div style="width:100%;height:180px;background:${theme.primaryColor}20;border-radius:${r} ${r} 0 0;display:flex;align-items:center;justify-content:center;font-size:2rem;">📰</div>`;
+    return `
+    <div style="border:1px solid rgba(0,0,0,0.08);border-radius:${r};overflow:hidden;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
+      ${img}
+      <div style="padding:1.25rem;">
+        <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${theme.primaryColor};">${a.categorie}</span>
+        ${date}
+        <h3 style="font-weight:700;font-size:1rem;margin:0.35rem 0;">${a.titre}</h3>
+        ${a.extrait ? `<p style="opacity:0.65;font-size:0.875rem;line-height:1.5;margin:0 0 1rem;">${a.extrait}</p>` : ""}
+        <a href="/blog/${a.slug}" style="font-weight:600;color:${theme.primaryColor};text-decoration:none;font-size:0.875rem;">Lire l'article →</a>
+      </div>
+    </div>`;
+  }).join("");
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    <h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:3rem;color:${theme.primaryColor};">${p.title ?? "Notre blog"}</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;">${cards}</div>
+  </div>
+</section>`;
+}
+
+function renderProducts(sec: WebsiteSection, theme: WebsiteTheme, products: ShopProduct[]): string {
+  const p = sec.props as { title?: string; count?: number; showPrice?: boolean; showCart?: boolean };
+  const s = sec.styles;
+  const r = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  if (!products.length) {
+    return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}${textAlign(s)}">
+    <h2 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:${theme.primaryColor};">${p.title ?? "Nos produits"}</h2>
+    <p style="opacity:0.5;">Aucun produit en ligne pour l'instant.</p>
+  </div>
+</section>`;
+  }
+  const cards = products.slice(0, p.count ?? 6).map(prod => {
+    const img = prod.image_url
+      ? `<img src="${prod.image_url}" style="width:100%;height:200px;object-fit:cover;" alt="${prod.name}" />`
+      : `<div style="width:100%;height:200px;background:${theme.primaryColor}15;display:flex;align-items:center;justify-content:center;font-size:3rem;">🛍️</div>`;
+    const price = p.showPrice !== false && prod.sale_price != null
+      ? `<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem;">
+          <span style="font-weight:800;color:${theme.primaryColor};font-size:1.1rem;">${Number(prod.sale_price).toFixed(2)} €</span>
+          ${prod.compare_price && prod.compare_price > prod.sale_price ? `<span style="text-decoration:line-through;opacity:0.45;font-size:0.875rem;">${Number(prod.compare_price).toFixed(2)} €</span>` : ""}
+        </div>` : "";
+    const cartBtn = p.showCart !== false
+      ? `<button onclick="window.location.href='/boutique/${prod.slug ?? prod.id}'" style="width:100%;margin-top:0.75rem;background:${theme.primaryColor};color:#fff;border:none;padding:0.6rem;border-radius:${r};font-weight:600;cursor:pointer;font-size:0.875rem;">Voir le produit</button>`
+      : "";
+    return `
+    <div style="border:1px solid rgba(0,0,0,0.08);border-radius:${r};overflow:hidden;">
+      ${img}
+      <div style="padding:1rem;">
+        ${prod.category ? `<span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;opacity:0.5;">${prod.category}</span>` : ""}
+        <h3 style="font-weight:700;font-size:1rem;margin:0.25rem 0;">${prod.name}</h3>
+        ${prod.short_description ? `<p style="opacity:0.6;font-size:0.8rem;margin:0;line-height:1.4;">${prod.short_description}</p>` : ""}
+        ${price}${cartBtn}
+      </div>
+    </div>`;
+  }).join("");
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    <h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:3rem;color:${theme.primaryColor};">${p.title ?? "Nos produits"}</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.5rem;">${cards}</div>
+  </div>
+</section>`;
+}
+
+function renderBooking(sec: WebsiteSection, theme: WebsiteTheme, websiteId: string): string {
+  const p = sec.props as { title?: string; subtitle?: string };
+  const s = sec.styles;
+  const r = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}max-width:560px;margin:0 auto;">
+    <h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:0.5rem;color:${theme.primaryColor};">${p.title ?? "Prendre rendez-vous"}</h2>
+    ${p.subtitle ? `<p style="${textAlign(s)}opacity:0.65;margin-bottom:2rem;">${p.subtitle}</p>` : ""}
+    <form id="rdv-form-${sec.id}" style="display:flex;flex-direction:column;gap:0.875rem;"
+      onsubmit="(function(e){e.preventDefault();var f=e.target,d={name:f.name.value,email:f.email.value,phone:f.phone?.value,message:f.message.value};fetch('/api/websites/${websiteId}/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(){f.parentElement.innerHTML='<div style=\\'text-align:center;padding:2rem;\\'><div style=\\'font-size:2.5rem;margin-bottom:1rem;\\'>✅</div><p style=\\'font-weight:700;color:${theme.primaryColor};\\'>Demande envoyée !</p><p style=\\'opacity:0.6;\\'>Nous vous contacterons rapidement pour confirmer votre rendez-vous.</p></div>'}).catch(function(){alert('Erreur — réessayez.')})})(event)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.875rem;">
+        <input name="name" type="text" placeholder="Votre nom *" required style="padding:0.7rem 1rem;border:1px solid rgba(0,0,0,0.2);border-radius:${r};font-family:inherit;font-size:0.9rem;" />
+        <input name="email" type="email" placeholder="E-mail *" required style="padding:0.7rem 1rem;border:1px solid rgba(0,0,0,0.2);border-radius:${r};font-family:inherit;font-size:0.9rem;" />
+      </div>
+      <input name="phone" type="tel" placeholder="Téléphone" style="padding:0.7rem 1rem;border:1px solid rgba(0,0,0,0.2);border-radius:${r};font-family:inherit;font-size:0.9rem;" />
+      <textarea name="message" placeholder="Précisez vos disponibilités et l'objet du rendez-vous" rows="3" style="padding:0.7rem 1rem;border:1px solid rgba(0,0,0,0.2);border-radius:${r};font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      <button type="submit" style="background:${theme.primaryColor};color:#fff;border:none;padding:0.9rem;border-radius:${r};font-weight:700;font-size:1rem;cursor:pointer;">Envoyer la demande</button>
+    </form>
+  </div>
+</section>`;
 }
 
 // ── Page renderer ─────────────────────────────────────────────────────────────
 
 export interface RenderOptions {
-  title?:       string;
+  title?:      string;
   description?: string;
-  favicon?:     string;
-  customCss?:   string;
-  fontsUrl?:    string;
+  favicon?:    string;
+  customCss?:  string;
+  fontsUrl?:   string;
+  websiteId?:  string;
+  embeds?: {
+    blogPosts?: BlogArticle[];
+    products?:  ShopProduct[];
+  };
 }
 
 export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderOptions = {}): string {
   const sections = (page.sections ?? [])
     .sort((a, b) => a.position - b.position)
-    .map(s => renderSection(s, theme))
+    .map(s => renderSection(s, theme, opts))
     .join("\n");
 
   const font = theme.fontHeading === "Inter" ? "" :

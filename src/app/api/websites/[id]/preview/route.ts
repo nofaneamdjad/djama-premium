@@ -65,10 +65,40 @@ export async function GET(req: NextRequest, { params }: Params) {
   const page: WebsitePage = { ...pageData, sections };
   const theme: WebsiteTheme = { ...DEFAULT_THEME, ...(site.theme as Partial<WebsiteTheme>) };
 
+  // Charger les embeds si des sections d'intégration existent
+  const sectionTypes = new Set(sections.map(s => s.type));
+
+  let blogPosts: { id: string; titre: string; slug: string; extrait: string; image_url: string | null; categorie: string; published_at: string }[] = [];
+  let products:  { id: string; name: string; slug: string | null; sale_price: number; compare_price?: number | null; image_url: string | null; short_description?: string; category?: string; stock_current?: number; featured?: boolean }[] = [];
+
+  if (sectionTypes.has("blog_feed")) {
+    const { data: articles } = await admin
+      .from("blog_articles")
+      .select("id, titre, slug, extrait, image_url, categorie, published_at")
+      .eq("user_id", user.id)
+      .eq("published", true)
+      .order("published_at", { ascending: false })
+      .limit(12);
+    blogPosts = (articles ?? []) as typeof blogPosts;
+  }
+
+  if (sectionTypes.has("products")) {
+    const { data: prods } = await admin
+      .from("stock_products")
+      .select("id, name, slug, sale_price, compare_price, image_url, short_description, category, stock_current, featured")
+      .eq("user_id", user.id)
+      .eq("sell_online", true)
+      .order("featured", { ascending: false })
+      .limit(24);
+    products = (prods ?? []) as typeof products;
+  }
+
   const html = renderPage(page, theme, {
-    title: site.seo_title ?? site.name,
+    title:       site.seo_title ?? site.name,
     description: site.seo_description ?? "",
-    favicon: site.favicon_url ?? "",
+    favicon:     site.favicon_url ?? "",
+    websiteId:   id,
+    embeds:      { blogPosts, products },
   });
 
   return new NextResponse(html, {

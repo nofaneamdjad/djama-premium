@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Globe, Plus, Pencil, Trash2, ExternalLink, Eye,
-  Clock, CheckCircle, Archive, MoreVertical, Layers
+  Clock, CheckCircle, Archive, MoreVertical, Layers, BarChart2
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
@@ -99,6 +99,7 @@ export default function SiteWebPage() {
                 menuOpen={menuOpen === site.id}
                 onMenuToggle={() => setMenuOpen(menuOpen === site.id ? null : site.id)}
                 onEdit={() => router.push(`/client/site-web/${site.id}/edit`)}
+                onStats={() => router.push(`/client/site-web/${site.id}/stats`)}
                 onDelete={() => handleDelete(site.id)}
               />
             ))}
@@ -112,7 +113,7 @@ export default function SiteWebPage() {
 // ── Carte site ─────────────────────────────────────────────────────────────────
 
 function SiteCard({
-  site, isDark, t, isDeleting, menuOpen, onMenuToggle, onEdit, onDelete
+  site, isDark, t, isDeleting, menuOpen, onMenuToggle, onEdit, onStats, onDelete
 }: {
   site: Website;
   isDark: boolean;
@@ -121,6 +122,7 @@ function SiteCard({
   menuOpen: boolean;
   onMenuToggle: () => void;
   onEdit: () => void;
+  onStats: () => void;
   onDelete: () => void;
 }) {
   const statusColor = STATUS_COLOR[site.status] ?? "#6B7280";
@@ -183,6 +185,7 @@ function SiteCard({
                 {[
                   { icon: <Pencil size={14} />, label: "Modifier", action: onEdit },
                   { icon: <Eye size={14} />, label: "Aperçu", action: () => window.open(`/api/websites/${site.id}/preview`, "_blank") },
+                  { icon: <BarChart2 size={14} />, label: "Statistiques", action: onStats },
                   { icon: <Trash2 size={14} />, label: "Supprimer", action: onDelete, danger: true },
                 ].map(item => (
                   <button
@@ -227,6 +230,17 @@ function SiteCard({
             }}
           >
             <Pencil size={13} /> Éditer
+          </button>
+          <button
+            onClick={onStats}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+              background: isDark ? "#ffffff12" : "#f3f4f6", color: t.text,
+              border: "none", borderRadius: "0.6rem",
+              padding: "0.5rem 0.65rem", fontWeight: 600, fontSize: "0.82rem", cursor: "pointer",
+            }}
+          >
+            <BarChart2 size={13} />
           </button>
           <button
             onClick={() => window.open(`/api/websites/${site.id}/preview`, "_blank")}
