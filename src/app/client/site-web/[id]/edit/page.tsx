@@ -83,6 +83,10 @@ export default function EditSitePage() {
   const [siteFavicon,   setSiteFavicon]    = useState("");
   const [settingsSaving, setSettingsSaving]   = useState(false);
   const [notificationEmail, setNotifEmail]    = useState("");
+  const [cookieBannerEnabled, setCookieBannerEnabled] = useState(false);
+  const [cookieBannerText, setCookieBannerText]       = useState("");
+  const [passwordEnabled, setPasswordEnabled]         = useState(false);
+  const [passwordInput, setPasswordInput]             = useState("");
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
 
@@ -94,11 +98,14 @@ export default function EditSitePage() {
         if (d.website) {
           const ws = d.website as Website;
           setSite(ws);
-          const th = ws.theme as Partial<WebsiteTheme> & { headerCode?: string; footerCode?: string; notificationEmail?: string };
+          const th = ws.theme as Partial<WebsiteTheme> & { headerCode?: string; footerCode?: string; notificationEmail?: string; cookieBanner?: { enabled?: boolean; text?: string }; passwordEnabled?: boolean };
           setLocalTheme(th);
           setHeaderCode(th.headerCode ?? "");
           setFooterCode(th.footerCode ?? "");
           setNotifEmail(th.notificationEmail ?? "");
+          setCookieBannerEnabled(th.cookieBanner?.enabled ?? false);
+          setCookieBannerText(th.cookieBanner?.text ?? "");
+          setPasswordEnabled(th.passwordEnabled ?? false);
           setSiteTitleEdit(ws.name ?? "");
           setSiteDescEdit((ws as { description?: string }).description ?? "");
           setSiteSeoTitle((ws as { seo_title?: string }).seo_title ?? "");
@@ -243,7 +250,26 @@ export default function EditSitePage() {
   async function saveSettings() {
     if (!site) return;
     setSettingsSaving(true);
-    const newTheme = { ...localTheme, notificationEmail };
+
+    // Hacher le mot de passe côté client (Web Crypto API) si renseigné
+    let passwordHash: string | undefined;
+    const themeExtCurrent = localTheme as Record<string, unknown>;
+    if (passwordInput) {
+      const enc = new TextEncoder();
+      const buf = await window.crypto.subtle.digest("SHA-256", enc.encode(passwordInput));
+      passwordHash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+      setPasswordInput("");
+    } else {
+      passwordHash = themeExtCurrent.passwordHash as string | undefined;
+    }
+
+    const newTheme = {
+      ...localTheme,
+      notificationEmail,
+      cookieBanner: { enabled: cookieBannerEnabled, text: cookieBannerText || undefined },
+      passwordEnabled,
+      ...(passwordHash ? { passwordHash } : {}),
+    };
     setLocalTheme(newTheme);
     await fetch(`/api/websites/${siteId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -679,6 +705,47 @@ export default function EditSitePage() {
                       />
                       <p style={{ fontSize: "0.65rem", opacity: 0.5, margin: "0.2rem 0 0" }}>Reçoit un e-mail à chaque soumission de formulaire</p>
                     </div>
+
+                    {/* ── Bandeau cookie RGPD ── */}
+                    <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: "0.75rem" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600 }}>
+                        <input type="checkbox" checked={cookieBannerEnabled} onChange={e => setCookieBannerEnabled(e.target.checked)} style={{ cursor: "pointer" }} />
+                        Bandeau cookies RGPD
+                      </label>
+                      {cookieBannerEnabled && (
+                        <div style={{ marginTop: "0.5rem" }}>
+                          <textarea
+                            value={cookieBannerText}
+                            onChange={e => setCookieBannerText(e.target.value)}
+                            placeholder="Ce site utilise des cookies pour améliorer votre expérience."
+                            rows={2}
+                            style={{ width: "100%", padding: "0.4rem 0.55rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.75rem", resize: "vertical", fontFamily: "inherit" }}
+                          />
+                          <p style={{ fontSize: "0.65rem", opacity: 0.5, margin: "0.2rem 0 0" }}>Boutons "Accepter" et "Refuser" inclus automatiquement</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Protection par mot de passe ── */}
+                    <div>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600 }}>
+                        <input type="checkbox" checked={passwordEnabled} onChange={e => setPasswordEnabled(e.target.checked)} style={{ cursor: "pointer" }} />
+                        Protéger le site par mot de passe
+                      </label>
+                      {passwordEnabled && (
+                        <div style={{ marginTop: "0.5rem" }}>
+                          <input
+                            type="password"
+                            value={passwordInput}
+                            onChange={e => setPasswordInput(e.target.value)}
+                            placeholder="Nouveau mot de passe (laisser vide pour conserver)"
+                            style={{ width: "100%", padding: "0.4rem 0.55rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem" }}
+                          />
+                          <p style={{ fontSize: "0.65rem", opacity: 0.5, margin: "0.2rem 0 0" }}>Les visiteurs devront saisir ce mot de passe pour accéder au site</p>
+                        </div>
+                      )}
+                    </div>
+
                     {site?.subdomain && (
                       <div>
                         <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.65 }}>URL publique</label>

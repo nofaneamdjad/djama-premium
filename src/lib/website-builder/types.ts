@@ -8,7 +8,8 @@ export type SectionType   =
   | "stats" | "logos" | "blog_feed" | "products" | "booking"
   | "rich_text" | "divider" | "spacer" | "video"
   | "custom_form" | "popup"
-  | "footer" | "newsletter" | "countdown";
+  | "footer" | "newsletter" | "countdown"
+  | "tabs" | "accordion" | "map";
 
 // ── Website ────────────────────────────────────────────────────────────────
 

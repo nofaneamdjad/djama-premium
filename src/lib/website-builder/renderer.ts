@@ -622,6 +622,135 @@ function renderPopup(sec: WebsiteSection, theme: WebsiteTheme): string {
 </script>`;
 }
 
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+function renderTabs(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?: string;
+    tabs?:  { id: string; label: string; content: string }[];
+  };
+  const s    = sec.styles;
+  const r    = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const uid  = `tabs_${sec.id.replace(/-/g, "")}`;
+  const tabs = p.tabs ?? [];
+
+  if (!tabs.length) return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}${textAlign(s)}"><p style="opacity:0.4;">Ajoutez des onglets à cette section</p></div>
+</section>`;
+
+  const tabHeaders = tabs.map((tab, i) => `<button onclick="${uid}_show(${i})" id="${uid}_btn_${i}" style="padding:0.65rem 1.25rem;border:none;background:${i===0?theme.primaryColor:"transparent"};color:${i===0?"#fff":theme.textColor};border-radius:${r};font-weight:600;font-size:0.9rem;cursor:pointer;transition:all 0.15s;white-space:nowrap;">${tab.label}</button>`).join("\n");
+
+  const tabPanels = tabs.map((tab, i) => `<div id="${uid}_panel_${i}" style="display:${i===0?"block":"none"};padding-top:1.5rem;line-height:1.7;">${tab.content}</div>`).join("\n");
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:2rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;border-bottom:2px solid ${theme.primaryColor}33;padding-bottom:0.5rem;">
+${tabHeaders}
+    </div>
+${tabPanels}
+  </div>
+</section>
+<script>
+(function(){
+  var n=${tabs.length};
+  window['${uid}_show']=function(i){
+    for(var j=0;j<n;j++){
+      var b=document.getElementById('${uid}_btn_'+j),p=document.getElementById('${uid}_panel_'+j);
+      if(b){b.style.background=j===i?'${theme.primaryColor}':'transparent';b.style.color=j===i?'#fff':'${theme.textColor}';}
+      if(p)p.style.display=j===i?'block':'none';
+    }
+  };
+})();
+</script>`;
+}
+
+// ── Accordion ─────────────────────────────────────────────────────────────────
+
+function renderAccordion(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:  string;
+    items?:  { id: string; title: string; content: string }[];
+  };
+  const s     = sec.styles;
+  const r     = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+  const uid   = `acc_${sec.id.replace(/-/g, "")}`;
+  const items = p.items ?? [];
+
+  const rendered = items.map((item, i) => `
+  <div style="border:1px solid ${theme.primaryColor}22;border-radius:${r};overflow:hidden;margin-bottom:0.5rem;">
+    <button onclick="${uid}_toggle(${i})" id="${uid}_hd_${i}" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;background:none;border:none;cursor:pointer;color:${theme.textColor};text-align:left;font-weight:600;font-size:0.95rem;">
+      <span>${item.title}</span>
+      <span id="${uid}_ic_${i}" style="font-size:1.5rem;font-weight:300;transition:transform 0.2s;display:inline-block;line-height:1;">+</span>
+    </button>
+    <div id="${uid}_bd_${i}" style="display:none;padding:0 1.25rem 1.25rem;line-height:1.7;opacity:0.8;">${item.content}</div>
+  </div>`).join("\n");
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:2rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    <div style="max-width:760px;margin:0 auto;">
+${rendered}
+    </div>
+  </div>
+</section>
+<script>
+(function(){
+  window['${uid}_toggle']=function(i){
+    var bd=document.getElementById('${uid}_bd_'+i),ic=document.getElementById('${uid}_ic_'+i);
+    if(!bd)return;
+    var open=bd.style.display!=='none';
+    bd.style.display=open?'none':'block';
+    if(ic)ic.style.transform=open?'rotate(0deg)':'rotate(45deg)';
+  };
+})();
+</script>`;
+}
+
+// ── Map ───────────────────────────────────────────────────────────────────────
+
+function renderMap(sec: WebsiteSection, theme: WebsiteTheme): string {
+  const p = sec.props as {
+    title?:   string;
+    address?: string;
+    lat?:     number;
+    lng?:     number;
+    zoom?:    number;
+    height?:  number;
+  };
+  const s      = sec.styles;
+  const zoom   = p.zoom ?? 14;
+  const height = p.height ?? 400;
+  const r      = { none:"0",sm:"4px",md:"8px",lg:"12px",xl:"20px",full:"9999px" }[theme.borderRadius ?? "md"];
+
+  let mapBlock = "";
+  if (p.lat !== undefined && p.lng !== undefined) {
+    const lat = p.lat, lng = p.lng;
+    const delta = 1 / Math.pow(2, zoom - 8);
+    const minLng = lng - delta, maxLng = lng + delta;
+    const minLat = lat - delta * 0.5, maxLat = lat + delta * 0.5;
+    const embedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${minLng.toFixed(6)}%2C${minLat.toFixed(6)}%2C${maxLng.toFixed(6)}%2C${maxLat.toFixed(6)}&layer=mapnik&marker=${lat.toFixed(6)}%2C${lng.toFixed(6)}`;
+    mapBlock = `<iframe src="${embedUrl}" width="100%" height="${height}" style="border:0;border-radius:${r};display:block;" loading="lazy" title="Carte" allowfullscreen></iframe>`;
+  } else if (p.address) {
+    const searchUrl = `https://www.openstreetmap.org/search?query=${encodeURIComponent(p.address)}`;
+    mapBlock = `<div style="height:${height}px;background:rgba(0,0,0,0.04);border-radius:${r};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;border:2px dashed ${theme.primaryColor}44;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="${theme.primaryColor}" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><p style="margin:0;font-weight:600;opacity:0.7;">${p.address}</p><a href="${searchUrl}" target="_blank" rel="noopener" style="background:${theme.primaryColor};color:#fff;text-decoration:none;padding:0.5rem 1.25rem;border-radius:${r};font-weight:600;font-size:0.875rem;">Voir sur la carte →</a></div>`;
+  } else {
+    mapBlock = `<div style="height:${height}px;background:rgba(0,0,0,0.04);border-radius:${r};display:flex;align-items:center;justify-content:center;border:2px dashed ${theme.primaryColor}44;"><p style="opacity:0.4;margin:0;">Configurez les coordonnées ou l'adresse</p></div>`;
+  }
+
+  return `
+<section style="${sectionBg(s, theme)}${sectionColor(s, theme)}${sectionPad(s)}">
+  <div style="${sectionAlign(s)}">
+    ${p.title ? `<h2 style="${textAlign(s)}font-size:2rem;font-weight:700;margin-bottom:1.5rem;color:${theme.primaryColor};">${p.title}</h2>` : ""}
+    ${mapBlock}
+    ${p.address ? `<p style="${textAlign(s)}margin-top:1rem;opacity:0.6;font-size:0.9rem;">📍 ${p.address}</p>` : ""}
+  </div>
+</section>`;
+}
+
 // ── Dispatch ──────────────────────────────────────────────────────────────────
 
 function renderSection(
@@ -658,6 +787,9 @@ function renderSection(
     case "footer":        return renderFooter(sec, theme, websiteId);
     case "newsletter":    return renderNewsletter(sec, theme, websiteId);
     case "countdown":     return renderCountdown(sec, theme);
+    case "tabs":          return renderTabs(sec, theme);
+    case "accordion":     return renderAccordion(sec, theme);
+    case "map":           return renderMap(sec, theme);
     default:              return "";
   }
 }
@@ -793,6 +925,34 @@ function renderBooking(sec: WebsiteSection, theme: WebsiteTheme, websiteId: stri
 </section>`;
 }
 
+// ── Cookie Consent RGPD ───────────────────────────────────────────────────────
+
+function renderCookieBanner(cfg: { text?: string; acceptText?: string; declineText?: string }): string {
+  const text = cfg.text ?? "Ce site utilise des cookies pour améliorer votre expérience de navigation.";
+  const acceptText  = cfg.acceptText  ?? "Accepter";
+  const declineText = cfg.declineText ?? "Refuser";
+  return `
+<div id="djama_cb" style="position:fixed;bottom:0;left:0;right:0;background:#1F2937;color:#F9FAFB;padding:1rem 1.5rem;z-index:9997;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;font-size:0.875rem;box-shadow:0 -4px 24px rgba(0,0,0,0.2);">
+  <p style="margin:0;opacity:0.9;flex:1;min-width:200px;">${text}</p>
+  <div style="display:flex;gap:0.75rem;flex-shrink:0;">
+    <button onclick="djama_consent(true)" style="background:#2563EB;color:#fff;border:none;padding:0.5rem 1.25rem;border-radius:0.45rem;font-weight:700;cursor:pointer;font-size:0.875rem;">${acceptText}</button>
+    <button onclick="djama_consent(false)" style="background:transparent;color:#F9FAFB;border:1px solid rgba(255,255,255,0.3);padding:0.5rem 1.25rem;border-radius:0.45rem;font-weight:600;cursor:pointer;font-size:0.875rem;">${declineText}</button>
+  </div>
+</div>
+<script>
+(function(){
+  try{if(document.cookie.indexOf('djama_consent=')!==-1){document.getElementById('djama_cb').style.display='none';return;}}catch(e){}
+  window.djama_consent=function(yes){
+    try{
+      var d=new Date(Date.now()+365*86400*1000).toUTCString();
+      document.cookie='djama_consent='+(yes?'yes':'no')+';expires='+d+';path=/;SameSite=Lax';
+      document.getElementById('djama_cb').style.display='none';
+    }catch(e){}
+  };
+})();
+</script>`;
+}
+
 // ── Page renderer ─────────────────────────────────────────────────────────────
 
 export interface RenderOptions {
@@ -871,10 +1031,12 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
   <meta name="twitter:description" content="${descStr}" />
   ${imageStr ? `<meta name="twitter:image" content="${imageStr}" />` : ""}` : "";
 
-  // Scripts injectés depuis le thème (headerCode / footerCode)
+  // Scripts injectés depuis le thème (headerCode / footerCode / cookieBanner)
   const themeExt = theme as unknown as Record<string, unknown>;
   const headerCode = String(themeExt.headerCode ?? "");
   const footerCode = String(themeExt.footerCode ?? "");
+  const cookieBannerCfg = themeExt.cookieBanner as { enabled?: boolean; text?: string; acceptText?: string; declineText?: string } | undefined;
+  const cookieBannerHtml = cookieBannerCfg?.enabled ? renderCookieBanner(cookieBannerCfg) : "";
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -906,6 +1068,7 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
 <body>
 ${sections}
 ${footerCode ? `<!-- Footer scripts -->\n${footerCode}` : ""}
+${cookieBannerHtml}
 </body>
 </html>`;
 }

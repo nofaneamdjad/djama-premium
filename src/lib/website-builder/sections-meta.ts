@@ -335,6 +335,53 @@ export const SECTIONS_LIBRARY: SectionMeta[] = [
     },
   },
 
+  // ── Interactif ───────────────────────────────────────────
+  {
+    type: "tabs",
+    label: "Onglets",
+    description: "Contenu organisé en onglets interactifs",
+    category: "contenu",
+    icon: "LayoutDashboard",
+    defaultProps: {
+      title: "",
+      tabs: [
+        { id: "tab_1", label: "Onglet 1", content: "<p>Contenu de l'onglet 1. Modifiez ce texte selon vos besoins.</p>" },
+        { id: "tab_2", label: "Onglet 2", content: "<p>Contenu de l'onglet 2. Ajoutez du texte, des listes ou des images.</p>" },
+        { id: "tab_3", label: "Onglet 3", content: "<p>Contenu de l'onglet 3. Personnalisez chaque onglet librement.</p>" },
+      ],
+    },
+  },
+  {
+    type: "accordion",
+    label: "Accordéon",
+    description: "Sections dépliables pour organiser le contenu",
+    category: "contenu",
+    icon: "ChevronsUpDown",
+    defaultProps: {
+      title: "",
+      items: [
+        { id: "acc_1", title: "Section 1", content: "Contenu développé de la section 1. Expliquez un sujet en détail." },
+        { id: "acc_2", title: "Section 2", content: "Contenu développé de la section 2. Ajoutez autant de sections que nécessaire." },
+        { id: "acc_3", title: "Section 3", content: "Contenu développé de la section 3. L'accordéon permet d'organiser beaucoup d'informations." },
+      ],
+    },
+  },
+  {
+    type: "map",
+    label: "Carte / Localisation",
+    description: "Carte OpenStreetMap avec adresse",
+    category: "contenu",
+    icon: "MapPin",
+    defaultProps: {
+      title: "Nous trouver",
+      address: "",
+      lat: undefined,
+      lng: undefined,
+      zoom: 14,
+      height: 400,
+    },
+  },
+
   // ── Structure (pied de page) ──────────────────────────────
   {
     type: "footer",

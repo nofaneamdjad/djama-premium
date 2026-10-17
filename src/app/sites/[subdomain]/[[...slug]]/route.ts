@@ -54,6 +54,16 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const websiteId = site.id as string;
 
+  // Protection par mot de passe
+  const themeExt = (site.theme ?? {}) as Record<string, unknown>;
+  if (themeExt.passwordEnabled === true && themeExt.passwordHash) {
+    const cookieName = `djama_pw_${websiteId}`;
+    const cookieVal  = req.cookies.get(cookieName)?.value;
+    if (cookieVal !== (themeExt.passwordHash as string)) {
+      return passwordGateResponse(websiteId, String(site.name ?? "Site protégé"));
+    }
+  }
+
   // Vérifier si une redirection active correspond à ce slug
   const requestPath = `/${pageSlug}`;
   const { data: redirect } = await admin
@@ -177,6 +187,55 @@ export async function GET(req: NextRequest, { params }: Params) {
       "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
       ...SECURITY_HEADERS,
     },
+  });
+}
+
+function passwordGateResponse(websiteId: string, siteName: string): NextResponse {
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${siteName} — Accès protégé</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f9fafb;color:#111827}
+    .card{background:#fff;border-radius:1rem;border:1px solid #e5e7eb;padding:2.5rem;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.08)}
+    h1{font-size:1.25rem;font-weight:800;margin:0 0 .5rem}
+    p{color:#6b7280;font-size:.875rem;margin:0 0 1.5rem}
+    input{width:100%;padding:.75rem 1rem;border:1px solid #d1d5db;border-radius:.5rem;font-size:1rem;outline:none;margin-bottom:.75rem}
+    input:focus{border-color:#2563eb;box-shadow:0 0 0 3px #2563eb22}
+    button{width:100%;padding:.75rem;background:#2563eb;color:#fff;border:none;border-radius:.5rem;font-size:1rem;font-weight:700;cursor:pointer}
+    button:hover{background:#1d4ed8}
+    .err{color:#ef4444;font-size:.8rem;margin:.5rem 0 0;min-height:1.2rem}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div style="font-size:3rem;margin-bottom:1rem">🔒</div>
+    <h1>${siteName}</h1>
+    <p>Ce site est protégé par un mot de passe.</p>
+    <input id="pw" type="password" placeholder="Mot de passe" autofocus />
+    <button onclick="submit()">Accéder</button>
+    <p class="err" id="err"></p>
+  </div>
+  <script>
+  document.getElementById('pw').addEventListener('keydown',function(e){if(e.key==='Enter')submit();});
+  function submit(){
+    var pw=document.getElementById('pw').value,err=document.getElementById('err');
+    err.textContent='';
+    if(!pw)return;
+    fetch('/api/websites/${websiteId}/password-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})
+      .then(function(r){return r.json()})
+      .then(function(j){if(j.ok){window.location.reload();}else{err.textContent=j.error||'Mot de passe incorrect';}})
+      .catch(function(){err.textContent='Erreur réseau';});
+  }
+  </script>
+</body>
+</html>`;
+  return new NextResponse(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
   });
 }
 
