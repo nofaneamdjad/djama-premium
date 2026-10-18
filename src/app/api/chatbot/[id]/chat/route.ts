@@ -6,6 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "@/lib/chatbot/defaults";
 import { retrieveContext } from "@/lib/chatbot/rag";
 import { getEnabledTools, executeTool } from "@/lib/chatbot/tools";
+import { sendWebhook } from "@/lib/chatbot/webhooks";
 import type { ChatMessage } from "@/lib/chatbot/types";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +52,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     .single();
 
   if (!bot) return new Response("Chatbot introuvable", { status: 404 });
+
+  // Business hours — mode preview interne : on ne bloque pas l'aperçu studio
+  // (le check business hours s'applique uniquement au widget public)
 
   // Charger ou créer une conversation
   let conversationId = body.conversationId;
@@ -228,4 +232,15 @@ async function persist(
   await admin.from("chatbots")
     .update({ message_count: ((bot.message_count as number) ?? 0) + 2 })
     .eq("id", chatbotId);
+
+  // Webhook sortant
+  if (bot.webhook_url) {
+    void sendWebhook(
+      chatbotId,
+      bot.webhook_url as string,
+      (bot.webhook_events as string[]) ?? ["new_message"],
+      "new_message",
+      { conversation_id: conversationId, content: fullText, tokens_used: totalTokens },
+    );
+  }
 }

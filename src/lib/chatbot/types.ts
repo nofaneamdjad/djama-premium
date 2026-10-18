@@ -47,6 +47,12 @@ export interface Chatbot {
   widget_config:   WidgetConfig;
   conversation_count: number;
   message_count:   number;
+  // Jalon D
+  webhook_url:            string | null;
+  webhook_events:         string[];
+  business_hours:         import("./schedule").BusinessHours | null;
+  monthly_message_count:  number;
+  monthly_reset_at:       string;
   created_at:      string;
   updated_at:      string;
 }

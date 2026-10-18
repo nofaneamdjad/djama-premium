@@ -5,16 +5,18 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Save, Sparkles, MessageSquare,
   Globe, Palette, Settings, Code2, Eye,
-  Play, PauseCircle, Copy, Check, BookOpen, Plug,
+  Play, PauseCircle, Copy, Check, BookOpen, Plug, ShieldCheck, Download,
 } from "lucide-react";
 import type { Chatbot, WidgetConfig } from "@/lib/chatbot/types";
+import type { BusinessHours } from "@/lib/chatbot/schedule";
+import { DEFAULT_BUSINESS_HOURS } from "@/lib/chatbot/schedule";
 import {
   PERSONALITY_LABELS, PERSONALITY_DESCRIPTIONS,
   LANGUAGE_LABELS, CHATBOT_MODELS,
 } from "@/lib/chatbot/defaults";
 import { INTEGRATION_META, type IntegrationType } from "@/lib/chatbot/tools";
 
-type Tab = "general" | "behavior" | "widget" | "integration" | "test" | "integrations";
+type Tab = "general" | "behavior" | "widget" | "integration" | "test" | "integrations" | "advanced";
 
 interface FormState {
   name:             string;
@@ -28,6 +30,9 @@ interface FormState {
   max_tokens:       number;
   allowed_domains:  string;
   widget_config:    Partial<WidgetConfig>;
+  webhook_url:      string;
+  webhook_events:   string[];
+  business_hours:   BusinessHours;
 }
 
 export default function ChatbotEditPage() {
@@ -72,6 +77,9 @@ export default function ChatbotEditPage() {
           max_tokens:       d.chatbot.max_tokens,
           allowed_domains:  d.chatbot.allowed_domains?.join(", ") ?? "",
           widget_config:    d.chatbot.widget_config ?? {},
+          webhook_url:      d.chatbot.webhook_url ?? "",
+          webhook_events:   d.chatbot.webhook_events ?? ["new_message"],
+          business_hours:   (d.chatbot.business_hours as BusinessHours | null) ?? { ...DEFAULT_BUSINESS_HOURS },
         });
         setTestHistory([
           { role: "assistant", content: d.chatbot.welcome_message },
@@ -92,7 +100,13 @@ export default function ChatbotEditPage() {
     await fetch(`/api/chatbot/${id}`, {
       method:  "PATCH",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ ...form, allowed_domains: domains }),
+      body:    JSON.stringify({
+        ...form,
+        allowed_domains: domains,
+        webhook_url:     form.webhook_url || null,
+        webhook_events:  form.webhook_events,
+        business_hours:  form.business_hours,
+      }),
     });
     setSaving(false);
     setSaved(true);
@@ -198,6 +212,7 @@ export default function ChatbotEditPage() {
     { key: "integration", label: "Intégration",   icon: <Code2 className="w-4 h-4" /> },
     { key: "test",          label: "Test",           icon: <MessageSquare className="w-4 h-4" /> },
     { key: "integrations",  label: "Intégrations",   icon: <Plug className="w-4 h-4" /> },
+    { key: "advanced",      label: "Avancé",         icon: <ShieldCheck className="w-4 h-4" /> },
   ];
 
   const goToKnowledge = () => router.push(`/client/chatbot/${id}/knowledge`);
@@ -647,6 +662,169 @@ export default function ChatbotEditPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
                 Les intégrations CRM, Boutique et Factures sont en <strong>lecture seule</strong>. Seule l&apos;intégration RDV peut créer des données (avec l&apos;accord explicite du visiteur).
               </div>
+            </div>
+          )}
+          {/* AVANCÉ */}
+          {tab === "advanced" && (
+            <div className="max-w-2xl space-y-8">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-violet-600" /> Paramètres avancés
+              </h2>
+
+              {/* Webhooks */}
+              <section className="border rounded-xl p-5 bg-white space-y-4">
+                <h3 className="font-semibold text-sm text-gray-900">Webhook sortant</h3>
+                <p className="text-xs text-gray-500">
+                  DJAMA envoie une requête POST à cette URL à chaque événement sélectionné.
+                </p>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">URL du webhook</label>
+                  <input
+                    type="url"
+                    value={form.webhook_url}
+                    onChange={e => setForm(f => f ? { ...f, webhook_url: e.target.value } : f)}
+                    placeholder="https://votre-serveur.com/webhook"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Événements déclencheurs</label>
+                  <div className="space-y-2">
+                    {[
+                      { value: "new_conversation", label: "Nouvelle conversation" },
+                      { value: "new_message",      label: "Nouveau message IA" },
+                      { value: "escalation",       label: "Escalade vers agent" },
+                      { value: "conversation_closed", label: "Conversation fermée" },
+                    ].map(({ value, label }) => (
+                      <label key={value} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.webhook_events.includes(value)}
+                          onChange={e => {
+                            const events = e.target.checked
+                              ? [...form.webhook_events, value]
+                              : form.webhook_events.filter(ev => ev !== value);
+                            setForm(f => f ? { ...f, webhook_events: events } : f);
+                          }}
+                          className="rounded border-gray-300 text-violet-600 focus:ring-violet-400"
+                        />
+                        <span className="text-gray-700">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* Horaires d'ouverture */}
+              <section className="border rounded-xl p-5 bg-white space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-sm text-gray-900">Horaires d&apos;ouverture</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      En dehors de ces horaires, le chatbot répond avec le message d&apos;absence.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setForm(f => f ? { ...f, business_hours: { ...f.business_hours, enabled: !f.business_hours.enabled } } : f)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors ${form.business_hours.enabled ? "bg-violet-600" : "bg-gray-200"}`}
+                    role="switch" aria-checked={form.business_hours.enabled}
+                  >
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ${form.business_hours.enabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                  </button>
+                </div>
+
+                {form.business_hours.enabled && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-2">Jours actifs</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"].map((day, i) => (
+                          <button key={i}
+                            onClick={() => {
+                              const days = form.business_hours.days.includes(i)
+                                ? form.business_hours.days.filter(d => d !== i)
+                                : [...form.business_hours.days, i];
+                              setForm(f => f ? { ...f, business_hours: { ...f.business_hours, days } } : f);
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                              form.business_hours.days.includes(i)
+                                ? "bg-violet-600 text-white border-violet-600"
+                                : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                            }`}
+                          >
+                            {day}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Heure d&apos;ouverture</label>
+                        <select
+                          value={form.business_hours.start_hour}
+                          onChange={e => setForm(f => f ? { ...f, business_hours: { ...f.business_hours, start_hour: +e.target.value } } : f)}
+                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                        >
+                          {Array.from({ length: 24 }, (_, h) => (
+                            <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Heure de fermeture</label>
+                        <select
+                          value={form.business_hours.end_hour}
+                          onChange={e => setForm(f => f ? { ...f, business_hours: { ...f.business_hours, end_hour: +e.target.value } } : f)}
+                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                        >
+                          {Array.from({ length: 24 }, (_, h) => (
+                            <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Fuseau horaire</label>
+                      <select
+                        value={form.business_hours.timezone}
+                        onChange={e => setForm(f => f ? { ...f, business_hours: { ...f.business_hours, timezone: e.target.value } } : f)}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      >
+                        {["Europe/Paris", "Europe/London", "America/New_York", "America/Los_Angeles", "Asia/Dubai", "UTC"].map(tz => (
+                          <option key={tz} value={tz}>{tz}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Message d&apos;absence</label>
+                      <textarea
+                        value={form.business_hours.away_message}
+                        onChange={e => setForm(f => f ? { ...f, business_hours: { ...f.business_hours, away_message: e.target.value } } : f)}
+                        rows={3}
+                        className="w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      />
+                    </div>
+                  </>
+                )}
+              </section>
+
+              {/* Export RGPD */}
+              <section className="border rounded-xl p-5 bg-white space-y-3">
+                <h3 className="font-semibold text-sm text-gray-900">Export & RGPD</h3>
+                <p className="text-xs text-gray-500">
+                  Exportez toutes les conversations et messages de ce chatbot en JSON (conforme RGPD).
+                </p>
+                <a
+                  href={`/api/chatbot/${id}/export`}
+                  download
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 font-medium"
+                >
+                  <Download className="w-4 h-4" /> Exporter les données (JSON)
+                </a>
+              </section>
             </div>
           )}
         </div>

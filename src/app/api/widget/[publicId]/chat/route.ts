@@ -4,7 +4,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "@/lib/chatbot/defaults";
 import { retrieveContext } from "@/lib/chatbot/rag";
 import { getEnabledTools, executeTool } from "@/lib/chatbot/tools";
+import { sendWebhook } from "@/lib/chatbot/webhooks";
+import { isWithinBusinessHours } from "@/lib/chatbot/schedule";
+import { checkMessageQuota, incrementMonthlyCount } from "@/lib/chatbot/quotas";
 import type { ChatMessage } from "@/lib/chatbot/types";
+import type { BusinessHours } from "@/lib/chatbot/schedule";
 
 export const dynamic = "force-dynamic";
 export const runtime  = "nodejs";
@@ -43,6 +47,36 @@ export async function POST(req: NextRequest, { params }: Params) {
     .single();
 
   if (!bot) return new Response("Chatbot introuvable ou inactif", { status: 404 });
+
+  // Business hours — répondre avec le message d'absence si hors horaires
+  const bh = bot.business_hours as BusinessHours | null;
+  if (!isWithinBusinessHours(bh)) {
+    const awayMsg = bh?.away_message ?? bot.fallback_message ?? "Nous sommes actuellement hors de nos horaires d'ouverture.";
+    const awayStream = new ReadableStream({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode(`data: ${JSON.stringify({ text: awayMsg as string })}\n\n`));
+        controller.enqueue(enc.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
+        controller.close();
+      },
+    });
+    return new Response(awayStream, {
+      headers: {
+        "Content-Type":                 "text/event-stream",
+        "Cache-Control":                "no-cache",
+        "Connection":                   "keep-alive",
+        "Access-Control-Allow-Origin":  "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
+  }
+
+  // Quota mensuel
+  const quota = await checkMessageQuota(bot.id as string);
+  if (!quota.allowed) {
+    return new Response("Quota mensuel atteint pour ce chatbot.", { status: 429 });
+  }
 
   // Vérification domaine (allowed_domains)
   const origin = req.headers.get("origin") ?? req.headers.get("referer") ?? "";
@@ -236,6 +270,20 @@ async function persistWidget(
   await admin.from("chatbot_conversations")
     .update({ last_message_at: new Date().toISOString() })
     .eq("id", conversationId);
+
+  // Incrémenter le compteur mensuel
+  void incrementMonthlyCount(bot.id as string);
+
+  // Webhook sortant
+  if (bot.webhook_url) {
+    void sendWebhook(
+      bot.id as string,
+      bot.webhook_url as string,
+      (bot.webhook_events as string[]) ?? ["new_message"],
+      "new_message",
+      { conversation_id: conversationId, content: fullText, tokens_used: totalTokens },
+    );
+  }
 }
 
 // CORS preflight

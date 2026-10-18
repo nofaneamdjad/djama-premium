@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { DEFAULT_WIDGET_CONFIG, DEFAULT_INSTRUCTIONS } from "@/lib/chatbot/defaults";
+import { checkChatbotCreationQuota } from "@/lib/chatbot/quotas";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  const quota = await checkChatbotCreationQuota(user.id);
+  if (!quota.allowed) return NextResponse.json({ error: quota.reason }, { status: 403 });
 
   const body = await req.json() as Partial<{
     name:            string;
