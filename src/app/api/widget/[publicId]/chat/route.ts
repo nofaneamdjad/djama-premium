@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "@/lib/chatbot/defaults";
+import { retrieveContext } from "@/lib/chatbot/rag";
 import type { ChatMessage } from "@/lib/chatbot/types";
 
 export const dynamic = "force-dynamic";
@@ -97,7 +98,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     // On accepte tout de même mais sans stocker l'identité
   }
 
-  const systemPrompt = buildSystemPrompt(bot.instructions, bot.personality, bot.language);
+  // Contexte RAG si base de connaissances activée
+  let ragContext = "";
+  if (bot.rag_enabled && process.env.OPENAI_API_KEY) {
+    ragContext = await retrieveContext(bot.id, body.message).catch(() => "");
+  }
+
+  const systemPrompt = buildSystemPrompt(bot.instructions, bot.personality, bot.language, ragContext || undefined);
 
   const messages: Anthropic.MessageParam[] = [
     ...(body.history ?? []).slice(-10).map(m => ({

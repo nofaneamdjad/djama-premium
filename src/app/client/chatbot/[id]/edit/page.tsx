@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Save, Sparkles, MessageSquare,
   Globe, Palette, Settings, Code2, Eye,
-  Play, PauseCircle, Copy, Check,
+  Play, PauseCircle, Copy, Check, BookOpen,
 } from "lucide-react";
 import type { Chatbot, WidgetConfig } from "@/lib/chatbot/types";
 import {
@@ -188,6 +188,8 @@ export default function ChatbotEditPage() {
     { key: "test",        label: "Test",           icon: <MessageSquare className="w-4 h-4" /> },
   ];
 
+  const goToKnowledge = () => router.push(`/client/chatbot/${id}/knowledge`);
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Top bar */}
@@ -235,6 +237,13 @@ export default function ChatbotEditPage() {
               {t.icon} {t.label}
             </button>
           ))}
+          <hr className="my-2" />
+          <button
+            onClick={goToKnowledge}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 w-full text-left"
+          >
+            <BookOpen className="w-4 h-4" /> Base de connaissances
+          </button>
         </nav>
 
         {/* Content */}
