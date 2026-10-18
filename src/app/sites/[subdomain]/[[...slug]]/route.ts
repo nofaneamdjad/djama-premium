@@ -6,6 +6,9 @@ import { renderPage } from "@/lib/website-builder/renderer";
 import { DEFAULT_THEME } from "@/lib/website-builder/types";
 import type { WebsiteTheme, WebsitePage, WebsiteSection } from "@/lib/website-builder/types";
 
+// Codes ISO 639-1 reconnus comme préfixes de langue dans les URLs
+const KNOWN_LANG_CODES = new Set(["fr", "en", "es", "de", "it", "pt", "ar", "zh", "ja", "nl", "ru", "pl", "tr"]);
+
 export const dynamic = "force-dynamic";
 
 // En-têtes de sécurité pour les sites publics
@@ -20,7 +23,16 @@ type Params = { params: Promise<{ subdomain: string; slug?: string[] }> };
 
 export async function GET(req: NextRequest, { params }: Params) {
   const { subdomain, slug: slugParts } = await params;
-  const pageSlug = slugParts?.join("/") ?? "";
+
+  // Détection du préfixe de langue : /{lang}/{slug} si le premier segment est un code ISO connu
+  let requestLang: string | null = null;
+  let pageSlug: string;
+  if (slugParts && slugParts.length > 0 && KNOWN_LANG_CODES.has(slugParts[0])) {
+    requestLang = slugParts[0];
+    pageSlug = slugParts.slice(1).join("/");
+  } else {
+    pageSlug = slugParts?.join("/") ?? "";
+  }
 
   const admin = createSupabaseAdmin();
 
@@ -80,7 +92,12 @@ export async function GET(req: NextRequest, { params }: Params) {
     });
   }
 
-  // Trouver la bonne page par slug
+  // Langue effective de la page
+  const siteLang = (site.lang as string | null) ?? "fr";
+  const secondaryLangs = (site.secondary_langs as string[] | null) ?? [];
+  const effectiveLang = requestLang ?? siteLang;
+
+  // Trouver la bonne page par slug (+ langue si précisée)
   let pageQuery = admin
     .from("website_pages")
     .select(`*, sections:website_sections(*)`)
@@ -93,7 +110,17 @@ export async function GET(req: NextRequest, { params }: Params) {
     pageQuery = pageQuery.eq("is_homepage", true);
   }
 
-  const { data: pageData } = await pageQuery.single();
+  // Si une langue spécifique est demandée, chercher d'abord une page avec ce lang
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let pageData: any = null;
+  if (requestLang && requestLang !== siteLang) {
+    const { data: langPage } = await (pageQuery.eq("lang", requestLang) as typeof pageQuery).maybeSingle();
+    if (langPage) pageData = langPage;
+  }
+  if (!pageData) {
+    const { data } = await pageQuery.single();
+    pageData = data;
+  }
 
   if (!pageData) {
     // Page 404 → chercher quand même la homepage pour le style
@@ -104,7 +131,8 @@ export async function GET(req: NextRequest, { params }: Params) {
   const sections = ((pageData.sections ?? []) as WebsiteSection[])
     .sort((a, b) => a.position - b.position);
 
-  const page: WebsitePage = { ...pageData, sections };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const page: WebsitePage = { ...(pageData as any), sections };
   const theme: WebsiteTheme = { ...DEFAULT_THEME, ...(site.theme as Partial<WebsiteTheme>) };
 
   // Charger les embeds (blog + produits)
@@ -150,19 +178,37 @@ export async function GET(req: NextRequest, { params }: Params) {
   const siteHost = isCustomDomain
     ? host
     : `${site.subdomain as string}.djama.site`;
-  const canonical = `https://${siteHost}${pageSlug ? `/${pageSlug}` : ""}`;
+  const baseUrl   = `https://${siteHost}`;
+  const slugPath  = pageSlug ? `/${pageSlug}` : "";
+  const canonical = requestLang && requestLang !== siteLang
+    ? `${baseUrl}/${requestLang}${slugPath}`
+    : `${baseUrl}${slugPath}`;
+
+  // Construire les langUrls pour hreflang + widget
+  const allActiveLangs = [siteLang, ...secondaryLangs];
+  const langUrls: Record<string, string> = {};
+  if (allActiveLangs.length > 1) {
+    for (const l of allActiveLangs) {
+      langUrls[l] = l === siteLang
+        ? `${baseUrl}${slugPath}`
+        : `${baseUrl}/${l}${slugPath}`;
+    }
+  }
 
   const html = renderPage(page, theme, {
-    title:       pageData.seo_title ?? site.seo_title ?? site.name ?? "Site DJAMA",
-    description: pageData.seo_description ?? site.seo_description ?? "",
-    favicon:     site.favicon_url ?? "",
+    title:         pageData.seo_title as string ?? site.seo_title ?? site.name ?? "Site DJAMA",
+    description:   pageData.seo_description as string ?? site.seo_description ?? "",
+    favicon:       site.favicon_url ?? "",
     websiteId,
-    embeds:      { blogPosts, products },
+    embeds:        { blogPosts, products },
     canonical,
-    siteUrl:     `https://${siteHost}`,
-    ogImage:     site.seo_image_url ?? "",
-    siteName:    site.name as string,
-    allPages:    (allPages ?? []) as { id: string; title: string; slug: string; is_homepage: boolean; in_nav: boolean; updated_at: string }[],
+    siteUrl:       baseUrl,
+    ogImage:       site.seo_image_url ?? "",
+    siteName:      site.name as string,
+    allPages:      (allPages ?? []) as { id: string; title: string; slug: string; is_homepage: boolean; in_nav: boolean; updated_at: string }[],
+    lang:          effectiveLang,
+    secondaryLangs,
+    langUrls:      Object.keys(langUrls).length > 1 ? langUrls : undefined,
   });
 
   // Enregistrer la visite de manière asynchrone (fire-and-forget)

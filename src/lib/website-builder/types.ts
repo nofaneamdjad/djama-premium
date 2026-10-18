@@ -83,6 +83,7 @@ export interface WebsitePage {
   is_homepage:     boolean;
   in_nav:          boolean;
   status:          PageStatus;
+  lang:            string | null;   // langue de cette page (null = langue principale du site)
   seo_title:       string | null;
   seo_description: string | null;
   og_image_url:    string | null;

@@ -104,6 +104,10 @@ export default function EditSitePage() {
   const [hotjarId,  setHotjarId]  = useState("");
   const [clarityId, setClarityId] = useState("");
 
+  // Multi-langue
+  const [siteLang,          setSiteLang]          = useState("fr");
+  const [siteSecondaryLangs, setSiteSecondaryLangs] = useState<string[]>([]);
+
   // Templates de page
   const [showTemplateModal, setShowTemplateModal]     = useState(false);
   const [applyingTemplate,  setApplyingTemplate]      = useState(false);
@@ -163,6 +167,8 @@ export default function EditSitePage() {
           setFbPixelId(th.fbPixelId ?? "");
           setHotjarId(th.hotjarId ?? "");
           setClarityId(th.clarityId ?? "");
+          setSiteLang((ws as { lang?: string }).lang ?? "fr");
+          setSiteSecondaryLangs((ws as { secondary_langs?: string[] }).secondary_langs ?? []);
           setSiteTitleEdit(ws.name ?? "");
           setSiteDescEdit((ws as { description?: string }).description ?? "");
           setSiteSeoTitle((ws as { seo_title?: string }).seo_title ?? "");
@@ -403,6 +409,8 @@ export default function EditSitePage() {
         seo_title:       siteSeoTitle,
         seo_description: siteSeoDesc,
         favicon_url:     siteFavicon,
+        lang:            siteLang,
+        secondary_langs: siteSecondaryLangs,
         theme:           newTheme,
       }),
     });
@@ -526,7 +534,12 @@ export default function EditSitePage() {
                   <>
                     {pages.map(page => (
                       <div key={page.id} onClick={() => setCurrentPageId(page.id)} style={{ padding: "0.55rem 0.7rem", borderRadius: "0.55rem", cursor: "pointer", marginBottom: "0.2rem", background: currentPageId === page.id ? "#2563EB1a" : "transparent", border: currentPageId === page.id ? "1px solid #2563EB35" : "1px solid transparent", fontSize: "0.82rem", fontWeight: currentPageId === page.id ? 600 : 400 }}>
-                        {page.is_homepage ? "🏠 " : "📄 "}{page.title}
+                        <span style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          {page.is_homepage ? "🏠 " : "📄 "}{page.title}
+                          {page.lang && page.lang !== siteLang && (
+                            <span style={{ fontSize: "0.62rem", fontWeight: 700, background: "#2563EB20", color: "#2563EB", borderRadius: "0.25rem", padding: "0.05rem 0.3rem", textTransform: "uppercase" }}>{page.lang}</span>
+                          )}
+                        </span>
                       </div>
                     ))}
                     <button
@@ -862,6 +875,55 @@ export default function EditSitePage() {
                         )}
                       </div>
                     ))}
+                    {/* Langues */}
+                    <div>
+                      <p style={{ margin: "0 0 0.5rem", fontSize: "0.7rem", fontWeight: 700, opacity: 0.45, textTransform: "uppercase" }}>Langues</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                        <div>
+                          <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.65 }}>Langue principale</label>
+                          <select value={siteLang} onChange={e => setSiteLang(e.target.value)}
+                            style={{ width: "100%", padding: "0.45rem 0.5rem", background: isDark ? "#ffffff08" : "#f9fafb", border: `1px solid ${t.border}`, borderRadius: "0.45rem", color: t.text, fontSize: "0.78rem" }}>
+                            {[
+                              { code: "fr", label: "Français" }, { code: "en", label: "English" },
+                              { code: "es", label: "Español" }, { code: "de", label: "Deutsch" },
+                              { code: "it", label: "Italiano" }, { code: "pt", label: "Português" },
+                              { code: "ar", label: "العربية" }, { code: "zh", label: "中文" },
+                              { code: "ja", label: "日本語" }, { code: "nl", label: "Nederlands" },
+                              { code: "ru", label: "Русский" }, { code: "pl", label: "Polski" },
+                              { code: "tr", label: "Türkçe" },
+                            ].map(l => <option key={l.code} value={l.code}>{l.label} ({l.code})</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.4rem", opacity: 0.65 }}>Langues secondaires</label>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                            {[
+                              { code: "fr", label: "FR" }, { code: "en", label: "EN" },
+                              { code: "es", label: "ES" }, { code: "de", label: "DE" },
+                              { code: "it", label: "IT" }, { code: "pt", label: "PT" },
+                              { code: "ar", label: "AR" }, { code: "zh", label: "ZH" },
+                              { code: "nl", label: "NL" }, { code: "ru", label: "RU" },
+                            ].filter(l => l.code !== siteLang).map(l => {
+                              const active = siteSecondaryLangs.includes(l.code);
+                              return (
+                                <button key={l.code} onClick={() => setSiteSecondaryLangs(prev =>
+                                  active ? prev.filter(x => x !== l.code) : [...prev, l.code]
+                                )}
+                                  style={{ background: active ? "#2563EB" : (isDark ? "#ffffff0f" : "#f3f4f6"), color: active ? "#fff" : t.text, border: "none", borderRadius: "0.35rem", padding: "0.25rem 0.55rem", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer" }}>
+                                  {l.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {siteSecondaryLangs.length > 0 && (
+                            <p style={{ fontSize: "0.65rem", opacity: 0.45, margin: "0.35rem 0 0" }}>
+                              Pages accessibles à /{siteSecondaryLangs.join(", /")}/slug — widget sélecteur ajouté automatiquement
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
                     <div>
                       <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem", opacity: 0.65 }}>E-mail de notification</label>
                       <input

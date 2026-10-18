@@ -1589,22 +1589,26 @@ function renderCookieBanner(cfg: { text?: string; acceptText?: string; declineTe
 // ── Page renderer ─────────────────────────────────────────────────────────────
 
 export interface RenderOptions {
-  title?:       string;
-  description?: string;
-  favicon?:     string;
-  customCss?:   string;
-  fontsUrl?:    string;
-  websiteId?:   string;
+  title?:         string;
+  description?:   string;
+  favicon?:       string;
+  customCss?:     string;
+  fontsUrl?:      string;
+  websiteId?:     string;
   // SEO avancé (Jalon D)
-  canonical?:   string;
-  siteUrl?:     string;
-  ogImage?:     string;
-  siteName?:    string;
-  allPages?:    { id: string; title: string; slug: string; is_homepage: boolean; in_nav: boolean; updated_at: string }[];
+  canonical?:     string;
+  siteUrl?:       string;
+  ogImage?:       string;
+  siteName?:      string;
+  allPages?:      { id: string; title: string; slug: string; is_homepage: boolean; in_nav: boolean; updated_at: string }[];
   embeds?: {
     blogPosts?: BlogArticle[];
     products?:  ShopProduct[];
   };
+  // Multi-langue (Jalon O)
+  lang?:          string;   // code ISO 639-1 de la page courante (ex: "fr")
+  secondaryLangs?: string[]; // autres langues actives du site (ex: ["en", "es"])
+  langUrls?:      Record<string, string>; // URLs hreflang par langue (ex: { fr: "https://…", en: "https://…/en" })
 }
 
 function esc(s: string): string {
@@ -1674,6 +1678,20 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
   const cookieBannerHtml = cookieBannerCfg?.enabled ? renderCookieBanner(cookieBannerCfg) : "";
   const integrationScripts = renderIntegrationScripts(themeExt);
 
+  // Multi-langue : hreflang + widget sélecteur
+  const pageLang   = opts.lang ?? page.lang ?? "fr";
+  const allLangs   = [pageLang, ...(opts.secondaryLangs ?? []).filter(l => l !== pageLang)];
+  const hreflangTags = opts.langUrls && allLangs.length > 1
+    ? allLangs.map(l => {
+        const url = opts.langUrls![l];
+        return url ? `<link rel="alternate" hreflang="${esc(l)}" href="${esc(url)}" />` : "";
+      }).filter(Boolean).join("\n  ") + `\n  <link rel="alternate" hreflang="x-default" href="${esc(opts.langUrls[pageLang] ?? canonical)}" />`
+    : "";
+
+  const langSwitcherHtml = opts.langUrls && allLangs.length > 1
+    ? renderLangSwitcher(pageLang, opts.langUrls, theme)
+    : "";
+
   const scrollAnimHtml = themeExt.scrollAnimations === true ? `
 <script>
 (function(){
@@ -1693,13 +1711,14 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
 </script>` : "";
 
   return `<!DOCTYPE html>
-<html lang="fr">
+<html lang="${esc(pageLang)}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${titleStr}</title>
   ${descStr ? `<meta name="description" content="${descStr}" />` : ""}
   ${canonical ? `<link rel="canonical" href="${esc(canonical)}" />` : ""}
+  ${hreflangTags}
   ${opts.favicon ? `<link rel="icon" href="${esc(opts.favicon)}" />` : ""}
   ${ogTags}
   ${canonical ? buildJsonLd(opts, page) : ""}
@@ -1722,11 +1741,38 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
 </head>
 <body>
 ${sections}
+${langSwitcherHtml}
 ${footerCode ? `<!-- Footer scripts -->\n${footerCode}` : ""}
 ${cookieBannerHtml}
 ${scrollAnimHtml}
 </body>
 </html>`;
+}
+
+// ── Sélecteur de langue ────────────────────────────────────────────────────────
+
+const LANG_LABELS: Record<string, string> = {
+  fr: "FR", en: "EN", es: "ES", de: "DE", it: "IT", pt: "PT",
+  ar: "AR", zh: "ZH", ja: "JA", nl: "NL", ru: "RU", pl: "PL", tr: "TR",
+};
+
+function renderLangSwitcher(currentLang: string, langUrls: Record<string, string>, theme: WebsiteTheme): string {
+  const langs = Object.keys(langUrls).filter(l => langUrls[l]);
+  if (langs.length < 2) return "";
+
+  const buttons = langs.map(l => {
+    const label = LANG_LABELS[l] ?? l.toUpperCase();
+    const isActive = l === currentLang;
+    const style = isActive
+      ? `background:${theme.primaryColor};color:#fff;border:none;`
+      : `background:rgba(0,0,0,0.07);color:inherit;border:none;`;
+    return `<a href="${esc(langUrls[l])}" style="${style}padding:0.3rem 0.6rem;border-radius:0.35rem;font-size:0.75rem;font-weight:700;text-decoration:none;cursor:pointer;">${label}</a>`;
+  }).join("");
+
+  return `
+<div style="position:fixed;bottom:1.25rem;right:1.25rem;z-index:9999;display:flex;gap:0.3rem;align-items:center;background:${theme.bgColor};border:1px solid rgba(0,0,0,0.12);border-radius:0.55rem;padding:0.35rem 0.45rem;box-shadow:0 2px 12px rgba(0,0,0,0.12);">
+  ${buttons}
+</div>`;
 }
 
 // ── Intégrations marketing ─────────────────────────────────────────────────────

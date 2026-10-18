@@ -93,12 +93,17 @@ export async function GET(req: NextRequest, { params }: Params) {
     products = (prods ?? []) as typeof products;
   }
 
+  const siteLang      = (site.lang as string | null) ?? "fr";
+  const secondaryLangs = (site.secondary_langs as string[] | null) ?? [];
+
   const html = renderPage(page, theme, {
-    title:       site.seo_title ?? site.name,
-    description: site.seo_description ?? "",
-    favicon:     site.favicon_url ?? "",
-    websiteId:   id,
-    embeds:      { blogPosts, products },
+    title:         site.seo_title ?? site.name,
+    description:   site.seo_description ?? "",
+    favicon:       site.favicon_url ?? "",
+    websiteId:     id,
+    embeds:        { blogPosts, products },
+    lang:          siteLang,
+    secondaryLangs,
   });
 
   return new NextResponse(html, {
