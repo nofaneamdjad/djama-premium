@@ -9,7 +9,9 @@ import {
   CheckCircle2, XCircle, AlertTriangle, Info,
   ArrowUpRight, ArrowDownRight, Minus,
   Activity, MessageCircle, Calendar, Package, CheckSquare, Star,
+  Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { useTheme }           from "@/lib/theme-context";
 import ModuleHeaderIcon       from "@/components/ModuleHeaderIcon";
 import { getPeriodRange, monthKeyLabel, deltaPercent } from "@/lib/analytics/periods";
@@ -842,8 +844,13 @@ export default function AnalyticsPage() {
                 {PERIOD_LABELS[p].replace("Ce ", "").replace("Cette ", "")}
               </button>
             ))}
+            <Link href="/client/analytics/executive"
+              className="p-1.5 rounded-lg transition ml-0.5" title="Dashboard exécutif + IA"
+              style={{ color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)" }}>
+              <Sparkles size={13} />
+            </Link>
             <a href={`/api/analytics/export?${exportParams}`}
-              className="p-1.5 rounded-lg transition ml-0.5" title="Exporter le rapport"
+              className="p-1.5 rounded-lg transition" title="Exporter le rapport"
               style={{ color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)" }}>
               <Download size={13} />
             </a>
