@@ -5,15 +5,16 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Save, Sparkles, MessageSquare,
   Globe, Palette, Settings, Code2, Eye,
-  Play, PauseCircle, Copy, Check, BookOpen,
+  Play, PauseCircle, Copy, Check, BookOpen, Plug,
 } from "lucide-react";
 import type { Chatbot, WidgetConfig } from "@/lib/chatbot/types";
 import {
   PERSONALITY_LABELS, PERSONALITY_DESCRIPTIONS,
   LANGUAGE_LABELS, CHATBOT_MODELS,
 } from "@/lib/chatbot/defaults";
+import { INTEGRATION_META, type IntegrationType } from "@/lib/chatbot/tools";
 
-type Tab = "general" | "behavior" | "widget" | "integration" | "test";
+type Tab = "general" | "behavior" | "widget" | "integration" | "test" | "integrations";
 
 interface FormState {
   name:             string;
@@ -42,6 +43,16 @@ export default function ChatbotEditPage() {
   const [testHistory, setTestHistory] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [testLoading, setTestLoading] = useState(false);
   const [copied,     setCopied]    = useState(false);
+  const [integrations, setIntegrations] = useState<{ type: IntegrationType; label: string; description: string; enabled: boolean }[]>([]);
+  const [integToggling, setIntegToggling] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/chatbot/${id}/integrations`)
+      .then(r => r.json())
+      .then((d: { integrations?: { type: IntegrationType; label: string; description: string; enabled: boolean }[] }) => {
+        setIntegrations(d.integrations ?? []);
+      });
+  }, [id]);
 
   useEffect(() => {
     fetch(`/api/chatbot/${id}`)
@@ -185,10 +196,22 @@ export default function ChatbotEditPage() {
     { key: "behavior",    label: "Comportement",  icon: <Sparkles className="w-4 h-4" /> },
     { key: "widget",      label: "Apparence",     icon: <Palette className="w-4 h-4" /> },
     { key: "integration", label: "Intégration",   icon: <Code2 className="w-4 h-4" /> },
-    { key: "test",        label: "Test",           icon: <MessageSquare className="w-4 h-4" /> },
+    { key: "test",          label: "Test",           icon: <MessageSquare className="w-4 h-4" /> },
+    { key: "integrations",  label: "Intégrations",   icon: <Plug className="w-4 h-4" /> },
   ];
 
   const goToKnowledge = () => router.push(`/client/chatbot/${id}/knowledge`);
+
+  const toggleIntegration = async (type: IntegrationType, enabled: boolean) => {
+    setIntegToggling(type);
+    await fetch(`/api/chatbot/${id}/integrations`, {
+      method:  "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ type, enabled }),
+    });
+    setIntegrations(prev => prev.map(i => i.type === type ? { ...i, enabled } : i));
+    setIntegToggling(null);
+  };
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -586,6 +609,43 @@ export default function ChatbotEditPage() {
                     Envoyer
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* INTÉGRATIONS */}
+          {tab === "integrations" && (
+            <div className="max-w-2xl space-y-4">
+              <h2 className="text-lg font-semibold">Intégrations DJAMA</h2>
+              <p className="text-sm text-gray-500">
+                Connectez le chatbot à vos modules DJAMA pour qu&apos;il puisse répondre avec vos vraies données.
+              </p>
+              {integrations.map(integ => (
+                <div key={integ.type} className="border rounded-xl p-4 bg-white flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-gray-900">{integ.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{integ.description}</p>
+                  </div>
+                  <button
+                    onClick={() => void toggleIntegration(integ.type, !integ.enabled)}
+                    disabled={integToggling === integ.type}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
+                      integ.enabled ? "bg-violet-600" : "bg-gray-200"
+                    }`}
+                    role="switch"
+                    aria-checked={integ.enabled}
+                  >
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 mt-0.5 ${
+                      integ.enabled ? "translate-x-5" : "translate-x-0.5"
+                    }`} />
+                  </button>
+                </div>
+              ))}
+              {integrations.length === 0 && (
+                <p className="text-gray-400 text-sm">Chargement…</p>
+              )}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+                Les intégrations CRM, Boutique et Factures sont en <strong>lecture seule</strong>. Seule l&apos;intégration RDV peut créer des données (avec l&apos;accord explicite du visiteur).
               </div>
             </div>
           )}

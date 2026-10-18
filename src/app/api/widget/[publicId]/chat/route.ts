@@ -3,6 +3,7 @@ import { createSupabaseAdmin } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "@/lib/chatbot/defaults";
 import { retrieveContext } from "@/lib/chatbot/rag";
+import { getEnabledTools, executeTool } from "@/lib/chatbot/tools";
 import type { ChatMessage } from "@/lib/chatbot/types";
 
 export const dynamic = "force-dynamic";
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const systemPrompt = buildSystemPrompt(bot.instructions, bot.personality, bot.language, ragContext || undefined);
 
-  const messages: Anthropic.MessageParam[] = [
+  const baseMessages: Anthropic.MessageParam[] = [
     ...(body.history ?? []).slice(-10).map(m => ({
       role:    m.role as "user" | "assistant",
       content: m.content,
@@ -114,52 +115,87 @@ export async function POST(req: NextRequest, { params }: Params) {
     { role: "user", content: body.message },
   ];
 
+  const tools  = await getEnabledTools(bot.id as string);
   const client = new Anthropic({ apiKey });
 
   const stream = new ReadableStream({
     async start(controller) {
       const enc = new TextEncoder();
-      let fullText   = "";
+      const emit = (p: Record<string, unknown>) =>
+        controller.enqueue(enc.encode(`data: ${JSON.stringify(p)}\n\n`));
+
+      let fullText    = "";
       let totalTokens = 0;
+      let msgs        = baseMessages;
 
       try {
+        // Tool loop si intégrations activées
+        if (tools.length > 0) {
+          const first = await client.messages.create({
+            model:      (bot.model as string) ?? "claude-haiku-4-5",
+            max_tokens: (bot.max_tokens as number) ?? 512,
+            system:     systemPrompt,
+            tools,
+            messages: msgs,
+          });
+
+          if (first.stop_reason === "tool_use") {
+            const tuBlocks = first.content.filter(
+              (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
+            );
+            for (const tu of tuBlocks) emit({ tool: tu.name });
+
+            const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
+              tuBlocks.map(async tu => ({
+                type:        "tool_result" as const,
+                tool_use_id: tu.id,
+                content:     await executeTool(
+                  tu.name,
+                  tu.input as Record<string, unknown>,
+                  bot.user_id as string,
+                ).catch(e => `Erreur : ${e instanceof Error ? e.message : String(e)}`),
+              })),
+            );
+            msgs = [
+              ...msgs,
+              { role: "assistant" as const, content: first.content },
+              { role: "user"      as const, content: toolResults },
+            ];
+          } else {
+            for (const block of first.content) {
+              if (block.type === "text") { fullText += block.text; emit({ text: block.text }); }
+            }
+            totalTokens = first.usage.output_tokens;
+            await persistWidget(admin, conversationId, bot, fullText, totalTokens);
+            emit({ done: true, conversationId });
+            controller.close();
+            return;
+          }
+        }
+
+        // Streaming final
         const response = await client.messages.stream({
-          model:      bot.model ?? "claude-haiku-4-5",
-          max_tokens: bot.max_tokens ?? 512,
+          model:      (bot.model as string) ?? "claude-haiku-4-5",
+          max_tokens: (bot.max_tokens as number) ?? 512,
           system:     systemPrompt,
-          messages,
+          messages:   msgs,
+          ...(tools.length > 0 ? { tools } : {}),
         });
 
         for await (const event of response) {
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
             fullText += event.delta.text;
-            controller.enqueue(enc.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`));
+            emit({ text: event.delta.text });
           }
           if (event.type === "message_delta" && event.usage) {
             totalTokens = event.usage.output_tokens;
           }
         }
 
-        // Persister la réponse IA
-        if (conversationId && fullText) {
-          await admin.from("chatbot_messages").insert({
-            conversation_id: conversationId,
-            chatbot_id:      bot.id,
-            role:            "assistant",
-            content:         fullText,
-            tokens_used:     totalTokens,
-            model:           bot.model,
-          });
-
-          await admin.from("chatbot_conversations")
-            .update({ last_message_at: new Date().toISOString() })
-            .eq("id", conversationId);
-        }
+        await persistWidget(admin, conversationId, bot, fullText, totalTokens);
 
         // Envoyer conversationId au client pour la suite
-        controller.enqueue(enc.encode(
-          `data: ${JSON.stringify({ done: true, conversationId })}\n\n`
-        ));
+        emit({ done: true, conversationId });
         controller.close();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Erreur IA";
@@ -179,6 +215,27 @@ export async function POST(req: NextRequest, { params }: Params) {
       "Access-Control-Allow-Headers": "Content-Type",
     },
   });
+}
+
+async function persistWidget(
+  admin:          ReturnType<typeof createSupabaseAdmin>,
+  conversationId: string | undefined,
+  bot:            Record<string, unknown>,
+  fullText:       string,
+  totalTokens:    number,
+) {
+  if (!conversationId || !fullText) return;
+  await admin.from("chatbot_messages").insert({
+    conversation_id: conversationId,
+    chatbot_id:      bot.id as string,
+    role:            "assistant",
+    content:         fullText,
+    tokens_used:     totalTokens,
+    model:           bot.model as string | null,
+  });
+  await admin.from("chatbot_conversations")
+    .update({ last_message_at: new Date().toISOString() })
+    .eq("id", conversationId);
 }
 
 // CORS preflight
