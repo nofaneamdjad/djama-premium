@@ -54,7 +54,7 @@ CREATE INDEX IF NOT EXISTS chatbot_chunks_embedding_idx
 
 CREATE OR REPLACE TRIGGER chatbot_documents_updated_at
   BEFORE UPDATE ON chatbot_documents
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_chatbot();
 
 -- ── RLS ────────────────────────────────────────────────────────────────────────
 
