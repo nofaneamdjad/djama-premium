@@ -101,3 +101,48 @@ export interface ForecastData {
   avg_6m:          number;   // CA moyen sur 6 derniers mois
   next_months:     { month_key: string; forecast_ca: number }[];
 }
+
+// ── Jalon C — Activité cross-modules ────────────────────────────────────────
+
+export interface ChatbotModuleStats {
+  nb_actifs:       number;
+  conversations:   number;
+  messages:        number;
+  taux_resolution: number; // % conversations closed
+}
+
+export interface RdvModuleStats {
+  total:      number;
+  confirmes:  number;
+  completes:  number;
+  annules:    number;
+  no_show:    number;
+}
+
+export interface BoutiqueModuleStats {
+  nb_commandes:    number;
+  ca_total:        number;
+  commandes_payees: number;
+}
+
+export interface TachesModuleStats {
+  total:       number;
+  completees:  number;
+  en_retard:   number;
+  urgentes:    number;
+}
+
+export interface ReputationModuleStats {
+  nb_avis:      number;
+  note_moyenne: number; // 0–5
+  nb_positifs:  number;
+  nb_negatifs:  number;
+}
+
+export interface ModulesData {
+  chatbot:    ChatbotModuleStats;
+  rdv:        RdvModuleStats;
+  boutique:   BoutiqueModuleStats;
+  taches:     TachesModuleStats;
+  reputation: ReputationModuleStats;
+}

@@ -8,13 +8,14 @@ import {
   ShoppingBag, PiggyBank, LayoutDashboard, Target, Download,
   CheckCircle2, XCircle, AlertTriangle, Info,
   ArrowUpRight, ArrowDownRight, Minus,
+  Activity, MessageCircle, Calendar, Package, CheckSquare, Star,
 } from "lucide-react";
 import { useTheme }           from "@/lib/theme-context";
 import ModuleHeaderIcon       from "@/components/ModuleHeaderIcon";
 import { getPeriodRange, monthKeyLabel, deltaPercent } from "@/lib/analytics/periods";
 import type {
   Period, OverviewData, VentesData, ClientsData, FinancesData,
-  HealthData, ForecastData,
+  HealthData, ForecastData, ModulesData,
 } from "@/lib/analytics/types";
 import { PERIOD_LABELS }      from "@/lib/analytics/types";
 import { fmtEurInt }          from "@/lib/format";
@@ -23,13 +24,14 @@ import { fmtEurInt }          from "@/lib/format";
 const ease = [0.22, 1, 0.36, 1] as const;
 const GOLD = "#c9a55a";
 
-type Tab = "overview" | "ventes" | "clients" | "finances";
+type Tab = "overview" | "ventes" | "clients" | "finances" | "activite";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "overview",  label: "Vue d'ensemble", icon: LayoutDashboard },
   { id: "ventes",    label: "Ventes",          icon: ShoppingBag },
   { id: "clients",   label: "Clients",         icon: Users },
   { id: "finances",  label: "Finances",        icon: PiggyBank },
+  { id: "activite",  label: "Activité",        icon: Activity },
 ];
 
 // ── Sous-composants ───────────────────────────────────────────────────────────
@@ -279,6 +281,7 @@ export default function AnalyticsPage() {
   const [finances,  setFinances]  = useState<FinancesData | null>(null);
   const [health,    setHealth]    = useState<HealthData | null>(null);
   const [forecast,  setForecast]  = useState<ForecastData | null>(null);
+  const [activite,  setActivite]  = useState<ModulesData | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -303,9 +306,12 @@ export default function AnalyticsPage() {
       } else if (tab === "clients") {
         const res = await fetch(`/api/analytics/clients?${params}`);
         if (res.ok) setClients(await res.json() as ClientsData);
-      } else {
+      } else if (tab === "finances") {
         const res = await fetch(`/api/analytics/finances?${params}`);
         if (res.ok) setFinances(await res.json() as FinancesData);
+      } else {
+        const res = await fetch(`/api/analytics/activite?${params}`);
+        if (res.ok) setActivite(await res.json() as ModulesData);
       }
     } catch {
       setError("Erreur réseau");
@@ -604,6 +610,213 @@ export default function AnalyticsPage() {
     );
   }
 
+  // ── Onglet : Activité (cross-modules) ─────────────────────────────────────
+  function ActiviteTab({ d }: { d: ModulesData }) {
+    const moduleColor = {
+      chatbot:    "#8b5cf6",
+      rdv:        "#3b82f6",
+      boutique:   "#f59e0b",
+      taches:     "#10b981",
+      reputation: "#ec4899",
+    };
+
+    function ModuleCard({ title, icon: Icon, color, children, delay = 0 }: {
+      title: string; icon: React.ElementType; color: string;
+      children: React.ReactNode; delay?: number;
+    }) {
+      return (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease, delay }}
+          className={`rounded-2xl p-4 ${card}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-7 w-7 rounded-xl flex items-center justify-center" style={{ background: color + "18" }}>
+              <Icon size={13} style={{ color }} />
+            </div>
+            <p className={`text-[11px] font-bold ${text}`}>{title}</p>
+          </div>
+          {children}
+        </motion.div>
+      );
+    }
+
+    function StatRow({ label, value, color, sub: subColor }: {
+      label: string; value: string | number; color: string; sub: string;
+    }) {
+      return (
+        <div className="flex items-center justify-between py-1.5"
+          style={{ borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"}` }}>
+          <span className={`text-[10.5px] ${subColor}`}>{label}</span>
+          <span className="text-[12px] font-bold tabular-nums" style={{ color }}>{value}</span>
+        </div>
+      );
+    }
+
+    const pctCompletees = d.taches.total > 0
+      ? Math.round((d.taches.completees / d.taches.total) * 100)
+      : 0;
+
+    const pctPayees = d.boutique.nb_commandes > 0
+      ? Math.round((d.boutique.commandes_payees / d.boutique.nb_commandes) * 100)
+      : 0;
+
+    return (
+      <div className="space-y-4">
+
+        {/* Chatbot IA */}
+        <ModuleCard title="Chatbot IA" icon={MessageCircle} color={moduleColor.chatbot} delay={0}>
+          <div>
+            <StatRow label="Chatbots actifs"     value={d.chatbot.nb_actifs}       color={moduleColor.chatbot} sub={sub} />
+            <StatRow label="Conversations"       value={d.chatbot.conversations}   color={moduleColor.chatbot} sub={sub} />
+            <StatRow label="Messages échangés"   value={d.chatbot.messages}        color={moduleColor.chatbot} sub={sub} />
+            <StatRow label="Taux de résolution"  value={`${d.chatbot.taux_resolution}%`} color="#10b981" sub={sub} />
+          </div>
+          {d.chatbot.conversations > 0 && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-[9.5px] ${muted}`}>Taux résolution</span>
+                <span className="text-[9.5px] font-bold" style={{ color: "#10b981" }}>{d.chatbot.taux_resolution}%</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                <motion.div initial={{ width: 0 }} animate={{ width: `${d.chatbot.taux_resolution}%` }}
+                  transition={{ duration: 0.6, ease }}
+                  className="h-full rounded-full" style={{ background: "#10b981" }} />
+              </div>
+            </div>
+          )}
+          {d.chatbot.nb_actifs === 0 && d.chatbot.conversations === 0 && (
+            <p className={`text-[10px] ${muted} text-center py-2`}>Aucune activité chatbot sur cette période</p>
+          )}
+        </ModuleCard>
+
+        {/* Rendez-vous */}
+        <ModuleCard title="Rendez-vous" icon={Calendar} color={moduleColor.rdv} delay={0.05}>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {[
+              { label: "Total",     value: d.rdv.total,     color: moduleColor.rdv  },
+              { label: "Confirmés", value: d.rdv.confirmes, color: "#10b981"        },
+              { label: "Complétés", value: d.rdv.completes, color: "#10b981"        },
+              { label: "Annulés",   value: d.rdv.annules,   color: "#ef4444"        },
+            ].map(item => (
+              <div key={item.label} className="rounded-xl p-2.5 text-center"
+                style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}>
+                <p className="text-[18px] font-black tabular-nums" style={{ color: item.color }}>{item.value}</p>
+                <p className={`text-[9px] ${muted}`}>{item.label}</p>
+              </div>
+            ))}
+          </div>
+          {d.rdv.total > 0 && d.rdv.no_show > 0 && (
+            <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5"
+              style={{ background: isDark ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>
+              <AlertCircle size={11} style={{ color: "#ef4444", flexShrink: 0 }} />
+              <span className="text-[9.5px]" style={{ color: "#ef4444" }}>{d.rdv.no_show} no-show sur cette période</span>
+            </div>
+          )}
+          {d.rdv.total === 0 && (
+            <p className={`text-[10px] ${muted} text-center py-2`}>Aucun rendez-vous sur cette période</p>
+          )}
+        </ModuleCard>
+
+        {/* Boutique */}
+        <ModuleCard title="Boutique" icon={Package} color={moduleColor.boutique} delay={0.1}>
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {[
+              { label: "Commandes",  value: d.boutique.nb_commandes,     color: moduleColor.boutique },
+              { label: "Payées",     value: d.boutique.commandes_payees, color: "#10b981"            },
+              { label: "CA boutique",value: fmtEurInt(d.boutique.ca_total), color: GOLD              },
+            ].map(item => (
+              <div key={item.label} className="rounded-xl p-2 text-center"
+                style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}>
+                <p className="text-[15px] font-black tabular-nums leading-tight" style={{ color: item.color }}>{item.value}</p>
+                <p className={`text-[8.5px] ${muted} mt-0.5`}>{item.label}</p>
+              </div>
+            ))}
+          </div>
+          {d.boutique.nb_commandes > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-[9.5px] ${muted}`}>Taux de paiement</span>
+                <span className="text-[9.5px] font-bold" style={{ color: "#10b981" }}>{pctPayees}%</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                <motion.div initial={{ width: 0 }} animate={{ width: `${pctPayees}%` }}
+                  transition={{ duration: 0.6, ease }}
+                  className="h-full rounded-full" style={{ background: "#10b981" }} />
+              </div>
+            </div>
+          )}
+          {d.boutique.nb_commandes === 0 && (
+            <p className={`text-[10px] ${muted} text-center py-2`}>Aucune commande sur cette période</p>
+          )}
+        </ModuleCard>
+
+        {/* Tâches productivité */}
+        <ModuleCard title="Tâches & Productivité" icon={CheckSquare} color={moduleColor.taches} delay={0.15}>
+          <div className="space-y-2 mb-3">
+            <StatRow label="Total créées"   value={d.taches.total}      color={moduleColor.taches} sub={sub} />
+            <StatRow label="Complétées"     value={d.taches.completees} color="#10b981"             sub={sub} />
+            <StatRow label="En retard"      value={d.taches.en_retard}  color="#ef4444"             sub={sub} />
+            <StatRow label="Urgentes"       value={d.taches.urgentes}   color="#f59e0b"             sub={sub} />
+          </div>
+          {d.taches.total > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-[9.5px] ${muted}`}>Avancement</span>
+                <span className="text-[9.5px] font-bold" style={{ color: "#10b981" }}>{pctCompletees}%</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                <motion.div initial={{ width: 0 }} animate={{ width: `${pctCompletees}%` }}
+                  transition={{ duration: 0.6, ease }}
+                  className="h-full rounded-full" style={{ background: "#10b981" }} />
+              </div>
+            </div>
+          )}
+          {d.taches.total === 0 && (
+            <p className={`text-[10px] ${muted} text-center py-2`}>Aucune tâche sur cette période</p>
+          )}
+        </ModuleCard>
+
+        {/* Réputation */}
+        <ModuleCard title="Réputation" icon={Star} color={moduleColor.reputation} delay={0.2}>
+          {d.reputation.nb_avis > 0 ? (
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="text-center">
+                  <p className="text-[32px] font-black tabular-nums leading-none" style={{ color: moduleColor.reputation }}>
+                    {d.reputation.note_moyenne}
+                  </p>
+                  <p className={`text-[9px] ${muted}`}>/5</p>
+                </div>
+                <div className="flex-1">
+                  <div className="h-2 rounded-full overflow-hidden mb-1" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${(d.reputation.note_moyenne / 5) * 100}%` }}
+                      transition={{ duration: 0.8, ease }}
+                      className="h-full rounded-full" style={{ background: moduleColor.reputation }} />
+                  </div>
+                  <p className={`text-[9.5px] ${muted}`}>{d.reputation.nb_avis} avis</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl p-2 text-center"
+                  style={{ background: isDark ? "rgba(16,185,129,0.07)" : "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)" }}>
+                  <p className="text-[16px] font-black tabular-nums" style={{ color: "#10b981" }}>{d.reputation.nb_positifs}</p>
+                  <p className={`text-[9px] ${muted}`}>Positifs</p>
+                </div>
+                <div className="rounded-xl p-2 text-center"
+                  style={{ background: isDark ? "rgba(239,68,68,0.07)" : "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                  <p className="text-[16px] font-black tabular-nums" style={{ color: "#ef4444" }}>{d.reputation.nb_negatifs}</p>
+                  <p className={`text-[9px] ${muted}`}>Négatifs</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className={`text-[10px] ${muted} text-center py-2`}>Aucun avis sur cette période</p>
+          )}
+        </ModuleCard>
+
+      </div>
+    );
+  }
+
   // ── Rendu ───────────────────────────────────────────────────────────────────
   return (
     <div className={`min-h-full pb-24 ${bg}`}>
@@ -680,10 +893,11 @@ export default function AnalyticsPage() {
         ) : (
           <AnimatePresence mode="wait">
             <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-              {tab === "overview" && overview  && <OverviewTab  d={overview}  h={health}   />}
-              {tab === "ventes"   && ventes    && <VentesTab    d={ventes}    f={forecast} />}
-              {tab === "clients"  && clients   && <ClientsTab   d={clients}   />}
-              {tab === "finances" && finances  && <FinancesTab  d={finances}  />}
+              {tab === "overview"  && overview  && <OverviewTab  d={overview}  h={health}   />}
+              {tab === "ventes"    && ventes    && <VentesTab    d={ventes}    f={forecast} />}
+              {tab === "clients"   && clients   && <ClientsTab   d={clients}   />}
+              {tab === "finances"  && finances  && <FinancesTab  d={finances}  />}
+              {tab === "activite"  && activite  && <ActiviteTab  d={activite}  />}
             </motion.div>
           </AnimatePresence>
         )}
