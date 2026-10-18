@@ -1,227 +1,284 @@
 ﻿"use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Plus, X, Trash2, Check, MessageSquare, Settings, Zap, Send } from "lucide-react";
-import { useTheme } from "@/lib/theme-context";
-import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  MessageSquare, Plus, MoreVertical, Copy, Trash2,
+  Play, PauseCircle, Edit3, BarChart2, Sparkles,
+} from "lucide-react";
+import type { Chatbot } from "@/lib/chatbot/types";
 
-const ease = [0.22, 1, 0.36, 1] as const;
-function uid() { return Math.random().toString(36).slice(2, 10); }
+type Tab = "chatbots" | "stats";
 
-interface ChatBot { id: string; name: string; persona: string; greeting: string; active: boolean; convs: number }
-interface ChatMsg { role: "user" | "bot"; text: string }
-
-const DEMO_BOTS: ChatBot[] = [
-  { id: "1", name: "Assistant Commercial",  persona: "Tu es un assistant commercial chaleureux pour DJAMA. Tu présentes les offres, réponds aux objections et proposes des rendez-vous.", greeting: "Bonjour ! Je suis l'assistant DJAMA, prêt à vous aider. Quel est votre besoin ?", active: true, convs: 312 },
-  { id: "2", name: "Support Client",         persona: "Tu es un agent de support patient et efficace. Tu résous les problèmes techniques et rassures les clients.", greeting: "Bonjour, comment puis-je vous aider aujourd'hui ?", active: true, convs: 87 },
-  { id: "3", name: "Chatbot FAQ",             persona: "Tu réponds aux questions fréquentes sur les services DJAMA avec des réponses concises.", greeting: "Bonjour ! Posez-moi votre question, j'ai les réponses.", active: false, convs: 45 },
-];
-
-const DEMO_RESPONSES: Record<string, string> = {
-  "bonjour": "Bonjour ! Ravi de vous rencontrer. Comment puis-je vous aider ?",
-  "prix": "Nos tarifs commencent à 49 €/mois pour le pack Essentiel. Voulez-vous un devis personnalisé ?",
-  "contact": "Vous pouvez nous joindre au 06 XX XX XX XX ou par email à contact@djama.fr. Souhaitez-vous prendre rendez-vous directement ?",
-  "rdv": "Je vous propose un rendez-vous découverte gratuit de 30 min. Quand êtes-vous disponible cette semaine ?",
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  draft:    { label: "Brouillon",  color: "#6b7280" },
+  active:   { label: "Actif",      color: "#10b981" },
+  disabled: { label: "Désactivé",  color: "#ef4444" },
 };
 
-export default function ChatbotPage() {
-  const { isDark } = useTheme();
-  const [bots, setBots]         = useState<ChatBot[]>(DEMO_BOTS);
-  const [tab, setTab]           = useState<"bots" | "preview">("bots");
-  const [creating, setCreating] = useState(false);
-  const [activeBot, setActiveBot] = useState<ChatBot | null>(null);
-  const [msgs, setMsgs]         = useState<ChatMsg[]>([]);
-  const [input, setInput]       = useState("");
-  const [form, setForm]         = useState({ name: "", persona: "", greeting: "" });
+export default function ChatbotDashboard() {
+  const router = useRouter();
+  const [tab,       setTab]       = useState<Tab>("chatbots");
+  const [bots,      setBots]      = useState<Chatbot[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState<string | null>(null);
+  const [menuId,    setMenuId]    = useState<string | null>(null);
+  const [creating,  setCreating]  = useState(false);
+  const [aiPrompt,  setAiPrompt]  = useState("");
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardLoading, setWizardLoading] = useState(false);
 
-  const s = {
-    card:  isDark ? "bg-white/[0.03] border-white/[0.07]"  : "bg-white border-black/[0.07] shadow-sm",
-    text:  isDark ? "text-white/85"                          : "text-gray-800",
-    muted: isDark ? "text-white/35"                          : "text-gray-400",
-    inp:   `w-full rounded-xl px-3 py-2.5 text-[12.5px] outline-none border ${isDark ? "bg-white/[0.05] border-white/[0.10] text-white placeholder:text-white/25" : "bg-black/[0.03] border-black/[0.08] text-gray-800 placeholder:text-gray-400"}`,
+  const load = async () => {
+    setLoading(true);
+    const r = await fetch("/api/chatbot");
+    const d = await r.json() as { chatbots?: Chatbot[]; error?: string };
+    if (d.error) setError(d.error);
+    else setBots(d.chatbots ?? []);
+    setLoading(false);
   };
 
-  function openPreview(bot: ChatBot) {
-    setActiveBot(bot);
-    setMsgs([{ role: "bot", text: bot.greeting }]);
-    setTab("preview");
-  }
+  useEffect(() => { void load(); }, []);
 
-  function sendMsg() {
-    if (!input.trim() || !activeBot) return;
-    const userMsg = input.trim();
-    setMsgs(p => [...p, { role: "user", text: userMsg }]);
-    setInput("");
-    const lower = userMsg.toLowerCase();
-    const key = Object.keys(DEMO_RESPONSES).find(k => lower.includes(k));
-    const reply = key ? DEMO_RESPONSES[key] : `Merci pour votre message ! Un conseiller DJAMA vous répondra sous peu. Y a-t-il autre chose que je puisse faire pour vous ?`;
-    setTimeout(() => setMsgs(p => [...p, { role: "bot", text: reply }]), 700);
-  }
-
-  function save() {
-    if (!form.name.trim() || !form.greeting.trim()) return;
-    setBots(p => [{ id: uid(), name: form.name, persona: form.persona, greeting: form.greeting, active: true, convs: 0 }, ...p]);
-    setForm({ name: "", persona: "", greeting: "" });
+  const create = async () => {
+    setCreating(true);
+    const r = await fetch("/api/chatbot", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ name: "Nouveau Chatbot" }),
+    });
+    const d = await r.json() as { chatbot?: Chatbot };
     setCreating(false);
-  }
+    if (d.chatbot) router.push(`/client/chatbot/${d.chatbot.id}/edit`);
+  };
+
+  const createWithAI = async () => {
+    if (!aiPrompt.trim()) return;
+    setWizardLoading(true);
+    const r = await fetch("/api/chatbot/generate", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ prompt: aiPrompt }),
+    });
+    const d = await r.json() as { chatbot?: Chatbot };
+    setWizardLoading(false);
+    setShowWizard(false);
+    setAiPrompt("");
+    if (d.chatbot) router.push(`/client/chatbot/${d.chatbot.id}/edit`);
+  };
+
+  const duplicate = async (id: string) => {
+    setMenuId(null);
+    const r = await fetch(`/api/chatbot/${id}/duplicate`, { method: "POST" });
+    const d = await r.json() as { chatbot?: Chatbot };
+    if (d.chatbot) void load();
+  };
+
+  const toggleStatus = async (bot: Chatbot) => {
+    setMenuId(null);
+    const next = bot.status === "active" ? "disabled" : "active";
+    await fetch(`/api/chatbot/${bot.id}`, {
+      method:  "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ status: next }),
+    });
+    void load();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("Supprimer ce chatbot et toutes ses conversations ?")) return;
+    setMenuId(null);
+    await fetch(`/api/chatbot/${id}`, { method: "DELETE" });
+    void load();
+  };
 
   return (
-    <div className={`min-h-full pb-20 ${isDark ? "bg-[#07080e]" : "bg-[#f0f2f5]"}`}>
-      <div className="px-4 pt-5 pb-4">
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease }}
-          className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ModuleHeaderIcon icon={Bot} color="#c9a55a" />
-            <div>
-              <h1 className={`text-[17px] font-black ${s.text}`}>Chatbot IA</h1>
-              <p className={`text-[10px] ${s.muted}`}>{bots.filter(b => b.active).length} chatbots actifs</p>
-            </div>
-          </div>
-          {tab === "bots" && (
-            <button onClick={() => setCreating(true)}
-              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold text-white"
-              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
-              <Plus size={14} /> Chatbot
-            </button>
-          )}
-          {tab === "preview" && (
-            <button onClick={() => setTab("bots")}
-              className="rounded-xl px-3 py-2 text-[12px] font-bold"
-              style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)", color: isDark ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.55)" }}>
-              ← Retour
-            </button>
-          )}
-        </motion.div>
-
-        <div className="flex gap-1.5 mt-4">
-          {(["bots", "preview"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className="rounded-xl px-4 py-1.5 text-[11.5px] font-semibold transition"
-              style={tab === t
-                ? { background: "rgba(201,165,90,0.15)", color: "#c9a55a", border: "1px solid rgba(139,92,246,0.30)" }
-                : { background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", color: isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` }}>
-              {t === "bots" ? "Mes chatbots" : "Prévisualisation"}
-            </button>
-          ))}
+    <div className="p-6 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <MessageSquare className="w-6 h-6" /> Chatbot IA
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Créez des assistants virtuels pour vos visiteurs
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowWizard(true)}
+            className="flex items-center gap-2 px-4 py-2 border border-violet-200 text-violet-700 rounded-lg hover:bg-violet-50 text-sm font-medium"
+          >
+            <Sparkles className="w-4 h-4" /> Créer avec l&apos;IA
+          </button>
+          <button
+            onClick={() => void create()}
+            disabled={creating}
+            className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm font-medium disabled:opacity-50"
+          >
+            <Plus className="w-4 h-4" />
+            {creating ? "Création…" : "Nouveau chatbot"}
+          </button>
         </div>
       </div>
 
-      {tab === "bots" && (
-        <div className="px-4 space-y-2.5">
-          {bots.map((b, i) => (
-            <motion.div key={b.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04, ease }}
-              className={`rounded-2xl border p-4 ${s.card}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="h-11 w-11 shrink-0 rounded-2xl flex items-center justify-center"
-                    style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.25)" }}>
-                    <Bot size={18} style={{ color: "#c9a55a" }} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className={`text-[13px] font-bold ${s.text}`}>{b.name}</p>
-                      <span className="text-[9.5px] font-bold rounded-full px-2 py-0.5"
-                        style={b.active ? { background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.25)" } : { background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
-                        {b.active ? "Actif" : "Inactif"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <div className="flex items-center gap-1"><MessageSquare size={9} className={s.muted} /><span className={`text-[10px] ${s.muted}`}>{b.convs} conversations</span></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button onClick={() => openPreview(b)}
-                    className="h-7 rounded-xl px-2.5 flex items-center gap-1 text-[10.5px] font-bold transition"
-                    style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.25)" }}>
-                    <Zap size={10} /> Tester
-                  </button>
-                  <button onClick={() => setBots(p => p.filter(x => x.id !== b.id))}
-                    className={`h-7 w-7 rounded-lg flex items-center justify-center hover:text-red-400 transition ${s.muted}`}>
-                    <Trash2 size={11} />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+      {/* Tabs */}
+      <div className="flex gap-4 border-b mb-6">
+        {(["chatbots", "stats"] as Tab[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+              tab === t
+                ? "border-violet-600 text-violet-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t === "chatbots" ? `Mes chatbots (${bots.length})` : "Statistiques"}
+          </button>
+        ))}
+      </div>
+
+      {/* AI Wizard modal */}
+      {showWizard && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
+            <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-violet-600" /> Créer avec l&apos;IA
+            </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Décrivez votre entreprise et vos besoins. L&apos;IA configurera le chatbot pour vous.
+            </p>
+            <textarea
+              value={aiPrompt}
+              onChange={e => setAiPrompt(e.target.value)}
+              rows={4}
+              placeholder="Ex : Je gère un cabinet dentaire à Paris. J'ai besoin d'un chatbot pour répondre aux questions sur les horaires, les soins proposés et prendre des RDV."
+              className="w-full border rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400"
+            />
+            <div className="flex gap-3 mt-4 justify-end">
+              <button onClick={() => setShowWizard(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+                Annuler
+              </button>
+              <button
+                onClick={() => void createWithAI()}
+                disabled={wizardLoading || !aiPrompt.trim()}
+                className="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50"
+              >
+                {wizardLoading ? "Génération…" : "Générer le chatbot"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {tab === "preview" && (
-        <div className="px-4">
-          {!activeBot ? (
-            <div className={`rounded-2xl border p-8 text-center ${s.card}`}>
-              <Bot size={32} className={`mx-auto mb-2 ${s.muted}`} />
-              <p className={`text-[12px] ${s.muted}`}>Sélectionnez un chatbot et cliquez "Tester"</p>
-            </div>
-          ) : (
-            <div className={`rounded-2xl border overflow-hidden ${s.card}`}>
-              <div className="flex items-center gap-2 px-4 py-3" style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
-                <Bot size={15} style={{ color: "white" }} />
-                <p className="text-[12px] font-bold text-white">{activeBot.name}</p>
-                <span className="ml-auto text-[9.5px] font-bold rounded-full px-2 py-0.5 bg-white/20 text-white">En ligne</span>
-              </div>
-              <div className="h-72 overflow-y-auto p-4 space-y-2.5">
-                {msgs.map((m, i) => (
-                  <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className="max-w-[80%] rounded-2xl px-3 py-2 text-[12px]"
-                      style={m.role === "user"
-                        ? { background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "white" }
-                        : { background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)", color: isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.75)" }}>
-                      {m.text}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="px-3 pb-3 pt-2 flex gap-2" style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }}>
-                <input className={s.inp} placeholder="Tapez votre message…" value={input} onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && sendMsg()} />
-                <button onClick={sendMsg}
-                  className="h-10 w-10 shrink-0 rounded-xl flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
-                  <Send size={13} style={{ color: "white" }} />
-                </button>
-              </div>
+      {tab === "chatbots" && (
+        <>
+          {loading && <p className="text-gray-500 text-sm">Chargement…</p>}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {!loading && bots.length === 0 && (
+            <div className="text-center py-20 text-gray-400">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-30" />
+              <p className="text-lg font-medium">Aucun chatbot</p>
+              <p className="text-sm mt-1">Créez votre premier chatbot pour commencer.</p>
             </div>
           )}
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {bots.map(bot => {
+              const st = STATUS_LABELS[bot.status] ?? STATUS_LABELS.draft;
+              return (
+                <div key={bot.id} className="border rounded-xl p-4 bg-white hover:shadow-md transition-shadow relative">
+                  {/* Status badge */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{ background: `${st.color}18`, color: st.color }}>
+                      <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: st.color }} />
+                      {st.label}
+                    </span>
+                    <button
+                      onClick={() => setMenuId(menuId === bot.id ? null : bot.id)}
+                      className="p-1 rounded hover:bg-gray-100"
+                    >
+                      <MoreVertical className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </div>
+
+                  {/* Action menu */}
+                  {menuId === bot.id && (
+                    <div className="absolute top-10 right-4 bg-white border rounded-lg shadow-lg z-10 py-1 min-w-[160px]">
+                      <button onClick={() => router.push(`/client/chatbot/${bot.id}/edit`)}
+                        className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 hover:bg-gray-50">
+                        <Edit3 className="w-4 h-4" /> Modifier
+                      </button>
+                      <button onClick={() => router.push(`/client/chatbot/${bot.id}/conversations`)}
+                        className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 hover:bg-gray-50">
+                        <MessageSquare className="w-4 h-4" /> Conversations
+                      </button>
+                      <button onClick={() => void toggleStatus(bot)}
+                        className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 hover:bg-gray-50">
+                        {bot.status === "active"
+                          ? <><PauseCircle className="w-4 h-4" /> Désactiver</>
+                          : <><Play className="w-4 h-4" /> Activer</>
+                        }
+                      </button>
+                      <button onClick={() => void duplicate(bot.id)}
+                        className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 hover:bg-gray-50">
+                        <Copy className="w-4 h-4" /> Dupliquer
+                      </button>
+                      <hr className="my-1" />
+                      <button onClick={() => void remove(bot.id)}
+                        className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 text-red-500 hover:bg-red-50">
+                        <Trash2 className="w-4 h-4" /> Supprimer
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Content */}
+                  <h3 className="font-semibold text-gray-900 truncate">{bot.name}</h3>
+                  {bot.description && (
+                    <p className="text-gray-500 text-sm mt-0.5 line-clamp-2">{bot.description}</p>
+                  )}
+
+                  {/* Stats */}
+                  <div className="flex gap-4 mt-3 text-xs text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <MessageSquare className="w-3 h-3" />
+                      {bot.conversation_count ?? 0} conv.
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <BarChart2 className="w-3 h-3" />
+                      {bot.message_count ?? 0} msg.
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => router.push(`/client/chatbot/${bot.id}/edit`)}
+                      className="flex-1 py-1.5 text-xs border rounded-lg hover:bg-gray-50 font-medium"
+                    >
+                      Configurer
+                    </button>
+                    <button
+                      onClick={() => router.push(`/client/chatbot/${bot.id}/conversations`)}
+                      className="flex-1 py-1.5 text-xs bg-violet-50 text-violet-700 border border-violet-200 rounded-lg hover:bg-violet-100 font-medium"
+                    >
+                      Conversations
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
-      <AnimatePresence>
-        {creating && (
-          <motion.div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setCreating(false)} />
-            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
-              className={`relative z-10 w-full max-w-sm rounded-3xl p-6 space-y-4 ${isDark ? "bg-[#0e1420] border border-white/[0.09]" : "bg-white border border-black/[0.07]"}`}>
-              <div className="flex items-center justify-between">
-                <h2 className={`text-[15px] font-black ${s.text}`}>Nouveau chatbot</h2>
-                <button onClick={() => setCreating(false)} className={`rounded-xl p-2 ${s.muted}`}><X size={16} /></button>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className={`block text-[10.5px] font-semibold mb-1 ${s.muted}`}>Nom du chatbot *</label>
-                  <input className={s.inp} placeholder="Ex: Assistant Commercial" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
-                </div>
-                <div>
-                  <label className={`block text-[10.5px] font-semibold mb-1 ${s.muted}`}>Personnalité (système IA)</label>
-                  <textarea rows={3} className={`${s.inp} resize-none`} placeholder="Décrivez le rôle et le ton du chatbot…" value={form.persona} onChange={e => setForm(p => ({ ...p, persona: e.target.value }))} />
-                </div>
-                <div>
-                  <label className={`block text-[10.5px] font-semibold mb-1 ${s.muted}`}>Message d'accueil *</label>
-                  <input className={s.inp} placeholder="Bonjour ! Comment puis-je vous aider ?" value={form.greeting} onChange={e => setForm(p => ({ ...p, greeting: e.target.value }))} />
-                </div>
-              </div>
-              <button onClick={save} disabled={!form.name.trim() || !form.greeting.trim()}
-                className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-black text-white disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
-                <Check size={15} /> Créer le chatbot
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {tab === "stats" && (
+        <div className="text-center py-20 text-gray-400">
+          <BarChart2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-medium">Statistiques globales</p>
+          <p className="text-sm mt-1">Disponible prochainement dans le Jalon B.</p>
+        </div>
+      )}
     </div>
   );
 }

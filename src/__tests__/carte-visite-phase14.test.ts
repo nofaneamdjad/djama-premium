@@ -214,7 +214,7 @@ describe("B — generateVCF()", () => {
     const card = { ...CARD_FULL, bio: "Ligne 1\nLigne 2" };
     const vcf  = generateVCF(card);
     expect(vcf).toContain("NOTE:Ligne 1\\nLigne 2");
-    expect(vcf).not.toMatch(/NOTE:.*\n.*\nTITLE/s);
+    expect(vcf).not.toMatch(/NOTE:[^\n]*\n[^\n]*\nTITLE/);
   });
 });
 

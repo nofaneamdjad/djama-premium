@@ -55,6 +55,7 @@ export const PREMIUM_TOOLS: string[] = [
   "/client/paie",
   "/client/site-web",
   "/client/carte-visite",
+  "/client/chatbot",
 ];
 
 export function getToolTier(pathname: string): PlanTier {
