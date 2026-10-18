@@ -5,14 +5,19 @@ import { motion, AnimatePresence }          from "framer-motion";
 import {
   BarChart2, TrendingUp, TrendingDown, Euro, Users, Briefcase,
   FileText, CreditCard, AlertCircle, RefreshCw, Loader2,
-  ShoppingBag, PiggyBank, LayoutDashboard, Target,
+  ShoppingBag, PiggyBank, LayoutDashboard, Target, Download,
+  CheckCircle2, XCircle, AlertTriangle, Info,
+  ArrowUpRight, ArrowDownRight, Minus,
 } from "lucide-react";
-import { useTheme }            from "@/lib/theme-context";
-import ModuleHeaderIcon        from "@/components/ModuleHeaderIcon";
+import { useTheme }           from "@/lib/theme-context";
+import ModuleHeaderIcon       from "@/components/ModuleHeaderIcon";
 import { getPeriodRange, monthKeyLabel, deltaPercent } from "@/lib/analytics/periods";
-import type { Period, OverviewData, VentesData, ClientsData, FinancesData } from "@/lib/analytics/types";
-import { PERIOD_LABELS }       from "@/lib/analytics/types";
-import { fmtEurInt }           from "@/lib/format";
+import type {
+  Period, OverviewData, VentesData, ClientsData, FinancesData,
+  HealthData, ForecastData,
+} from "@/lib/analytics/types";
+import { PERIOD_LABELS }      from "@/lib/analytics/types";
+import { fmtEurInt }          from "@/lib/format";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -33,9 +38,9 @@ function KpiCard({ label, value, delta, icon: Icon, color, isDark, delay = 0 }: 
   label: string; value: string; delta: number; icon: React.ElementType;
   color: string; isDark: boolean; delay?: number;
 }) {
-  const card = isDark ? "bg-white/[0.03] border border-white/[0.07]" : "bg-white border border-black/[0.07] shadow-sm";
+  const card  = isDark ? "bg-white/[0.03] border border-white/[0.07]" : "bg-white border border-black/[0.07] shadow-sm";
   const muted = isDark ? "text-white/35" : "text-gray-400";
-  const up   = delta >= 0;
+  const up    = delta >= 0;
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, ease }}
       className={`rounded-2xl p-4 ${card}`}>
@@ -57,7 +62,7 @@ function KpiCard({ label, value, delta, icon: Icon, color, isDark, delay = 0 }: 
   );
 }
 
-function BarChart({ data, isDark, delay = 0 }: {
+function BarChart12M({ data, isDark, delay = 0 }: {
   data: { month_key: string; ca: number; depenses: number }[];
   isDark: boolean; delay?: number;
 }) {
@@ -108,7 +113,9 @@ function ProgressBar({ label, value, total, color, sub, isDark }: {
     <div>
       <div className="flex items-center justify-between mb-1">
         <span className={`text-[11px] ${sub}`}>{label}</span>
-        <span className="text-[11px] font-bold tabular-nums" style={{ color }}>{value} <span className={`text-[9px] font-normal ${sub}`}>/ {total}</span></span>
+        <span className="text-[11px] font-bold tabular-nums" style={{ color }}>
+          {value} <span className={`text-[9px] font-normal ${sub}`}>/ {total}</span>
+        </span>
       </div>
       <div className="h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
         <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease }}
@@ -132,6 +139,131 @@ function Section({ title, isDark, children, delay = 0 }: {
   );
 }
 
+function AlertBanners({ alerts, isDark }: { alerts: HealthData["alerts"]; isDark: boolean }) {
+  if (alerts.length === 0) return null;
+  const cfg = {
+    danger:  { bg: isDark ? "rgba(239,68,68,0.12)"  : "rgba(239,68,68,0.08)",  border: "#ef4444", icon: XCircle,       color: "#ef4444" },
+    warning: { bg: isDark ? "rgba(245,158,11,0.12)" : "rgba(245,158,11,0.08)", border: "#f59e0b", icon: AlertTriangle, color: "#f59e0b" },
+    info:    { bg: isDark ? "rgba(59,130,246,0.10)" : "rgba(59,130,246,0.07)", border: "#3b82f6", icon: Info,          color: "#3b82f6" },
+  };
+  return (
+    <div className="px-4 mb-3 space-y-2">
+      {alerts.map((a, i) => {
+        const c    = cfg[a.type];
+        const Icon = c.icon;
+        return (
+          <motion.div key={i} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, ease }}
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
+            style={{ background: c.bg, border: `1px solid ${c.border}33` }}>
+            <Icon size={12} style={{ color: c.color, flexShrink: 0 }} />
+            <p className="text-[10.5px] font-medium leading-tight" style={{ color: c.color }}>{a.message}</p>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function HealthCard({ d, isDark, delay = 0 }: { d: HealthData; isDark: boolean; delay?: number }) {
+  const card  = isDark ? "bg-white/[0.03] border border-white/[0.07]" : "bg-white border border-black/[0.07] shadow-sm";
+  const text  = isDark ? "text-white/85"  : "text-gray-800";
+  const muted = isDark ? "text-white/35"  : "text-gray-400";
+  const sub   = isDark ? "text-white/55"  : "text-gray-500";
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease, delay }}
+      className={`rounded-2xl p-4 ${card}`}>
+      <div className="flex items-center justify-between mb-3">
+        <p className={`text-[11px] font-bold ${text}`}>Score de santé financière</p>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold" style={{ color: d.color }}>{d.label}</span>
+          <span className="text-[22px] font-black tabular-nums leading-none" style={{ color: d.color }}>{d.score}</span>
+          <span className={`text-[10px] ${muted}`}>/100</span>
+        </div>
+      </div>
+      {/* Barre de score */}
+      <div className="h-2 rounded-full overflow-hidden mb-4" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+        <motion.div initial={{ width: 0 }} animate={{ width: `${d.score}%` }} transition={{ duration: 0.8, ease }}
+          className="h-full rounded-full" style={{ background: d.color }} />
+      </div>
+      {/* Indicateurs */}
+      <div className="space-y-2">
+        {d.indicators.map(ind => (
+          <div key={ind.label} className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              {ind.ok
+                ? <CheckCircle2 size={11} style={{ color: "#10b981", flexShrink: 0 }} />
+                : <AlertCircle  size={11} style={{ color: "#f59e0b", flexShrink: 0 }} />}
+              <span className={`text-[10.5px] truncate ${sub}`}>{ind.label}</span>
+            </div>
+            <span className={`text-[9.5px] shrink-0 ml-2 ${muted}`}>{ind.detail}</span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function ForecastSection({ d, isDark, delay = 0 }: { d: ForecastData; isDark: boolean; delay?: number }) {
+  const card  = isDark ? "bg-white/[0.03] border border-white/[0.07]" : "bg-white border border-black/[0.07] shadow-sm";
+  const text  = isDark ? "text-white/85"  : "text-gray-800";
+  const muted = isDark ? "text-white/35"  : "text-gray-400";
+  const sub   = isDark ? "text-white/55"  : "text-gray-500";
+
+  const trendIcon = d.trend === "hausse" ? ArrowUpRight : d.trend === "baisse" ? ArrowDownRight : Minus;
+  const trendColor = d.trend === "hausse" ? "#10b981" : d.trend === "baisse" ? "#ef4444" : "#f59e0b";
+  const TrendIcon = trendIcon;
+
+  const confColor = d.confidence === "bonne" ? "#10b981" : d.confidence === "moyenne" ? "#f59e0b" : "#ef4444";
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease, delay }}
+      className={`rounded-2xl p-4 ${card}`}>
+      <div className="flex items-center justify-between mb-3">
+        <p className={`text-[11px] font-bold ${text}`}>Prévisions CA</p>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1" style={{ color: trendColor }}>
+            <TrendIcon size={11} />
+            <span className="text-[9.5px] font-semibold capitalize">{d.trend}</span>
+          </div>
+          <span className="text-[9px] px-1.5 py-0.5 rounded-md font-medium" style={{ background: confColor + "18", color: confColor }}>
+            confiance {d.confidence}
+          </span>
+        </div>
+      </div>
+
+      {/* Prévisions 3 mois */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        {d.next_months.map((m, i) => (
+          <div key={m.month_key} className="text-center py-2 rounded-xl"
+            style={{ background: isDark ? "rgba(201,165,90,0.06)" : "rgba(201,165,90,0.05)", border: "1px solid rgba(201,165,90,0.15)" }}>
+            <p className={`text-[8.5px] mb-1 ${muted}`}>{monthKeyLabel(m.month_key)}</p>
+            <p className="text-[14px] font-black tabular-nums leading-tight" style={{ color: GOLD }}>
+              {fmtEurInt(m.forecast_ca)}
+            </p>
+            {i > 0 && d.next_months[i - 1] && (
+              <p className="text-[8px] mt-0.5" style={{
+                color: m.forecast_ca >= (d.next_months[i - 1]?.forecast_ca ?? 0) ? "#10b981" : "#ef4444",
+              }}>
+                {m.forecast_ca >= (d.next_months[i - 1]?.forecast_ca ?? 0) ? "+" : ""}
+                {Math.round(((m.forecast_ca - (d.next_months[i - 1]?.forecast_ca ?? 0)) / Math.max(1, d.next_months[i - 1]?.forecast_ca ?? 1)) * 100)}%
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className={`text-[9.5px] ${sub} border-t pt-2`} style={{ borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+        Basé sur les 6 derniers mois · Moyenne : {fmtEurInt(d.avg_6m)}/mois
+        {d.slope_per_month !== 0 && (
+          <span style={{ color: d.slope_per_month > 0 ? "#10b981" : "#ef4444" }}>
+            {" "}· Tendance {d.slope_per_month > 0 ? "+" : ""}{fmtEurInt(d.slope_per_month)}/mois
+          </span>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 // ── Page principale ───────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
@@ -145,6 +277,8 @@ export default function AnalyticsPage() {
   const [ventes,    setVentes]    = useState<VentesData | null>(null);
   const [clients,   setClients]   = useState<ClientsData | null>(null);
   const [finances,  setFinances]  = useState<FinancesData | null>(null);
+  const [health,    setHealth]    = useState<HealthData | null>(null);
+  const [forecast,  setForecast]  = useState<ForecastData | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -152,13 +286,27 @@ export default function AnalyticsPage() {
     const { start, end, prevStart, prevEnd } = getPeriodRange(period);
     const params = new URLSearchParams({ start, end, prevStart, prevEnd }).toString();
     try {
-      const res = await fetch(`/api/analytics/${tab}?${params}`);
-      if (!res.ok) { setError("Erreur de chargement"); setLoading(false); return; }
-      const data = await res.json() as OverviewData & VentesData & ClientsData & FinancesData;
-      if (tab === "overview")  setOverview(data as OverviewData);
-      if (tab === "ventes")    setVentes(data as VentesData);
-      if (tab === "clients")   setClients(data as ClientsData);
-      if (tab === "finances")  setFinances(data as FinancesData);
+      if (tab === "overview") {
+        const [resO, resH] = await Promise.all([
+          fetch(`/api/analytics/overview?${params}`),
+          fetch(`/api/analytics/health?${params}`),
+        ]);
+        if (resO.ok) setOverview(await resO.json() as OverviewData);
+        if (resH.ok) setHealth(await resH.json() as HealthData);
+      } else if (tab === "ventes") {
+        const [resV, resF] = await Promise.all([
+          fetch(`/api/analytics/ventes?${params}`),
+          fetch(`/api/analytics/forecast`),
+        ]);
+        if (resV.ok) setVentes(await resV.json() as VentesData);
+        if (resF.ok) setForecast(await resF.json() as ForecastData);
+      } else if (tab === "clients") {
+        const res = await fetch(`/api/analytics/clients?${params}`);
+        if (res.ok) setClients(await res.json() as ClientsData);
+      } else {
+        const res = await fetch(`/api/analytics/finances?${params}`);
+        if (res.ok) setFinances(await res.json() as FinancesData);
+      }
     } catch {
       setError("Erreur réseau");
     } finally {
@@ -168,47 +316,52 @@ export default function AnalyticsPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  // ── Styles ─────────────────────────────────────────────────────────────────
-  const bg   = isDark ? "bg-[#07080e]"     : "bg-[#f0f2f5]";
-  const card = isDark ? "bg-white/[0.03] border border-white/[0.07]" : "bg-white border border-black/[0.07] shadow-sm";
-  const text = isDark ? "text-white/85"    : "text-gray-800";
-  const muted = isDark ? "text-white/35"   : "text-gray-400";
-  const sub   = isDark ? "text-white/55"   : "text-gray-500";
+  // URL d'export (avec période courante)
+  const { start, end, prevStart, prevEnd } = getPeriodRange(period);
+  const exportParams = new URLSearchParams({ start, end, prevStart, prevEnd }).toString();
 
+  // ── Styles ─────────────────────────────────────────────────────────────────
+  const bg    = isDark ? "bg-[#07080e]"     : "bg-[#f0f2f5]";
+  const card  = isDark ? "bg-white/[0.03] border border-white/[0.07]" : "bg-white border border-black/[0.07] shadow-sm";
+  const text  = isDark ? "text-white/85"    : "text-gray-800";
+  const muted = isDark ? "text-white/35"    : "text-gray-400";
+  const sub   = isDark ? "text-white/55"    : "text-gray-500";
   const tabBg = isDark ? "bg-white/[0.03] border border-white/[0.07]" : "bg-white border border-black/[0.07]";
 
   // ── Onglet : Vue d'ensemble ─────────────────────────────────────────────────
-  function OverviewTab({ d }: { d: OverviewData }) {
-    const benefice      = d.ca_current - d.dep_current;
-    const beneficePrev  = d.ca_prev    - d.dep_prev;
+  function OverviewTab({ d, h }: { d: OverviewData; h: HealthData | null }) {
+    const benefice     = d.ca_current - d.dep_current;
+    const beneficePrev = d.ca_prev    - d.dep_prev;
     const dCA  = deltaPercent(d.ca_current,  d.ca_prev);
     const dDep = deltaPercent(d.dep_current, d.dep_prev);
     const dBen = deltaPercent(benefice,      beneficePrev);
     const kpis = [
-      { label: "CA encaissé",  value: fmtEurInt(d.ca_current),  delta: dCA,                      icon: Euro,        color: GOLD,      sign: 1  },
-      { label: "Dépenses",     value: fmtEurInt(d.dep_current), delta: dDep,                     icon: CreditCard,  color: "#ef4444", sign: -1 },
-      { label: "Bénéfice net", value: fmtEurInt(benefice),      delta: dBen,                     icon: TrendingUp,  color: benefice >= 0 ? "#10b981" : "#ef4444", sign: 1 },
-      { label: "Impayés",      value: fmtEurInt(d.impayés),     delta: 0,                        icon: AlertCircle, color: "#f59e0b", sign: -1 },
+      { label: "CA encaissé",  value: fmtEurInt(d.ca_current),  delta: dCA,    icon: Euro,        color: GOLD      },
+      { label: "Dépenses",     value: fmtEurInt(d.dep_current), delta: -dDep,  icon: CreditCard,  color: "#ef4444" },
+      { label: "Bénéfice net", value: fmtEurInt(benefice),      delta: dBen,   icon: TrendingUp,  color: benefice >= 0 ? "#10b981" : "#ef4444" },
+      { label: "Impayés",      value: fmtEurInt(d.impayés),     delta: 0,      icon: AlertCircle, color: "#f59e0b" },
     ];
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-2">
           {kpis.map((k, i) => (
-            <KpiCard key={k.label} label={k.label} value={k.value}
-              delta={k.sign === -1 ? -k.delta : k.delta}
+            <KpiCard key={k.label} label={k.label} value={k.value} delta={k.delta}
               icon={k.icon} color={k.color} isDark={isDark} delay={i * 0.06} />
           ))}
         </div>
 
+        {/* Score de santé */}
+        {h && <HealthCard d={h} isDark={isDark} delay={0.08} />}
+
         {/* Compteurs rapides */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease, delay: 0.1 }}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease, delay: 0.12 }}
           className={`rounded-2xl p-4 ${card}`}>
           <div className="grid grid-cols-4 gap-2">
             {[
-              { icon: Users,    color: "#3b82f6", value: d.nb_clients,      label: "Clients CRM" },
-              { icon: Briefcase,color: "#8b5cf6", value: d.nb_projets,      label: "Projets actifs" },
-              { icon: FileText, color: GOLD,      value: d.factures.total,  label: "Factures" },
-              { icon: Target,   color: "#10b981", value: `${d.devis.taux_conversion}%`, label: "Conv. devis" },
+              { icon: Users,     color: "#3b82f6", value: d.nb_clients,            label: "Clients CRM" },
+              { icon: Briefcase, color: "#8b5cf6", value: d.nb_projets,            label: "Projets actifs" },
+              { icon: FileText,  color: GOLD,      value: d.factures.total,        label: "Factures" },
+              { icon: Target,    color: "#10b981", value: `${d.devis.taux_conversion}%`, label: "Conv. devis" },
             ].map(item => {
               const Icon = item.icon;
               return (
@@ -222,9 +375,8 @@ export default function AnalyticsPage() {
           </div>
         </motion.div>
 
-        {/* Statut factures */}
         {d.factures.total > 0 && (
-          <Section title="Statut des factures" isDark={isDark} delay={0.12}>
+          <Section title="Statut des factures" isDark={isDark} delay={0.15}>
             <div className="space-y-2.5">
               <ProgressBar label="Payées"    value={d.factures.payées}    total={d.factures.total} color="#10b981" sub={sub} isDark={isDark} />
               <ProgressBar label="Envoyées"  value={d.factures.envoyées}  total={d.factures.total} color="#f59e0b" sub={sub} isDark={isDark} />
@@ -233,7 +385,7 @@ export default function AnalyticsPage() {
           </Section>
         )}
 
-        <BarChart data={d.mensuel} isDark={isDark} delay={0.15} />
+        <BarChart12M data={d.mensuel} isDark={isDark} delay={0.18} />
 
         {d.factures.total === 0 && d.ca_current === 0 && d.dep_current === 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -248,16 +400,16 @@ export default function AnalyticsPage() {
   }
 
   // ── Onglet : Ventes ─────────────────────────────────────────────────────────
-  function VentesTab({ d }: { d: VentesData }) {
-    const dCA = deltaPercent(d.ca_total, d.ca_prev);
+  function VentesTab({ d, f }: { d: VentesData; f: ForecastData | null }) {
+    const dCA   = deltaPercent(d.ca_total, d.ca_prev);
     const maxCA = Math.max(...d.mensuel.map(m => m.ca_paye), 1);
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-2">
-          <KpiCard label="CA période"  value={fmtEurInt(d.ca_total)}   delta={dCA}  icon={Euro}     color={GOLD}      isDark={isDark} />
-          <KpiCard label="Factures"    value={String(d.nb_factures)}   delta={0}    icon={FileText}  color="#3b82f6"   isDark={isDark} delay={0.05} />
-          <KpiCard label="Payées"      value={String(d.factures.payées)}  delta={0} icon={TrendingUp} color="#10b981" isDark={isDark} delay={0.1} />
-          <KpiCard label="Conv. devis" value={`${d.taux_conversion}%`} delta={0}    icon={Target}    color="#8b5cf6"   isDark={isDark} delay={0.15} />
+          <KpiCard label="CA période"  value={fmtEurInt(d.ca_total)}        delta={dCA}  icon={Euro}       color={GOLD}      isDark={isDark} />
+          <KpiCard label="Factures"    value={String(d.nb_factures)}        delta={0}    icon={FileText}   color="#3b82f6"   isDark={isDark} delay={0.05} />
+          <KpiCard label="Payées"      value={String(d.factures.payées)}    delta={0}    icon={TrendingUp} color="#10b981"   isDark={isDark} delay={0.1} />
+          <KpiCard label="Conv. devis" value={`${d.taux_conversion}%`}      delta={0}    icon={Target}     color="#8b5cf6"   isDark={isDark} delay={0.15} />
         </div>
 
         {d.factures.total > 0 && (
@@ -289,9 +441,11 @@ export default function AnalyticsPage() {
           </div>
         </motion.div>
 
-        {/* Top clients */}
+        {/* Prévisions */}
+        {f && <ForecastSection d={f} isDark={isDark} delay={0.2} />}
+
         {d.top_clients.length > 0 && (
-          <Section title="Top clients" isDark={isDark} delay={0.2}>
+          <Section title="Top clients" isDark={isDark} delay={0.25}>
             <div className="space-y-2">
               {d.top_clients.map((c, i) => (
                 <div key={c.client_name} className="flex items-center justify-between">
@@ -319,9 +473,9 @@ export default function AnalyticsPage() {
       <div className="space-y-4">
         <div className="grid grid-cols-3 gap-2">
           {[
-            { icon: Users,     color: "#3b82f6",  value: d.nb_total,       label: "Contacts CRM",  delta: 0 },
-            { icon: TrendingUp,color: "#10b981",  value: d.clients_actifs, label: "Actifs période", delta: 0 },
-            { icon: Users,     color: "#f59e0b",  value: d.nouveaux,       label: "Nouveaux",        delta: dNew },
+            { icon: Users,      color: "#3b82f6", value: d.nb_total,       label: "Contacts CRM",   delta: 0    },
+            { icon: TrendingUp, color: "#10b981", value: d.clients_actifs, label: "Actifs période",  delta: 0    },
+            { icon: Users,      color: "#f59e0b", value: d.nouveaux,       label: "Nouveaux",         delta: dNew },
           ].map((item, i) => {
             const Icon = item.icon;
             return (
@@ -350,8 +504,8 @@ export default function AnalyticsPage() {
           <Section title="Top clients — CA annuel" isDark={isDark} delay={0.1}>
             <div className="space-y-3">
               {d.top_clients.map((c, i) => {
-                const maxCA  = d.top_clients[0]?.ca_total ?? 1;
-                const pct    = Math.round((c.ca_total / maxCA) * 100);
+                const maxCA = d.top_clients[0]?.ca_total ?? 1;
+                const pct   = Math.round((c.ca_total / maxCA) * 100);
                 return (
                   <div key={c.client_name}>
                     <div className="flex items-center justify-between mb-1">
@@ -386,16 +540,16 @@ export default function AnalyticsPage() {
 
   // ── Onglet : Finances ───────────────────────────────────────────────────────
   function FinancesTab({ d }: { d: FinancesData }) {
-    const dDep      = deltaPercent(d.dep_current, d.dep_prev);
-    const benefice  = d.ca_current - d.dep_current;
-    const totalCat  = d.depenses_par_cat.reduce((s, c) => s + c.total, 0);
+    const dDep     = deltaPercent(d.dep_current, d.dep_prev);
+    const benefice = d.ca_current - d.dep_current;
+    const totalCat = d.depenses_par_cat.reduce((s, c) => s + c.total, 0);
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-3 gap-2">
           {[
-            { icon: CreditCard,  color: "#ef4444", value: fmtEurInt(d.dep_current), label: "Dépenses",    delta: -dDep },
-            { icon: TrendingUp,  color: "#10b981", value: fmtEurInt(benefice),      label: "Bénéfice",    delta: 0 },
-            { icon: Target,      color: "#f59e0b", value: `${d.ratio_charges}%`,    label: "Ratio ch./CA", delta: 0 },
+            { icon: CreditCard, color: "#ef4444", value: fmtEurInt(d.dep_current), label: "Dépenses",      delta: -dDep },
+            { icon: TrendingUp, color: "#10b981", value: fmtEurInt(benefice),      label: "Bénéfice",      delta: 0 },
+            { icon: Target,     color: "#f59e0b", value: `${d.ratio_charges}%`,    label: "Ratio ch./CA",  delta: 0 },
           ].map((item, i) => {
             const Icon = item.icon;
             return (
@@ -445,7 +599,7 @@ export default function AnalyticsPage() {
           </Section>
         )}
 
-        <BarChart data={d.mensuel} isDark={isDark} delay={0.2} />
+        <BarChart12M data={d.mensuel} isDark={isDark} delay={0.2} />
       </div>
     );
   }
@@ -465,17 +619,22 @@ export default function AnalyticsPage() {
               <p className={`text-[10px] ${muted}`}>Indicateurs business en temps réel</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {(["month", "quarter", "year"] as Period[]).map(p => (
               <button key={p} onClick={() => setPeriod(p)}
-                className="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold transition"
+                className="rounded-xl px-2 py-1.5 text-[10px] font-semibold transition"
                 style={period === p
                   ? { background: "rgba(201,165,90,0.18)", color: GOLD, border: "1px solid rgba(201,165,90,0.35)" }
                   : { background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` }}>
                 {PERIOD_LABELS[p].replace("Ce ", "").replace("Cette ", "")}
               </button>
             ))}
-            <button onClick={() => void load()} className="p-1.5 rounded-lg ml-0.5"
+            <a href={`/api/analytics/export?${exportParams}`}
+              className="p-1.5 rounded-lg transition ml-0.5" title="Exporter le rapport"
+              style={{ color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)" }}>
+              <Download size={13} />
+            </a>
+            <button onClick={() => void load()} className="p-1.5 rounded-lg transition"
               style={{ color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)" }}>
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
             </button>
@@ -483,12 +642,15 @@ export default function AnalyticsPage() {
         </motion.div>
       </div>
 
+      {/* Alertes — affichées si santé chargée et alertes présentes */}
+      {health && health.alerts.length > 0 && <AlertBanners alerts={health.alerts} isDark={isDark} />}
+
       {/* Tab bar */}
       <div className="px-4 mb-4">
         <div className={`flex rounded-2xl p-1 gap-0.5 ${tabBg}`}>
           {TABS.map(t => {
-            const Icon    = t.icon;
-            const active  = tab === t.id;
+            const Icon   = t.icon;
+            const active = tab === t.id;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold transition-all"
@@ -518,8 +680,8 @@ export default function AnalyticsPage() {
         ) : (
           <AnimatePresence mode="wait">
             <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-              {tab === "overview" && overview  && <OverviewTab  d={overview}  />}
-              {tab === "ventes"   && ventes    && <VentesTab    d={ventes}    />}
+              {tab === "overview" && overview  && <OverviewTab  d={overview}  h={health}   />}
+              {tab === "ventes"   && ventes    && <VentesTab    d={ventes}    f={forecast} />}
               {tab === "clients"  && clients   && <ClientsTab   d={clients}   />}
               {tab === "finances" && finances  && <FinancesTab  d={finances}  />}
             </motion.div>

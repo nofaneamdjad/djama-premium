@@ -70,3 +70,34 @@ export interface FinancesData {
   depenses_par_cat: { category: string; total: number; nb: number }[];
   mensuel:          { month_key: string; ca: number; depenses: number }[];
 }
+
+// ── Jalon B ─────────────────────────────────────────────────────────────────
+
+export interface AlertItem {
+  type:    "danger" | "warning" | "info";
+  message: string;
+}
+
+export interface HealthIndicator {
+  label: string;
+  score: number; // 0-100
+  ok:    boolean;
+  detail?: string;
+}
+
+export interface HealthData {
+  score:      number;  // 0-100
+  label:      string;  // "Excellent" | "Bon" | "Moyen" | "À améliorer" | "Critique"
+  color:      string;
+  indicators: HealthIndicator[];
+  alerts:     AlertItem[];
+}
+
+export interface ForecastData {
+  trend:           "hausse" | "baisse" | "stable";
+  slope_per_month: number;   // € par mois
+  r2:              number;   // 0–1 (coefficient de détermination)
+  confidence:      "faible" | "moyenne" | "bonne";
+  avg_6m:          number;   // CA moyen sur 6 derniers mois
+  next_months:     { month_key: string; forecast_ca: number }[];
+}
