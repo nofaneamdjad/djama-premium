@@ -7,7 +7,7 @@ import {
   BookOpen, MessageSquare, Target, FolderOpen, Lock,
   StickyNote, CalendarPlus, ShoppingCart, Landmark, ScrollText,
   Store, Briefcase, Bot, TrendingUp, Contact2, PenLine, Globe,
-  QrCode, ShoppingBag, Mail, Layout,
+  QrCode, ShoppingBag, Mail,
 } from "lucide-react";
 
 export type AppCategory =
@@ -489,19 +489,9 @@ export const APP_REGISTRY: readonly AppEntry[] = [
     icon: Globe,
     route: "/client/site-web",
     category: "gestion",
-    description: "Constructeur de site web",
+    description: "Créer et gérer vos sites web professionnels",
     permission: "premium",
-    keywords: ["site", "web", "vitrine", "landing", "page"],
-  },
-  {
-    id: "mes-sites",
-    name: "Mes Sites",
-    icon: Layout,
-    route: "/client/mes-sites",
-    category: "gestion",
-    description: "Gestion de vos sites et pages web",
-    permission: "premium",
-    keywords: ["site", "page", "web", "déploiement", "domaine"],
+    keywords: ["site", "web", "vitrine", "landing", "page", "mes sites", "domaine"],
   },
 ] as const;
 

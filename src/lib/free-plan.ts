@@ -53,7 +53,6 @@ export const SLUG_TO_HREF: Record<string, string> = {
   "temoignages":     "/client/temoignages",
   "planification":   "/client/planification",
   "site-web":        "/client/site-web",
-  "mes-sites":       "/client/mes-sites",
   "agences":         "/client/agences",
 };
 
