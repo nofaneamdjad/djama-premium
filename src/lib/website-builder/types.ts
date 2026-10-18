@@ -115,6 +115,8 @@ export interface SectionStyles {
   paddingBot?:  "none" | "sm" | "md" | "lg" | "xl";
   alignment?:   "left" | "center" | "right";
   fullWidth?:   boolean;
+  hideOn?:      ("mobile" | "tablet" | "desktop")[];  // masquer sur ces appareils
+  locked?:      boolean;                               // section verrouillée (pas d'édition)
 }
 
 // ── Version ───────────────────────────────────────────────────────────────

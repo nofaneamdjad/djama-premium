@@ -52,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id, pageId } = await params;
   const body = await req.json() as Record<string, unknown>;
 
-  const allowed = ["title", "slug", "is_homepage", "in_nav", "status", "position", "seo_title", "seo_description", "og_image_url"];
+  const allowed = ["title", "slug", "is_homepage", "in_nav", "status", "position", "lang", "seo_title", "seo_description", "og_image_url"];
   const update: Record<string, unknown> = {};
   for (const k of allowed) {
     if (k in body) update[k] = body[k];

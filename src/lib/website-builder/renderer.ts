@@ -1642,11 +1642,33 @@ function buildJsonLd(opts: RenderOptions, page: WebsitePage): string {
 }
 
 export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderOptions = {}): string {
-  const sections = (page.sections ?? [])
-    .sort((a, b) => a.position - b.position)
-    .map(s => renderSection(s, theme, opts))
+  const sortedSections = (page.sections ?? []).sort((a, b) => a.position - b.position);
+
+  // Injecter id="sec-<id>" sur le premier élément HTML de chaque section
+  const sections = sortedSections
+    .map(s => {
+      const html = renderSection(s, theme, opts);
+      const sid  = `sec-${s.id.replace(/-/g, "")}`;
+      return html.replace(/(<(?:section|nav|div|footer|header|aside)\b)/, `$1 id="${sid}"`);
+    })
     .join("\n")
     .replace(/<img\b(?![^>]*\bloading=)/gi, '<img loading="lazy"');
+
+  // CSS de visibilité conditionnelle par appareil
+  const hideOnCss = sortedSections
+    .filter(s => s.styles?.hideOn?.length)
+    .map(s => {
+      const sid = `sec-${s.id.replace(/-/g, "")}`;
+      const rules: string[] = [];
+      if (s.styles.hideOn!.includes("mobile"))
+        rules.push(`@media(max-width:767px){#${sid}{display:none!important}}`);
+      if (s.styles.hideOn!.includes("tablet"))
+        rules.push(`@media(min-width:768px) and (max-width:1199px){#${sid}{display:none!important}}`);
+      if (s.styles.hideOn!.includes("desktop"))
+        rules.push(`@media(min-width:1200px){#${sid}{display:none!important}}`);
+      return rules.join("");
+    })
+    .join("\n");
 
   const fontsToLoad = [...new Set([theme.fontHeading, theme.fontBody].filter(f => f && f !== "Inter"))] as string[];
   const font = fontsToLoad.length === 0 ? "" :
@@ -1737,6 +1759,7 @@ export function renderPage(page: WebsitePage, theme: WebsiteTheme, opts: RenderO
       section > div { flex-direction: column !important; }
     }
     ${opts.customCss ?? theme.customCss ?? ""}
+    ${hideOnCss}
   </style>
 </head>
 <body>

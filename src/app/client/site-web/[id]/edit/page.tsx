@@ -10,7 +10,7 @@ import {
   Bot, Send, History, RotateCcw, Palette, Search, Code2,
   Image as ImageIcon, Upload, Link2, SlidersHorizontal,
   ClipboardList, Download, CornerUpRight, Copy, LayoutTemplate,
-  AlignLeft, AlignCenter, AlignRight
+  AlignLeft, AlignCenter, AlignRight, Lock, Unlock
 } from "lucide-react";
 import { tok } from "@/lib/website-builder/theme-utils";
 import { useTheme } from "@/lib/theme-context";
@@ -115,6 +115,10 @@ export default function EditSitePage() {
   // Drag & drop sections
   const dragIdxRef = useRef<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  // Drag & drop pages
+  const pageDragIdxRef = useRef<number | null>(null);
+  const [pageDragOverIdx, setPageDragOverIdx] = useState<number | null>(null);
 
   // Recherche bibliothèque
   const [libSearch, setLibSearch] = useState("");
@@ -276,6 +280,21 @@ export default function EditSitePage() {
       await fetch(`/api/websites/${siteId}/sections`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ section_id: reindexed[i].id, position: i }),
+      });
+    }
+  }
+
+  async function reorderPages(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    const updated = [...pages];
+    const [moved] = updated.splice(fromIdx, 1);
+    updated.splice(toIdx, 0, moved);
+    const reindexed = updated.map((p, i) => ({ ...p, position: i }));
+    setPages(reindexed);
+    for (let i = 0; i < reindexed.length; i++) {
+      await fetch(`/api/websites/${siteId}/pages/${reindexed[i].id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ position: i }),
       });
     }
   }
@@ -532,12 +551,20 @@ export default function EditSitePage() {
               <div style={{ flex: 1, overflowY: "auto", padding: "0.65rem" }}>
                 {leftPanel === "pages" && (
                   <>
-                    {pages.map(page => (
-                      <div key={page.id} onClick={() => setCurrentPageId(page.id)} style={{ padding: "0.55rem 0.7rem", borderRadius: "0.55rem", cursor: "pointer", marginBottom: "0.2rem", background: currentPageId === page.id ? "#2563EB1a" : "transparent", border: currentPageId === page.id ? "1px solid #2563EB35" : "1px solid transparent", fontSize: "0.82rem", fontWeight: currentPageId === page.id ? 600 : 400 }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    {pages.map((page, pidx) => (
+                      <div key={page.id}
+                        draggable
+                        onDragStart={() => { pageDragIdxRef.current = pidx; }}
+                        onDragOver={e => { e.preventDefault(); setPageDragOverIdx(pidx); }}
+                        onDrop={() => { if (pageDragIdxRef.current !== null) { void reorderPages(pageDragIdxRef.current, pidx); pageDragIdxRef.current = null; setPageDragOverIdx(null); } }}
+                        onDragEnd={() => { pageDragIdxRef.current = null; setPageDragOverIdx(null); }}
+                        onClick={() => setCurrentPageId(page.id)}
+                        style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: "0.45rem 0.6rem", borderRadius: "0.55rem", cursor: "pointer", marginBottom: "0.2rem", background: currentPageId === page.id ? "#2563EB1a" : pageDragOverIdx === pidx ? (isDark ? "#ffffff0a" : "#eff4ff") : "transparent", border: currentPageId === page.id ? "1px solid #2563EB35" : pageDragOverIdx === pidx ? "1px solid #2563EB55" : "1px solid transparent", fontSize: "0.82rem", fontWeight: currentPageId === page.id ? 600 : 400 }}>
+                        <GripVertical size={9} style={{ opacity: 0.3, flexShrink: 0, cursor: "grab" }} />
+                        <span style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: 1, minWidth: 0 }}>
                           {page.is_homepage ? "🏠 " : "📄 "}{page.title}
                           {page.lang && page.lang !== siteLang && (
-                            <span style={{ fontSize: "0.62rem", fontWeight: 700, background: "#2563EB20", color: "#2563EB", borderRadius: "0.25rem", padding: "0.05rem 0.3rem", textTransform: "uppercase" }}>{page.lang}</span>
+                            <span style={{ fontSize: "0.62rem", fontWeight: 700, background: "#2563EB20", color: "#2563EB", borderRadius: "0.25rem", padding: "0.05rem 0.3rem", textTransform: "uppercase", flexShrink: 0 }}>{page.lang}</span>
                           )}
                         </span>
                       </div>
@@ -601,15 +628,34 @@ export default function EditSitePage() {
           </button>
 
           {/* Preview */}
-          <div style={{ flex: 1, overflow: "auto", display: "flex", justifyContent: "center", padding: "1.5rem", background: isDark ? "#0d1117" : "#f0f4f8" }}>
-            <div style={{ width: PREVIEW_WIDTHS[previewWidth], maxWidth: "100%", transition: "width 0.3s" }}>
-              <iframe
-                key={previewKey}
-                src={`/api/websites/${siteId}/preview?page_id=${currentPageId}`}
-                style={{ width: "100%", height: 560, border: "none", borderRadius: "0.75rem", boxShadow: "0 4px 20px rgba(0,0,0,0.14)" }}
-                title="Aperçu"
-              />
-            </div>
+          <div style={{ flex: 1, overflow: "auto", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "1.5rem", background: isDark ? "#0d1117" : "#f0f4f8" }}>
+            {previewWidth === "desktop" && (
+              <div style={{ width: PREVIEW_WIDTHS.desktop, maxWidth: "100%", transition: "width 0.3s" }}>
+                <iframe key={previewKey} src={`/api/websites/${siteId}/preview?page_id=${currentPageId}`}
+                  style={{ width: "100%", height: 600, border: "none", borderRadius: "0.75rem", boxShadow: "0 4px 20px rgba(0,0,0,0.14)" }} title="Aperçu" />
+              </div>
+            )}
+            {previewWidth === "tablet" && (
+              <div style={{ position: "relative", width: 810, maxWidth: "100%", background: isDark ? "#1e2030" : "#d1d5db", borderRadius: "2rem", padding: "1.5rem 1.2rem 2rem", boxShadow: "0 8px 32px rgba(0,0,0,0.28)", border: `8px solid ${isDark ? "#374151" : "#9ca3af"}` }}>
+                <div style={{ position: "absolute", top: "0.7rem", left: "50%", transform: "translateX(-50%)", width: 36, height: 5, background: isDark ? "#4b5563" : "#9ca3af", borderRadius: 9999 }} />
+                <div style={{ overflow: "hidden", borderRadius: "0.65rem", background: "#fff" }}>
+                  <iframe key={previewKey} src={`/api/websites/${siteId}/preview?page_id=${currentPageId}`}
+                    style={{ width: "100%", height: 700, border: "none", display: "block" }} title="Aperçu tablette" />
+                </div>
+              </div>
+            )}
+            {previewWidth === "mobile" && (
+              <div style={{ position: "relative", width: 393, maxWidth: "100%", background: isDark ? "#111827" : "#1f2937", borderRadius: "3rem", padding: "3rem 0.85rem 2.5rem", boxShadow: "0 12px 48px rgba(0,0,0,0.5)", border: `10px solid ${isDark ? "#374151" : "#374151"}` }}>
+                {/* Dynamic Island */}
+                <div style={{ position: "absolute", top: "0.85rem", left: "50%", transform: "translateX(-50%)", width: 120, height: 30, background: "#000", borderRadius: 9999 }} />
+                <div style={{ overflow: "hidden", borderRadius: "1.5rem", background: "#fff" }}>
+                  <iframe key={previewKey} src={`/api/websites/${siteId}/preview?page_id=${currentPageId}`}
+                    style={{ width: "100%", height: 780, border: "none", display: "block" }} title="Aperçu mobile" />
+                </div>
+                {/* Home bar */}
+                <div style={{ position: "absolute", bottom: "0.8rem", left: "50%", transform: "translateX(-50%)", width: 100, height: 4, background: "#6b7280", borderRadius: 9999 }} />
+              </div>
+            )}
           </div>
 
           {/* Section list */}
@@ -618,25 +664,48 @@ export default function EditSitePage() {
               {sections.length} section{sections.length !== 1 ? "s" : ""}
             </p>
             {sections.length === 0 && <p style={{ opacity: 0.35, fontSize: "0.78rem", textAlign: "center", padding: "1rem 0" }}>Ajoutez des blocs depuis la bibliothèque.</p>}
-            {sections.map((sec, idx) => (
-              <div key={sec.id}
-                draggable
-                onDragStart={() => { dragIdxRef.current = idx; }}
-                onDragOver={e => { e.preventDefault(); setDragOverIdx(idx); }}
-                onDrop={() => { if (dragIdxRef.current !== null) { reorderSections(dragIdxRef.current, idx); dragIdxRef.current = null; setDragOverIdx(null); } }}
-                onDragEnd={() => { dragIdxRef.current = null; setDragOverIdx(null); }}
-                onClick={() => { setSelectedSectionId(sec.id === selectedSectionId ? null : sec.id); setRightPanel("props"); }}
-                style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.55rem", borderRadius: "0.45rem", cursor: "pointer", background: selectedSectionId === sec.id ? "#2563EB1a" : dragOverIdx === idx ? (isDark ? "#ffffff0a" : "#eff4ff") : "transparent", border: selectedSectionId === sec.id ? "1px solid #2563EB35" : dragOverIdx === idx ? "1px solid #2563EB55" : "1px solid transparent", marginBottom: "0.15rem", opacity: sec.visible ? 1 : 0.4 }}
-              >
-                <GripVertical size={11} style={{ opacity: 0.35, flexShrink: 0, cursor: "grab" }} />
-                <span style={{ flex: 1, fontSize: "0.8rem", fontWeight: 500 }}>{SECTIONS_LIBRARY.find(s => s.type === sec.type)?.label ?? sec.type}</span>
-                <button onClick={e => { e.stopPropagation(); moveSection(idx, -1); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><ChevronUp size={11} /></button>
-                <button onClick={e => { e.stopPropagation(); moveSection(idx, 1); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><ChevronDown size={11} /></button>
-                <button onClick={e => { e.stopPropagation(); toggleVisibility(sec); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}>{sec.visible ? <Eye size={11} /> : <EyeOff size={11} />}</button>
-                <button onClick={e => { e.stopPropagation(); duplicateSection(sec); }} title="Dupliquer" style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><Copy size={11} /></button>
-                <button onClick={e => { e.stopPropagation(); deleteSection(sec.id); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", color: "#EF4444", opacity: 0.65 }}><Trash2 size={11} /></button>
-              </div>
-            ))}
+            {sections.map((sec, idx) => {
+              const isLocked = sec.styles?.locked === true;
+              return (
+                <div key={sec.id}
+                  draggable={!isLocked}
+                  onDragStart={() => { if (!isLocked) dragIdxRef.current = idx; }}
+                  onDragOver={e => { e.preventDefault(); setDragOverIdx(idx); }}
+                  onDrop={() => { if (!isLocked && dragIdxRef.current !== null) { reorderSections(dragIdxRef.current, idx); dragIdxRef.current = null; setDragOverIdx(null); } }}
+                  onDragEnd={() => { dragIdxRef.current = null; setDragOverIdx(null); }}
+                  onClick={() => { setSelectedSectionId(sec.id === selectedSectionId ? null : sec.id); setRightPanel("props"); }}
+                  style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.55rem", borderRadius: "0.45rem", cursor: "pointer", background: selectedSectionId === sec.id ? "#2563EB1a" : dragOverIdx === idx ? (isDark ? "#ffffff0a" : "#eff4ff") : "transparent", border: selectedSectionId === sec.id ? "1px solid #2563EB35" : dragOverIdx === idx ? "1px solid #2563EB55" : "1px solid transparent", marginBottom: "0.15rem", opacity: sec.visible ? 1 : 0.4 }}
+                >
+                  {isLocked
+                    ? <Lock size={11} style={{ opacity: 0.5, flexShrink: 0, color: "#F59E0B" }} />
+                    : <GripVertical size={11} style={{ opacity: 0.35, flexShrink: 0, cursor: "grab" }} />}
+                  <span style={{ flex: 1, fontSize: "0.8rem", fontWeight: 500 }}>{SECTIONS_LIBRARY.find(s => s.type === sec.type)?.label ?? sec.type}</span>
+                  {!isLocked && <>
+                    <button onClick={e => { e.stopPropagation(); moveSection(idx, -1); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><ChevronUp size={11} /></button>
+                    <button onClick={e => { e.stopPropagation(); moveSection(idx, 1); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><ChevronDown size={11} /></button>
+                  </>}
+                  <button onClick={e => { e.stopPropagation(); toggleVisibility(sec); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}>{sec.visible ? <Eye size={11} /> : <EyeOff size={11} />}</button>
+                  <button
+                    onClick={async e => {
+                      e.stopPropagation();
+                      const newStyles = { ...sec.styles, locked: !isLocked };
+                      await fetch(`/api/websites/${siteId}/sections`, {
+                        method: "PATCH", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ section_id: sec.id, styles: newStyles }),
+                      });
+                      setSections(prev => prev.map(s => s.id === sec.id ? { ...s, styles: newStyles } : s));
+                    }}
+                    title={isLocked ? "Déverrouiller" : "Verrouiller"}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: isLocked ? 1 : 0.35, color: isLocked ? "#F59E0B" : t.text }}>
+                    {isLocked ? <Lock size={11} /> : <Unlock size={11} />}
+                  </button>
+                  {!isLocked && <>
+                    <button onClick={e => { e.stopPropagation(); void duplicateSection(sec); }} title="Dupliquer" style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", opacity: 0.45, color: t.text }}><Copy size={11} /></button>
+                    <button onClick={e => { e.stopPropagation(); void deleteSection(sec.id); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.1rem", color: "#EF4444", opacity: 0.65 }}><Trash2 size={11} /></button>
+                  </>}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1189,9 +1258,16 @@ function PropsEditor({ section, isDark, t, siteId, onUpdate }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", position: "relative" }}>
-      <p style={{ margin: "0 0 0.35rem", fontSize: "0.7rem", fontWeight: 700, opacity: 0.45, textTransform: "uppercase" }}>
-        {meta?.label ?? section.type}
-      </p>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.1rem" }}>
+        <p style={{ margin: 0, fontSize: "0.7rem", fontWeight: 700, opacity: 0.45, textTransform: "uppercase", flex: 1 }}>
+          {meta?.label ?? section.type}
+        </p>
+        {localStyles.locked && (
+          <span style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.65rem", fontWeight: 700, color: "#F59E0B", background: "#F59E0B15", borderRadius: "0.3rem", padding: "0.1rem 0.4rem" }}>
+            <Lock size={9} /> Verrouillée
+          </span>
+        )}
+      </div>
 
       {/* ── Style de section ── */}
       <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: "0.65rem" }}>
@@ -1236,6 +1312,28 @@ function PropsEditor({ section, isDark, t, siteId, onUpdate }: {
                     {v === "left" ? <AlignLeft size={11} /> : v === "center" ? <AlignCenter size={11} /> : <AlignRight size={11} />}
                   </button>
                 ))}
+              </div>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.35rem", opacity: 0.55 }}>Masquer sur</label>
+              <div style={{ display: "flex", gap: "0.3rem" }}>
+                {([
+                  { val: "mobile" as const,  icon: <Smartphone size={10} />, label: "Mobile" },
+                  { val: "tablet" as const,  icon: <Tablet size={10} />,     label: "Tablette" },
+                  { val: "desktop" as const, icon: <Monitor size={10} />,    label: "Desktop" },
+                ]).map(({ val, icon, label }) => {
+                  const active = (localStyles.hideOn ?? []).includes(val);
+                  return (
+                    <button key={val} title={label}
+                      onClick={() => {
+                        const current = localStyles.hideOn ?? [];
+                        updateStyle("hideOn", active ? current.filter(x => x !== val) : [...current, val]);
+                      }}
+                      style={{ display: "flex", alignItems: "center", gap: "0.2rem", background: active ? "#EF444420" : (isDark ? "#ffffff0f" : "#f3f4f6"), color: active ? "#EF4444" : t.text, border: active ? "1px solid #EF444440" : "none", borderRadius: "0.3rem", padding: "0.25rem 0.45rem", fontSize: "0.68rem", fontWeight: 600, cursor: "pointer" }}>
+                      {icon}{label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
