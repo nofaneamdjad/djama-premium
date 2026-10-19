@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
     { data: caMonthsRpc },
     { data: depMonthsRpc },
     { data: currDocs },
+    { data: currShop },
   ] = await Promise.all([
     admin.rpc("analytics_depenses_cat",      { p_user_id: uid, p_start: start,      p_end: end }),
     admin.from("expenses").select("amount")
@@ -51,11 +52,16 @@ export async function GET(req: NextRequest) {
     admin.from("documents").select("total_ttc")
       .eq("user_id", uid).eq("type", "invoice").eq("status", "paid")
       .gte("date", start).lte("date", end),
+    admin.from("shop_orders").select("total")
+      .eq("user_id", uid).eq("payment_status", "paid")
+      .gte("created_at", start).lte("created_at", end),
   ]);
 
-  const dep_current = (depCatRpc ?? []).reduce((s: number, r: { total: number }) => s + Number(r.total), 0);
-  const dep_prev    = (prevExps ?? []).reduce((s, e) => s + (e.amount ?? 0), 0);
-  const ca_current  = (currDocs ?? []).reduce((s, d) => s + (d.total_ttc ?? 0), 0);
+  const dep_current  = (depCatRpc ?? []).reduce((s: number, r: { total: number }) => s + Number(r.total), 0);
+  const dep_prev     = (prevExps ?? []).reduce((s, e) => s + (e.amount ?? 0), 0);
+  const ca_docs      = (currDocs ?? []).reduce((s, d) => s + (d.total_ttc ?? 0), 0);
+  const ca_shop      = (currShop ?? []).reduce((s, o) => s + (o.total ?? 0), 0);
+  const ca_current   = ca_docs + ca_shop;
 
   const buckets = build12MonthBuckets();
   const caMap:  Record<string, number> = {};

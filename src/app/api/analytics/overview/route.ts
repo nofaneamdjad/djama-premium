@@ -30,8 +30,11 @@ export async function GET(req: NextRequest) {
   const admin = createSupabaseAdmin();
   const uid   = user.id;
 
-  // Factures période courante
-  const [{ data: docs }, { data: prevDocs }, { data: allDevis }] = await Promise.all([
+  // Factures + commandes boutique — période courante et précédente
+  const [
+    { data: docs }, { data: prevDocs }, { data: allDevis },
+    { data: shopOrders }, { data: prevShopOrders },
+  ] = await Promise.all([
     admin.from("documents").select("total_ttc,status,client_name")
       .eq("user_id", uid).eq("type", "invoice")
       .gte("date", start).lte("date", end),
@@ -41,14 +44,24 @@ export async function GET(req: NextRequest) {
     admin.from("documents").select("status")
       .eq("user_id", uid).eq("type", "quote")
       .gte("date", start).lte("date", end),
+    admin.from("shop_orders").select("total")
+      .eq("user_id", uid).eq("payment_status", "paid")
+      .gte("created_at", start).lte("created_at", end),
+    admin.from("shop_orders").select("total")
+      .eq("user_id", uid).eq("payment_status", "paid")
+      .gte("created_at", prevStart).lte("created_at", prevEnd),
   ]);
 
-  const paidDocs   = (docs ?? []).filter(d => d.status === "paid");
-  const sentDocs   = (docs ?? []).filter(d => d.status === "sent");
-  const draftDocs  = (docs ?? []).filter(d => d.status === "draft");
-  const ca_current = paidDocs.reduce((s, d) => s + (d.total_ttc ?? 0), 0);
-  const impayés    = sentDocs.reduce((s, d) => s + (d.total_ttc ?? 0), 0);
-  const ca_prev    = (prevDocs ?? []).filter(d => d.status === "paid").reduce((s, d) => s + (d.total_ttc ?? 0), 0);
+  const paidDocs     = (docs ?? []).filter(d => d.status === "paid");
+  const sentDocs     = (docs ?? []).filter(d => d.status === "sent");
+  const draftDocs    = (docs ?? []).filter(d => d.status === "draft");
+  const ca_docs      = paidDocs.reduce((s, d) => s + (d.total_ttc ?? 0), 0);
+  const ca_shop      = (shopOrders ?? []).reduce((s, o) => s + (o.total ?? 0), 0);
+  const ca_current   = ca_docs + ca_shop;
+  const impayés      = sentDocs.reduce((s, d) => s + (d.total_ttc ?? 0), 0);
+  const ca_prev_docs = (prevDocs ?? []).filter(d => d.status === "paid").reduce((s, d) => s + (d.total_ttc ?? 0), 0);
+  const ca_prev_shop = (prevShopOrders ?? []).reduce((s, o) => s + (o.total ?? 0), 0);
+  const ca_prev      = ca_prev_docs + ca_prev_shop;
 
   // Devis → taux de conversion
   const devisTotal    = (allDevis ?? []).length;
