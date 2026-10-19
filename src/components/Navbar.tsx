@@ -6,23 +6,29 @@ import DjamaLogo from "@/components/DjamaLogo";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, Globe } from "lucide-react";
 import { APPS_DATA } from "@/lib/applications-data";
+import { useLanguage } from "@/lib/language-context";
+import type { Lang } from "@/lib/language-context";
 
 const ease   = [0.22, 1, 0.36, 1] as const;
 const GOLD   = "#c9a55a";
 const GOLDR  = "201,165,90";
 
+const LANG_CYCLE: Record<Lang, Lang> = { fr: "en", en: "ar", ar: "fr" };
+const LANG_LABELS: Record<Lang, string> = { fr: "FR", en: "EN", ar: "AR" };
+
 export default function Navbar() {
   const pathname = usePathname();
+  const { lang, setLang, dict, isRTL } = useLanguage();
 
   const NAV_LINKS = [
-    { href: "/",                label: "Accueil"       },
-    { href: "/applications",    label: "Applications"  },
-    { href: "/industries",      label: "Industries"    },
-    { href: "/communaute",      label: "Communauté"    },
-    { href: "/tarification",    label: "Tarification"  },
-{ href: "/contact",         label: "Aide"          },
+    { href: "/",             label: dict.nav.home      },
+    { href: "/applications", label: lang === "ar" ? "التطبيقات"  : lang === "en" ? "Applications" : "Applications"  },
+    { href: "/industries",   label: lang === "ar" ? "القطاعات"   : lang === "en" ? "Industries"   : "Industries"    },
+    { href: "/communaute",   label: lang === "ar" ? "المجتمع"    : lang === "en" ? "Community"    : "Communauté"    },
+    { href: "/tarification", label: dict.nav.offres    },
+    { href: "/contact",      label: dict.nav.contact   },
   ];
 
   const [scrolled,  setScrolled]  = useState(false);
@@ -216,7 +222,7 @@ export default function Navbar() {
                         className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-[0.85rem] font-extrabold text-black"
                         style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
                       >
-                        Essayer gratuitement <ArrowRight size={13} />
+                        {dict.nav.freeQuote} <ArrowRight size={13} />
                       </Link>
                     </div>
                   </div>
@@ -232,11 +238,21 @@ export default function Navbar() {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
             className="hidden md:flex items-center gap-2"
           >
+            {/* Sélecteur de langue */}
+            <button
+              onClick={() => setLang(LANG_CYCLE[lang])}
+              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[0.78rem] font-semibold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+              title={dict.nav.language}
+            >
+              <Globe size={13} />
+              {LANG_LABELS[lang]}
+            </button>
+
             <Link
               href="/espace-client"
               className="px-4 py-2 text-[0.92rem] font-medium text-gray-500 transition-colors hover:text-gray-900"
             >
-              Connexion
+              {lang === "ar" ? "تسجيل الدخول" : lang === "en" ? "Sign in" : "Connexion"}
             </Link>
 
             <Link
@@ -244,7 +260,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[0.88rem] font-extrabold text-black transition-all hover:opacity-90 hover:shadow-[0_4px_20px_rgba(201,165,90,0.35)]"
               style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
             >
-              Essayer gratuitement
+              {dict.nav.freeQuote}
             </Link>
           </motion.div>
 
@@ -323,6 +339,25 @@ export default function Navbar() {
               })}
 
             </motion.nav>
+
+            {/* Sélecteur langue + CTA mobile */}
+            <div className="mx-4 mt-6 flex items-center gap-3 pb-8">
+              <button
+                onClick={() => setLang(LANG_CYCLE[lang])}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-500 transition-colors hover:bg-gray-50"
+              >
+                <Globe size={14} />
+                {LANG_LABELS[lang]} — {lang === "fr" ? "Français" : lang === "en" ? "English" : "العربية"}
+              </button>
+              <Link
+                href="/espace-client"
+                onClick={() => setMenuOpen(false)}
+                className="flex-1 rounded-xl py-2.5 text-center text-sm font-extrabold text-black"
+                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+              >
+                {dict.nav.freeQuote}
+              </Link>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

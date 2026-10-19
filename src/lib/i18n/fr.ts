@@ -9,7 +9,7 @@ export const fr: Translations = {
     about: "À propos",
     contact: "Contact",
     clientArea: "Espace client",
-    freeQuote: "Devis gratuit",
+    freeQuote: "Essayer gratuitement",
     language: "Langue",
   },
 

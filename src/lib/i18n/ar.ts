@@ -9,7 +9,7 @@ export const ar: Translations = {
     about: "من نحن",
     contact: "اتصل بنا",
     clientArea: "فضاء العميل",
-    freeQuote: "عرض مجاني",
+    freeQuote: "ابدأ مجانًا",
     language: "اللغة",
   },
 

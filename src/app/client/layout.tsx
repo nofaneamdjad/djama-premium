@@ -12,6 +12,7 @@ import { useSubscription } from "@/lib/use-require-subscription";
 import { isPathAllowedForFreeUser } from "@/lib/free-plan";
 import OnboardingModal from "@/components/OnboardingModal";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
+import { LanguageProvider } from "@/lib/language-context";
 import { APP_REGISTRY } from "@/lib/app-registry";
 
 import { DesktopSidebar, MobileSidebar } from "@/components/nav/Sidebar";
@@ -324,9 +325,11 @@ const DARK_PAGES = [
 /* ─────────── LAYOUT ROOT ─────────── */
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider>
-      <ClientLayoutInner>{children}</ClientLayoutInner>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <ClientLayoutInner>{children}</ClientLayoutInner>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
 

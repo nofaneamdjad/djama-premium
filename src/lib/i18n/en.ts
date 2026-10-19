@@ -9,7 +9,7 @@ export const en: Translations = {
     about: "About",
     contact: "Contact",
     clientArea: "Client Area",
-    freeQuote: "Free Quote",
+    freeQuote: "Start for free",
     language: "Language",
   },
 
