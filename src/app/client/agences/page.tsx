@@ -7,6 +7,7 @@ import {
   Briefcase, Plus, Search, X, Loader2, Trash2, Pencil,
   Globe, Mail, MapPin, ChevronRight, Download,
   Star, Building2, Users, Activity, TrendingUp, RefreshCw,
+  FileQuestion,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -198,6 +199,10 @@ export default function PrestatairesPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => router.push("/client/agences/devis")}
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold border ${isDark ? "border-white/[0.10] text-white/60 hover:text-white/80" : "border-black/[0.08] text-gray-500 hover:text-gray-700"} transition`}>
+              <FileQuestion size={13} /> Devis
+            </button>
             <button onClick={() => window.open("/api/vendors/export", "_blank")}
               className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold border ${isDark ? "border-white/[0.10] text-white/60 hover:text-white/80" : "border-black/[0.08] text-gray-500 hover:text-gray-700"} transition`}>
               <Download size={13} />
