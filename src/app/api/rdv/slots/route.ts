@@ -75,12 +75,15 @@ export async function GET(req: NextRequest) {
   // 1. Résoudre token → booking page (user_id)
   const { data: page } = await admin
     .from("rdv_booking_pages")
-    .select("id, user_id, is_active")
+    .select("id, user_id, is_active, expires_at")
     .eq("token", token)
     .single();
 
   if (!page) return NextResponse.json({ error: "Page introuvable." }, { status: 404 });
   if (!page.is_active) return NextResponse.json({ error: "Page désactivée." }, { status: 403 });
+  if (page.expires_at && new Date(page.expires_at as string) < new Date()) {
+    return NextResponse.json({ error: "Cette page de réservation a expiré." }, { status: 410 });
+  }
 
   // 2. Récupérer le type de RDV (doit appartenir au même user)
   const { data: rdvType } = await admin

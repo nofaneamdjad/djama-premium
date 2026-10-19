@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Resend } from "resend";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { allowed } = checkRateLimit(user.id, 20, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(user.id, 20, 60 * 60 * 1000);
   if (!allowed) return NextResponse.json({ error: "Trop de requêtes." }, { status: 429 });
 
   const { portal_client_id } = await req.json() as { portal_client_id: string };
@@ -86,10 +86,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erreur d'envoi email" }, { status: 500 });
   }
 
-  // Mise à jour : invitation_sent_at + portal_status = invited
+  // Mise à jour : invitation_sent_at + portal_status + expiration token (30 jours)
+  const invExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   await supabase
     .from("portail_clients")
-    .update({ invitation_sent_at: new Date().toISOString(), portal_status: "invited" })
+    .update({
+      invitation_sent_at: new Date().toISOString(),
+      portal_status: "invited",
+      invitation_token_expires_at: invExpires,
+    })
     .eq("id", pc.id)
     .eq("user_id", user.id);
 

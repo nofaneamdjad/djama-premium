@@ -81,7 +81,7 @@ export default function PortailClientDashboard() {
       // Récupère l'accès portail via token (lecture publique limitée par la politique RLS)
       const { data, error: e } = await supabase
         .from("portail_clients")
-        .select("id,nom,email,entreprise,portal_status,portal_user_id,portal_activated_at,permissions,welcome_message,user_id")
+        .select("id,nom,email,entreprise,portal_status,portal_user_id,portal_activated_at,permissions,welcome_message,user_id,invitation_token_expires_at")
         .eq("id", id)
         .eq("invitation_token", token)
         .maybeSingle();
@@ -89,6 +89,8 @@ export default function PortailClientDashboard() {
       if (e || !data) { setError("Lien invalide ou expiré."); setLoading(false); return; }
       if (data.portal_status === "suspended") { setError("Votre accès a été suspendu. Contactez votre prestataire."); setLoading(false); return; }
       if (data.portal_status === "expired")   { setError("Ce lien d'accès a expiré."); setLoading(false); return; }
+      const invExp = (data as { invitation_token_expires_at?: string | null }).invitation_token_expires_at;
+      if (invExp && new Date(invExp) < new Date()) { setError("Ce lien d'invitation a expiré. Demandez un nouveau lien à votre prestataire."); setLoading(false); return; }
 
       setAccess(data as PortalAccess);
 

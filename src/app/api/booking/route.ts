@@ -31,6 +31,9 @@ export async function GET(req: NextRequest) {
     .single();
 
   if (error || !page) return NextResponse.json({ error: "Page introuvable" }, { status: 404 });
+  if (page.expires_at && new Date(page.expires_at) < new Date()) {
+    return NextResponse.json({ error: "Cette page de réservation a expiré." }, { status: 410 });
+  }
 
   // Return page config (without user_id)
   if (!date) {
@@ -118,6 +121,9 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (pageErr || !page) return NextResponse.json({ error: "Page introuvable" }, { status: 404 });
+  if (page.expires_at && new Date(page.expires_at) < new Date()) {
+    return NextResponse.json({ error: "Cette page de réservation a expiré." }, { status: 410 });
+  }
 
   const dur = page.duration_minutes as number;
   const [h, m] = time.split(":").map(Number);

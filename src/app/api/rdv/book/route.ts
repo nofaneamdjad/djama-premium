@@ -102,12 +102,15 @@ export async function POST(req: NextRequest) {
   // Résolution token → booking page
   const { data: page } = await admin
     .from("rdv_booking_pages")
-    .select("id, user_id, organization_id, is_active")
+    .select("id, user_id, organization_id, is_active, expires_at")
     .eq("token", token)
     .single();
 
-  if (!page)          return NextResponse.json({ error: "Page introuvable." }, { status: 404 });
+  if (!page)           return NextResponse.json({ error: "Page introuvable." }, { status: 404 });
   if (!page.is_active) return NextResponse.json({ error: "Page désactivée." }, { status: 403 });
+  if (page.expires_at && new Date(page.expires_at as string) < new Date()) {
+    return NextResponse.json({ error: "Cette page de réservation a expiré." }, { status: 410 });
+  }
 
   // Type de RDV (doit appartenir au user de la page)
   const { data: rdvType } = await admin
