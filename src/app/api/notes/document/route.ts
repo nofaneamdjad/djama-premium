@@ -7,7 +7,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { buildStoragePath, FILE_TYPE_META, type FileType } from "@/lib/wopi";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
   };
 
   // Rate limit création (Phase 11)
-  const { allowed } = checkRateLimit(user.id, 100, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(user.id, 100, 60 * 60 * 1000);
   if (!allowed) return err("Trop de documents créés. Réessayez dans une heure.", 429);
 
   // Valider doc_type

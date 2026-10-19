@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }              from "@supabase/supabase-js";
-import { checkRateLimit }            from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit }            from "@/lib/rate-limit";
 import { createHash }                from "crypto";
 
 export const runtime = "nodejs";
@@ -21,7 +21,7 @@ function isValidEmail(email: string): boolean {
 export async function POST(req: NextRequest) {
   // ── Rate limit : 5 inscriptions par IP par heure ──────────────────────────
   const ip = getClientIp(req);
-  const { allowed } = checkRateLimit(`waitlist:${ip}`, 5, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(`waitlist:${ip}`, 5, 60 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
       { error: "Trop de tentatives. Réessayez dans une heure." },

@@ -14,7 +14,7 @@ import Anthropic                    from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient }        from "@supabase/ssr";
 import { cookies }                   from "next/headers";
-import { checkRateLimit }            from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit }            from "@/lib/rate-limit";
 import { createLogger }              from "@/lib/logger";
 
 export const runtime  = "nodejs";

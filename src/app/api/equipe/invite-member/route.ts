@@ -18,7 +18,7 @@ import { createClient }               from "@supabase/supabase-js";
 import { createServerClient }         from "@supabase/ssr";
 import { cookies }                    from "next/headers";
 import { createSupabaseAdmin }        from "@/lib/supabase-server";
-import { checkRateLimit }             from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit }             from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const { data: { user: caller } } = await supabaseAuth.auth.getUser();
   if (!caller) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
 
-  const { allowed } = checkRateLimit(caller.id, 10, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(caller.id, 10, 60 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json({ error: "Limite atteinte : 10 invitations par heure." }, { status: 429 });
   }

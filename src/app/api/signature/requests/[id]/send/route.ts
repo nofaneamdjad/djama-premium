@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit } from "@/lib/rate-limit";
 import { Resend } from "resend";
 
 export const runtime = "nodejs";
@@ -88,7 +88,7 @@ export async function POST(
   const user = await getUser();
   if (!user) return err("Non authentifié", 401);
 
-  const { allowed } = checkRateLimit(user.id, 20, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(user.id, 20, 60 * 60 * 1000);
   if (!allowed) return err("Trop d'envois. Réessayez dans une heure.", 429);
 
   const { id } = await params;

@@ -21,7 +21,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient }        from "@supabase/ssr";
 import { cookies }                   from "next/headers";
 import { createSupabaseAdmin }       from "@/lib/supabase-server";
-import { checkRateLimit }            from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit }            from "@/lib/rate-limit";
 import { getOrgRole }                from "@/lib/org-permissions";
 
 export const runtime = "nodejs";
