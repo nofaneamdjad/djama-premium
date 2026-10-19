@@ -435,13 +435,13 @@ export const APP_REGISTRY: readonly AppEntry[] = [
   },
   {
     id: "agences",
-    name: "Agences",
+    name: "Prestataires & Partenaires",
     icon: Briefcase,
     route: "/client/agences",
     category: "commercial",
-    description: "Annuaire des agences et partenaires",
+    description: "Gérez vos prestataires, sous-traitants et partenaires",
     permission: "premium",
-    keywords: ["agence", "partenaire", "prestataire", "réseau"],
+    keywords: ["agence", "partenaire", "prestataire", "sous-traitant", "fournisseur", "réseau"],
   },
   {
     id: "chatbot",

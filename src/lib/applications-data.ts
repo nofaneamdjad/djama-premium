@@ -924,24 +924,24 @@ export const APPS_DATA: AppDetail[] = [
   },
   {
     slug: "agences",
-    label: "Agences partenaires",
+    label: "Prestataires & Partenaires",
     category: "Gestion",
     color: "#7c3aed",
     bg: "#ede9fe",
     icon: Briefcase,
     clientHref: "/client/agences",
     hero: {
-      title: "Un réseau d'agences partenaires à votre service",
-      subtitle: "Accédez à des agences digitales certifiées DJAMA pour des projets d'envergure — développement, design, marketing et conseil.",
+      title: "Gérez tous vos prestataires et partenaires en un seul endroit",
+      subtitle: "Centralisez vos freelances, agences, sous-traitants et fournisseurs. Suivez les missions, les devis et l'historique de chaque collaboration.",
     },
-    valueProposition: "Pour les projets qui dépassent les outils self-service, notre réseau d'agences partenaires vous accompagne de A à Z.",
+    valueProposition: "Un carnet de contacts professionnel dédié à vos prestataires externes, avec suivi des missions, demandes de devis et évaluation de chaque partenaire.",
     features: [
-      { title: "Agences certifiées", description: "Toutes nos agences partenaires sont certifiées et évaluées par DJAMA.", icon: Shield },
-      { title: "Par spécialité", description: "Trouvez une agence spécialisée dans votre secteur ou votre besoin spécifique.", icon: Search },
-      { title: "Devis comparatifs", description: "Recevez des devis de plusieurs agences et comparez facilement.", icon: BarChart2 },
-      { title: "Suivi de mission", description: "Suivez l'avancement de votre projet avec votre agence depuis DJAMA.", icon: TrendingUp },
+      { title: "Annuaire centralisé", description: "Regroupez tous vos prestataires avec profil complet : contact, spécialités, localisation, évaluation.", icon: Users },
+      { title: "Suivi des missions", description: "Associez des missions à chaque prestataire avec statut, dates et montants — tout l'historique au même endroit.", icon: TrendingUp },
+      { title: "Demandes de devis", description: "Créez des demandes de devis, collectez les réponses de plusieurs prestataires et sélectionnez le lauréat.", icon: FileText },
+      { title: "Export CSV", description: "Exportez votre base prestataires en CSV pour vos tableaux de bord ou reportings externes.", icon: BarChart2 },
     ],
-    crossSell: { slug: "marketplace", label: "Marketplace", teaser: "Vous cherchez des prestataires indépendants pour des missions ponctuelles ?" },
+    crossSell: { slug: "projets", label: "Projets", teaser: "Vous gérez des projets ? Liez vos missions prestataires directement à vos projets." },
   },
 ];
 
