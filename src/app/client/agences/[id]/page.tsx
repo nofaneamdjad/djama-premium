@@ -5,9 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Briefcase, Building2, Mail, Phone, Globe, MapPin,
-  Star, Pencil, Trash2, Loader2, Plus, X, Check, Calendar,
-  FileText, MessageSquare, DollarSign, Clock, ChevronRight,
-  Linkedin, ExternalLink,
+  Star, Plus, X, Check, Calendar,
+  FileText, DollarSign, Loader2, Trash2,
+  Linkedin, ExternalLink, FolderOpen,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import type { Vendor, VendorMission, VendorDocument, MissionStatus } from "@/lib/vendors/types";
@@ -25,6 +25,15 @@ const MISSION_STATUS_COLORS: Record<MissionStatus, string> = {
   annulee:   "#6b7280",
 };
 
+const DOC_TYPE_LABELS: Record<string, string> = {
+  contrat:     "Contrat",
+  devis:       "Devis",
+  facture:     "Facture",
+  nda:         "NDA",
+  bon_commande:"Bon de commande",
+  autre:       "Autre",
+};
+
 type Tab = "info" | "missions" | "documents" | "notes";
 
 interface MissionFormState {
@@ -35,12 +44,27 @@ interface MissionFormState {
   amount: string;
   currency: string;
   description: string;
+  project_id: string;
 }
 
 const EMPTY_MISSION: MissionFormState = {
   title: "", status: "en_cours", start_date: "", end_date: "",
-  amount: "", currency: "EUR", description: "",
+  amount: "", currency: "EUR", description: "", project_id: "",
 };
+
+interface DocFormState {
+  title: string;
+  document_type: string;
+  doc_date: string;
+  notes: string;
+  file_url: string;
+}
+
+const EMPTY_DOC: DocFormState = {
+  title: "", document_type: "autre", doc_date: "", notes: "", file_url: "",
+};
+
+interface ProjectOption { id: string; title: string; status: string; }
 
 export default function VendorDetailPage() {
   const { isDark } = useTheme();
@@ -48,17 +72,26 @@ export default function VendorDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [vendor, setVendor]     = useState<Vendor | null>(null);
-  const [missions, setMissions] = useState<VendorMission[]>([]);
+  const [vendor, setVendor]       = useState<Vendor | null>(null);
+  const [missions, setMissions]   = useState<VendorMission[]>([]);
   const [documents, setDocuments] = useState<VendorDocument[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
-  const [tab, setTab]           = useState<Tab>("info");
+  const [projects, setProjects]   = useState<ProjectOption[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
+  const [tab, setTab]             = useState<Tab>("info");
 
-  const [missionModal, setMissionModal] = useState(false);
-  const [missionForm, setMissionForm]   = useState<MissionFormState>(EMPTY_MISSION);
-  const [savingMission, setSavingMission] = useState(false);
+  // Missions
+  const [missionModal, setMissionModal]     = useState(false);
+  const [missionForm, setMissionForm]       = useState<MissionFormState>(EMPTY_MISSION);
+  const [savingMission, setSavingMission]   = useState(false);
   const [deleteMissionId, setDeleteMissionId] = useState<string | null>(null);
+
+  // Documents
+  const [docModal, setDocModal]     = useState(false);
+  const [docForm, setDocForm]       = useState<DocFormState>(EMPTY_DOC);
+  const [savingDoc, setSavingDoc]   = useState(false);
+  const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
+  const [docsLoaded, setDocsLoaded] = useState(false);
 
   const [ratingUpdating, setRatingUpdating] = useState(false);
 
@@ -75,16 +108,18 @@ export default function VendorDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [vRes, mRes] = await Promise.all([
+      const [vRes, mRes, pRes] = await Promise.all([
         fetch(`/api/vendors/${id}`),
         fetch(`/api/vendors/${id}/missions`),
+        fetch("/api/vendors/projects"),
       ]);
       if (!vRes.ok) throw new Error("Prestataire introuvable");
       const vData = await vRes.json();
       const mData = mRes.ok ? await mRes.json() : { missions: [] };
+      const pData = pRes.ok ? await pRes.json() : { projects: [] };
       setVendor(vData.vendor);
       setMissions(mData.missions ?? []);
-      setDocuments(vData.documents ?? []);
+      setProjects(pData.projects ?? []);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Erreur de chargement");
     } finally {
@@ -92,7 +127,25 @@ export default function VendorDetailPage() {
     }
   }, [id]);
 
+  const loadDocs = useCallback(async () => {
+    if (docsLoaded) return;
+    try {
+      const res = await fetch(`/api/vendors/${id}/documents`);
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data.documents ?? []);
+        setDocsLoaded(true);
+      }
+    } catch (e: unknown) {
+      console.error(e);
+    }
+  }, [id, docsLoaded]);
+
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (tab === "documents") loadDocs();
+  }, [tab, loadDocs]);
 
   async function updateRating(rating: number) {
     if (!vendor) return;
@@ -123,6 +176,7 @@ export default function VendorDetailPage() {
         amount:      missionForm.amount ? Number(missionForm.amount) : null,
         currency:    missionForm.currency,
         description: missionForm.description || null,
+        project_id:  missionForm.project_id || null,
       };
       const res = await fetch(`/api/vendors/${id}/missions`, {
         method: "POST",
@@ -161,6 +215,47 @@ export default function VendorDetailPage() {
       if (!res.ok) return;
       const data = await res.json();
       setMissions(prev => prev.map(m => m.id === missionId ? data.mission : m));
+    } catch (e: unknown) {
+      console.error(e);
+    }
+  }
+
+  async function saveDoc() {
+    if (!docForm.title.trim()) return;
+    setSavingDoc(true);
+    try {
+      const res = await fetch(`/api/vendors/${id}/documents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title:         docForm.title.trim(),
+          document_type: docForm.document_type,
+          doc_date:      docForm.doc_date || null,
+          notes:         docForm.notes || null,
+          file_url:      docForm.file_url || null,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setDocuments(prev => [data.document, ...prev]);
+      setDocModal(false);
+      setDocForm(EMPTY_DOC);
+    } catch (e: unknown) {
+      console.error(e);
+    } finally {
+      setSavingDoc(false);
+    }
+  }
+
+  async function deleteDoc(docId: string) {
+    try {
+      await fetch(`/api/vendors/${id}/documents`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ doc_id: docId }),
+      });
+      setDocuments(prev => prev.filter(d => d.id !== docId));
+      setDeleteDocId(null);
     } catch (e: unknown) {
       console.error(e);
     }
@@ -222,7 +317,6 @@ export default function VendorDetailPage() {
                 {VENDOR_TYPE_LABELS[vendor.type as keyof typeof VENDOR_TYPE_LABELS]}
                 {vendor.country && ` · ${vendor.city ?? vendor.country}`}
               </p>
-              {/* Rating */}
               <div className="flex items-center gap-1 mt-1.5">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <button key={i} onClick={() => updateRating(i + 1)} disabled={ratingUpdating}
@@ -257,7 +351,6 @@ export default function VendorDetailPage() {
         {tab === "info" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}
             className="space-y-3">
-            {/* Contact principal */}
             {(vendor.contact_name || vendor.contact_email || vendor.contact_phone) && (
               <div className={`rounded-2xl border p-4 ${s.card}`}>
                 <h3 className={`text-[11px] font-semibold uppercase tracking-wide ${s.muted} mb-3`}>Contact principal</h3>
@@ -287,7 +380,6 @@ export default function VendorDetailPage() {
               </div>
             )}
 
-            {/* Coordonnées */}
             <div className={`rounded-2xl border p-4 ${s.card}`}>
               <h3 className={`text-[11px] font-semibold uppercase tracking-wide ${s.muted} mb-3`}>Coordonnées</h3>
               <div className="space-y-2">
@@ -314,16 +406,14 @@ export default function VendorDetailPage() {
               </div>
             </div>
 
-            {/* Fiche */}
             <div className={`rounded-2xl border p-4 ${s.card}`}>
               <h3 className={`text-[11px] font-semibold uppercase tracking-wide ${s.muted} mb-3`}>Fiche</h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                 {[
-                  { label: "Relation", value: VENDOR_RELATIONSHIP_LABELS[vendor.relationship as keyof typeof VENDOR_RELATIONSHIP_LABELS] },
-                  { label: "Statut", value: VENDOR_STATUS_LABELS[vendor.status] },
-
-                  { label: "Depuis", value: vendor.since ? new Date(vendor.since).toLocaleDateString("fr-FR", { year: "numeric", month: "long" }) : "—" },
-                  { label: "Missions", value: String(missions.length) },
+                  { label: "Relation",  value: VENDOR_RELATIONSHIP_LABELS[vendor.relationship as keyof typeof VENDOR_RELATIONSHIP_LABELS] },
+                  { label: "Statut",    value: VENDOR_STATUS_LABELS[vendor.status] },
+                  { label: "Depuis",    value: vendor.since ? new Date(vendor.since).toLocaleDateString("fr-FR", { year: "numeric", month: "long" }) : "—" },
+                  { label: "Missions",  value: String(missions.length) },
                   { label: "Évaluation", value: vendor.rating > 0 ? `${vendor.rating}/5` : "—" },
                 ].map(({ label, value }) => (
                   <div key={label}>
@@ -396,7 +486,7 @@ export default function VendorDetailPage() {
                         )}
                         {m.project && (
                           <span className={`flex items-center gap-1 text-[11px] ${s.muted}`}>
-                            <FileText size={10} /> {m.project.title}
+                            <FolderOpen size={10} /> {m.project.title}
                           </span>
                         )}
                       </div>
@@ -416,31 +506,51 @@ export default function VendorDetailPage() {
         {tab === "documents" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}
             className="space-y-2">
+            <button onClick={() => setDocModal(true)}
+              className="w-full rounded-2xl py-3 text-[12px] font-bold flex items-center justify-center gap-2 text-white"
+              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+              <Plus size={14} /> Ajouter un document
+            </button>
+
             {documents.length === 0 ? (
               <div className={`rounded-2xl border p-6 text-center ${s.card}`}>
                 <FileText size={24} className="mx-auto mb-2 opacity-30" style={{ color: "#c9a55a" }} />
                 <p className={`text-[12px] ${s.muted}`}>Aucun document associé</p>
-                <p className={`text-[11px] ${s.muted} mt-1`}>Les contrats et devis liés apparaîtront ici</p>
+                <p className={`text-[11px] ${s.muted} mt-1`}>Contrats, devis, NDA et factures liés à ce prestataire</p>
               </div>
             ) : (
               documents.map(doc => (
                 <div key={doc.id} className={`rounded-2xl border p-3.5 flex items-center gap-3 ${s.card}`}>
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#c9a55a18" }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#c9a55a18" }}>
                     <FileText size={16} style={{ color: "#c9a55a" }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`text-[13px] font-semibold ${s.text} truncate`}>{doc.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-[11px] ${s.muted}`}>{doc.document_type}</span>
-                      {doc.doc_date && <span className={`text-[11px] ${s.muted}`}>{new Date(doc.doc_date).toLocaleDateString("fr-FR")}</span>}
+                      <span className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                        style={{ background: "#c9a55a18", color: "#c9a55a" }}>
+                        {DOC_TYPE_LABELS[doc.document_type] ?? doc.document_type}
+                      </span>
+                      {doc.doc_date && (
+                        <span className={`text-[11px] ${s.muted}`}>
+                          {new Date(doc.doc_date).toLocaleDateString("fr-FR")}
+                        </span>
+                      )}
                     </div>
+                    {doc.notes && <p className={`text-[11px] ${s.muted} mt-0.5 truncate`}>{doc.notes}</p>}
                   </div>
-                  {doc.file_url && (
-                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg hover:bg-[#c9a55a]/10 transition">
-                      <ExternalLink size={13} style={{ color: "#c9a55a" }} />
-                    </a>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {doc.file_url && (
+                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                        className="p-1.5 rounded-lg hover:bg-[#c9a55a]/10 transition">
+                        <ExternalLink size={13} style={{ color: "#c9a55a" }} />
+                      </a>
+                    )}
+                    <button onClick={() => setDeleteDocId(doc.id)}
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 transition">
+                      <Trash2 size={12} className="text-red-400/60" />
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -471,7 +581,7 @@ export default function VendorDetailPage() {
                   <X size={16} className={s.muted} />
                 </button>
               </div>
-              <div className="px-5 pb-6 pt-4 space-y-3 overflow-y-auto max-h-[60vh]">
+              <div className="px-5 pb-6 pt-4 space-y-3 overflow-y-auto max-h-[70vh]">
                 <div>
                   <label className={`block text-[11px] font-semibold mb-1 ${s.muted}`}>Titre *</label>
                   <input value={missionForm.title} onChange={e => setMissionForm(f => ({ ...f, title: e.target.value }))}
@@ -491,6 +601,18 @@ export default function VendorDetailPage() {
                     ))}
                   </div>
                 </div>
+                {projects.length > 0 && (
+                  <div>
+                    <label className={`block text-[11px] font-semibold mb-1 ${s.muted}`}>Projet associé</label>
+                    <select value={missionForm.project_id} onChange={e => setMissionForm(f => ({ ...f, project_id: e.target.value }))}
+                      className={s.input}>
+                      <option value="">— Aucun projet —</option>
+                      {projects.map(p => (
+                        <option key={p.id} value={p.id}>{p.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className={`block text-[11px] font-semibold mb-1 ${s.muted}`}>Début</label>
@@ -540,6 +662,70 @@ export default function VendorDetailPage() {
         )}
       </AnimatePresence>
 
+      {/* Document Add Modal */}
+      <AnimatePresence>
+        {docModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className={`w-full max-w-lg rounded-t-3xl overflow-hidden ${isDark ? "bg-[#0d0e15]" : "bg-white"}`}>
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b"
+                style={{ borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+                <h2 className={`text-[15px] font-black ${s.text}`}>Ajouter un document</h2>
+                <button onClick={() => setDocModal(false)}
+                  className={`p-2 rounded-xl ${isDark ? "hover:bg-white/10" : "hover:bg-black/05"} transition`}>
+                  <X size={16} className={s.muted} />
+                </button>
+              </div>
+              <div className="px-5 pb-6 pt-4 space-y-3 overflow-y-auto max-h-[65vh]">
+                <div>
+                  <label className={`block text-[11px] font-semibold mb-1 ${s.muted}`}>Titre *</label>
+                  <input value={docForm.title} onChange={e => setDocForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="Ex. Contrat de prestation 2024" className={s.input} />
+                </div>
+                <div>
+                  <label className={`block text-[11px] font-semibold mb-1 ${s.muted}`}>Type de document</label>
+                  <select value={docForm.document_type} onChange={e => setDocForm(f => ({ ...f, document_type: e.target.value }))}
+                    className={s.input}>
+                    {Object.entries(DOC_TYPE_LABELS).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={`block text-[11px] font-semibold mb-1 ${s.muted}`}>Date du document</label>
+                  <input type="date" value={docForm.doc_date} onChange={e => setDocForm(f => ({ ...f, doc_date: e.target.value }))}
+                    className={s.input} />
+                </div>
+                <div>
+                  <label className={`block text-[11px] font-semibold mb-1 ${s.muted}`}>URL du fichier</label>
+                  <input value={docForm.file_url} onChange={e => setDocForm(f => ({ ...f, file_url: e.target.value }))}
+                    placeholder="https://..." className={s.input} />
+                </div>
+                <div>
+                  <label className={`block text-[11px] font-semibold mb-1 ${s.muted}`}>Notes</label>
+                  <textarea value={docForm.notes} onChange={e => setDocForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder="Remarques sur ce document..." rows={2} className={`${s.input} resize-none`} />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => setDocModal(false)}
+                    className={`flex-1 rounded-xl py-2.5 text-[13px] font-semibold border ${isDark ? "border-white/[0.10] text-white/60" : "border-black/[0.08] text-gray-500"}`}>
+                    Annuler
+                  </button>
+                  <button onClick={saveDoc} disabled={savingDoc || !docForm.title.trim()}
+                    className="flex-1 rounded-xl py-2.5 text-[13px] font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50"
+                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+                    {savingDoc ? <Loader2 size={14} className="animate-spin" /> : null}
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Delete Mission Confirm */}
       <AnimatePresence>
         {deleteMissionId && (
@@ -563,14 +749,36 @@ export default function VendorDetailPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Delete Document Confirm */}
+      <AnimatePresence>
+        {deleteDocId && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className={`w-full max-w-xs rounded-3xl p-6 ${isDark ? "bg-[#0d0e15]" : "bg-white"}`}>
+              <h3 className={`text-[14px] font-black text-center ${s.text} mb-1`}>Supprimer ce document ?</h3>
+              <p className={`text-[11.5px] text-center ${s.muted} mb-5`}>Le document sera retiré de ce prestataire.</p>
+              <div className="flex gap-2">
+                <button onClick={() => setDeleteDocId(null)}
+                  className={`flex-1 rounded-xl py-2.5 text-[12px] font-semibold border ${isDark ? "border-white/[0.10] text-white/60" : "border-black/[0.08] text-gray-500"}`}>
+                  Annuler
+                </button>
+                <button onClick={() => deleteDoc(deleteDocId)}
+                  className="flex-1 rounded-xl py-2.5 text-[12px] font-bold text-white bg-red-500">
+                  Supprimer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-// Sous-composant notes inline pour garder la page plus lisible
 function VendorNotesEditor({
-  vendor, isDark, s,
-  onSaved,
+  vendor, isDark, s, onSaved,
 }: {
   vendor: Vendor;
   isDark: boolean;

@@ -7,7 +7,7 @@ import {
   Briefcase, Plus, Search, X, Loader2, Trash2, Pencil,
   Globe, Mail, MapPin, ChevronRight, Download,
   Star, Building2, Users, Activity, TrendingUp, RefreshCw,
-  FileQuestion,
+  FileQuestion, Upload, CheckCircle, AlertCircle,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
@@ -71,6 +71,12 @@ export default function PrestatairesPage() {
   const [form, setForm]           = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving]       = useState(false);
   const [deleteId, setDeleteId]   = useState<string | null>(null);
+
+  // Import CSV
+  const [importModal, setImportModal]     = useState(false);
+  const [importFile, setImportFile]       = useState<File | null>(null);
+  const [importing, setImporting]         = useState(false);
+  const [importResult, setImportResult]   = useState<{ imported: number; skipped: number; details: string[] } | null>(null);
 
   const s = {
     page:  isDark ? "bg-[#07080e]" : "bg-[#f0f2f5]",
@@ -169,6 +175,25 @@ export default function PrestatairesPage() {
     }
   }
 
+  async function runImport() {
+    if (!importFile) return;
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", importFile);
+      const res = await fetch("/api/vendors/import", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erreur import");
+      setImportResult(data);
+      load();
+    } catch (e: unknown) {
+      setImportResult({ imported: 0, skipped: 0, details: [e instanceof Error ? e.message : "Erreur inconnue"] });
+    } finally {
+      setImporting(false);
+    }
+  }
+
   function toggleSpeciality(s: string) {
     setForm(f => ({
       ...f,
@@ -202,6 +227,10 @@ export default function PrestatairesPage() {
             <button onClick={() => router.push("/client/agences/devis")}
               className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold border ${isDark ? "border-white/[0.10] text-white/60 hover:text-white/80" : "border-black/[0.08] text-gray-500 hover:text-gray-700"} transition`}>
               <FileQuestion size={13} /> Devis
+            </button>
+            <button onClick={() => { setImportFile(null); setImportResult(null); setImportModal(true); }}
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold border ${isDark ? "border-white/[0.10] text-white/60 hover:text-white/80" : "border-black/[0.08] text-gray-500 hover:text-gray-700"} transition`}>
+              <Upload size={13} />
             </button>
             <button onClick={() => window.open("/api/vendors/export", "_blank")}
               className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold border ${isDark ? "border-white/[0.10] text-white/60 hover:text-white/80" : "border-black/[0.08] text-gray-500 hover:text-gray-700"} transition`}>
@@ -531,6 +560,94 @@ export default function PrestatairesPage() {
                   className="flex-1 rounded-xl py-2.5 text-[12px] font-bold text-white bg-red-500">
                   Supprimer
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Import CSV Modal */}
+      <AnimatePresence>
+        {importModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className={`w-full max-w-lg rounded-t-3xl overflow-hidden ${isDark ? "bg-[#0d0e15]" : "bg-white"}`}>
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b"
+                style={{ borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+                <div className="flex items-center gap-2">
+                  <Upload size={15} style={{ color: "#c9a55a" }} />
+                  <h2 className={`text-[15px] font-black ${s.text}`}>Importer des prestataires</h2>
+                </div>
+                <button onClick={() => setImportModal(false)}
+                  className={`p-2 rounded-xl ${isDark ? "hover:bg-white/10" : "hover:bg-black/05"} transition`}>
+                  <X size={16} className={s.muted} />
+                </button>
+              </div>
+              <div className="px-5 pb-6 pt-4 space-y-4">
+                {/* Format hint */}
+                <div className={`rounded-xl p-3 text-[11.5px] ${isDark ? "bg-white/[0.04]" : "bg-black/[0.03]"} ${s.sub}`}>
+                  <p className="font-semibold mb-1">Format CSV attendu (en-têtes requis) :</p>
+                  <code className={`text-[10.5px] ${isDark ? "text-white/50" : "text-gray-500"}`}>
+                    nom, type, relation, statut, pays, ville, contact, email, telephone, site_web, specialites, notes
+                  </code>
+                  <p className="mt-1">Colonne <strong>nom</strong> obligatoire. Spécialités séparées par <strong>;</strong></p>
+                </div>
+
+                {/* File picker */}
+                <div>
+                  <label className={`block text-[11px] font-semibold mb-2 ${s.muted}`}>Fichier CSV</label>
+                  <label className={`flex items-center gap-3 rounded-xl border-2 border-dashed p-4 cursor-pointer transition ${
+                    importFile
+                      ? isDark ? "border-[#c9a55a]/40 bg-[#c9a55a]/05" : "border-[#c9a55a]/40 bg-[#c9a55a]/05"
+                      : isDark ? "border-white/[0.10] hover:border-white/20" : "border-black/[0.10] hover:border-black/20"
+                  }`}>
+                    <input type="file" accept=".csv,text/csv" className="hidden"
+                      onChange={e => { setImportFile(e.target.files?.[0] ?? null); setImportResult(null); }} />
+                    <Upload size={18} style={{ color: importFile ? "#c9a55a" : isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)" }} />
+                    <div>
+                      {importFile
+                        ? <p className={`text-[12.5px] font-semibold ${s.text}`}>{importFile.name}</p>
+                        : <p className={`text-[12.5px] ${s.muted}`}>Cliquer pour sélectionner un fichier .csv</p>
+                      }
+                    </div>
+                  </label>
+                </div>
+
+                {/* Result */}
+                {importResult && (
+                  <div className={`rounded-xl p-3 ${importResult.imported > 0 ? "bg-emerald-500/10" : "bg-red-500/10"}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      {importResult.imported > 0
+                        ? <CheckCircle size={14} className="text-emerald-400" />
+                        : <AlertCircle size={14} className="text-red-400" />
+                      }
+                      <span className={`text-[12.5px] font-semibold ${importResult.imported > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {importResult.imported} importé{importResult.imported > 1 ? "s" : ""}
+                        {importResult.skipped > 0 ? `, ${importResult.skipped} ignoré${importResult.skipped > 1 ? "s" : ""}` : ""}
+                      </span>
+                    </div>
+                    {importResult.details.slice(0, 3).map((d, i) => (
+                      <p key={i} className={`text-[11px] ${s.muted}`}>{d}</p>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button onClick={() => setImportModal(false)}
+                    className={`flex-1 rounded-xl py-2.5 text-[13px] font-semibold border ${isDark ? "border-white/[0.10] text-white/60" : "border-black/[0.08] text-gray-500"}`}>
+                    {importResult ? "Fermer" : "Annuler"}
+                  </button>
+                  {!importResult && (
+                    <button onClick={runImport} disabled={importing || !importFile}
+                      className="flex-1 rounded-xl py-2.5 text-[13px] font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+                      {importing ? <Loader2 size={14} className="animate-spin" /> : null}
+                      Importer
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
