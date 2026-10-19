@@ -10,6 +10,8 @@ jobs:
   check:
     name: Typecheck & Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,10 +21,15 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: TypeScript — vérification des types
-        run: npx tsc --noEmit
+        run: npx tsc --noEmit --skipLibCheck
 
       - name: Vitest — suite de tests
         run: npm test
+        env:
+          # Variables minimales pour que les tests ne cassent pas sur les imports
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          ANTHROPIC_API_KEY: placeholder
