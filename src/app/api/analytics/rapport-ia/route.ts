@@ -6,7 +6,7 @@ import Anthropic                     from "@anthropic-ai/sdk";
 import { computeHealthScore }        from "@/lib/analytics/health";
 import { computeForecast }           from "@/lib/analytics/forecast";
 import { build12MonthBuckets }       from "@/lib/analytics/periods";
-import { checkRateLimit }            from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit } from "@/lib/rate-limit";
 import type { OverviewData }         from "@/lib/analytics/types";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { allowed } = checkRateLimit(user.id, 5, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(user.id, 5, 60 * 60 * 1000);
   if (!allowed) return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une heure." }, { status: 429 });
 
   const sp    = req.nextUrl.searchParams;

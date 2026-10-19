@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit } from "@/lib/rate-limit";
 import {
   buildChatPrompt,
   parseAiJson,
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { allowed } = checkRateLimit(user.id, 30, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(user.id, 30, 60 * 60 * 1000);
   if (!allowed) return NextResponse.json({ error: "Limite atteinte (30 messages/heure)." }, { status: 429 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;

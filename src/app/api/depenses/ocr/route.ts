@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic                      from "@anthropic-ai/sdk";
 import { createServerClient }         from "@supabase/ssr";
 import { cookies }                    from "next/headers";
+import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -28,19 +29,6 @@ Si un champ est absent ou illisible, omets-le. Retourne uniquement le JSON.`;
 
 const ALLOWED = new Set(["image/jpeg","image/png","image/webp","image/gif"]);
 
-// Rate limit : 20 OCR/user/heure
-const ocrLimits = new Map<string, { count: number; resetAt: number }>();
-function checkRateLimit(userId: string): boolean {
-  const now  = Date.now();
-  const slot = ocrLimits.get(userId);
-  if (!slot || now > slot.resetAt) {
-    ocrLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    return true;
-  }
-  if (slot.count >= 20) return false;
-  slot.count++;
-  return true;
-}
 
 export async function POST(req: NextRequest) {
   /* ── Auth ── */
@@ -53,7 +41,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  if (!checkRateLimit(user.id)) {
+  const { allowed: _rl_allowed } = await checkRateLimitAsync(user.id, 30, 60 * 60 * 1000);
+  if (!_rl_allowed) {
     return NextResponse.json({ error: "Limite OCR atteinte" }, { status: 429 });
   }
 

@@ -8,24 +8,13 @@ import Anthropic                     from "@anthropic-ai/sdk";
 import { createServerClient }        from "@supabase/ssr";
 import { cookies }                   from "next/headers";
 import { createLogger }              from "@/lib/logger";
+import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const log = createLogger("social/generate");
 
-const generateLimits = new Map<string, { count: number; resetAt: number }>();
-function checkRateLimit(userId: string): boolean {
-  const now  = Date.now();
-  const slot = generateLimits.get(userId);
-  if (!slot || now > slot.resetAt) {
-    generateLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    return true;
-  }
-  if (slot.count >= 20) return false;
-  slot.count++;
-  return true;
-}
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
@@ -38,7 +27,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
 
-  if (!checkRateLimit(user.id)) {
+  const { allowed: _rl_allowed } = await checkRateLimitAsync(user.id, 30, 60 * 60 * 1000);
+  if (!_rl_allowed) {
     return NextResponse.json(
       { error: "Limite atteinte : 20 générations par heure." },
       { status: 429 },

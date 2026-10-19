@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 import { DEFAULT_WIDGET_CONFIG } from "@/lib/chatbot/defaults";
+import { checkRateLimitAsync } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime  = "nodejs";
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
   );
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  const { allowed: _rl } = await checkRateLimitAsync(user.id, 10, 60 * 60 * 1000);
+  if (!_rl) return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une heure." }, { status: 429 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "IA non configurée" }, { status: 503 });

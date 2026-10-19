@@ -21,7 +21,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimitAsync as checkRateLimit } from "@/lib/rate-limit";
 import { routeIntent } from "@/lib/ai/intent-router";
 import { getToolByName, type ArtifactData, type ToolName } from "@/lib/ai/tool-registry";
 import { jsonrepair } from "jsonrepair";
@@ -1366,7 +1366,7 @@ export async function POST(req: NextRequest) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { allowed } = checkRateLimit(user.id, 20, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(user.id, 20, 60 * 60 * 1000);
   if (!allowed) return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une heure." }, { status: 429 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;

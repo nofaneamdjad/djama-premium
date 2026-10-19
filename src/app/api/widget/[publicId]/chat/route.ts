@@ -7,6 +7,7 @@ import { getEnabledTools, executeTool } from "@/lib/chatbot/tools";
 import { sendWebhook } from "@/lib/chatbot/webhooks";
 import { isWithinBusinessHours } from "@/lib/chatbot/schedule";
 import { checkMessageQuota, incrementMonthlyCount } from "@/lib/chatbot/quotas";
+import { checkRateLimitAsync, getClientIp } from "@/lib/rate-limit";
 import type { ChatMessage } from "@/lib/chatbot/types";
 import type { BusinessHours } from "@/lib/chatbot/schedule";
 
@@ -47,6 +48,11 @@ export async function POST(req: NextRequest, { params }: Params) {
     .single();
 
   if (!bot) return new Response("Chatbot introuvable ou inactif", { status: 404 });
+
+  // Rate limiting par IP (endpoint public — pas de userId)
+  const ip = getClientIp(req);
+  const { allowed: _rl } = await checkRateLimitAsync(`widget:${publicId}:${ip}`, 20, 60 * 60 * 1000);
+  if (!_rl) return new Response("Trop de requêtes. Réessayez dans une heure.", { status: 429 });
 
   // Business hours — répondre avec le message d'absence si hors horaires
   const bh = bot.business_hours as BusinessHours | null;

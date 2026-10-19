@@ -7,6 +7,7 @@ import { buildSystemPrompt } from "@/lib/chatbot/defaults";
 import { retrieveContext } from "@/lib/chatbot/rag";
 import { getEnabledTools, executeTool } from "@/lib/chatbot/tools";
 import { sendWebhook } from "@/lib/chatbot/webhooks";
+import { checkRateLimitAsync } from "@/lib/rate-limit";
 import type { ChatMessage } from "@/lib/chatbot/types";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const user = await getUser();
   if (!user) return new Response("Non authentifié", { status: 401 });
+
+  const { allowed: _rl } = await checkRateLimitAsync(user.id, 30, 60 * 60 * 1000);
+  if (!_rl) return new Response("Trop de requêtes. Réessayez dans une heure.", { status: 429 });
 
   const body = await req.json() as {
     message:         string;

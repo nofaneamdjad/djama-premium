@@ -9,6 +9,7 @@ import { createClient }              from "@supabase/supabase-js";
 import { createServerClient }        from "@supabase/ssr";
 import { cookies }                   from "next/headers";
 import { createLogger }              from "@/lib/logger";
+import { checkRateLimitAsync }       from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +60,9 @@ export async function POST(req: NextRequest) {
   );
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  const { allowed: _rl } = await checkRateLimitAsync(user.id, 5, 60 * 60 * 1000);
+  if (!_rl) return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une heure." }, { status: 429 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

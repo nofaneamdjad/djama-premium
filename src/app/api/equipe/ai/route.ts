@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
 
-  const { allowed } = checkRateLimit(`equipe-ai:${user.id}`, 20, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(`equipe-ai:${user.id}`, 20, 60 * 60 * 1000);
   if (!allowed) return NextResponse.json({ error: "Limite atteinte : 20 requêtes/heure." }, { status: 429 });
 
   let body: { org_id?: string; question?: string; history?: { role: string; content: string }[] };

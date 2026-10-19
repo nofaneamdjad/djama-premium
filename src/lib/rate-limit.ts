@@ -101,22 +101,16 @@ const UPSTASH_ENABLED =
   Boolean(process.env.UPSTASH_REDIS_REST_TOKEN);
 
 /**
- * Vérifie si une clé (userId ou IP) est dans les limites autorisées.
+ * Rate limiting in-memory uniquement (par instance serveur).
+ * En production multi-instance Vercel, utiliser checkRateLimitAsync.
  *
- * @param key      Identifiant unique (userId ou IP)
- * @param maxReq   Nombre max de requêtes sur la fenêtre
- * @param windowMs Durée de la fenêtre en millisecondes
+ * @deprecated Préférer checkRateLimitAsync dans les Route Handlers async.
  */
 export function checkRateLimit(
   key: string,
   maxReq: number,
   windowMs: number,
 ): { allowed: boolean; remaining: number; resetAt: number } {
-  if (UPSTASH_ENABLED) {
-    // Upstash est async — on lance et ignore l'attente pour rester sync.
-    // Pour une protection stricte en prod, utiliser checkRateLimitAsync.
-    return checkRateLimitInMemory(key, maxReq, windowMs);
-  }
   return checkRateLimitInMemory(key, maxReq, windowMs);
 }
 
