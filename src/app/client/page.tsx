@@ -491,7 +491,7 @@ export default function AccueilPage() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <Link
-                  href="/client/abonnement"
+                  href="/client/abonnements"
                   className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
                   style={{ background: GOLD, color: "#111" }}
                 >
@@ -888,7 +888,7 @@ export default function AccueilPage() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold" style={{ color: t.text }}>Vos applications</h2>
-            <Link href="/client/applications" className="text-xs flex items-center gap-0.5 transition-opacity hover:opacity-70" style={{ color: t.text3 }}>
+            <Link href="/client/apps" className="text-xs flex items-center gap-0.5 transition-opacity hover:opacity-70" style={{ color: t.text3 }}>
               Toutes les applications <ChevronRight size={10} />
             </Link>
           </div>

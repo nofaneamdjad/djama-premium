@@ -15,7 +15,7 @@ import { ToastStack, useToastStack } from "@/components/ui/ToastStack";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { useTheme } from "@/lib/theme-context";
 const VIOLET = "#c9a55a";
-const GOLD   = "#C9A55A";
+const GOLD   = "#c9a55a";
 
 const PRIO = {
   low:    { label: "Faible",  color: "#6b7280", bg: "bg-gray-500/15",  txt: "text-gray-400"  },
