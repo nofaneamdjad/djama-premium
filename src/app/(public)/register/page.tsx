@@ -319,7 +319,7 @@ function RegisterForm() {
       password,
       options: {
         data: { name: nom.trim(), pays, pays_nom: selectedCountry?.name },
-        emailRedirectTo: `${window.location.origin}${redirectTo}`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
       },
     });
 
