@@ -7,7 +7,7 @@ import {
   ArrowLeft, Briefcase, Building2, Mail, Phone, Globe, MapPin,
   Star, Plus, X, Check, Calendar,
   FileText, DollarSign, Loader2, Trash2,
-  Linkedin, ExternalLink, FolderOpen,
+  Linkedin, ExternalLink, FolderOpen, UserCheck, Link2, Link2Off,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import type { Vendor, VendorMission, VendorDocument, MissionStatus } from "@/lib/vendors/types";
@@ -95,6 +95,14 @@ export default function VendorDetailPage() {
 
   const [ratingUpdating, setRatingUpdating] = useState(false);
 
+  // CRM link
+  const [crmModal, setCrmModal]         = useState(false);
+  const [crmContacts, setCrmContacts]   = useState<{ id: string; name: string; email: string | null; company: string | null }[]>([]);
+  const [crmSearch, setCrmSearch]       = useState("");
+  const [crmLoading, setCrmLoading]     = useState(false);
+  const [linkingCrm, setLinkingCrm]     = useState(false);
+  const [linkedContact, setLinkedContact] = useState<{ id: string; name: string; email: string | null; company: string | null } | null>(null);
+
   const s = {
     page:  isDark ? "bg-[#07080e]" : "bg-[#f0f2f5]",
     card:  isDark ? "bg-white/[0.03] border-white/[0.07]" : "bg-white border-black/[0.07] shadow-sm",
@@ -120,6 +128,16 @@ export default function VendorDetailPage() {
       setVendor(vData.vendor);
       setMissions(mData.missions ?? []);
       setProjects(pData.projects ?? []);
+      // Si le vendor a un contact CRM lié, on le charge
+      if (vData.vendor?.crm_contact_id) {
+        fetch(`/api/vendors/crm-contacts?q=`)
+          .then(r => r.ok ? r.json() : { contacts: [] })
+          .then(d => {
+            const found = (d.contacts ?? []).find((c: { id: string }) => c.id === vData.vendor.crm_contact_id);
+            if (found) setLinkedContact(found);
+          })
+          .catch(() => {});
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Erreur de chargement");
     } finally {
@@ -146,6 +164,56 @@ export default function VendorDetailPage() {
   useEffect(() => {
     if (tab === "documents") loadDocs();
   }, [tab, loadDocs]);
+
+  async function openCrmModal() {
+    setCrmSearch("");
+    setCrmLoading(true);
+    setCrmModal(true);
+    try {
+      const res = await fetch("/api/vendors/crm-contacts?q=");
+      const data = res.ok ? await res.json() : { contacts: [] };
+      setCrmContacts(data.contacts ?? []);
+    } catch { /* ignore */ } finally {
+      setCrmLoading(false);
+    }
+  }
+
+  async function searchCrm(q: string) {
+    setCrmSearch(q);
+    setCrmLoading(true);
+    try {
+      const res = await fetch(`/api/vendors/crm-contacts?q=${encodeURIComponent(q)}`);
+      const data = res.ok ? await res.json() : { contacts: [] };
+      setCrmContacts(data.contacts ?? []);
+    } catch { /* ignore */ } finally {
+      setCrmLoading(false);
+    }
+  }
+
+  async function linkCrm(contactId: string | null) {
+    setLinkingCrm(true);
+    try {
+      const res = await fetch(`/api/vendors/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ crm_contact_id: contactId }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setVendor(data.vendor);
+      if (!contactId) {
+        setLinkedContact(null);
+      } else {
+        const found = crmContacts.find(c => c.id === contactId);
+        if (found) setLinkedContact(found);
+      }
+      setCrmModal(false);
+    } catch (e: unknown) {
+      console.error(e);
+    } finally {
+      setLinkingCrm(false);
+    }
+  }
 
   async function updateRating(rating: number) {
     if (!vendor) return;
@@ -404,6 +472,36 @@ export default function VendorDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Lien CRM */}
+            <div className={`rounded-2xl border p-4 ${s.card}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className={`text-[11px] font-semibold uppercase tracking-wide ${s.muted}`}>Contact CRM</h3>
+                <button onClick={openCrmModal}
+                  className={`flex items-center gap-1 text-[10.5px] font-semibold rounded-lg px-2 py-1 transition ${isDark ? "hover:bg-white/10" : "hover:bg-black/05"}`}
+                  style={{ color: "#c9a55a" }}>
+                  <Link2 size={10} /> {linkedContact ? "Modifier" : "Lier"}
+                </button>
+              </div>
+              {linkedContact ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#c9a55a18" }}>
+                    <UserCheck size={14} style={{ color: "#c9a55a" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[13px] font-semibold ${s.text} truncate`}>{linkedContact.name}</p>
+                    {linkedContact.company && <p className={`text-[11px] ${s.muted} truncate`}>{linkedContact.company}</p>}
+                    {linkedContact.email && <p className={`text-[11px] ${s.muted} truncate`}>{linkedContact.email}</p>}
+                  </div>
+                  <button onClick={() => linkCrm(null)}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 transition shrink-0">
+                    <Link2Off size={12} className="text-red-400/60" />
+                  </button>
+                </div>
+              ) : (
+                <p className={`text-[12px] ${s.muted}`}>Aucun contact CRM associé</p>
+              )}
             </div>
 
             <div className={`rounded-2xl border p-4 ${s.card}`}>
@@ -767,6 +865,75 @@ export default function VendorDetailPage() {
                 <button onClick={() => deleteDoc(deleteDocId)}
                   className="flex-1 rounded-xl py-2.5 text-[12px] font-bold text-white bg-red-500">
                   Supprimer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* CRM Link Modal */}
+      <AnimatePresence>
+        {crmModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className={`w-full max-w-lg rounded-t-3xl overflow-hidden ${isDark ? "bg-[#0d0e15]" : "bg-white"}`}>
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b"
+                style={{ borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+                <div className="flex items-center gap-2">
+                  <UserCheck size={15} style={{ color: "#c9a55a" }} />
+                  <h2 className={`text-[15px] font-black ${s.text}`}>Lier un contact CRM</h2>
+                </div>
+                <button onClick={() => setCrmModal(false)}
+                  className={`p-2 rounded-xl ${isDark ? "hover:bg-white/10" : "hover:bg-black/05"} transition`}>
+                  <X size={16} className={s.muted} />
+                </button>
+              </div>
+              <div className="px-4 py-3 border-b" style={{ borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+                <input
+                  value={crmSearch}
+                  onChange={e => searchCrm(e.target.value)}
+                  placeholder="Rechercher par nom, email, entreprise..."
+                  className={`w-full rounded-xl px-3 py-2.5 text-[12.5px] outline-none border ${isDark ? "bg-white/[0.05] border-white/[0.10] text-white placeholder:text-white/25" : "bg-black/[0.03] border-black/[0.08] text-gray-800 placeholder:text-gray-400"} focus:border-[#c9a55a]/60`} />
+              </div>
+              <div className="overflow-y-auto max-h-[45vh] py-2">
+                {crmLoading ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 size={20} className="animate-spin" style={{ color: "#c9a55a" }} />
+                  </div>
+                ) : crmContacts.length === 0 ? (
+                  <p className={`text-[12px] text-center py-6 ${s.muted}`}>Aucun contact trouvé</p>
+                ) : (
+                  crmContacts.map(c => (
+                    <button key={c.id} onClick={() => linkCrm(c.id)} disabled={linkingCrm}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition ${
+                        vendor?.crm_contact_id === c.id
+                          ? isDark ? "bg-[#c9a55a]/10" : "bg-[#c9a55a]/08"
+                          : isDark ? "hover:bg-white/[0.04]" : "hover:bg-black/[0.03]"
+                      }`}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: vendor?.crm_contact_id === c.id ? "#c9a55a22" : isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)" }}>
+                        <UserCheck size={13} style={{ color: vendor?.crm_contact_id === c.id ? "#c9a55a" : undefined }} className={s.muted} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[13px] font-semibold ${s.text} truncate`}>{c.name}</p>
+                        <p className={`text-[11px] ${s.muted} truncate`}>
+                          {[c.company, c.email].filter(Boolean).join(" · ")}
+                        </p>
+                      </div>
+                      {vendor?.crm_contact_id === c.id && (
+                        <Check size={13} style={{ color: "#c9a55a" }} className="shrink-0" />
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+              <div className="px-4 py-3 border-t" style={{ borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+                <button onClick={() => setCrmModal(false)}
+                  className={`w-full rounded-xl py-2.5 text-[13px] font-semibold border ${isDark ? "border-white/[0.10] text-white/60" : "border-black/[0.08] text-gray-500"}`}>
+                  Fermer
                 </button>
               </div>
             </motion.div>
