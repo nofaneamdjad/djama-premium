@@ -237,6 +237,15 @@ CREATE POLICY "vqresp_update" ON vendor_quote_responses FOR UPDATE USING (user_i
 CREATE POLICY "vqresp_delete" ON vendor_quote_responses FOR DELETE USING (user_id = auth.uid());
 
 
+-- ─── Fonction updated_at (idempotente) ───────────────────────────────────────────
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- ─── Triggers updated_at ──────────────────────────────────────────────────────────
 DO $$ BEGIN
   CREATE TRIGGER vendors_updated_at
