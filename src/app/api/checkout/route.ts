@@ -134,7 +134,7 @@ export async function POST(req: Request) {
     const submitMessage = isYearly
       ? isUsd
         ? `You will be billed ${sym}123.84 per year (${sym}10.32/month). Cancel anytime.`
-        : `Vous serez débité de 114,24 € par an (9,52 €/mois). Sans engagement, résiliable à tout moment.`
+        : `Vous serez débité de 118,80 € par an (9,90 €/mois). Sans engagement, résiliable à tout moment.`
       : isUsd
         ? `You will be billed ${sym}12.90 each month. Cancel anytime.`
         : `Vous serez débité de 11,90 € chaque mois. Sans engagement, résiliable à tout moment.`;
