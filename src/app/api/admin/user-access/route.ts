@@ -9,9 +9,10 @@
  * DELETE → supprime un enregistrement (body: { id })
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createLogger } from "@/lib/logger";
+import { requireAdmin } from "@/lib/admin-auth";
 
 const log = createLogger("admin/user-access");
 
@@ -24,7 +25,9 @@ function getSupabaseAdmin() {
 }
 
 /* ── GET — liste complète ──────────────────────────────────── */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -53,7 +56,9 @@ const PATCHABLE_FIELDS = new Set([
 ]);
 
 /* ── PATCH — mise à jour d'une ligne ──────────────────────── */
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
   try {
     const body = await req.json() as Record<string, unknown>;
     const { id, ...raw } = body;
@@ -92,7 +97,9 @@ export async function PATCH(req: Request) {
 }
 
 /* ── DELETE — suppression d'une ligne ─────────────────────── */
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
   try {
     const body = await req.json() as { id?: string };
     const { id } = body;

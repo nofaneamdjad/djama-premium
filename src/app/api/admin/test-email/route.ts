@@ -7,8 +7,9 @@
  * Utilisation : appeler depuis le navigateur ou depuis l'admin.
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { requireAdmin } from "@/lib/admin-auth";
 
 const GOLD = "#c9a55a";
 const BG   = "#09090b";
@@ -19,7 +20,9 @@ function sanitizeKey(raw: string | undefined): string {
   return raw.trim().replace(/^["']|["']$/g, "").trim();
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
   const { searchParams } = new URL(req.url);
   const to = searchParams.get("to")?.trim();
 

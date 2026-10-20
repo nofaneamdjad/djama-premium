@@ -52,7 +52,7 @@ describe("LANG_CYCLE — cycle complet des langues", () => {
 
   it("3 itérations ramènent à la langue de départ", () => {
     const start: Lang = "fr";
-    let cur = start;
+    let cur: Lang = start;
     for (let i = 0; i < 3; i++) cur = LANG_CYCLE[cur];
     expect(cur).toBe(start);
   });
@@ -71,7 +71,7 @@ describe("isRTL — logique RTL arabe", () => {
   });
 
   it("fr et en ne sont pas RTL", () => {
-    expect("fr" === "ar").toBe(false);
-    expect("en" === "ar").toBe(false);
+    const langs: Lang[] = ["fr", "en"];
+    for (const l of langs) expect(l === "ar").toBe(false);
   });
 });

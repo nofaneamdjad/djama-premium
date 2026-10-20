@@ -91,7 +91,7 @@ function nextThreshold(delays: number[], daysOverdue: number, sentDelays: Set<nu
 export async function GET(req: NextRequest) {
   /* ── Sécurité cron ── */
   const secret = req.headers.get("x-cron-secret");
-  if (secret !== process.env.CRON_SECRET && process.env.NODE_ENV === "production") {
+  if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 

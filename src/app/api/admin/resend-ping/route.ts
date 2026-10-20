@@ -9,14 +9,17 @@
  *   { ok: false, error, key_preview, fix }         ← clé invalide ou absente
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
 
 function sanitizeKey(raw: string | undefined): string {
   if (!raw) return "";
   return raw.trim().replace(/^["']|["']$/g, "").trim();
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
   const rawKey  = process.env.RESEND_API_KEY;
   const key     = sanitizeKey(rawKey);
   const from    = process.env.RESEND_FROM?.trim() ?? "DJAMA <noreply@djama.space>";
