@@ -27,14 +27,14 @@ AS $$
   FROM (
     -- Factures payées
     SELECT
-      to_char(date_trunc('month', d.date::date), 'YYYY-MM') AS month_key,
-      COALESCE(SUM(d.total_ttc), 0)                         AS ca_paye,
-      COUNT(*)                                               AS nb_factures
+      to_char(date_trunc('month', d.date_document), 'YYYY-MM') AS month_key,
+      COALESCE(SUM(d.total_ttc), 0)                            AS ca_paye,
+      COUNT(*)                                                  AS nb_factures
     FROM documents d
-    WHERE d.user_id   = p_user_id
-      AND d.type      = 'invoice'
-      AND d.status    = 'paid'
-      AND d.date::date BETWEEN p_start::date AND p_end::date
+    WHERE d.user_id      = p_user_id
+      AND d.type         = 'invoice'
+      AND d.status       = 'paid'
+      AND d.date_document BETWEEN p_start::date AND p_end::date
     GROUP BY 1
 
     UNION ALL
