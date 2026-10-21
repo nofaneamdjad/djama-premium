@@ -12,7 +12,7 @@ import {
   Star, MessageSquare, Briefcase, Edit3, Award, Calendar,
   Brain, Camera, Film, Palette,
   Terminal, ShieldCheck, Webhook, Send, Settings, Wrench,
-  LogOut, Menu, X, ChevronDown, Search, Bell, HeadphonesIcon,
+  LogOut, Menu, X, ChevronDown, Search, Bell, HeadphonesIcon, FlaskConical,
 } from "lucide-react";
 
 const GOLD   = "#c9a55a";
@@ -70,6 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/contenu",       label: "Contenu du site",icon: Edit3        },
       { href: "/admin/messages",      label: "Messages",       icon: MessageSquare     },
       { href: "/admin/support",       label: "Support",        icon: HeadphonesIcon    },
+      { href: "/admin/beta",          label: "Bêta publique",  icon: FlaskConical      },
       { href: "/admin/reservations",  label: "Réservations",   icon: Calendar          },
     ],
   },
