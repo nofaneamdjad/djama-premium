@@ -56,6 +56,17 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: "hq-espaces", label: "Espaces HQ", icon: Briefcase,
+    items: [
+      { href: "/admin/hq/commercial",   label: "Commercial",    icon: TrendingUp   },
+      { href: "/admin/hq/support",      label: "Support",       icon: MessageSquare },
+      { href: "/admin/hq/informatique", label: "Informatique",  icon: Terminal      },
+      { href: "/admin/hq/marketing",    label: "Marketing",     icon: LayoutGrid    },
+      { href: "/admin/hq/finance",      label: "Finance HQ",    icon: Banknote      },
+      { href: "/admin/hq/rh",           label: "RH",            icon: UserCheck     },
+    ],
+  },
+  {
     id: "finance", label: "Abonnements & finances", icon: CreditCard,
     items: [
       { href: "/admin/acces",      label: "Abonnements",  icon: Shield      },
