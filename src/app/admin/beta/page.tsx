@@ -201,7 +201,7 @@ export default function BetaAdminPage() {
 
       {/* Stats cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12, marginBottom: "2rem" }}>
-        <StatCard label="Liste d'attente" value={stats?.total_waitlist ?? 0} sub="+7j : +" + (stats?.recent_signups_7d ?? 0)} icon={Users} color={GOLD} />
+        <StatCard label="Liste d'attente" value={stats?.total_waitlist ?? 0} sub={`+7j : +${stats?.recent_signups_7d ?? 0}`} icon={Users} color={GOLD} />
         <StatCard label="Testeurs actifs" value={stats?.total_beta_users ?? 0} sub={`max ${config?.max_testers ?? 50}`} icon={Shield} color="#3b82f6" />
         <StatCard label="Feedbacks" value={stats?.total_feedback ?? 0} sub={`${stats?.feedback_by_status?.open ?? 0} ouverts`} icon={MessageSquare} color="#f59e0b" />
         <StatCard label="Appels IA" value={stats?.total_ai_calls ?? 0} sub={`quota ${config?.ai_quota_per_user ?? 200}/user`} icon={TrendingUp} color="#22c55e" />
