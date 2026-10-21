@@ -13,6 +13,7 @@ import {
   Brain, Camera, Film, Palette,
   Terminal, ShieldCheck, Webhook, Send, Settings, Wrench,
   LogOut, Menu, X, ChevronDown, Search, Bell, HeadphonesIcon, FlaskConical,
+  Cpu, UserCog,
 } from "lucide-react";
 
 const GOLD   = "#c9a55a";
@@ -39,6 +40,15 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/entreprises",  label: "Entreprises",   icon: Building2    },
       { href: "/admin/membres",      label: "Membres",       icon: UserCheck    },
       { href: "/admin/invitations",  label: "Invitations",   icon: Mail         },
+    ],
+  },
+  {
+    id: "hq", label: "DJAMA HQ", icon: Cpu,
+    items: [
+      { href: "/admin/hq",              label: "Vue d'ensemble",  icon: LayoutDashboard },
+      { href: "/admin/hq/employes",     label: "Employés",        icon: UserCog         },
+      { href: "/admin/hq/roles",        label: "Rôles",           icon: Shield          },
+      { href: "/admin/hq/departements", label: "Départements",    icon: Building2       },
     ],
   },
   {
