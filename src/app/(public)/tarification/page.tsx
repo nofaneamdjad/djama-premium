@@ -59,7 +59,7 @@ const PLANS: Plan[] = [
     tagline: "Toutes les apps pour votre équipe",
     free: false,
     monthlyPrice: 11.90,
-    annualPrice: 9.52,
+    annualPrice: 9.90,
     monthlyPriceUsd: 12.90,
     annualPriceUsd: 10.32,
     features: [
@@ -143,6 +143,7 @@ function PlanDetail({
   const accompPrice = service === "accomp" ? users * (currency === "eur" ? 5 : 5.5) : 0;
   const baseTotal = users * unitPrice;
   const discountLine = annual ? -(users * (monthlyPrice - unitPrice)) : 0;
+  const discountPct = monthlyPrice > 0 ? Math.round((1 - unitPrice / monthlyPrice) * 100) : 0;
   const total = baseTotal + accompPrice;
 
   return (
@@ -318,7 +319,7 @@ function PlanDetail({
 
                 {annual && discountLine < 0 && (
                   <div className="flex items-center justify-between py-2.5">
-                    <p className="text-[0.82rem] text-gray-500">Remise annuelle (20 %)</p>
+                    <p className="text-[0.82rem] text-gray-500">Remise annuelle ({discountPct} %)</p>
                     <span className="text-[0.88rem] font-bold" style={{ color: "#16a34a" }}>
                       {fmt(discountLine).replace("-", "−")}
                     </span>
@@ -580,7 +581,7 @@ export default function TarificationPage() {
           </div>
 
           <p className="mt-8 text-center text-[0.77rem] text-gray-400">
-            * Prix mensuel affiché, facturé annuellement (économisez 20 %). Hébergement géré DJAMA.sh disponible sur plan Personnalisé.
+            * Prix mensuel affiché, facturé annuellement (économisez 17 %). Hébergement géré DJAMA.sh disponible sur plan Personnalisé.
             <br />
             Tous les prix sont hors taxes · 14 jours d&apos;essai gratuit · Résiliable à tout moment.
           </p>
