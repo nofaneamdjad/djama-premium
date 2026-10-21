@@ -12,7 +12,7 @@ import {
   Star, MessageSquare, Briefcase, Edit3, Award, Calendar,
   Brain, Camera, Film, Palette,
   Terminal, ShieldCheck, Webhook, Send, Settings, Wrench,
-  LogOut, Menu, X, ChevronDown, Search, Bell,
+  LogOut, Menu, X, ChevronDown, Search, Bell, HeadphonesIcon,
 } from "lucide-react";
 
 const GOLD   = "#c9a55a";
@@ -68,8 +68,9 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/partenaires",   label: "Partenaires",    icon: Building2    },
       { href: "/admin/services",      label: "Services",       icon: Briefcase    },
       { href: "/admin/contenu",       label: "Contenu du site",icon: Edit3        },
-      { href: "/admin/messages",      label: "Messages",       icon: MessageSquare},
-      { href: "/admin/reservations",  label: "Réservations",   icon: Calendar     },
+      { href: "/admin/messages",      label: "Messages",       icon: MessageSquare     },
+      { href: "/admin/support",       label: "Support",        icon: HeadphonesIcon    },
+      { href: "/admin/reservations",  label: "Réservations",   icon: Calendar          },
     ],
   },
   {
