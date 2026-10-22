@@ -7,6 +7,7 @@ import {
   LayoutGrid, CalendarDays, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { V } from "@/components/hq";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -104,7 +105,7 @@ function CalendarView({
   const isToday = (d: number) => today.getFullYear() === year && today.getMonth() === mon && today.getDate() === d;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "#18181c" }}>
+    <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: V.card }}>
       {/* Calendar header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.07]">
         <button onClick={() => onMonthChange(new Date(year, mon - 1, 1))} className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 hover:bg-white/[0.06] hover:text-white/70 transition-colors">
@@ -264,7 +265,7 @@ export default function AdminReservations() {
           { label: "En attente",  value: pending,             color: "#fbbf24" },
           { label: "À venir",     value: upcoming,            color: "#a78bfa" },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl border border-white/[0.07] px-4 py-4" style={{ background: "#18181c" }}>
+          <div key={s.label} className="rounded-2xl border border-white/[0.07] px-4 py-4" style={{ background: V.card }}>
             <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/30 mb-1.5">{s.label}</p>
             {loading ? (
               <div className="h-7 w-10 rounded-lg bg-white/[0.06] animate-pulse" />
@@ -334,7 +335,7 @@ export default function AdminReservations() {
           onMonthChange={setCalMonth}
         />
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.07] py-16" style={{ background: "#18181c" }}>
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.07] py-16" style={{ background: V.card }}>
           <Calendar size={32} className="text-white/15" />
           <p className="text-[0.88rem] text-white/35">
             {search || filterStatus !== "tous"
@@ -356,7 +357,7 @@ export default function AdminReservations() {
                 className={`rounded-2xl border p-5 transition-all ${
                   soon ? "border-[rgba(74,222,128,0.15)]" : "border-white/[0.07]"
                 }`}
-                style={{ background: "#18181c" }}
+                style={{ background: V.card }}
               >
                 {/* Header */}
                 <div className="mb-4 flex items-start justify-between gap-3">

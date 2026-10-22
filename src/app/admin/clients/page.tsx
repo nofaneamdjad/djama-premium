@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Search, UserPlus, MoreHorizontal, Mail, Shield, RefreshCw, Loader2, Users, Download, X, Check, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
+import { V } from "@/components/hq";
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
@@ -188,7 +189,7 @@ function CreateClientModal({ onClose, onCreated }: { onClose: () => void; onCrea
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden" style={{ background: "#111318" }}>
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden" style={{ background: V.surface }}>
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.07]">
           <h2 className="text-[0.98rem] font-black text-white">Ajouter un client</h2>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.05] text-white/40 hover:bg-white/[0.09] hover:text-white/70 transition-colors">
@@ -397,7 +398,7 @@ export default function AdminClients() {
           { label: "Actifs",   value: actifCount,     color: "#4ade80",               icon: Shield },
           { label: "Inactifs", value: inactifCount,   color: "#f87171",               icon: Users },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl border border-white/[0.07] px-4 py-4" style={{ background: "#18181c" }}>
+          <div key={s.label} className="rounded-2xl border border-white/[0.07] px-4 py-4" style={{ background: V.card }}>
             <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/30 mb-1.5">{s.label}</p>
             {loading ? (
               <div className="h-7 w-12 rounded-lg bg-white/[0.06] animate-pulse" />
@@ -435,7 +436,7 @@ export default function AdminClients() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "#18181c" }}>
+      <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: V.card }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 size={22} className="animate-spin text-[#c9a55a]" />

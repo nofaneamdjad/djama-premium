@@ -15,6 +15,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { V } from "@/components/hq";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -338,7 +339,7 @@ export default function AdminContenu() {
               <div
                 key={section.id}
                 className="rounded-2xl border border-white/[0.07] p-6"
-                style={{ background: "#18181c" }}
+                style={{ background: V.card }}
               >
                 {/* Card header */}
                 <div className="mb-5 flex items-center gap-3">

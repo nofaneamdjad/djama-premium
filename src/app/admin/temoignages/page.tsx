@@ -342,7 +342,7 @@ export default function AdminTemoignagesPage() {
             <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
               exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
               className="w-full max-w-sm rounded-[1.75rem] border border-white/[0.1] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
-              style={{ background: "#111318" }}>
+              style={{ background: V.surface }}>
               <Trash2 size={18} className="mb-3 text-red-400" />
               <h3 className="text-base font-extrabold text-white">Supprimer ce témoignage ?</h3>
               <p className="mt-1.5 text-sm text-white/40">Cette action est irréversible.</p>

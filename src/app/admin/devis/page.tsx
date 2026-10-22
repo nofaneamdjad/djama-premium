@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEur } from "@/lib/format";
+import { V } from "@/components/hq";
 import type { QuoteRow, QuoteItemRow, QuoteStatus, TemplateType } from "@/types/db";
 import { generatePdf } from "@/lib/pdf/generatePdf";
 import { fetchCompanySettings } from "@/lib/pdf/companySettings";
@@ -422,7 +423,7 @@ export default function AdminDevis() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "#18181c" }}>
+      <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: V.card }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 size={20} className="animate-spin text-[#c9a55a]" />
@@ -486,7 +487,7 @@ export default function AdminDevis() {
           className="fixed inset-0 z-50 overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm"
           onClick={e => { if (e.target === e.currentTarget) setModal(null); }}
         >
-          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: "#111318" }}>
+          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: V.surface }}>
             {/* Header modal */}
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-[1rem] font-black text-white">
@@ -692,7 +693,7 @@ export default function AdminDevis() {
       {/* ── Confirmation suppression ─── */}
       {confirmDel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-sm rounded-3xl border border-white/[0.08] p-6 text-center shadow-2xl" style={{ background: "#111318" }}>
+          <div className="w-full max-w-sm rounded-3xl border border-white/[0.08] p-6 text-center shadow-2xl" style={{ background: V.surface }}>
             <Trash2 size={24} className="mx-auto mb-3 text-[#f87171]" />
             <p className="mb-1 font-bold text-white">Supprimer ce devis ?</p>
             <p className="mb-5 text-[0.8rem] text-white/40">Les lignes associées seront également supprimées.</p>

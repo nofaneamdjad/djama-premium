@@ -226,7 +226,7 @@ export default function BetaAdminPage() {
       {tab === "overview" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {/* Feedbacks par type */}
-          <div style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1.25rem" }}>
+          <div style={{ background: V.card, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1.25rem" }}>
             <h3 style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "1rem", fontWeight: 600 }}>
               Feedbacks par type
             </h3>
@@ -249,7 +249,7 @@ export default function BetaAdminPage() {
           </div>
 
           {/* Statuts feedbacks */}
-          <div style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1.25rem" }}>
+          <div style={{ background: V.card, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1.25rem" }}>
             <h3 style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "1rem", fontWeight: 600 }}>
               Statuts des feedbacks
             </h3>
@@ -352,7 +352,7 @@ export default function BetaAdminPage() {
 
           {/* Panneau réponse */}
           {selected && (
-            <div style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1.25rem", display: "flex", flexDirection: "column", gap: 12, height: "fit-content", position: "sticky", top: 16 }}>
+            <div style={{ background: V.card, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1.25rem", display: "flex", flexDirection: "column", gap: 12, height: "fit-content", position: "sticky", top: 16 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "#fff" }}>Répondre</span>
                 <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: "1rem" }}>×</button>

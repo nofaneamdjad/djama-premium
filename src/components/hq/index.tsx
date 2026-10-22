@@ -76,14 +76,22 @@ export const V = {
 const DARK_VARS  = `--hq-bg:#0B0D12;--hq-sidebar:#0F1117;--hq-card:#141720;--hq-surface:#171A22;--hq-surface-hov:#1C2030;--hq-border:rgba(255,255,255,0.07);--hq-border-hov:rgba(255,255,255,0.13);--hq-text:#F5F5F3;--hq-text-sub:#87909E;--hq-text-muted:rgba(255,255,255,0.38);--hq-text-faint:rgba(255,255,255,0.20)`;
 const LIGHT_VARS = `--hq-bg:#F7F8FA;--hq-sidebar:#FFFFFF;--hq-card:#FFFFFF;--hq-surface:#EEF0F4;--hq-surface-hov:#E4E7ED;--hq-border:#E6E8EC;--hq-border-hov:#CDD0D9;--hq-text:#171A21;--hq-text-sub:#667085;--hq-text-muted:rgba(23,26,33,0.60);--hq-text-faint:rgba(23,26,33,0.38)`;
 
-/* Correctifs globaux mode clair : remplace les classes Tailwind text-white/* hardcodées dark-only */
+/* Correctifs globaux mode clair : remplace les classes Tailwind dark-only */
 const LIGHT_OVERRIDES = `
 [data-hq-theme=light] .text-white,[data-hq-theme=light] .text-white\\/80,[data-hq-theme=light] .text-white\\/70{color:var(--hq-text)!important}
 [data-hq-theme=light] .text-white\\/60,[data-hq-theme=light] .text-white\\/50{color:var(--hq-text-sub)!important}
 [data-hq-theme=light] .text-white\\/40,[data-hq-theme=light] .text-white\\/35{color:var(--hq-text-muted)!important}
 [data-hq-theme=light] .text-white\\/30,[data-hq-theme=light] .text-white\\/25,[data-hq-theme=light] .text-white\\/20,[data-hq-theme=light] .text-white\\/15,[data-hq-theme=light] .text-white\\/10{color:var(--hq-text-faint)!important}
-[data-hq-theme=light] .placeholder\\:text-white\\/20::placeholder,[data-hq-theme=light] .placeholder\\:text-white\\/30::placeholder{color:var(--hq-text-faint)!important}
-[data-hq-theme=light] .hover\\:text-white\\/60:hover{color:var(--hq-text-sub)!important}
+[data-hq-theme=light] .placeholder\\:text-white\\/20::placeholder,[data-hq-theme=light] .placeholder\\:text-white\\/30::placeholder,[data-hq-theme=light] .placeholder-white\\/25::placeholder{color:var(--hq-text-faint)!important}
+[data-hq-theme=light] .hover\\:text-white\\/60:hover,[data-hq-theme=light] .hover\\:text-white\\/65:hover,[data-hq-theme=light] .hover\\:text-white\\/70:hover{color:var(--hq-text-sub)!important}
+[data-hq-theme=light] .hover\\:text-white\\/80:hover{color:var(--hq-text)!important}
+[data-hq-theme=light] .bg-white\\/\\[0\\.02\\],[data-hq-theme=light] .bg-white\\/\\[0\\.03\\],[data-hq-theme=light] .bg-white\\/\\[0\\.04\\],[data-hq-theme=light] .bg-white\\/\\[0\\.05\\],[data-hq-theme=light] .bg-white\\/\\[0\\.06\\],[data-hq-theme=light] .bg-white\\/\\[0\\.07\\],[data-hq-theme=light] .bg-white\\/\\[0\\.08\\],[data-hq-theme=light] .bg-white\\/\\[0\\.09\\],[data-hq-theme=light] .bg-white\\/10,[data-hq-theme=light] .bg-white\\/15{background-color:var(--hq-surface)!important}
+[data-hq-theme=light] .hover\\:bg-white\\/\\[0\\.03\\]:hover,[data-hq-theme=light] .hover\\:bg-white\\/\\[0\\.05\\]:hover,[data-hq-theme=light] .hover\\:bg-white\\/\\[0\\.06\\]:hover,[data-hq-theme=light] .hover\\:bg-white\\/\\[0\\.09\\]:hover,[data-hq-theme=light] .hover\\:bg-white\\/\\[0\\.10\\]:hover{background-color:var(--hq-surface-hov)!important}
+[data-hq-theme=light] .border-white\\/\\[0\\.07\\],[data-hq-theme=light] .border-white\\/\\[0\\.08\\],[data-hq-theme=light] .border-white\\/\\[0\\.12\\],[data-hq-theme=light] .border-white\\/\\[0\\.13\\]{border-color:var(--hq-border)!important}
+[data-hq-theme=light] .hover\\:border-white\\/\\[0\\.12\\]:hover,[data-hq-theme=light] .hover\\:border-white\\/\\[0\\.15\\]:hover,[data-hq-theme=light] .hover\\:border-white\\/\\[0\\.20\\]:hover{border-color:var(--hq-border-hov)!important}
+[data-hq-theme=light] .divide-white\\/\\[0\\.06\\]>*+*,[data-hq-theme=light] .divide-white\\/\\[0\\.07\\]>*+*{border-color:var(--hq-border)!important}
+[data-hq-theme=light] input.bg-white\\/\\[0\\.04\\],[data-hq-theme=light] textarea.bg-white\\/\\[0\\.04\\]{background-color:var(--hq-bg)!important;border-color:var(--hq-border)!important}
+[data-hq-theme=light] input:focus,[data-hq-theme=light] textarea:focus{outline:none}
 `;
 
 export function HQThemeStyle({ theme }: { theme: "dark" | "light" }) {

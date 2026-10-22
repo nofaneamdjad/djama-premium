@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Star, Plus, Pencil, Trash2, X, Loader2, Check, ToggleLeft, ToggleRight, Image, Video } from "lucide-react";
 import type { RealisationRow, RealisationStatus, RealisationMediaType } from "@/types/db";
 import { MediaUploader } from "@/components/admin/MediaUploader";
+import { V } from "@/components/hq";
 
 const tagColors: Record<string, string> = {
   "E-commerce":  "#c9a55a",
@@ -207,7 +208,7 @@ export default function AdminRealisations() {
           <Loader2 size={22} className="animate-spin text-[#c9a55a]" />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "#18181c" }}>
+        <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: V.card }}>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -279,7 +280,7 @@ export default function AdminRealisations() {
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm"
           onClick={e => { if (e.target === e.currentTarget) setModal(null); }}
         >
-          <div className="w-full max-w-lg rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: "#111318" }}>
+          <div className="w-full max-w-lg rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: V.surface }}>
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-[1rem] font-black text-white">
                 {modal === "add" ? "Nouveau projet" : "Modifier le projet"}
@@ -497,7 +498,7 @@ export default function AdminRealisations() {
       {/* Delete Confirm */}
       {confirmDel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: "#111318" }}>
+          <div className="w-full max-w-sm rounded-3xl border border-white/[0.08] p-6 shadow-2xl" style={{ background: V.surface }}>
             <h2 className="text-[1rem] font-black text-white">Supprimer ce projet ?</h2>
             <p className="mt-2 text-[0.82rem] text-white/40">Cette action est irréversible.</p>
             <div className="mt-5 flex gap-3">
