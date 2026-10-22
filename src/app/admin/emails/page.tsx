@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Send, RefreshCw, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const BORDER = "rgba(255,255,255,0.07)";
-const CARD   = "#131620";
+import { V } from "@/components/hq";
 
 interface PingResult {
   ok:          boolean;
@@ -63,7 +60,7 @@ export default function EmailsPage() {
       {/* Header */}
       <div>
         <h1 className="text-lg font-bold text-white flex items-center gap-2">
-          <Send size={18} style={{ color: GOLD }} />
+          <Send size={18} style={{ color: V.gold }} />
           Diagnostic emails
         </h1>
         <p className="mt-1 text-sm text-white/40">
@@ -72,14 +69,14 @@ export default function EmailsPage() {
       </div>
 
       {/* Status Resend */}
-      <div className="rounded-xl p-5 space-y-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+      <div className="rounded-xl p-5 space-y-4" style={{ background: V.card, border: `1px solid ${V.border}` }}>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white">Statut Resend</h2>
           <button
             onClick={doPing}
             disabled={pinging}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white/60 transition hover:text-white disabled:opacity-40"
-            style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}` }}
+            style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${V.border}` }}
           >
             <RefreshCw size={11} className={pinging ? "animate-spin" : ""} />
             Vérifier
@@ -149,7 +146,7 @@ export default function EmailsPage() {
       </div>
 
       {/* Envoi de test */}
-      <div className="rounded-xl p-5 space-y-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+      <div className="rounded-xl p-5 space-y-4" style={{ background: V.card, border: `1px solid ${V.border}` }}>
         <h2 className="text-sm font-semibold text-white">Envoyer un email de test</h2>
 
         <div className="flex gap-2">
@@ -159,14 +156,14 @@ export default function EmailsPage() {
             onChange={e => setTo(e.target.value)}
             placeholder="destinataire@exemple.com"
             className="flex-1 rounded-lg px-3 py-2 text-sm text-white/80 outline-none placeholder:text-white/25"
-            style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}
+            style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${V.border}` }}
             onKeyDown={e => { if (e.key === "Enter") void sendTest(); }}
           />
           <button
             onClick={sendTest}
             disabled={sending || !to.trim()}
             className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition disabled:opacity-40"
-            style={{ background: `rgba(201,165,90,0.15)`, border: `1px solid rgba(201,165,90,0.3)`, color: GOLD }}
+            style={{ background: `rgba(201,165,90,0.15)`, border: `1px solid rgba(201,165,90,0.3)`, color: V.gold }}
           >
             {sending ? <RefreshCw size={12} className="animate-spin" /> : <Send size={12} />}
             Envoyer

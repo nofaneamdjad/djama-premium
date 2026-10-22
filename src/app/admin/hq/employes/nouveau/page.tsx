@@ -4,11 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserPlus, Send, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
-
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Dept = { id: string; name: string; color: string };
 type Role = { id: string; name: string; level: number; hq_departments?: { name: string } | null };
@@ -25,7 +21,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
 }
 
 const inputCls = "w-full rounded-xl border bg-transparent px-3.5 py-2.5 text-[0.85rem] text-white/85 outline-none transition-colors placeholder:text-white/20 focus:border-white/20";
-const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: BORDER };
+const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: V.border };
 
 export default function NewEmployeePage() {
   const router = useRouter();
@@ -118,7 +114,7 @@ export default function NewEmployeePage() {
 
       <form onSubmit={e => void handleSubmit(e)} className="space-y-5">
         {/* Identité */}
-        <div className="rounded-2xl border p-6 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-6 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="text-[0.8rem] font-bold text-white/60 uppercase tracking-[0.08em]">Identité</h2>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Prénom" required>
@@ -137,7 +133,7 @@ export default function NewEmployeePage() {
         </div>
 
         {/* Poste */}
-        <div className="rounded-2xl border p-6 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-6 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="text-[0.8rem] font-bold text-white/60 uppercase tracking-[0.08em]">Poste & organisation</h2>
           <Field label="Intitulé du poste">
             <input className={inputCls} style={inputStyle} value={form.job_title} onChange={e => set("job_title", e.target.value)} placeholder="Ex : Commercial Senior" />
@@ -161,7 +157,7 @@ export default function NewEmployeePage() {
         </div>
 
         {/* Rôle */}
-        <div className="rounded-2xl border p-6 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-6 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="text-[0.8rem] font-bold text-white/60 uppercase tracking-[0.08em]">Rôle et permissions</h2>
           <Field label="Rôle initial">
             <select
@@ -186,7 +182,7 @@ export default function NewEmployeePage() {
         </div>
 
         {/* Invitation */}
-        <div className="rounded-2xl border p-5 flex items-center justify-between gap-4" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-5 flex items-center justify-between gap-4" style={{ background: V.card, borderColor: V.border }}>
           <div>
             <p className="text-[0.82rem] font-semibold text-white">Envoyer l'invitation par email</p>
             <p className="text-[0.72rem] text-white/35">L'employé recevra un lien sécurisé valable 7 jours pour créer son compte.</p>
@@ -195,7 +191,7 @@ export default function NewEmployeePage() {
             type="button"
             onClick={() => set("send_invite", !form.send_invite)}
             className="flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
-            style={{ background: form.send_invite ? `rgba(${GOLDR},0.6)` : "rgba(255,255,255,0.1)" }}
+            style={{ background: form.send_invite ? `rgba(${V.goldR},0.6)` : "rgba(255,255,255,0.1)" }}
           >
             <span
               className="h-5 w-5 rounded-full bg-white shadow-sm transition-transform"
@@ -222,7 +218,7 @@ export default function NewEmployeePage() {
             type="submit"
             disabled={loading}
             className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.82rem] font-semibold transition-opacity hover:opacity-85 disabled:opacity-50"
-            style={{ background: `rgba(${GOLDR},0.15)`, border: `1px solid rgba(${GOLDR},0.3)`, color: GOLD }}
+            style={{ background: `rgba(${V.goldR},0.15)`, border: `1px solid rgba(${V.goldR},0.3)`, color: V.gold }}
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : (form.send_invite ? <Send size={14} /> : <UserPlus size={14} />)}
             {loading ? "Création…" : form.send_invite ? "Créer et inviter" : "Créer l'employé"}

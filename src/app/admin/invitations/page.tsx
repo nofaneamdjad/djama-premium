@@ -3,11 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Mail, Clock, CheckCircle, XCircle, RefreshCw, Trash2 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
-
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
-const GOLDR  = "201,165,90";
-const GOLD   = "#c9a55a";
+import { V } from "@/components/hq";
 
 interface Invitation {
   id: string;
@@ -78,16 +74,16 @@ export default function InvitationsPage() {
             {" · "}{accepted.length} acceptées · {expired.length} expirées
           </p>
         </div>
-        <button onClick={load} className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.75rem] font-medium text-white/40 transition hover:border-white/20 hover:text-white/70" style={{ borderColor: BORDER }}>
+        <button onClick={load} className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.75rem] font-medium text-white/40 transition hover:border-white/20 hover:text-white/70" style={{ borderColor: V.border }}>
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
           Actualiser
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border" style={{ background: CARD, borderColor: BORDER }}>
+      <div className="overflow-hidden rounded-2xl border" style={{ background: V.card, borderColor: V.border }}>
         {loading ? (
           <div>{[...Array(5)].map((_, i) => (
-            <div key={i} className="flex animate-pulse items-center gap-4 border-b px-5 py-3.5" style={{ borderColor: BORDER }}>
+            <div key={i} className="flex animate-pulse items-center gap-4 border-b px-5 py-3.5" style={{ borderColor: V.border }}>
               <div className="h-8 w-8 rounded-xl bg-white/[0.06]" />
               <div className="flex-1 space-y-1.5"><div className="h-3 w-40 rounded bg-white/[0.07]" /><div className="h-2 w-24 rounded bg-white/[0.04]" /></div>
               <div className="h-5 w-16 rounded-full bg-white/[0.05]" />
@@ -102,7 +98,7 @@ export default function InvitationsPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b text-left" style={{ borderColor: BORDER }}>
+              <tr className="border-b text-left" style={{ borderColor: V.border }}>
                 {["Email", "Organisation", "Rôle", "Expiration", "Statut", ""].map(h => (
                   <th key={h} className="px-5 py-3 text-[0.7rem] font-semibold uppercase tracking-wider text-white/25">{h}</th>
                 ))}
@@ -110,10 +106,10 @@ export default function InvitationsPage() {
             </thead>
             <tbody>
               {invitations.map((inv, i) => (
-                <tr key={inv.id} className="group border-b transition hover:bg-white/[0.02]" style={{ borderColor: i === invitations.length - 1 ? "transparent" : BORDER }}>
+                <tr key={inv.id} className="group border-b transition hover:bg-white/[0.02]" style={{ borderColor: i === invitations.length - 1 ? "transparent" : V.border }}>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-xl text-[0.6rem] font-black" style={{ background: `rgba(${GOLDR},0.10)`, color: GOLD }}>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-xl text-[0.6rem] font-black" style={{ background: `rgba(${V.goldR},0.10)`, color: V.gold }}>
                         {inv.email.slice(0, 2).toUpperCase()}
                       </div>
                       <span className="text-[0.82rem] text-white/70">{inv.email}</span>

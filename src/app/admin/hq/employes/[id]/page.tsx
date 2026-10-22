@@ -9,10 +9,7 @@ import {
   ArrowLeft, Lock, UserX,
 } from "lucide-react";
 
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Permission = { id: string; slug: string; label: string; category: string };
 type Role = { id: string; name: string; level: number; hq_role_permissions?: { hq_permissions: Permission }[] };
@@ -129,7 +126,7 @@ export default function EmployeeDetailPage() {
           <div className="flex items-center gap-4">
             <div
               className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-[1.1rem] font-black"
-              style={{ background: `rgba(${GOLDR},0.15)`, color: GOLD }}
+              style={{ background: `rgba(${V.goldR},0.15)`, color: V.gold }}
             >
               {emp.first_name[0]}{emp.last_name[0]}
             </div>
@@ -149,7 +146,7 @@ export default function EmployeeDetailPage() {
           <Link
             href="/admin/hq/employes"
             className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-            style={{ border: `1px solid ${BORDER}` }}
+            style={{ border: `1px solid ${V.border}` }}
           >
             <ArrowLeft size={13} /> Retour
           </Link>
@@ -172,7 +169,7 @@ export default function EmployeeDetailPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Coordonnées */}
-        <div className="rounded-2xl border p-5 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-5 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.1em] text-white/40">Coordonnées</h2>
           <InfoRow icon={Mail} label="Email" value={emp.email} />
           <InfoRow icon={Phone} label="Téléphone" value={emp.phone} />
@@ -185,7 +182,7 @@ export default function EmployeeDetailPage() {
         </div>
 
         {/* Rôles */}
-        <div className="rounded-2xl border p-5 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-5 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.1em] text-white/40">Rôles ({roles.length})</h2>
           {roles.length === 0 ? (
             <p className="text-[0.78rem] text-white/25">Aucun rôle attribué.</p>
@@ -194,7 +191,7 @@ export default function EmployeeDetailPage() {
               {roles.map(r => {
                 const lvlColor = r.level === 1 ? "#c9a55a" : r.level === 2 ? "#8b5cf6" : "#3b82f6";
                 return (
-                  <div key={r.id} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
+                  <div key={r.id} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${V.border}` }}>
                     <Shield size={13} style={{ color: lvlColor }} />
                     <span className="text-[0.82rem] font-semibold text-white/75">{r.name}</span>
                   </div>
@@ -207,7 +204,7 @@ export default function EmployeeDetailPage() {
 
       {/* Permissions */}
       {allPerms.length > 0 && (
-        <div className="rounded-2xl border p-5 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-5 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <div className="flex items-center gap-2">
             <Lock size={13} className="text-white/35" />
             <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.1em] text-white/40">
@@ -224,7 +221,7 @@ export default function EmployeeDetailPage() {
                       key={p.slug}
                       title={p.label}
                       className="rounded-lg px-2 py-1 text-[0.68rem] font-mono text-white/50"
-                      style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}
+                      style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${V.border}` }}
                     >
                       {p.slug}
                     </span>
@@ -238,7 +235,7 @@ export default function EmployeeDetailPage() {
 
       {/* Actions */}
       {emp.status !== "offboarded" && (
-        <div className="rounded-2xl border p-5 space-y-3" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-5 space-y-3" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.1em] text-white/40">Actions</h2>
           <div className="flex flex-wrap gap-3">
             {emp.status === "active" && (

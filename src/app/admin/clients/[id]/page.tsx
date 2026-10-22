@@ -10,10 +10,7 @@ import {
   ChevronRight, Building2, Activity,
 } from "lucide-react";
 
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 /* ─── Types ────────────────────────────────────────────────── */
 interface Client {
@@ -74,7 +71,7 @@ function Badge({ s }: { s: string }) {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b py-3 text-[0.82rem]" style={{ borderColor: BORDER }}>
+    <div className="flex items-start justify-between gap-4 border-b py-3 text-[0.82rem]" style={{ borderColor: V.border }}>
       <span className="shrink-0 font-medium text-white/35">{label}</span>
       <span className="text-right font-medium text-white/80">{value || <span className="text-white/20">—</span>}</span>
     </div>
@@ -87,7 +84,7 @@ function Toggle({ label, value, onToggle, disabled }: { label: string; value: bo
       onClick={onToggle}
       disabled={disabled}
       className="flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition hover:border-white/15 disabled:opacity-40"
-      style={{ borderColor: BORDER }}
+      style={{ borderColor: V.border }}
     >
       <span className="text-[0.82rem] font-medium text-white/70">{label}</span>
       <div className={`relative h-5 w-9 rounded-full transition-colors ${value ? "bg-emerald-500" : "bg-white/10"}`}>
@@ -218,7 +215,7 @@ export default function ClientDetailPage() {
       <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
         <AlertCircle size={32} className="text-white/20" />
         <p className="text-[0.9rem] font-semibold text-white/40">Utilisateur introuvable</p>
-        <Link href="/admin/clients" className="text-[0.8rem] underline" style={{ color: GOLD }}>Retour à la liste</Link>
+        <Link href="/admin/clients" className="text-[0.8rem] underline" style={{ color: V.gold }}>Retour à la liste</Link>
       </div>
     );
   }
@@ -242,14 +239,14 @@ export default function ClientDetailPage() {
         <button
           onClick={() => router.back()}
           className="flex h-8 w-8 items-center justify-center rounded-xl border text-white/30 transition hover:border-white/20 hover:text-white/60"
-          style={{ borderColor: BORDER }}
+          style={{ borderColor: V.border }}
         >
           <ArrowLeft size={14} />
         </button>
         <div className="flex flex-1 items-center gap-4">
           <div
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-[0.8rem] font-black"
-            style={{ background: `rgba(${GOLDR},0.12)`, color: GOLD }}
+            style={{ background: `rgba(${V.goldR},0.12)`, color: V.gold }}
           >
             {initials}
           </div>
@@ -267,7 +264,7 @@ export default function ClientDetailPage() {
           <button
             onClick={() => window.open(`mailto:${client.email}`, "_blank")}
             className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.75rem] font-medium text-white/50 transition hover:border-white/20 hover:text-white/80"
-            style={{ borderColor: BORDER }}
+            style={{ borderColor: V.border }}
           >
             <Send size={11} /> Email
           </button>
@@ -291,7 +288,7 @@ export default function ClientDetailPage() {
           <button
             onClick={load}
             className="flex h-8 w-8 items-center justify-center rounded-lg border text-white/30 transition hover:border-white/20 hover:text-white/60"
-            style={{ borderColor: BORDER }}
+            style={{ borderColor: V.border }}
           >
             <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
           </button>
@@ -303,14 +300,14 @@ export default function ClientDetailPage() {
 
         {/* Colonne 1 — Informations personnelles */}
         <div className="space-y-4 lg:col-span-1">
-          <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="mb-4 flex items-center gap-2">
               <User size={13} className="text-white/25" />
               <h2 className="text-[0.85rem] font-bold text-white">Informations</h2>
             </div>
             <div className="-mt-1">
               <Row label="Nom" value={client.name} />
-              <Row label="Email" value={<a href={`mailto:${client.email}`} className="underline decoration-dotted" style={{ color: GOLD }}>{client.email}</a>} />
+              <Row label="Email" value={<a href={`mailto:${client.email}`} className="underline decoration-dotted" style={{ color: V.gold }}>{client.email}</a>} />
               <Row label="Téléphone" value={client.phone} />
               <Row label="Entreprise" value={client.company} />
               <Row label="Pays" value={client.country} />
@@ -327,7 +324,7 @@ export default function ClientDetailPage() {
           </div>
 
           {/* Actions */}
-          <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <h2 className="mb-3 text-[0.85rem] font-bold text-white">Actions</h2>
             <div className="space-y-2">
               {[
@@ -339,9 +336,9 @@ export default function ClientDetailPage() {
                   key={label}
                   onClick={action}
                   className="flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left text-[0.79rem] font-medium text-white/50 transition hover:border-white/15 hover:text-white/80"
-                  style={{ borderColor: BORDER }}
+                  style={{ borderColor: V.border }}
                 >
-                  <Icon size={13} style={{ color: GOLD, flexShrink: 0 }} />
+                  <Icon size={13} style={{ color: V.gold, flexShrink: 0 }} />
                   {label}
                   <ChevronRight size={11} className="ml-auto text-white/20" />
                 </button>
@@ -352,7 +349,7 @@ export default function ClientDetailPage() {
 
         {/* Colonne 2 — Accès & abonnement */}
         <div className="space-y-4 lg:col-span-1">
-          <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="mb-4 flex items-center gap-2">
               <Shield size={13} className="text-white/25" />
               <h2 className="text-[0.85rem] font-bold text-white">Accès & abonnement</h2>
@@ -385,7 +382,7 @@ export default function ClientDetailPage() {
                   disabled={saving}
                 />
 
-                <div className="border-t pt-3" style={{ borderColor: BORDER }}>
+                <div className="border-t pt-3" style={{ borderColor: V.border }}>
                   <Row label="Code d'accès" value={access.access_code ? <code className="rounded bg-white/[0.07] px-1.5 py-0.5 text-[0.7rem]">{access.access_code}</code> : null} />
                   <Row label="Expiration" value={access.expires_at ? fmtDate(access.expires_at) : "Aucune"} />
                   <Row label="Source accès" value={access.source} />
@@ -409,7 +406,7 @@ export default function ClientDetailPage() {
           </div>
 
           {/* Abonnement Stripe (si disponible) */}
-          <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="mb-3 flex items-center gap-2">
               <CreditCard size={13} className="text-white/25" />
               <h2 className="text-[0.85rem] font-bold text-white">Facturation</h2>
@@ -417,18 +414,18 @@ export default function ClientDetailPage() {
             <Link
               href={`/admin/paiements?email=${encodeURIComponent(client.email ?? "")}`}
               className="flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[0.79rem] font-medium text-white/50 transition hover:border-white/15 hover:text-white/80"
-              style={{ borderColor: BORDER }}
+              style={{ borderColor: V.border }}
             >
-              <CreditCard size={13} style={{ color: GOLD }} />
+              <CreditCard size={13} style={{ color: V.gold }} />
               Voir les paiements
               <ChevronRight size={11} className="ml-auto text-white/20" />
             </Link>
             <Link
               href={`/admin/factures?email=${encodeURIComponent(client.email ?? "")}`}
               className="mt-2 flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[0.79rem] font-medium text-white/50 transition hover:border-white/15 hover:text-white/80"
-              style={{ borderColor: BORDER }}
+              style={{ borderColor: V.border }}
             >
-              <Package size={13} style={{ color: GOLD }} />
+              <Package size={13} style={{ color: V.gold }} />
               Voir les factures
               <ChevronRight size={11} className="ml-auto text-white/20" />
             </Link>
@@ -437,7 +434,7 @@ export default function ClientDetailPage() {
 
         {/* Colonne 3 — Activité récente */}
         <div className="space-y-4 lg:col-span-1">
-          <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="mb-4 flex items-center gap-2">
               <Activity size={13} className="text-white/25" />
               <h2 className="text-[0.85rem] font-bold text-white">Messages récents</h2>
@@ -447,7 +444,7 @@ export default function ClientDetailPage() {
             ) : (
               <div className="space-y-3">
                 {messages.map(m => (
-                  <div key={m.id} className="rounded-xl border p-3" style={{ borderColor: BORDER }}>
+                  <div key={m.id} className="rounded-xl border p-3" style={{ borderColor: V.border }}>
                     <div className="mb-1.5 flex items-start justify-between gap-2">
                       <p className="text-[0.79rem] font-semibold text-white/70 line-clamp-1">{m.subject || "Sans objet"}</p>
                       <Badge s={m.status} />
@@ -461,14 +458,14 @@ export default function ClientDetailPage() {
           </div>
 
           {/* Meta */}
-          <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="mb-3 flex items-center gap-2">
               <Calendar size={13} className="text-white/25" />
               <h2 className="text-[0.85rem] font-bold text-white">Chronologie</h2>
             </div>
             <div className="space-y-3">
               {[
-                { icon: User, label: "Inscription", value: fmtDateTime(client.created_at), color: GOLD },
+                { icon: User, label: "Inscription", value: fmtDateTime(client.created_at), color: V.gold },
                 { icon: Clock, label: "Dernière mise à jour", value: access?.updated_at ? fmtDateTime(access.updated_at) : "—", color: "#60a5fa" },
                 { icon: Building2, label: "Entreprise", value: client.company || "—", color: "#a78bfa" },
                 { icon: MapPin, label: "Pays", value: client.country || "—", color: "#4ade80" },

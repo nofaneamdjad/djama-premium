@@ -2,10 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Download, RefreshCw, Search, Users, X } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const BORDER = "rgba(255,255,255,0.07)";
-const CARD   = "#131620";
+import { V } from "@/components/hq";
 
 const COUNTRIES_FILTER = [
   "", "France", "Belgique", "Suisse", "Canada", "Maroc", "Sénégal", "Côte d'Ivoire",
@@ -99,7 +96,7 @@ export default function WaitlistAdminPage() {
           <button
             onClick={load}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
-              background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}`,
+              background: "rgba(255,255,255,0.06)", border: `1px solid ${V.border}`,
               borderRadius: 8, color: "#ccc", fontSize: 13, cursor: "pointer" }}
           >
             <RefreshCw size={14} /> Actualiser
@@ -108,7 +105,7 @@ export default function WaitlistAdminPage() {
             onClick={() => exportCsv(entries)}
             disabled={entries.length === 0}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px",
-              background: GOLD, border: "none", borderRadius: 8,
+              background: V.gold, border: "none", borderRadius: 8,
               color: "#0a0a0a", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
           >
             <Download size={14} /> Exporter CSV
@@ -119,12 +116,12 @@ export default function WaitlistAdminPage() {
       {/* KPI */}
       <div style={{
         display: "inline-flex", alignItems: "center", gap: 10,
-        padding: "10px 18px", background: CARD, border: `1px solid ${BORDER}`,
+        padding: "10px 18px", background: V.card, border: `1px solid ${V.border}`,
         borderRadius: 10, marginBottom: 28,
       }}>
-        <Users size={16} color={GOLD} />
+        <Users size={16} color={V.gold} />
         <span style={{ fontSize: 13, color: "#aaa" }}>Total inscrits :</span>
-        <span style={{ fontSize: 20, fontWeight: 800, color: GOLD }}>{entries.length}</span>
+        <span style={{ fontSize: 20, fontWeight: 800, color: V.gold }}>{entries.length}</span>
       </div>
 
       {/* Filtres */}
@@ -137,7 +134,7 @@ export default function WaitlistAdminPage() {
             placeholder="Rechercher nom, email, entreprise…"
             style={{
               width: "100%", paddingLeft: 32, padding: "9px 12px 9px 32px",
-              background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`,
+              background: "rgba(255,255,255,0.04)", border: `1px solid ${V.border}`,
               borderRadius: 8, color: "#e8e2d6", fontSize: 14, outline: "none",
             }}
           />
@@ -156,7 +153,7 @@ export default function WaitlistAdminPage() {
           onChange={e => setPays(e.target.value)}
           style={{
             padding: "9px 14px", background: "rgba(255,255,255,0.04)",
-            border: `1px solid ${BORDER}`, borderRadius: 8,
+            border: `1px solid ${V.border}`, borderRadius: 8,
             color: "#e8e2d6", fontSize: 14, outline: "none", cursor: "pointer",
           }}
         >
@@ -177,7 +174,7 @@ export default function WaitlistAdminPage() {
       )}
 
       {/* Table */}
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ background: V.card, border: `1px solid ${V.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
@@ -187,7 +184,7 @@ export default function WaitlistAdminPage() {
                     padding: "12px 16px", textAlign: "left",
                     fontWeight: 600, color: "#888", fontSize: 11,
                     textTransform: "uppercase", letterSpacing: "0.05em",
-                    borderBottom: `1px solid ${BORDER}`,
+                    borderBottom: `1px solid ${V.border}`,
                   }}>{h}</th>
                 ))}
               </tr>
@@ -204,7 +201,7 @@ export default function WaitlistAdminPage() {
               ) : (
                 entries.map((e, i) => (
                   <tr key={e.id} style={{
-                    borderBottom: i < entries.length - 1 ? `1px solid ${BORDER}` : "none",
+                    borderBottom: i < entries.length - 1 ? `1px solid ${V.border}` : "none",
                     transition: "background 0.15s",
                   }}
                     onMouseEnter={ev => (ev.currentTarget.style.background = "rgba(255,255,255,0.02)")}
@@ -217,7 +214,7 @@ export default function WaitlistAdminPage() {
                       {e.pays
                         ? <span style={{ padding: "3px 9px", background: "rgba(201,165,90,0.12)",
                             border: "1px solid rgba(201,165,90,0.25)", borderRadius: 6,
-                            color: GOLD, fontSize: 12, fontWeight: 500 }}>{e.pays}</span>
+                            color: V.gold, fontSize: 12, fontWeight: 500 }}>{e.pays}</span>
                         : <span style={{ color: "#555" }}>—</span>
                       }
                     </td>

@@ -2,11 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Activity, RefreshCw, Filter } from "lucide-react";
-
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
-const GOLD   = "#c9a55a";
-const GOLDR  = "201,165,90";
+import { V } from "@/components/hq";
 
 interface LogEntry {
   id: string;
@@ -65,7 +61,7 @@ export default function ActivitePage() {
         <button
           onClick={load}
           className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.75rem] font-medium text-white/40 transition hover:border-white/20 hover:text-white/70"
-          style={{ borderColor: BORDER }}
+          style={{ borderColor: V.border }}
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
           Actualiser
@@ -81,7 +77,7 @@ export default function ActivitePage() {
             className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.74rem] font-medium transition ${
               filter === t ? "border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.08)] text-[#c9a55a]" : "text-white/40 hover:border-white/20 hover:text-white/60"
             }`}
-            style={{ borderColor: filter === t ? `rgba(${GOLDR},0.4)` : BORDER }}
+            style={{ borderColor: filter === t ? `rgba(${V.goldR},0.4)` : V.border }}
           >
             <Filter size={10} />
             {t === "all" ? "Tout" : t}
@@ -89,11 +85,11 @@ export default function ActivitePage() {
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border" style={{ background: CARD, borderColor: BORDER }}>
+      <div className="overflow-hidden rounded-2xl border" style={{ background: V.card, borderColor: V.border }}>
         {loading ? (
           <div className="space-y-0">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="flex animate-pulse items-center gap-4 border-b px-5 py-3.5" style={{ borderColor: BORDER }}>
+              <div key={i} className="flex animate-pulse items-center gap-4 border-b px-5 py-3.5" style={{ borderColor: V.border }}>
                 <div className="h-2 w-2 rounded-full bg-white/[0.08]" />
                 <div className="flex-1 space-y-1.5">
                   <div className="h-3 w-40 rounded bg-white/[0.07]" />
@@ -117,7 +113,7 @@ export default function ActivitePage() {
                 <div
                   key={log.id}
                   className="flex items-start gap-4 border-b px-5 py-3.5 transition hover:bg-white/[0.015]"
-                  style={{ borderColor: i === filtered.length - 1 ? "transparent" : BORDER }}
+                  style={{ borderColor: i === filtered.length - 1 ? "transparent" : V.border }}
                 >
                   <div className="mt-1 flex h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
                   <div className="flex-1 min-w-0">

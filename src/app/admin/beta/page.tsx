@@ -6,8 +6,7 @@ import {
   Settings, ToggleLeft, ToggleRight, RefreshCw, TrendingUp,
   Clock, Shield, Loader2, ChevronRight, CheckCircle, XCircle,
 } from "lucide-react";
-
-const GOLD = "#c9a55a";
+import { V } from "@/components/hq";
 
 interface BetaConfig {
   signups_open: boolean;
@@ -158,7 +157,7 @@ export default function BetaAdminPage() {
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300 }}>
-      <Loader2 size={20} color={GOLD} style={{ animation: "spin 1s linear infinite" }} />
+      <Loader2 size={20} color={V.gold} style={{ animation: "spin 1s linear infinite" }} />
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -169,7 +168,7 @@ export default function BetaAdminPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2rem", flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <span style={{ background: "rgba(201,165,90,0.12)", borderRadius: 8, padding: "4px 10px", fontSize: "0.65rem", fontWeight: 700, color: GOLD, letterSpacing: "0.08em" }}>BÊTA PUBLIQUE</span>
+            <span style={{ background: "rgba(201,165,90,0.12)", borderRadius: 8, padding: "4px 10px", fontSize: "0.65rem", fontWeight: 700, color: V.gold, letterSpacing: "0.08em" }}>BÊTA PUBLIQUE</span>
             <h1 style={{ fontSize: "1.3rem", fontWeight: 700, color: "#fff", margin: 0 }}>Tableau de bord bêta</h1>
           </div>
           <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.3)", margin: 0 }}>
@@ -201,7 +200,7 @@ export default function BetaAdminPage() {
 
       {/* Stats cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12, marginBottom: "2rem" }}>
-        <StatCard label="Liste d'attente" value={stats?.total_waitlist ?? 0} sub={`+7j : +${stats?.recent_signups_7d ?? 0}`} icon={Users} color={GOLD} />
+        <StatCard label="Liste d'attente" value={stats?.total_waitlist ?? 0} sub={`+7j : +${stats?.recent_signups_7d ?? 0}`} icon={Users} color={V.gold} />
         <StatCard label="Testeurs actifs" value={stats?.total_beta_users ?? 0} sub={`max ${config?.max_testers ?? 50}`} icon={Shield} color="#3b82f6" />
         <StatCard label="Feedbacks" value={stats?.total_feedback ?? 0} sub={`${stats?.feedback_by_status?.open ?? 0} ouverts`} icon={MessageSquare} color="#f59e0b" />
         <StatCard label="Appels IA" value={stats?.total_ai_calls ?? 0} sub={`quota ${config?.ai_quota_per_user ?? 200}/user`} icon={TrendingUp} color="#22c55e" />
@@ -215,7 +214,7 @@ export default function BetaAdminPage() {
             padding: "0.6rem 1rem",
             fontSize: "0.82rem", fontWeight: tab === t ? 600 : 400,
             color: tab === t ? "#fff" : "rgba(255,255,255,0.4)",
-            borderBottom: tab === t ? `2px solid ${GOLD}` : "2px solid transparent",
+            borderBottom: tab === t ? `2px solid ${V.gold}` : "2px solid transparent",
             marginBottom: -1,
           }}>
             {t === "overview" ? "Vue d'ensemble" : t === "feedbacks" ? `Feedbacks (${feedbacks.length})` : "Paramètres"}
@@ -239,7 +238,7 @@ export default function BetaAdminPage() {
                   <span style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.6)", flex: 1 }}>{TYPE_LABELS[type] ?? type}</span>
                   <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#fff" }}>{count as number}</span>
                   <div style={{ width: 60, background: "rgba(255,255,255,0.05)", borderRadius: 4, height: 4 }}>
-                    <div style={{ width: `${Math.min(100, ((count as number) / (stats?.total_feedback || 1)) * 100)}%`, background: GOLD, borderRadius: 4, height: 4 }} />
+                    <div style={{ width: `${Math.min(100, ((count as number) / (stats?.total_feedback || 1)) * 100)}%`, background: V.gold, borderRadius: 4, height: 4 }} />
                   </div>
                 </div>
               );
@@ -302,7 +301,7 @@ export default function BetaAdminPage() {
                   padding: "0.35rem 0.75rem", borderRadius: 6, cursor: "pointer", fontSize: "0.75rem",
                   background: fbFilter === val ? "rgba(201,165,90,0.1)" : "rgba(255,255,255,0.03)",
                   border: `1px solid ${fbFilter === val ? "rgba(201,165,90,0.3)" : "rgba(255,255,255,0.07)"}`,
-                  color: fbFilter === val ? GOLD : "rgba(255,255,255,0.5)",
+                  color: fbFilter === val ? V.gold : "rgba(255,255,255,0.5)",
                 }}>
                   {label}
                 </button>
@@ -389,7 +388,7 @@ export default function BetaAdminPage() {
 
               <button onClick={() => void sendReply()} disabled={sendingReply} style={{
                 background: "rgba(201,165,90,0.1)", border: "1px solid rgba(201,165,90,0.25)",
-                borderRadius: 8, color: GOLD, padding: "0.55rem", fontSize: "0.82rem", fontWeight: 600,
+                borderRadius: 8, color: V.gold, padding: "0.55rem", fontSize: "0.82rem", fontWeight: 600,
                 cursor: sendingReply ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}>
                 {sendingReply ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle size={13} />}
@@ -433,7 +432,7 @@ export default function BetaAdminPage() {
           <div style={{ gridColumn: "1 / -1", display: "flex", gap: 8, marginTop: 8 }}>
             <button onClick={() => void saveConfig()} disabled={saving} style={{
               background: "rgba(201,165,90,0.1)", border: "1px solid rgba(201,165,90,0.25)",
-              borderRadius: 10, color: GOLD, padding: "0.65rem 1.25rem", fontSize: "0.875rem", fontWeight: 600,
+              borderRadius: 10, color: V.gold, padding: "0.65rem 1.25rem", fontSize: "0.875rem", fontWeight: 600,
               cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6,
             }}>
               {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle size={14} />}

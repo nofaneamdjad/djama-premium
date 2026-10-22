@@ -1,10 +1,7 @@
 "use client";
 
 import { LayoutGrid, CheckCircle } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const BORDER = "rgba(255,255,255,0.07)";
-const CARD   = "#131620";
+import { V } from "@/components/hq";
 
 const MODULES = [
   { slug: "crm",           label: "CRM",              desc: "Contacts, pipeline, leads" },
@@ -38,7 +35,7 @@ export default function ApplicationsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-bold text-white flex items-center gap-2">
-          <LayoutGrid size={18} style={{ color: GOLD }} />
+          <LayoutGrid size={18} style={{ color: V.gold }} />
           Applications DJAMA
         </h1>
         <p className="mt-1 text-sm text-white/40">
@@ -51,9 +48,9 @@ export default function ApplicationsPage() {
           <div
             key={m.slug}
             className="flex items-start gap-3 rounded-xl p-4"
-            style={{ background: CARD, border: `1px solid ${BORDER}` }}
+            style={{ background: V.card, border: `1px solid ${V.border}` }}
           >
-            <CheckCircle size={14} style={{ color: GOLD, marginTop: 2, flexShrink: 0 }} />
+            <CheckCircle size={14} style={{ color: V.gold, marginTop: 2, flexShrink: 0 }} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-white">{m.label}</p>
               <p className="text-xs text-white/35 mt-0.5">{m.desc}</p>
@@ -65,7 +62,7 @@ export default function ApplicationsPage() {
 
       <div
         className="rounded-xl px-5 py-4 text-sm text-white/40"
-        style={{ background: CARD, border: `1px solid ${BORDER}` }}
+        style={{ background: V.card, border: `1px solid ${V.border}` }}
       >
         La gestion des plans et permissions par module sera disponible depuis les sections{" "}
         <span className="font-medium text-white/60">Plans</span> et{" "}

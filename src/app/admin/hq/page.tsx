@@ -7,10 +7,7 @@ import {
   ChevronRight, Briefcase, ArrowRight,
 } from "lucide-react";
 
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Dept = { id: string; name: string; color: string; slug: string; employee_count?: { count: number }[] };
 type Employee = {
@@ -25,7 +22,7 @@ function KpiCard({ label, value, icon: Icon, color, href }: {
   const inner = (
     <div
       className="flex flex-col gap-3 rounded-2xl border p-5 transition-colors"
-      style={{ background: CARD, borderColor: BORDER }}
+      style={{ background: V.card, borderColor: V.border }}
     >
       <div className="flex items-center justify-between">
         <span className="text-[0.72rem] font-semibold uppercase tracking-[0.09em] text-white/35">{label}</span>
@@ -87,7 +84,7 @@ export default function HqHubPage() {
         <Link
           href="/admin/hq/employes/nouveau"
           className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.8rem] font-semibold transition-opacity hover:opacity-80"
-          style={{ background: `rgba(${GOLDR},0.12)`, border: `1px solid rgba(${GOLDR},0.25)`, color: GOLD }}
+          style={{ background: `rgba(${V.goldR},0.12)`, border: `1px solid rgba(${V.goldR},0.25)`, color: V.gold }}
         >
           <UserPlus size={14} />
           Nouvel employé
@@ -106,14 +103,14 @@ export default function HqHubPage() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[0.85rem] font-bold text-white/70 uppercase tracking-[0.08em]">Départements</h2>
-          <Link href="/admin/hq/departements" className="flex items-center gap-1 text-[0.72rem] font-semibold hover:opacity-80" style={{ color: GOLD }}>
+          <Link href="/admin/hq/departements" className="flex items-center gap-1 text-[0.72rem] font-semibold hover:opacity-80" style={{ color: V.gold }}>
             Gérer <ArrowRight size={11} />
           </Link>
         </div>
         {loading ? (
           <div className="text-[0.8rem] text-white/25">Chargement…</div>
         ) : departments.length === 0 ? (
-          <div className="rounded-2xl border border-dashed p-8 text-center text-[0.82rem] text-white/25" style={{ borderColor: BORDER }}>
+          <div className="rounded-2xl border border-dashed p-8 text-center text-[0.82rem] text-white/25" style={{ borderColor: V.border }}>
             Aucun département configuré
           </div>
         ) : (
@@ -124,7 +121,7 @@ export default function HqHubPage() {
                 <div
                   key={dept.id}
                   className="rounded-xl border p-4 flex flex-col gap-2"
-                  style={{ background: CARD, borderColor: BORDER, borderLeft: `3px solid ${dept.color}` }}
+                  style={{ background: V.card, borderColor: V.border, borderLeft: `3px solid ${dept.color}` }}
                 >
                   <span className="text-[0.82rem] font-bold text-white">{dept.name}</span>
                   <span className="text-[0.72rem] text-white/35">{count} employé{count > 1 ? "s" : ""}</span>
@@ -139,29 +136,29 @@ export default function HqHubPage() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[0.85rem] font-bold text-white/70 uppercase tracking-[0.08em]">Employés récents</h2>
-          <Link href="/admin/hq/employes" className="flex items-center gap-1 text-[0.72rem] font-semibold hover:opacity-80" style={{ color: GOLD }}>
+          <Link href="/admin/hq/employes" className="flex items-center gap-1 text-[0.72rem] font-semibold hover:opacity-80" style={{ color: V.gold }}>
             Voir tout <ArrowRight size={11} />
           </Link>
         </div>
         {loading ? (
           <div className="text-[0.8rem] text-white/25">Chargement…</div>
         ) : recent.length === 0 ? (
-          <div className="rounded-2xl border border-dashed p-10 text-center" style={{ borderColor: BORDER }}>
+          <div className="rounded-2xl border border-dashed p-10 text-center" style={{ borderColor: V.border }}>
             <Users size={32} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.12)" }} />
             <p className="text-[0.82rem] text-white/30">Aucun employé pour l'instant</p>
             <Link
               href="/admin/hq/employes/nouveau"
               className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[0.78rem] font-semibold"
-              style={{ background: `rgba(${GOLDR},0.10)`, border: `1px solid rgba(${GOLDR},0.2)`, color: GOLD }}
+              style={{ background: `rgba(${V.goldR},0.10)`, border: `1px solid rgba(${V.goldR},0.2)`, color: V.gold }}
             >
               <UserPlus size={13} /> Créer le premier employé
             </Link>
           </div>
         ) : (
-          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: V.border }}>
             <table className="w-full">
               <thead>
-                <tr className="border-b text-left" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+                <tr className="border-b text-left" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
                   <th className="px-5 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-white/30">Employé</th>
                   <th className="hidden px-5 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-white/30 sm:table-cell">Poste</th>
                   <th className="hidden px-5 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-white/30 md:table-cell">Département</th>
@@ -171,12 +168,12 @@ export default function HqHubPage() {
               </thead>
               <tbody>
                 {recent.map(emp => (
-                  <tr key={emp.id} className="border-b last:border-0 transition-colors hover:bg-white/[0.02]" style={{ borderColor: BORDER }}>
+                  <tr key={emp.id} className="border-b last:border-0 transition-colors hover:bg-white/[0.02]" style={{ borderColor: V.border }}>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <div
                           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-black"
-                          style={{ background: `rgba(${GOLDR},0.15)`, color: GOLD }}
+                          style={{ background: `rgba(${V.goldR},0.15)`, color: V.gold }}
                         >
                           {emp.first_name[0]}{emp.last_name[0]}
                         </div>
@@ -226,10 +223,10 @@ export default function HqHubPage() {
               key={href}
               href={href}
               className="flex items-center gap-4 rounded-xl border p-4 transition-colors hover:border-white/[0.12] hover:bg-white/[0.02]"
-              style={{ background: CARD, borderColor: BORDER }}
+              style={{ background: V.card, borderColor: V.border }}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${GOLDR},0.10)` }}>
-                <Icon size={17} style={{ color: GOLD }} />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `rgba(${V.goldR},0.10)` }}>
+                <Icon size={17} style={{ color: V.gold }} />
               </div>
               <div className="min-w-0">
                 <p className="text-[0.82rem] font-semibold text-white">{label}</p>

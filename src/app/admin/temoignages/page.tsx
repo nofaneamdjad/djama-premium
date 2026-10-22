@@ -8,8 +8,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
+import { V } from "@/components/hq";
 
-const GOLD  = "#c9a55a";
 const ease  = [0.16, 1, 0.3, 1] as const;
 
 interface Temoignage {
@@ -48,8 +48,8 @@ function StarRating({ value, onChange }: { value: number; onChange: (n: number) 
         >
           <Star
             size={18}
-            fill={(hover || value) >= i ? GOLD : "none"}
-            style={{ color: (hover || value) >= i ? GOLD : "rgba(255,255,255,0.2)" }}
+            fill={(hover || value) >= i ? V.gold : "none"}
+            style={{ color: (hover || value) >= i ? V.gold : "rgba(255,255,255,0.2)" }}
           />
         </button>
       ))}
@@ -142,8 +142,8 @@ export default function AdminTemoignagesPage() {
       <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl"
-            style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}25` }}>
-            <Star size={16} style={{ color: GOLD }} />
+            style={{ background: `${V.gold}12`, border: `1px solid ${V.gold}25` }}>
+            <Star size={16} style={{ color: V.gold }} />
           </div>
           <div>
             <h1 className="text-base font-extrabold text-white">Témoignages clients</h1>
@@ -152,7 +152,7 @@ export default function AdminTemoignagesPage() {
         </div>
         <button onClick={newItem}
           className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#0a0a0a] transition hover:opacity-90"
-          style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
+          style={{ background: `linear-gradient(135deg, ${V.gold}, #b08d45)` }}>
           <Plus size={13} /> Ajouter
         </button>
       </div>
@@ -182,8 +182,8 @@ export default function AdminTemoignagesPage() {
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex gap-0.5">
                       {[1,2,3,4,5].map(i => (
-                        <Star key={i} size={9} fill={(t.note ?? 5) >= i ? GOLD : "none"}
-                          style={{ color: (t.note ?? 5) >= i ? GOLD : "rgba(255,255,255,0.15)" }} />
+                        <Star key={i} size={9} fill={(t.note ?? 5) >= i ? V.gold : "none"}
+                          style={{ color: (t.note ?? 5) >= i ? V.gold : "rgba(255,255,255,0.15)" }} />
                       ))}
                     </div>
                     <span className={`text-[0.55rem] font-bold ${t.published ? "text-emerald-400" : "text-white/25"}`}>
@@ -203,11 +203,11 @@ export default function AdminTemoignagesPage() {
         <main className={`flex flex-1 flex-col overflow-hidden ${mobileView === "list" ? "hidden sm:flex" : "flex"}`}>
           {!draft ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-              <Star size={28} style={{ color: GOLD }} />
+              <Star size={28} style={{ color: V.gold }} />
               <p className="text-base font-bold text-white/60">Sélectionnez ou ajoutez un témoignage</p>
               <button onClick={newItem}
                 className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold text-[#0a0a0a]"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
+                style={{ background: `linear-gradient(135deg, ${V.gold}, #b08d45)` }}>
                 <Plus size={14} /> Ajouter
               </button>
             </div>
@@ -229,8 +229,8 @@ export default function AdminTemoignagesPage() {
                 </button>
                 {dirty && (
                   <span className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.6rem] font-semibold sm:inline-flex"
-                    style={{ borderColor: `${GOLD}28`, background: `${GOLD}10`, color: GOLD }}>
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: GOLD }}/> Non sauvegardé
+                    style={{ borderColor: `${V.gold}28`, background: `${V.gold}10`, color: V.gold }}>
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: V.gold }}/> Non sauvegardé
                   </span>
                 )}
                 <div className="ml-auto flex items-center gap-2">
@@ -243,7 +243,7 @@ export default function AdminTemoignagesPage() {
                   )}
                   <button onClick={handleSave} disabled={saving || !dirty}
                     className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold text-[#0a0a0a] transition hover:opacity-90 disabled:opacity-40"
-                    style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
+                    style={{ background: `linear-gradient(135deg, ${V.gold}, #b08d45)` }}>
                     {saving ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
                     {saving ? "Enregistrement…" : "Enregistrer"}
                   </button>
@@ -302,12 +302,12 @@ export default function AdminTemoignagesPage() {
                   {/* Preview */}
                   {draft.texte && (
                     <div className="rounded-[1.25rem] p-5"
-                      style={{ background: `${GOLD}06`, border: `1px solid ${GOLD}18` }}>
-                      <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: `${GOLD}80` }}>Aperçu</p>
+                      style={{ background: `${V.gold}06`, border: `1px solid ${V.gold}18` }}>
+                      <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-widest" style={{ color: `${V.gold}80` }}>Aperçu</p>
                       <div className="flex gap-1 mb-3">
                         {[1,2,3,4,5].map(i => (
-                          <Star key={i} size={12} fill={(draft.note ?? 5) >= i ? GOLD : "none"}
-                            style={{ color: (draft.note ?? 5) >= i ? GOLD : "rgba(255,255,255,0.15)" }} />
+                          <Star key={i} size={12} fill={(draft.note ?? 5) >= i ? V.gold : "none"}
+                            style={{ color: (draft.note ?? 5) >= i ? V.gold : "rgba(255,255,255,0.15)" }} />
                         ))}
                       </div>
                       <p className="text-sm italic leading-relaxed text-white/55">&ldquo;{draft.texte}&rdquo;</p>

@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 import { Tag, Plus, Copy, Check, Trash2 } from "lucide-react";
-
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
-const GOLD   = "#c9a55a";
-const GOLDR  = "201,165,90";
+import { V } from "@/components/hq";
 
 interface Coupon {
   code: string;
@@ -48,7 +44,7 @@ export default function CouponsPage() {
         </div>
         <button
           className="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[0.78rem] font-semibold text-black transition hover:opacity-90"
-          style={{ background: GOLD }}
+          style={{ background: V.gold }}
         >
           <Plus size={13} /> Nouveau coupon
         </button>
@@ -58,10 +54,10 @@ export default function CouponsPage() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Actifs", value: coupons.filter(c => c.active).length, color: "#4ade80" },
-          { label: "Utilisations totales", value: coupons.reduce((s, c) => s + c.uses, 0), color: GOLD },
+          { label: "Utilisations totales", value: coupons.reduce((s, c) => s + c.uses, 0), color: V.gold },
           { label: "Inactifs", value: coupons.filter(c => !c.active).length, color: "#f87171" },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-2xl border p-4 text-center" style={{ background: CARD, borderColor: BORDER }}>
+          <div key={label} className="rounded-2xl border p-4 text-center" style={{ background: V.card, borderColor: V.border }}>
             <p className="text-[1.4rem] font-black text-white tabular-nums">{value}</p>
             <p className="mt-0.5 text-[0.72rem] font-semibold text-white/30">{label}</p>
           </div>
@@ -69,10 +65,10 @@ export default function CouponsPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border" style={{ background: CARD, borderColor: BORDER }}>
+      <div className="overflow-hidden rounded-2xl border" style={{ background: V.card, borderColor: V.border }}>
         <table className="w-full">
           <thead>
-            <tr className="border-b text-left" style={{ borderColor: BORDER }}>
+            <tr className="border-b text-left" style={{ borderColor: V.border }}>
               {["Code", "Réduction", "Utilisations", "Expiration", "Statut", ""].map(h => (
                 <th key={h} className="px-5 py-3 text-[0.7rem] font-semibold uppercase tracking-wider text-white/25">{h}</th>
               ))}
@@ -80,11 +76,11 @@ export default function CouponsPage() {
           </thead>
           <tbody>
             {coupons.map((c, i) => (
-              <tr key={c.code} className="group border-b transition hover:bg-white/[0.02]" style={{ borderColor: i === coupons.length - 1 ? "transparent" : BORDER }}>
+              <tr key={c.code} className="group border-b transition hover:bg-white/[0.02]" style={{ borderColor: i === coupons.length - 1 ? "transparent" : V.border }}>
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `rgba(${GOLDR},0.10)` }}>
-                      <Tag size={11} style={{ color: GOLD }} />
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `rgba(${V.goldR},0.10)` }}>
+                      <Tag size={11} style={{ color: V.gold }} />
                     </div>
                     <code className="rounded-lg bg-white/[0.07] px-2 py-0.5 text-[0.8rem] font-bold text-white/80">{c.code}</code>
                     <CopyBtn text={c.code} />

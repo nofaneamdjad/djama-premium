@@ -2,10 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { ShieldCheck, RefreshCw, Search, X, AlertTriangle, Info, CheckCircle } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const BORDER = "rgba(255,255,255,0.07)";
-const CARD   = "#131620";
+import { V } from "@/components/hq";
 
 interface LogEntry {
   id:          string;
@@ -32,7 +29,7 @@ function actionBadge(action: string) {
     return { bg: "rgba(74,222,128,0.1)", border: "rgba(74,222,128,0.25)", color: "#4ade80", icon: CheckCircle };
   if (action.includes("delete") || action.includes("ban") || action.includes("revoke"))
     return { bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.25)", color: "#ef4444", icon: AlertTriangle };
-  return { bg: "rgba(201,165,90,0.1)", border: "rgba(201,165,90,0.25)", color: GOLD, icon: Info };
+  return { bg: "rgba(201,165,90,0.1)", border: "rgba(201,165,90,0.25)", color: V.gold, icon: Info };
 }
 
 export default function SecuritePage() {
@@ -72,7 +69,7 @@ export default function SecuritePage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-lg font-bold text-white flex items-center gap-2">
-            <ShieldCheck size={18} style={{ color: GOLD }} />
+            <ShieldCheck size={18} style={{ color: V.gold }} />
             Logs d&apos;audit
           </h1>
           <p className="mt-1 text-sm text-white/40">
@@ -84,7 +81,7 @@ export default function SecuritePage() {
             value={limit}
             onChange={e => setLimit(Number(e.target.value))}
             className="rounded-lg px-3 py-1.5 text-xs text-white/70 outline-none"
-            style={{ background: CARD, border: `1px solid ${BORDER}` }}
+            style={{ background: V.card, border: `1px solid ${V.border}` }}
           >
             <option value={50}>50 derniers</option>
             <option value={100}>100 derniers</option>
@@ -95,7 +92,7 @@ export default function SecuritePage() {
             onClick={load}
             disabled={loading}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white/60 transition hover:text-white disabled:opacity-40"
-            style={{ background: CARD, border: `1px solid ${BORDER}` }}
+            style={{ background: V.card, border: `1px solid ${V.border}` }}
           >
             <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
             Actualiser
@@ -106,7 +103,7 @@ export default function SecuritePage() {
       {/* Search */}
       <div
         className="flex items-center gap-2 rounded-lg px-3 py-2"
-        style={{ background: CARD, border: `1px solid ${BORDER}` }}
+        style={{ background: V.card, border: `1px solid ${V.border}` }}
       >
         <Search size={13} className="shrink-0 text-white/25" />
         <input
@@ -135,12 +132,12 @@ export default function SecuritePage() {
       {/* Table */}
       <div
         className="overflow-hidden rounded-xl"
-        style={{ border: `1px solid ${BORDER}` }}
+        style={{ border: `1px solid ${V.border}` }}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.03)", borderBottom: `1px solid ${BORDER}` }}>
+              <tr style={{ background: "rgba(255,255,255,0.03)", borderBottom: `1px solid ${V.border}` }}>
                 <th className="px-4 py-3 text-left font-semibold text-white/30 uppercase tracking-wider">Action</th>
                 <th className="px-4 py-3 text-left font-semibold text-white/30 uppercase tracking-wider">Cible</th>
                 <th className="px-4 py-3 text-left font-semibold text-white/30 uppercase tracking-wider">IP</th>
@@ -168,7 +165,7 @@ export default function SecuritePage() {
                     key={log.id}
                     style={{
                       background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
-                      borderBottom: `1px solid ${BORDER}`,
+                      borderBottom: `1px solid ${V.border}`,
                     }}
                   >
                     <td className="px-4 py-3">

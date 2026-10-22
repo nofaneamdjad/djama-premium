@@ -3,11 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Building2, Search, RefreshCw, ExternalLink, Mail, Users } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
-
-const GOLD   = "#c9a55a";
-const GOLDR  = "201,165,90";
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 interface Org {
   id: string;
@@ -88,7 +84,7 @@ export default function EntreprisesPage() {
         <button
           onClick={load}
           className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.75rem] font-medium text-white/40 transition hover:border-white/20 hover:text-white/70"
-          style={{ borderColor: BORDER }}
+          style={{ borderColor: V.border }}
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
           Actualiser
@@ -104,16 +100,16 @@ export default function EntreprisesPage() {
           onChange={e => setSearch(e.target.value)}
           placeholder="Rechercher une entreprise..."
           className="w-full rounded-xl border bg-transparent py-2.5 pl-9 pr-4 text-[0.82rem] text-white placeholder-white/20 outline-none transition focus:border-white/20"
-          style={{ borderColor: BORDER }}
+          style={{ borderColor: V.border }}
         />
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border" style={{ background: CARD, borderColor: BORDER }}>
+      <div className="overflow-hidden rounded-2xl border" style={{ background: V.card, borderColor: V.border }}>
         {loading ? (
           <div className="space-y-0">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex animate-pulse items-center gap-4 border-b px-5 py-4" style={{ borderColor: BORDER }}>
+              <div key={i} className="flex animate-pulse items-center gap-4 border-b px-5 py-4" style={{ borderColor: V.border }}>
                 <div className="h-9 w-9 rounded-xl bg-white/[0.06]" />
                 <div className="flex-1 space-y-1.5">
                   <div className="h-3 w-36 rounded bg-white/[0.07]" />
@@ -133,7 +129,7 @@ export default function EntreprisesPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b text-left" style={{ borderColor: BORDER }}>
+              <tr className="border-b text-left" style={{ borderColor: V.border }}>
                 {["Entreprise", "Slug", "Plan", "Membres", "Créée le"].map(h => (
                   <th key={h} className="px-5 py-3 text-[0.7rem] font-semibold uppercase tracking-wider text-white/25">{h}</th>
                 ))}
@@ -142,12 +138,12 @@ export default function EntreprisesPage() {
             </thead>
             <tbody>
               {filtered.map(org => (
-                <tr key={org.id} className="group border-b transition-colors hover:bg-white/[0.02]" style={{ borderColor: BORDER }}>
+                <tr key={org.id} className="group border-b transition-colors hover:bg-white/[0.02]" style={{ borderColor: V.border }}>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[0.65rem] font-black"
-                        style={{ background: `rgba(${GOLDR},0.10)`, color: GOLD }}
+                        style={{ background: `rgba(${V.goldR},0.10)`, color: V.gold }}
                       >
                         {org.name.slice(0, 2).toUpperCase()}
                       </div>

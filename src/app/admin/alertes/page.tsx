@@ -3,9 +3,7 @@
 import { AlertTriangle, CheckCircle, XCircle, Info, RefreshCw } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { getSupabase } from "@/lib/supabase";
-
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 interface Alert {
   type: "error" | "warning" | "info" | "success";
@@ -78,7 +76,7 @@ export default function AlertesPage() {
         <button
           onClick={load}
           className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.75rem] font-medium text-white/40 transition hover:border-white/20 hover:text-white/70"
-          style={{ borderColor: BORDER }}
+          style={{ borderColor: V.border }}
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
           Actualiser
@@ -88,7 +86,7 @@ export default function AlertesPage() {
       {loading ? (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl" style={{ background: CARD }} />
+            <div key={i} className="h-20 animate-pulse rounded-2xl" style={{ background: V.card }} />
           ))}
         </div>
       ) : (

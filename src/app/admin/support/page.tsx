@@ -2,10 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { RefreshCw, Search, MessageSquare, Mail, Clock, CheckCircle, AlertCircle, Loader2, ChevronDown, Send, X } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const BORDER = "rgba(255,255,255,0.07)";
-const CARD   = "#131620";
+import { V } from "@/components/hq";
 
 type TicketStatus   = "open" | "in_progress" | "closed";
 type TicketPriority = "low" | "normal" | "high" | "urgent";
@@ -37,7 +34,7 @@ const STATUS_COLORS: Record<TicketStatus, string> = {
 
 const STATUS_TEXT: Record<TicketStatus, string> = {
   open:        "#ef4444",
-  in_progress: GOLD,
+  in_progress: V.gold,
   closed:      "#22c55e",
 };
 
@@ -51,7 +48,7 @@ const PRIORITY_LABELS: Record<TicketPriority, string> = {
 const PRIORITY_DOT: Record<TicketPriority, string> = {
   low:    "#6b7280",
   normal: "#3b82f6",
-  high:   GOLD,
+  high:   V.gold,
   urgent: "#ef4444",
 };
 
@@ -161,7 +158,7 @@ export default function SupportAdminPage() {
       {toast && (
         <div style={{
           position: "fixed", top: 20, right: 20, zIndex: 999,
-          background: "#1a1f30", border: `1px solid ${BORDER}`,
+          background: "#1a1f30", border: `1px solid ${V.border}`,
           borderRadius: 10, padding: "0.75rem 1.25rem",
           color: "#c9a55a", fontSize: "0.875rem", fontWeight: 600,
           boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
@@ -184,7 +181,7 @@ export default function SupportAdminPage() {
           style={{
             display: "flex", alignItems: "center", gap: 6,
             background: "rgba(201,165,90,0.1)", border: `1px solid rgba(201,165,90,0.25)`,
-            color: GOLD, borderRadius: 10, padding: "0.5rem 1rem",
+            color: V.gold, borderRadius: 10, padding: "0.5rem 1rem",
             fontSize: "0.82rem", fontWeight: 600, cursor: "pointer",
           }}
         >
@@ -196,12 +193,12 @@ export default function SupportAdminPage() {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "1.5rem" }}>
         {[
-          { label: "Total tickets", value: tickets.length, icon: <MessageSquare size={18} color={GOLD} /> },
+          { label: "Total tickets", value: tickets.length, icon: <MessageSquare size={18} color={V.gold} /> },
           { label: "Ouverts", value: openTickets, icon: <AlertCircle size={18} color="#ef4444" /> },
-          { label: "En cours", value: inProgressCount, icon: <Clock size={18} color={GOLD} /> },
+          { label: "En cours", value: inProgressCount, icon: <Clock size={18} color={V.gold} /> },
         ].map(({ label, value, icon }) => (
           <div key={label} style={{
-            background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12,
+            background: V.card, border: `1px solid ${V.border}`, borderRadius: 12,
             padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: 12,
           }}>
             <div style={{ background: "rgba(201,165,90,0.08)", borderRadius: 8, padding: 8 }}>{icon}</div>
@@ -224,7 +221,7 @@ export default function SupportAdminPage() {
             onChange={e => setSearch(e.target.value)}
             style={{
               width: "100%", paddingLeft: 32, padding: "0.5rem 0.75rem 0.5rem 32px",
-              background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10,
+              background: V.card, border: `1px solid ${V.border}`, borderRadius: 10,
               color: "#fff", fontSize: "0.82rem", outline: "none", boxSizing: "border-box",
             }}
           />
@@ -234,7 +231,7 @@ export default function SupportAdminPage() {
             value={filter}
             onChange={e => setFilter(e.target.value)}
             style={{
-              appearance: "none", background: CARD, border: `1px solid ${BORDER}`,
+              appearance: "none", background: V.card, border: `1px solid ${V.border}`,
               borderRadius: 10, color: "rgba(255,255,255,0.7)", padding: "0.5rem 2rem 0.5rem 0.75rem",
               fontSize: "0.82rem", outline: "none", cursor: "pointer",
             }}
@@ -255,7 +252,7 @@ export default function SupportAdminPage() {
       )}
 
       {/* Table */}
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+      <div style={{ background: V.card, border: `1px solid ${V.border}`, borderRadius: 14, overflow: "hidden" }}>
         {loading && !tickets.length ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "rgba(255,255,255,0.3)" }}>
             <Loader2 size={24} style={{ animation: "spin 1s linear infinite", margin: "0 auto 0.5rem" }} />
@@ -269,7 +266,7 @@ export default function SupportAdminPage() {
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <tr style={{ borderBottom: `1px solid ${V.border}` }}>
                 {["Sujet", "Email", "Priorité", "Statut", "Date", ""].map(h => (
                   <th key={h} style={{ padding: "0.75rem 1rem", textAlign: "left", fontSize: "0.72rem", fontWeight: 600, color: "rgba(255,255,255,0.35)", letterSpacing: "0.05em", textTransform: "uppercase" }}>
                     {h}
@@ -282,7 +279,7 @@ export default function SupportAdminPage() {
                 <tr
                   key={t.id}
                   style={{
-                    borderBottom: i < filtered.length - 1 ? `1px solid ${BORDER}` : "none",
+                    borderBottom: i < filtered.length - 1 ? `1px solid ${V.border}` : "none",
                     background: selected?.id === t.id ? "rgba(201,165,90,0.04)" : "transparent",
                     transition: "background 0.15s",
                   }}
@@ -315,7 +312,7 @@ export default function SupportAdminPage() {
                       onClick={() => { setSelected(t); setReply(t.admin_reply ?? ""); }}
                       style={{
                         background: "rgba(201,165,90,0.08)", border: `1px solid rgba(201,165,90,0.2)`,
-                        color: GOLD, borderRadius: 8, padding: "0.35rem 0.75rem",
+                        color: V.gold, borderRadius: 8, padding: "0.35rem 0.75rem",
                         fontSize: "0.75rem", fontWeight: 600, cursor: "pointer",
                       }}
                     >
@@ -333,7 +330,7 @@ export default function SupportAdminPage() {
       {selected && (
         <div style={{
           position: "fixed", top: 0, right: 0, bottom: 0, width: 480,
-          background: "#0d0f18", borderLeft: `1px solid ${BORDER}`,
+          background: "#0d0f18", borderLeft: `1px solid ${V.border}`,
           zIndex: 50, overflowY: "auto", padding: "1.5rem",
           boxShadow: "-8px 0 32px rgba(0,0,0,0.5)",
         }}>
@@ -345,7 +342,7 @@ export default function SupportAdminPage() {
           </div>
 
           {/* Meta */}
-          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "1rem", marginBottom: "1rem" }}>
+          <div style={{ background: V.card, border: `1px solid ${V.border}`, borderRadius: 12, padding: "1rem", marginBottom: "1rem" }}>
             <div style={{ fontSize: "0.95rem", fontWeight: 600, marginBottom: "0.5rem" }}>{selected.subject}</div>
             <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", marginBottom: "0.75rem", display: "flex", gap: 12 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Mail size={12} />{selected.email}</span>
@@ -369,7 +366,7 @@ export default function SupportAdminPage() {
                     void handlePatch(selected.id, { status: s });
                   }}
                   style={{
-                    width: "100%", appearance: "none", background: "#1a1f30", border: `1px solid ${BORDER}`,
+                    width: "100%", appearance: "none", background: "#1a1f30", border: `1px solid ${V.border}`,
                     borderRadius: 8, color: "#fff", padding: "0.45rem 2rem 0.45rem 0.75rem",
                     fontSize: "0.82rem", outline: "none", cursor: "pointer",
                   }}
@@ -392,7 +389,7 @@ export default function SupportAdminPage() {
                     void handlePatch(selected.id, { priority: p });
                   }}
                   style={{
-                    width: "100%", appearance: "none", background: "#1a1f30", border: `1px solid ${BORDER}`,
+                    width: "100%", appearance: "none", background: "#1a1f30", border: `1px solid ${V.border}`,
                     borderRadius: 8, color: "#fff", padding: "0.45rem 2rem 0.45rem 0.75rem",
                     fontSize: "0.82rem", outline: "none", cursor: "pointer",
                   }}
@@ -418,7 +415,7 @@ export default function SupportAdminPage() {
               rows={6}
               placeholder="Votre réponse au client…"
               style={{
-                width: "100%", background: "#1a1f30", border: `1px solid ${BORDER}`,
+                width: "100%", background: "#1a1f30", border: `1px solid ${V.border}`,
                 borderRadius: 10, color: "#fff", padding: "0.75rem",
                 fontSize: "0.85rem", outline: "none", resize: "vertical",
                 lineHeight: 1.6, fontFamily: "inherit", boxSizing: "border-box",
@@ -431,7 +428,7 @@ export default function SupportAdminPage() {
                 marginTop: "0.75rem", width: "100%",
                 background: saving || !reply.trim() ? "rgba(201,165,90,0.2)" : "rgba(201,165,90,0.15)",
                 border: `1px solid ${saving || !reply.trim() ? "rgba(201,165,90,0.15)" : "rgba(201,165,90,0.35)"}`,
-                color: saving || !reply.trim() ? "rgba(201,165,90,0.4)" : GOLD,
+                color: saving || !reply.trim() ? "rgba(201,165,90,0.4)" : V.gold,
                 borderRadius: 10, padding: "0.65rem",
                 fontSize: "0.85rem", fontWeight: 600, cursor: saving || !reply.trim() ? "not-allowed" : "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
