@@ -300,7 +300,7 @@ export default function BetaAdminPage() {
                 <button key={val} onClick={() => setFbFilter(val)} style={{
                   padding: "0.35rem 0.75rem", borderRadius: 6, cursor: "pointer", fontSize: "0.75rem",
                   background: fbFilter === val ? "rgba(201,165,90,0.1)" : "rgba(255,255,255,0.03)",
-                  border: `1px solid ${fbFilter === val ? "rgba(201,165,90,0.3)" : "rgba(255,255,255,0.07)"}`,
+                  border: `1px solid ${fbFilter === val ? "rgba(201,165,90,0.3)" : V.border}`,
                   color: fbFilter === val ? V.gold : "rgba(255,255,255,0.5)",
                 }}>
                   {label}

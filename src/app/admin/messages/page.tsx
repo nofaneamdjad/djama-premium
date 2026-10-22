@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { V } from "@/components/hq";
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
@@ -21,7 +22,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
       <button
         onClick={() => onChange(page - 1)}
         disabled={page === 1}
-        className="flex h-8 w-8 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.07)] text-[0.8rem] text-white/40 transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-white/60 disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--hq-border)] text-[0.8rem] text-white/40 transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-white/60 disabled:opacity-30"
       >
         ←
       </button>
@@ -35,7 +36,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
               className={`flex h-8 min-w-[2rem] items-center justify-center rounded-xl px-2 text-[0.8rem] font-semibold transition-all ${
                 p === page
                   ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a] border border-[rgba(201,165,90,0.3)]"
-                  : "border border-[rgba(255,255,255,0.07)] text-white/40 hover:border-[rgba(255,255,255,0.15)] hover:text-white/60"
+                  : "border border-[var(--hq-border)] text-white/40 hover:border-[rgba(255,255,255,0.15)] hover:text-white/60"
               }`}
             >
               {p}
@@ -46,7 +47,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
       <button
         onClick={() => onChange(page + 1)}
         disabled={page === totalPages}
-        className="flex h-8 w-8 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.07)] text-[0.8rem] text-white/40 transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-white/60 disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--hq-border)] text-[0.8rem] text-white/40 transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-white/60 disabled:opacity-30"
       >
         →
       </button>
@@ -173,7 +174,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)] p-5 animate-pulse">
+    <div className="flex items-center gap-4 rounded-2xl border border-[var(--hq-border)] bg-[rgba(255,255,255,0.03)] p-5 animate-pulse">
       <div className="shrink-0">
         <div className="h-5 w-20 rounded-full bg-[rgba(255,255,255,0.06)] mb-2" />
         <div className="h-4 w-28 rounded bg-[rgba(255,255,255,0.06)]" />
@@ -212,7 +213,7 @@ function ConfirmModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-[rgba(255,255,255,0.07)] bg-[#131620] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-[var(--hq-border)] bg-[var(--hq-card)] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(248,113,113,0.12)] mb-4">
           <Trash2 size={20} className="text-[#f87171]" />
         </div>
@@ -223,7 +224,7 @@ function ConfirmModal({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.04)] py-2.5 text-[0.83rem] font-semibold text-white/60 transition-colors hover:bg-[rgba(255,255,255,0.08)]"
+            className="flex-1 rounded-xl border border-[var(--hq-border)] bg-[rgba(255,255,255,0.04)] py-2.5 text-[0.83rem] font-semibold text-white/60 transition-colors hover:bg-[rgba(255,255,255,0.08)]"
           >
             Annuler
           </button>
@@ -264,10 +265,10 @@ function DetailPanel({
   return (
     <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-[rgba(255,255,255,0.07)] bg-[#131620] shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-[var(--hq-border)] bg-[var(--hq-card)] shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden max-h-[90vh] flex flex-col">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)]">
+        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-[var(--hq-border)] bg-[rgba(255,255,255,0.03)]">
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[0.62rem] font-black"
@@ -312,12 +313,12 @@ function DetailPanel({
 
           {/* Contact info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex items-center gap-2.5 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] px-4 py-3">
+            <div className="flex items-center gap-2.5 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[var(--hq-border)] px-4 py-3">
               <Mail size={13} className="text-white/35 shrink-0" />
               <span className="text-[0.82rem] text-white/70 truncate">{msg.email}</span>
             </div>
             {msg.phone && (
-              <div className="flex items-center gap-2.5 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] px-4 py-3">
+              <div className="flex items-center gap-2.5 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[var(--hq-border)] px-4 py-3">
                 <Phone size={13} className="text-white/35 shrink-0" />
                 <span className="text-[0.82rem] text-white/70">{msg.phone}</span>
               </div>
@@ -333,7 +334,7 @@ function DetailPanel({
           {/* Message */}
           <div>
             <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/35 mb-2">Message</p>
-            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] px-4 py-4">
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-[var(--hq-border)] px-4 py-4">
               <p className="text-[0.84rem] text-white/70 leading-relaxed whitespace-pre-wrap">{msg.message}</p>
             </div>
           </div>
@@ -342,7 +343,7 @@ function DetailPanel({
           {msg.metadata && Object.keys(msg.metadata).length > 0 && (
             <div>
               <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/35 mb-2">Informations supplémentaires</p>
-              <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] px-4 py-3 space-y-1.5">
+              <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-[var(--hq-border)] px-4 py-3 space-y-1.5">
                 {Object.entries(msg.metadata).map(([k, v]) => (
                   <div key={k} className="flex gap-2 text-[0.8rem]">
                     <span className="text-white/35 shrink-0 capitalize">{k} :</span>
@@ -355,7 +356,7 @@ function DetailPanel({
         </div>
 
         {/* Footer actions */}
-        <div className="flex flex-wrap items-center gap-2.5 px-6 py-4 border-t border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)]">
+        <div className="flex flex-wrap items-center gap-2.5 px-6 py-4 border-t border-[var(--hq-border)] bg-[rgba(255,255,255,0.03)]">
           {msg.status === "nouveau" && (
             <button
               onClick={onMarkLu}
@@ -417,8 +418,8 @@ function MessageRow({
     <div
       className={`group relative flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border p-5 transition-all duration-150 cursor-pointer hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.04)] ${
         isNew
-          ? "border-[rgba(96,165,250,0.18)] bg-[#131620]"
-          : "border-[rgba(255,255,255,0.07)] bg-[#131620]"
+          ? "border-[rgba(96,165,250,0.18)] bg-[var(--hq-card)]"
+          : "border-[var(--hq-border)] bg-[var(--hq-card)]"
       }`}
       onClick={onSelect}
     >
@@ -677,7 +678,7 @@ export default function AdminMessages() {
               onClick={() => exportCSV(filtered)}
               disabled={loading || filtered.length === 0}
               title="Exporter en CSV"
-              className="flex shrink-0 items-center gap-2 rounded-xl border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.04)] px-3.5 py-2.5 text-[0.82rem] font-semibold text-white/60 transition-all hover:bg-[rgba(255,255,255,0.08)] hover:text-white/80 disabled:opacity-50"
+              className="flex shrink-0 items-center gap-2 rounded-xl border border-[var(--hq-border)] bg-[rgba(255,255,255,0.04)] px-3.5 py-2.5 text-[0.82rem] font-semibold text-white/60 transition-all hover:bg-[rgba(255,255,255,0.08)] hover:text-white/80 disabled:opacity-50"
             >
               <Download size={13} />
               CSV
@@ -685,7 +686,7 @@ export default function AdminMessages() {
             <button
               onClick={() => fetchDirect(true)}
               disabled={refreshing || loading}
-              className="flex shrink-0 items-center gap-2 rounded-xl border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.04)] px-4 py-2.5 text-[0.82rem] font-semibold text-white/60 transition-all hover:bg-[rgba(255,255,255,0.08)] hover:text-white/80 disabled:opacity-50"
+              className="flex shrink-0 items-center gap-2 rounded-xl border border-[var(--hq-border)] bg-[rgba(255,255,255,0.04)] px-4 py-2.5 text-[0.82rem] font-semibold text-white/60 transition-all hover:bg-[rgba(255,255,255,0.08)] hover:text-white/80 disabled:opacity-50"
             >
               <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
               Actualiser
@@ -702,7 +703,7 @@ export default function AdminMessages() {
           ].map(s => (
             <div
               key={s.label}
-              className="rounded-2xl border border-[rgba(255,255,255,0.07)] bg-[#131620] px-4 py-4 sm:px-5"
+              className="rounded-2xl border border-[var(--hq-border)] bg-[var(--hq-card)] px-4 py-4 sm:px-5"
             >
               <p className="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-white/35 mb-1.5">{s.label}</p>
               <p className="text-[1.7rem] font-black" style={{ color: s.color }}>
@@ -757,7 +758,7 @@ export default function AdminMessages() {
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.07)] bg-[#131620] py-16 px-8 text-center">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-[var(--hq-border)] bg-[var(--hq-card)] py-16 px-8 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(255,255,255,0.04)] mb-4">
                 <InboxIcon size={24} className="text-white/20" />
               </div>
