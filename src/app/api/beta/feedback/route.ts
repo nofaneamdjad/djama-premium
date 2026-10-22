@@ -14,7 +14,7 @@ const FeedbackSchema = z.object({
   message:     z.string().min(1).max(5000),
   rating:      z.number().int().min(1).max(5).optional(),
   screenshot_url: z.string().url().max(1000).optional(),
-  metadata:    z.record(z.unknown()).optional(),
+  metadata:    z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function POST(req: NextRequest) {

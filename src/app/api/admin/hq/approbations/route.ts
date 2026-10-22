@@ -11,7 +11,7 @@ const CreateSchema = z.object({
   description: z.string().max(2000).optional(),
   priority:    z.enum(["urgente","haute","normale","basse"]).default("normale"),
   target_id:   z.string().uuid().optional(),
-  details:     z.record(z.unknown()).optional(),
+  details:     z.record(z.string(), z.unknown()).optional(),
   expires_at:  z.string().datetime().optional(),
   requested_by: z.string().uuid(),
 });
