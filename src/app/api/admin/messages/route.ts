@@ -51,7 +51,7 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
     const parsed = z.object({
-      status: z.enum(["nouveau", "traité", "archivé"]),
+      status: z.enum(["nouveau", "lu", "traité", "archivé"]),
     }).safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Statut invalide" }, { status: 400 });

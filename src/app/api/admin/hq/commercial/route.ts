@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireHqPermission } from "@/lib/hq-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const deny = await requireHqPermission(req, "crm.read");
   if (deny) return deny;
 
   const sb = createSupabaseAdmin();

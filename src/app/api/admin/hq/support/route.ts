@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireHqPermission } from "@/lib/hq-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const deny = await requireHqPermission(req, "support.read");
   if (deny) return deny;
 
   const { searchParams } = new URL(req.url);
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const deny = await requireHqPermission(req, "support.manage");
   if (deny) return deny;
 
   const { id, lu } = await req.json() as { id: string; lu: boolean };

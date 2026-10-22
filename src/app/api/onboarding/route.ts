@@ -6,12 +6,12 @@ import { cookies } from "next/headers";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function getAuth() {
-  const cookieStore = cookies();
+async function getAuth() {
+  const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => (cookieStore as Awaited<typeof cookieStore>).getAll(), setAll: () => {} } },
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
   );
 }
 

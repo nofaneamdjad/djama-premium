@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   LayoutDashboard, Activity, AlertTriangle,
   Users, Building2, UserCheck, Mail,
@@ -213,8 +213,20 @@ function NavSection({
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router   = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [search, setSearch]         = useState("");
+  const [mobileOpen, setMobileOpen]       = useState(false);
+  const [search, setSearch]               = useState("");
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/admin/messages", { cache: "no-store" })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: unknown) => {
+        if (Array.isArray(data)) {
+          setUnreadMessages((data as { status?: string }[]).filter(m => m.status === "nouveau").length);
+        }
+      })
+      .catch(() => {});
+  }, [pathname]);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Sections repliées (persistées en localStorage)
@@ -244,8 +256,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const toggleSection = (id: string) =>
     setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
 
+  const navGroups = useMemo(() => NAV_GROUPS.map(g => ({
+    ...g,
+    items: g.items.map(item =>
+      item.href === "/admin/messages" ? { ...item, badge: unreadMessages } : item
+    ),
+  })), [unreadMessages]);
+
   // Label de la page courante
-  const allItems = NAV_GROUPS.flatMap(g => g.items);
+  const allItems = navGroups.flatMap(g => g.items);
   const activeItem = allItems.find(n =>
     n.exact ? pathname === n.href : pathname.startsWith(n.href)
   );
@@ -315,7 +334,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         className="flex-1 overflow-y-auto px-2 py-3 space-y-3"
         style={{ scrollbarWidth: "none" }}
       >
-        {NAV_GROUPS.map(group => (
+        {navGroups.map(group => (
           <NavSection
             key={group.id}
             group={group}
@@ -357,19 +376,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Overlay mobile */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/70 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-20 bg-black/70 backdrop-blur-sm md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar desktop */}
-      <div className="hidden lg:flex shrink-0" style={{ width: `${SIDE_W}px` }}>
+      {/* Sidebar desktop (md+) */}
+      <div className="hidden md:flex shrink-0" style={{ width: `${SIDE_W}px` }}>
         <Sidebar />
       </div>
 
-      {/* Sidebar mobile (slide-in) */}
+      {/* Sidebar mobile (slide-in, < md) */}
       <div
-        className={`fixed inset-y-0 left-0 z-30 flex lg:hidden transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-30 flex md:hidden transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         style={{ width: `${SIDE_W}px` }}
       >
         <Sidebar isMobile />
@@ -380,13 +399,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Topbar */}
         <header
-          className="flex h-[56px] shrink-0 items-center gap-3 px-4 lg:px-6"
+          className="flex h-[56px] shrink-0 items-center gap-3 px-4 md:px-6"
           style={{ background: TOPBAR_BG, borderBottom: `1px solid ${BORDER}` }}
         >
           {/* Hamburger mobile */}
           <button
             onClick={() => setMobileOpen(true)}
-            className="shrink-0 text-white/30 transition hover:text-white/70 lg:hidden"
+            className="shrink-0 text-white/30 transition hover:text-white/70 md:hidden"
           >
             <Menu size={18} />
           </button>
@@ -426,7 +445,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Contenu */}
-        <main className="flex-1 overflow-y-auto px-5 py-6 lg:px-8 lg:py-8">
+        <main className="flex-1 overflow-y-auto px-5 py-6 md:px-8 md:py-8">
           {children}
         </main>
       </div>

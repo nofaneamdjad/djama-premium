@@ -6,6 +6,7 @@ import {
   Users, CreditCard, Star, MessageSquare, TrendingUp,
   ArrowUp, ArrowDown, Minus, Shield, Briefcase,
   RefreshCw, ChevronRight, UserCheck,
+  AlertTriangle, ClipboardCheck, Bell,
 } from "lucide-react";
 
 const GOLD  = "#c9a55a";
@@ -88,21 +89,35 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   );
 }
 
+type Alerts = { incidentsOuverts: number; incidentsCritiques: number; approbationsEnAttente: number; messagesNouveaux: number };
+
 export default function DirectionDashboard() {
   const [kpi, setKpi]       = useState<Kpi | null>(null);
   const [charts, setCharts] = useState<Charts | null>(null);
   const [employes, setEmployes] = useState<Employe[]>([]);
+  const [alerts, setAlerts] = useState<Alerts>({ incidentsOuverts: 0, incidentsCritiques: 0, approbationsEnAttente: 0, messagesNouveaux: 0 });
   const [loading, setLoading]   = useState(true);
   const [refreshAt, setRefreshAt] = useState(Date.now());
 
   const load = useCallback(() => {
     setLoading(true);
-    fetch("/api/admin/hq/dashboard")
-      .then(r => r.json())
-      .then(d => {
+    Promise.all([
+      fetch("/api/admin/hq/dashboard").then(r => r.json()),
+      fetch("/api/admin/hq/informatique").then(r => r.json()),
+      fetch("/api/admin/hq/approbations?statut=en_attente").then(r => r.json()),
+      fetch("/api/admin/messages").then(r => r.ok ? r.json() : []),
+    ])
+      .then(([d, it, ap, msgs]) => {
         setKpi(d.kpi);
         setCharts(d.charts);
         setEmployes(d.recentEmployes ?? []);
+        const incidentsList = (it.incidents ?? []) as { severite?: string }[];
+        setAlerts({
+          incidentsOuverts:       it.kpi?.ouverts ?? 0,
+          incidentsCritiques:     incidentsList.filter(i => i.severite === "critique").length,
+          approbationsEnAttente:  ap.counts?.enAttente ?? 0,
+          messagesNouveaux:       Array.isArray(msgs) ? (msgs as { status?: string }[]).filter(m => m.status === "nouveau").length : 0,
+        });
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -171,6 +186,59 @@ export default function DirectionDashboard() {
           href="/admin/hq/employes"
         />
       </div>
+
+      {/* Alertes opérationnelles */}
+      {(alerts.incidentsCritiques > 0 || alerts.approbationsEnAttente > 0 || alerts.messagesNouveaux > 0) && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {alerts.incidentsCritiques > 0 && (
+            <Link href="/admin/hq/informatique" className="flex items-center gap-3 rounded-2xl border px-4 py-3 transition-opacity hover:opacity-80" style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.20)" }}>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(239,68,68,0.15)" }}>
+                <AlertTriangle size={15} style={{ color: "#ef4444" }} />
+              </div>
+              <div>
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.08em]" style={{ color: "#ef4444" }}>Incidents critiques</p>
+                <p className="text-[1.1rem] font-black text-white">{alerts.incidentsCritiques}</p>
+              </div>
+            </Link>
+          )}
+          {alerts.approbationsEnAttente > 0 && (
+            <Link href="/admin/hq/approbations" className="flex items-center gap-3 rounded-2xl border px-4 py-3 transition-opacity hover:opacity-80" style={{ background: "rgba(245,158,11,0.08)", borderColor: "rgba(245,158,11,0.20)" }}>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(245,158,11,0.15)" }}>
+                <ClipboardCheck size={15} style={{ color: "#f59e0b" }} />
+              </div>
+              <div>
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.08em]" style={{ color: "#f59e0b" }}>Approbations en attente</p>
+                <p className="text-[1.1rem] font-black text-white">{alerts.approbationsEnAttente}</p>
+              </div>
+            </Link>
+          )}
+          {alerts.messagesNouveaux > 0 && (
+            <Link href="/admin/messages" className="flex items-center gap-3 rounded-2xl border px-4 py-3 transition-opacity hover:opacity-80" style={{ background: "rgba(96,165,250,0.08)", borderColor: "rgba(96,165,250,0.20)" }}>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(96,165,250,0.15)" }}>
+                <Bell size={15} style={{ color: "#60a5fa" }} />
+              </div>
+              <div>
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.08em]" style={{ color: "#60a5fa" }}>Nouveaux messages</p>
+                <p className="text-[1.1rem] font-black text-white">{alerts.messagesNouveaux}</p>
+              </div>
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* Résumé incidents */}
+      {alerts.incidentsOuverts > 0 && (
+        <div className="flex items-center gap-3 rounded-2xl border px-5 py-3" style={{ borderColor: BORDER, background: CARD }}>
+          <AlertTriangle size={14} className="shrink-0 text-orange-400" />
+          <p className="text-[0.82rem] text-white/60">
+            <span className="font-bold text-orange-400">{alerts.incidentsOuverts}</span> incident{alerts.incidentsOuverts > 1 ? "s" : ""} ouvert{alerts.incidentsOuverts > 1 ? "s" : ""} — dont{" "}
+            <span className="font-bold text-red-400">{alerts.incidentsCritiques} critique{alerts.incidentsCritiques > 1 ? "s" : ""}</span>
+          </p>
+          <Link href="/admin/hq/informatique" className="ml-auto flex items-center gap-1 text-[0.72rem] font-semibold hover:opacity-80" style={{ color: GOLD }}>
+            Gérer <ChevronRight size={11} />
+          </Link>
+        </div>
+      )}
 
       {/* Graphiques */}
       {charts && (

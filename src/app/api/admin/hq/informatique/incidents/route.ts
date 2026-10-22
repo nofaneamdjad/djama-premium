@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireHqPermission } from "@/lib/hq-auth";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ const PatchSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const deny = await requireHqPermission(req, "incidents.manage");
   if (deny) return deny;
 
   const body = await req.json();
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const deny = await requireHqPermission(req, "incidents.manage");
   if (deny) return deny;
 
   const body = await req.json();
