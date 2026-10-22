@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrendingUp, Users, Star, ArrowUp, ArrowDown, RefreshCw } from "lucide-react";
-
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 function monthLabel(key: string) {
   const [y, m] = key.split("-");
@@ -48,7 +46,7 @@ export default function MarketingPage() {
         </div>
         <button onClick={() => setTick(t => t + 1)}
           className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-          style={{ border: `1px solid ${BORDER}` }}>
+          style={{ border: `1px solid ${V.border}` }}>
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
@@ -61,7 +59,7 @@ export default function MarketingPage() {
           { label: "Mois précédent",    value: loading ? "—" : String(kpi?.newPrev ?? 0),      icon: TrendingUp,  color: "#6b7280" },
           { label: "Taux premium",      value: loading ? "—" : `${kpi?.tauxPremium ?? 0}%`,   icon: Star,        color: "#c9a55a" },
         ].map(({ label, value, icon: Icon, color, showDiff }) => (
-          <div key={label} className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div key={label} className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-white/30">{label}</span>
               <Icon size={13} style={{ color }} />
@@ -80,7 +78,7 @@ export default function MarketingPage() {
 
       {/* Graphique inscriptions 12 mois */}
       {charts && (
-        <div className="rounded-2xl border p-6" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-6" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-5 flex items-center justify-between">
             <div>
               <p className="text-[0.75rem] font-bold uppercase tracking-[0.08em] text-white/40">Inscriptions — 12 derniers mois</p>
@@ -108,7 +106,7 @@ export default function MarketingPage() {
 
       {/* Métriques de conversion */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-white/30 mb-3">Conversion gratuit → premium</p>
           <div className="flex items-center gap-3">
             <div className="flex-1 h-2 rounded-full overflow-hidden bg-white/[0.06]">
@@ -126,7 +124,7 @@ export default function MarketingPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-white/30 mb-3">Croissance mensuelle</p>
           <p className="text-[1.5rem] font-black text-white tabular-nums">
             {loading ? "—" : (

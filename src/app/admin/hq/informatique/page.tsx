@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Terminal, AlertTriangle, CheckCircle, Clock, Plus, X, Loader2, RefreshCw } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const GOLDR  = "201,165,90";
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Incident = {
   id: string; titre: string; description?: string;
@@ -89,7 +85,7 @@ export default function InformatiquePage() {
   }
 
   const inputCls = "w-full rounded-xl border bg-transparent px-3.5 py-2.5 text-[0.82rem] text-white/85 outline-none placeholder:text-white/25 focus:border-white/20";
-  const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: BORDER };
+  const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: V.border };
 
   return (
     <div className="space-y-6">
@@ -106,12 +102,12 @@ export default function InformatiquePage() {
         <div className="flex items-center gap-2">
           <button onClick={() => setTick(t => t + 1)}
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-            style={{ border: `1px solid ${BORDER}` }}>
+            style={{ border: `1px solid ${V.border}` }}>
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           </button>
           <button onClick={() => setShowForm(o => !o)}
             className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.8rem] font-semibold transition-opacity hover:opacity-80"
-            style={{ background: `rgba(${GOLDR},0.12)`, border: `1px solid rgba(${GOLDR},0.25)`, color: GOLD }}>
+            style={{ background: `rgba(${V.goldR},0.12)`, border: `1px solid rgba(${V.goldR},0.25)`, color: V.gold }}>
             {showForm ? <X size={14} /> : <Plus size={14} />}
             {showForm ? "Annuler" : "Signaler"}
           </button>
@@ -125,7 +121,7 @@ export default function InformatiquePage() {
           { label: "En cours",          value: kpi?.enCours ?? 0,  icon: Clock,         color: "#f59e0b" },
           { label: "Résolus ce mois",   value: kpi?.resolus ?? 0,  icon: CheckCircle,   color: "#22c55e" },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div key={label} className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-white/30">{label}</span>
               <Icon size={13} style={{ color }} />
@@ -150,7 +146,7 @@ export default function InformatiquePage() {
 
       {/* Formulaire incident */}
       {showForm && (
-        <form onSubmit={e => void handleCreate(e)} className="rounded-2xl border p-6 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <form onSubmit={e => void handleCreate(e)} className="rounded-2xl border p-6 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-white/50">Signaler un incident</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 flex flex-col gap-1.5">
@@ -174,7 +170,7 @@ export default function InformatiquePage() {
           <div className="flex justify-end">
             <button type="submit" disabled={saving}
               className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.82rem] font-semibold disabled:opacity-50"
-              style={{ background: `rgba(${GOLDR},0.15)`, border: `1px solid rgba(${GOLDR},0.3)`, color: GOLD }}>
+              style={{ background: `rgba(${V.goldR},0.15)`, border: `1px solid rgba(${V.goldR},0.3)`, color: V.gold }}>
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
               {saving ? "Création…" : "Créer l'incident"}
             </button>
@@ -184,8 +180,8 @@ export default function InformatiquePage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Incidents actifs */}
-        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
-          <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: V.border }}>
+          <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
             <AlertTriangle size={12} className="text-white/30" />
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-white/30">Incidents actifs</p>
           </div>
@@ -194,7 +190,7 @@ export default function InformatiquePage() {
           ) : incidents.length === 0 ? (
             <div className="py-8 text-center text-[0.78rem] text-white/25">Aucun incident actif</div>
           ) : (
-            <div className="divide-y" style={{ borderColor: BORDER }}>
+            <div className="divide-y" style={{ borderColor: V.border }}>
               {incidents.map(inc => {
                 const sev = SEV_MAP[inc.severite] ?? SEV_MAP.moyen;
                 const sta = STAT_MAP[inc.statut]  ?? STAT_MAP.ouvert;
@@ -216,7 +212,7 @@ export default function InformatiquePage() {
                         {inc.statut === "ouvert" && (
                           <button onClick={() => void changeStatut(inc, "en_cours")}
                             className="text-[0.65rem] px-2 py-1 rounded-lg text-white/40 hover:text-white/70 transition-colors"
-                            style={{ border: `1px solid ${BORDER}` }}>En cours</button>
+                            style={{ border: `1px solid ${V.border}` }}>En cours</button>
                         )}
                         {(inc.statut === "ouvert" || inc.statut === "en_cours") && (
                           <button onClick={() => void changeStatut(inc, "resolu")}
@@ -233,8 +229,8 @@ export default function InformatiquePage() {
         </div>
 
         {/* Audit log */}
-        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
-          <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: V.border }}>
+          <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
             <Terminal size={12} className="text-white/30" />
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-white/30">Journal d'audit</p>
           </div>
@@ -243,7 +239,7 @@ export default function InformatiquePage() {
           ) : auditLog.length === 0 ? (
             <div className="py-8 text-center text-[0.78rem] text-white/25">Aucune entrée</div>
           ) : (
-            <div className="divide-y" style={{ borderColor: BORDER }}>
+            <div className="divide-y" style={{ borderColor: V.border }}>
               {auditLog.map(entry => (
                 <div key={entry.id} className="px-5 py-3 flex items-start gap-3">
                   <div className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/20" />

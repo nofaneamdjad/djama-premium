@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, Star, TrendingUp, ArrowUp, ArrowDown, RefreshCw, ChevronRight, CreditCard } from "lucide-react";
-
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 function fmt(n: number) {
   return n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -81,7 +77,7 @@ export default function CommercialPage() {
         <button
           onClick={() => setTick(t => t + 1)}
           className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-          style={{ border: `1px solid ${BORDER}` }}
+          style={{ border: `1px solid ${V.border}` }}
         >
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
         </button>
@@ -91,11 +87,11 @@ export default function CommercialPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
           { label: "Clients totaux",  value: loading ? "—" : String(kpi?.totalClients ?? 0),  icon: Users,       color: "#3b82f6", sub: "" },
-          { label: "Comptes premium", value: loading ? "—" : String(kpi?.premium ?? 0),        icon: Star,        color: GOLD,      sub: `${kpi?.tauxPremium ?? 0}% du total` },
+          { label: "Comptes premium", value: loading ? "—" : String(kpi?.premium ?? 0),        icon: Star,        color: V.gold,      sub: `${kpi?.tauxPremium ?? 0}% du total` },
           { label: "Nouveaux ce mois",value: loading ? "—" : String(kpi?.clientsMois ?? 0),    icon: TrendingUp,  color: "#22c55e", sub: kpi?.clientsPrev ? `Préc. ${kpi.clientsPrev}` : "" },
           { label: "MRR ce mois",     value: loading ? "—" : fmt(kpi?.mrrMois ?? 0),           icon: CreditCard,  color: "#8b5cf6", sub: "" },
         ].map(({ label, value, icon: Icon, color, sub }) => (
-          <div key={label} className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div key={label} className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-white/30">{label}</span>
               <Icon size={13} style={{ color }} />
@@ -114,7 +110,7 @@ export default function CommercialPage() {
       </div>
 
       {/* Barre de recherche */}
-      <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
+      <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${V.border}` }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
@@ -133,15 +129,15 @@ export default function CommercialPage() {
       {loading ? (
         <div className="py-12 text-center text-[0.8rem] text-white/25">Chargement…</div>
       ) : (
-        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
-          <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: V.border }}>
+          <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-white/30">
               Pipeline — {filtered.length} clients
             </p>
           </div>
           <table className="w-full">
             <thead>
-              <tr className="border-b text-left" style={{ borderColor: BORDER }}>
+              <tr className="border-b text-left" style={{ borderColor: V.border }}>
                 <th className="px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25">Client</th>
                 <th className="hidden px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25 sm:table-cell">Entreprise</th>
                 <th className="px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25">Accès</th>
@@ -152,7 +148,7 @@ export default function CommercialPage() {
             </thead>
             <tbody>
               {filtered.slice(0, 30).map(c => (
-                <tr key={c.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
+                <tr key={c.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: V.border }}>
                   <td className="px-5 py-3.5">
                     <p className="text-[0.82rem] font-semibold text-white/85">{c.name}</p>
                     <p className="text-[0.7rem] text-white/35">{c.email}</p>
@@ -162,7 +158,7 @@ export default function CommercialPage() {
                   </td>
                   <td className="px-5 py-3.5">
                     {isPremium(c.user_access) ? (
-                      <span className="flex items-center gap-1 text-[0.68rem] font-semibold" style={{ color: GOLD }}>
+                      <span className="flex items-center gap-1 text-[0.68rem] font-semibold" style={{ color: V.gold }}>
                         <Star size={10} />Premium
                       </span>
                     ) : (

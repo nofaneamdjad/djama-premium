@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CreditCard, TrendingUp, AlertCircle, RefreshCw, ArrowUp, ArrowDown } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 function fmt(n: number) {
   return n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -68,7 +65,7 @@ export default function FinancePage() {
         </div>
         <button onClick={() => setTick(t => t + 1)}
           className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-          style={{ border: `1px solid ${BORDER}` }}>
+          style={{ border: `1px solid ${V.border}` }}>
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
@@ -78,12 +75,12 @@ export default function FinancePage() {
         {[
           { label: "MRR ce mois",      value: loading ? "—" : fmt(kpi?.mrrMois    ?? 0), color: "#22c55e", icon: CreditCard, diff: mrrDiffPct },
           { label: "ARR estimé",        value: loading ? "—" : fmt(kpi?.arr        ?? 0), color: "#3b82f6", icon: TrendingUp, diff: null },
-          { label: "Total 12 mois",     value: loading ? "—" : fmt(kpi?.totalAnnee ?? 0), color: GOLD,      icon: CreditCard, diff: null },
+          { label: "Total 12 mois",     value: loading ? "—" : fmt(kpi?.totalAnnee ?? 0), color: V.gold,      icon: CreditCard, diff: null },
           { label: "En attente",        value: loading ? "—" : fmt(kpi?.enAttente  ?? 0), color: "#f59e0b", icon: AlertCircle, diff: null },
           { label: "Paiements échoués", value: loading ? "—" : String(kpi?.echecsM ?? 0), color: "#ef4444", icon: AlertCircle, diff: null },
           { label: "Mois précédent",    value: loading ? "—" : fmt(kpi?.mrrPrev    ?? 0), color: "#6b7280", icon: CreditCard, diff: null },
         ].map(({ label, value, color, icon: Icon, diff }) => (
-          <div key={label} className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div key={label} className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-white/30">{label}</span>
               <Icon size={13} style={{ color }} />
@@ -102,7 +99,7 @@ export default function FinancePage() {
 
       {/* Graphique 12 mois */}
       {charts && (
-        <div className="rounded-2xl border p-6" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-6" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-5 flex items-center justify-between">
             <div>
               <p className="text-[0.75rem] font-bold uppercase tracking-[0.08em] text-white/40">Revenus — 12 derniers mois</p>
@@ -128,15 +125,15 @@ export default function FinancePage() {
 
       {/* Créances en attente */}
       {enAttente.length > 0 && (
-        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
-          <div className="px-5 py-3 border-b" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: V.border }}>
+          <div className="px-5 py-3 border-b" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-white/30">
               Factures en attente / en retard — {enAttente.length}
             </p>
           </div>
           <table className="w-full">
             <thead>
-              <tr className="border-b text-left" style={{ borderColor: BORDER }}>
+              <tr className="border-b text-left" style={{ borderColor: V.border }}>
                 <th className="px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25">Client</th>
                 <th className="px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25">Montant</th>
                 <th className="hidden px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25 sm:table-cell">Statut</th>
@@ -147,7 +144,7 @@ export default function FinancePage() {
               {enAttente.map(inv => {
                 const st = STATUS_MAP[inv.payment_status] ?? { label: inv.payment_status, color: "rgba(255,255,255,0.4)", bg: "rgba(255,255,255,0.05)" };
                 return (
-                  <tr key={inv.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
+                  <tr key={inv.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: V.border }}>
                     <td className="px-5 py-3.5">
                       <p className="text-[0.8rem] font-semibold text-white/80">{inv.clients?.name ?? "—"}</p>
                       <p className="text-[0.68rem] text-white/30">{inv.clients?.email ?? ""}</p>

@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, UserCheck, UserX, Clock, RefreshCw, ChevronRight, Mail } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const GOLDR  = "201,165,90";
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Kpi = { totalEmployes: number; actifs: number; suspendus: number; offboarded: number; invitationsEnAttente: number };
 type Employe = {
@@ -70,12 +66,12 @@ export default function RhPage() {
         <div className="flex items-center gap-2">
           <button onClick={() => setTick(t => t + 1)}
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-            style={{ border: `1px solid ${BORDER}` }}>
+            style={{ border: `1px solid ${V.border}` }}>
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           </button>
           <Link href="/admin/hq/employes/nouveau"
             className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.8rem] font-semibold transition-opacity hover:opacity-80"
-            style={{ background: `rgba(${GOLDR},0.12)`, border: `1px solid rgba(${GOLDR},0.25)`, color: GOLD }}>
+            style={{ background: `rgba(${V.goldR},0.12)`, border: `1px solid rgba(${V.goldR},0.25)`, color: V.gold }}>
             + Inviter
           </Link>
         </div>
@@ -89,7 +85,7 @@ export default function RhPage() {
           { label: "Invitations att.", value: kpi?.invitationsEnAttente ?? 0,    icon: Clock,     color: "#f59e0b" },
           { label: "Offboardés",       value: kpi?.offboarded    ?? 0,           icon: UserX,     color: "#6b7280" },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div key={label} className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-white/30">{label}</span>
               <Icon size={13} style={{ color }} />
@@ -104,13 +100,13 @@ export default function RhPage() {
       {/* Invitations en attente */}
       {invitations.length > 0 && (
         <div className="rounded-2xl border overflow-hidden" style={{ borderColor: `rgba(59,130,246,0.2)` }}>
-          <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: BORDER, background: "rgba(59,130,246,0.04)" }}>
+          <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: V.border, background: "rgba(59,130,246,0.04)" }}>
             <Clock size={12} className="text-blue-400" />
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-blue-400/70">
               Onboardings en attente — {invitations.length}
             </p>
           </div>
-          <div className="divide-y" style={{ borderColor: BORDER }}>
+          <div className="divide-y" style={{ borderColor: V.border }}>
             {invitations.map(inv => (
               <div key={inv.id} className="flex items-center gap-4 px-5 py-3.5">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-black bg-blue-500/10 text-blue-400">
@@ -142,7 +138,7 @@ export default function RhPage() {
       )}
 
       {/* Recherche + liste employés */}
-      <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
+      <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${V.border}` }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
@@ -157,8 +153,8 @@ export default function RhPage() {
       {loading ? (
         <div className="py-12 text-center text-[0.8rem] text-white/25">Chargement…</div>
       ) : (
-        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
-          <div className="px-5 py-3 border-b" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: V.border }}>
+          <div className="px-5 py-3 border-b" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-white/30">
               Équipe — {filtered.length} membres
             </p>
@@ -168,7 +164,7 @@ export default function RhPage() {
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b text-left" style={{ borderColor: BORDER }}>
+                <tr className="border-b text-left" style={{ borderColor: V.border }}>
                   <th className="px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25">Employé</th>
                   <th className="hidden px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25 sm:table-cell">Poste</th>
                   <th className="hidden px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25 md:table-cell">Département</th>
@@ -181,11 +177,11 @@ export default function RhPage() {
                 {filtered.map(e => {
                   const st = STATUS_MAP[e.status] ?? STATUS_MAP.active;
                   return (
-                    <tr key={e.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
+                    <tr key={e.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: V.border }}>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-black"
-                            style={{ background: `rgba(${GOLDR},0.12)`, color: GOLD }}>
+                            style={{ background: `rgba(${V.goldR},0.12)`, color: V.gold }}>
                             {e.first_name[0]}{e.last_name[0]}
                           </div>
                           <div>

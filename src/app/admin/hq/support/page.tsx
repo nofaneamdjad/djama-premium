@@ -3,9 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { MessageSquare, Search, RefreshCw, ChevronLeft, ChevronRight, MailOpen } from "lucide-react";
-
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Kpi  = { total: number; totalMois: number };
 type Msg  = { id: string; nom?: string; name?: string; email?: string; message?: string; sujet?: string; created_at: string; lu?: boolean };
@@ -56,7 +54,7 @@ export default function SupportPage() {
         <button
           onClick={load}
           className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-          style={{ border: `1px solid ${BORDER}` }}
+          style={{ border: `1px solid ${V.border}` }}
         >
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
         </button>
@@ -68,7 +66,7 @@ export default function SupportPage() {
           { label: "Messages totaux", value: loading ? "—" : String(kpi?.total ?? 0), color: "#3b82f6" },
           { label: "Ce mois",         value: loading ? "—" : String(kpi?.totalMois ?? 0), color: "#f59e0b" },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div key={label} className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-white/30">{label}</span>
               <MessageSquare size={13} style={{ color }} />
@@ -79,7 +77,7 @@ export default function SupportPage() {
       </div>
 
       {/* Recherche */}
-      <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
+      <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${V.border}` }}>
         <Search size={13} className="shrink-0 text-white/30" />
         <input
           value={search}
@@ -93,7 +91,7 @@ export default function SupportPage() {
       {loading ? (
         <div className="py-12 text-center text-[0.8rem] text-white/25">Chargement…</div>
       ) : messages.length === 0 ? (
-        <div className="rounded-2xl border border-dashed p-12 text-center" style={{ borderColor: BORDER }}>
+        <div className="rounded-2xl border border-dashed p-12 text-center" style={{ borderColor: V.border }}>
           <MessageSquare size={20} className="mx-auto mb-2 text-white/15" />
           <p className="text-[0.82rem] text-white/30">Aucun message</p>
         </div>
@@ -103,7 +101,7 @@ export default function SupportPage() {
             <div
               key={m.id}
               className="rounded-2xl border overflow-hidden"
-              style={{ background: CARD, borderColor: BORDER }}
+              style={{ background: V.card, borderColor: V.border }}
             >
               <button
                 onClick={() => setExpanded(e => e === m.id ? null : m.id)}
@@ -132,7 +130,7 @@ export default function SupportPage() {
               </button>
 
               {expanded === m.id && m.message && (
-                <div className="px-5 pb-5 pt-1 border-t" style={{ borderColor: BORDER }}>
+                <div className="px-5 pb-5 pt-1 border-t" style={{ borderColor: V.border }}>
                   <p className="text-[0.8rem] text-white/60 leading-relaxed whitespace-pre-wrap">{m.message}</p>
                 </div>
               )}
@@ -148,12 +146,12 @@ export default function SupportPage() {
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
               className="flex items-center gap-1 rounded-xl px-3 py-2 text-[0.74rem] text-white/40 disabled:opacity-30"
-              style={{ border: `1px solid ${BORDER}` }}>
+              style={{ border: `1px solid ${V.border}` }}>
               <ChevronLeft size={13} /> Précédent
             </button>
             <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}
               className="flex items-center gap-1 rounded-xl px-3 py-2 text-[0.74rem] text-white/40 disabled:opacity-30"
-              style={{ border: `1px solid ${BORDER}` }}>
+              style={{ border: `1px solid ${V.border}` }}>
               Suivant <ChevronRight size={13} />
             </button>
           </div>
