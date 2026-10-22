@@ -6,11 +6,7 @@ import {
   CheckCircle, XCircle, Clock, AlertTriangle, Plus, X,
   Loader2, RefreshCw, ChevronDown,
 } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const GOLDR  = "201,165,90";
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 const TYPE_MAP: Record<string, { label: string; color: string }> = {
   offboarding:  { label: "Offboarding",    color: "#ef4444" },
@@ -118,7 +114,7 @@ export default function ApprobationsPage() {
   }
 
   const inputCls = "w-full rounded-xl border bg-transparent px-3.5 py-2.5 text-[0.82rem] text-white/85 outline-none placeholder:text-white/25 focus:border-white/20";
-  const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: BORDER };
+  const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: V.border };
 
   return (
     <div className="space-y-6">
@@ -140,12 +136,12 @@ export default function ApprobationsPage() {
         <div className="flex items-center gap-2">
           <button onClick={() => setTick(t => t + 1)}
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-            style={{ border: `1px solid ${BORDER}` }}>
+            style={{ border: `1px solid ${V.border}` }}>
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           </button>
           <button onClick={() => setShowForm(o => !o)}
             className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.8rem] font-semibold transition-opacity hover:opacity-80"
-            style={{ background: `rgba(${GOLDR},0.12)`, border: `1px solid rgba(${GOLDR},0.25)`, color: GOLD }}>
+            style={{ background: `rgba(${V.goldR},0.12)`, border: `1px solid rgba(${V.goldR},0.25)`, color: V.gold }}>
             {showForm ? <X size={14} /> : <Plus size={14} />}
             {showForm ? "Annuler" : "Nouvelle demande"}
           </button>
@@ -166,7 +162,7 @@ export default function ApprobationsPage() {
 
       {/* Formulaire création */}
       {showForm && (
-        <form onSubmit={e => void handleCreate(e)} className="rounded-2xl border p-6 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <form onSubmit={e => void handleCreate(e)} className="rounded-2xl border p-6 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-white/50">Nouvelle demande d'approbation</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 flex flex-col gap-1.5">
@@ -204,7 +200,7 @@ export default function ApprobationsPage() {
           <div className="flex justify-end">
             <button type="submit" disabled={saving}
               className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.82rem] font-semibold disabled:opacity-50"
-              style={{ background: `rgba(${GOLDR},0.15)`, border: `1px solid rgba(${GOLDR},0.3)`, color: GOLD }}>
+              style={{ background: `rgba(${V.goldR},0.15)`, border: `1px solid rgba(${V.goldR},0.3)`, color: V.gold }}>
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
               {saving ? "Création…" : "Soumettre"}
             </button>
@@ -218,9 +214,9 @@ export default function ApprobationsPage() {
           <button key={tab.value} onClick={() => setStatut(tab.value)}
             className="relative rounded-xl px-3.5 py-2 text-[0.75rem] font-medium transition-all"
             style={{
-              background: statut === tab.value ? `rgba(${GOLDR},0.12)` : "rgba(255,255,255,0.04)",
-              border: `1px solid ${statut === tab.value ? `rgba(${GOLDR},0.3)` : BORDER}`,
-              color: statut === tab.value ? GOLD : "rgba(255,255,255,0.4)",
+              background: statut === tab.value ? `rgba(${V.goldR},0.12)` : "rgba(255,255,255,0.04)",
+              border: `1px solid ${statut === tab.value ? `rgba(${V.goldR},0.3)` : V.border}`,
+              color: statut === tab.value ? V.gold : "rgba(255,255,255,0.4)",
             }}>
             {tab.label}
             {tab.value === "en_attente" && counts.enAttente > 0 && (
@@ -236,7 +232,7 @@ export default function ApprobationsPage() {
       {loading ? (
         <div className="py-12 text-center text-[0.8rem] text-white/25">Chargement…</div>
       ) : approvals.length === 0 ? (
-        <div className="rounded-2xl border border-dashed p-12 text-center" style={{ borderColor: BORDER }}>
+        <div className="rounded-2xl border border-dashed p-12 text-center" style={{ borderColor: V.border }}>
           <CheckCircle size={22} className="mx-auto mb-2 text-white/15" />
           <p className="text-[0.82rem] text-white/30">
             {statut === "en_attente" ? "Aucune demande en attente" : "Aucune entrée"}
@@ -249,7 +245,7 @@ export default function ApprobationsPage() {
             const type = TYPE_MAP[a.type]     ?? TYPE_MAP.autre;
             const isReviewing = reviewing?.id === a.id;
             return (
-              <div key={a.id} className="rounded-2xl border overflow-hidden" style={{ background: CARD, borderColor: a.statut === "en_attente" ? "rgba(245,158,11,0.2)" : BORDER }}>
+              <div key={a.id} className="rounded-2xl border overflow-hidden" style={{ background: V.card, borderColor: a.statut === "en_attente" ? "rgba(245,158,11,0.2)" : V.border }}>
                 <div className="flex items-start gap-4 p-5">
                   {/* Indicateur priorité */}
                   <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full" style={{ background: prio.color }} />
@@ -301,7 +297,7 @@ export default function ApprobationsPage() {
 
                 {/* Panneau de révision */}
                 {isReviewing && (
-                  <div className="border-t px-5 py-4 space-y-3" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+                  <div className="border-t px-5 py-4 space-y-3" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
                     <p className="text-[0.78rem] font-semibold text-white/60">
                       {reviewing.action === "approuve" ? "✓ Confirmer l'approbation" : "✗ Confirmer le rejet"}
                     </p>

@@ -3,11 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { UserPlus, Search, Filter, ChevronRight, RefreshCw } from "lucide-react";
-
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Employee = {
   id: string; first_name: string; last_name: string; email: string;
@@ -85,7 +81,7 @@ export default function EmployeesPage() {
         <Link
           href="/admin/hq/employes/nouveau"
           className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.8rem] font-semibold transition-opacity hover:opacity-80"
-          style={{ background: `rgba(${GOLDR},0.12)`, border: `1px solid rgba(${GOLDR},0.25)`, color: GOLD }}
+          style={{ background: `rgba(${V.goldR},0.12)`, border: `1px solid rgba(${V.goldR},0.25)`, color: V.gold }}
         >
           <UserPlus size={14} />
           Nouvel employé
@@ -94,7 +90,7 @@ export default function EmployeesPage() {
 
       {/* Filtres */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-[200px]" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-[200px]" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${V.border}` }}>
           <Search size={13} className="shrink-0 text-white/30" />
           <input
             value={search}
@@ -110,16 +106,16 @@ export default function EmployeesPage() {
               onClick={() => setStatus(opt.value)}
               className="rounded-xl px-3 py-2 text-[0.74rem] font-medium transition-all"
               style={{
-                background: status === opt.value ? `rgba(${GOLDR},0.12)` : "rgba(255,255,255,0.04)",
-                border: `1px solid ${status === opt.value ? `rgba(${GOLDR},0.3)` : BORDER}`,
-                color: status === opt.value ? GOLD : "rgba(255,255,255,0.4)",
+                background: status === opt.value ? `rgba(${V.goldR},0.12)` : "rgba(255,255,255,0.04)",
+                border: `1px solid ${status === opt.value ? `rgba(${V.goldR},0.3)` : V.border}`,
+                color: status === opt.value ? V.gold : "rgba(255,255,255,0.4)",
               }}
             >
               {opt.label}
             </button>
           ))}
         </div>
-        <button onClick={load} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.74rem] text-white/30 hover:text-white/60 transition-colors" style={{ border: `1px solid ${BORDER}` }}>
+        <button onClick={load} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.74rem] text-white/30 hover:text-white/60 transition-colors" style={{ border: `1px solid ${V.border}` }}>
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
@@ -128,21 +124,21 @@ export default function EmployeesPage() {
       {loading ? (
         <div className="py-16 text-center text-[0.8rem] text-white/25">Chargement…</div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed p-12 text-center" style={{ borderColor: BORDER }}>
+        <div className="rounded-2xl border border-dashed p-12 text-center" style={{ borderColor: V.border }}>
           <p className="text-[0.82rem] text-white/30">Aucun employé trouvé</p>
           <Link
             href="/admin/hq/employes/nouveau"
             className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[0.78rem] font-semibold"
-            style={{ background: `rgba(${GOLDR},0.10)`, border: `1px solid rgba(${GOLDR},0.2)`, color: GOLD }}
+            style={{ background: `rgba(${V.goldR},0.10)`, border: `1px solid rgba(${V.goldR},0.2)`, color: V.gold }}
           >
             <UserPlus size={13} /> Créer un employé
           </Link>
         </div>
       ) : (
-        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: V.border }}>
           <table className="w-full">
             <thead>
-              <tr className="border-b text-left" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+              <tr className="border-b text-left" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
                 <th className="px-5 py-3 text-[0.63rem] font-semibold uppercase tracking-[0.1em] text-white/30">Employé</th>
                 <th className="hidden px-5 py-3 text-[0.63rem] font-semibold uppercase tracking-[0.1em] text-white/30 sm:table-cell">Poste</th>
                 <th className="hidden px-5 py-3 text-[0.63rem] font-semibold uppercase tracking-[0.1em] text-white/30 md:table-cell">Département</th>
@@ -155,12 +151,12 @@ export default function EmployeesPage() {
               {filtered.map(emp => {
                 const role = emp.hq_employee_roles?.[0]?.hq_roles;
                 return (
-                  <tr key={emp.id} className="border-b last:border-0 transition-colors hover:bg-white/[0.02]" style={{ borderColor: BORDER }}>
+                  <tr key={emp.id} className="border-b last:border-0 transition-colors hover:bg-white/[0.02]" style={{ borderColor: V.border }}>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <div
                           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-black"
-                          style={{ background: `rgba(${GOLDR},0.15)`, color: GOLD }}
+                          style={{ background: `rgba(${V.goldR},0.15)`, color: V.gold }}
                         >
                           {emp.first_name[0]}{emp.last_name[0]}
                         </div>

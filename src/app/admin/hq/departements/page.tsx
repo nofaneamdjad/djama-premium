@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Building2, Plus, Users, Loader2, CheckCircle, AlertCircle, X } from "lucide-react";
-
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Dept = {
   id: string; name: string; slug: string; description?: string; color: string;
@@ -22,7 +18,7 @@ function DeptCard({ dept, onUpdated }: { dept: Dept; onUpdated: () => void }) {
   return (
     <div
       className="rounded-2xl border p-5 flex flex-col gap-3"
-      style={{ background: CARD, borderColor: BORDER, borderLeft: `3px solid ${dept.color}` }}
+      style={{ background: V.card, borderColor: V.border, borderLeft: `3px solid ${dept.color}` }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -89,7 +85,7 @@ export default function DepartmentsPage() {
   }
 
   const inputCls = "w-full rounded-xl border bg-transparent px-3.5 py-2.5 text-[0.85rem] text-white/85 outline-none transition-colors placeholder:text-white/20 focus:border-white/20";
-  const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: BORDER };
+  const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: V.border };
 
   return (
     <div className="space-y-6">
@@ -106,7 +102,7 @@ export default function DepartmentsPage() {
         <button
           onClick={() => setShowForm(o => !o)}
           className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[0.8rem] font-semibold transition-opacity hover:opacity-80"
-          style={{ background: `rgba(${GOLDR},0.12)`, border: `1px solid rgba(${GOLDR},0.25)`, color: GOLD }}
+          style={{ background: `rgba(${V.goldR},0.12)`, border: `1px solid rgba(${V.goldR},0.25)`, color: V.gold }}
         >
           {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? "Annuler" : "Nouveau département"}
@@ -128,7 +124,7 @@ export default function DepartmentsPage() {
       )}
 
       {showForm && (
-        <form onSubmit={e => void handleCreate(e)} className="rounded-2xl border p-6 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <form onSubmit={e => void handleCreate(e)} className="rounded-2xl border p-6 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="text-[0.82rem] font-bold text-white/60 uppercase tracking-[0.08em]">Nouveau département</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
@@ -161,7 +157,7 @@ export default function DepartmentsPage() {
             <button
               type="submit" disabled={saving}
               className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[0.82rem] font-semibold disabled:opacity-50"
-              style={{ background: `rgba(${GOLDR},0.15)`, border: `1px solid rgba(${GOLDR},0.3)`, color: GOLD }}
+              style={{ background: `rgba(${V.goldR},0.15)`, border: `1px solid rgba(${V.goldR},0.3)`, color: V.gold }}
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
               {saving ? "Création…" : "Créer"}

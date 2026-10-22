@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Shield, Plus, Lock, Users, ChevronDown, ChevronUp } from "lucide-react";
-
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Permission = { id: string; slug: string; label: string; category: string };
 type Role = {
@@ -36,7 +32,7 @@ function RoleCard({ role }: { role: Role }) {
   }, {});
 
   return (
-    <div className="rounded-2xl border overflow-hidden" style={{ background: CARD, borderColor: BORDER }}>
+    <div className="rounded-2xl border overflow-hidden" style={{ background: V.card, borderColor: V.border }}>
       <div className="flex items-start justify-between gap-4 p-5">
         <div className="flex items-start gap-3 min-w-0">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `${lv.color}18` }}>
@@ -64,7 +60,7 @@ function RoleCard({ role }: { role: Role }) {
         <button
           onClick={() => setOpen(o => !o)}
           className="flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[0.72rem] text-white/35 hover:text-white/60 transition-colors"
-          style={{ border: `1px solid ${BORDER}` }}
+          style={{ border: `1px solid ${V.border}` }}
         >
           {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           {open ? "Masquer" : "Permissions"}
@@ -72,7 +68,7 @@ function RoleCard({ role }: { role: Role }) {
       </div>
 
       {open && (
-        <div className="border-t px-5 py-4" style={{ borderColor: BORDER }}>
+        <div className="border-t px-5 py-4" style={{ borderColor: V.border }}>
           {perms.length === 0 ? (
             <p className="text-[0.75rem] text-white/25">Aucune permission attribuée.</p>
           ) : (
@@ -85,7 +81,7 @@ function RoleCard({ role }: { role: Role }) {
                       <span
                         key={p.slug}
                         className="rounded-lg px-2 py-1 text-[0.68rem] font-mono text-white/55"
-                        style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}
+                        style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${V.border}` }}
                       >
                         {p.slug}
                       </span>
@@ -155,7 +151,7 @@ export default function RolesPage() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-dashed p-6" style={{ borderColor: BORDER }}>
+      <div className="rounded-2xl border border-dashed p-6" style={{ borderColor: V.border }}>
         <p className="text-[0.78rem] text-white/30 text-center">
           La création de rôles personnalisés sera disponible dans une prochaine version.
         </p>

@@ -3,11 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Search, RefreshCw, ChevronRight, ChevronLeft, Star } from "lucide-react";
-
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type Client = {
   id: string; name: string; email: string; statut: string;
@@ -90,7 +86,7 @@ export default function HQClientsPage() {
 
       {/* Filtres */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-[200px]" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-[200px]" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${V.border}` }}>
           <Search size={13} className="shrink-0 text-white/30" />
           <input
             value={search}
@@ -107,9 +103,9 @@ export default function HQClientsPage() {
               onClick={() => setStatut(o.value)}
               className="rounded-xl px-3 py-2 text-[0.74rem] font-medium transition-all"
               style={{
-                background: statut === o.value ? `rgba(${GOLDR},0.12)` : "rgba(255,255,255,0.04)",
-                border: `1px solid ${statut === o.value ? `rgba(${GOLDR},0.3)` : BORDER}`,
-                color: statut === o.value ? GOLD : "rgba(255,255,255,0.4)",
+                background: statut === o.value ? `rgba(${V.goldR},0.12)` : "rgba(255,255,255,0.04)",
+                border: `1px solid ${statut === o.value ? `rgba(${V.goldR},0.3)` : V.border}`,
+                color: statut === o.value ? V.gold : "rgba(255,255,255,0.4)",
               }}
             >{o.label}</button>
           ))}
@@ -122,9 +118,9 @@ export default function HQClientsPage() {
               onClick={() => setPremium(o.value)}
               className="flex items-center gap-1 rounded-xl px-3 py-2 text-[0.74rem] font-medium transition-all"
               style={{
-                background: premium === o.value ? `rgba(${GOLDR},0.12)` : "rgba(255,255,255,0.04)",
-                border: `1px solid ${premium === o.value ? `rgba(${GOLDR},0.3)` : BORDER}`,
-                color: premium === o.value ? GOLD : "rgba(255,255,255,0.4)",
+                background: premium === o.value ? `rgba(${V.goldR},0.12)` : "rgba(255,255,255,0.04)",
+                border: `1px solid ${premium === o.value ? `rgba(${V.goldR},0.3)` : V.border}`,
+                color: premium === o.value ? V.gold : "rgba(255,255,255,0.4)",
               }}
             >
               {o.value === "true" && <Star size={10} />}
@@ -133,7 +129,7 @@ export default function HQClientsPage() {
           ))}
         </div>
 
-        <button onClick={load} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.74rem] text-white/30 hover:text-white/60 transition-colors" style={{ border: `1px solid ${BORDER}` }}>
+        <button onClick={load} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[0.74rem] text-white/30 hover:text-white/60 transition-colors" style={{ border: `1px solid ${V.border}` }}>
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
@@ -142,14 +138,14 @@ export default function HQClientsPage() {
       {loading ? (
         <div className="py-16 text-center text-[0.8rem] text-white/25">Chargement…</div>
       ) : clients.length === 0 ? (
-        <div className="rounded-2xl border border-dashed p-12 text-center" style={{ borderColor: BORDER }}>
+        <div className="rounded-2xl border border-dashed p-12 text-center" style={{ borderColor: V.border }}>
           <p className="text-[0.82rem] text-white/30">Aucun client trouvé</p>
         </div>
       ) : (
-        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: V.border }}>
           <table className="w-full">
             <thead>
-              <tr className="border-b text-left" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+              <tr className="border-b text-left" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
                 <th className="px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/30">Client</th>
                 <th className="hidden px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/30 sm:table-cell">Entreprise</th>
                 <th className="px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/30">Accès</th>
@@ -160,7 +156,7 @@ export default function HQClientsPage() {
             </thead>
             <tbody>
               {clients.map(c => (
-                <tr key={c.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
+                <tr key={c.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: V.border }}>
                   <td className="px-5 py-3.5">
                     <div>
                       <p className="text-[0.82rem] font-semibold text-white">{c.name}</p>
@@ -172,7 +168,7 @@ export default function HQClientsPage() {
                   </td>
                   <td className="px-5 py-3.5">
                     {c.access.espace_premium ? (
-                      <span className="flex items-center gap-1 text-[0.68rem] font-semibold" style={{ color: GOLD }}>
+                      <span className="flex items-center gap-1 text-[0.68rem] font-semibold" style={{ color: V.gold }}>
                         <Star size={10} />Premium
                       </span>
                     ) : (
@@ -211,7 +207,7 @@ export default function HQClientsPage() {
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
               className="flex items-center gap-1 rounded-xl px-3 py-2 text-[0.74rem] text-white/40 disabled:opacity-30 hover:text-white/70 transition-colors"
-              style={{ border: `1px solid ${BORDER}` }}
+              style={{ border: `1px solid ${V.border}` }}
             >
               <ChevronLeft size={13} /> Précédent
             </button>
@@ -219,7 +215,7 @@ export default function HQClientsPage() {
               onClick={() => setPage(p => Math.min(pages, p + 1))}
               disabled={page === pages}
               className="flex items-center gap-1 rounded-xl px-3 py-2 text-[0.74rem] text-white/40 disabled:opacity-30 hover:text-white/70 transition-colors"
-              style={{ border: `1px solid ${BORDER}` }}
+              style={{ border: `1px solid ${V.border}` }}
             >
               Suivant <ChevronRight size={13} />
             </button>

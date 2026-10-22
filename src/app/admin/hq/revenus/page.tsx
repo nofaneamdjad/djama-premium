@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CreditCard, TrendingUp, TrendingDown, ArrowUp, ArrowDown, RefreshCw } from "lucide-react";
-
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
-const CARD  = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 function fmt(n: number) {
   return n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -70,7 +66,7 @@ export default function RevenusPage() {
         <button
           onClick={() => setTick(t => t + 1)}
           className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-          style={{ border: `1px solid ${BORDER}` }}
+          style={{ border: `1px solid ${V.border}` }}
         >
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
         </button>
@@ -97,7 +93,7 @@ export default function RevenusPage() {
             label: "Total 12 mois",
             value: loading ? "—" : fmt(kpi?.totalAnnee ?? 0),
             sub: "",
-            color: GOLD,
+            color: V.gold,
             trend: null,
           },
           {
@@ -108,7 +104,7 @@ export default function RevenusPage() {
             trend: null,
           },
         ].map(({ label, value, sub, color, trend }) => (
-          <div key={label} className="rounded-2xl border p-5" style={{ background: CARD, borderColor: BORDER }}>
+          <div key={label} className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-white/30">{label}</span>
               <CreditCard size={13} style={{ color }} />
@@ -129,7 +125,7 @@ export default function RevenusPage() {
 
       {/* Graphique 12 mois */}
       {revenus.length > 0 && (
-        <div className="rounded-2xl border p-6" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-6" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-5 flex items-center justify-between">
             <p className="text-[0.75rem] font-bold uppercase tracking-[0.08em] text-white/40">Revenus mensuels — 12 mois</p>
             <TrendingUp size={14} style={{ color: "#22c55e" }} />
@@ -156,8 +152,8 @@ export default function RevenusPage() {
       )}
 
       {/* Factures récentes */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
-        <div className="px-5 py-3.5 border-b" style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: V.border }}>
+        <div className="px-5 py-3.5 border-b" style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-white/30">Factures récentes</p>
         </div>
         {loading ? (
@@ -167,7 +163,7 @@ export default function RevenusPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="text-left border-b" style={{ borderColor: BORDER }}>
+              <tr className="text-left border-b" style={{ borderColor: V.border }}>
                 <th className="px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25">Client</th>
                 <th className="px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25">Montant</th>
                 <th className="hidden px-5 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-white/25 sm:table-cell">Statut</th>
@@ -178,7 +174,7 @@ export default function RevenusPage() {
               {invoices.map(inv => {
                 const st = STATUS_MAP[inv.payment_status] ?? { label: inv.payment_status, color: "rgba(255,255,255,0.4)", bg: "rgba(255,255,255,0.05)" };
                 return (
-                  <tr key={inv.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
+                  <tr key={inv.id} className="border-b last:border-0 hover:bg-white/[0.02] transition-colors" style={{ borderColor: V.border }}>
                     <td className="px-5 py-3.5">
                       <div>
                         <p className="text-[0.8rem] font-semibold text-white/80">{inv.clients?.name ?? "—"}</p>

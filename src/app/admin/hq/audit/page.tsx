@@ -3,11 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Shield, RefreshCw, ChevronLeft, ChevronRight, Search, Filter, X } from "lucide-react";
-
-const GOLD   = "#c9a55a";
-const GOLDR  = "201,165,90";
-const CARD   = "#131620";
-const BORDER = "rgba(255,255,255,0.07)";
+import { V } from "@/components/hq";
 
 type AuditEntry = {
   id: string;
@@ -87,7 +83,7 @@ export default function AuditPage() {
 
   const hasActiveFilters = Object.values(applied).some(v => v !== "");
   const inputCls = "w-full rounded-xl border bg-transparent px-3 py-2 text-[0.78rem] text-white/80 outline-none placeholder:text-white/25 focus:border-white/20";
-  const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: BORDER };
+  const inputStyle = { background: "rgba(255,255,255,0.03)", borderColor: V.border };
 
   return (
     <div className="space-y-6">
@@ -107,15 +103,15 @@ export default function AuditPage() {
         <div className="flex items-center gap-2">
           <button onClick={() => setTick(t => t + 1)}
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-            style={{ border: `1px solid ${BORDER}` }}>
+            style={{ border: `1px solid ${V.border}` }}>
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           </button>
           <button onClick={() => setShowFilters(o => !o)}
             className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.8rem] font-semibold transition-opacity hover:opacity-80"
             style={{
-              background: hasActiveFilters ? `rgba(${GOLDR},0.12)` : "rgba(255,255,255,0.04)",
-              border: `1px solid ${hasActiveFilters ? `rgba(${GOLDR},0.3)` : BORDER}`,
-              color: hasActiveFilters ? GOLD : "rgba(255,255,255,0.5)",
+              background: hasActiveFilters ? `rgba(${V.goldR},0.12)` : "rgba(255,255,255,0.04)",
+              border: `1px solid ${hasActiveFilters ? `rgba(${V.goldR},0.3)` : V.border}`,
+              color: hasActiveFilters ? V.gold : "rgba(255,255,255,0.5)",
             }}>
             <Filter size={13} />
             Filtres{hasActiveFilters && " •"}
@@ -125,7 +121,7 @@ export default function AuditPage() {
 
       {/* Panneau filtres */}
       {showFilters && (
-        <div className="rounded-2xl border p-5 space-y-4" style={{ background: CARD, borderColor: BORDER }}>
+        <div className="rounded-2xl border p-5 space-y-4" style={{ background: V.card, borderColor: V.border }}>
           <div className="flex items-center justify-between">
             <span className="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-white/40">Filtres</span>
             {hasActiveFilters && (
@@ -173,7 +169,7 @@ export default function AuditPage() {
           <div className="flex justify-end">
             <button onClick={applyFilters}
               className="flex items-center gap-2 rounded-xl px-4 py-2 text-[0.78rem] font-semibold"
-              style={{ background: `rgba(${GOLDR},0.12)`, border: `1px solid rgba(${GOLDR},0.25)`, color: GOLD }}>
+              style={{ background: `rgba(${V.goldR},0.12)`, border: `1px solid rgba(${V.goldR},0.25)`, color: V.gold }}>
               Appliquer
             </button>
           </div>
@@ -181,10 +177,10 @@ export default function AuditPage() {
       )}
 
       {/* Table */}
-      <div className="rounded-2xl border overflow-hidden" style={{ background: CARD, borderColor: BORDER }}>
+      <div className="rounded-2xl border overflow-hidden" style={{ background: V.card, borderColor: V.border }}>
         {/* Header */}
         <div className="grid grid-cols-[1fr_140px_200px_140px] gap-0 border-b px-4 py-2.5"
-          style={{ borderColor: BORDER, background: "rgba(255,255,255,0.02)" }}>
+          style={{ borderColor: V.border, background: "rgba(255,255,255,0.02)" }}>
           <span className="text-[0.65rem] font-bold uppercase tracking-[0.1em] text-white/25">Action / Entité</span>
           <span className="text-[0.65rem] font-bold uppercase tracking-[0.1em] text-white/25">Type</span>
           <span className="text-[0.65rem] font-bold uppercase tracking-[0.1em] text-white/25">Effectuée par</span>
@@ -199,7 +195,7 @@ export default function AuditPage() {
             <p className="text-[0.82rem] text-white/30">Aucune entrée</p>
           </div>
         ) : (
-          <div className="divide-y" style={{ borderColor: BORDER }}>
+          <div className="divide-y" style={{ borderColor: V.border }}>
             {entries.map(e => (
               <div key={e.id} className="grid grid-cols-[1fr_140px_200px_140px] gap-0 px-4 py-3 hover:bg-white/[0.02] transition-colors">
                 <div className="min-w-0 flex flex-col gap-1">
@@ -240,19 +236,19 @@ export default function AuditPage() {
 
         {/* Pagination */}
         {pages > 1 && (
-          <div className="flex items-center justify-between border-t px-4 py-3" style={{ borderColor: BORDER }}>
+          <div className="flex items-center justify-between border-t px-4 py-3" style={{ borderColor: V.border }}>
             <span className="text-[0.72rem] text-white/30">
               Page {page} / {pages} — {total.toLocaleString("fr-FR")} entrée{total > 1 ? "s" : ""}
             </span>
             <div className="flex items-center gap-1.5">
               <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}
                 className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-[0.75rem] disabled:opacity-30 hover:bg-white/5 transition-colors"
-                style={{ border: `1px solid ${BORDER}`, color: "rgba(255,255,255,0.5)" }}>
+                style={{ border: `1px solid ${V.border}`, color: "rgba(255,255,255,0.5)" }}>
                 <ChevronLeft size={13} /> Préc.
               </button>
               <button disabled={page >= pages} onClick={() => setPage(p => Math.min(pages, p + 1))}
                 className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-[0.75rem] disabled:opacity-30 hover:bg-white/5 transition-colors"
-                style={{ border: `1px solid ${BORDER}`, color: "rgba(255,255,255,0.5)" }}>
+                style={{ border: `1px solid ${V.border}`, color: "rgba(255,255,255,0.5)" }}>
                 Suiv. <ChevronRight size={13} />
               </button>
             </div>
