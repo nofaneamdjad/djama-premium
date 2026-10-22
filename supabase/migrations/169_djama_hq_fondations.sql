@@ -143,7 +143,7 @@ ON CONFLICT (slug) DO NOTHING;
 -- Seed : Rôles système
 -- ============================================================
 INSERT INTO hq_roles (name, slug, description, level, is_system, department_id)
-SELECT name, slug, description, level, true, d.id
+SELECT v.name, v.slug, v.description, v.level, true, d.id
 FROM (VALUES
   ('Directeur Général',      'director',           'Accès complet DJAMA HQ',                           1, 'direction'),
   ('Responsable Commercial', 'manager-commercial', 'Responsable de l''équipe commerciale',              2, 'commercial'),
