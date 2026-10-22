@@ -74,11 +74,23 @@ export const V = {
    THEME STYLE — injecte les variables CSS dans :root
 ───────────────────────────────────────────────────────────── */
 const DARK_VARS  = `--hq-bg:#0B0D12;--hq-sidebar:#0F1117;--hq-card:#141720;--hq-surface:#171A22;--hq-surface-hov:#1C2030;--hq-border:rgba(255,255,255,0.07);--hq-border-hov:rgba(255,255,255,0.13);--hq-text:#F5F5F3;--hq-text-sub:#87909E;--hq-text-muted:rgba(255,255,255,0.38);--hq-text-faint:rgba(255,255,255,0.20)`;
-const LIGHT_VARS = `--hq-bg:#F0F1F4;--hq-sidebar:#FFFFFF;--hq-card:#FFFFFF;--hq-surface:#F8F9FB;--hq-surface-hov:#EDEEF1;--hq-border:rgba(0,0,0,0.07);--hq-border-hov:rgba(0,0,0,0.14);--hq-text:#111318;--hq-text-sub:#5A6272;--hq-text-muted:rgba(0,0,0,0.42);--hq-text-faint:rgba(0,0,0,0.24)`;
+const LIGHT_VARS = `--hq-bg:#F7F8FA;--hq-sidebar:#FFFFFF;--hq-card:#FFFFFF;--hq-surface:#EEF0F4;--hq-surface-hov:#E4E7ED;--hq-border:#E6E8EC;--hq-border-hov:#CDD0D9;--hq-text:#171A21;--hq-text-sub:#667085;--hq-text-muted:rgba(23,26,33,0.60);--hq-text-faint:rgba(23,26,33,0.38)`;
+
+/* Correctifs globaux mode clair : remplace les classes Tailwind text-white/* hardcodées dark-only */
+const LIGHT_OVERRIDES = `
+[data-hq-theme=light] .text-white,[data-hq-theme=light] .text-white\\/80,[data-hq-theme=light] .text-white\\/70{color:var(--hq-text)!important}
+[data-hq-theme=light] .text-white\\/60,[data-hq-theme=light] .text-white\\/50{color:var(--hq-text-sub)!important}
+[data-hq-theme=light] .text-white\\/40,[data-hq-theme=light] .text-white\\/35{color:var(--hq-text-muted)!important}
+[data-hq-theme=light] .text-white\\/30,[data-hq-theme=light] .text-white\\/25,[data-hq-theme=light] .text-white\\/20,[data-hq-theme=light] .text-white\\/15,[data-hq-theme=light] .text-white\\/10{color:var(--hq-text-faint)!important}
+[data-hq-theme=light] .placeholder\\:text-white\\/20::placeholder,[data-hq-theme=light] .placeholder\\:text-white\\/30::placeholder{color:var(--hq-text-faint)!important}
+[data-hq-theme=light] .hover\\:text-white\\/60:hover{color:var(--hq-text-sub)!important}
+`;
 
 export function HQThemeStyle({ theme }: { theme: "dark" | "light" }) {
+  const vars  = theme === "dark" ? DARK_VARS : LIGHT_VARS;
+  const extra = theme === "light" ? LIGHT_OVERRIDES : "";
   return (
-    <style dangerouslySetInnerHTML={{ __html: `:root{${theme === "dark" ? DARK_VARS : LIGHT_VARS}}` }} />
+    <style dangerouslySetInnerHTML={{ __html: `:root{${vars}}${extra}` }} />
   );
 }
 
@@ -88,26 +100,26 @@ export function HQThemeStyle({ theme }: { theme: "dark" | "light" }) {
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
   actif:          { label: "Actif",          bg: "rgba(52,211,153,0.12)",  color: "#34d399" },
   active:         { label: "Actif",          bg: "rgba(52,211,153,0.12)",  color: "#34d399" },
-  inactif:        { label: "Inactif",        bg: "rgba(255,255,255,0.06)", color: "#87909E" },
+  inactif:        { label: "Inactif",        bg: V.surface,               color: V.textSub },
   suspendu:       { label: "Suspendu",       bg: "rgba(251,191,36,0.12)",  color: "#fbbf24" },
   en_attente:     { label: "En attente",     bg: "rgba(96,165,250,0.12)",  color: "#60a5fa" },
   approuvé:       { label: "Approuvé",       bg: "rgba(52,211,153,0.12)",  color: "#34d399" },
   refusé:         { label: "Refusé",         bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
   nouveau:        { label: "Nouveau",        bg: "rgba(96,165,250,0.12)",  color: "#60a5fa" },
-  lu:             { label: "Lu",             bg: "rgba(255,255,255,0.06)", color: "#87909E" },
+  lu:             { label: "Lu",             bg: V.surface,               color: V.textSub },
   traité:         { label: "Traité",         bg: "rgba(52,211,153,0.12)",  color: "#34d399" },
-  archivé:        { label: "Archivé",        bg: "rgba(255,255,255,0.06)", color: "#87909E" },
+  archivé:        { label: "Archivé",        bg: V.surface,               color: V.textSub },
   critique:       { label: "Critique",       bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
   majeur:         { label: "Majeur",         bg: "rgba(245,158,11,0.12)",  color: "#f59e0b" },
-  mineur:         { label: "Mineur",         bg: "rgba(255,255,255,0.06)", color: "#87909E" },
+  mineur:         { label: "Mineur",         bg: V.surface,               color: V.textSub },
   ouvert:         { label: "Ouvert",         bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
   résolu:         { label: "Résolu",         bg: "rgba(52,211,153,0.12)",  color: "#34d399" },
   premium:        { label: "Premium",        bg: "rgba(201,165,90,0.12)",  color: "#C9A55A" },
-  gratuit:        { label: "Gratuit",        bg: "rgba(255,255,255,0.06)", color: "#87909E" },
+  gratuit:        { label: "Gratuit",        bg: V.surface,               color: V.textSub },
   payé:           { label: "Payé",           bg: "rgba(52,211,153,0.12)",  color: "#34d399" },
   impayé:         { label: "Impayé",         bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
-  annulé:         { label: "Annulé",         bg: "rgba(255,255,255,0.06)", color: "#87909E" },
-  brouillon:      { label: "Brouillon",      bg: "rgba(255,255,255,0.06)", color: "#87909E" },
+  annulé:         { label: "Annulé",         bg: V.surface,               color: V.textSub },
+  brouillon:      { label: "Brouillon",      bg: V.surface,               color: V.textSub },
 };
 
 export function HQStatusBadge({
@@ -119,8 +131,8 @@ export function HQStatusBadge({
 }) {
   const s = custom ?? STATUS_MAP[status.toLowerCase()] ?? {
     label: status,
-    bg:    "rgba(255,255,255,0.06)",
-    color: "#87909E",
+    bg:    V.surface,
+    color: V.textSub,
   };
   return (
     <span
@@ -512,8 +524,10 @@ export function HQNotificationPanel({
             items.map(item => (
               <div
                 key={item.id}
-                className="border-b px-4 py-3 transition-colors hover:bg-white/[0.03]"
+                className="border-b px-4 py-3 transition-colors"
                 style={{ borderColor: V.border }}
+                onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = V.surfaceHov}
+                onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
               >
                 <div className="flex items-start gap-2.5">
                   <div

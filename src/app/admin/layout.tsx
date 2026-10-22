@@ -154,7 +154,7 @@ function NavLink({
         padding: compact ? "7px" : "5px 10px 5px 10px",
         justifyContent: compact ? "center" : undefined,
         background: active ? `rgba(${V.goldR},0.09)` : "transparent",
-        color: active ? HQ.text : V.textMuted,
+        color: active ? V.text : V.textMuted,
       }}
       onMouseEnter={e => {
         if (!active) (e.currentTarget as HTMLElement).style.background = V.surface;
@@ -417,7 +417,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           {(!compact || isMobile) && (
             <div className="min-w-0 leading-none">
-              <p className="truncate text-[0.875rem] font-black tracking-tight text-white">DJAMA</p>
+              <p className="truncate text-[0.875rem] font-black tracking-tight" style={{ color: V.text }}>DJAMA</p>
               <p className="mt-0.5 text-[0.5rem] font-bold uppercase tracking-[0.2em]" style={{ color: V.gold }}>
                 Console Admin
               </p>
@@ -428,14 +428,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {isMobile ? (
           <button
             onClick={() => setMobileOpen(false)}
-            className="shrink-0 p-1 text-white/25 transition hover:text-white/60"
+            className="shrink-0 p-1 transition"
+            style={{ color: V.textFaint }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = V.textMuted}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = V.textFaint}
           >
             <X size={14} />
           </button>
         ) : (
           <button
             onClick={toggleCompact}
-            className="shrink-0 rounded-md p-1 text-white/20 transition hover:text-white/50"
+            className="shrink-0 rounded-md p-1 transition"
+            style={{ color: V.textFaint }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = V.textSub}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = V.textFaint}
             title={compact ? "Développer la sidebar" : "Réduire la sidebar"}
           >
             {compact ? <ChevronsRight size={13} /> : <ChevronsLeft size={13} />}
@@ -457,7 +463,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher…"
               className="min-w-0 flex-1 bg-transparent text-[0.78rem] outline-none"
-              style={{ color: "rgba(255,255,255,0.70)", caretColor: V.gold }}
+              style={{ color: V.textSub, caretColor: V.gold }}
             />
             {search && (
               <button onClick={() => setSearch("")} style={{ color: V.textFaint }}>
@@ -706,7 +712,7 @@ function SidebarCompactGroup({
               background: active ? `rgba(${V.goldR},0.12)` : "transparent",
               color:      active ? V.gold : V.textMuted,
             }}
-            onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+            onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = V.surfaceHov; }}
             onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
           >
             <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
