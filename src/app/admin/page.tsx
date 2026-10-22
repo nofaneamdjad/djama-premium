@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
-import { HQ } from "@/components/hq";
+import { V } from "@/components/hq";
 import {
   Chart as ChartJS,
   CategoryScale, LinearScale, PointElement, LineElement,
@@ -72,7 +72,7 @@ function KpiCard({
   const inner = (
     <div
       className={`group flex flex-col gap-4 rounded-2xl border p-5 transition-all duration-150 ${href ? "hover:border-white/[0.12]" : ""}`}
-      style={{ background: HQ.card, borderColor: HQ.border }}
+      style={{ background: V.card, borderColor: V.border }}
     >
       <div className="flex items-start justify-between">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: iconBg }}>
@@ -104,7 +104,7 @@ const LINE_OPTS: ChartOptions<"line"> = {
   responsive: true,
   maintainAspectRatio: false,
   interaction: { mode: "index", intersect: false },
-  plugins: { tooltip: { backgroundColor: "#1e2130", titleColor: "#fff", bodyColor: "rgba(255,255,255,0.55)", borderColor: HQ.border, borderWidth: 1, padding: 10, cornerRadius: 8 } },
+  plugins: { tooltip: { backgroundColor: "#1e2130", titleColor: "#fff", bodyColor: "rgba(255,255,255,0.55)", borderColor: V.border, borderWidth: 1, padding: 10, cornerRadius: 8 } },
   scales: {
     x: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.3)", font: { size: 11 } } },
     y: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.3)", font: { size: 11 } }, beginAtZero: true },
@@ -113,7 +113,7 @@ const LINE_OPTS: ChartOptions<"line"> = {
 const BAR_OPTS: ChartOptions<"bar"> = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: { tooltip: { backgroundColor: "#1e2130", titleColor: "#fff", bodyColor: "rgba(255,255,255,0.55)", borderColor: HQ.border, borderWidth: 1, padding: 10, cornerRadius: 8 } },
+  plugins: { tooltip: { backgroundColor: "#1e2130", titleColor: "#fff", bodyColor: "rgba(255,255,255,0.55)", borderColor: V.border, borderWidth: 1, padding: 10, cornerRadius: 8 } },
   scales: {
     x: { grid: { display: false }, ticks: { color: "rgba(255,255,255,0.3)", font: { size: 11 } } },
     y: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "rgba(255,255,255,0.3)", font: { size: 11 } }, beginAtZero: true },
@@ -246,15 +246,15 @@ export default function AdminDashboard() {
   const labels = charts.months.map(monthLabel);
   const donut = {
     labels: ["Premium", "Gratuit"],
-    datasets: [{ data: [kpi.premium, kpi.gratuit], backgroundColor: [`rgba(${HQ.goldR},0.85)`, "rgba(255,255,255,0.08)"], borderWidth: 0, hoverOffset: 4 }],
+    datasets: [{ data: [kpi.premium, kpi.gratuit], backgroundColor: [`rgba(${V.goldR},0.85)`, "rgba(255,255,255,0.08)"], borderWidth: 0, hoverOffset: 4 }],
   };
   const lineInsc = {
     labels,
-    datasets: [{ label: "Inscriptions", data: charts.inscriptions, borderColor: `rgba(${HQ.goldR},0.9)`, backgroundColor: `rgba(${HQ.goldR},0.06)`, fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: HQ.gold }],
+    datasets: [{ label: "Inscriptions", data: charts.inscriptions, borderColor: `rgba(${V.goldR},0.9)`, backgroundColor: `rgba(${V.goldR},0.06)`, fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: V.gold }],
   };
   const barRev = {
     labels,
-    datasets: [{ label: "Revenus (€)", data: charts.revenus, backgroundColor: `rgba(${HQ.goldR},0.65)`, borderRadius: 6, hoverBackgroundColor: `rgba(${HQ.goldR},0.9)` }],
+    datasets: [{ label: "Revenus (€)", data: charts.revenus, backgroundColor: `rgba(${V.goldR},0.65)`, borderRadius: 6, hoverBackgroundColor: `rgba(${V.goldR},0.9)` }],
   };
 
   return (
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
         <button
           onClick={() => setRefreshAt(Date.now())}
           className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.75rem] font-medium text-white/40 transition hover:border-white/20 hover:text-white/70"
-          style={{ borderColor: HQ.border }}
+          style={{ borderColor: V.border }}
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
           Actualiser
@@ -279,7 +279,7 @@ export default function AdminDashboard() {
       {/* KPIs principaux — ligne 1 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label="Utilisateurs total" value={kpi.totalUsers} sub={`+${kpi.newUsersToday} aujourd'hui`}
-          icon={Users} iconColor={HQ.gold} iconBg={HQ.goldDim} href="/admin/clients" loading={loading} />
+          icon={Users} iconColor={V.gold} iconBg={V.goldDim} href="/admin/clients" loading={loading} />
         <KpiCard label="Revenus du mois" value={formatEur(kpi.mrrMois)}
           trend={{ current: kpi.mrrMois, previous: kpi.mrrPrev }}
           icon={Wallet} iconColor="#4ade80" iconBg="rgba(74,222,128,0.09)" href="/admin/paiements" loading={loading} />
@@ -297,7 +297,7 @@ export default function AdminDashboard() {
         <KpiCard label="Cette semaine" value={kpi.newUsersWeek} sub="Nouvelles inscriptions"
           icon={TrendingUp} iconColor="#34d399" iconBg="rgba(52,211,153,0.09)" loading={loading} />
         <KpiCard label="Utilisateurs Premium" value={kpi.premium} sub={`sur ${kpi.totalUsers} total`}
-          icon={CreditCard} iconColor={HQ.gold} iconBg={HQ.goldDim} href="/admin/acces" loading={loading} />
+          icon={CreditCard} iconColor={V.gold} iconBg={V.goldDim} href="/admin/acces" loading={loading} />
         <KpiCard label="Paiements échoués" value={kpi.paiementsEchoues} sub="À vérifier"
           icon={AlertCircle} iconColor="#f87171" iconBg="rgba(248,113,113,0.09)" href="/admin/paiements" loading={loading} />
       </div>
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
       <div className="grid gap-5 lg:grid-cols-3">
 
         {/* Évolution inscriptions */}
-        <div className="rounded-2xl border p-5 lg:col-span-1" style={{ background: HQ.card, borderColor: HQ.border }}>
+        <div className="rounded-2xl border p-5 lg:col-span-1" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-[0.88rem] font-bold text-white">Inscriptions</h2>
@@ -321,7 +321,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Revenus mensuels */}
-        <div className="rounded-2xl border p-5 lg:col-span-1" style={{ background: HQ.card, borderColor: HQ.border }}>
+        <div className="rounded-2xl border p-5 lg:col-span-1" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-[0.88rem] font-bold text-white">Revenus</h2>
@@ -336,7 +336,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Répartition free/premium */}
-        <div className="rounded-2xl border p-5" style={{ background: HQ.card, borderColor: HQ.border }}>
+        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-[0.88rem] font-bold text-white">Répartition</h2>
@@ -351,11 +351,11 @@ export default function AdminDashboard() {
           ) : (
             <div className="flex items-center gap-5">
               <div style={{ height: 120, width: 120, flexShrink: 0 }}>
-                <Doughnut data={donut} options={{ responsive: true, maintainAspectRatio: false, cutout: "68%", plugins: { tooltip: { backgroundColor: "#1e2130", titleColor: "#fff", bodyColor: "rgba(255,255,255,0.55)", borderColor: HQ.border, borderWidth: 1, padding: 10, cornerRadius: 8 } } }} />
+                <Doughnut data={donut} options={{ responsive: true, maintainAspectRatio: false, cutout: "68%", plugins: { tooltip: { backgroundColor: "#1e2130", titleColor: "#fff", bodyColor: "rgba(255,255,255,0.55)", borderColor: V.border, borderWidth: 1, padding: 10, cornerRadius: 8 } } }} />
               </div>
               <div className="flex flex-col gap-2.5 text-[0.75rem]">
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: HQ.gold }} />
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: V.gold }} />
                   <span className="text-white/60">Premium</span>
                   <span className="ml-auto font-bold text-white">{kpi.premium}</span>
                 </div>
@@ -364,7 +364,7 @@ export default function AdminDashboard() {
                   <span className="text-white/60">Gratuit</span>
                   <span className="ml-auto font-bold text-white">{kpi.gratuit}</span>
                 </div>
-                <div className="mt-1 border-t pt-2" style={{ borderColor: HQ.border }}>
+                <div className="mt-1 border-t pt-2" style={{ borderColor: V.border }}>
                   <span className="text-white/30">Total</span>
                   <span className="ml-auto float-right font-bold text-white">{kpi.totalUsers}</span>
                 </div>
@@ -378,7 +378,7 @@ export default function AdminDashboard() {
       <div className="grid gap-5 lg:grid-cols-2">
 
         {/* Messages récents */}
-        <div className="rounded-2xl border p-5" style={{ background: HQ.card, borderColor: HQ.border }}>
+        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageSquare size={13} className="text-white/30" />
@@ -389,7 +389,7 @@ export default function AdminDashboard() {
                 </span>
               )}
             </div>
-            <Link href="/admin/messages" className="flex items-center gap-1 text-[0.73rem] font-medium transition hover:opacity-80" style={{ color: HQ.gold }}>
+            <Link href="/admin/messages" className="flex items-center gap-1 text-[0.73rem] font-medium transition hover:opacity-80" style={{ color: V.gold }}>
               Voir tout <ArrowRight size={11} />
             </Link>
           </div>
@@ -430,13 +430,13 @@ export default function AdminDashboard() {
         </div>
 
         {/* Nouvelles inscriptions */}
-        <div className="rounded-2xl border p-5" style={{ background: HQ.card, borderColor: HQ.border }}>
+        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock size={13} className="text-white/30" />
               <h2 className="text-[0.87rem] font-bold text-white">Dernières inscriptions</h2>
             </div>
-            <Link href="/admin/clients" className="flex items-center gap-1 text-[0.73rem] font-medium transition hover:opacity-80" style={{ color: HQ.gold }}>
+            <Link href="/admin/clients" className="flex items-center gap-1 text-[0.73rem] font-medium transition hover:opacity-80" style={{ color: V.gold }}>
               Voir tout <ArrowRight size={11} />
             </Link>
           </div>
@@ -459,7 +459,7 @@ export default function AdminDashboard() {
             <div className="space-y-2.5">
               {recentClients.map(c => (
                 <div key={c.id} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[0.58rem] font-black" style={{ background: HQ.goldDim, color: HQ.gold }}>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[0.58rem] font-black" style={{ background: V.goldDim, color: V.gold }}>
                     {(c.name || c.email || "?").slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -478,11 +478,11 @@ export default function AdminDashboard() {
       </div>
 
       {/* Liens rapides */}
-      <div className="rounded-2xl border p-5" style={{ background: HQ.card, borderColor: HQ.border }}>
+      <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
         <h2 className="mb-4 text-[0.87rem] font-bold text-white">Accès rapides</h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
-            { href: "/admin/clients",     label: "Gérer les utilisateurs", icon: Users,        color: HQ.gold          },
+            { href: "/admin/clients",     label: "Gérer les utilisateurs", icon: Users,        color: V.gold          },
             { href: "/admin/acces",       label: "Gérer les accès",        icon: Shield,       color: "#a78bfa"        },
             { href: "/admin/paiements",   label: "Voir les paiements",     icon: CreditCard,   color: "#4ade80"        },
             { href: "/admin/messages",    label: "Répondre aux messages",  icon: Mail,         color: "#60a5fa"        },
@@ -490,7 +490,7 @@ export default function AdminDashboard() {
             <Link
               key={href} href={href}
               className="flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-[0.78rem] font-medium text-white/55 transition hover:border-white/15 hover:text-white/80"
-              style={{ borderColor: HQ.border }}
+              style={{ borderColor: V.border }}
             >
               <Icon size={13} style={{ color, flexShrink: 0 }} strokeWidth={2} />
               {label}

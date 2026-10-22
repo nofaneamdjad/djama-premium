@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { HQ } from "@/components/hq";
+import { V } from "@/components/hq";
 import {
   Users, CreditCard, Star, MessageSquare, TrendingUp,
   ArrowUp, ArrowDown, Minus, Shield, Briefcase,
@@ -42,7 +42,7 @@ function KpiCard({ label, value, sub, icon: Icon, color, trend, href }: {
   href?: string;
 }) {
   const inner = (
-    <div className="flex flex-col gap-4 rounded-2xl border p-5 transition-colors hover:border-white/10" style={{ background: HQ.card, borderColor: HQ.border }}>
+    <div className="flex flex-col gap-4 rounded-2xl border p-5 transition-colors hover:border-white/10" style={{ background: V.card, borderColor: V.border }}>
       <div className="flex items-center justify-between">
         <span className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-white/30">{label}</span>
         <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: `${color}18` }}>
@@ -141,7 +141,7 @@ export default function DirectionDashboard() {
         <button
           onClick={() => setRefreshAt(Date.now())}
           className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.78rem] text-white/35 hover:text-white/60 transition-colors"
-          style={{ border: `1px solid ${HQ.border}` }}
+          style={{ border: `1px solid ${V.border}` }}
         >
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           Actualiser
@@ -178,7 +178,7 @@ export default function DirectionDashboard() {
           label="Équipe HQ"
           value={loading ? "—" : String(kpi?.hqActifs ?? 0)}
           sub={`/${kpi?.hqTotal ?? 0} membres`}
-          icon={Shield} color={HQ.gold}
+          icon={Shield} color={V.gold}
           trend={null}
           href="/admin/hq/employes"
         />
@@ -225,13 +225,13 @@ export default function DirectionDashboard() {
 
       {/* Résumé incidents */}
       {alerts.incidentsOuverts > 0 && (
-        <div className="flex items-center gap-3 rounded-2xl border px-5 py-3" style={{ borderColor: HQ.border, background: HQ.card }}>
+        <div className="flex items-center gap-3 rounded-2xl border px-5 py-3" style={{ borderColor: V.border, background: V.card }}>
           <AlertTriangle size={14} className="shrink-0 text-orange-400" />
           <p className="text-[0.82rem] text-white/60">
             <span className="font-bold text-orange-400">{alerts.incidentsOuverts}</span> incident{alerts.incidentsOuverts > 1 ? "s" : ""} ouvert{alerts.incidentsOuverts > 1 ? "s" : ""} — dont{" "}
             <span className="font-bold text-red-400">{alerts.incidentsCritiques} critique{alerts.incidentsCritiques > 1 ? "s" : ""}</span>
           </p>
-          <Link href="/admin/hq/informatique" className="ml-auto flex items-center gap-1 text-[0.72rem] font-semibold hover:opacity-80" style={{ color: HQ.gold }}>
+          <Link href="/admin/hq/informatique" className="ml-auto flex items-center gap-1 text-[0.72rem] font-semibold hover:opacity-80" style={{ color: V.gold }}>
             Gérer <ChevronRight size={11} />
           </Link>
         </div>
@@ -241,7 +241,7 @@ export default function DirectionDashboard() {
       {charts && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {/* Revenus 6 mois */}
-          <div className="rounded-2xl border p-5" style={{ background: HQ.card, borderColor: HQ.border }}>
+          <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-[0.75rem] font-bold uppercase tracking-[0.08em] text-white/40">Revenus — 6 derniers mois</p>
@@ -267,7 +267,7 @@ export default function DirectionDashboard() {
           </div>
 
           {/* Inscriptions 6 mois */}
-          <div className="rounded-2xl border p-5" style={{ background: HQ.card, borderColor: HQ.border }}>
+          <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-[0.75rem] font-bold uppercase tracking-[0.08em] text-white/40">Inscriptions — 6 derniers mois</p>
@@ -295,12 +295,12 @@ export default function DirectionDashboard() {
       )}
 
       {/* Équipe HQ récente */}
-      <div className="rounded-2xl border p-5" style={{ background: HQ.card, borderColor: HQ.border }}>
+      <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
         <div className="mb-4 flex items-center justify-between">
           <p className="text-[0.75rem] font-bold uppercase tracking-[0.08em] text-white/40 flex items-center gap-2">
             <Shield size={12} />Équipe HQ récente
           </p>
-          <Link href="/admin/hq/employes" className="flex items-center gap-1 text-[0.72rem] font-semibold hover:opacity-80" style={{ color: HQ.gold }}>
+          <Link href="/admin/hq/employes" className="flex items-center gap-1 text-[0.72rem] font-semibold hover:opacity-80" style={{ color: V.gold }}>
             Voir tout <ChevronRight size={11} />
           </Link>
         </div>
@@ -316,7 +316,7 @@ export default function DirectionDashboard() {
               >
                 <div
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-black"
-                  style={{ background: HQ.goldDim, color: HQ.gold }}
+                  style={{ background: V.goldDim, color: V.gold }}
                 >
                   {e.first_name[0]}{e.last_name[0]}
                 </div>
@@ -343,7 +343,7 @@ export default function DirectionDashboard() {
         {[
           { href: "/admin/hq/clients",      label: "Clients",       icon: Users,        color: "#3b82f6" },
           { href: "/admin/hq/revenus",       label: "Revenus",       icon: CreditCard,   color: "#22c55e" },
-          { href: "/admin/hq/feature-flags", label: "Feature flags", icon: Star,         color: HQ.gold   },
+          { href: "/admin/hq/feature-flags", label: "Feature flags", icon: Star,         color: V.gold   },
           { href: "/admin/hq/employes",      label: "Équipe HQ",     icon: Briefcase,    color: "#8b5cf6" },
         ].map(({ href, label, icon: Icon, color }) => (
           <Link

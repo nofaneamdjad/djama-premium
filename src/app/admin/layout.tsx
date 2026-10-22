@@ -13,9 +13,9 @@ import {
   Brain, Camera, Film, Palette,
   ShieldCheck, Webhook, Send, Settings, Wrench,
   LogOut, Menu, X, ChevronDown, Search, Bell,
-  ChevronsLeft, ChevronsRight, BarChart3,
+  ChevronsLeft, ChevronsRight, BarChart3, Sun, Moon,
 } from "lucide-react";
-import { HQ } from "@/components/hq";
+import { HQ, V, HQThemeStyle } from "@/components/hq";
 
 /* ─────────────────────────────────────────────────────────────
    NAVIGATION — 8 groupes organisés
@@ -153,11 +153,11 @@ function NavLink({
         gap: compact ? 0 : "10px",
         padding: compact ? "7px" : "5px 10px 5px 10px",
         justifyContent: compact ? "center" : undefined,
-        background: active ? `rgba(${HQ.goldR},0.09)` : "transparent",
-        color: active ? HQ.text : HQ.textMuted,
+        background: active ? `rgba(${V.goldR},0.09)` : "transparent",
+        color: active ? HQ.text : V.textMuted,
       }}
       onMouseEnter={e => {
-        if (!active) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
+        if (!active) (e.currentTarget as HTMLElement).style.background = V.surface;
       }}
       onMouseLeave={e => {
         if (!active) (e.currentTarget as HTMLElement).style.background = "transparent";
@@ -167,14 +167,14 @@ function NavLink({
       {active && !compact && (
         <span
           className="absolute left-0 top-1/2 h-3.5 w-[3px] -translate-y-1/2 rounded-r-full"
-          style={{ background: HQ.gold }}
+          style={{ background: V.gold }}
         />
       )}
 
       <Icon
         size={14}
         strokeWidth={active ? 2.2 : 1.8}
-        style={{ color: active ? HQ.gold : "inherit", flexShrink: 0 }}
+        style={{ color: active ? V.gold : "inherit", flexShrink: 0 }}
       />
 
       {!compact && (
@@ -226,7 +226,7 @@ function NavSection({
     /* Mode compact : juste les icônes, sans titre de groupe */
     return (
       <div className="flex flex-col items-center gap-px py-1">
-        <div className="mb-1 h-px w-8" style={{ background: HQ.border }} />
+        <div className="mb-1 h-px w-8" style={{ background: V.border }} />
         {group.items.map(item => (
           <NavLink key={item.href} item={item} pathname={pathname} compact onClick={onNavClick} />
         ))}
@@ -239,9 +239,9 @@ function NavSection({
       <button
         onClick={onToggle}
         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 transition-all duration-100"
-        style={{ color: hasActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.22)" }}
-        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.50)"}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = hasActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.22)"}
+        style={{ color: hasActive ? V.textSub : V.textFaint }}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = V.textMuted}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = hasActive ? V.textSub : V.textFaint}
       >
         <GIcon size={10} strokeWidth={2.2} style={{ flexShrink: 0 }} />
         <span className="flex-1 truncate text-left text-[0.67rem] font-bold uppercase tracking-[0.11em]">
@@ -277,6 +277,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [compact,        setCompact]        = useState(false);
   const [search,         setSearch]         = useState("");
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [theme,          setTheme]          = useState<"dark" | "light">("dark");
   const searchRef = useRef<HTMLInputElement>(null);
 
   /* Sections repliées — {} sur SSR (évite hydration mismatch), localStorage après mount */
@@ -298,6 +299,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (v !== null) setCompact(v === "1");
     } catch { /* */ }
   }, []);
+
+  /* Thème clair/sombre (localStorage) */
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem("djama_admin_theme");
+      if (t === "light" || t === "dark") setTheme(t);
+    } catch { /* */ }
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme(prev => {
+      const next = prev === "dark" ? "light" : "dark";
+      try { localStorage.setItem("djama_admin_theme", next); } catch { /* */ }
+      return next;
+    });
+  };
 
   const toggleCompact = () => {
     setCompact(prev => {
@@ -376,9 +393,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <aside
       className="flex h-full flex-col"
       style={{
-        width: compact && !isMobile ? `${HQ.sidebarCompactW}px` : `${HQ.sidebarW}px`,
-        background: HQ.sidebar,
-        borderRight: `1px solid ${HQ.border}`,
+        width: compact && !isMobile ? `${V.sidebarCompactW}px` : `${V.sidebarW}px`,
+        background: V.sidebar,
+        borderRight: `1px solid ${V.border}`,
         transition: "width 220ms cubic-bezier(0.4,0,0.2,1)",
         overflow: "hidden",
       }}
@@ -386,7 +403,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* En-tête logo */}
       <div
         className="flex h-[60px] shrink-0 items-center px-3"
-        style={{ borderBottom: `1px solid ${HQ.border}` }}
+        style={{ borderBottom: `1px solid ${V.border}` }}
       >
         <Link
           href="/admin"
@@ -394,14 +411,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: HQ.goldDim, border: `1px solid ${HQ.goldBorder}` }}
+            style={{ background: V.goldDim, border: `1px solid ${V.goldBorder}` }}
           >
-            <span className="text-[0.7rem] font-black" style={{ color: HQ.gold }}>D</span>
+            <span className="text-[0.7rem] font-black" style={{ color: V.gold }}>D</span>
           </div>
           {(!compact || isMobile) && (
             <div className="min-w-0 leading-none">
               <p className="truncate text-[0.875rem] font-black tracking-tight text-white">DJAMA</p>
-              <p className="mt-0.5 text-[0.5rem] font-bold uppercase tracking-[0.2em]" style={{ color: HQ.gold }}>
+              <p className="mt-0.5 text-[0.5rem] font-bold uppercase tracking-[0.2em]" style={{ color: V.gold }}>
                 Console Admin
               </p>
             </div>
@@ -428,27 +445,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Recherche (masquée en compact) */}
       {(!compact || isMobile) && (
-        <div className="px-3 py-2" style={{ borderBottom: `1px solid ${HQ.border}` }}>
+        <div className="px-3 py-2" style={{ borderBottom: `1px solid ${V.border}` }}>
           <div
             className="flex items-center gap-2 rounded-lg px-3 py-1.5"
-            style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${HQ.border}` }}
+            style={{ background: V.surface, border: `1px solid ${V.border}` }}
           >
-            <Search size={11} className="shrink-0" style={{ color: HQ.textFaint }} />
+            <Search size={11} className="shrink-0" style={{ color: V.textFaint }} />
             <input
               ref={searchRef}
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher…"
               className="min-w-0 flex-1 bg-transparent text-[0.78rem] outline-none"
-              style={{ color: "rgba(255,255,255,0.70)", caretColor: HQ.gold }}
+              style={{ color: "rgba(255,255,255,0.70)", caretColor: V.gold }}
             />
             {search && (
-              <button onClick={() => setSearch("")} style={{ color: HQ.textFaint }}>
+              <button onClick={() => setSearch("")} style={{ color: V.textFaint }}>
                 <X size={10} />
               </button>
             )}
             {!search && (
-              <kbd className="hidden sm:block rounded px-1 text-[0.55rem] font-mono" style={{ background: "rgba(255,255,255,0.06)", color: HQ.textFaint }}>
+              <kbd className="hidden sm:block rounded px-1 text-[0.55rem] font-mono" style={{ background: V.border, color: V.textFaint }}>
                 ⌘K
               </kbd>
             )}
@@ -488,16 +505,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </nav>
 
       {/* Footer */}
-      <div className="shrink-0 p-2" style={{ borderTop: `1px solid ${HQ.border}` }}>
+      <div className="shrink-0 p-2" style={{ borderTop: `1px solid ${V.border}` }}>
         {!compact || isMobile ? (
           <>
             <Link
               href="/"
               target="_blank"
               className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.78rem] font-medium transition"
-              style={{ color: HQ.textFaint }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = HQ.textMuted}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = HQ.textFaint}
+              style={{ color: V.textFaint }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = V.textMuted}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = V.textFaint}
             >
               <LayoutGrid size={12} style={{ flexShrink: 0 }} />
               <span>Voir le site</span>
@@ -505,9 +522,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               onClick={logout}
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.78rem] font-medium transition"
-              style={{ color: HQ.textFaint }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = HQ.textMuted}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = HQ.textFaint}
+              style={{ color: V.textFaint }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = V.textMuted}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = V.textFaint}
             >
               <LogOut size={12} style={{ flexShrink: 0 }} />
               <span>Déconnexion</span>
@@ -515,10 +532,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </>
         ) : (
           <div className="flex flex-col items-center gap-1">
-            <Link href="/" target="_blank" title="Voir le site" className="flex h-8 w-8 items-center justify-center rounded-lg transition" style={{ color: HQ.textFaint }}>
+            <Link href="/" target="_blank" title="Voir le site" className="flex h-8 w-8 items-center justify-center rounded-lg transition" style={{ color: V.textFaint }}>
               <LayoutGrid size={13} />
             </Link>
-            <button onClick={logout} title="Déconnexion" className="flex h-8 w-8 items-center justify-center rounded-lg transition" style={{ color: HQ.textFaint }}>
+            <button onClick={logout} title="Déconnexion" className="flex h-8 w-8 items-center justify-center rounded-lg transition" style={{ color: V.textFaint }}>
               <LogOut size={13} />
             </button>
           </div>
@@ -529,9 +546,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div
+      data-hq-theme={theme}
       className="flex h-screen overflow-hidden"
-      style={{ background: HQ.bg, fontFamily: "inherit" }}
+      style={{ background: V.bg, fontFamily: "inherit" }}
     >
+      <HQThemeStyle theme={theme} />
       {/* Overlay mobile */}
       {mobileOpen && (
         <div
@@ -544,7 +563,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div
         className="hidden shrink-0 md:flex"
         style={{
-          width: compact ? `${HQ.sidebarCompactW}px` : `${HQ.sidebarW}px`,
+          width: compact ? `${V.sidebarCompactW}px` : `${V.sidebarW}px`,
           transition: "width 220ms cubic-bezier(0.4,0,0.2,1)",
         }}
       >
@@ -554,7 +573,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar mobile (drawer) */}
       <div
         className={`fixed inset-y-0 left-0 z-30 flex md:hidden transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ width: `${HQ.sidebarW}px` }}
+        style={{ width: `${V.sidebarW}px` }}
       >
         <SidebarContent isMobile />
       </div>
@@ -565,31 +584,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Header */}
         <header
           className="flex h-[60px] shrink-0 items-center gap-3 px-4 md:px-5"
-          style={{ background: HQ.sidebar, borderBottom: `1px solid ${HQ.border}` }}
+          style={{ background: V.sidebar, borderBottom: `1px solid ${V.border}` }}
         >
           {/* Hamburger mobile */}
           <button
             onClick={() => setMobileOpen(true)}
             className="shrink-0 rounded-lg p-1.5 transition md:hidden"
-            style={{ color: HQ.textMuted }}
+            style={{ color: V.textMuted }}
           >
             <Menu size={17} />
           </button>
 
           {/* Breadcrumbs */}
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            <span className="text-[0.73rem]" style={{ color: HQ.textFaint }}>Admin</span>
+            <span className="text-[0.73rem]" style={{ color: V.textFaint }}>Admin</span>
             {activeGroup && (
               <>
-                <span className="text-[0.68rem]" style={{ color: HQ.textFaint }}>/</span>
-                <span className="hidden text-[0.73rem] sm:block" style={{ color: HQ.textFaint }}>
+                <span className="text-[0.68rem]" style={{ color: V.textFaint }}>/</span>
+                <span className="hidden text-[0.73rem] sm:block" style={{ color: V.textFaint }}>
                   {activeGroup.label}
                 </span>
-                <span className="hidden text-[0.68rem] sm:block" style={{ color: HQ.textFaint }}>/</span>
+                <span className="hidden text-[0.68rem] sm:block" style={{ color: V.textFaint }}>/</span>
               </>
             )}
             {activeItem && (
-              <span className="truncate text-[0.78rem] font-semibold" style={{ color: HQ.textSub }}>
+              <span className="truncate text-[0.78rem] font-semibold" style={{ color: V.textSub }}>
                 {activeItem.label}
               </span>
             )}
@@ -597,11 +616,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Actions */}
           <div className="flex items-center gap-1.5">
+            {/* Toggle thème */}
+            <button
+              onClick={toggleTheme}
+              className="flex h-8 w-8 items-center justify-center rounded-lg transition"
+              style={{ color: V.textMuted }}
+              title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = V.surface}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+            >
+              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+
             {/* Bell */}
             <button
               className="relative flex h-8 w-8 items-center justify-center rounded-lg transition"
-              style={{ color: HQ.textMuted }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"}
+              style={{ color: V.textMuted }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = V.surface}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
             >
               <Bell size={15} />
@@ -613,15 +644,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Profil */}
             <div
               className="flex h-8 items-center gap-2 rounded-lg px-2.5"
-              style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${HQ.border}` }}
+              style={{ background: V.surface, border: `1px solid ${V.border}` }}
             >
               <div
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.55rem] font-black"
-                style={{ background: HQ.goldDim, color: HQ.gold, border: `1px solid ${HQ.goldBorder}` }}
+                style={{ background: V.goldDim, color: V.gold, border: `1px solid ${V.goldBorder}` }}
               >
                 A
               </div>
-              <span className="hidden text-[0.73rem] font-medium sm:block" style={{ color: HQ.textSub }}>
+              <span className="hidden text-[0.73rem] font-medium sm:block" style={{ color: V.textSub }}>
                 Super Admin
               </span>
             </div>
@@ -631,7 +662,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Contenu de page */}
         <main
           className="flex-1 overflow-y-auto"
-          style={{ padding: "24px 20px", scrollbarWidth: "thin", scrollbarColor: `${HQ.border} transparent` }}
+          style={{ padding: "24px 20px", scrollbarWidth: "thin", scrollbarColor: `${V.border} transparent` }}
         >
           <style>{`
             @media (min-width: 768px) { main { padding: 32px 36px; } }
@@ -659,7 +690,7 @@ function SidebarCompactGroup({
 }) {
   return (
     <div className="flex flex-col items-center gap-px">
-      <div className="my-1.5 h-px w-8" style={{ background: HQ.border }} />
+      <div className="my-1.5 h-px w-8" style={{ background: V.border }} />
       {group.items.map(item => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
         const Icon = item.icon;
@@ -672,8 +703,8 @@ function SidebarCompactGroup({
             aria-label={item.label}
             className="relative flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-100"
             style={{
-              background: active ? `rgba(${HQ.goldR},0.12)` : "transparent",
-              color:      active ? HQ.gold : HQ.textMuted,
+              background: active ? `rgba(${V.goldR},0.12)` : "transparent",
+              color:      active ? V.gold : V.textMuted,
             }}
             onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
             onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}

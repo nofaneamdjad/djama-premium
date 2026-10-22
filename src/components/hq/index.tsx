@@ -44,6 +44,45 @@ export const HQ = {
 } as const;
 
 /* ─────────────────────────────────────────────────────────────
+   CSS VARIABLE REFS — pour supporter dark + light dans toute l'admin
+   Thème-sensibles → var(--hq-xxx)  |  Invariants (or) → valeur directe
+───────────────────────────────────────────────────────────── */
+export const V = {
+  bg:              "var(--hq-bg)",
+  sidebar:         "var(--hq-sidebar)",
+  card:            "var(--hq-card)",
+  surface:         "var(--hq-surface)",
+  surfaceHov:      "var(--hq-surface-hov)",
+  border:          "var(--hq-border)",
+  borderHov:       "var(--hq-border-hov)",
+  text:            "var(--hq-text)",
+  textSub:         "var(--hq-text-sub)",
+  textMuted:       "var(--hq-text-muted)",
+  textFaint:       "var(--hq-text-faint)",
+  gold:            "#C9A55A",
+  goldR:           "201,165,90",
+  goldDim:         "rgba(201,165,90,0.10)",
+  goldBorder:      "rgba(201,165,90,0.18)",
+  goldHov:         "rgba(201,165,90,0.16)",
+  r:               HQ.r,
+  sidebarW:        HQ.sidebarW,
+  sidebarCompactW: HQ.sidebarCompactW,
+  headerH:         HQ.headerH,
+} as const;
+
+/* ─────────────────────────────────────────────────────────────
+   THEME STYLE — injecte les variables CSS dans :root
+───────────────────────────────────────────────────────────── */
+const DARK_VARS  = `--hq-bg:#0B0D12;--hq-sidebar:#0F1117;--hq-card:#141720;--hq-surface:#171A22;--hq-surface-hov:#1C2030;--hq-border:rgba(255,255,255,0.07);--hq-border-hov:rgba(255,255,255,0.13);--hq-text:#F5F5F3;--hq-text-sub:#87909E;--hq-text-muted:rgba(255,255,255,0.38);--hq-text-faint:rgba(255,255,255,0.20)`;
+const LIGHT_VARS = `--hq-bg:#F0F1F4;--hq-sidebar:#FFFFFF;--hq-card:#FFFFFF;--hq-surface:#F8F9FB;--hq-surface-hov:#EDEEF1;--hq-border:rgba(0,0,0,0.07);--hq-border-hov:rgba(0,0,0,0.14);--hq-text:#111318;--hq-text-sub:#5A6272;--hq-text-muted:rgba(0,0,0,0.42);--hq-text-faint:rgba(0,0,0,0.24)`;
+
+export function HQThemeStyle({ theme }: { theme: "dark" | "light" }) {
+  return (
+    <style dangerouslySetInnerHTML={{ __html: `:root{${theme === "dark" ? DARK_VARS : LIGHT_VARS}}` }} />
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    STATUS BADGE
 ───────────────────────────────────────────────────────────── */
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
@@ -118,14 +157,14 @@ export function HQStatCard({
   const inner = (
     <div
       className="group flex flex-col gap-4 rounded-2xl border p-5 transition-all duration-150"
-      style={{ background: HQ.card, borderColor: HQ.border }}
-      onMouseEnter={e => href && ((e.currentTarget as HTMLDivElement).style.borderColor = HQ.borderHov)}
-      onMouseLeave={e => href && ((e.currentTarget as HTMLDivElement).style.borderColor = HQ.border)}
+      style={{ background: V.card, borderColor: V.border }}
+      onMouseEnter={e => href && ((e.currentTarget as HTMLDivElement).style.borderColor = V.borderHov)}
+      onMouseLeave={e => href && ((e.currentTarget as HTMLDivElement).style.borderColor = V.border)}
     >
       <div className="flex items-start justify-between">
         <span
           className="text-[0.7rem] font-bold uppercase tracking-[0.09em]"
-          style={{ color: HQ.textMuted }}
+          style={{ color: V.textMuted }}
         >
           {label}
         </span>
@@ -138,17 +177,17 @@ export function HQStatCard({
       </div>
 
       {loading ? (
-        <div className="h-9 w-28 animate-pulse rounded-lg" style={{ background: "rgba(255,255,255,0.06)" }} />
+        <div className="h-9 w-28 animate-pulse rounded-lg" style={{ background: V.border }} />
       ) : (
         <div>
           <p
             className="text-[1.85rem] font-black leading-none tabular-nums"
-            style={{ color: HQ.text }}
+            style={{ color: V.text }}
           >
             {value}
           </p>
           <div className="mt-2 flex items-center gap-2">
-            {sub && <span className="text-[0.73rem]" style={{ color: HQ.textMuted }}>{sub}</span>}
+            {sub && <span className="text-[0.73rem]" style={{ color: V.textMuted }}>{sub}</span>}
             {trend !== undefined && trend !== null && (
               <span
                 className="flex items-center gap-0.5 text-[0.7rem] font-semibold"
@@ -159,7 +198,7 @@ export function HQStatCard({
               </span>
             )}
             {trend === null && (
-              <span className="flex items-center gap-0.5 text-[0.7rem]" style={{ color: HQ.textFaint }}>
+              <span className="flex items-center gap-0.5 text-[0.7rem]" style={{ color: V.textFaint }}>
                 <Minus size={9} />stable
               </span>
             )}
@@ -199,7 +238,7 @@ export function HQPageHeader({
           {breadcrumbs.map((bc, i) => (
             <React.Fragment key={i}>
               {i > 0 && (
-                <span className="text-[0.63rem]" style={{ color: HQ.textFaint }}>
+                <span className="text-[0.63rem]" style={{ color: V.textFaint }}>
                   /
                 </span>
               )}
@@ -207,12 +246,12 @@ export function HQPageHeader({
                 <Link
                   href={bc.href}
                   className="text-[0.73rem] font-medium transition-colors"
-                  style={{ color: HQ.textMuted }}
+                  style={{ color: V.textMuted }}
                 >
                   {bc.label}
                 </Link>
               ) : (
-                <span className="text-[0.73rem] font-semibold" style={{ color: HQ.textSub }}>
+                <span className="text-[0.73rem] font-semibold" style={{ color: V.textSub }}>
                   {bc.label}
                 </span>
               )}
@@ -226,20 +265,20 @@ export function HQPageHeader({
           {Icon && (
             <div
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: HQ.goldDim, border: `1px solid ${HQ.goldBorder}` }}
+              style={{ background: V.goldDim, border: `1px solid ${V.goldBorder}` }}
             >
-              <Icon size={17} style={{ color: HQ.gold }} />
+              <Icon size={17} style={{ color: V.gold }} />
             </div>
           )}
           <div>
             <h1
               className="text-[1.2rem] font-black leading-tight tracking-tight"
-              style={{ color: HQ.text }}
+              style={{ color: V.text }}
             >
               {title}
             </h1>
             {description && (
-              <p className="mt-0.5 text-[0.8rem]" style={{ color: HQ.textSub }}>
+              <p className="mt-0.5 text-[0.8rem]" style={{ color: V.textSub }}>
                 {description}
               </p>
             )}
@@ -270,15 +309,15 @@ export function HQEmptyState({
       {Icon && (
         <div
           className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
-          style={{ background: HQ.goldDim, border: `1px solid ${HQ.goldBorder}` }}
+          style={{ background: V.goldDim, border: `1px solid ${V.goldBorder}` }}
         >
-          <Icon size={22} style={{ color: HQ.gold }} />
+          <Icon size={22} style={{ color: V.gold }} />
         </div>
       )}
-      <p className="text-[1rem] font-bold" style={{ color: HQ.text }}>
+      <p className="text-[1rem] font-bold" style={{ color: V.text }}>
         {title}
       </p>
-      <p className="mt-1.5 max-w-sm text-[0.82rem]" style={{ color: HQ.textSub }}>
+      <p className="mt-1.5 max-w-sm text-[0.82rem]" style={{ color: V.textSub }}>
         {description}
       </p>
       {action && <div className="mt-6">{action}</div>}
@@ -307,7 +346,7 @@ export function HQLoadingSkeleton({
               key={c}
               className={`${height} flex-1 animate-pulse rounded-lg`}
               style={{
-                background: "rgba(255,255,255,0.04)",
+                background: V.border,
                 animationDelay: `${(r * cols + c) * 40}ms`,
               }}
             />
@@ -349,19 +388,19 @@ export function HQConfirmDialog({
       />
       <div
         className="relative w-full max-w-sm rounded-2xl border p-6 shadow-2xl"
-        style={{ background: HQ.surface, borderColor: HQ.borderHov }}
+        style={{ background: V.surface, borderColor: V.borderHov }}
       >
-        <h3 className="text-[0.95rem] font-bold" style={{ color: HQ.text }}>
+        <h3 className="text-[0.95rem] font-bold" style={{ color: V.text }}>
           {title}
         </h3>
-        <p className="mt-2 text-[0.82rem]" style={{ color: HQ.textSub }}>
+        <p className="mt-2 text-[0.82rem]" style={{ color: V.textSub }}>
           {message}
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <button
             onClick={onCancel}
             className="rounded-lg border px-4 py-1.5 text-[0.8rem] font-medium transition-colors"
-            style={{ borderColor: HQ.border, color: HQ.textSub }}
+            style={{ borderColor: V.border, color: V.textSub }}
           >
             {cancelLabel}
           </button>
@@ -371,7 +410,7 @@ export function HQConfirmDialog({
             style={
               danger
                 ? { background: "rgba(239,68,68,0.12)", color: "#ef4444", borderColor: "rgba(239,68,68,0.22)" }
-                : { background: HQ.goldDim, color: HQ.gold, borderColor: HQ.goldBorder }
+                : { background: V.goldDim, color: V.gold, borderColor: V.goldBorder }
             }
           >
             {confirmLabel}
@@ -407,9 +446,9 @@ export function HQFilterBar({
               onClick={() => onChange(tab.key)}
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-medium transition-all duration-100"
               style={{
-                background: isActive ? `rgba(${HQ.goldR},0.10)` : "transparent",
-                color: isActive ? HQ.gold : HQ.textMuted,
-                border: `1px solid ${isActive ? HQ.goldBorder : "transparent"}`,
+                background: isActive ? `rgba(${V.goldR},0.10)` : "transparent",
+                color: isActive ? V.gold : V.textMuted,
+                border: `1px solid ${isActive ? V.goldBorder : "transparent"}`,
               }}
             >
               {tab.label}
@@ -417,8 +456,8 @@ export function HQFilterBar({
                 <span
                   className="rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold tabular-nums"
                   style={{
-                    background: isActive ? `rgba(${HQ.goldR},0.15)` : "rgba(255,255,255,0.08)",
-                    color: isActive ? HQ.gold : HQ.textMuted,
+                    background: isActive ? `rgba(${V.goldR},0.15)` : V.border,
+                    color: isActive ? V.gold : V.textMuted,
                   }}
                 >
                   {tab.count}
@@ -452,10 +491,10 @@ export function HQNotificationPanel({
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
         className="absolute right-0 top-full z-50 mt-2 w-80 rounded-2xl border shadow-2xl"
-        style={{ background: HQ.surface, borderColor: HQ.borderHov }}
+        style={{ background: V.surface, borderColor: V.borderHov }}
       >
-        <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: HQ.border }}>
-          <span className="text-[0.8rem] font-bold" style={{ color: HQ.text }}>
+        <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: V.border }}>
+          <span className="text-[0.8rem] font-bold" style={{ color: V.text }}>
             Notifications
           </span>
           {items.length > 0 && (
@@ -467,14 +506,14 @@ export function HQNotificationPanel({
         <div className="max-h-80 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
           {items.length === 0 ? (
             <div className="flex flex-col items-center py-8 text-center">
-              <p className="text-[0.8rem]" style={{ color: HQ.textMuted }}>Aucune notification</p>
+              <p className="text-[0.8rem]" style={{ color: V.textMuted }}>Aucune notification</p>
             </div>
           ) : (
             items.map(item => (
               <div
                 key={item.id}
                 className="border-b px-4 py-3 transition-colors hover:bg-white/[0.03]"
-                style={{ borderColor: HQ.border }}
+                style={{ borderColor: V.border }}
               >
                 <div className="flex items-start gap-2.5">
                   <div
@@ -482,9 +521,9 @@ export function HQNotificationPanel({
                     style={{ background: colorMap[item.type] }}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[0.78rem] font-semibold" style={{ color: HQ.text }}>{item.title}</p>
-                    <p className="mt-0.5 text-[0.73rem]" style={{ color: HQ.textSub }}>{item.body}</p>
-                    <p className="mt-1 text-[0.65rem]" style={{ color: HQ.textFaint }}>{item.time}</p>
+                    <p className="text-[0.78rem] font-semibold" style={{ color: V.text }}>{item.title}</p>
+                    <p className="mt-0.5 text-[0.73rem]" style={{ color: V.textSub }}>{item.body}</p>
+                    <p className="mt-1 text-[0.65rem]" style={{ color: V.textFaint }}>{item.time}</p>
                   </div>
                 </div>
               </div>
