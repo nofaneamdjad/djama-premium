@@ -5,15 +5,16 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
   LayoutDashboard, Activity, AlertTriangle, TrendingUp,
-  Users, Building2, UserCheck, Mail,
+  Users, Building2, UserCheck, Mail, History,
   Cpu, UserCog, Shield, CreditCard, Sliders, ClipboardCheck, ScrollText,
   Briefcase, MessageSquare, Terminal, LayoutGrid, Banknote,
-  Receipt, FileText, Tag, Lock, FlaskConical,
-  Edit3, HeadphonesIcon, Star, Award, Globe, Calendar,
-  Brain, Camera, Film, Palette,
-  ShieldCheck, Webhook, Send, Settings, Wrench,
+  Receipt, FileText, Tag, Lock, FlaskConical, BarChart2,
+  HeadphonesIcon, Bug, Flame, MonitorDot,
+  Brain,
+  ShieldCheck, Webhook, Send, Settings, Wrench, Globe, Megaphone,
   LogOut, Menu, X, ChevronDown, Search, Bell,
   ChevronsLeft, ChevronsRight, BarChart3, Sun, Moon,
+  Zap, DollarSign, RefreshCcw, Undo2, TestTube2, Server,
 } from "lucide-react";
 import { HQ, V, HQThemeStyle } from "@/components/hq";
 
@@ -24,24 +25,64 @@ type NavItem  = { href: string; label: string; icon: React.ElementType; exact?: 
 type NavGroup = { id: string; label: string; icon: React.ElementType; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
+  /* ── A. Vue générale ────────────────────────────────────── */
   {
-    id: "direction", label: "Direction", icon: BarChart3,
+    id: "vue", label: "Vue générale", icon: BarChart3,
     items: [
-      { href: "/admin",             label: "Dashboard",      icon: LayoutDashboard, exact: true },
-      { href: "/admin/hq/direction",label: "Direction HQ",   icon: TrendingUp       },
-      { href: "/admin/activite",    label: "Activité",       icon: Activity         },
-      { href: "/admin/alertes",     label: "Alertes",        icon: AlertTriangle    },
+      { href: "/admin",             label: "Tableau de bord", icon: LayoutDashboard, exact: true },
+      { href: "/admin/activite",    label: "Activité",        icon: Activity         },
+      { href: "/admin/alertes",     label: "Alertes",         icon: AlertTriangle    },
+      { href: "/admin/rapports",    label: "Rapports",        icon: BarChart2        },
     ],
   },
+  /* ── B. Clients ────────────────────────────────────────── */
   {
-    id: "clients", label: "Clients & Entreprises", icon: Users,
+    id: "clients", label: "Clients", icon: Users,
     items: [
-      { href: "/admin/clients",      label: "Utilisateurs",  icon: Users       },
-      { href: "/admin/entreprises",  label: "Entreprises",   icon: Building2   },
-      { href: "/admin/membres",      label: "Membres",       icon: UserCheck   },
-      { href: "/admin/invitations",  label: "Invitations",   icon: Mail        },
+      { href: "/admin/clients",     label: "Utilisateurs",   icon: Users     },
+      { href: "/admin/entreprises", label: "Entreprises",    icon: Building2 },
+      { href: "/admin/membres",     label: "Membres",        icon: UserCheck },
+      { href: "/admin/invitations", label: "Invitations",    icon: Mail      },
     ],
   },
+  /* ── C. Abonnements & Revenus ──────────────────────────── */
+  {
+    id: "revenus", label: "Abonnements & Revenus", icon: CreditCard,
+    items: [
+      { href: "/admin/plans",          label: "Offres",         icon: Sliders   },
+      { href: "/admin/acces",          label: "Abonnements",    icon: Shield    },
+      { href: "/admin/paiements",      label: "Paiements",      icon: CreditCard },
+      { href: "/admin/factures",       label: "Facturation",    icon: Receipt   },
+      { href: "/admin/coupons",        label: "Coupons",        icon: Tag       },
+      { href: "/admin/essais",         label: "Essais gratuits",icon: TestTube2 },
+      { href: "/admin/resiliations",   label: "Résiliations",   icon: RefreshCcw },
+      { href: "/admin/remboursements", label: "Remboursements", icon: Undo2     },
+    ],
+  },
+  /* ── D. Applications & IA ──────────────────────────────── */
+  {
+    id: "applications", label: "Applications & IA", icon: LayoutGrid,
+    items: [
+      { href: "/admin/applications",   label: "Catalogue",      icon: LayoutGrid },
+      { href: "/admin/hq/feature-flags", label: "Feature Flags",icon: Sliders   },
+      { href: "/admin/ia",             label: "Intelligence IA", icon: Brain     },
+      { href: "/admin/monitoring",     label: "Monitoring",      icon: MonitorDot },
+    ],
+  },
+  /* ── E. Exploitation logiciel ──────────────────────────── */
+  {
+    id: "exploitation", label: "Exploitation", icon: Server,
+    items: [
+      { href: "/admin/support",     label: "Support",       icon: HeadphonesIcon },
+      { href: "/admin/messages",    label: "Messages",      icon: MessageSquare  },
+      { href: "/admin/tickets",     label: "Tickets",       icon: ClipboardCheck },
+      { href: "/admin/incidents",   label: "Incidents",     icon: Flame          },
+      { href: "/admin/bugs",        label: "Bugs",          icon: Bug            },
+      { href: "/admin/maintenance", label: "Maintenance",   icon: Wrench         },
+      { href: "/admin/webhooks",    label: "Webhooks",      icon: Webhook        },
+    ],
+  },
+  /* ── F. DJAMA HQ — Personnel ───────────────────────────── */
   {
     id: "hq", label: "DJAMA HQ", icon: Cpu,
     items: [
@@ -50,79 +91,52 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/hq/departements",   label: "Départements",    icon: Building2    },
       { href: "/admin/hq/roles",          label: "Rôles",           icon: Shield       },
       { href: "/admin/hq/approbations",   label: "Approbations",    icon: ClipboardCheck },
-      { href: "/admin/hq/clients",        label: "Clients HQ",      icon: Users        },
-      { href: "/admin/hq/revenus",        label: "Revenus",         icon: CreditCard   },
-      { href: "/admin/hq/feature-flags",  label: "Feature Flags",   icon: Sliders      },
+      { href: "/admin/hq/audit",          label: "Journal interne", icon: ScrollText   },
     ],
   },
+  /* ── G. Commercialisation SaaS ─────────────────────────── */
   {
-    id: "espaces", label: "Espaces professionnels", icon: Briefcase,
+    id: "commercial", label: "Commercialisation", icon: Megaphone,
     items: [
-      { href: "/admin/hq/commercial",   label: "Commercial",   icon: TrendingUp      },
-      { href: "/admin/hq/support",      label: "Support HQ",   icon: MessageSquare   },
-      { href: "/admin/hq/informatique", label: "Informatique", icon: Terminal        },
-      { href: "/admin/hq/marketing",    label: "Marketing",    icon: LayoutGrid      },
-      { href: "/admin/hq/finance",      label: "Finance",      icon: Banknote        },
-      { href: "/admin/hq/rh",           label: "RH",           icon: UserCheck       },
+      { href: "/admin/beta",      label: "Bêta publique",  icon: FlaskConical },
+      { href: "/admin/waitlist",  label: "Liste d'attente",icon: History      },
+      { href: "/admin/prospects", label: "Prospects",      icon: TrendingUp   },
+      { href: "/admin/campagnes", label: "Campagnes",      icon: Megaphone    },
     ],
   },
+  /* ── H. Sécurité & Paramètres ──────────────────────────── */
   {
-    id: "plateforme", label: "Plateforme", icon: LayoutGrid,
+    id: "securite", label: "Sécurité & Paramètres", icon: Settings,
     items: [
-      { href: "/admin/applications", label: "Applications",  icon: LayoutGrid   },
-      { href: "/admin/acces",        label: "Abonnements",   icon: Shield       },
-      { href: "/admin/paiements",    label: "Paiements",     icon: CreditCard   },
-      { href: "/admin/factures",     label: "Factures",      icon: Receipt      },
-      { href: "/admin/virements",    label: "Virements",     icon: Banknote     },
-      { href: "/admin/devis",        label: "Devis",         icon: FileText     },
-      { href: "/admin/coupons",      label: "Coupons",       icon: Tag          },
-      { href: "/admin/plans",        label: "Plans",         icon: Sliders      },
-      { href: "/admin/permissions",  label: "Permissions",   icon: Lock         },
-      { href: "/admin/beta",         label: "Bêta publique", icon: FlaskConical },
+      { href: "/admin/securite",   label: "Journal d'audit",  icon: ShieldCheck },
+      { href: "/admin/emails",     label: "Emails système",   icon: Send        },
+      { href: "/admin/settings",   label: "Identité SaaS",    icon: Building2   },
+      { href: "/admin/parametres", label: "Paramètres",       icon: Settings    },
+      { href: "/admin/permissions",label: "Permissions",      icon: Lock        },
     ],
   },
+  /* ── Site vitrine (hors périmètre SaaS — masqué par défaut) */
   {
-    id: "contenu", label: "Contenu & Support", icon: Edit3,
+    id: "vitrine", label: "Site vitrine", icon: Globe,
     items: [
-      { href: "/admin/messages",     label: "Messages",      icon: MessageSquare   },
-      { href: "/admin/support",      label: "Support",       icon: HeadphonesIcon  },
-      { href: "/admin/blog",         label: "Blog",          icon: Edit3           },
-      { href: "/admin/services",     label: "Services",      icon: Briefcase       },
-      { href: "/admin/partenaires",  label: "Partenaires",   icon: Building2       },
-      { href: "/admin/realisations", label: "Réalisations",  icon: Star            },
-      { href: "/admin/temoignages",  label: "Témoignages",   icon: Award           },
-      { href: "/admin/contenu",      label: "Contenu site",  icon: Globe           },
-      { href: "/admin/reservations", label: "Réservations",  icon: Calendar        },
-    ],
-  },
-  {
-    id: "creativite", label: "Services créatifs", icon: Brain,
-    items: [
-      { href: "/admin/coaching-ia",    label: "Coaching IA",    icon: Brain   },
-      { href: "/admin/retouche-photo", label: "Retouche photo", icon: Camera  },
-      { href: "/admin/montage-video",  label: "Montage vidéo",  icon: Film    },
-      { href: "/admin/visuels",        label: "Visuels",        icon: Palette },
-    ],
-  },
-  {
-    id: "systeme", label: "Sécurité & Système", icon: Settings,
-    items: [
-      { href: "/admin/hq/audit",   label: "Journal d'audit", icon: ScrollText  },
-      { href: "/admin/securite",   label: "Sécurité",        icon: ShieldCheck },
-      { href: "/admin/webhooks",   label: "Webhooks",        icon: Webhook     },
-      { href: "/admin/emails",     label: "Emails",          icon: Send        },
-      { href: "/admin/settings",   label: "Identité",        icon: Building2   },
-      { href: "/admin/parametres", label: "Paramètres",      icon: Settings    },
-      { href: "/admin/maintenance",label: "Maintenance",     icon: Wrench      },
+      { href: "/admin/blog",         label: "Blog",          icon: FileText    },
+      { href: "/admin/contenu",      label: "Contenu site",  icon: Globe       },
+      { href: "/admin/services",     label: "Services",      icon: Briefcase   },
+      { href: "/admin/partenaires",  label: "Partenaires",   icon: Building2   },
+      { href: "/admin/realisations", label: "Réalisations",  icon: DollarSign  },
+      { href: "/admin/temoignages",  label: "Témoignages",   icon: MessageSquare },
+      { href: "/admin/reservations", label: "Réservations",  icon: ClipboardCheck },
+      { href: "/admin/coaching-ia",  label: "Coaching IA",   icon: Brain       },
     ],
   },
 ];
 
-/* Groupes repliés par défaut (peu fréquents) */
+/* Groupes repliés par défaut */
 const DEFAULT_COLLAPSED: Record<string, boolean> = {
-  plateforme: true,
-  contenu:    true,
-  creativite: true,
+  revenus:      true,
+  applications: true,
+  commercial:   true,
+  vitrine:      true,  /* hors périmètre SaaS — masqué par défaut */
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -358,17 +372,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => window.removeEventListener("keydown", handler);
   }, [compact]);
 
-  if (pathname === "/admin/login") return <>{children}</>;
-
-  const logout = async () => {
-    await fetch("/api/admin/auth", { method: "DELETE" });
-    router.replace("/admin/login");
-  };
-
-  const toggleSection = (id: string) =>
-    setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
-
-  /* Badge sur "Messages" */
+  /* Badge sur "Messages" — useMemo AVANT tout return conditionnel */
   const navGroups = useMemo(() =>
     NAV_GROUPS.map(g => ({
       ...g,
@@ -378,6 +382,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     })),
     [unreadMessages]
   );
+
+  if (pathname === "/admin/login") return <>{children}</>;
+
+  const logout = async () => {
+    await fetch("/api/admin/auth", { method: "DELETE" });
+    router.replace("/admin/login");
+  };
+
+  const toggleSection = (id: string) =>
+    setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
 
   /* Breadcrumb : Admin / Groupe / Page */
   const allItems = navGroups.flatMap(g => g.items);
