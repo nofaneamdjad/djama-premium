@@ -15,10 +15,11 @@
  *   { success: true, email_sent?: boolean, email_error?: string }
  */
 
-import { NextResponse }              from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient }              from "@supabase/supabase-js";
 import { sendAccessActivatedEmail }  from "@/lib/email";
 import { createLogger }              from "@/lib/logger";
+import { requireAdmin }              from "@/lib/admin-auth";
 
 const log = createLogger("activate-access");
 
@@ -38,7 +39,10 @@ function getSupabaseClient() {
   );
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
+
   // ── Constantes URL résolues à l'exécution (pas au chargement du module) ──
   const SITE_URL   = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000";
   const LOGIN_URLS: Record<AccessCol, string> = {

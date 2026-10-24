@@ -20,10 +20,11 @@
  *   { success: true, isNew: boolean, access_code: string }
  */
 
-import { NextResponse }             from "next/server";
-import { createClient }             from "@supabase/supabase-js";
-import { sendAccessWelcomeEmail }   from "@/lib/email";
-import { createLogger }             from "@/lib/logger";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient }              from "@supabase/supabase-js";
+import { sendAccessWelcomeEmail }    from "@/lib/email";
+import { createLogger }              from "@/lib/logger";
+import { requireAdmin }              from "@/lib/admin-auth";
 
 const log = createLogger("grant-access");
 
@@ -58,7 +59,10 @@ function generateAccessCode(): string {
 }
 
 // ── Handler ────────────────────────────────────────────────────
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const deny = await requireAdmin(req);
+  if (deny) return deny;
+
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000";
 
   // ── Diagnostic (muet en production) ───────────────────────────
