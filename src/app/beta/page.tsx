@@ -76,12 +76,14 @@ export default function BetaPage() {
       {/* ── Hero ── */}
       <section style={{ maxWidth: 760, margin: "0 auto", textAlign: "center", padding: "5rem 1.5rem 3rem" }}>
         {/* Badge */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(201,165,90,0.1)", border: "1px solid rgba(201,165,90,0.25)", borderRadius: 50, padding: "5px 14px", marginBottom: "1.5rem" }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, display: "inline-block", animation: "pulse 2s ease-in-out infinite" }} />
-          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: GOLD, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            {status?.open ? `${spotsLeft} place${spotsLeft !== 1 ? "s" : ""} restante${spotsLeft !== 1 ? "s" : ""}` : "Liste d'attente"}
-          </span>
-        </div>
+        {spotsLeft !== null && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(201,165,90,0.1)", border: "1px solid rgba(201,165,90,0.25)", borderRadius: 50, padding: "5px 14px", marginBottom: "1.5rem" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, display: "inline-block", animation: "pulse 2s ease-in-out infinite" }} />
+            <span style={{ fontSize: "0.72rem", fontWeight: 700, color: GOLD, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              {spotsLeft > 0 ? `${spotsLeft} place${spotsLeft !== 1 ? "s" : ""} restante${spotsLeft !== 1 ? "s" : ""}` : "Quota atteint"}
+            </span>
+          </div>
+        )}
 
         <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.2rem)", fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.03em", marginBottom: "1.25rem" }}>
           Testez DJAMA<br />
@@ -135,7 +137,7 @@ export default function BetaPage() {
             <>
               <h2 style={{ fontSize: "1.05rem", fontWeight: 700, marginBottom: "0.25rem" }}>Rejoindre la bêta</h2>
               <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.35)", marginBottom: "1.5rem" }}>
-                {status?.open ? "Places limitées — candidature libre" : "Inscriptions sur liste d'attente"}
+                Places limitées — candidature gratuite
               </p>
 
               <form onSubmit={e => void handleSubmit(e)} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
