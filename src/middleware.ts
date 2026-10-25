@@ -93,12 +93,17 @@ export async function middleware(request: NextRequest) {
     // 1. user_subscriptions (source sécurisée)
     const { data: apiSub } = await supabaseApi
       .from("user_subscriptions")
-      .select("is_active, current_period_end")
+      .select("is_active, current_period_end, beta_access, beta_expires_at")
       .eq("user_id", apiUser.id)
       .maybeSingle();
     const apiSubActive = apiSub?.is_active === true &&
       (!apiSub.current_period_end || new Date(apiSub.current_period_end) >= new Date());
     if (apiSubActive) return NextResponse.next();
+
+    // Accès bêta
+    const apiBetaActive = apiSub?.beta_access === true &&
+      (!apiSub.beta_expires_at || new Date(apiSub.beta_expires_at) >= new Date());
+    if (apiBetaActive) return NextResponse.next();
 
     // 2. user_access legacy
     const { data: apiAccess } = await supabaseApi
@@ -260,7 +265,7 @@ export async function middleware(request: NextRequest) {
   // 1. user_subscriptions — service_role only, impossible à forger
   const { data: sub } = await supabase
     .from("user_subscriptions")
-    .select("is_active, current_period_end")
+    .select("is_active, current_period_end, beta_access, beta_expires_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -269,6 +274,12 @@ export async function middleware(request: NextRequest) {
   );
 
   if (subActive) return response;
+
+  // 1b. Accès bêta — testeurs invités avec accès temporaire
+  const betaActive = sub?.beta_access === true && (
+    !sub.beta_expires_at || new Date(sub.beta_expires_at) >= new Date()
+  );
+  if (betaActive) return response;
 
   // 2. user_access legacy (INSERT/UPDATE fermés après migration 052)
   const { data: access } = await supabase

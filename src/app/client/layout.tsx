@@ -20,6 +20,7 @@ import TopBar from "@/components/nav/TopBar";
 import CommandPalette from "@/components/nav/CommandPalette";
 import AppLauncher from "@/components/nav/AppLauncher";
 import BottomNavMobile from "@/components/nav/BottomNavMobile";
+import { BetaFeedbackWidget } from "@/components/BetaFeedbackWidget";
 
 const GOLD = "#c9a55a";
 const PINNED_KEY = "djama-pinned-apps";
@@ -510,6 +511,9 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Onboarding */}
       <OnboardingModal name={name?.split(" ")[0]} />
+
+      {/* Widget feedback bêta */}
+      <BetaFeedbackWidget />
     </div>
   );
 }
