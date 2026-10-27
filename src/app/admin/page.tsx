@@ -7,7 +7,6 @@ import {
   ArrowUp, ArrowDown, Minus, ArrowUpRight,
 } from "lucide-react";
 import Link from "next/link";
-import { getSupabase } from "@/lib/supabase";
 import { V } from "@/components/hq";
 import {
   Chart as ChartJS,
@@ -15,37 +14,28 @@ import {
   BarElement, ArcElement, Tooltip, Filler,
 } from "chart.js";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
+import { AdminAlertsPanel } from "./_components/AdminAlertsPanel";
+import type { DashboardData } from "@/app/api/admin/dashboard/route";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Filler);
 
-/* ─── Helpers ─────────────────────────────────────────────── */
+/* ─── Helpers ─────────────────────────────────────────────────── */
 function formatEur(n: number) {
   return n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 }
 function formatDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
-  catch { return iso; }
-}
-function monthKey(iso: string) {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-function getMonths(n: number) {
-  const months: string[] = [];
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(1);
-    d.setMonth(d.getMonth() - i);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
-  return months;
+  try {
+    return new Date(iso).toLocaleDateString("fr-FR", {
+      day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+    });
+  } catch { return iso; }
 }
 function monthLabel(key: string) {
   const [y, m] = key.split("-");
   return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("fr-FR", { month: "short" });
 }
 
-/* ─── Détection thème ──────────────────────────────────────── */
+/* ─── Détection thème ──────────────────────────────────────────── */
 function useAdminTheme() {
   const [isDark, setIsDark] = useState(true);
   useEffect(() => {
@@ -63,7 +53,7 @@ function useAdminTheme() {
   return isDark;
 }
 
-/* ─── Tendance ────────────────────────────────────────────── */
+/* ─── Tendance ────────────────────────────────────────────────── */
 function Trend({ current, previous }: { current: number; previous: number }) {
   if (previous === 0 && current === 0)
     return <span className="text-[0.7rem]" style={{ color: V.textFaint }}>—</span>;
@@ -80,7 +70,7 @@ function Trend({ current, previous }: { current: number; previous: number }) {
   );
 }
 
-/* ─── KPI Card ────────────────────────────────────────────── */
+/* ─── KPI Card ────────────────────────────────────────────────── */
 function KpiCard({
   label, value, sub, icon: Icon, iconColor, iconBg, href, loading, trend,
 }: {
@@ -128,7 +118,7 @@ function KpiCard({
   return href ? <Link href={href}>{inner}</Link> : inner;
 }
 
-/* ─── Badge statut ─────────────────────────────────────────── */
+/* ─── Badge statut ─────────────────────────────────────────────── */
 function Badge({ s }: { s: string }) {
   const map: Record<string, { color: string; bg: string }> = {
     "payée":      { color: "#34d399", bg: "rgba(52,211,153,0.12)"  },
@@ -154,7 +144,7 @@ function Badge({ s }: { s: string }) {
   );
 }
 
-/* ─── Séparateur de section ────────────────────────────────── */
+/* ─── Séparateur de section ────────────────────────────────────── */
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
@@ -166,121 +156,58 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ─── Dashboard ────────────────────────────────────────────── */
+/* ─── État initial ────────────────────────────────────────────── */
+const INITIAL_KPI: DashboardData["kpi"] = {
+  totalUsers: 0, newUsersMonth: 0, newUsersPrev: 0, newUsersWeek: 0, newUsersToday: 0,
+  abonnementsActifs: 0, gratuit: 0, mrrMois: 0, mrrPrev: 0,
+  paiementsEchoues: 0, messagesAttente: 0,
+};
+
+/* ─── Dashboard ────────────────────────────────────────────────── */
 export default function AdminDashboard() {
   const isDark = useAdminTheme();
-  const [loading, setLoading] = useState(true);
-  const [refreshAt, setRefreshAt] = useState(Date.now());
-  const [period, setPeriod] = useState<3 | 6 | 12>(6);
+  const [loading, setLoading]       = useState(true);
+  const [refreshAt, setRefreshAt]   = useState(Date.now());
+  const [period, setPeriod]         = useState<3 | 6 | 12>(6);
+  const [error, setError]           = useState<string | null>(null);
 
-  const [kpi, setKpi] = useState({
-    totalUsers: 0, newUsersMonth: 0, newUsersPrev: 0, newUsersWeek: 0, newUsersToday: 0,
-    premium: 0, gratuit: 0, mrrMois: 0, mrrPrev: 0,
-    paiementsEchoues: 0, messagesAttente: 0, accesActifs: 0,
-  });
+  const [kpi, setKpi]               = useState<DashboardData["kpi"]>(INITIAL_KPI);
+  const [charts, setCharts]         = useState<DashboardData["charts"]>({ months: [], inscriptions: [], revenus: [] });
+  const [recentMessages, setRecentMessages] = useState<DashboardData["recentMessages"]>([]);
+  const [recentClients,  setRecentClients]  = useState<DashboardData["recentClients"]>([]);
+  const [alerts, setAlerts]         = useState<DashboardData["alerts"]>([]);
 
-  const [charts, setCharts] = useState({
-    months: getMonths(6),
-    inscriptions: [] as number[],
-    revenus: [] as number[],
-  });
-
-  const [recentMessages, setRecentMessages] = useState<{
-    id: string; name: string; email: string; subject: string | null; status: string; created_at: string;
-  }[]>([]);
-  const [recentClients, setRecentClients] = useState<{
-    id: string; name: string; email: string; created_at: string; statut: string;
-  }[]>([]);
-
+  /* ─── Fetch depuis l'API route serveur ──────────────────────── */
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const sb = getSupabase();
-      const now = new Date();
-      const months = getMonths(period);
-      const startOf = `${months[0]}-01`;
-      const startMois = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-      const endPrev   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
-      const startWeek = new Date(now.getTime() - 7 * 86400000).toISOString();
-      const startDay  = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-
-      const [
-        clientsRes, accessRes, messagesRes,
-        invMoisRes, invPrevRes, invWeekRes, invDayRes,
-        invoicesMoisRes, invoicesPrevRes, invoicesEchecsRes,
-        recentMsgRes, recentClientsRes, invoicesRes, clients6MRes,
-      ] = await Promise.all([
-        sb.from("clients").select("id, statut"),
-        sb.from("user_access").select("id, espace_premium, outils_saas"),
-        sb.from("contact_messages").select("id").eq("status", "nouveau"),
-        sb.from("clients").select("id").gte("created_at", startMois),
-        sb.from("clients").select("id").gte("created_at", startPrev).lte("created_at", endPrev),
-        sb.from("clients").select("id").gte("created_at", startWeek),
-        sb.from("clients").select("id").gte("created_at", startDay),
-        sb.from("invoices").select("total").eq("payment_status", "payée").gte("created_at", startMois),
-        sb.from("invoices").select("total").eq("payment_status", "payée").gte("created_at", startPrev).lte("created_at", endPrev),
-        sb.from("invoices").select("id").in("payment_status", ["échoué", "en retard"]),
-        sb.from("contact_messages").select("id, name, email, subject, status, created_at").order("created_at", { ascending: false }).limit(5),
-        sb.from("clients").select("id, name, email, created_at, statut").order("created_at", { ascending: false }).limit(5),
-        sb.from("invoices").select("total, created_at, payment_status").gte("created_at", startOf).eq("payment_status", "payée"),
-        sb.from("clients").select("created_at").gte("created_at", startOf),
-      ]);
-
-      const clientsData = clientsRes.data ?? [];
-      const accessData  = accessRes.data ?? [];
-      const premium = accessData.filter(a => a.espace_premium).length;
-      const gratuit = Math.max(0, clientsData.length - premium);
-      const mrrMois = (invoicesMoisRes.data ?? []).reduce((s, i) => s + (Number(i.total) || 0), 0);
-      const mrrPrev = (invoicesPrevRes.data ?? []).reduce((s, i) => s + (Number(i.total) || 0), 0);
-
-      const inscByMonth: Record<string, number> = {};
-      const revByMonth: Record<string, number>  = {};
-      months.forEach(m => { inscByMonth[m] = 0; revByMonth[m] = 0; });
-
-      for (const c of (clients6MRes.data ?? [])) {
-        const k = monthKey(c.created_at);
-        if (k in inscByMonth) inscByMonth[k]++;
-      }
-      for (const inv of (invoicesRes.data ?? [])) {
-        const k = monthKey(inv.created_at);
-        if (k in revByMonth) revByMonth[k] += Number(inv.total) || 0;
-      }
-
-      setKpi({
-        totalUsers: clientsData.length, newUsersMonth: invMoisRes.data?.length ?? 0,
-        newUsersPrev: invPrevRes.data?.length ?? 0, newUsersWeek: invWeekRes.data?.length ?? 0,
-        newUsersToday: invDayRes.data?.length ?? 0, premium, gratuit,
-        mrrMois, mrrPrev,
-        paiementsEchoues: invoicesEchecsRes.data?.length ?? 0,
-        messagesAttente:  messagesRes.data?.length ?? 0,
-        accesActifs: premium,
-      });
-
-      setCharts({
-        months,
-        inscriptions: months.map(m => inscByMonth[m] ?? 0),
-        revenus:      months.map(m => revByMonth[m] ?? 0),
-      });
-
-      setRecentMessages((recentMsgRes.data ?? []) as typeof recentMessages);
-      setRecentClients((recentClientsRes.data ?? []) as typeof recentClients);
+      const res = await fetch(`/api/admin/dashboard?period=${period}`, { cache: "no-store" });
+      if (res.status === 401) { setError("Session expirée — reconnectez-vous."); return; }
+      if (!res.ok)            { setError("Erreur lors du chargement des données."); return; }
+      const data: DashboardData = await res.json();
+      setKpi(data.kpi);
+      setCharts(data.charts);
+      setRecentMessages(data.recentMessages);
+      setRecentClients(data.recentClients);
+      setAlerts(data.alerts);
     } catch (err) {
       console.error("[AdminDashboard]", err);
+      setError("Impossible de charger le tableau de bord.");
     } finally {
       setLoading(false);
     }
   }, [period]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll, refreshAt]);
+  useEffect(() => { void fetchAll(); }, [fetchAll, refreshAt]);
 
-  /* ─── Options charts adaptatives au thème ──────────────── */
+  /* ─── Options charts adaptatives au thème ──────────────────── */
   const lineOpts = useMemo(() => {
-    const t = isDark ? "rgba(135,144,158,0.8)" : "rgba(102,112,133,0.75)";
-    const g = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.055)";
+    const t  = isDark ? "rgba(135,144,158,0.8)" : "rgba(102,112,133,0.75)";
+    const g  = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.055)";
     const tt = {
       backgroundColor: isDark ? "#1a1e2e" : "#ffffff",
-      titleColor:      isDark ? "#F5F5F3"  : "#171A21",
+      titleColor:      isDark ? "#F5F5F3" : "#171A21",
       bodyColor:       isDark ? "rgba(245,245,243,0.55)" : "rgba(23,26,33,0.6)",
       borderColor:     isDark ? "rgba(255,255,255,0.08)" : "#E6E8EC",
       borderWidth: 1, padding: 12, cornerRadius: 10,
@@ -297,11 +224,11 @@ export default function AdminDashboard() {
   }, [isDark]);
 
   const barOpts = useMemo(() => {
-    const t = isDark ? "rgba(135,144,158,0.8)" : "rgba(102,112,133,0.75)";
-    const g = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.055)";
+    const t  = isDark ? "rgba(135,144,158,0.8)" : "rgba(102,112,133,0.75)";
+    const g  = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.055)";
     const tt = {
       backgroundColor: isDark ? "#1a1e2e" : "#ffffff",
-      titleColor:      isDark ? "#F5F5F3"  : "#171A21",
+      titleColor:      isDark ? "#F5F5F3" : "#171A21",
       bodyColor:       isDark ? "rgba(245,245,243,0.55)" : "rgba(23,26,33,0.6)",
       borderColor:     isDark ? "rgba(255,255,255,0.08)" : "#E6E8EC",
       borderWidth: 1, padding: 12, cornerRadius: 10,
@@ -324,7 +251,7 @@ export default function AdminDashboard() {
   const donutOpts = useMemo(() => {
     const tt = {
       backgroundColor: isDark ? "#1a1e2e" : "#ffffff",
-      titleColor:      isDark ? "#F5F5F3"  : "#171A21",
+      titleColor:      isDark ? "#F5F5F3" : "#171A21",
       bodyColor:       isDark ? "rgba(245,245,243,0.55)" : "rgba(23,26,33,0.6)",
       borderColor:     isDark ? "rgba(255,255,255,0.08)" : "#E6E8EC",
       borderWidth: 1, padding: 12, cornerRadius: 10,
@@ -354,10 +281,13 @@ export default function AdminDashboard() {
   };
 
   const donut = {
-    labels: ["Premium", "Gratuit"],
+    labels: ["Abonnés", "Gratuit"],
     datasets: [{
-      data: [kpi.premium, kpi.gratuit],
-      backgroundColor: [`rgba(${V.goldR},0.85)`, isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"],
+      data: [kpi.abonnementsActifs, kpi.gratuit],
+      backgroundColor: [
+        `rgba(${V.goldR},0.85)`,
+        isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
+      ],
       borderWidth: 0, hoverOffset: 4,
     }],
   };
@@ -369,7 +299,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
 
-      {/* ── Zone 1 : En-tête direction ───────────────────────── */}
+      {/* ── Zone 1 : En-tête ────────────────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-[1.3rem] font-black tracking-tight" style={{ color: V.text }}>
@@ -378,11 +308,7 @@ export default function AdminDashboard() {
           <p className="mt-0.5 text-[0.78rem] capitalize" style={{ color: V.textMuted }}>{dateLabel}</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Sélecteur de période */}
-          <div
-            className="flex overflow-hidden rounded-xl border"
-            style={{ borderColor: V.border }}
-          >
+          <div className="flex overflow-hidden rounded-xl border" style={{ borderColor: V.border }}>
             {([3, 6, 12] as const).map((p, i) => (
               <button
                 key={p}
@@ -390,7 +316,7 @@ export default function AdminDashboard() {
                 className="px-3.5 py-1.5 text-[0.73rem] font-medium transition-all duration-100"
                 style={{
                   background: period === p ? `rgba(${V.goldR},0.10)` : "transparent",
-                  color: period === p ? V.gold : V.textMuted,
+                  color:      period === p ? V.gold : V.textMuted,
                   borderRight: i < 2 ? `1px solid ${V.border}` : undefined,
                 }}
               >
@@ -402,8 +328,8 @@ export default function AdminDashboard() {
             onClick={() => setRefreshAt(Date.now())}
             className="flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-[0.73rem] font-medium transition"
             style={{ borderColor: V.border, color: V.textMuted }}
-            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.borderColor = V.borderHov}
-            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.borderColor = V.border}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = V.borderHov)}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = V.border)}
           >
             <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
             Actualiser
@@ -411,7 +337,22 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Zone 2 : KPIs principaux ─────────────────────────── */}
+      {/* ── Erreur ──────────────────────────────────────────── */}
+      {error && (
+        <div
+          className="rounded-xl border px-4 py-3 text-[0.82rem]"
+          style={{ background: "rgba(248,113,113,0.08)", borderColor: "rgba(248,113,113,0.18)", color: "#f87171" }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* ── Zone 2 : Alertes prioritaires ───────────────────── */}
+      {(loading || alerts.length > 0) && (
+        <AdminAlertsPanel alerts={alerts} loading={loading} />
+      )}
+
+      {/* ── Zone 3 : KPIs principaux ─────────────────────────── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
           label="Utilisateurs"
@@ -429,8 +370,8 @@ export default function AdminDashboard() {
         />
         <KpiCard
           label="Abonnements actifs"
-          value={kpi.accesActifs}
-          sub={`${kpi.gratuit} gratuits`}
+          value={kpi.abonnementsActifs}
+          sub={`${kpi.gratuit} sans abonnement`}
           icon={Shield} iconColor="#a78bfa" iconBg="rgba(167,139,250,0.09)"
           href="/admin/acces" loading={loading}
         />
@@ -460,8 +401,8 @@ export default function AdminDashboard() {
           loading={loading}
         />
         <KpiCard
-          label="Utilisateurs Premium"
-          value={kpi.premium}
+          label="Utilisateurs abonnés"
+          value={kpi.abonnementsActifs}
           sub={`sur ${kpi.totalUsers} total`}
           icon={CreditCard} iconColor={V.gold} iconBg={V.goldDim}
           href="/admin/acces" loading={loading}
@@ -477,11 +418,10 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* ── Zone 3 : Graphiques commerciaux ──────────────────── */}
+      {/* ── Zone 4 : Graphiques commerciaux ──────────────────── */}
       <SectionLabel>Tendances — {period} derniers mois</SectionLabel>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        {/* Inscriptions */}
         <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -498,7 +438,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Revenus */}
         <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -516,14 +455,13 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Zone 4 : Répartition + Accès rapides ─────────────── */}
+      {/* ── Zone 5 : Répartition + Accès rapides ─────────────── */}
       <div className="grid gap-5 lg:grid-cols-3">
-        {/* Répartition */}
         <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-[0.87rem] font-bold" style={{ color: V.text }}>Répartition</h2>
-              <p className="text-[0.71rem]" style={{ color: V.textFaint }}>Gratuit vs Premium</p>
+              <p className="text-[0.71rem]" style={{ color: V.textFaint }}>Abonnés vs gratuit</p>
             </div>
             <Shield size={14} style={{ color: V.textFaint }} />
           </div>
@@ -539,8 +477,8 @@ export default function AdminDashboard() {
               <div className="flex flex-col gap-3 text-[0.75rem]">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: V.gold }} />
-                  <span style={{ color: V.textSub }}>Premium</span>
-                  <span className="ml-auto font-black tabular-nums" style={{ color: V.text }}>{kpi.premium}</span>
+                  <span style={{ color: V.textSub }}>Abonnés</span>
+                  <span className="ml-auto font-black tabular-nums" style={{ color: V.text }}>{kpi.abonnementsActifs}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
@@ -561,7 +499,6 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Accès rapides — 2 colonnes */}
         <div className="rounded-2xl border p-5 lg:col-span-2" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="mb-4 text-[0.87rem] font-bold" style={{ color: V.text }}>Accès rapides</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -578,11 +515,11 @@ export default function AdminDashboard() {
                 style={{ borderColor: V.border, color: V.textSub }}
                 onMouseEnter={e => {
                   (e.currentTarget as HTMLAnchorElement).style.borderColor = V.borderHov;
-                  (e.currentTarget as HTMLAnchorElement).style.background = V.surfaceHov;
+                  (e.currentTarget as HTMLAnchorElement).style.background  = V.surfaceHov;
                 }}
                 onMouseLeave={e => {
                   (e.currentTarget as HTMLAnchorElement).style.borderColor = V.border;
-                  (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                  (e.currentTarget as HTMLAnchorElement).style.background  = "transparent";
                 }}
               >
                 <div
@@ -598,7 +535,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Zone 5 : Activité récente ─────────────────────────── */}
+      {/* ── Zone 6 : Activité récente ─────────────────────────── */}
       <SectionLabel>Activité récente</SectionLabel>
 
       <div className="grid gap-5 lg:grid-cols-2">
