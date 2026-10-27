@@ -160,7 +160,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 const INITIAL_KPI: DashboardData["kpi"] = {
   totalUsers: 0, newUsersMonth: 0, newUsersPrev: 0, newUsersWeek: 0, newUsersToday: 0,
   abonnementsActifs: 0, gratuit: 0, revenusMois: 0, revenusPrev: 0,
-  paiementsEchoues: 0, messagesAttente: 0,
+  revenusQualite: "indisponible", paiementsEchoues: 0, remboursements: 0, messagesAttente: 0,
 };
 
 /* ─── Dashboard ────────────────────────────────────────────────── */
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
   const [error, setError]           = useState<string | null>(null);
 
   const [kpi, setKpi]               = useState<DashboardData["kpi"]>(INITIAL_KPI);
-  const [charts, setCharts]         = useState<DashboardData["charts"]>({ months: [], inscriptions: [], revenus: [] });
+  const [charts, setCharts]         = useState<DashboardData["charts"]>({ months: [], inscriptions: [], revenus: [], revenuQualite: "approximative" });
   const [recentMessages, setRecentMessages] = useState<DashboardData["recentMessages"]>([]);
   const [recentClients,  setRecentClients]  = useState<DashboardData["recentClients"]>([]);
   const [alerts, setAlerts]         = useState<DashboardData["alerts"]>([]);
@@ -241,12 +241,22 @@ export default function AdminDashboard() {
         x: { grid: { display: false }, ticks: { color: t, font: { size: 11 } } },
         y: {
           grid: { color: g },
-          ticks: { color: t, font: { size: 11 }, callback: (v: number | string) => formatEur(Number(v)) },
+          ticks: {
+            color: t, font: { size: 11 },
+            // R01 fix : n'afficher que les ticks entiers pour éviter "1€" sur axe vide
+            callback: (v: number | string) => {
+              const n = Number(v);
+              if (!Number.isInteger(n)) return "";
+              return formatEur(n);
+            },
+          },
           beginAtZero: true,
+          // Quand toutes les valeurs sont 0, forcer max=0 pour éviter axe [0,1]
+          max: charts.revenus.every(r => r === 0) ? 0 : undefined,
         },
       },
     };
-  }, [isDark]);
+  }, [isDark, charts.revenus]);
 
   const donutOpts = useMemo(() => {
     const tt = {
@@ -363,8 +373,9 @@ export default function AdminDashboard() {
         />
         <KpiCard
           label="Encaissements du mois"
-          value={formatEur(kpi.revenusMois)}
-          trend={{ current: kpi.revenusMois, previous: kpi.revenusPrev }}
+          value={kpi.revenusQualite === "indisponible" ? "—" : formatEur(kpi.revenusMois)}
+          sub={kpi.revenusQualite === "approximative" ? "Dates estimées ⚠️" : undefined}
+          trend={kpi.revenusQualite !== "indisponible" ? { current: kpi.revenusMois, previous: kpi.revenusPrev } : undefined}
           icon={Wallet} iconColor="#4ade80" iconBg="rgba(74,222,128,0.09)"
           href="/admin/paiements" loading={loading}
         />
@@ -410,7 +421,7 @@ export default function AdminDashboard() {
         <KpiCard
           label="Paiements échoués"
           value={kpi.paiementsEchoues}
-          sub={kpi.paiementsEchoues > 0 ? "À vérifier" : "RAS"}
+          sub={kpi.paiementsEchoues > 0 ? "À vérifier" : kpi.remboursements > 0 ? `${kpi.remboursements} rembours.` : "RAS"}
           icon={AlertCircle}
           iconColor={kpi.paiementsEchoues > 0 ? "#f87171" : "#34d399"}
           iconBg={kpi.paiementsEchoues > 0 ? "rgba(248,113,113,0.09)" : "rgba(52,211,153,0.09)"}
@@ -441,16 +452,27 @@ export default function AdminDashboard() {
         <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-[0.87rem] font-bold" style={{ color: V.text }}>Revenus</h2>
-              <p className="text-[0.71rem]" style={{ color: V.textFaint }}>{period} derniers mois</p>
+              <h2 className="text-[0.87rem] font-bold" style={{ color: V.text }}>Encaissements</h2>
+              <p className="text-[0.71rem]" style={{ color: V.textFaint }}>
+                {period} derniers mois
+                {!loading && charts.revenuQualite === "approximative" && (
+                  <span className="ml-1.5" style={{ color: "#f59e0b" }}>· dates estimées</span>
+                )}
+              </p>
             </div>
             <Wallet size={14} style={{ color: V.textFaint }} />
           </div>
           <div style={{ height: 200 }}>
-            {loading
-              ? <div className="h-full w-full animate-pulse rounded-xl" style={{ background: V.surface }} />
-              : <Bar data={barRev} options={barOpts} />
-            }
+            {loading ? (
+              <div className="h-full w-full animate-pulse rounded-xl" style={{ background: V.surface }} />
+            ) : charts.revenus.every(r => r === 0) ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2">
+                <Wallet size={22} style={{ color: V.textFaint, opacity: 0.4 }} />
+                <p className="text-[0.78rem]" style={{ color: V.textFaint }}>Aucun encaissement sur la période</p>
+              </div>
+            ) : (
+              <Bar data={barRev} options={barOpts} />
+            )}
           </div>
         </div>
       </div>

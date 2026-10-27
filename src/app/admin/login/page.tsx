@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Lock, ShieldCheck, Mail } from "lucide-react";
 
 export default function AdminLogin() {
   const router = useRouter();
+  const [email,     setEmail]     = useState("");
   const [password,  setPassword]  = useState("");
   const [totpCode,  setTotpCode]  = useState("");
   const [show,      setShow]      = useState(false);
@@ -19,7 +20,8 @@ export default function AdminLogin() {
     setError("");
     try {
       const body: Record<string, string> = { password };
-      if (need2FA) body.totpCode = totpCode;
+      if (email.trim())  body.email     = email.trim().toLowerCase();
+      if (need2FA)       body.totpCode  = totpCode;
 
       const res = await fetch("/api/admin/auth", {
         method: "POST",
@@ -75,6 +77,22 @@ export default function AdminLogin() {
           </p>
 
           <form onSubmit={submit} className="space-y-3">
+            {/* Champ email — mode individuel */}
+            {!need2FA && (
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center">
+                  <Mail size={14} className="text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setError(""); }}
+                  placeholder="Email administrateur"
+                  autoFocus
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pl-10 text-[0.85rem] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white"
+                />
+              </div>
+            )}
             {/* Champ mot de passe — masqué en mode 2FA */}
             {!need2FA && (
               <div className="relative">
@@ -83,7 +101,6 @@ export default function AdminLogin() {
                   value={password}
                   onChange={e => { setPassword(e.target.value); setError(""); }}
                   placeholder="Mot de passe"
-                  autoFocus
                   className={`w-full rounded-xl border bg-gray-50 px-4 py-3 pr-11 text-[0.85rem] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white ${
                     error ? "border-red-300" : "border-gray-200"
                   }`}
@@ -121,6 +138,10 @@ export default function AdminLogin() {
             {error && (
               <p className="text-center text-[0.77rem] text-red-500">{error}</p>
             )}
+
+            <p className="text-center text-[0.72rem] text-gray-400">
+              {email ? "Authentification individuelle" : "Mot de passe administrateur partagé (ADMIN_PASS)"}
+            </p>
 
             <button
               type="submit"
