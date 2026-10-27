@@ -186,57 +186,65 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       .limit(1),
   ]);
 
-  /* ── 4. KPI revenus — via RPC (agrégation Postgres) ──────── */
+  /* ── 4. KPI revenus — via RPC (agrégation Postgres, v1.3) ─── */
+  // net_amount = encaissements 'payée' - remboursements (BOOL_OR bug corrigé)
+  // partial payments exclues du net (montant exact inconnu sans paid_amount)
   let revenusMois     = 0;
   let revenusPrev     = 0;
+  let remboursementsMois = 0;
   let revenusQualite: RevenueQuality = "indisponible";
 
+  const endMois = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
   const [rpcMois, rpcPrev] = await Promise.all([
-    sb.rpc("get_monthly_revenue", {
-      p_start_mois: startMois,
-      p_end_mois:   new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString(),
-    }),
-    sb.rpc("get_monthly_revenue", {
-      p_start_mois: startPrev,
-      p_end_mois:   endPrev,
-    }),
+    sb.rpc("get_monthly_revenue", { p_start_mois: startMois, p_end_mois: endMois }),
+    sb.rpc("get_monthly_revenue", { p_start_mois: startPrev, p_end_mois: endPrev }),
   ]);
 
   if (!rpcMois.error && rpcMois.data) {
     const row = Array.isArray(rpcMois.data) ? rpcMois.data[0] : rpcMois.data;
     if (row) {
-      revenusMois   = Number(row.total_amount) || 0;
-      revenusQualite = row.dates_fiables ? "fiable" : "approximative";
+      // net_amount = total_amount - refund_amount (v1.3, paiements partiels exclus)
+      revenusMois        = Number(row.net_amount)    || 0;
+      remboursementsMois = Number(row.refund_amount) || 0;
+      revenusQualite     = row.dates_fiables ? "fiable" : "approximative";
+      // Si paiements partiels présents et aucune facture payée complète → toujours approximatif
+      if (row.has_partial && (row.invoice_count ?? 0) === 0) {
+        revenusQualite = "approximative";
+      }
     } else {
-      revenusQualite = "fiable"; // pas de factures = 0€ fiable
+      revenusQualite = "fiable"; // aucune facture = 0€ fiable
     }
   } else {
-    // Fallback si RPC indisponible (migration non appliquée)
-    const fallback = await sb
-      .from("invoices")
-      .select("total, paid_at, updated_at")
-      .eq("payment_status", "payée")
-      .gte("created_at", startMois);
-    if (!fallback.error && fallback.data) {
-      revenusMois = fallback.data.reduce((s, i) => s + (Number(i.total) || 0), 0);
-      const hasPaidAt = fallback.data.some(i => i.paid_at);
+    // Fallback si RPC indisponible (migration 174 non appliquée)
+    const [fbPaid, fbRefund] = await Promise.all([
+      sb.from("invoices").select("total, paid_at, updated_at")
+        .eq("payment_status", "payée").gte("created_at", startMois),
+      sb.from("invoices").select("total")
+        .eq("payment_status", "remboursée").gte("created_at", startMois),
+    ]);
+    if (!fbPaid.error && fbPaid.data) {
+      revenusMois = fbPaid.data.reduce((s, i) => s + (Number(i.total) || 0), 0);
+      const hasPaidAt = fbPaid.data.some(i => i.paid_at);
       revenusQualite = hasPaidAt ? "fiable" : "approximative";
+    }
+    if (!fbRefund.error && fbRefund.data) {
+      remboursementsMois = fbRefund.data.reduce((s, i) => s + (Number(i.total) || 0), 0);
+      revenusMois -= remboursementsMois; // déduire du net
     }
   }
 
   if (!rpcPrev.error && rpcPrev.data) {
     const row = Array.isArray(rpcPrev.data) ? rpcPrev.data[0] : rpcPrev.data;
-    revenusPrev = row ? Number(row.total_amount) || 0 : 0;
+    // Utiliser net_amount si disponible (v1.3), sinon total_amount (fallback v1.2)
+    revenusPrev = row ? (Number(row.net_amount ?? row.total_amount) || 0) : 0;
   }
 
   /* ── 5. Données graphiques — via RPC (performances) ──────── */
   let revenuQualiteChart: RevenueQuality = "approximative";
 
   const [rpcRev, rpcInsc] = await Promise.all([
-    sb.rpc("get_revenue_by_month", {
-      p_start_date:   startOf,
-      p_months_count: period,
-    }),
+    sb.rpc("get_revenue_by_month", { p_start_date: startOf, p_months_count: period }),
     sb.rpc("get_inscriptions_by_month", { p_start_date: startOf }),
   ]);
 
@@ -246,18 +254,19 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   if (!rpcRev.error && Array.isArray(rpcRev.data)) {
     let allFiable = true;
-    for (const row of rpcRev.data as { month_key: string; total_revenue: number; has_paid_at: boolean }[]) {
-      if (row.month_key in revByMonth) revByMonth[row.month_key] += Number(row.total_revenue) || 0;
+    // v1.3 : utiliser net_revenue (brut - remboursements) pour les graphiques
+    type RevRow = { month_key: string; net_revenue?: number; total_revenue: number; has_paid_at: boolean };
+    for (const row of rpcRev.data as RevRow[]) {
+      const val = Number(row.net_revenue ?? row.total_revenue) || 0;
+      if (row.month_key in revByMonth) revByMonth[row.month_key] += val;
       if (!row.has_paid_at) allFiable = false;
     }
     revenuQualiteChart = allFiable ? "fiable" : "approximative";
   } else {
-    // Fallback : chargement minimal des lignes
-    const fallbackRev = await sb
-      .from("invoices")
+    // Fallback : chargement minimal, seulement 'payée'
+    const fallbackRev = await sb.from("invoices")
       .select("total, paid_at, updated_at, created_at")
-      .eq("payment_status", "payée")
-      .gte("created_at", startOf);
+      .eq("payment_status", "payée").gte("created_at", startOf);
     for (const inv of (fallbackRev.data ?? [])) {
       const dateRef = inv.paid_at || inv.updated_at || inv.created_at;
       const k = monthKey(dateRef);
@@ -355,7 +364,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       revenusPrev,
       revenusQualite,
       paiementsEchoues,
-      remboursements,
+      remboursements: Math.max(remboursementsMois, invoicesRembRes.count ?? 0),
       messagesAttente,
     },
     charts: {

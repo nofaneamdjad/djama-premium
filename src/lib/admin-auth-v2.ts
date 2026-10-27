@@ -260,6 +260,19 @@ export async function requireAdminUser(
   }
 
   /* ── Tentative 2 : fallback ADMIN_PASS legacy ────────────── */
+
+  // Désactivation explicite : ADMIN_PASS_DEPRECATED=true bloque complètement le fallback.
+  // À activer une fois que admin_users est peuplé et le compte individuel validé.
+  if (process.env.ADMIN_PASS_DEPRECATED === "true") {
+    return {
+      admin: null,
+      deny: NextResponse.json(
+        { error: "L'authentification ADMIN_PASS partagé est désactivée. Utilisez votre compte individuel." },
+        { status: 401 }
+      ),
+    };
+  }
+
   const legacyDeny = await requireAdmin(req);
 
   if (legacyDeny) {
@@ -267,14 +280,22 @@ export async function requireAdminUser(
     return { admin: null, deny: legacyDeny };
   }
 
-  // Autorisé via legacy — créer un AdminUser anonyme
+  // Autorisé via legacy — rôle LIMITÉ (admin, pas super_admin) pour encourager la migration.
+  // Seules les actions de consultation sont disponibles en mode legacy.
   const legacyAdmin: AdminUser = {
     id:          "legacy",
     email:       "admin@djama.local",
-    name:        "Admin (ADMIN_PASS)",
-    role:        "super_admin",
-    permissions: {},
-    authMethod:  "legacy_admin_pass",
+    name:        "Admin (ADMIN_PASS — migration requise)",
+    role:        "admin",  // downgraded from super_admin : pas de gestion admins ni settings
+    permissions: {
+      can_view_dashboard:  true,
+      can_view_revenue:    true,
+      can_view_messages:   true,
+      can_manage_admins:   false,  // ne peut pas créer/supprimer des admins
+      can_manage_settings: false,  // ne peut pas modifier les paramètres
+      can_delete_users:    false,
+    },
+    authMethod: "legacy_admin_pass",
   };
 
   if (options.logAction) {
