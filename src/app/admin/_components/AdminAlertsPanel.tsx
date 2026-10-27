@@ -51,7 +51,7 @@ export function AdminAlertsPanel({ alerts, loading }: AdminAlertsPanelProps) {
           <Info size={14} style={{ color: "#34d399" }} />
         </div>
         <p className="text-[0.8rem]" style={{ color: V.textMuted }}>
-          Aucune alerte — tout fonctionne normalement
+          Aucune alerte détectée dans les catégories surveillées (paiements · messages)
         </p>
       </div>
     );

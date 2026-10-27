@@ -159,7 +159,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 /* ─── État initial ────────────────────────────────────────────── */
 const INITIAL_KPI: DashboardData["kpi"] = {
   totalUsers: 0, newUsersMonth: 0, newUsersPrev: 0, newUsersWeek: 0, newUsersToday: 0,
-  abonnementsActifs: 0, gratuit: 0, mrrMois: 0, mrrPrev: 0,
+  abonnementsActifs: 0, gratuit: 0, revenusMois: 0, revenusPrev: 0,
   paiementsEchoues: 0, messagesAttente: 0,
 };
 
@@ -362,9 +362,9 @@ export default function AdminDashboard() {
           href="/admin/clients" loading={loading}
         />
         <KpiCard
-          label="Revenus du mois"
-          value={formatEur(kpi.mrrMois)}
-          trend={{ current: kpi.mrrMois, previous: kpi.mrrPrev }}
+          label="Encaissements du mois"
+          value={formatEur(kpi.revenusMois)}
+          trend={{ current: kpi.revenusMois, previous: kpi.revenusPrev }}
           icon={Wallet} iconColor="#4ade80" iconBg="rgba(74,222,128,0.09)"
           href="/admin/paiements" loading={loading}
         />

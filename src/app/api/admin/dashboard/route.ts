@@ -44,8 +44,8 @@ export type DashboardData = {
     newUsersToday:    number;
     abonnementsActifs: number;
     gratuit:          number;
-    mrrMois:          number;
-    mrrPrev:          number;
+    revenusMois:      number;
+    revenusPrev:      number;
     paiementsEchoues: number;
     messagesAttente:  number;
   };
@@ -143,8 +143,8 @@ export async function GET(req: NextRequest) {
   const messagesAttente  = messagesAttenteRes.count ?? 0;
   const paiementsEchoues = invoicesEchecsRes.count ?? 0;
 
-  const mrrMois = (invoicesMoisRes.data ?? []).reduce((s, i) => s + (Number(i.total) || 0), 0);
-  const mrrPrev = (invoicesPrevRes.data ?? []).reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const revenusMois = (invoicesMoisRes.data ?? []).reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const revenusPrev = (invoicesPrevRes.data ?? []).reduce((s, i) => s + (Number(i.total) || 0), 0);
 
   /* ── Agrégations graphiques ───────────────────────────────── */
   const inscByMonth: Record<string, number> = {};
@@ -196,8 +196,8 @@ export async function GET(req: NextRequest) {
       newUsersToday:    invDayRes.count ?? 0,
       abonnementsActifs,
       gratuit,
-      mrrMois,
-      mrrPrev,
+      revenusMois,
+      revenusPrev,
       paiementsEchoues,
       messagesAttente,
     },
