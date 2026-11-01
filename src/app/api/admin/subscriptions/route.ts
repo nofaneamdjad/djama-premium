@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   const sb = createSupabaseAdmin();
 
-  // Récupère user_subscriptions avec info client
+  // Récupère user_subscriptions (sans join FK — pas de relation déclarée)
   let query = sb
     .from("user_subscriptions")
     .select(`
@@ -46,10 +46,7 @@ export async function GET(req: NextRequest) {
       updated_at,
       beta_access,
       beta_expires_at,
-      ai_calls_used,
-      clients!inner (
-        id, name, email, phone, company, statut, created_at
-      )
+      ai_calls_used
     `, { count: "exact" });
 
   // Filtre statut
@@ -80,15 +77,34 @@ export async function GET(req: NextRequest) {
   const { data, count, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Filtre texte côté JS (email/nom depuis clients)
   let rows = (data ?? []) as Record<string, unknown>[];
+
+  // Enrichir avec les données clients via user_id (pas de FK déclarée)
+  if (rows.length > 0) {
+    const userIds = [...new Set(rows.map(r => r.user_id as string).filter(Boolean))];
+    const { data: clientsData } = await sb
+      .from("clients")
+      .select("id, full_name, email, company, statut, user_id, created_at")
+      .in("user_id", userIds);
+
+    const clientsByUserId = Object.fromEntries(
+      (clientsData ?? []).map(c => [c.user_id, c])
+    );
+
+    rows = rows.map(r => ({
+      ...r,
+      clients: clientsByUserId[r.user_id as string] ?? null,
+    }));
+  }
+
+  // Filtre texte côté JS
   if (q) {
     const lq = q.toLowerCase();
     rows = rows.filter(r => {
       const c = r.clients as Record<string, string> | null;
       return (
-        c?.email?.toLowerCase().includes(lq) ||
-        c?.name?.toLowerCase().includes(lq)  ||
+        c?.email?.toLowerCase().includes(lq)      ||
+        c?.full_name?.toLowerCase().includes(lq)  ||
         c?.company?.toLowerCase().includes(lq)
       );
     });

@@ -31,7 +31,16 @@ export async function GET(req: NextRequest) {
   if (severity) q = q.eq("severity", severity);
 
   const { data, error } = await q;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
+      return NextResponse.json({
+        incidents: [],
+        stats: { total: 0, open: 0, investigating: 0, resolved: 0, critical: 0 },
+        _warning: "Table incidents absente — appliquer migration 177",
+      });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   const rows = data ?? [];
   const stats = {

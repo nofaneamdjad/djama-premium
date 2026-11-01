@@ -33,23 +33,21 @@ export async function GET(req: NextRequest) {
   try {
     const sb = createSupabaseAdmin();
 
+    // Colonnes disponibles en production (migration 175 non appliquée → suspended_at absent)
     let query = sb
       .from("clients")
       .select(
-        `id, name, email, phone, company, statut, abonnement, paid,
-         suspended_at, suspended_by, admin_notes,
-         created_at, updated_at, user_id`,
+        `id, full_name, email, statut, abonnement, created_at, updated_at, user_id`,
         { count: "exact" }
       );
 
     if (q) {
-      query = query.or(`email.ilike.%${q}%,name.ilike.%${q}%`);
+      query = query.or(`email.ilike.%${q}%,full_name.ilike.%${q}%`);
     }
 
-    if (statut === "suspendu") {
-      query = query.not("suspended_at", "is", null);
-    } else if (statut) {
-      query = query.eq("statut", statut).is("suspended_at", null);
+    // Filtre suspendu ignoré si colonne absente (migration 175 requise)
+    if (statut && statut !== "suspendu") {
+      query = query.eq("statut", statut);
     }
 
     if (plan) {
@@ -60,7 +58,15 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
+        return NextResponse.json({
+          users: [], total: 0, page, limit, totalPages: 0,
+          _warning: "Colonnes manquantes dans clients — migrations admin non appliquées en production",
+        });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({
       users:      data ?? [],

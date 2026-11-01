@@ -30,7 +30,17 @@ export async function GET(req: NextRequest) {
   if (search)   q = q.or(`action.ilike.%${search}%,admin_email.ilike.%${search}%,resource.ilike.%${search}%`);
 
   const { data, error } = await q;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    // admin_audit_log n'existe pas encore en production (migration 174 non appliquée)
+    if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
+      return NextResponse.json({
+        logs: [],
+        stats: { total: 0, info: 0, warning: 0, critical: 0 },
+        _warning: "Table admin_audit_log absente — appliquer migration 174",
+      });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   const rows = data ?? [];
   const stats = {

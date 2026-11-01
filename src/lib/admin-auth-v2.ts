@@ -135,6 +135,39 @@ async function getAdminUserFromSupabase(
   }
 }
 
+/* ── Vérification révocation de session ────────────────────────────── */
+// Vérifie qu'il existe au moins une session active non-révoquée pour cet admin.
+// Graceful : si admin_sessions n'existe pas (migration 174 non appliquée),
+// considère la session comme valide et continue.
+async function checkSessionNotRevoked(adminId: string): Promise<boolean> {
+  try {
+    const sb = createSupabaseAdmin();
+    const now = new Date().toISOString();
+    const { data, error } = await sb
+      .from("admin_sessions")
+      .select("id")
+      .eq("admin_user_id", adminId)
+      .is("revoked_at", null)
+      .gt("expires_at", now)
+      .limit(1);
+
+    if (error) {
+      // Table absente (migration 174 non appliquée) → pas de contrainte, OK
+      if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
+        return true;
+      }
+      // Autre erreur DB → ne pas bloquer, laisser passer
+      console.warn("[AdminAuthV2] Erreur vérification admin_sessions:", error.message);
+      return true;
+    }
+
+    // Si aucune session active trouvée ET que la table existe → sessions toutes révoquées
+    return (data ?? []).length > 0;
+  } catch {
+    return true; // Non bloquant
+  }
+}
+
 /* ── Journalisation ────────────────────────────────────────────────── */
 
 export async function logAdminAction(params: {
@@ -209,6 +242,23 @@ export async function requireAdminUser(
       const adminUser = await getAdminUserFromSupabase(sbUser.id);
 
       if (adminUser) {
+        // Vérification révocation de session (migration 174 optionnelle)
+        const sessionValid = await checkSessionNotRevoked(adminUser.id);
+        if (!sessionValid) {
+          await logAdminAction({
+            admin: adminUser, action: "ACCESS_DENIED_SESSION_REVOKED",
+            resource: options.logResource, ip, userAgent,
+            severity: "warning",
+          });
+          return {
+            admin: null,
+            deny: NextResponse.json(
+              { error: "Votre session a été révoquée. Reconnectez-vous." },
+              { status: 401 }
+            ),
+          };
+        }
+
         // Vérification de permission spécifique si demandée
         if (options.requiredPermission && !hasPermission(adminUser, options.requiredPermission)) {
           await logAdminAction({

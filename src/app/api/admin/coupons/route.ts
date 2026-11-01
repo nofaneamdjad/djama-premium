@@ -21,7 +21,16 @@ export async function GET(req: NextRequest) {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
+      return NextResponse.json({
+        coupons: [],
+        stats: { total: 0, active: 0, expired: 0, used: 0 },
+        _warning: "Table promo_codes absente — appliquer la migration correspondante",
+      });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ coupons: data ?? [] });
 }
 

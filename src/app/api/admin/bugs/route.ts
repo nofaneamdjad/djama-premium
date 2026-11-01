@@ -32,7 +32,16 @@ export async function GET(req: NextRequest) {
   if (search)   q = q.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
 
   const { data, error } = await q;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
+      return NextResponse.json({
+        bugs: [],
+        stats: { total: 0, new_bugs: 0, in_progress: 0, fixed: 0, critical: 0 },
+        _warning: "Table bug_reports absente — appliquer migration 177",
+      });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   const rows = data ?? [];
   const stats = {
