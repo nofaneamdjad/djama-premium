@@ -300,7 +300,7 @@ export default function SupportPage() {
                   </label>
                   <div className="relative">
                     <select
-                      value={(selected as Record<string,string>)[f.key]}
+                      value={(selected as unknown as Record<string,string>)[f.key]}
                       onChange={e => {
                         setSelected(prev => prev ? { ...prev, [f.key]: e.target.value } as Ticket : prev);
                         patch(selected.id, { [f.key]: e.target.value });
