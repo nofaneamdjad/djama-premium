@@ -23,11 +23,10 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
-      return NextResponse.json({
-        coupons: [],
-        stats: { total: 0, active: 0, expired: 0, used: 0 },
-        _warning: "Table promo_codes absente — appliquer la migration correspondante",
-      });
+      return NextResponse.json(
+        { error: "Service coupons indisponible — migration 176 non appliquée", _migration: "176_promo_codes" },
+        { status: 503 },
+      );
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

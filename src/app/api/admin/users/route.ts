@@ -60,10 +60,10 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
-        return NextResponse.json({
-          users: [], total: 0, page, limit, totalPages: 0,
-          _warning: "Colonnes manquantes dans clients — migrations admin non appliquées en production",
-        });
+        return NextResponse.json(
+          { error: "Table clients inaccessible — erreur schéma PostgreSQL", _hint: "Redémarrer PostgREST ou vérifier les migrations" },
+          { status: 503 },
+        );
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }

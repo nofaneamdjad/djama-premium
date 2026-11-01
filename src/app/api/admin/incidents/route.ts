@@ -33,11 +33,10 @@ export async function GET(req: NextRequest) {
   const { data, error } = await q;
   if (error) {
     if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
-      return NextResponse.json({
-        incidents: [],
-        stats: { total: 0, open: 0, investigating: 0, resolved: 0, critical: 0 },
-        _warning: "Table incidents absente — appliquer migration 177",
-      });
+      return NextResponse.json(
+        { error: "Service incidents indisponible — migration 177 non appliquée", _migration: "177_support_exploit" },
+        { status: 503 },
+      );
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

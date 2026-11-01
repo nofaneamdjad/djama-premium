@@ -33,11 +33,10 @@ export async function GET(req: NextRequest) {
   if (error) {
     // admin_audit_log n'existe pas encore en production (migration 174 non appliquée)
     if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
-      return NextResponse.json({
-        logs: [],
-        stats: { total: 0, info: 0, warning: 0, critical: 0 },
-        _warning: "Table admin_audit_log absente — appliquer migration 174",
-      });
+      return NextResponse.json(
+        { error: "Service d'audit indisponible — migration 174 non appliquée", _migration: "174_admin_auth_v2" },
+        { status: 503 },
+      );
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
