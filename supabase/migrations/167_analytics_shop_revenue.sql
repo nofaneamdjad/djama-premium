@@ -32,8 +32,8 @@ AS $$
       COUNT(*)                                                  AS nb_factures
     FROM documents d
     WHERE d.user_id      = p_user_id
-      AND d.type         = 'invoice'
-      AND d.status       = 'paid'
+      AND d.type         IN ('facture', 'invoice')
+      AND d.statut       IN ('payé', 'paid')
       AND d.date_document BETWEEN p_start::date AND p_end::date
     GROUP BY 1
 

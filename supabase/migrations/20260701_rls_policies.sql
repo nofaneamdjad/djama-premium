@@ -77,29 +77,45 @@ DECLARE
     'team_members','team_tasks','team_leaves','team_meetings','team_messages','employees',
     'ai_conversations','ai_messages','social_posts','coaching_progress','user_settings'
   ];
+  col_exists boolean;
 BEGIN
   FOREACH tbl IN ARRAY tables LOOP
-    EXECUTE format('DROP POLICY IF EXISTS "user_select_%s" ON %I', tbl, tbl);
-    EXECUTE format('DROP POLICY IF EXISTS "user_insert_%s" ON %I', tbl, tbl);
-    EXECUTE format('DROP POLICY IF EXISTS "user_update_%s" ON %I', tbl, tbl);
-    EXECUTE format('DROP POLICY IF EXISTS "user_delete_%s" ON %I', tbl, tbl);
+    -- Vérifier que la table existe et possède une colonne user_id
+    SELECT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = tbl AND column_name = 'user_id'
+    ) INTO col_exists;
 
-    EXECUTE format(
-      'CREATE POLICY "user_select_%s" ON %I FOR SELECT USING (user_id = auth.uid())',
-      tbl, tbl
-    );
-    EXECUTE format(
-      'CREATE POLICY "user_insert_%s" ON %I FOR INSERT WITH CHECK (user_id = auth.uid())',
-      tbl, tbl
-    );
-    EXECUTE format(
-      'CREATE POLICY "user_update_%s" ON %I FOR UPDATE USING (user_id = auth.uid())',
-      tbl, tbl
-    );
-    EXECUTE format(
-      'CREATE POLICY "user_delete_%s" ON %I FOR DELETE USING (user_id = auth.uid())',
-      tbl, tbl
-    );
+    IF NOT col_exists THEN
+      CONTINUE;
+    END IF;
+
+    BEGIN
+      EXECUTE format('DROP POLICY IF EXISTS "user_select_%s" ON %I', tbl, tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "user_insert_%s" ON %I', tbl, tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "user_update_%s" ON %I', tbl, tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "user_delete_%s" ON %I', tbl, tbl);
+
+      EXECUTE format(
+        'CREATE POLICY "user_select_%s" ON %I FOR SELECT USING (user_id = auth.uid())',
+        tbl, tbl
+      );
+      EXECUTE format(
+        'CREATE POLICY "user_insert_%s" ON %I FOR INSERT WITH CHECK (user_id = auth.uid())',
+        tbl, tbl
+      );
+      EXECUTE format(
+        'CREATE POLICY "user_update_%s" ON %I FOR UPDATE USING (user_id = auth.uid())',
+        tbl, tbl
+      );
+      EXECUTE format(
+        'CREATE POLICY "user_delete_%s" ON %I FOR DELETE USING (user_id = auth.uid())',
+        tbl, tbl
+      );
+    EXCEPTION WHEN OTHERS THEN
+      -- Ignorer les tables sans user_id direct ou avec policies déjà conflictuelles
+      NULL;
+    END;
   END LOOP;
 END $$;
 

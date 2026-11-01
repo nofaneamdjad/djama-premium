@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS admin_users (
   last_login_ip    text
 );
 
+-- Colonnes v2 (admin_users existe déjà dans 002 sans ces colonnes)
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS supabase_user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS permissions jsonb NOT NULL DEFAULT '{}';
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS mfa_required boolean NOT NULL DEFAULT false;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS invited_by uuid REFERENCES admin_users(id) ON DELETE SET NULL;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login timestamptz;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_ip text;
+CREATE UNIQUE INDEX IF NOT EXISTS admin_users_supabase_user_id_key ON admin_users(supabase_user_id) WHERE supabase_user_id IS NOT NULL;
+
 COMMENT ON TABLE admin_users IS
   'Administrateurs DJAMA individuels — chaque entrée correspond à un compte Supabase Auth. '
   'Role: super_admin (tous droits) | admin (gestion standard) | support (lecture + messages) | viewer (lecture seule). '

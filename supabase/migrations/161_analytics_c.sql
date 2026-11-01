@@ -19,7 +19,7 @@ RETURNS TABLE (
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 AS $$
   SELECT
-    (SELECT COUNT(*) FROM chatbots WHERE user_id = p_user_id AND is_active = true)::bigint,
+    (SELECT COUNT(*) FROM chatbots WHERE user_id = p_user_id AND status = 'active')::bigint,
 
     (SELECT COUNT(*)
      FROM chatbot_conversations cc

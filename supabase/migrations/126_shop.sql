@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS shop_orders (
   total               numeric(12,2) NOT NULL DEFAULT 0,
   -- Promotion
   promo_code          text    DEFAULT '',
-  promotion_id        uuid    REFERENCES shop_promotions(id) ON DELETE SET NULL,
+  promotion_id        uuid,
   -- Paiement
   payment_method      text    DEFAULT '',
   payment_reference   text    DEFAULT '',
@@ -222,4 +222,5 @@ CREATE POLICY "shop_shipping_own" ON shop_shipping_zones
   FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
 -- ── Forward reference fix — shop_orders FK vers shop_promotions ──────────
--- (shop_promotions est créé avant shop_orders dans ce fichier, OK)
+ALTER TABLE shop_orders ADD CONSTRAINT fk_shop_orders_promotion
+  FOREIGN KEY (promotion_id) REFERENCES shop_promotions(id) ON DELETE SET NULL;

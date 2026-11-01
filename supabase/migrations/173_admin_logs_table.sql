@@ -21,6 +21,9 @@ ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
 -- Aucune policy anon/authenticated → refus par défaut pour le client browser
 -- Le service_role bypasse le RLS → seules les routes /api/admin/* peuvent lire/écrire
 
+-- Ajouter admin_id si absent (admin_logs créé en 059 sans cette colonne)
+ALTER TABLE admin_logs ADD COLUMN IF NOT EXISTS admin_id text;
+
 -- Index pour les requêtes tableau de bord
 CREATE INDEX IF NOT EXISTS admin_logs_created_at_idx  ON admin_logs (created_at DESC);
 CREATE INDEX IF NOT EXISTS admin_logs_action_idx      ON admin_logs (action);

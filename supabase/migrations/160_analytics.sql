@@ -16,14 +16,14 @@ LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT
-    to_char(date_trunc('month', d.date::date), 'YYYY-MM') AS month_key,
-    COALESCE(SUM(d.total_ttc), 0)::numeric               AS ca_paye,
-    COUNT(*)::bigint                                      AS nb_factures
+    to_char(date_trunc('month', d.date_document), 'YYYY-MM') AS month_key,
+    COALESCE(SUM(d.total_ttc), 0)::numeric                   AS ca_paye,
+    COUNT(*)::bigint                                          AS nb_factures
   FROM documents d
   WHERE d.user_id  = p_user_id
-    AND d.type     = 'invoice'
-    AND d.status   = 'paid'
-    AND d.date::date BETWEEN p_start::date AND p_end::date
+    AND d.type     IN ('facture', 'invoice')
+    AND d.statut   IN ('payé', 'paid')
+    AND d.date_document BETWEEN p_start::date AND p_end::date
   GROUP BY 1
   ORDER BY 1;
 $$;
@@ -61,7 +61,7 @@ CREATE OR REPLACE FUNCTION analytics_top_clients(
   p_limit   int DEFAULT 10
 )
 RETURNS TABLE (
-  client_name text,
+  client_nom  text,
   ca_total    numeric,
   nb_factures bigint
 )
@@ -69,17 +69,17 @@ LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT
-    d.client_name,
+    d.client_nom,
     COALESCE(SUM(d.total_ttc), 0)::numeric AS ca_total,
     COUNT(*)::bigint                        AS nb_factures
   FROM documents d
   WHERE d.user_id     = p_user_id
-    AND d.type        = 'invoice'
-    AND d.status      = 'paid'
-    AND d.date::date BETWEEN p_start::date AND p_end::date
-    AND d.client_name IS NOT NULL
-    AND d.client_name <> ''
-  GROUP BY d.client_name
+    AND d.type        IN ('facture', 'invoice')
+    AND d.statut      IN ('payé', 'paid')
+    AND d.date_document BETWEEN p_start::date AND p_end::date
+    AND d.client_nom  IS NOT NULL
+    AND d.client_nom  <> ''
+  GROUP BY d.client_nom
   ORDER BY ca_total DESC
   LIMIT p_limit;
 $$;

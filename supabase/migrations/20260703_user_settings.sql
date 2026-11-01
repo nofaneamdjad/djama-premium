@@ -11,12 +11,16 @@ CREATE TABLE IF NOT EXISTS user_settings (
 
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "user_select_user_settings" ON user_settings;
 CREATE POLICY "user_select_user_settings" ON user_settings
   FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "user_insert_user_settings" ON user_settings;
 CREATE POLICY "user_insert_user_settings" ON user_settings
   FOR INSERT WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "user_update_user_settings" ON user_settings;
 CREATE POLICY "user_update_user_settings" ON user_settings
   FOR UPDATE USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "user_delete_user_settings" ON user_settings;
 CREATE POLICY "user_delete_user_settings" ON user_settings
   FOR DELETE USING (user_id = auth.uid());
 

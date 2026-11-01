@@ -161,11 +161,16 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_gcal_tokens_user ON google_calendar_tokens(user_id);
 
 -- ── 5. AGENDA_EVENTS — colonne gcal_event_id (sync) ───────────
-ALTER TABLE agenda_events
-  ADD COLUMN IF NOT EXISTS gcal_event_id text;
-
-CREATE INDEX IF NOT EXISTS idx_agenda_events_gcal ON agenda_events(gcal_event_id)
-  WHERE gcal_event_id IS NOT NULL;
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'agenda_events'
+  ) THEN
+    ALTER TABLE agenda_events ADD COLUMN IF NOT EXISTS gcal_event_id text;
+    CREATE INDEX IF NOT EXISTS idx_agenda_events_gcal ON agenda_events(gcal_event_id)
+      WHERE gcal_event_id IS NOT NULL;
+  END IF;
+END $$;
 
 -- ── Trigger updated_at pour blog_articles ─────────────────────
 CREATE OR REPLACE FUNCTION update_updated_at_col()
@@ -192,3 +197,36 @@ DO $$ BEGIN
       FOR EACH ROW EXECUTE FUNCTION update_updated_at_col();
   END IF;
 END $$;
+
+-- Tables portail (001zc_portail_messages_docs.sql est skippé)
+CREATE TABLE IF NOT EXISTS portail_messages (
+  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  portail_client_id uuid        NOT NULL REFERENCES portail_clients(id) ON DELETE CASCADE,
+  user_id           uuid        NOT NULL,
+  from_role         text        NOT NULL CHECK (from_role IN ('admin','client')),
+  text              text        NOT NULL,
+  created_at        timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS portail_messages_client_idx ON portail_messages (portail_client_id);
+ALTER TABLE portail_messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "users_own_portail_messages" ON portail_messages;
+CREATE POLICY "users_own_portail_messages" ON portail_messages
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE TABLE IF NOT EXISTS portail_docs (
+  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  portail_client_id uuid        NOT NULL REFERENCES portail_clients(id) ON DELETE CASCADE,
+  user_id           uuid        NOT NULL,
+  name              text        NOT NULL,
+  file_type         text,
+  size              bigint,
+  url               text        NOT NULL,
+  storage_path      text,
+  uploaded_by       text        NOT NULL CHECK (uploaded_by IN ('admin','client')),
+  created_at        timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS portail_docs_client_idx ON portail_docs (portail_client_id);
+ALTER TABLE portail_docs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "users_own_portail_docs" ON portail_docs;
+CREATE POLICY "users_own_portail_docs" ON portail_docs
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);

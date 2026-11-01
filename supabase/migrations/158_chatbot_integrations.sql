@@ -21,7 +21,7 @@ CREATE INDEX IF NOT EXISTS chatbot_integrations_chatbot_idx
 
 CREATE OR REPLACE TRIGGER chatbot_integrations_updated_at
   BEFORE UPDATE ON chatbot_integrations
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_col();
 
 ALTER TABLE chatbot_integrations ENABLE ROW LEVEL SECURITY;
 
