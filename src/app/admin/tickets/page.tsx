@@ -1,23 +1,16 @@
 "use client";
 
-import { ClipboardCheck } from "lucide-react";
-import { ComingSoon } from "@/app/admin/_components/ComingSoon";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { V } from "@/components/hq";
 
 export default function TicketsPage() {
+  const router = useRouter();
+  useEffect(() => { router.replace("/admin/support"); }, [router]);
   return (
-    <ComingSoon
-      icon={ClipboardCheck}
-      title="Tickets support"
-      description="Système de ticketing pour les demandes d'assistance des utilisateurs DJAMA."
-      features={[
-        "File de tickets classés par priorité",
-        "Affectation aux agents support",
-        "Statuts : Ouvert, En cours, Résolu, Fermé",
-        "Escalade vers le niveau technique",
-        "Base de connaissances liée",
-        "Indicateurs de satisfaction (CSAT)",
-        "Historique complet des échanges",
-      ]}
-    />
+    <div className="flex items-center justify-center py-20">
+      <Loader2 size={20} className="animate-spin" style={{ color: V.gold }} />
+    </div>
   );
 }
