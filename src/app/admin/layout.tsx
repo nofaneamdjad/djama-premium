@@ -50,7 +50,7 @@ const NAV_GROUPS: NavGroup[] = [
     id: "revenus", label: "Abonnements & Revenus", icon: CreditCard,
     items: [
       { href: "/admin/plans",          label: "Offres",         icon: Sliders   },
-      { href: "/admin/acces",          label: "Abonnements",    icon: Shield    },
+      { href: "/admin/abonnements",     label: "Abonnements",    icon: Shield    },
       { href: "/admin/paiements",      label: "Paiements",      icon: CreditCard },
       { href: "/admin/factures",       label: "Facturation",    icon: Receipt   },
       { href: "/admin/coupons",        label: "Coupons",        icon: Tag       },
