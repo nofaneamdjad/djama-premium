@@ -57,6 +57,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, Record<string, boolean>> = {
     can_view_audit_log:    true,
     can_manage_blog:       true,
     can_view_analytics:    true,
+    manage_subscriptions:  true,
   },
   admin: {
     can_view_dashboard:    true,
@@ -143,13 +144,15 @@ async function checkSessionNotRevoked(adminId: string): Promise<boolean> {
   try {
     const sb = createSupabaseAdmin();
     const now = new Date().toISOString();
+    // Récupère toutes les sessions (actives + révoquées) pour distinguer les cas :
+    // 0 sessions = pas de tracking actif = accès accordé
+    // N sessions toutes révoquées = révocation explicite = accès refusé
     const { data, error } = await sb
       .from("admin_sessions")
-      .select("id")
+      .select("id, revoked_at, expires_at")
       .eq("admin_user_id", adminId)
-      .is("revoked_at", null)
-      .gt("expires_at", now)
-      .limit(1);
+      .order("created_at", { ascending: false })
+      .limit(20);
 
     if (error) {
       // Table absente (migration 174 non appliquée) → pas de contrainte, OK
@@ -161,8 +164,12 @@ async function checkSessionNotRevoked(adminId: string): Promise<boolean> {
       return true;
     }
 
-    // Si aucune session active trouvée ET que la table existe → sessions toutes révoquées
-    return (data ?? []).length > 0;
+    const sessions = data ?? [];
+    // Aucune session trackée → tracking non actif → accès accordé
+    if (sessions.length === 0) return true;
+
+    // Au moins une session active (non-révoquée et non-expirée) → accès accordé
+    return sessions.some(s => s.revoked_at === null && s.expires_at > now);
   } catch {
     return true; // Non bloquant
   }

@@ -7,24 +7,28 @@
  *  2. Sinon → fallback ADMIN_PASS partagé (rétrocompatibilité)
  */
 import { NextRequest, NextResponse }               from "next/server";
+import { cookies }                                  from "next/headers";
 import { generateAdminToken }                       from "@/lib/admin-token";
 import { checkRateLimitAsync as checkRateLimit,
          getClientIp }                              from "@/lib/rate-limit";
 import { verifyTOTP, isTOTPEnabled }               from "@/lib/totp";
-import { createClient }                             from "@supabase/supabase-js";
+import { createServerClient }                       from "@supabase/ssr";
 import { createSupabaseAdmin }                      from "@/lib/supabase-server";
 import { logAdminAction, updateLastLogin }          from "@/lib/admin-auth-v2";
 
 export async function POST(req: NextRequest) {
   // ── Rate limiting : 10 tentatives / 15 min par IP ──────────────
   const ip = getClientIp(req);
-  const { allowed } = await checkRateLimit(ip, 10, 15 * 60 * 1000);
+  const { allowed, resetAt } = await checkRateLimit(ip, 10, 15 * 60 * 1000);
   if (!allowed) {
     await new Promise((r) => setTimeout(r, 1000));
-    return NextResponse.json(
+    const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
+    const res = NextResponse.json(
       { error: "Trop de tentatives. Réessayez plus tard." },
       { status: 429 }
     );
+    res.headers.set("Retry-After", String(retryAfter));
+    return res;
   }
 
   try {
@@ -43,10 +47,17 @@ export async function POST(req: NextRequest) {
       const normalizedEmail = email.trim().toLowerCase();
 
       // Authentification avec email + mot de passe Supabase
-      const supabasePublic = createClient(
+      // createServerClient pour que les cookies sb-* soient émis dans la réponse
+      const sessionCookies: { name: string; value: string; options: Record<string, unknown> }[] = [];
+      const supabasePublic = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } }
+        {
+          cookies: {
+            getAll: () => [],
+            setAll: (cs) => { sessionCookies.push(...cs); },
+          },
+        }
       );
 
       const { data: authData, error: authError } = await supabasePublic.auth.signInWithPassword({
@@ -115,6 +126,20 @@ export async function POST(req: NextRequest) {
       // Mettre à jour last_login (non-bloquant)
       void updateLastLogin(adminRow.id, ip);
 
+      // Créer une entrée dans admin_sessions pour requireAdminUser (checkSessionNotRevoked)
+      const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      try {
+        await sbAdmin.from("admin_sessions").insert({
+          admin_user_id: adminRow.id,
+          token_hash:    crypto.randomUUID(),
+          ip_address:    ip,
+          user_agent:    req.headers.get("user-agent") ?? "",
+          expires_at:    sessionExpiresAt,
+        });
+      } catch {
+        // Non bloquant — ne jamais bloquer un login pour un échec de tracking
+      }
+
       // Journal d'accès
       await logAdminAction({
         admin: { id: adminRow.id, email: adminRow.email, name: adminRow.name,
@@ -135,10 +160,23 @@ export async function POST(req: NextRequest) {
         maxAge:   60 * 60 * 24 * 7,
         path:     "/",
       });
+      // Attacher les cookies de session Supabase (sb-*) pour que requireAdminUser
+      // puisse identifier l'utilisateur réel via Strategy 1 sur les requêtes suivantes
+      for (const { name, value, options } of sessionCookies) {
+        res.cookies.set(name, value, options as Parameters<typeof res.cookies.set>[2]);
+      }
       return res;
     }
 
     /* ── Stratégie 2 : fallback ADMIN_PASS partagé ──────────────── */
+    // Bloqué en production — seule l'auth individuelle Supabase est autorisée
+    if (process.env.DJAMA_ENV === "production") {
+      return NextResponse.json(
+        { error: "L'authentification ADMIN_PASS est désactivée en production. Utilisez votre email." },
+        { status: 401 }
+      );
+    }
+
     const ADMIN_PASS = process.env.ADMIN_PASS;
     if (!ADMIN_PASS) {
       return NextResponse.json(
@@ -199,6 +237,22 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE() {
+  const cookieStore = await cookies();
+  const cookiesToSet: { name: string; value: string; options: Record<string, unknown> }[] = [];
+
+  // Déconnexion Supabase pour effacer les cookies sb-* de session
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: (cs) => { cookiesToSet.push(...cs); },
+      },
+    }
+  );
+  await supabase.auth.signOut();
+
   const res = NextResponse.json({ ok: true });
   res.cookies.set("djama_admin_tok", "", {
     httpOnly: true,
@@ -207,5 +261,8 @@ export async function DELETE() {
     maxAge:   0,
     path:     "/",
   });
+  for (const { name, value, options } of cookiesToSet) {
+    res.cookies.set(name, value, options as Parameters<typeof res.cookies.set>[2]);
+  }
   return res;
 }

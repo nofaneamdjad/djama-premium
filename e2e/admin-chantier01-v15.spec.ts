@@ -1,48 +1,119 @@
 /**
- * DJAMA — Chantier 01 Admin E2E V1.5
+ * DJAMA — Chantier 01 Admin E2E V1.6
  *
- * Tests : authentification individuelle, rôles, suspension, révocation, HTTP codes
+ * Tests : authentification individuelle, rôles, suspension, HTTP codes, rate limiting
  * Cible : http://localhost:3001 (Supabase local, ADMIN_PASS=djama-dev-local-2024)
  *
- * Comptes de test (Supabase local) :
- *   contact@djama.fr       → super_admin  (SuperAdmin2024!)
- *   admin-test@djama.fr    → admin        (Admin2024!)
- *   support-test@djama.fr  → viewer       (Viewer2024!)
- *   suspended@djama.fr     → admin        (Suspended2024!) [is_active=false]
+ * Comptes de test (Supabase local uniquement — seeds dans seed_admin_tests.sql) :
+ *   contact@djama.space       → super_admin  [is_active=true]
+ *   admin-test@djama.space    → admin        [is_active=true]
+ *   support-test@djama.space  → viewer       [is_active=true]
+ *   suspended@djama.space     → admin        [is_active=false]
  */
 
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3001";
-const ADMIN_PASS = process.env.ADMIN_PASS ?? "djama-dev-local-2024";
+
+// Passwords lus depuis l'env — ne jamais hardcoder dans le source
+const PASS_SUPER  = process.env.TEST_PASS_SUPER  ?? "SuperAdmin2024!";
+const PASS_ADMIN  = process.env.TEST_PASS_ADMIN  ?? "Admin2024!";
+const PASS_VIEWER = process.env.TEST_PASS_VIEWER ?? "Viewer2024!";
+const PASS_SUSP   = process.env.TEST_PASS_SUSP   ?? "Suspended2024!";
 
 const ACCOUNTS = {
-  super_admin: { email: "contact@djama.fr",      password: "SuperAdmin2024!" },
-  admin:       { email: "admin-test@djama.fr",   password: "Admin2024!"      },
-  viewer:      { email: "support-test@djama.fr", password: "Viewer2024!"     },
-  suspended:   { email: "suspended@djama.fr",    password: "Suspended2024!"  },
+  super_admin: { email: "contact@djama.space",       password: PASS_SUPER  },
+  admin:       { email: "admin-test@djama.space",    password: PASS_ADMIN  },
+  viewer:      { email: "support-test@djama.space",  password: PASS_VIEWER },
+  suspended:   { email: "suspended@djama.space",     password: PASS_SUSP   },
 };
+
+// ── Cookies de session globaux (acquis une seule fois avant tous les tests) ──
+// Réduit le nombre d'appels à /api/admin/auth pour éviter le rate limit (10/15min).
+
+let fileSuperCookie  = "";
+let fileViewerCookie = "";
+// Drapeau booléen explicite — plus robuste que vérifier les strings (qui peuvent être "")
+let _cookiesAcquired = false;
+
+// Acquiert les cookies avant toute suite qui les utilise.
+// Idempotent via _cookiesAcquired : Playwright relance beforeAll entre describe-groups.
+// B1-B5 font leurs propres logins UI → 5 appels supplémentaires → total ≤ 7 avant E1.
+test.beforeAll(async ({ request }) => {
+  if (_cookiesAcquired) return;
+
+  const s = await getSessionCookie(request, "super_admin");
+  expect(s.status).toBe(200);
+  fileSuperCookie = s.cookie;
+
+  const v = await getSessionCookie(request, "viewer");
+  expect(v.status).toBe(200);
+  fileViewerCookie = v.cookie;
+
+  _cookiesAcquired = true;
+});
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
 async function loginAs(page: Page, role: keyof typeof ACCOUNTS) {
   const { email, password } = ACCOUNTS[role];
   await page.goto(`${BASE}/admin/login`);
-  await page.fill('input[name="email"], input[type="email"]', email);
-  await page.fill('input[name="password"], input[type="password"]', password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL(/\/admin/, { timeout: 10_000 });
+
+  // Dismiss cookie consent banner if visible (z-[999] fixed banner blocks submit)
+  try {
+    const closeBtn = page.locator('button[aria-label="Fermer"]').first();
+    await closeBtn.click({ timeout: 2500 });
+  } catch {}
+
+  const emailField = page.locator('input[name="email"], input[type="email"]').first();
+  const passField  = page.locator('input[name="password"], input[type="password"]').first();
+  await emailField.fill(email);
+  await passField.fill(password);
+  await Promise.all([
+    page.waitForURL(/\/admin/, { timeout: 15_000 }),
+    page.locator('button[type="submit"]').click(),
+  ]);
 }
 
-async function apiGet(page: Page, path: string) {
-  return page.request.get(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+async function apiAsAuth(
+  request: APIRequestContext,
+  method: "GET" | "POST" | "PATCH" | "DELETE",
+  path: string,
+  body?: Record<string, unknown>,
+  cookies?: string,
+) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (cookies) headers["Cookie"] = cookies;
+  return request.fetch(`${BASE}${path}`, {
+    method,
+    headers,
+    data: body ? JSON.stringify(body) : undefined,
   });
 }
 
-// ── Suite A : Routes API sans cookie → 401 ──────────────────────────
+// Effectue un vrai login via Next.js et récupère les cookies de session
+// Extrait les paires name=value de tous les set-cookie (djama_admin_tok + sb-*)
+async function getSessionCookie(request: APIRequestContext, role: keyof typeof ACCOUNTS) {
+  const { email, password } = ACCOUNTS[role];
+  const res = await request.post(`${BASE}/api/admin/auth`, {
+    data: { email, password },
+    headers: { "Content-Type": "application/json" },
+  });
+  const headers = res.headers();
+  // Playwright joint plusieurs set-cookie avec \n — on extrait uniquement name=value
+  const cookiePairs = (headers["set-cookie"] ?? "")
+    .split("\n")
+    .map(line => line.split(";")[0].trim())
+    .filter(Boolean)
+    .join("; ");
+  return { status: res.status(), cookie: cookiePairs };
+}
 
-test.describe("A — Sécurité API (unauthenticated)", () => {
+// ══════════════════════════════════════════════════════════════════
+// Suite A — Sécurité API (unauthenticated)
+// ══════════════════════════════════════════════════════════════════
+
+test.describe("A — API sans authentification → 401", () => {
   test("A1 — GET /api/admin/dashboard → 401", async ({ request }) => {
     const res = await request.get(`${BASE}/api/admin/dashboard`);
     expect(res.status()).toBe(401);
@@ -58,204 +129,268 @@ test.describe("A — Sécurité API (unauthenticated)", () => {
     expect(res.status()).toBe(401);
   });
 
-  test("A4 — DELETE /api/admin/auth → 200 (logout idempotent)", async ({ request }) => {
-    const res = await request.delete(`${BASE}/api/admin/auth`);
-    expect([200, 401]).toContain(res.status());
+  test("A4 — GET /api/admin/subscriptions → 401", async ({ request }) => {
+    const res = await request.get(`${BASE}/api/admin/subscriptions`);
+    expect(res.status()).toBe(401);
   });
 
-  test("A5 — Mauvais ADMIN_PASS → 401", async ({ request }) => {
+  test("A5 — GET /api/admin/paiements → 401", async ({ request }) => {
+    const res = await request.get(`${BASE}/api/admin/paiements`);
+    expect(res.status()).toBe(401);
+  });
+
+  test("A6 — Mauvais mot de passe → 401 (pas 500)", async ({ request }) => {
     const res = await request.post(`${BASE}/api/admin/auth`, {
-      data: { password: "mauvais-mot-de-passe" },
+      data: { password: "mot-de-passe-faux-12345" },
       headers: { "Content-Type": "application/json" },
     });
     expect(res.status()).toBe(401);
   });
 
-  test("A6 — Mot de passe vide → 400 ou 401", async ({ request }) => {
+  test("A7 — Mot de passe vide → 400 ou 401", async ({ request }) => {
     const res = await request.post(`${BASE}/api/admin/auth`, {
       data: { password: "" },
       headers: { "Content-Type": "application/json" },
     });
     expect([400, 401]).toContain(res.status());
   });
+
+  test("A8 — Les détails 503 (_migration) ne sont pas exposés sans auth", async ({ request }) => {
+    // Toute route admin sans cookie → 401 uniquement, jamais de détails internes
+    const res = await request.get(`${BASE}/api/admin/audit`);
+    expect(res.status()).toBe(401);
+    // Ne doit pas leaker d'infos de migration à un non-authentifié
+    const body = await res.text();
+    expect(body).not.toContain("_migration");
+    expect(body).not.toContain("admin_audit_log");
+  });
 });
 
-// ── Suite B : Authentification individuelle ──────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// Suite B — Authentification individuelle Supabase
+// ══════════════════════════════════════════════════════════════════
 
 test.describe("B — Auth individuelle Supabase", () => {
-  test("B1 — super_admin login réussi", async ({ page }) => {
-    await page.goto(`${BASE}/admin/login`);
-    await page.fill('input[name="email"], input[type="email"]', ACCOUNTS.super_admin.email);
-    await page.fill('input[name="password"], input[type="password"]', ACCOUNTS.super_admin.password);
-
-    await Promise.all([
-      page.waitForURL(/\/admin/, { timeout: 15_000 }),
-      page.click('button[type="submit"]'),
-    ]);
-
-    // Dashboard accessible
+  test("B1 — super_admin login réussi → dashboard accessible", async ({ page }) => {
+    await loginAs(page, "super_admin");
     await expect(page).toHaveURL(/\/admin/);
-    await page.screenshot({ path: "playwright-screenshots/B1-super-admin-login.png", fullPage: true });
+    await page.screenshot({ path: "playwright-screenshots/B1-super-admin-dashboard.png", fullPage: true });
   });
 
-  test("B2 — admin login → accès partiel (pas can_manage_admins)", async ({ page }) => {
+  test("B2 — admin login → accès dashboard sans erreur", async ({ page }) => {
     await loginAs(page, "admin");
-
-    // La page admin charge sans erreur
     await expect(page).toHaveURL(/\/admin/);
-
-    // Vérifier que le rôle est visible dans l'UI si affiché
-    const body = await page.textContent("body");
-    // Rôle admin a des permissions limitées
-    expect(body).toBeTruthy();
-
-    await page.screenshot({ path: "playwright-screenshots/B2-admin-role-dashboard.png", fullPage: true });
+    await page.screenshot({ path: "playwright-screenshots/B2-admin-dashboard.png", fullPage: true });
   });
 
-  test("B3 — viewer login → accès lecture seule", async ({ page }) => {
+  test("B3 — viewer login → accès dashboard sans erreur", async ({ page }) => {
     await loginAs(page, "viewer");
     await expect(page).toHaveURL(/\/admin/);
-    await page.screenshot({ path: "playwright-screenshots/B3-viewer-role-dashboard.png", fullPage: true });
+    await page.screenshot({ path: "playwright-screenshots/B3-viewer-dashboard.png", fullPage: true });
   });
 
-  test("B4 — compte suspendu (is_active=false) → refusé", async ({ page }) => {
-    await page.goto(`${BASE}/admin/login`);
-    await page.fill('input[name="email"], input[type="email"]', ACCOUNTS.suspended.email);
-    await page.fill('input[name="password"], input[type="password"]', ACCOUNTS.suspended.password);
-    await page.click('button[type="submit"]');
-
-    // Doit rester sur /admin/login ou recevoir message d'erreur
-    await page.waitForTimeout(3_000);
-    const url = page.url();
-    const body = await page.textContent("body") ?? "";
-
-    const isBlocked =
-      url.includes("/admin/login") ||
-      body.includes("403") ||
-      body.includes("suspendu") ||
-      body.includes("inactif") ||
-      body.includes("autorisé");
-
-    expect(isBlocked).toBe(true);
-    await page.screenshot({ path: "playwright-screenshots/B4-suspended-blocked.png", fullPage: true });
-  });
-
-  test("B5 — ADMIN_PASS legacy fonctionne si non déprécié", async ({ request }) => {
+  test("B4 — compte suspendu (is_active=false) → bloqué côté serveur", async ({ request }) => {
+    // Le login API doit retourner 401/403 pour un compte inactif
     const res = await request.post(`${BASE}/api/admin/auth`, {
-      data: { password: ADMIN_PASS },
+      data: { email: ACCOUNTS.suspended.email, password: ACCOUNTS.suspended.password },
       headers: { "Content-Type": "application/json" },
     });
-    // 200 = mode legacy accepté, ou 401 si ADMIN_PASS_DEPRECATED=true
-    expect([200, 401]).toContain(res.status());
+    // is_active=false → refus serveur (pas 200 + cookie)
+    expect([401, 403]).toContain(res.status());
+  });
+
+  test("B5 — logout DELETE → supprime le cookie de session", async ({ page }) => {
+    await loginAs(page, "super_admin");
+    // Effectue le logout
+    const res = await page.request.delete(`${BASE}/api/admin/auth`);
+    expect(res.status()).toBe(200);
+    // Après logout, le dashboard doit refuser
+    const check = await page.request.get(`${BASE}/api/admin/dashboard`);
+    expect(check.status()).toBe(401);
   });
 });
 
-// ── Suite C : Routes admin avec auth super_admin ─────────────────────
+// ══════════════════════════════════════════════════════════════════
+// Suite C — Routes admin avec super_admin authentifié
+// ══════════════════════════════════════════════════════════════════
 
-test.describe("C — Routes admin (super_admin authentifié)", () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAs(page, "super_admin");
-  });
-
-  test("C1 — GET /api/admin/users → 200 avec données", async ({ page }) => {
-    const res = await apiGet(page, "/api/admin/users?limit=5");
+test.describe("C — Routes admin (super_admin)", () => {
+  test("C1 — GET /api/admin/users → 200 avec tableau users", async ({ request }) => {
+    const res = await apiAsAuth(request, "GET", "/api/admin/users?limit=5", undefined, fileSuperCookie);
     expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty("users");
+    const body = await res.json() as { users: unknown[] };
     expect(Array.isArray(body.users)).toBe(true);
   });
 
-  test("C2 — GET /api/admin/audit → 200 (table existe en local)", async ({ page }) => {
-    const res = await apiGet(page, "/api/admin/audit");
+  test("C2 — GET /api/admin/audit → 200 avec tableau logs", async ({ request }) => {
+    const res = await apiAsAuth(request, "GET", "/api/admin/audit", undefined, fileSuperCookie);
     expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty("logs");
+    const body = await res.json() as { logs: unknown[] };
+    expect(Array.isArray(body.logs)).toBe(true);
   });
 
-  test("C3 — GET /api/admin/subscriptions → 200", async ({ page }) => {
-    const res = await apiGet(page, "/api/admin/subscriptions");
-    expect(res.status()).toBe(200);
-  });
-
-  test("C4 — GET /api/admin/paiements → 200", async ({ page }) => {
-    const res = await apiGet(page, "/api/admin/paiements");
+  test("C3 — GET /api/admin/subscriptions → 200", async ({ request }) => {
+    const res = await apiAsAuth(request, "GET", "/api/admin/subscriptions", undefined, fileSuperCookie);
     expect(res.status()).toBe(200);
   });
 
-  test("C5 — GET /api/admin/coupons → 200 (migration 176 appliquée)", async ({ page }) => {
-    const res = await apiGet(page, "/api/admin/coupons");
+  test("C4 — GET /api/admin/paiements → 200", async ({ request }) => {
+    const res = await apiAsAuth(request, "GET", "/api/admin/paiements", undefined, fileSuperCookie);
     expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty("coupons");
   });
 
-  test("C6 — GET /api/admin/incidents → 200 (migration 177 en local)", async ({ page }) => {
-    const res = await apiGet(page, "/api/admin/incidents");
-    // 200 si migration 177 appliquée, 503 sinon
-    expect([200, 503]).toContain(res.status());
+  test("C5 — GET /api/admin/coupons → 200 (migration 176 appliquée)", async ({ request }) => {
+    const res = await apiAsAuth(request, "GET", "/api/admin/coupons", undefined, fileSuperCookie);
+    expect(res.status()).toBe(200);
+    const body = await res.json() as { coupons: unknown[] };
+    expect(Array.isArray(body.coupons)).toBe(true);
   });
 
-  test("C7 — GET /api/admin/bugs → 200 (migration 177 en local)", async ({ page }) => {
-    const res = await apiGet(page, "/api/admin/bugs");
-    expect([200, 503]).toContain(res.status());
+  test("C6 — GET /api/admin/incidents → 200 (migration 177 locale)", async ({ request }) => {
+    const res = await apiAsAuth(request, "GET", "/api/admin/incidents", undefined, fileSuperCookie);
+    // Environnement local = migration 177 présente → 200 obligatoire
+    expect(res.status()).toBe(200);
+  });
+
+  test("C7 — GET /api/admin/bugs → 200 (migration 177 locale)", async ({ request }) => {
+    const res = await apiAsAuth(request, "GET", "/api/admin/bugs", undefined, fileSuperCookie);
+    expect(res.status()).toBe(200);
+  });
+
+  test("C8 — GET /api/admin/dashboard → 200 avec structure kpi", async ({ request }) => {
+    const res = await apiAsAuth(request, "GET", "/api/admin/dashboard", undefined, fileSuperCookie);
+    expect(res.status()).toBe(200);
+    const body = await res.json() as { kpi?: Record<string, unknown> };
+    expect(body).toHaveProperty("kpi");
+    expect(body.kpi).toHaveProperty("totalUsers");
+    expect(body.kpi).toHaveProperty("revenusMois");
   });
 });
 
-// ── Suite D : HTTP codes corrects (503 vs 200 vides) ────────────────
+// ══════════════════════════════════════════════════════════════════
+// Suite D — HTTP codes sémantiques (déterministe)
+// ══════════════════════════════════════════════════════════════════
 
-test.describe("D — HTTP codes sémantiques", () => {
-  test("D1 — 503 explicite quand table absente (non 200 vide)", async ({ request }) => {
-    // On ne peut pas simuler une table absente facilement,
-    // mais on vérifie que si 503 retourné, il contient _migration
-    // Ce test documente l'invariant sans l'enfreindre.
-    const res = await request.get(`${BASE}/api/admin/audit`);
-    if (res.status() === 503) {
-      const body = await res.json();
-      expect(body).toHaveProperty("_migration");
-      expect(body.error).toContain("migration");
-    } else {
-      // Table existe (local) → 200 ou 401
-      expect([200, 401]).toContain(res.status());
+test.describe("D — HTTP codes : env local (toutes migrations) → 200", () => {
+  // En environnement local, TOUTES les migrations sont appliquées → 200 strict
+  const routes = [
+    "/api/admin/users",
+    "/api/admin/audit",
+    "/api/admin/incidents",
+    "/api/admin/bugs",
+    "/api/admin/coupons",
+  ];
+
+  for (const route of routes) {
+    test(`D1 — ${route} → 200 (table présente en local)`, async ({ request }) => {
+      const res = await apiAsAuth(request, "GET", route, undefined, fileSuperCookie);
+      expect(res.status()).toBe(200);
+      // Aucun _warning ne doit polluer une réponse 200 légitime
+      const body = await res.json() as Record<string, unknown>;
+      expect(body).not.toHaveProperty("_warning");
+    });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Suite F — Rôles et permissions
+// ══════════════════════════════════════════════════════════════════
+
+test.describe("F — Rôles et permissions", () => {
+  test("F1 — viewer → 403 sur création coupon (écriture interdite)", async ({ request }) => {
+    const res = await apiAsAuth(request, "POST", "/api/admin/coupons", {
+      code: "VIEWER_TEST", discount: 10, type: "percent",
+    }, fileViewerCookie);
+    expect(res.status()).toBe(403);
+  });
+
+  test("F2 — viewer → accès lecture audit 200 (permission can_view_audit_log false → 403)", async ({ request }) => {
+    // viewer n'a pas can_view_audit_log → 403
+    const res = await apiAsAuth(request, "GET", "/api/admin/audit", undefined, fileViewerCookie);
+    // Selon ROLE_PERMISSIONS viewer: can_view_audit_log: false
+    expect(res.status()).toBe(403);
+  });
+
+  test("F3 — super_admin → création coupon réussie (200 ou 201)", async ({ request }) => {
+    const code = `TEST_${Date.now()}`;
+    const res = await apiAsAuth(request, "POST", "/api/admin/coupons", {
+      code, discount: 5, type: "percent", max_uses: 10, expires_at: null,
+    }, fileSuperCookie);
+    expect([200, 201]).toContain(res.status());
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Suite G — Audit log (toute écriture admin → ligne audit)
+// ══════════════════════════════════════════════════════════════════
+
+test.describe("G — Traçabilité audit log", () => {
+  test("G1 — création coupon → entrée dans admin_audit_log", async ({ request }) => {
+    // Compte les entrées avant
+    const before = await apiAsAuth(request, "GET", "/api/admin/audit", undefined, fileSuperCookie);
+    const beforeBody = await before.json() as { logs: { action: string }[] };
+    const countBefore = beforeBody.logs.length;
+
+    // Action d'écriture
+    const code = `AUDIT_${Date.now()}`;
+    await apiAsAuth(request, "POST", "/api/admin/coupons", {
+      code, discount: 1, type: "percent",
+    }, fileSuperCookie);
+
+    // Compte après
+    const after = await apiAsAuth(request, "GET", "/api/admin/audit", undefined, fileSuperCookie);
+    const afterBody = await after.json() as { logs: { action: string }[] };
+    const countAfter = afterBody.logs.length;
+
+    expect(countAfter).toBeGreaterThan(countBefore);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Suite E — Rate limiting (preuve d'une vraie 429)
+// NB : placée après F/G car elle déclenche le rate limiter par IP
+//      et rendrait inaccessibles les beforeAll des suites suivantes.
+// ══════════════════════════════════════════════════════════════════
+
+test.describe("E — Rate limiting", () => {
+  test("E1 — 12 logins avec mauvais password → au moins une 429 avec Retry-After", async ({ request }) => {
+    // Login avec mauvais password — déclenche le rate limiter par IP + email
+    const wrongPass = "WRONG_PASS_" + Date.now();
+    const responses = [];
+
+    for (let i = 0; i < 12; i++) {
+      const res = await request.post(`${BASE}/api/admin/auth`, {
+        data: { email: ACCOUNTS.admin.email, password: wrongPass },
+        headers: { "Content-Type": "application/json" },
+      });
+      responses.push({ status: res.status(), retryAfter: res.headers()["retry-after"] });
+      if (res.status() === 429) break; // arrêt dès qu'on a la 429
     }
+
+    const hit429 = responses.some(r => r.status === 429);
+    expect(hit429).toBe(true);
+
+    const r429 = responses.find(r => r.status === 429);
+    expect(r429?.retryAfter).toBeTruthy();
   });
 });
 
-// ── Suite E : Rate limiting ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// Suite H — Responsive
+// ══════════════════════════════════════════════════════════════════
 
-test.describe("E — Rate limiting dashboard", () => {
-  test("E1 — 11 requêtes dashboard → 429", async ({ request }) => {
-    // Effectue 11 appels sans cookie (401 expected), puis vérifie 429 si RLS activé
-    // En pratique, rate limiting admin est sur /api/admin/dashboard avec cookie valide
-    // Ce test documente l'intention sans auth (serait 401 de toute façon)
-    const promises = Array.from({ length: 11 }, () =>
-      request.get(`${BASE}/api/admin/dashboard`)
-    );
-    const responses = await Promise.all(promises);
-    const statuses = responses.map(r => r.status());
-    // Tous 401 (sans cookie) ou quelques 429 si rate limit déclenché avant auth
-    expect(statuses.every(s => s === 401 || s === 429)).toBe(true);
-  });
-});
-
-// ── Suite F : Responsive ─────────────────────────────────────────────
-
-test.describe("F — Responsive admin login", () => {
-  test("F1 — Login page visible en mobile (375px)", async ({ page }) => {
+test.describe("H — Responsive", () => {
+  test("H1 — Login visible en mobile (375px)", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(`${BASE}/admin/login`);
-    await expect(page.locator('input[type="password"]')).toBeVisible();
-    await page.screenshot({
-      path: "playwright-screenshots/F1-mobile-login.png",
-      fullPage: true,
-    });
+    await expect(page.locator("input[type='password']").first()).toBeVisible();
+    await page.screenshot({ path: "playwright-screenshots/H1-mobile-login.png", fullPage: true });
   });
 
-  test("F2 — Dashboard visible en desktop (1280px)", async ({ page }) => {
+  test("H2 — Dashboard visible en desktop (1280px)", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await loginAs(page, "super_admin");
-    await page.screenshot({
-      path: "playwright-screenshots/F2-desktop-dashboard.png",
-      fullPage: true,
-    });
+    await expect(page).toHaveURL(/\/admin/);
+    await page.screenshot({ path: "playwright-screenshots/H2-desktop-dashboard.png", fullPage: true });
   });
 });
