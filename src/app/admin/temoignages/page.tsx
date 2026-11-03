@@ -108,13 +108,13 @@ export default function AdminTemoignagesPage() {
     if (!draft || !draft.nom.trim()) { showToast("error", "Le nom est requis"); return; }
     setSaving(true);
 
-    if (selected) {
-      const { error } = await supabase.from("testimonials").update({ ...draft }).eq("id", selected.id);
-      if (error) { showToast("error", error.message); setSaving(false); return; }
-    } else {
-      const { error } = await supabase.from("testimonials").insert({ ...draft });
-      if (error) { showToast("error", error.message); setSaving(false); return; }
-    }
+    const body = selected ? { id: selected.id, ...draft } : { ...draft };
+    const res = await fetch("/api/admin/temoignages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const e = await res.json(); showToast("error", e.error ?? "Erreur serveur"); setSaving(false); return; }
 
     showToast("success", "Témoignage enregistré");
     setDirty(false);
@@ -125,7 +125,7 @@ export default function AdminTemoignagesPage() {
   async function handleDelete() {
     if (!selected) return;
     setDeleting(true);
-    await supabase.from("testimonials").delete().eq("id", selected.id);
+    await fetch(`/api/admin/temoignages?id=${selected.id}`, { method: "DELETE" });
     setDeleting(false); setConfirmDel(false);
     setSelected(null); setDraft(null); setMobileView("list");
     showToast("success", "Témoignage supprimé");

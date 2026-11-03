@@ -316,13 +316,12 @@ export default function AdminParametres() {
   async function saveAll() {
     setSaving(true);
     try {
-      const updates = Object.entries(valuesMap).map(([key, value]) =>
-        supabase
-          .from("site_settings")
-          .update({ value, updated_at: new Date().toISOString() })
-          .eq("key", key)
-      );
-      await Promise.all(updates);
+      const res = await fetch("/api/admin/parametres", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ updates: valuesMap }),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur serveur"); }
       toast("Paramètres sauvegardés avec succès", true);
     } catch {
       toast("Erreur lors de la sauvegarde", false);
@@ -336,14 +335,13 @@ export default function AdminParametres() {
     id: string,
     patch: Partial<Pick<SocialLinkRow, "url" | "active" | "sort_order">>
   ) {
-    const { data, error } = await supabase
-      .from("social_links")
-      .update(patch)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const res = await fetch("/api/admin/parametres", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...patch }),
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur serveur"); }
+    const { data } = await res.json();
     setSocialLinks(prev => prev.map(l => (l.id === id ? data : l)));
   }
 

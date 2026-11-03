@@ -306,36 +306,31 @@ export default function AdminFactures() {
         updated_at:     new Date().toISOString(),
       };
 
+      const items = form.items
+        .filter(i => i.description.trim())
+        .map((i, idx) => ({
+          description: i.description.trim(),
+          quantity:    Number(i.quantity),
+          unit_price:  Number(i.unit_price),
+          total:       Number(i.total),
+          sort_order:  idx,
+        }));
+
       if (modal === "add") {
         const ref = await nextRef();
-        const { data, error } = await supabase
-          .from("invoices")
-          .insert([{ ...payload, reference: ref }])
-          .select("id")
-          .single();
-        if (error) throw error;
-        invId = data.id;
+        const res = await fetch("/api/admin/factures", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, reference: ref, items }),
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur serveur"); }
       } else {
-        const { error } = await supabase.from("invoices").update(payload).eq("id", editId!);
-        if (error) throw error;
-        await supabase.from("invoice_items").delete().eq("invoice_id", editId!);
-      }
-
-      if (form.items.length > 0 && invId) {
-        const rows = form.items
-          .filter(i => i.description.trim())
-          .map((i, idx) => ({
-            invoice_id:  invId!,
-            description: i.description.trim(),
-            quantity:    Number(i.quantity),
-            unit_price:  Number(i.unit_price),
-            total:       Number(i.total),
-            sort_order:  idx,
-          }));
-        if (rows.length > 0) {
-          const { error } = await supabase.from("invoice_items").insert(rows);
-          if (error) throw error;
-        }
+        const res = await fetch("/api/admin/factures", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editId!, ...payload, items }),
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur serveur"); }
       }
 
       setModal(null);
@@ -350,8 +345,8 @@ export default function AdminFactures() {
   }
 
   async function deleteInvoice(id: string) {
-    const { error } = await supabase.from("invoices").delete().eq("id", id);
-    if (error) { console.error("[AdminFactures] delete error:", error); return; }
+    const res = await fetch(`/api/admin/factures?id=${id}`, { method: "DELETE" });
+    if (!res.ok) { const e = await res.json(); console.error("[AdminFactures] delete error:", e.error); return; }
     setConfirmDel(null);
     showToast("Facture supprimée");
     load();
@@ -360,7 +355,11 @@ export default function AdminFactures() {
   async function togglePaid(inv: InvoiceRow) {
     const payment_status: InvoicePaymentStatus = inv.payment_status === "payée" ? "non payée" : "payée";
     const status: InvoiceStatus = payment_status === "payée" ? "payée" : inv.status === "payée" ? "envoyée" : inv.status;
-    await supabase.from("invoices").update({ payment_status, status, updated_at: new Date().toISOString() }).eq("id", inv.id);
+    await fetch("/api/admin/factures", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: inv.id, payment_status, status }),
+    });
     load();
   }
 

@@ -161,19 +161,22 @@ function CreateClientModal({ onClose, onCreated }: { onClose: () => void; onCrea
     }
     setSaving(true); setError(null);
     try {
-      const supabase = getSupabase();
-      const { error: dbErr } = await supabase.from("user_access").insert([{
-        name:             form.name.trim(),
-        email:            form.email.trim().toLowerCase(),
-        phone:            form.phone.trim() || null,
-        source:           form.source,
-        espace_premium:   form.espace_premium,
-        coaching_ia:      form.coaching_ia,
-        soutien_scolaire: form.soutien_scolaire,
-        outils_saas:      form.outils_saas,
-        notes:            form.notes.trim() || null,
-      }]);
-      if (dbErr) throw dbErr;
+      const res = await fetch("/api/admin/clients-write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name:             form.name.trim(),
+          email:            form.email.trim().toLowerCase(),
+          phone:            form.phone.trim() || null,
+          source:           form.source,
+          espace_premium:   form.espace_premium,
+          coaching_ia:      form.coaching_ia,
+          soutien_scolaire: form.soutien_scolaire,
+          outils_saas:      form.outils_saas,
+          notes:            form.notes.trim() || null,
+        }),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur serveur"); }
       onCreated();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erreur lors de la création.";
