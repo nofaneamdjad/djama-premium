@@ -188,10 +188,11 @@ export async function POST(req: NextRequest) {
     }
 
     /* ── Stratégie 2 : fallback ADMIN_PASS partagé ──────────────── */
-    // Bloqué en production — seule l'auth individuelle Supabase est autorisée
-    if (process.env.DJAMA_ENV === "production") {
+    // Fail-closed : bloqué sauf en développement explicite.
+    // DJAMA_ENV absent = production (fail-closed, corrige P-02).
+    if (process.env.DJAMA_ENV !== "development") {
       return NextResponse.json(
-        { error: "L'authentification ADMIN_PASS est désactivée en production. Utilisez votre email." },
+        { error: "L'authentification ADMIN_PASS est désactivée. Utilisez votre compte individuel." },
         { status: 401 }
       );
     }

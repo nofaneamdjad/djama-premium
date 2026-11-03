@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdminUser } from "@/lib/admin-auth-v2";
 import { getEmployeePermissions } from "@/lib/hq-permissions";
 
 /**
@@ -15,8 +15,8 @@ export async function requireHqPermission(
   req: NextRequest,
   permission: string,
 ): Promise<NextResponse | null> {
-  // D'abord vérifier l'auth admin (HMAC cookie)
-  const adminDeny = await requireAdmin(req);
+  // D'abord vérifier l'auth admin (SHA-256 session ou Supabase JWT)
+  const { deny: adminDeny } = await requireAdminUser(req);
   if (adminDeny) return adminDeny;
 
   // Récupérer l'employé HQ via l'email admin depuis le cookie
