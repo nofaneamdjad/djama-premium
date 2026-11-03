@@ -27,8 +27,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createLogger }      from "@/lib/logger";
-import { requireAdmin }      from "@/lib/admin-auth";
+import { randomUUID }         from "crypto";
+import { createLogger }       from "@/lib/logger";
+import { requireAdminUser }   from "@/lib/admin-auth-v2";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 
 const log = createLogger("admin/upload");
@@ -39,36 +40,34 @@ export const runtime  = "nodejs";
 // ─── POST ─────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
 
-  // 1. Auth HMAC cookie
-  const deny = await requireAdmin(req);
+  // 1. Auth SHA-256 session / Supabase JWT
+  const { deny } = await requireAdminUser(req);
   if (deny) return deny;
 
   try {
     const formData = await req.formData();
     const file     = formData.get("file")   as File   | null;
     const bucket   = (formData.get("bucket") as string | null) ?? "logos";
-    const path     = formData.get("path")   as string | null;
+    // path client ignoré — régénéré côté serveur (V1.7-SECU Point 8)
 
-    // 2. Validation
+    // 2. Validation présence
     if (!file) {
       return NextResponse.json({ error: "Paramètre 'file' manquant" }, { status: 400 });
     }
-    if (!path || path.startsWith("/")) {
-      return NextResponse.json(
-        { error: `Paramètre 'path' invalide : "${path}". Ne doit pas commencer par "/".` },
-        { status: 400 },
-      );
-    }
 
-    // 2b. Whitelist des types MIME autorisés (images uniquement)
-    const ALLOWED_MIME = [
-      "image/jpeg", "image/jpg", "image/png", "image/webp",
-      "image/gif",  "image/svg+xml", "image/avif",
-    ];
-    if (!ALLOWED_MIME.includes(file.type)) {
+    // 2b. Whitelist MIME stricte : SVG et HTML exclus (XSS)
+    const MIME_EXT: Record<string, string> = {
+      "image/jpeg":       "jpg",
+      "image/jpg":        "jpg",
+      "image/png":        "png",
+      "image/webp":       "webp",
+      "application/pdf":  "pdf",
+    };
+    const ext = MIME_EXT[file.type];
+    if (!ext) {
       log.warn(`Type MIME rejeté : ${file.type}`);
       return NextResponse.json(
-        { error: `Type de fichier non autorisé : "${file.type}". Formats acceptés : JPEG, PNG, WebP, GIF, SVG, AVIF.` },
+        { error: `Type de fichier non autorisé : "${file.type}". Formats acceptés : JPEG, PNG, WebP, PDF.` },
         { status: 400 },
       );
     }
@@ -81,6 +80,9 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+
+    // 2d. Nom de fichier régénéré serveur-side (pas de confiance au client)
+    const path = `${randomUUID()}.${ext}`;
 
     log.info(`bucket=${bucket} path=${path} size=${file.size} type=${file.type}`);
 
