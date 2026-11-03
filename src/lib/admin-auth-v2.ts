@@ -23,6 +23,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient }        from "@supabase/ssr";
 import { createSupabaseAdmin }       from "@/lib/supabase-server";
 import { requireAdmin }              from "@/lib/admin-auth";
+import { createHash }                from "crypto";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
@@ -137,41 +138,40 @@ async function getAdminUserFromSupabase(
 }
 
 /* ── Vérification révocation de session ────────────────────────────── */
-// Vérifie qu'il existe au moins une session active non-révoquée pour cet admin.
-// Graceful : si admin_sessions n'existe pas (migration 174 non appliquée),
-// considère la session comme valide et continue.
-async function checkSessionNotRevoked(adminId: string): Promise<boolean> {
+// Vérifie que LE cookie de session actuel est valide (non révoqué, non expiré).
+// Fail-closed : pas de session trouvée → 401. Pas de fail-open.
+// sessionToken = valeur brute du cookie djama_admin_tok (session token Strategy 1).
+async function checkSessionNotRevoked(
+  adminId:      string,
+  sessionToken: string | null | undefined,
+): Promise<boolean> {
+  if (!sessionToken) return false; // pas de cookie → refus
+
   try {
-    const sb = createSupabaseAdmin();
-    const now = new Date().toISOString();
-    // Récupère toutes les sessions (actives + révoquées) pour distinguer les cas :
-    // 0 sessions = pas de tracking actif = accès accordé
-    // N sessions toutes révoquées = révocation explicite = accès refusé
+    const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+    const sb        = createSupabaseAdmin();
+    const now       = new Date().toISOString();
+
     const { data, error } = await sb
       .from("admin_sessions")
       .select("id, revoked_at, expires_at")
       .eq("admin_user_id", adminId)
-      .order("created_at", { ascending: false })
-      .limit(20);
+      .eq("token_hash",    tokenHash)
+      .maybeSingle();
 
     if (error) {
-      // Table absente (migration 174 non appliquée) → pas de contrainte, OK
-      if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
-        return true;
-      }
-      // Autre erreur DB → ne pas bloquer, laisser passer
+      // Table absente (migration 174 non appliquée) → fail-closed désormais
       console.warn("[AdminAuthV2] Erreur vérification admin_sessions:", error.message);
-      return true;
+      return false;
     }
 
-    const sessions = data ?? [];
-    // Aucune session trackée → tracking non actif → accès accordé
-    if (sessions.length === 0) return true;
+    if (!data)                   return false; // session introuvable → 401
+    if (data.revoked_at !== null) return false; // révoquée explicitement → 401
+    if (data.expires_at <= now)  return false; // expirée → 401
 
-    // Au moins une session active (non-révoquée et non-expirée) → accès accordé
-    return sessions.some(s => s.revoked_at === null && s.expires_at > now);
+    return true;
   } catch {
-    return true; // Non bloquant
+    return false; // fail-closed
   }
 }
 
@@ -234,6 +234,64 @@ export async function requireAdminUser(
   const ip        = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const userAgent = req.headers.get("user-agent") ?? "";
 
+  /* ── Tentative 0 : session token djama_admin_tok (principal) ── */
+  // Vérifie admin_sessions par hash — fonctionne sans JWT Supabase.
+  try {
+    const sessionToken0 = req.cookies.get("djama_admin_tok")?.value;
+    if (sessionToken0) {
+      const tokenHash0 = createHash("sha256").update(sessionToken0).digest("hex");
+      const now0       = new Date().toISOString();
+      const sb0        = createSupabaseAdmin();
+
+      const { data: sess, error: sessErr } = await sb0
+        .from("admin_sessions")
+        .select("admin_user_id, revoked_at, expires_at")
+        .eq("token_hash", tokenHash0)
+        .maybeSingle();
+
+      if (!sessErr && sess && sess.revoked_at === null && sess.expires_at > now0) {
+        const { data: adminData } = await sb0
+          .from("admin_users")
+          .select("id, email, name, role, permissions, is_active")
+          .eq("id", sess.admin_user_id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (adminData) {
+          const adminUser: AdminUser = {
+            id:          adminData.id,
+            email:       adminData.email,
+            name:        adminData.name,
+            role:        adminData.role as AdminRole,
+            permissions: (adminData.permissions as Record<string, boolean>) ?? {},
+            authMethod:  "supabase_individual",
+          };
+
+          if (options.requiredPermission && !hasPermission(adminUser, options.requiredPermission)) {
+            return {
+              admin: null,
+              deny: NextResponse.json(
+                { error: "Permissions insuffisantes pour cette action." },
+                { status: 403 }
+              ),
+            };
+          }
+
+          if (options.logAction) {
+            await logAdminAction({
+              admin: adminUser, action: options.logAction,
+              resource: options.logResource, ip, userAgent,
+            });
+          }
+
+          return { admin: adminUser, deny: null };
+        }
+      }
+    }
+  } catch {
+    /* fail-closed: fall through to Strategy 1 */
+  }
+
   /* ── Tentative 1 : authentification Supabase individuelle ── */
   try {
     const cookieStore = { getAll: () => req.cookies.getAll(), setAll: () => {} };
@@ -249,8 +307,9 @@ export async function requireAdminUser(
       const adminUser = await getAdminUserFromSupabase(sbUser.id);
 
       if (adminUser) {
-        // Vérification révocation de session (migration 174 optionnelle)
-        const sessionValid = await checkSessionNotRevoked(adminUser.id);
+        // Vérification révocation de session — lit djama_admin_tok (session token)
+        const sessionToken = req.cookies.get("djama_admin_tok")?.value;
+        const sessionValid = await checkSessionNotRevoked(adminUser.id, sessionToken);
         if (!sessionValid) {
           await logAdminAction({
             admin: adminUser, action: "ACCESS_DENIED_SESSION_REVOKED",

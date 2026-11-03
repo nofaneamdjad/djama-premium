@@ -15,11 +15,15 @@ import { verifyTOTP, isTOTPEnabled }               from "@/lib/totp";
 import { createServerClient }                       from "@supabase/ssr";
 import { createSupabaseAdmin }                      from "@/lib/supabase-server";
 import { logAdminAction, updateLastLogin }          from "@/lib/admin-auth-v2";
+import { randomBytes, createHash }                  from "crypto";
+
+const SESSION_DURATION_MS = 12 * 60 * 60 * 1000; // 12 h — durée max session admin
 
 export async function POST(req: NextRequest) {
-  // ── Rate limiting : 10 tentatives / 15 min par IP ──────────────
+  // ── Rate limiting (configurable via ADMIN_AUTH_RATE_LIMIT, défaut 10) ──
   const ip = getClientIp(req);
-  const { allowed, resetAt } = await checkRateLimit(ip, 10, 15 * 60 * 1000);
+  const rateMax = parseInt(process.env.ADMIN_AUTH_RATE_LIMIT ?? "10", 10);
+  const { allowed, resetAt } = await checkRateLimit(ip, rateMax, 15 * 60 * 1000);
   if (!allowed) {
     await new Promise((r) => setTimeout(r, 1000));
     const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
@@ -126,18 +130,30 @@ export async function POST(req: NextRequest) {
       // Mettre à jour last_login (non-bloquant)
       void updateLastLogin(adminRow.id, ip);
 
-      // Créer une entrée dans admin_sessions pour requireAdminUser (checkSessionNotRevoked)
-      const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      try {
-        await sbAdmin.from("admin_sessions").insert({
+      // ── Créer la session admin — BLOQUANT : le login échoue si l'INSERT échoue ──
+      // token_hash = SHA-256(sessionToken) — lié au cookie djama_admin_tok
+      const sessionToken  = randomBytes(32).toString("hex"); // 64 hex chars
+      const tokenHash     = createHash("sha256").update(sessionToken).digest("hex");
+      const sessionExpiry = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
+
+      const { data: sessionRow, error: sessionError } = await sbAdmin
+        .from("admin_sessions")
+        .insert({
           admin_user_id: adminRow.id,
-          token_hash:    crypto.randomUUID(),
+          token_hash:    tokenHash,
           ip_address:    ip,
           user_agent:    req.headers.get("user-agent") ?? "",
-          expires_at:    sessionExpiresAt,
-        });
-      } catch {
-        // Non bloquant — ne jamais bloquer un login pour un échec de tracking
+          expires_at:    sessionExpiry,
+        })
+        .select("id")
+        .single();
+
+      if (sessionError || !sessionRow) {
+        console.error("[AdminAuth] Échec INSERT admin_sessions:", sessionError?.message);
+        return NextResponse.json(
+          { error: "Erreur serveur lors de la création de session. Réessayez." },
+          { status: 500 }
+        );
       }
 
       // Journal d'accès
@@ -149,15 +165,18 @@ export async function POST(req: NextRequest) {
         details: { method: "supabase_individual", role: adminRow.role },
       });
 
-      // Émettre le cookie djama_admin_tok pour la compatibilité middleware
-      const ADMIN_PASS = process.env.ADMIN_PASS ?? "";
-      const token = await generateAdminToken(ADMIN_PASS || normalizedEmail);
-      const res = NextResponse.json({ ok: true, role: adminRow.role, name: adminRow.name });
-      res.cookies.set("djama_admin_tok", token, {
+      // Cookie djama_admin_tok = session token (remplace le PBKDF2 en Strategy 1)
+      const res = NextResponse.json({
+        ok:        true,
+        role:      adminRow.role,
+        name:      adminRow.name,
+        sessionId: sessionRow.id,   // exposé au client pour la révocation ciblée
+      });
+      res.cookies.set("djama_admin_tok", sessionToken, {
         httpOnly: true,
         secure:   process.env.NODE_ENV === "production",
         sameSite: "strict",
-        maxAge:   60 * 60 * 24 * 7,
+        maxAge:   SESSION_DURATION_MS / 1000, // 12 h en secondes
         path:     "/",
       });
       // Attacher les cookies de session Supabase (sb-*) pour que requireAdminUser

@@ -1,7 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient }            from "@supabase/ssr";
 import { verifyAdminToken }              from "@/lib/admin-token";
+import { createSupabaseAdmin }           from "@/lib/supabase-server";
 import { isPathAllowedForFreeUser, getSlugForApiPath, getSlugForClientPath } from "@/lib/free-plan";
+
+/** SHA-256 via Web Crypto API — compatible Edge Runtime */
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 /**
  * Middleware Next.js — Contrôle d'accès DJAMA
@@ -69,7 +76,45 @@ export async function middleware(request: NextRequest) {
   if (isAdminPage || isAdminApi) {
     const ADMIN_PASS = process.env.ADMIN_PASS;
     const tok = request.cookies.get("djama_admin_tok")?.value;
-    const valid = ADMIN_PASS && tok ? await verifyAdminToken(tok, ADMIN_PASS) : false;
+
+    let valid = false;
+
+    if (tok) {
+      // Stratégie A : token legacy PBKDF2 (admin-token V1.6)
+      if (ADMIN_PASS) {
+        valid = await verifyAdminToken(tok, ADMIN_PASS);
+      }
+
+      // Stratégie B : token V1.7 (64 hex chars — randomBytes(32).toString("hex"))
+      // Dev : l'Edge Runtime ne peut accéder au Supabase local → format-check uniquement.
+      //       requireAdminUser (Node.js runtime) re-valide en DB (Strategy 0 + révocation).
+      // Prod : fetch REST direct — SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY pointent prod.
+      if (!valid) {
+        if (process.env.NODE_ENV === "development") {
+          valid = tok.length === 64 && /^[0-9a-f]+$/i.test(tok);
+        } else {
+          try {
+            const tokenHash = await sha256Hex(tok);
+            const now = new Date().toISOString();
+            const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (url && key) {
+              const apiUrl = `${url}/rest/v1/admin_sessions?select=revoked_at,expires_at&token_hash=eq.${encodeURIComponent(tokenHash)}&limit=1`;
+              const res = await fetch(apiUrl, {
+                headers: { "apikey": key, "Authorization": `Bearer ${key}` },
+              });
+              if (res.ok) {
+                const rows = await res.json() as { revoked_at: string | null; expires_at: string }[];
+                const sess = rows[0];
+                valid = !!(sess && sess.revoked_at === null && sess.expires_at > now);
+              }
+            }
+          } catch {
+            valid = false;
+          }
+        }
+      }
+    }
 
     if (!valid) {
       if (isAdminApi) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
