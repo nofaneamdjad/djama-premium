@@ -1,4 +1,4 @@
--- Migration 175 : REVOKE EXECUTE sur 3 RPCs SECURITY DEFINER accessibles publiquement
+-- Migration 20261103-1 : REVOKE EXECUTE sur 3 RPCs SECURITY DEFINER accessibles publiquement
 -- Faille P-SEC-RPC : get_monthly_revenue, get_revenue_by_month, get_inscriptions_by_month
 -- exposés à PUBLIC/anon/authenticated — données financières et inscriptions lisibles sans auth
 --

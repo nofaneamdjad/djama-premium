@@ -1,4 +1,4 @@
--- Migration 176 : Activer RLS sur beta_config
+-- Migration 20261103-2 : Activer RLS sur beta_config
 -- Faille P-RLS-BETA : table sans RLS, exposée à anon via anon key
 --
 -- Analyse des callers :
