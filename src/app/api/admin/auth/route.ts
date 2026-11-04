@@ -140,6 +140,7 @@ export async function POST(req: NextRequest) {
           ip_address:    ip,
           user_agent:    req.headers.get("user-agent") ?? "",
           expires_at:    sessionExpiry,
+          aal:           "aal1", // login sans MFA → aal1
         })
         .select("id")
         .single();

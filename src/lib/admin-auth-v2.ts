@@ -137,29 +137,32 @@ async function getAdminUserFromSupabase(
 }
 
 /* ── Vérification niveau MFA (aal2) ───────────────────────────────── */
-// Retourne false seulement si l'admin a mfa_required=true ET la session est en aal1.
-// Fail-open intentionnel si getAuthenticatorAssuranceLevel échoue (mfa_required non défini
-// dans une ancienne migration → on laisse passer plutôt que de bloquer).
+// Fail-closed : toute erreur de lecture → refus (401).
 async function checkMfaLevel(
   supabase: ReturnType<typeof createServerClient>,
   adminUser: AdminUser,
 ): Promise<boolean> {
-  try {
-    // Récupérer mfa_required depuis admin_users
-    const sb = createSupabaseAdmin();
-    const { data } = await sb
-      .from("admin_users")
-      .select("mfa_required")
-      .eq("id", adminUser.id)
-      .maybeSingle();
+  const sb = createSupabaseAdmin();
+  const { data, error } = await sb
+    .from("admin_users")
+    .select("mfa_required")
+    .eq("id", adminUser.id)
+    .maybeSingle();
 
-    if (!data?.mfa_required) return true; // pas obligatoire → accès sans MFA
-
-    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    return (aalData?.currentLevel === "aal2");
-  } catch {
-    return true; // fail-open si la vérification échoue (Supabase indisponible)
+  if (error || !data) {
+    console.warn("[AdminAuthV2] checkMfaLevel: erreur lecture admin_users:", error?.message ?? "data null");
+    return false; // fail-closed
   }
+
+  if (!data.mfa_required) return true; // non obligatoire → accès direct
+
+  const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aalError || !aalData) {
+    console.warn("[AdminAuthV2] checkMfaLevel: erreur getAuthenticatorAssuranceLevel:", aalError?.message ?? "data null");
+    return false; // fail-closed
+  }
+
+  return aalData.currentLevel === "aal2";
 }
 
 /* ── Vérification révocation de session ────────────────────────────── */
@@ -270,19 +273,36 @@ export async function requireAdminUser(
 
       const { data: sess, error: sessErr } = await sb0
         .from("admin_sessions")
-        .select("admin_user_id, revoked_at, expires_at")
+        .select("admin_user_id, revoked_at, expires_at, aal")
         .eq("token_hash", tokenHash0)
         .maybeSingle();
 
       if (!sessErr && sess && sess.revoked_at === null && sess.expires_at > now0) {
         const { data: adminData } = await sb0
           .from("admin_users")
-          .select("id, email, name, role, permissions, is_active")
+          .select("id, email, name, role, permissions, is_active, mfa_required")
           .eq("id", sess.admin_user_id)
           .eq("is_active", true)
           .maybeSingle();
 
         if (adminData) {
+          // Faille 2 : vérifier que le niveau AAL de la session est suffisant
+          if (adminData.mfa_required && sess.aal !== "aal2") {
+            await logAdminAction({
+              admin: null, action: "ACCESS_DENIED_SESSION_AAL_INSUFFICIENT",
+              ip, userAgent,
+              details: { admin_id: adminData.id, session_aal: sess.aal ?? "aal1" },
+              severity: "warning",
+            });
+            return {
+              admin: null,
+              deny: NextResponse.json(
+                { error: "MFA requis pour ce compte.", mfaRequired: true },
+                { status: 401 }
+              ),
+            };
+          }
+
           const adminUser: AdminUser = {
             id:          adminData.id,
             email:       adminData.email,
