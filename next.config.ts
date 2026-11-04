@@ -19,6 +19,19 @@ if (_DJAMA_ENV !== "development" && _DJAMA_ENV !== "production") {
   );
 }
 
+// ── Garde Upstash : obligatoire en production (rate limiting distribué) ──────
+// En dev, le fallback in-memory de rate-limit.ts est acceptable (1 instance).
+// En prod Vercel (multi-instance), l'absence d'Upstash = rate limiting inopérant.
+if (_DJAMA_ENV === "production") {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    throw new Error(
+      `[DJAMA] UPSTASH_REDIS_REST_URL et/ou UPSTASH_REDIS_REST_TOKEN absents en production. ` +
+      `Sans Upstash, le rate limiting est inopérant sur les instances Vercel. ` +
+      `Configurez-les dans les variables d'environnement Vercel.`
+    );
+  }
+}
+
 // Garde dev/prod : en mode développement, l'URL Supabase doit être locale.
 // Si ce n'est pas le cas, Next.js refuse de démarrer (T5 V1.6).
 if (
