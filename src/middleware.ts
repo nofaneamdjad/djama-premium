@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient }            from "@supabase/ssr";
-import { createSupabaseAdmin }           from "@/lib/supabase-server";
 import { isPathAllowedForFreeUser, getSlugForApiPath, getSlugForClientPath } from "@/lib/free-plan";
 
 /** SHA-256 via Web Crypto API — compatible Edge Runtime */
