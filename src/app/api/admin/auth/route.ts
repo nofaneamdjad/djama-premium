@@ -9,7 +9,6 @@ import { NextRequest, NextResponse }               from "next/server";
 import { cookies }                                  from "next/headers";
 import { checkRateLimitAsync as checkRateLimit,
          getClientIp }                              from "@/lib/rate-limit";
-import { verifyTOTP, isTOTPEnabled }               from "@/lib/totp";
 import { createServerClient }                       from "@supabase/ssr";
 import { createSupabaseAdmin }                      from "@/lib/supabase-server";
 import { logAdminAction, updateLastLogin }          from "@/lib/admin-auth-v2";
@@ -98,31 +97,30 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Vérification TOTP si activée
-      if (isTOTPEnabled()) {
-        const secret = process.env.ADMIN_TOTP_SECRET!;
-        if (!totpCode) {
-          return NextResponse.json(
-            { error: "Code 2FA requis", require2fa: true },
-            { status: 401 }
-          );
-        }
-        const valid = await verifyTOTP(secret, totpCode);
-        if (!valid) {
-          await new Promise((r) => setTimeout(r, 600));
-          return NextResponse.json(
-            { error: "Code 2FA invalide ou expiré", require2fa: true },
-            { status: 401 }
-          );
-        }
-      }
+      // ── MFA Supabase Auth (aal2) ──────────────────────────────
+      // Si mfa_required = true pour cet admin, on ne délivre PAS le djama_admin_tok
+      // lors de ce POST. Le client doit compléter le challenge MFA via
+      // POST /api/admin/auth/mfa {action:"challenge"} puis {action:"verify"}.
+      // Les cookies Supabase sb-* (session aal1) sont déjà émis (sessionCookies).
+      if (adminRow.mfa_required) {
+        // Détecter si l'utilisateur a déjà des facteurs MFA enrôlés
+        const { data: factorsData } = await sbAdmin.auth.admin.getUserById(authData.user.id);
+        const verifiedFactors = (factorsData?.user?.factors ?? []).filter(
+          (f: { status: string }) => f.status === "verified"
+        );
+        const hasFactors = verifiedFactors.length > 0;
 
-      // Lier supabase_user_id si pas encore fait
-      if (!adminRow.id) {
-        await sbAdmin
-          .from("admin_users")
-          .update({ supabase_user_id: authData.user.id })
-          .eq("email", normalizedEmail);
+        // Émettre les cookies Supabase aal1 mais PAS le djama_admin_tok
+        const partialRes = NextResponse.json({
+          ok:         false,
+          mfaRequired: true,
+          hasFactors,
+          adminId:    adminRow.id,  // utilisé pour créer admin_sessions après verify
+        }, { status: 200 });
+        for (const { name, value, options } of sessionCookies) {
+          partialRes.cookies.set(name, value, options as Parameters<typeof partialRes.cookies.set>[2]);
+        }
+        return partialRes;
       }
 
       // Mettre à jour last_login (non-bloquant)

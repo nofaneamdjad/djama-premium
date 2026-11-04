@@ -167,9 +167,10 @@ const INITIAL_KPI: DashboardData["kpi"] = {
 export default function AdminDashboard() {
   const isDark = useAdminTheme();
   const [loading, setLoading]       = useState(true);
-  const [refreshAt, setRefreshAt]   = useState(Date.now());
-  const [period, setPeriod]         = useState<3 | 6 | 12>(6);
-  const [error, setError]           = useState<string | null>(null);
+  const [refreshAt, setRefreshAt]       = useState(Date.now());
+  const [period, setPeriod]             = useState<3 | 6 | 12>(6);
+  const [error, setError]               = useState<string | null>(null);
+  const [statsUnavailable, setStatsUnavailable] = useState(false);
 
   const [kpi, setKpi]               = useState<DashboardData["kpi"]>(INITIAL_KPI);
   const [charts, setCharts]         = useState<DashboardData["charts"]>({ months: [], inscriptions: [], revenus: [], revenuQualite: "approximative" });
@@ -181,10 +182,35 @@ export default function AdminDashboard() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setStatsUnavailable(false);
     try {
       const res = await fetch(`/api/admin/dashboard?period=${period}`, { cache: "no-store" });
       if (res.status === 401) { setError("Session expirée — reconnectez-vous."); return; }
-      if (!res.ok)            { setError("Erreur lors du chargement des données."); return; }
+
+      // 503 avec données partielles (RPCs manquantes)
+      if (res.status === 503) {
+        const body = await res.json() as {
+          stats_unavailable?: boolean;
+          partial?: {
+            kpi: DashboardData["kpi"];
+            recentMessages: DashboardData["recentMessages"];
+            recentClients:  DashboardData["recentClients"];
+            alerts:         DashboardData["alerts"];
+          };
+        };
+        if (body.stats_unavailable && body.partial) {
+          setKpi(body.partial.kpi);
+          setRecentMessages(body.partial.recentMessages);
+          setRecentClients(body.partial.recentClients);
+          setAlerts(body.partial.alerts);
+          setStatsUnavailable(true);
+        } else {
+          setError("Statistiques indisponibles.");
+        }
+        return;
+      }
+
+      if (!res.ok) { setError("Erreur lors du chargement des données."); return; }
       const data: DashboardData = await res.json();
       setKpi(data.kpi);
       setCharts(data.charts);
@@ -354,6 +380,18 @@ export default function AdminDashboard() {
           style={{ background: "rgba(248,113,113,0.08)", borderColor: "rgba(248,113,113,0.18)", color: "#f87171" }}
         >
           {error}
+        </div>
+      )}
+
+      {/* ── Bandeau statistiques indisponibles (RPCs absentes) ── */}
+      {statsUnavailable && (
+        <div
+          className="rounded-xl border px-4 py-3 text-[0.82rem]"
+          style={{ background: "rgba(234,179,8,0.08)", borderColor: "rgba(234,179,8,0.25)", color: "#ca8a04" }}
+        >
+          <span className="font-semibold">Statistiques de revenus indisponibles.</span>
+          {" "}Les RPCs analytics ne sont pas encore déployées en production.
+          Les données d'activité (clients, messages, alertes) sont affichées normalement.
         </div>
       )}
 

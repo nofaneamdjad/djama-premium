@@ -186,9 +186,82 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       .limit(1),
   ]);
 
-  /* ── 4. KPI revenus — via RPC (agrégation Postgres, v1.3) ─── */
-  // net_amount = encaissements 'payée' - remboursements (BOOL_OR bug corrigé)
-  // partial payments exclues du net (montant exact inconnu sans paid_amount)
+  /* ── 4. Détection RPCs manquantes (migration 174 non appliquée en prod) ── */
+  // On tente un appel minimal. L'erreur 42883 (function does not exist) → RPCs absentes.
+  // Dans ce cas on retourne 503 avec les données partielles (sans revenus/graphiques).
+  const rpcProbe = await sb.rpc("get_monthly_revenue", {
+    p_start_mois: startMois,
+    p_end_mois:   startMois,  // période nulle → aucun calcul
+  });
+
+  const rpcsMissing = Boolean(
+    rpcProbe.error &&
+    (rpcProbe.error.code === "42883" ||            // function does not exist (Postgres)
+     rpcProbe.error.code === "PGRST202" ||          // PostgREST "Could not find the function"
+     rpcProbe.error.message?.includes("function") &&
+     rpcProbe.error.message?.includes("does not exist"))
+  );
+
+  if (rpcsMissing) {
+    // Construire les données partielles (tout sauf revenus et graphiques)
+    const partialAlerts: DashboardAlert[] = [];
+    const pEchoues = invoicesEchecsRes.count ?? 0;
+    if (pEchoues > 0) partialAlerts.push({
+      type: "paiements_echoues",
+      message: `${pEchoues} paiement${pEchoues > 1 ? "s" : ""} échoué${pEchoues > 1 ? "s" : ""} — action requise`,
+      href: "/admin/paiements", severity: "high",
+    });
+    const nMsg = messagesAttenteRes.count ?? 0;
+    if (nMsg > 0) partialAlerts.push({
+      type: "messages_attente",
+      message: `${nMsg} message${nMsg > 1 ? "s" : ""} en attente`,
+      href: "/admin/messages", severity: nMsg > 5 ? "medium" : "low",
+    });
+
+    const partial = {
+      kpi: {
+        totalUsers:        clientsTotalRes.count ?? 0,
+        newUsersMonth:     invMoisRes.count ?? 0,
+        newUsersPrev:      invPrevRes.count ?? 0,
+        newUsersWeek:      invWeekRes.count ?? 0,
+        newUsersToday:     invDayRes.count ?? 0,
+        abonnementsActifs: subsActifsRes.count ?? 0,
+        gratuit:           Math.max(0, (clientsTotalRes.count ?? 0) - (subsActifsRes.count ?? 0)),
+        revenusMois:       0,
+        revenusPrev:       0,
+        revenusQualite:    "indisponible" as RevenueQuality,
+        paiementsEchoues:  pEchoues,
+        remboursements:    invoicesRembRes.count ?? 0,
+        messagesAttente:   nMsg,
+      },
+      recentMessages: (recentMsgRes.data ?? []) as DashboardData["recentMessages"],
+      recentClients:  (recentClientsRes.data ?? []) as DashboardData["recentClients"],
+      alerts:         partialAlerts,
+      meta: {
+        adminEmail:   admin?.email ?? "unknown",
+        adminRole:    admin?.role ?? "unknown",
+        authMethod:   admin?.authMethod ?? "unknown",
+        generatedAt:  now.toISOString(),
+        periodMonths: period,
+      },
+    };
+
+    const r503 = NextResponse.json(
+      {
+        error:            "Statistiques indisponibles",
+        hint:             "Les RPCs get_monthly_revenue, get_revenue_by_month et get_inscriptions_by_month " +
+                          "ne sont pas déployées en production. Appliquer la migration contenant ces fonctions.",
+        stats_unavailable: true,
+        partial,
+      },
+      { status: 503 }
+    );
+    r503.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    r503.headers.set("X-Content-Type-Options", "nosniff");
+    return r503;
+  }
+
+  /* ── 4b. KPI revenus — via RPC (agrégation Postgres, T4) ─── */
   let revenusMois     = 0;
   let revenusPrev     = 0;
   let remboursementsMois = 0;
@@ -204,43 +277,23 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!rpcMois.error && rpcMois.data) {
     const row = Array.isArray(rpcMois.data) ? rpcMois.data[0] : rpcMois.data;
     if (row) {
-      // net_amount = total_amount - refund_amount (v1.3, paiements partiels exclus)
       revenusMois        = Number(row.net_amount)    || 0;
       remboursementsMois = Number(row.refund_amount) || 0;
       revenusQualite     = row.dates_fiables ? "fiable" : "approximative";
-      // Si paiements partiels présents et aucune facture payée complète → toujours approximatif
       if (row.has_partial && (row.invoice_count ?? 0) === 0) {
         revenusQualite = "approximative";
       }
     } else {
-      revenusQualite = "fiable"; // aucune facture = 0€ fiable
-    }
-  } else {
-    // Fallback si RPC indisponible (migration 174 non appliquée)
-    const [fbPaid, fbRefund] = await Promise.all([
-      sb.from("invoices").select("total, paid_at, updated_at")
-        .eq("payment_status", "payée").gte("created_at", startMois),
-      sb.from("invoices").select("total")
-        .eq("payment_status", "remboursée").gte("created_at", startMois),
-    ]);
-    if (!fbPaid.error && fbPaid.data) {
-      revenusMois = fbPaid.data.reduce((s, i) => s + (Number(i.total) || 0), 0);
-      const hasPaidAt = fbPaid.data.some(i => i.paid_at);
-      revenusQualite = hasPaidAt ? "fiable" : "approximative";
-    }
-    if (!fbRefund.error && fbRefund.data) {
-      remboursementsMois = fbRefund.data.reduce((s, i) => s + (Number(i.total) || 0), 0);
-      revenusMois -= remboursementsMois; // déduire du net
+      revenusQualite = "fiable";
     }
   }
 
   if (!rpcPrev.error && rpcPrev.data) {
     const row = Array.isArray(rpcPrev.data) ? rpcPrev.data[0] : rpcPrev.data;
-    // Utiliser net_amount si disponible (v1.3), sinon total_amount (fallback v1.2)
     revenusPrev = row ? (Number(row.net_amount ?? row.total_amount) || 0) : 0;
   }
 
-  /* ── 5. Données graphiques — via RPC (performances) ──────── */
+  /* ── 5. Données graphiques — via RPC ─────────────────────── */
   let revenuQualiteChart: RevenueQuality = "approximative";
 
   const [rpcRev, rpcInsc] = await Promise.all([
@@ -254,7 +307,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   if (!rpcRev.error && Array.isArray(rpcRev.data)) {
     let allFiable = true;
-    // v1.3 : utiliser net_revenue (brut - remboursements) pour les graphiques
     type RevRow = { month_key: string; net_revenue?: number; total_revenue: number; has_paid_at: boolean };
     for (const row of rpcRev.data as RevRow[]) {
       const val = Number(row.net_revenue ?? row.total_revenue) || 0;
@@ -262,16 +314,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       if (!row.has_paid_at) allFiable = false;
     }
     revenuQualiteChart = allFiable ? "fiable" : "approximative";
-  } else {
-    // Fallback : chargement minimal, seulement 'payée'
-    const fallbackRev = await sb.from("invoices")
-      .select("total, paid_at, updated_at, created_at")
-      .eq("payment_status", "payée").gte("created_at", startOf);
-    for (const inv of (fallbackRev.data ?? [])) {
-      const dateRef = inv.paid_at || inv.updated_at || inv.created_at;
-      const k = monthKey(dateRef);
-      if (k in revByMonth) revByMonth[k] += Number(inv.total) || 0;
-    }
   }
 
   if (!rpcInsc.error && Array.isArray(rpcInsc.data)) {

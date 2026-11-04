@@ -136,6 +136,32 @@ async function getAdminUserFromSupabase(
   }
 }
 
+/* ── Vérification niveau MFA (aal2) ───────────────────────────────── */
+// Retourne false seulement si l'admin a mfa_required=true ET la session est en aal1.
+// Fail-open intentionnel si getAuthenticatorAssuranceLevel échoue (mfa_required non défini
+// dans une ancienne migration → on laisse passer plutôt que de bloquer).
+async function checkMfaLevel(
+  supabase: ReturnType<typeof createServerClient>,
+  adminUser: AdminUser,
+): Promise<boolean> {
+  try {
+    // Récupérer mfa_required depuis admin_users
+    const sb = createSupabaseAdmin();
+    const { data } = await sb
+      .from("admin_users")
+      .select("mfa_required")
+      .eq("id", adminUser.id)
+      .maybeSingle();
+
+    if (!data?.mfa_required) return true; // pas obligatoire → accès sans MFA
+
+    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    return (aalData?.currentLevel === "aal2");
+  } catch {
+    return true; // fail-open si la vérification échoue (Supabase indisponible)
+  }
+}
+
 /* ── Vérification révocation de session ────────────────────────────── */
 // Vérifie que LE cookie de session actuel est valide (non révoqué, non expiré).
 // Fail-closed : pas de session trouvée → 401. Pas de fail-open.
@@ -319,6 +345,20 @@ export async function requireAdminUser(
             admin: null,
             deny: NextResponse.json(
               { error: "Votre session a été révoquée. Reconnectez-vous." },
+              { status: 401 }
+            ),
+          };
+        }
+
+        // ── Vérification aal2 si mfa_required (Strategy 1) ──────
+        // Note : Strategy 0 (djama_admin_tok) garantit déjà que aal2 a été
+        // complété lors du login, car le token n'est émis qu'après verify MFA.
+        // Ici (Strategy 1 fallback sans djama_admin_tok), on vérifie explicitement.
+        if (!(await checkMfaLevel(supabaseAuth, adminUser))) {
+          return {
+            admin: null,
+            deny: NextResponse.json(
+              { error: "MFA requis pour ce compte.", mfaRequired: true },
               { status: 401 }
             ),
           };

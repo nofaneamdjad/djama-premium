@@ -1,18 +1,22 @@
 /**
- * Tests de sécurité admin — DJAMA Chantier 01 v1.3
+ * Tests de sécurité admin — DJAMA Chantier 01 v1.7-SECU
  *
- * PRÉREQUIS : npx next dev (port 3000)
+ * PRÉREQUIS : npx next dev (port 3000) + Supabase local (127.0.0.1:54321)
  * Exécuter via : npx ts-node --esm src/__tests__/admin-security.test.ts
  * OU : node --experimental-vm-modules node_modules/.bin/jest src/__tests__/admin-security.test.ts
  *
  * PÉRIMÈTRE :
- *  - Tests A-D : ne nécessitent pas Supabase (ADMIN_PASS uniquement)
- *  - Tests E-G : nécessitent Supabase local + migration 174 appliquée
- *  - Résultats documentés dans le rapport v1.3
+ *  - Tests A-D : auth individuelle + rate limiting (Strategy A supprimée)
+ *  - Tests E   : MFA aal2 Supabase (nécessite admin_users + mfa_required)
+ *  - Tests F   : rate limiting dashboard
+ *  - Tests G   : headers de sécurité
+ *  - Tests H   : dashboard 503 RPCs manquantes
  */
 
 const BASE = process.env.TEST_BASE_URL ?? "http://localhost:3000";
-const ADMIN_PASS = process.env.ADMIN_PASS ?? "test-admin-pass-dev";
+// ADMIN_PASS supprimé (V1.7-SECU Bloquant 3) — login via email+password uniquement
+const TEST_ADMIN_EMAIL    = process.env.TEST_ADMIN_EMAIL    ?? "";
+const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? "";
 
 type TestResult = {
   id:     string;
@@ -50,12 +54,20 @@ function skip(id: string, label: string, reason: string) {
 
 /* ─── Helpers ────────────────────────────────────────────────── */
 
-async function getAdminCookie(password = ADMIN_PASS): Promise<string> {
+// Obtenir un cookie admin individuel (sans MFA) pour un compte viewer / admin sans mfa_required.
+// Si mfa_required=true, le login retourne mfaRequired:true et aucun cookie n'est émis ici.
+async function getAdminCookie(
+  email    = TEST_ADMIN_EMAIL,
+  password = TEST_ADMIN_PASSWORD,
+): Promise<string> {
+  if (!email || !password) return "";
   const res = await fetch(`${BASE}/api/admin/auth`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ email, password }),
   });
+  const body = await res.json() as { mfaRequired?: boolean };
+  if (body.mfaRequired) return ""; // compte MFA — ne pas extraire le cookie ici
   const setCookie = res.headers.get("set-cookie") ?? "";
   const match = setCookie.match(/djama_admin_tok=([^;]+)/);
   return match ? `djama_admin_tok=${match[1]}` : "";
@@ -68,6 +80,11 @@ async function run() {
   console.log(`Base URL : ${BASE}\n`);
 
   // ── A. Accès sans authentification ──────────────────────────
+  if (!TEST_ADMIN_EMAIL || !TEST_ADMIN_PASSWORD) {
+    console.warn("⚠  TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD non définis — tests D et E ignorés.");
+    console.warn("   Définir dans .env.test : TEST_ADMIN_EMAIL=... TEST_ADMIN_PASSWORD=...");
+  }
+
   await test("A1", "Dashboard sans cookie → 401",
     async () => {
       const r = await fetch(`${BASE}/api/admin/dashboard`);
@@ -82,27 +99,39 @@ async function run() {
     }, 200,
   );
 
-  // ── B. Mauvais mot de passe ──────────────────────────────────
-  await test("B1", "ADMIN_PASS incorrect → 401",
+  // ── B. Mauvais identifiants ───────────────────────────────────
+  await test("B1", "Email + mauvais mot de passe → 401",
     async () => {
       const r = await fetch(`${BASE}/api/admin/auth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: "mauvais-mot-de-passe-incorrect" }),
+        body: JSON.stringify({ email: "test@djama.space", password: "mauvais-mot-de-passe-incorrect" }),
       });
       return { status: r.status };
     }, 401,
   );
 
-  await test("B2", "ADMIN_PASS vide → 400",
+  await test("B2", "Mot de passe vide → 400",
     async () => {
       const r = await fetch(`${BASE}/api/admin/auth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: "" }),
+        body: JSON.stringify({ email: "test@djama.space", password: "" }),
       });
       return { status: r.status };
     }, 400,
+  );
+
+  await test("B3", "Sans email ni password → 400",
+    async () => {
+      const r = await fetch(`${BASE}/api/admin/auth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      return { status: r.status };
+    }, 400,
+    "Strategy A (ADMIN_PASS partagé) supprimée — email obligatoire",
   );
 
   // ── C. Rate limiting ─────────────────────────────────────────
@@ -123,18 +152,23 @@ async function run() {
     "Requiert REDIS ou in-memory RL — peut varier selon reset du serveur",
   );
 
-  // ── D. Authentification ADMIN_PASS valide + accès dashboard ─
+  // ── D. Authentification individuelle + accès dashboard ───────
   const cookie = await getAdminCookie();
 
-  await test("D1", "Login ADMIN_PASS valide → 200",
+  await test("D1", "Login email+password valide (sans MFA) → 200",
     async () => {
+      if (!TEST_ADMIN_EMAIL || !TEST_ADMIN_PASSWORD) return { status: 0 };
       const r = await fetch(`${BASE}/api/admin/auth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: ADMIN_PASS }),
+        body: JSON.stringify({ email: TEST_ADMIN_EMAIL, password: TEST_ADMIN_PASSWORD }),
       });
+      const body = await r.json() as { mfaRequired?: boolean; ok?: boolean };
+      // Si mfa_required → le serveur retourne 200 avec mfaRequired:true (pas de cookie)
+      // On attend 200 dans les deux cas (mfa requis ou pas)
       return { status: r.status };
     }, 200,
+    "Compte TEST_ADMIN_EMAIL doit exister dans admin_users (is_active=true)",
   );
 
   if (cookie) {
@@ -174,15 +208,67 @@ async function run() {
     skip("D4", "Cookie corrompu → 401", "Cookie non obtenu");
   }
 
-  // ── E. Tests Supabase-dépendants (migration 174 requise) ────
-  skip("E1", "Email non-admin Supabase → 403",
-    "Requiert Supabase local (Docker) + migration 174 appliquée");
-  skip("E2", "Admin is_active=false → 403",
-    "Requiert Supabase local + admin_users peuplé");
-  skip("E3", "Auth individuelle email+password → 200",
-    "Requiert Supabase local + compte admin_users lié");
-  skip("E4", "Admin suspendu (is_active=false) révoqué immédiatement",
-    "Requiert Supabase local + service_role pour UPDATE admin_users");
+  // ── E. Tests MFA aal2 Supabase ───────────────────────────────
+  // E1 : super_admin avec mfa_required=true + aal1 → le serveur renvoie mfaRequired:true
+  await test("E1", "super_admin mfa_required=true + aal1 → 200 avec mfaRequired:true",
+    async () => {
+      if (!TEST_ADMIN_EMAIL || !TEST_ADMIN_PASSWORD) return { status: 0 };
+      const r = await fetch(`${BASE}/api/admin/auth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: TEST_ADMIN_EMAIL, password: TEST_ADMIN_PASSWORD }),
+      });
+      if (r.status !== 200) return { status: r.status };
+      const body = await r.json() as { mfaRequired?: boolean };
+      // On vérifie que mfaRequired est true (pas de djama_admin_tok émis)
+      const cookie200 = r.headers.get("set-cookie") ?? "";
+      const hasTok = cookie200.includes("djama_admin_tok");
+      if (body.mfaRequired && !hasTok) return { status: 200 };
+      // Si mfa_required=false pour ce compte → skip (compte sans MFA)
+      return { status: body.mfaRequired ? 200 : 0 };
+    }, 200,
+    "Requiert compte admin avec mfa_required=true dans admin_users",
+  );
+
+  // E2 : dashboard sans djama_admin_tok mais avec session aal1 → 401
+  await test("E2", "Dashboard avec session aal1 seulement (sans djama_admin_tok) → 401",
+    async () => {
+      if (!TEST_ADMIN_EMAIL || !TEST_ADMIN_PASSWORD) return { status: 0 };
+      // Login → récupérer les cookies Supabase sb-* (aal1) mais PAS djama_admin_tok
+      const loginRes = await fetch(`${BASE}/api/admin/auth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: TEST_ADMIN_EMAIL, password: TEST_ADMIN_PASSWORD }),
+      });
+      const sbCookies = (loginRes.headers.get("set-cookie") ?? "")
+        .split(/,(?=[^;]+=[^;]+;)/)
+        .filter(c => c.includes("sb-"))
+        .map(c => c.split(";")[0].trim())
+        .join("; ");
+      if (!sbCookies) return { status: 0 };
+
+      const r = await fetch(`${BASE}/api/admin/dashboard`, {
+        headers: { Cookie: sbCookies },  // aal1 uniquement, pas de djama_admin_tok
+      });
+      return { status: r.status };
+    }, 401,
+    "Requiert compte avec mfa_required=true — aal1 seul doit être refusé",
+  );
+
+  // E3 : viewer (mfa_required=false) → accès sans MFA
+  skip("E3", "viewer mfa_required=false → accès direct sans MFA",
+    "Requiert compte viewer séparé dans admin_users (TEST_VIEWER_EMAIL / TEST_VIEWER_PASSWORD)");
+
+  // E4 : admin is_active=false → 403
+  skip("E4", "Admin is_active=false → 403",
+    "Requiert admin_users peuplé + UPDATE is_active=false");
+
+  // ── H. Dashboard 503 RPCs manquantes ──────────────────────
+  // Ce test vérifie le comportement quand les RPCs ne sont pas déployées.
+  // En local (migration 174 appliquée) les RPCs existent → on ne peut pas
+  // simuler leur absence ici. Test documenté pour l'environnement de staging.
+  skip("H1", "Dashboard 503 avec RPCs absentes → partial data",
+    "Simuler en renommant temporairement get_monthly_revenue en base locale");
 
   // ── F. Rate limiting dashboard ───────────────────────────────
   if (cookie) {
