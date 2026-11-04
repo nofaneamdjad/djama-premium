@@ -90,6 +90,29 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer      = Buffer.from(arrayBuffer);
 
+    // 3b. Vérification des magic bytes — défense contre le MIME spoofing
+    // (un HTML renommé en .png a file.type="image/png" mais pas la signature PNG)
+    const MAGIC_SIGNATURES: Record<string, (b: Buffer) => boolean> = {
+      "image/jpeg": (b) => b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF,
+      "image/jpg":  (b) => b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF,
+      "image/png":  (b) =>
+        b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47 &&
+        b[4] === 0x0D && b[5] === 0x0A && b[6] === 0x1A && b[7] === 0x0A,
+      "image/webp": (b) =>
+        b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+        b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50,
+      "application/pdf": (b) =>
+        b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46,
+    };
+    const checkSignature = MAGIC_SIGNATURES[file.type];
+    if (!checkSignature || buffer.length < 12 || !checkSignature(buffer)) {
+      log.warn(`Magic bytes invalides — type déclaré: ${file.type}, taille: ${buffer.length}`);
+      return NextResponse.json(
+        { error: `Signature du fichier non conforme au type "${file.type}". Fichier corrompu ou format non autorisé.` },
+        { status: 400 },
+      );
+    }
+
     // 4. Upload via service_role (bypass RLS)
     const sb = createSupabaseAdmin();
 
