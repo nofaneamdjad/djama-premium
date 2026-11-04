@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient }            from "@supabase/ssr";
-import { verifyAdminToken }              from "@/lib/admin-token";
 import { createSupabaseAdmin }           from "@/lib/supabase-server";
 import { isPathAllowedForFreeUser, getSlugForApiPath, getSlugForClientPath } from "@/lib/free-plan";
 
@@ -29,7 +28,7 @@ export async function middleware(request: NextRequest) {
   // DJAMA_LAUNCH_MODE=prelaunch → bloque l'accès aux routes privées et
   // aux routes de paiement. Ce paramètre NE sert PAS de mécanisme
   // d'authentification : seul le cookie djama_admin_tok (vérifié par
-  // verifyAdminToken) autorise l'accès admin en prelaunch.
+  // la session admin DB (Strategy B)) autorise l'accès admin en prelaunch.
   const PRELAUNCH = process.env.DJAMA_LAUNCH_MODE === "prelaunch";
 
   if (PRELAUNCH) {
@@ -55,11 +54,28 @@ export async function middleware(request: NextRequest) {
           pathname !== "/membre/login");
 
       if (isRestricted) {
-        const ADMIN_PASS_PL = process.env.ADMIN_PASS;
-        const tokPL         = request.cookies.get("djama_admin_tok")?.value;
-        const validPL       = ADMIN_PASS_PL && tokPL
-          ? await verifyAdminToken(tokPL, ADMIN_PASS_PL)
-          : false;
+        // Strategy B : session SHA-256 en DB (même logique que la zone admin ci-dessous)
+        const tokPL = request.cookies.get("djama_admin_tok")?.value;
+        let validPL = false;
+        if (tokPL) {
+          try {
+            const tokenHashPL = await sha256Hex(tokPL);
+            const nowPL = new Date().toISOString();
+            const urlPL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const keyPL = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (urlPL && keyPL) {
+              const apiUrlPL = `${urlPL}/rest/v1/admin_sessions?select=revoked_at,expires_at&token_hash=eq.${encodeURIComponent(tokenHashPL)}&limit=1`;
+              const resPL = await fetch(apiUrlPL, {
+                headers: { "apikey": keyPL, "Authorization": `Bearer ${keyPL}` },
+              });
+              if (resPL.ok) {
+                const rowsPL = await resPL.json() as { revoked_at: string | null; expires_at: string }[];
+                const sessPL = rowsPL[0];
+                validPL = !!(sessPL && sessPL.revoked_at === null && sessPL.expires_at > nowPL);
+              }
+            }
+          } catch { validPL = false; }
+        }
         if (!validPL) return NextResponse.redirect(new URL("/", request.url));
         return NextResponse.next();
       }
@@ -74,40 +90,32 @@ export async function middleware(request: NextRequest) {
   const isAdminApi  = pathname.startsWith("/api/admin") && pathname !== "/api/admin/auth";
 
   if (isAdminPage || isAdminApi) {
-    const ADMIN_PASS = process.env.ADMIN_PASS;
     const tok = request.cookies.get("djama_admin_tok")?.value;
 
     let valid = false;
 
     if (tok) {
-      // Stratégie A : token legacy PBKDF2 (admin-token V1.6)
-      if (ADMIN_PASS) {
-        valid = await verifyAdminToken(tok, ADMIN_PASS);
-      }
-
       // Stratégie B : token V1.7 (64 hex chars — randomBytes(32).toString("hex"))
       // Validation DB dans tous les environnements (fix V1.7-SECU Strategy B bypass).
       // Requiert SUPABASE_URL=http://127.0.0.1:54321 dans .env.local pour le dev local.
-      if (!valid) {
-        try {
-          const tokenHash = await sha256Hex(tok);
-          const now = new Date().toISOString();
-          const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-          const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-          if (url && key) {
-            const apiUrl = `${url}/rest/v1/admin_sessions?select=revoked_at,expires_at&token_hash=eq.${encodeURIComponent(tokenHash)}&limit=1`;
-            const res = await fetch(apiUrl, {
-              headers: { "apikey": key, "Authorization": `Bearer ${key}` },
-            });
-            if (res.ok) {
-              const rows = await res.json() as { revoked_at: string | null; expires_at: string }[];
-              const sess = rows[0];
-              valid = !!(sess && sess.revoked_at === null && sess.expires_at > now);
-            }
+      try {
+        const tokenHash = await sha256Hex(tok);
+        const now = new Date().toISOString();
+        const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (url && key) {
+          const apiUrl = `${url}/rest/v1/admin_sessions?select=revoked_at,expires_at&token_hash=eq.${encodeURIComponent(tokenHash)}&limit=1`;
+          const res = await fetch(apiUrl, {
+            headers: { "apikey": key, "Authorization": `Bearer ${key}` },
+          });
+          if (res.ok) {
+            const rows = await res.json() as { revoked_at: string | null; expires_at: string }[];
+            const sess = rows[0];
+            valid = !!(sess && sess.revoked_at === null && sess.expires_at > now);
           }
-        } catch {
-          valid = false;
         }
+      } catch {
+        valid = false;
       }
     }
 

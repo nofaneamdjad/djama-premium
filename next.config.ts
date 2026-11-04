@@ -1,7 +1,40 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+// Permet deux instances Next.js sur des ports différents (dev local vs prod)
+// sans conflit sur le verrou .next/dev/lock.
+// Usage : NEXT_DIST_DIR=.next-local npx next dev --port 3001
+const distDir = process.env.NEXT_DIST_DIR ?? ".next";
+
+// ── Garde DJAMA_ENV : valeur obligatoire, typage strict ──────────────────
+// Fail-closed : absent ou invalide → refuse de démarrer.
+// Local : DJAMA_ENV=development dans .env.local
+// Production : DJAMA_ENV=production dans les variables Vercel
+const _DJAMA_ENV = process.env.DJAMA_ENV;
+if (_DJAMA_ENV !== "development" && _DJAMA_ENV !== "production") {
+  throw new Error(
+    `[DJAMA] DJAMA_ENV="${_DJAMA_ENV ?? "(absent)"}" est invalide. ` +
+    `Définissez DJAMA_ENV=development (local) ou DJAMA_ENV=production (Vercel). ` +
+    `En local : copiez .env.local.dev vers .env.local.`
+  );
+}
+
+// Garde dev/prod : en mode développement, l'URL Supabase doit être locale.
+// Si ce n'est pas le cas, Next.js refuse de démarrer (T5 V1.6).
+if (
+  _DJAMA_ENV === "development" &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  !process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith("http://127.0.0.1:54321")
+) {
+  throw new Error(
+    `[DJAMA] Garde dev/prod : NEXT_PUBLIC_SUPABASE_URL="${process.env.NEXT_PUBLIC_SUPABASE_URL}" ` +
+    `n'est pas localhost. Utilisez .env.local.dev ou définissez NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321.`
+  );
+}
+
 const nextConfig: NextConfig = {
+  distDir,
+
   // Ignore les erreurs TS auto-générées par le validator de routes Next.js 16
   // (bug interne .next/dev/types/validator.ts — "Cannot find name 'k'")
   // Les types sont toujours vérifiés via `tsc --noEmit` en CI/pre-commit.

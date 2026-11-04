@@ -1,14 +1,12 @@
 /**
- * POST /api/admin/auth   — Connexion administrateur (dual strategy)
+ * POST /api/admin/auth   — Connexion administrateur individuelle
  * DELETE /api/admin/auth — Déconnexion
  *
- * Stratégie :
- *  1. Si email fourni → auth Supabase individuelle + vérification admin_users
- *  2. Sinon → fallback ADMIN_PASS partagé (rétrocompatibilité)
+ * Stratégie unique : auth Supabase individuelle + vérification admin_users
+ * Strategy 2 (ADMIN_PASS partagé PBKDF2) supprimée — V1.7-SECU Bloquant 3.
  */
 import { NextRequest, NextResponse }               from "next/server";
 import { cookies }                                  from "next/headers";
-import { generateAdminToken }                       from "@/lib/admin-token";
 import { checkRateLimitAsync as checkRateLimit,
          getClientIp }                              from "@/lib/rate-limit";
 import { verifyTOTP, isTOTPEnabled }               from "@/lib/totp";
@@ -187,69 +185,11 @@ export async function POST(req: NextRequest) {
       return res;
     }
 
-    /* ── Stratégie 2 : fallback ADMIN_PASS partagé ──────────────── */
-    // Fail-closed : bloqué sauf en développement explicite.
-    // DJAMA_ENV absent = production (fail-closed, corrige P-02).
-    if (process.env.DJAMA_ENV !== "development") {
-      return NextResponse.json(
-        { error: "L'authentification ADMIN_PASS est désactivée. Utilisez votre compte individuel." },
-        { status: 401 }
-      );
-    }
-
-    const ADMIN_PASS = process.env.ADMIN_PASS;
-    if (!ADMIN_PASS) {
-      return NextResponse.json(
-        { error: "Configuration admin manquante." },
-        { status: 503 }
-      );
-    }
-
-    if (password !== ADMIN_PASS) {
-      await new Promise((r) => setTimeout(r, 600));
-      return NextResponse.json(
-        { error: "Mot de passe incorrect." },
-        { status: 401 }
-      );
-    }
-
-    // TOTP si activé
-    if (isTOTPEnabled()) {
-      const secret = process.env.ADMIN_TOTP_SECRET!;
-      if (!totpCode) {
-        return NextResponse.json(
-          { error: "Code 2FA requis", require2fa: true },
-          { status: 401 }
-        );
-      }
-      const valid = await verifyTOTP(secret, totpCode);
-      if (!valid) {
-        await new Promise((r) => setTimeout(r, 600));
-        return NextResponse.json(
-          { error: "Code 2FA invalide ou expiré", require2fa: true },
-          { status: 401 }
-        );
-      }
-    }
-
-    // Journal d'accès legacy
-    await logAdminAction({
-      admin: null, action: "LOGIN_SUCCESS_LEGACY",
-      ip, userAgent: req.headers.get("user-agent") ?? "",
-      details: { method: "admin_pass_shared", note: "Migrer vers auth individuelle" },
-      severity: "info",
-    });
-
-    const token = await generateAdminToken(ADMIN_PASS);
-    const res = NextResponse.json({ ok: true });
-    res.cookies.set("djama_admin_tok", token, {
-      httpOnly: true,
-      secure:   process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge:   60 * 60 * 24 * 7,
-      path:     "/",
-    });
-    return res;
+    // Pas d'email → Strategy 2 supprimée (V1.7-SECU)
+    return NextResponse.json(
+      { error: "Authentification individuelle requise. Fournissez votre email et mot de passe." },
+      { status: 400 }
+    );
 
   } catch {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
