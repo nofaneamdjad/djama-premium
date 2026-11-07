@@ -572,6 +572,148 @@ async function syncSubscriptionStatus(
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Dispatch des événements Stripe — table exhaustive des handlers
+   Chaque type d'événement est traité exactement une fois.
+   Événements gérés :
+     checkout.session.completed      → Activation / lien paiement / coaching IA
+     invoice.paid                    → Renouvellement abonnement
+     invoice.payment_failed          → Alerte paiement échoué
+     customer.subscription.updated  → Synchronisation statut
+     customer.subscription.deleted  → Désactivation accès
+     payment_intent.succeeded       → Paiement direct (hors lien DJAMA)
+     payment_intent.payment_failed  → Paiement direct échoué
+───────────────────────────────────────────────────────────── */
+async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
+  switch (event.type) {
+
+    /* ── Paiement Stripe confirmé ──────────────────────────── */
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const meta    = session.metadata ?? {};
+
+      if (meta.payment_link_id) {
+        // Lien de paiement DJAMA (facture/devis)
+        await handlePaymentLinkSuccess(session);
+      } else if (meta.product === "coaching_ia") {
+        // Paiement unique Coaching IA (190€)
+        await activateCoachingIA(session);
+      } else if (meta.document_id) {
+        // Paiement direct sur une facture sans lien DJAMA
+        await markDocumentPaid(meta.document_id);
+      } else {
+        // Abonnement outils DJAMA (flux principal SaaS)
+        await handleCheckoutCompleted(session);
+      }
+      break;
+    }
+
+    /* ── Renouvellement abonnement ─────────────────────────── */
+    case "invoice.paid": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const isSubscriptionInvoice =
+        invoice.billing_reason === "subscription_cycle"  ||
+        invoice.billing_reason === "subscription_create" ||
+        invoice.billing_reason === "subscription_update";
+
+      if (isSubscriptionInvoice) {
+        await confirmSubscriptionActive(invoice.customer as string);
+        // Email de renouvellement uniquement pour les cycles récurrents
+        if (invoice.billing_reason === "subscription_cycle") {
+          const renewUser = await findUserByStripeCustomerId(invoice.customer as string);
+          if (renewUser?.email) {
+            await sendRenewalEmail({
+              email:    renewUser.email,
+              fullName: (renewUser.user_metadata?.full_name as string | null) ?? null,
+            });
+            log.info("Email renouvellement envoyé → " + renewUser.email);
+          }
+        }
+      } else {
+        log.info(`invoice.paid ignoré (billing_reason: ${invoice.billing_reason})`);
+      }
+      break;
+    }
+
+    /* ── Paiement de renouvellement échoué ─────────────────── */
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const user = await findUserByStripeCustomerId(invoice.customer as string);
+      if (user?.email) {
+        await sendPaymentFailedEmail({
+          email:    user.email,
+          fullName: user.user_metadata?.full_name ?? null,
+        });
+        log.info("Email paiement échoué envoyé → " + user.email);
+      }
+      break;
+    }
+
+    /* ── Mise à jour abonnement (pause, reprise, upgrade…) ──── */
+    case "customer.subscription.updated": {
+      const sub = event.data.object as Stripe.Subscription;
+      await syncSubscriptionStatus(sub.customer as string, sub.status);
+      log.info(`Subscription updated → statut: ${sub.status}`);
+      break;
+    }
+
+    /* ── Résiliation abonnement ────────────────────────────── */
+    case "customer.subscription.deleted": {
+      const sub = event.data.object as Stripe.Subscription;
+      await deactivateSubscription(sub.customer as string);
+      log.info("Subscription deleted");
+      break;
+    }
+
+    /* ── Paiement direct (hors lien DJAMA) ─────────────────── */
+    case "payment_intent.succeeded": {
+      const pi   = event.data.object as Stripe.PaymentIntent;
+      const meta = pi.metadata ?? {};
+      if (meta.payment_link_id) {
+        // Couvert par checkout.session.completed — ignorer pour éviter double enregistrement
+        log.info("payment_intent.succeeded(payment_link) → géré via checkout.session.completed");
+      } else if (meta.document_id) {
+        await markDocumentPaid(meta.document_id);
+      } else if (meta.reference) {
+        await getSupabaseAdmin()
+          .from("documents")
+          .update({ statut: "payé" })
+          .eq("numero", meta.reference);
+        log.info(`payment_intent.succeeded → document ${meta.reference} → payé`);
+      }
+      break;
+    }
+
+    /* ── Paiement direct échoué ────────────────────────────── */
+    case "payment_intent.payment_failed": {
+      const pi   = event.data.object as Stripe.PaymentIntent;
+      const meta = pi.metadata ?? {};
+      if (meta.payment_link_id) {
+        await getSupabaseAdmin()
+          .from("payment_transactions")
+          .update({ status: "failed", updated_at: new Date().toISOString() })
+          .eq("stripe_payment_intent_id", pi.id);
+      } else if (meta.document_id) {
+        await getSupabaseAdmin()
+          .from("documents")
+          .update({ statut: "en_retard" })
+          .eq("id", meta.document_id);
+        log.info(`payment_intent.payment_failed → document ${meta.document_id} → en_retard`);
+      } else if (meta.reference) {
+        await getSupabaseAdmin()
+          .from("documents")
+          .update({ statut: "en_retard" })
+          .eq("numero", meta.reference);
+        log.info(`payment_intent.payment_failed → document ${meta.reference} → en_retard`);
+      }
+      break;
+    }
+
+    default:
+      log.info(`Event non géré : ${event.type} — ignoré`);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
    Handler principal
 ───────────────────────────────────────────────────────────── */
 export async function POST(req: Request) {
@@ -582,147 +724,69 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
   }
 
+  // FIN-03 : vérification explicite avant constructEvent
+  // process.env.STRIPE_WEBHOOK_SECRET! contourne TypeScript silencieusement si absent
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    log.error("STRIPE_WEBHOOK_SECRET non configuré — arrêt du traitement");
+    return NextResponse.json(
+      { error: "Configuration webhook manquante — contacter l'administrateur" },
+      { status: 500 }
+    );
+  }
+
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Invalid signature";
     log.error("Signature invalide", msg);
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  // ── Idempotence : vérification via Supabase (multi-instance safe) ──
-  const supabaseIdempotent = getSupabaseAdmin();
-  const { data: alreadyProcessed } = await supabaseIdempotent
+  // ── Idempotence atomique : INSERT → conflict 23505 = déjà reçu ──
+  // Un seul INSERT, pas de SELECT préalable — safe en multi-instance
+  const supabaseAdmin = getSupabaseAdmin();
+  const { error: idempotenceErr } = await supabaseAdmin
     .from("stripe_webhook_events")
-    .select("id")
-    .eq("id", event.id)
-    .maybeSingle();
+    .insert({ id: event.id, event_type: event.type, status: "processing" });
 
-  if (alreadyProcessed) {
-    log.info("Event déjà traité, ignoré");
-    return NextResponse.json({ received: true, skipped: true });
+  if (idempotenceErr) {
+    if (idempotenceErr.code === "23505") {
+      // Conflict clé primaire = event déjà reçu ou en cours de traitement
+      log.info(`Event ${event.id} déjà enregistré (idempotence), ignoré`);
+      return NextResponse.json({ received: true, skipped: true });
+    }
+    // Autre erreur DB : logger mais continuer (fail-open pour éviter perte d'event)
+    log.error("Erreur idempotence INSERT", idempotenceErr.message);
   }
 
+  log.info(`Event reçu: ${event.type} (${event.id})`);
+
+  // ── Dispatch et mise à jour du statut ───────────────────────────
   try {
-    await supabaseIdempotent
+    await dispatchStripeEvent(event);
+
+    await supabaseAdmin
       .from("stripe_webhook_events")
-      .insert({ id: event.id });
-  } catch {
-    // Race condition : un autre worker a inséré en parallèle — OK
-  }
+      .update({ status: "processed", processed_at: new Date().toISOString() })
+      .eq("id", event.id);
 
-  log.info(`Event reçu: ${event.type}`);
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    log.error(`Erreur handler ${event.type}`, errorMsg);
 
-  /* ── checkout.session.completed ─────────────────────────── */
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    if (session.metadata?.payment_link_id) {
-      /* Lien de paiement DJAMA — géré dans le bloc dédié ci-dessous */
-    } else if (session.metadata?.document_id) {
-      /* Paiement lien de paiement (facture/devis) */
-      await markDocumentPaid(session.metadata.document_id);
-    } else if (session.metadata?.product === "coaching_ia") {
-      await activateCoachingIA(session);
-    } else {
-      await handleCheckoutCompleted(session);
-    }
-  }
+    // Marquer l'event comme échoué — permet la reprise manuelle via dashboard Stripe
+    await supabaseAdmin
+      .from("stripe_webhook_events")
+      .update({
+        status:    "failed",
+        failed_at: new Date().toISOString(),
+        error:     errorMsg.slice(0, 500),
+      })
+      .eq("id", event.id);
 
-  /* ── invoice.paid ────────────────────────────────────────── */
-  if (event.type === "invoice.paid") {
-    const invoice = event.data.object as Stripe.Invoice;
-    const isSubscriptionInvoice =
-      invoice.billing_reason === "subscription_cycle" ||
-      invoice.billing_reason === "subscription_create" ||
-      invoice.billing_reason === "subscription_update";
-
-    if (isSubscriptionInvoice) {
-      await confirmSubscriptionActive(invoice.customer as string);
-      // Email de renouvellement uniquement pour les cycles récurrents (pas le 1er paiement)
-      if (invoice.billing_reason === "subscription_cycle") {
-        const renewUser = await findUserByStripeCustomerId(invoice.customer as string);
-        if (renewUser?.email) {
-          await sendRenewalEmail({
-            email:    renewUser.email,
-            fullName: (renewUser.user_metadata?.full_name as string | null) ?? null,
-          });
-          log.info("Email renouvellement envoyé → " + renewUser.email);
-        }
-      }
-    } else {
-      log.info(`invoice.paid ignoré (billing_reason: ${invoice.billing_reason})`);
-    }
-  }
-
-  /* ── customer.subscription.updated ───────────────────────── */
-  if (event.type === "customer.subscription.updated") {
-    const sub = event.data.object as Stripe.Subscription;
-    await syncSubscriptionStatus(sub.customer as string, sub.status);
-    log.info(`Subscription updated → statut: ${sub.status}`);
-  }
-
-  /* ── customer.subscription.deleted ───────────────────────── */
-  if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as Stripe.Subscription;
-    await deactivateSubscription(sub.customer as string);
-    log.info("Subscription deleted");
-  }
-
-  /* ── invoice.payment_failed — paiement de renouvellement échoué ── */
-  if (event.type === "invoice.payment_failed") {
-    const invoice = event.data.object as Stripe.Invoice;
-    const user = await findUserByStripeCustomerId(invoice.customer as string);
-    if (user?.email) {
-      await sendPaymentFailedEmail({
-        email:    user.email,
-        fullName: user.user_metadata?.full_name ?? null,
-      });
-      log.info("Email paiement échoué envoyé → " + user.email);
-    }
-  }
-
-  /* ── checkout.session.completed (lien de paiement personnalisé) ── */
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const meta    = session.metadata ?? {};
-    if (meta.payment_link_id) {
-      await handlePaymentLinkSuccess(session);
-    }
-  }
-
-  /* ── payment_intent.succeeded — paiement direct (lien de paiement) ── */
-  if (event.type === "payment_intent.succeeded") {
-    const pi   = event.data.object as Stripe.PaymentIntent;
-    const meta = pi.metadata ?? {};
-    if (meta.payment_link_id) {
-      // Géré via checkout.session.completed — skip pour éviter double enregistrement
-    } else if (meta.document_id) {
-      await markDocumentPaid(meta.document_id);
-    } else if (meta.reference) {
-      const supabase = getSupabaseAdmin();
-      await supabase.from("documents").update({ statut: "payé" }).eq("numero", meta.reference);
-      log.info(`payment_intent.succeeded → document ${meta.reference} → payé`);
-    }
-  }
-
-  /* ── payment_intent.payment_failed — lien de paiement échoué ── */
-  if (event.type === "payment_intent.payment_failed") {
-    const pi   = event.data.object as Stripe.PaymentIntent;
-    const meta = pi.metadata ?? {};
-    if (meta.payment_link_id) {
-      await getSupabaseAdmin().from("payment_transactions").update({
-        status: "failed", updated_at: new Date().toISOString(),
-      }).eq("stripe_payment_intent_id", pi.id);
-    } else if (meta.document_id) {
-      const supabase = getSupabaseAdmin();
-      await supabase.from("documents").update({ statut: "en_retard" }).eq("id", meta.document_id);
-      log.info(`payment_intent.payment_failed → document ${meta.document_id} → en_retard`);
-    } else if (meta.reference) {
-      const supabase = getSupabaseAdmin();
-      await supabase.from("documents").update({ statut: "en_retard" }).eq("numero", meta.reference);
-      log.info(`payment_intent.payment_failed → document ${meta.reference} → en_retard`);
-    }
+    return NextResponse.json({ error: "Erreur traitement webhook" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
