@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Mail, Clock, CheckCircle, XCircle, RefreshCw, Trash2 } from "lucide-react";
-import { getSupabase } from "@/lib/supabase";
 import { V } from "@/components/hq";
 
 interface Invitation {
@@ -37,20 +36,10 @@ export default function InvitationsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const sb = getSupabase();
-      const { data } = await sb
-        .from("organization_invitations")
-        .select("id, email, role, status, token, expires_at, created_at, organization_id")
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (!data) { setInvitations([]); return; }
-
-      const orgIds = [...new Set(data.map(i => i.organization_id))];
-      const { data: orgs } = await sb.from("organizations").select("id, name").in("id", orgIds);
-      const orgMap = Object.fromEntries((orgs ?? []).map(o => [o.id, o.name]));
-
-      setInvitations(data.map(inv => ({ ...inv, org_name: orgMap[inv.organization_id] ?? "—" })));
+      const res = await fetch("/api/admin/invitations");
+      if (!res.ok) throw new Error("Erreur serveur");
+      const { invitations } = await res.json() as { invitations: Invitation[] };
+      setInvitations(invitations);
     } catch (e) {
       console.error(e);
     } finally {

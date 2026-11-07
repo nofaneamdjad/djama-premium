@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { FileText, Plus, Search, RefreshCw, Edit2, Eye, Trash2 } from "lucide-react";
-import { getSupabase } from "@/lib/supabase";
 import { V } from "@/components/hq";
 
 interface Post {
@@ -28,12 +27,10 @@ export default function BlogPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const sb = getSupabase();
-      const { data } = await sb
-        .from("blog_posts")
-        .select("id, title, slug, published, created_at, updated_at, tags")
-        .order("created_at", { ascending: false });
-      setPosts(data ?? []);
+      const res = await fetch("/api/admin/blog");
+      if (!res.ok) throw new Error("Erreur serveur");
+      const { posts } = await res.json() as { posts: Post[] };
+      setPosts(posts);
     } catch (e) {
       console.error(e);
     } finally {

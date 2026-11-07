@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Search, UserPlus, MoreHorizontal, Mail, Shield, RefreshCw, Loader2, Users, Download, X, Check, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { getSupabase } from "@/lib/supabase";
 import { V } from "@/components/hq";
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
@@ -282,15 +281,14 @@ export default function AdminClients() {
   async function fetchClients(silent = false) {
     if (!silent) setLoading(true);
     try {
-      const supabase = getSupabase();
+      const res = await fetch("/api/admin/clients");
+      if (!res.ok) throw new Error("Erreur serveur");
+      const { clients: rawClients, userAccess: rawAccess } = await res.json() as {
+        clients: Client[]; userAccess: UserAccess[];
+      };
 
-      const [clientsRes, accessRes] = await Promise.all([
-        supabase.from("clients").select("id, email, full_name, statut, abonnement, subscription_active, created_at").order("created_at", { ascending: false }),
-        supabase.from("user_access").select("id, email, name, espace_premium, coaching_ia, soutien_scolaire, outils_saas, source, notes, created_at").order("created_at", { ascending: false }),
-      ]);
-
-      const clientsData: Client[] = clientsRes.data ?? [];
-      const accessData: UserAccess[] = accessRes.data ?? [];
+      const clientsData: Client[] = rawClients;
+      const accessData: UserAccess[] = rawAccess;
 
       const merged: DisplayClient[] = [];
       const seenEmails = new Set<string>();

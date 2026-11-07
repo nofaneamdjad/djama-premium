@@ -12,6 +12,26 @@ import { z }                         from "zod";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/* GET /api/admin/parametres — lire tous les settings et liens sociaux */
+export async function GET(req: NextRequest) {
+  const { deny } = await requireAdminUser(req);
+  if (deny) return deny;
+
+  const sb = createSupabaseAdmin();
+  const [settingsRes, socialRes] = await Promise.all([
+    sb.from("site_settings").select("*").order("section").order("key"),
+    sb.from("social_links").select("*").order("sort_order"),
+  ]);
+
+  if (settingsRes.error) return NextResponse.json({ error: settingsRes.error.message }, { status: 500 });
+  if (socialRes.error)   return NextResponse.json({ error: socialRes.error.message  }, { status: 500 });
+
+  return NextResponse.json({
+    settings:    settingsRes.data ?? [],
+    socialLinks: socialRes.data  ?? [],
+  });
+}
+
 const SaveSettingsSchema = z.object({
   updates: z.record(z.string().min(1), z.string().max(5000)),
 });

@@ -54,12 +54,10 @@ export default function AdminVisuels() {
   async function load() {
     setLoading(true);
     try {
-      const { data, error } = await getSupabase()
-        .from("visuals")
-        .select("*")
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      setItems((data ?? []) as VisualRow[]);
+      const res = await fetch("/api/admin/visuels");
+      if (!res.ok) throw new Error("Erreur serveur");
+      const { items: data } = await res.json() as { items: VisualRow[] };
+      setItems(data);
     } catch (err) {
       toast(`Erreur : ${err instanceof Error ? err.message : String(err)}`, false);
     } finally {
@@ -130,12 +128,12 @@ export default function AdminVisuels() {
         sort_order:   Number(form.sort_order) || 0,
       };
       if (editing) {
-        const { error } = await getSupabase().from("visuals").update(payload).eq("id", editing.id);
-        if (error) throw error;
+        const res = await fetch("/api/admin/visuels", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editing.id, ...payload }) });
+        if (!res.ok) throw new Error("Erreur serveur");
         toast("Visuel mis à jour ✓", true);
       } else {
-        const { error } = await getSupabase().from("visuals").insert(payload);
-        if (error) throw error;
+        const res = await fetch("/api/admin/visuels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error("Erreur serveur");
         toast("Visuel ajouté ✓", true);
       }
       setModal(null);
@@ -149,8 +147,8 @@ export default function AdminVisuels() {
 
   async function handleDelete(id: string) {
     try {
-      const { error } = await getSupabase().from("visuals").delete().eq("id", id);
-      if (error) throw error;
+      const res = await fetch("/api/admin/visuels", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      if (!res.ok) throw new Error("Erreur serveur");
       setConfirmDel(null);
       toast("Visuel supprimé.", true);
       load();
@@ -162,8 +160,8 @@ export default function AdminVisuels() {
   async function toggleStatus(item: VisualRow) {
     const next: VisualStatus = item.status === "published" ? "draft" : "published";
     try {
-      const { error } = await getSupabase().from("visuals").update({ status: next }).eq("id", item.id);
-      if (error) throw error;
+      const res = await fetch("/api/admin/visuels", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, status: next }) });
+      if (!res.ok) throw new Error("Erreur serveur");
       setItems(prev => prev.map(x => x.id === item.id ? { ...x, status: next } : x));
     } catch (err) {
       toast(`Erreur : ${err instanceof Error ? err.message : String(err)}`, false);

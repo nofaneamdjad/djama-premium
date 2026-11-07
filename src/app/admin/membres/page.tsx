@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { UserCheck, Search, RefreshCw, Building2 } from "lucide-react";
-import { getSupabase } from "@/lib/supabase";
 import { V } from "@/components/hq";
 
 interface Member {
@@ -36,27 +35,10 @@ export default function MembresPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const sb = getSupabase();
-      const { data: membersData } = await sb
-        .from("organization_members")
-        .select("id, user_id, role, created_at, organization_id")
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (!membersData) { setMembers([]); return; }
-
-      /* Enrichir avec noms orgs */
-      const orgIds = [...new Set(membersData.map(m => m.organization_id))];
-      const { data: orgs } = await sb
-        .from("organizations")
-        .select("id, name")
-        .in("id", orgIds);
-      const orgMap = Object.fromEntries((orgs ?? []).map(o => [o.id, o.name]));
-
-      setMembers(membersData.map(m => ({
-        ...m,
-        org_name: orgMap[m.organization_id] ?? m.organization_id.slice(0, 8) + "…",
-      })));
+      const res = await fetch("/api/admin/membres");
+      if (!res.ok) throw new Error("Erreur serveur");
+      const { members } = await res.json() as { members: Member[] };
+      setMembers(members);
     } catch (e) {
       console.error(e);
     } finally {

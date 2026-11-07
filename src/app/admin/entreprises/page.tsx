@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Building2, Search, RefreshCw, ExternalLink, Mail, Users } from "lucide-react";
-import { getSupabase } from "@/lib/supabase";
 import { V } from "@/components/hq";
 
 interface Org {
@@ -40,25 +39,10 @@ export default function EntreprisesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const sb = getSupabase();
-      const { data } = await sb
-        .from("organizations")
-        .select("id, name, slug, plan, owner_id, logo_url, created_at")
-        .order("created_at", { ascending: false });
-
-      if (!data) { setOrgs([]); return; }
-
-      /* Compter les membres par org */
-      const withCounts = await Promise.all(
-        data.map(async (org) => {
-          const { count } = await sb
-            .from("organization_members")
-            .select("id", { count: "exact", head: true })
-            .eq("organization_id", org.id);
-          return { ...org, member_count: count ?? 0 };
-        })
-      );
-      setOrgs(withCounts);
+      const res = await fetch("/api/admin/entreprises");
+      if (!res.ok) throw new Error("Erreur serveur");
+      const { orgs } = await res.json() as { orgs: Org[] };
+      setOrgs(orgs);
     } catch (e) {
       console.error(e);
     } finally {
