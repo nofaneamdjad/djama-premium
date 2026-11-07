@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
 
     const isAdminZone =
       (pathname.startsWith("/admin") && pathname !== "/admin/login") ||
-      (pathname.startsWith("/api/admin") && !pathname.startsWith("/api/admin/auth"));
+      (pathname.startsWith("/api/admin") && !(pathname === "/api/admin/auth" || pathname.startsWith("/api/admin/auth/")));
 
     if (!isAdminZone) {
       // Routes clients → accès uniquement si cookie admin valide
@@ -86,7 +86,7 @@ export async function middleware(request: NextRequest) {
 
   // ── Admin protection ──────────────────────────────────────────────────────
   const isAdminPage = pathname.startsWith("/admin") && pathname !== "/admin/login";
-  const isAdminApi  = pathname.startsWith("/api/admin") && !pathname.startsWith("/api/admin/auth");
+  const isAdminApi  = pathname.startsWith("/api/admin") && !(pathname === "/api/admin/auth" || pathname.startsWith("/api/admin/auth/"));
 
   if (isAdminPage || isAdminApi) {
     const tok = request.cookies.get("djama_admin_tok")?.value;

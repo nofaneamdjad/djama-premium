@@ -14,17 +14,33 @@ export const dynamic = "force-dynamic";
 
 const TestimonialSchema = z.object({
   id:         z.string().uuid().optional(),
-  name:       z.string().min(1).max(200),
-  role:       z.string().max(200).optional(),
-  company:    z.string().max(200).optional(),
-  content:    z.string().min(1).max(2000),
-  rating:     z.number().int().min(1).max(5).optional(),
-  avatar_url: z.string().max(500).optional(),
-  visible:    z.boolean().optional(),
+  nom:        z.string().min(1).max(200),
+  role:       z.string().max(200).optional().default(""),
+  entreprise: z.string().max(200).nullable().optional(),
+  texte:      z.string().min(1).max(2000),
+  note:       z.number().int().min(1).max(5).optional().default(5),
+  avatar_url: z.string().max(500).nullable().optional(),
+  published:  z.boolean().optional().default(false),
 });
 
 function getIp(req: NextRequest): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+}
+
+/* GET /api/admin/temoignages — lister tous les témoignages */
+export async function GET(req: NextRequest) {
+  const { deny } = await requireAdminUser(req);
+  if (deny) return deny;
+
+  const sb = createSupabaseAdmin();
+  const { data, error } = await sb
+    .from("testimonials")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ testimonials: data ?? [] });
 }
 
 /* POST /api/admin/temoignages — créer ou mettre à jour un témoignage */

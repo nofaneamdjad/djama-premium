@@ -6,7 +6,6 @@ import {
   Star, Plus, Trash2, Save, X, Search, Loader2,
   Eye, EyeOff, User, ArrowLeft, Building2,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import { V } from "@/components/hq";
 
@@ -74,12 +73,11 @@ export default function AdminTemoignagesPage() {
 
   const fetchItems = useCallback(async () => {
     setLoadingAll(true);
-    const { data } = await supabase
-      .from("testimonials")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    setItems((data ?? []) as Temoignage[]);
+    const res = await fetch("/api/admin/temoignages");
+    if (res.ok) {
+      const json = await res.json() as { testimonials: Temoignage[] };
+      setItems(json.testimonials ?? []);
+    }
     setLoadingAll(false);
   }, []);
 

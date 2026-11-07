@@ -8,7 +8,6 @@ import {
   ArrowUp, ArrowDown,
 } from "lucide-react";
 import NextImage from "next/image";
-import { getSupabase } from "@/lib/supabase";
 import type { VideoProjectRow, VideoCategory, VideoStatus } from "@/types/db";
 
 const ACCENT = "#c9a55a";
@@ -98,12 +97,13 @@ export default function AdminMontageVideoPage() {
     if (!modal) return;
     setUploading(true);
     try {
-      const ext  = file.name.split(".").pop();
-      const path = `thumbnails/${Date.now()}.${ext}`;
-      const { error } = await getSupabase().storage.from(BUCKET).upload(path, file);
-      if (error) throw error;
-      const { data } = getSupabase().storage.from(BUCKET).getPublicUrl(path);
-      setModal(m => m ? { ...m, thumbnail_url: data.publicUrl } : m);
+      const form = new FormData();
+      form.append("file", file);
+      form.append("bucket", BUCKET);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+      if (!res.ok) throw new Error("Erreur upload");
+      const { url } = await res.json() as { url: string };
+      setModal(m => m ? { ...m, thumbnail_url: url } : m);
       add("Miniature uploadée");
     } catch { add("Erreur upload", false); }
     finally { setUploading(false); }

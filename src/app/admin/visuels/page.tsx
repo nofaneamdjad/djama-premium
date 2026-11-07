@@ -6,7 +6,6 @@ import {
   Image, Upload, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import NextImage from "next/image";
-import { getSupabase } from "@/lib/supabase";
 import type { VisualRow, VisualCategory, VisualStatus } from "@/types/db";
 
 const ACCENT = "#c9a55a";
@@ -96,12 +95,13 @@ export default function AdminVisuels() {
     if (!file) return;
     setUploading(true);
     try {
-      const ext  = file.name.split(".").pop();
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await getSupabase().storage.from(BUCKET).upload(path, file, { upsert: false });
-      if (upErr) throw upErr;
-      const { data: urlData } = getSupabase().storage.from(BUCKET).getPublicUrl(path);
-      setForm(f => ({ ...f, image_url: urlData.publicUrl }));
+      const form = new FormData();
+      form.append("file", file);
+      form.append("bucket", BUCKET);
+      const uploadRes = await fetch("/api/admin/upload", { method: "POST", body: form });
+      if (!uploadRes.ok) throw new Error("Erreur upload");
+      const { url: imageUrl } = await uploadRes.json() as { url: string };
+      setForm(f => ({ ...f, image_url: imageUrl }));
       toast("Image uploadée ✓", true);
     } catch (err) {
       toast(`Upload échoué : ${err instanceof Error ? err.message : String(err)}`, false);

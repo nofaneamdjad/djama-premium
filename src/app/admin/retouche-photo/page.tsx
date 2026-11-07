@@ -8,7 +8,6 @@ import {
   ArrowUp, ArrowDown, Image,
 } from "lucide-react";
 import NextImage from "next/image";
-import { getSupabase } from "@/lib/supabase";
 import type { PhotoRetouchRow, PhotoRetouchCategory, PhotoRetouchStatus } from "@/types/db";
 
 const ACCENT = "#c9a55a";
@@ -96,12 +95,12 @@ export default function AdminRetouchePhotoPage() {
     if (!modal) return;
     setUploadingField(field);
     try {
-      const ext  = file.name.split(".").pop();
-      const path = `${field}/${Date.now()}.${ext}`;
-      const { error } = await getSupabase().storage.from(BUCKET).upload(path, file);
-      if (error) throw error;
-      const { data } = getSupabase().storage.from(BUCKET).getPublicUrl(path);
-      const url = data.publicUrl;
+      const form = new FormData();
+      form.append("file", file);
+      form.append("bucket", BUCKET);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+      if (!res.ok) throw new Error("Erreur upload");
+      const { url } = await res.json() as { url: string };
       setModal(m => m ? { ...m, [field === "before" ? "before_url" : "after_url"]: url } : m);
       add(`Image ${field === "before" ? "avant" : "après"} uploadée`);
     } catch { add("Erreur upload", false); }
