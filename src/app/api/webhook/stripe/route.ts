@@ -591,17 +591,25 @@ async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
       const session = event.data.object as Stripe.Checkout.Session;
       const meta    = session.metadata ?? {};
 
+      // Règles de priorité des métadonnées (mutuellement exclusives par construction) :
+      //
+      // 1. payment_link_id  → lien DJAMA (peut contenir document_id — priorité absolue
+      //                       car handlePaymentLinkSuccess() gère aussi le document)
+      // 2. product=coaching_ia → paiement unique 190€ (jamais via lien DJAMA)
+      // 3. document_id seul → paiement direct sur facture hors lien DJAMA
+      // 4. aucun metadata   → abonnement SaaS (checkout mode=subscription)
+      //
+      // Si un event contenait payment_link_id ET document_id, la branche 1 s'exécute
+      // seule — handlePaymentLinkSuccess() lit link.document_id depuis la DB et
+      // appelle markDocumentPaid() en interne. Pas de double effet.
+
       if (meta.payment_link_id) {
-        // Lien de paiement DJAMA (facture/devis)
         await handlePaymentLinkSuccess(session);
       } else if (meta.product === "coaching_ia") {
-        // Paiement unique Coaching IA (190€)
         await activateCoachingIA(session);
       } else if (meta.document_id) {
-        // Paiement direct sur une facture sans lien DJAMA
         await markDocumentPaid(meta.document_id);
       } else {
-        // Abonnement outils DJAMA (flux principal SaaS)
         await handleCheckoutCompleted(session);
       }
       break;
@@ -745,20 +753,32 @@ export async function POST(req: Request) {
   }
 
   // ── Idempotence atomique : INSERT → conflict 23505 = déjà reçu ──
-  // Un seul INSERT, pas de SELECT préalable — safe en multi-instance
+  // Fail-CLOSED : si la réservation échoue, aucun effet métier ne se produit.
+  // Stripe réessaie l'event sur HTTP 503 — aucune perte d'event possible.
   const supabaseAdmin = getSupabaseAdmin();
   const { error: idempotenceErr } = await supabaseAdmin
     .from("stripe_webhook_events")
-    .insert({ id: event.id, event_type: event.type, status: "processing" });
+    .insert({
+      id:               event.id,
+      event_type:       event.type,
+      status:           "processing",
+      processing_since: new Date().toISOString(),
+      attempt_count:    1,
+    });
 
   if (idempotenceErr) {
     if (idempotenceErr.code === "23505") {
-      // Conflict clé primaire = event déjà reçu ou en cours de traitement
+      // Conflict clé primaire = event déjà réservé, en cours ou traité
       log.info(`Event ${event.id} déjà enregistré (idempotence), ignoré`);
       return NextResponse.json({ received: true, skipped: true });
     }
-    // Autre erreur DB : logger mais continuer (fail-open pour éviter perte d'event)
-    log.error("Erreur idempotence INSERT", idempotenceErr.message);
+    // DB indisponible → FAIL-CLOSED : aucun effet métier, Stripe réessaiera
+    // Ne jamais continuer sans réservation atomique confirmée
+    log.error("DB indisponible pour réservation webhook", idempotenceErr.code ?? "unknown");
+    return NextResponse.json(
+      { error: "Service temporairement indisponible" },
+      { status: 503 }
+    );
   }
 
   log.info(`Event reçu: ${event.type} (${event.id})`);
