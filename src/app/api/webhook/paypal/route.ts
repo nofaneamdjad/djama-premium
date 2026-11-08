@@ -123,9 +123,11 @@ export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<vo
         });
       }
 
+      // name is NOT NULL — provide a fallback derived from payer info
+      const clientName = fullName ?? email.split("@")[0];
       await supabase.from("clients").upsert(
-        { user_id: user.id, email, full_name: fullName, coaching_ia_active: true, coaching_ia_expires: expiresAt, coaching_ia_payment_method: "paypal", coaching_ia_pending_transfer: false, updated_at: new Date().toISOString() },
-        { onConflict: "email" }
+        { user_id: user.id, email, name: clientName, coaching_ia_active: true, coaching_ia_expires: expiresAt, coaching_ia_payment_method: "paypal", coaching_ia_pending_transfer: false, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" }
       );
 
       let accessLink = `${SITE_URL}/coaching-ia/espace`;
