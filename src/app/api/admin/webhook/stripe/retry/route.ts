@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { requireAdminUser } from "@/lib/admin-auth-v2";
+import { requireAdminUser, logAdminAction } from "@/lib/admin-auth-v2";
 import { createLogger } from "@/lib/logger";
 import { dispatchStripeEvent } from "@/app/api/webhook/stripe/route";
 
@@ -26,19 +26,28 @@ function getSupabaseAdmin() {
    Rejoue atomiquement un event Stripe failed ou processing-expiré.
 
    Body : { event_id: string, lease_secs?: number }
-   Auth : requireAdminUser (rôle admin ou super_admin)
+   Auth : requireAdminUser — permission can_manage_payments obligatoire
 
-   Comportement :
-   1. Vérifie l'auth admin
-   2. Appelle acquire_webhook_lease → acquiert le bail ou refuse
-   3. Récupère l'event depuis l'API Stripe
-   4. Dispatch via dispatchStripeEvent
-   5. Met à jour le statut processed / failed
-   6. Retourne le résultat détaillé
+   Ordre de sécurité (invariant) :
+   1. Authentifier + vérifier session + MFA si requis
+   2. Vérifier permission can_manage_payments → 403 sinon
+   3. Valider les paramètres → 400 si invalides
+   4. Acquérir atomiquement le bail → 0 effet DB si auth échoue
+   5. Récupérer l'event depuis Stripe
+   6. Dispatcher via dispatchStripeEvent
+   7. Mettre à jour le statut processed / failed
+   8. Journaliser le résultat dans admin_audit_log
 ─────────────────────────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
-  // ── Auth admin ───────────────────────────────────────────────────
-  const { deny } = await requireAdminUser(req);
+  const ip        = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const userAgent = req.headers.get("user-agent") ?? "";
+
+  // ── 1. Auth + Permission + MFA (AVANT toute opération DB) ────────
+  const { admin, deny } = await requireAdminUser(req, {
+    requiredPermission: "can_manage_payments",
+    logAction:          "WEBHOOK_STRIPE_RETRY_ATTEMPT",
+    logResource:        "stripe_webhook_events",
+  });
   if (deny) return deny;
 
   // ── Validation du body ──────────────────────────────────────────
@@ -143,6 +152,17 @@ export async function POST(req: NextRequest) {
 
     log.info(`Event ${event_id} retraité avec succès (tentative #${lease.attempt_count})`);
 
+    // ── 8. Journaliser le succès ──────────────────────────────────
+    await logAdminAction({
+      admin,
+      action:     "WEBHOOK_STRIPE_RETRY_SUCCESS",
+      resource:   "stripe_webhook_events",
+      resourceId: event_id,
+      ip, userAgent,
+      details:    { event_type: lease.event_type, attempt_count: lease.attempt_count },
+      severity:   "info",
+    });
+
     return NextResponse.json({
       ok:            true,
       event_id,
@@ -162,6 +182,17 @@ export async function POST(req: NextRequest) {
         error:     msg.slice(0, 500),
       })
       .eq("id", event_id);
+
+    // ── 8. Journaliser l'échec ────────────────────────────────────
+    await logAdminAction({
+      admin,
+      action:     "WEBHOOK_STRIPE_RETRY_FAILED",
+      resource:   "stripe_webhook_events",
+      resourceId: event_id,
+      ip, userAgent,
+      details:    { event_type: lease.event_type, attempt_count: lease.attempt_count, error: msg.slice(0, 200) },
+      severity:   "warning",
+    });
 
     return NextResponse.json(
       {

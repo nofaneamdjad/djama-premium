@@ -768,9 +768,42 @@ export async function POST(req: Request) {
 
   if (idempotenceErr) {
     if (idempotenceErr.code === "23505") {
-      // Conflict clé primaire = event déjà réservé, en cours ou traité
-      log.info(`Event ${event.id} déjà enregistré (idempotence), ignoré`);
-      return NextResponse.json({ received: true, skipped: true });
+      // Conflict clé primaire — distinguer l'état réel pour un retour précis
+      const { data: existing } = await supabaseAdmin
+        .from("stripe_webhook_events")
+        .select("id, status, processing_since, attempt_count")
+        .eq("id", event.id)
+        .maybeSingle();
+
+      const st = existing?.status ?? "unknown";
+
+      if (st === "processed") {
+        log.info(`Event ${event.id} déjà traité (idempotence), ignoré`);
+        return NextResponse.json({ received: true, skipped: true, reason: "already_processed" });
+      }
+
+      if (st === "processing") {
+        // Bail actif ? (processing_since < now - 300s = expiré → Stripe peut réessayer)
+        const since = existing?.processing_since ? new Date(existing.processing_since) : null;
+        const leaseExpired = since ? (Date.now() - since.getTime()) > 300_000 : true;
+        if (leaseExpired) {
+          // Bail expiré — le précédent worker a crashé. Stripe réessaiera → Stripe renvoie l'event.
+          // Ici on renvoie 503 pour forcer le retry Stripe qui sera pris en charge par la route admin/retry.
+          log.warn(`Event ${event.id} bail expiré (processing depuis ${since?.toISOString()}) — retour 503 pour retry Stripe`);
+          return NextResponse.json({ error: "Event en cours de traitement — bail expiré, réessai en cours" }, { status: 503 });
+        }
+        log.info(`Event ${event.id} déjà en cours de traitement (bail actif)`);
+        return NextResponse.json({ received: true, skipped: true, reason: "processing_in_progress" });
+      }
+
+      if (st === "failed") {
+        // Event échoué — ne pas reprocesser via le webhook public, utiliser /admin/webhook/stripe/retry
+        log.warn(`Event ${event.id} déjà échoué — reprise manuelle requise`);
+        return NextResponse.json({ received: true, skipped: true, reason: "failed_manual_retry_required" });
+      }
+
+      log.info(`Event ${event.id} déjà enregistré (statut=${st}), ignoré`);
+      return NextResponse.json({ received: true, skipped: true, reason: st });
     }
     // DB indisponible → FAIL-CLOSED : aucun effet métier, Stripe réessaiera
     // Ne jamais continuer sans réservation atomique confirmée
