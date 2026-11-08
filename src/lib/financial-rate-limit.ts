@@ -7,7 +7,7 @@
  * Nomenclature des clés Redis : `fin:{operation}:{id}`
  */
 
-import { checkRateLimitAsync } from "@/lib/rate-limit";
+import { checkRateLimitAsync, checkRateLimitAsyncStrict } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 export type FinancialOperation =
@@ -34,9 +34,20 @@ const LIMITS: Record<FinancialOperation, [number, number]> = {
   public_paypal_subscribe: [10,  15 * 60 * 1000],  // 10 req/15min par IP
 };
 
+/**
+ * Opérations irréversibles : Redis indisponible → refus (503) plutôt que fallback silencieux.
+ * Fail-closed uniquement si Upstash est configuré (en production).
+ * En développement sans Upstash, le fallback in-memory reste actif pour toutes les ops.
+ */
+const FAIL_CLOSED_OPS: ReadonlySet<FinancialOperation> = new Set([
+  "admin_refund_process",  // remboursement irréversible
+  "user_payment_delete",   // suppression de paiement destructive
+  "admin_virement_mutate", // modification de compte client
+]);
+
 export interface RateLimitResult {
   allowed: boolean;
-  /** Prêt à retourner en 429 si allowed=false */
+  /** Prêt à retourner en 429/503 si allowed=false */
   response429: NextResponse | null;
 }
 
@@ -52,18 +63,36 @@ export async function checkFinancialRateLimit(
   const [maxReq, windowMs] = LIMITS[op];
   const key = `fin:${op}:${id}`;
 
-  const { allowed, resetAt } = await checkRateLimitAsync(key, maxReq, windowMs);
+  let result: { allowed: boolean; resetAt: number };
 
-  if (!allowed) {
-    const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
-    const response429 = NextResponse.json(
-      { error: "Limite de requêtes atteinte pour cette opération financière. Réessayez plus tard." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(retryAfter) },
-      },
-    );
-    return { allowed: false, response429 };
+  if (FAIL_CLOSED_OPS.has(op)) {
+    // Opération sensible : utilise la version strict qui propage les erreurs Redis
+    try {
+      result = await checkRateLimitAsyncStrict(key, maxReq, windowMs);
+    } catch {
+      // Redis configuré mais indisponible → refus par précaution (fail-closed)
+      return {
+        allowed: false,
+        response429: NextResponse.json(
+          { error: "Protection de sécurité temporairement indisponible. Réessayez dans 30 secondes." },
+          { status: 503, headers: { "Retry-After": "30" } },
+        ),
+      };
+    }
+  } else {
+    // Opération non-critique : fallback in-memory acceptable si Redis down
+    result = await checkRateLimitAsync(key, maxReq, windowMs);
+  }
+
+  if (!result.allowed) {
+    const retryAfter = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
+    return {
+      allowed: false,
+      response429: NextResponse.json(
+        { error: "Limite de requêtes atteinte pour cette opération financière. Réessayez plus tard." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } },
+      ),
+    };
   }
 
   return { allowed: true, response429: null };

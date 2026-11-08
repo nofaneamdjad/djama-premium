@@ -128,6 +128,29 @@ export async function checkRateLimitAsync(
 }
 
 /**
+ * Version strict — propage l'erreur Upstash au lieu de basculer en in-memory.
+ * À utiliser pour les opérations financières sensibles (fail-closed).
+ * Si Upstash n'est pas configuré, bascule normalement sur in-memory.
+ */
+export async function checkRateLimitAsyncStrict(
+  key: string,
+  maxReq: number,
+  windowMs: number,
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  if (UPSTASH_ENABLED) {
+    // Pas de try/catch — laisse l'erreur remonter pour que l'appelant
+    // puisse appliquer une politique fail-closed
+    return await checkRateLimitUpstash(key, maxReq, windowMs);
+  }
+  return checkRateLimitInMemory(key, maxReq, windowMs);
+}
+
+/** Indique si Upstash Redis est configuré (utile pour les tests). */
+export function isUpstashEnabled(): boolean {
+  return UPSTASH_ENABLED;
+}
+
+/**
  * Extrait l'IP depuis les headers Next.js / Vercel.
  */
 export function getClientIp(req: Request): string {
