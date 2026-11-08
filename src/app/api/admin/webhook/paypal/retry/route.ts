@@ -26,9 +26,16 @@ function getSupabaseAdmin() {
    2. Vérifier permission can_manage_payments → 403 sinon
    3. Valider les paramètres → 400 si invalides
    4. Acquérir atomiquement le bail → 0 effet DB si auth échoue
-   5. Re-dispatcher via dispatchPayPalEvent
-   6. Mettre à jour le statut processed / failed
-   7. Journaliser le résultat dans admin_audit_log
+   5. Charger le payload authentifié stocké (raw_payload)
+      → 422 si absent (payload jamais reçu ou effacé)
+   6. Vérifier déduplication event_id (autre livraison déjà traitée)
+   7. Dispatcher depuis raw_payload (jamais de reconstruction)
+   8. Mettre à jour le statut processed / failed
+   9. Journaliser dans admin_audit_log
+
+   Contrainte fondamentale :
+   JAMAIS de reconstruction d'un événement financier.
+   Si raw_payload est absent → 422 + instructions de récupération PayPal.
 ─────────────────────────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
   const ip        = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
@@ -105,34 +112,99 @@ export async function POST(req: NextRequest) {
 
   log.info(`Bail acquis pour ${transmission_id} (tentative #${lease.attempt_count}, type=${lease.event_type})`);
 
-  // ── 4. Récupération de l'event depuis Supabase (raw_body non stocké) ──
-  // PayPal ne fournit pas d'API équivalente à stripe.events.retrieve.
-  // La reprise doit être déclenchée depuis le dashboard PayPal (Resend Webhook)
-  // ou via le corps de l'event original stocké en DB si disponible.
-  // Ici on reconstruit un event minimal depuis les données stockées pour
-  // permettre un re-dispatch partiel sur les types supportés.
-  const { data: storedEvent } = await supabaseAdmin
+  // ── 4. Chargement du payload authentifié ────────────────────
+  // Le payload a été stocké lors de la réception initiale après vérification
+  // de signature. C'est la seule source autorisée pour le replay.
+  const { data: storedRow } = await supabaseAdmin
     .from("paypal_webhook_events")
-    .select("id, event_id, event_type, raw_body_hash")
+    .select("id, event_id, event_type, resource_id, raw_payload")
     .eq("id", transmission_id)
     .maybeSingle();
 
-  // ── 5. Dispatch ────────────────────────────────────────────
-  // Note : sans le corps original, le dispatch ne peut réactiver que les
-  // types qui n'ont pas besoin du payload complet (ex: subscription status).
-  // Le corps original n'est pas stocké pour des raisons de taille/sécurité.
-  // Les types BILLING.SUBSCRIPTION.* utilisent resource.id = subscriptionId.
-  // Pour PAYMENT.CAPTURE.COMPLETED, le replay nécessite le corps original.
-  try {
-    // Construire un event minimal depuis les données stockées
-    // Pour la reprise complète, utiliser le "Resend Webhook" PayPal Dashboard.
-    const minimalEvent = {
-      id:         storedEvent?.event_id ?? undefined,
-      event_type: lease.event_type,
-      resource:   { id: storedEvent?.event_id ?? transmission_id },
-    };
+  if (!storedRow?.raw_payload) {
+    // Payload absent — refus de reconstruire un événement financier
+    log.warn(`raw_payload absent pour ${transmission_id} — replay refusé`);
 
-    await dispatchPayPalEvent(minimalEvent);
+    await supabaseAdmin
+      .from("paypal_webhook_events")
+      .update({ status: "failed", failed_at: new Date().toISOString(), error: "raw_payload absent — replay refusé" })
+      .eq("id", transmission_id);
+
+    await logAdminAction({
+      admin,
+      action:     "WEBHOOK_PAYPAL_RETRY_FAILED",
+      resource:   "paypal_webhook_events",
+      resourceId: transmission_id,
+      ip, userAgent,
+      details:    { reason: "raw_payload_missing", event_type: lease.event_type, attempt_count: lease.attempt_count },
+      severity:   "warning",
+    });
+
+    return NextResponse.json({
+      error:        "Payload original non disponible — replay refusé",
+      detail:       "Le payload authentifié n'a pas été stocké lors de la réception initiale.",
+      recovery:     "Utiliser 'Resend Webhook' depuis le dashboard PayPal Sandbox/Live pour re-livrer l'événement avec sa signature.",
+      transmission_id,
+      event_type:   lease.event_type,
+    }, { status: 422 });
+  }
+
+  // ── 5. Déduplication event_id ────────────────────────────────
+  // Si le même événement métier a déjà été traité par une autre livraison,
+  // marquer comme processed sans redéclencher les effets financiers.
+  if (storedRow.event_id) {
+    const { data: alreadyProcessed } = await supabaseAdmin
+      .from("paypal_webhook_events")
+      .select("id, status")
+      .eq("event_id", storedRow.event_id)
+      .eq("status", "processed")
+      .neq("id", transmission_id)
+      .maybeSingle();
+
+    if (alreadyProcessed) {
+      await supabaseAdmin
+        .from("paypal_webhook_events")
+        .update({ status: "processed", processed_at: new Date().toISOString() })
+        .eq("id", transmission_id);
+
+      log.info(`event_id ${storedRow.event_id} déjà traité par ${alreadyProcessed.id} — livraison ${transmission_id} marquée processed`);
+
+      await logAdminAction({
+        admin,
+        action:     "WEBHOOK_PAYPAL_RETRY_SUCCESS",
+        resource:   "paypal_webhook_events",
+        resourceId: transmission_id,
+        ip, userAgent,
+        details:    { event_type: lease.event_type, attempt_count: lease.attempt_count, reason: "duplicate_delivery_dedup" },
+        severity:   "info",
+      });
+
+      return NextResponse.json({
+        ok:            true,
+        skipped:       true,
+        reason:        "event_already_processed_by_other_delivery",
+        processed_by:  alreadyProcessed.id,
+        transmission_id,
+      });
+    }
+  }
+
+  // ── 6. Dispatch depuis le payload authentifié ───────────────
+  interface PayPalWebhookEvent {
+    id?: string;
+    event_type: string;
+    resource: {
+      id: string;
+      status?: string;
+      custom_id?: string;
+      plan_id?: string;
+      subscriber?: { email_address?: string; name?: { given_name?: string; surname?: string } };
+      payer?: { email_address?: string; name?: { given_name?: string; surname?: string } };
+    };
+  }
+
+  try {
+    await dispatchPayPalEvent(storedRow.raw_payload as PayPalWebhookEvent);
 
     await supabaseAdmin
       .from("paypal_webhook_events")
@@ -144,7 +216,7 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", transmission_id);
 
-    log.info(`PayPal event ${transmission_id} retraité avec succès (tentative #${lease.attempt_count})`);
+    log.info(`PayPal tx ${transmission_id} retraité avec succès (tentative #${lease.attempt_count})`);
 
     await logAdminAction({
       admin,
@@ -152,7 +224,7 @@ export async function POST(req: NextRequest) {
       resource:   "paypal_webhook_events",
       resourceId: transmission_id,
       ip, userAgent,
-      details:    { event_type: lease.event_type, attempt_count: lease.attempt_count },
+      details:    { event_type: lease.event_type, attempt_count: lease.attempt_count, resource_id: storedRow.resource_id ?? undefined },
       severity:   "info",
     });
 

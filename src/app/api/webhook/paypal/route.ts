@@ -23,6 +23,20 @@ function getSupabaseAdmin() {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Les 3 identifiants PayPal :
+   - paypal-transmission-id  → clé d'idempotence de LIVRAISON (table PK)
+   - event.id                → identifiant MÉTIER de l'événement (dédup)
+   - resource.id             → identifiant de l'OBJET FINANCIER (I-xxxx, etc.)
+─────────────────────────────────────────────────────────────── */
+
+function getResourceType(eventType: string): string {
+  if (eventType.startsWith("BILLING.SUBSCRIPTION.")) return "SUBSCRIPTION";
+  if (eventType.startsWith("PAYMENT.CAPTURE."))       return "CAPTURE";
+  if (eventType.startsWith("PAYMENT.SALE."))          return "SALE";
+  return "OTHER";
+}
+
+/* ─────────────────────────────────────────────────────────────
    Types
 ─────────────────────────────────────────────────────────────── */
 interface PayPalWebhookEvent {
@@ -37,11 +51,17 @@ interface PayPalWebhookEvent {
       email_address?: string;
       name?: { given_name?: string; surname?: string };
     };
+    payer?: {
+      email_address?: string;
+      name?: { given_name?: string; surname?: string };
+    };
   };
 }
 
 /* ─────────────────────────────────────────────────────────────
    Export du dispatcher (réutilisé par la route retry admin)
+   Prend le payload authentifié tel quel — ne fabrique jamais
+   un event de remplacement.
 ─────────────────────────────────────────────────────────────── */
 export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<void> {
   const { event_type, resource } = event;
@@ -140,6 +160,7 @@ export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<vo
     /* ── Renouvellement ── */
     case "BILLING.SUBSCRIPTION.RENEWED":
     case "PAYMENT.SALE.COMPLETED": {
+      // resource.id = identifiant de l'abonnement (I-xxxx)
       await confirmActiveByPayPalSubId(subscriptionId);
       log.info(`${event_type} -> confirmé actif: ${subscriptionId}`);
       break;
@@ -149,6 +170,7 @@ export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<vo
     case "BILLING.SUBSCRIPTION.CANCELLED":
     case "BILLING.SUBSCRIPTION.SUSPENDED":
     case "BILLING.SUBSCRIPTION.EXPIRED": {
+      // resource.id = identifiant de l'abonnement (I-xxxx)
       await deactivateUserByPayPalSubId(subscriptionId);
       log.info(`${event_type} -> accès désactivé: ${subscriptionId}`);
       break;
@@ -163,9 +185,13 @@ export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<vo
    POST /api/webhook/paypal
    Réception + idempotence atomique + dispatch PayPal
 
-   Idempotence : paypal-transmission-id (unique par livraison PayPal)
+   Idempotences :
+   1. LIVRAISON   : paypal-transmission-id (PK table) — atomique via INSERT
+   2. MÉTIER      : event.id — déduplication si même event déjà traité
+   3. BUSINESS    : helpers idempotents (upsert onConflict)
+
    Fail-closed  : toute erreur DB non-23505 → 503 (PayPal retentera)
-   Bail         : processing_since + acquire_paypal_webhook_lease (RPC)
+   Payload      : stocké après vérification de signature (base du replay)
 ─────────────────────────────────────────────────────────────── */
 export async function POST(req: Request) {
   // ── Guard : PAYPAL_WEBHOOK_ID requis ───────────────────────
@@ -177,14 +203,14 @@ export async function POST(req: Request) {
 
   const rawBody = await req.text();
 
-  // ── Clé d'idempotence : transmission_id ────────────────────
+  // ── Clé d'idempotence : transmission_id (livraison) ────────
   const transmissionId = req.headers.get("paypal-transmission-id");
   if (!transmissionId) {
     log.warn("Header paypal-transmission-id absent");
     return NextResponse.json({ error: "Missing paypal-transmission-id header" }, { status: 400 });
   }
 
-  // ── Vérification de signature ───────────────────────────────
+  // ── Vérification de signature (avant tout effet) ────────────
   const isValid = await verifyPayPalWebhook({
     headers: req.headers as Headers,
     rawBody,
@@ -203,14 +229,15 @@ export async function POST(req: Request) {
   }
 
   const { event_type } = event;
-  const eventId = event.id ?? null;
-  const rawBodyHash = createHash("sha256").update(rawBody).digest("hex");
+  const eventId        = event.id ?? null;
+  const resourceId     = event.resource?.id ?? null;
+  const rawBodyHash    = createHash("sha256").update(rawBody).digest("hex");
 
-  log.info(`Event: ${event_type} | transmission_id: ${transmissionId} | event_id: ${eventId ?? "n/a"}`);
+  log.info(`Event: ${event_type} | tx: ${transmissionId} | event_id: ${eventId ?? "n/a"} | resource_id: ${resourceId ?? "n/a"}`);
 
   const supabaseAdmin = getSupabaseAdmin();
 
-  // ── Réservation atomique (INSERT) ───────────────────────────
+  // ── Réservation atomique + stockage du payload authentifié ─
   const { error: idempotenceErr } = await supabaseAdmin
     .from("paypal_webhook_events")
     .insert({
@@ -221,11 +248,14 @@ export async function POST(req: Request) {
       processing_since: new Date().toISOString(),
       attempt_count:    1,
       raw_body_hash:    rawBodyHash,
+      resource_id:      resourceId,
+      resource_type:    getResourceType(event_type),
+      raw_payload:      event,
     });
 
   if (idempotenceErr) {
     if (idempotenceErr.code === "23505") {
-      // Conflict clé primaire — distinguer l'état réel
+      // Conflict clé primaire — distinguer l'état réel de la livraison
       const { data: existing } = await supabaseAdmin
         .from("paypal_webhook_events")
         .select("id, status, processing_since, attempt_count")
@@ -235,26 +265,26 @@ export async function POST(req: Request) {
       const st = existing?.status ?? "unknown";
 
       if (st === "processed") {
-        log.info(`PayPal event ${transmissionId} déjà traité — ignoré`);
+        log.info(`PayPal tx ${transmissionId} déjà traité — ignoré`);
         return NextResponse.json({ received: true, skipped: true, reason: "already_processed" });
       }
 
       if (st === "processing") {
-        const since = existing?.processing_since ? new Date(existing.processing_since) : null;
+        const since       = existing?.processing_since ? new Date(existing.processing_since) : null;
         const leaseExpired = since ? (Date.now() - since.getTime()) > 300_000 : true;
         if (leaseExpired) {
-          log.warn(`PayPal event ${transmissionId} bail expiré — retour 503`);
+          log.warn(`PayPal tx ${transmissionId} bail expiré — retour 503`);
           return NextResponse.json(
             { error: "Event en cours de traitement — bail expiré, réessai en cours" },
             { status: 503 }
           );
         }
-        log.info(`PayPal event ${transmissionId} déjà en cours de traitement (bail actif)`);
+        log.info(`PayPal tx ${transmissionId} déjà en cours de traitement (bail actif)`);
         return NextResponse.json({ received: true, skipped: true, reason: "processing_in_progress" });
       }
 
       if (st === "failed") {
-        log.warn(`PayPal event ${transmissionId} déjà échoué — reprise manuelle requise`);
+        log.warn(`PayPal tx ${transmissionId} déjà échoué — reprise manuelle requise`);
         return NextResponse.json({ received: true, skipped: true, reason: "failed_manual_retry_required" });
       }
 
@@ -267,6 +297,27 @@ export async function POST(req: Request) {
       { error: "Erreur interne — réessai automatique en cours" },
       { status: 503 }
     );
+  }
+
+  // ── Déduplication métier : event_id déjà traité par une autre livraison ──
+  // Protège contre les livraisons dupliquées du même événement financier
+  if (eventId) {
+    const { data: alreadyProcessed } = await supabaseAdmin
+      .from("paypal_webhook_events")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("status", "processed")
+      .neq("id", transmissionId)
+      .maybeSingle();
+
+    if (alreadyProcessed) {
+      await supabaseAdmin
+        .from("paypal_webhook_events")
+        .update({ status: "processed", processed_at: new Date().toISOString() })
+        .eq("id", transmissionId);
+      log.info(`Livraison dupliquée ${transmissionId} — event_id ${eventId} déjà traité par ${alreadyProcessed.id}`);
+      return NextResponse.json({ received: true, skipped: true, reason: "duplicate_delivery" });
+    }
   }
 
   // ── Dispatch ────────────────────────────────────────────────
@@ -283,7 +334,7 @@ export async function POST(req: Request) {
       })
       .eq("id", transmissionId);
 
-    log.info(`PayPal event ${transmissionId} (${event_type}) traité avec succès`);
+    log.info(`PayPal tx ${transmissionId} (${event_type}) traité avec succès`);
     return NextResponse.json({ received: true });
 
   } catch (err) {
