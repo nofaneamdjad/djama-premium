@@ -1,0 +1,132 @@
+{
+  "timestamp": "2026-11-08T21:40:05.936Z",
+  "sprint": "S7_INTEGRATION",
+  "score": "24/24 (100%)",
+  "pass": 24,
+  "fail": 0,
+  "blocked": 0,
+  "total": 24,
+  "failures": [],
+  "details": [
+    {
+      "id": "INT-01a",
+      "result": "PASS",
+      "msg": "user_access : outils_saas=true, espace_premium=true ✓"
+    },
+    {
+      "id": "INT-01b",
+      "result": "PASS",
+      "msg": "user_access relecture cohérente ✓"
+    },
+    {
+      "id": "INT-02a",
+      "result": "PASS",
+      "msg": "Demande processing créée : id=ed4a7c96…"
+    },
+    {
+      "id": "INT-02b",
+      "result": "PASS",
+      "msg": "Webhook → status=succeeded, processed_at défini ✓"
+    },
+    {
+      "id": "INT-03a",
+      "result": "PASS",
+      "msg": "Admin A réserve 60/100 EUR (pending) ✓"
+    },
+    {
+      "id": "INT-03b",
+      "result": "PASS",
+      "msg": "get_already_refunded = 60 EUR (réservation pending) ✓"
+    },
+    {
+      "id": "INT-03c",
+      "result": "PASS",
+      "msg": "Plafond respecté : 60+50=110 > 100 → blocage correct ✓"
+    },
+    {
+      "id": "INT-04a",
+      "result": "PASS",
+      "msg": "GET /api/admin/remboursements sans cookie → 401 (auth avant rate limit) ✓"
+    },
+    {
+      "id": "INT-04b",
+      "result": "PASS",
+      "msg": "POST sans cookie → 401 ✓"
+    },
+    {
+      "id": "INT-04c",
+      "result": "PASS",
+      "msg": "POST /api/admin/virements sans cookie → 401 ✓"
+    },
+    {
+      "id": "INT-05a",
+      "result": "PASS",
+      "msg": "Login admin finance réussi (aal1 session) ✓"
+    },
+    {
+      "id": "INT-05b",
+      "result": "PASS",
+      "msg": "GET remboursements avec rôle finance + aal1 → 401 mfaRequired ✓"
+    },
+    {
+      "id": "INT-06a",
+      "result": "PASS",
+      "msg": "Activation via virement → user_access ✓"
+    },
+    {
+      "id": "INT-06b",
+      "result": "PASS",
+      "msg": "Un seul enregistrement user_access — pas de doublon (source=paypal) ✓"
+    },
+    {
+      "id": "INT-07a",
+      "result": "PASS",
+      "msg": "admin_audit_log : écriture + lecture ✓"
+    },
+    {
+      "id": "INT-07b",
+      "result": "PASS",
+      "msg": "Nettoyage entrée audit_log de test ✓"
+    },
+    {
+      "id": "INT-08a",
+      "result": "PASS",
+      "msg": "Premier INSERT avec idempotency_key ✓"
+    },
+    {
+      "id": "INT-08b",
+      "result": "PASS",
+      "msg": "Deuxième INSERT refusé par contrainte UNIQUE (23505) ✓"
+    },
+    {
+      "id": "INT-09a",
+      "result": "PASS",
+      "msg": "isSandboxMode() présente dans refund-providers.ts ✓"
+    },
+    {
+      "id": "INT-09b",
+      "result": "PASS",
+      "msg": "Sandbox retourne { sandbox: true } sans appel provider ✓"
+    },
+    {
+      "id": "INT-09c",
+      "result": "PASS",
+      "msg": "Guard sandbox dans sendRefundNotificationEmail ✓"
+    },
+    {
+      "id": "INT-10a",
+      "result": "PASS",
+      "msg": "PATCHABLE allowlist présente ✓"
+    },
+    {
+      "id": "INT-10b",
+      "result": "PASS",
+      "msg": "stripe_customer_id dans PATCHABLE (FINDING S7-05 documenté) — contrôle actif ✓"
+    },
+    {
+      "id": "INT-10c",
+      "result": "PASS",
+      "msg": "Permission manage_subscriptions requise pour PATCH ✓"
+    }
+  ]
+}
