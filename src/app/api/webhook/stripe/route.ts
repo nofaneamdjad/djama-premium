@@ -583,7 +583,7 @@ async function syncSubscriptionStatus(
      payment_intent.succeeded       → Paiement direct (hors lien DJAMA)
      payment_intent.payment_failed  → Paiement direct échoué
 ───────────────────────────────────────────────────────────── */
-async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
+export async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
 
     /* ── Paiement Stripe confirmé ──────────────────────────── */
