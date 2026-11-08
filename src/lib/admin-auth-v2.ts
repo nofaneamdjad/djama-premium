@@ -26,7 +26,15 @@ import { createHash }                from "crypto";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
-export type AdminRole = "super_admin" | "admin" | "support" | "viewer";
+export type AdminRole =
+  | "super_admin"   // Tous droits + sécurité système
+  | "direction"     // Management opérationnel
+  | "admin"         // Alias rétrocompat → traité comme direction
+  | "finance"       // Responsable financier
+  | "commercial"    // Commercial / abonnements
+  | "support"       // Support client
+  | "tech"          // Équipe informatique
+  | "viewer";       // Lecture seule (autres employés)
 
 export interface AdminUser {
   id:          string;
@@ -46,58 +54,183 @@ export interface RequireAdminResult {
 
 const ROLE_PERMISSIONS: Record<AdminRole, Record<string, boolean>> = {
   super_admin: {
-    can_view_dashboard:    true,
-    can_manage_users:      true,
-    can_delete_users:      true,
-    can_view_revenue:      true,
-    can_manage_payments:   true,
-    can_view_messages:     true,
-    can_manage_settings:   true,
-    can_manage_admins:     true,
-    can_view_audit_log:    true,
-    can_manage_blog:       true,
-    can_view_analytics:    true,
-    manage_subscriptions:  true,
+    can_view_dashboard:       true,
+    can_manage_users:         true,
+    can_delete_users:         true,
+    can_view_revenue:         true,
+    can_manage_payments:      true,
+    can_view_messages:        true,
+    can_manage_settings:      true,  // paramètres système
+    can_manage_admins:        true,  // créer/modifier/supprimer des admins
+    can_view_audit_log:       true,
+    can_manage_blog:          true,
+    can_view_analytics:       true,
+    manage_subscriptions:     true,  // droits abonnements (migration, annulation forcée)
+    can_manage_plans:         true,
+    can_manage_hq:            true,
+    can_manage_security:      true,  // reset MFA, révocation sessions
+    can_perform_refunds:      true,  // remboursements
   },
+
+  // Direction : management opérationnel — même accès qu'admin historique + hq
+  direction: {
+    can_view_dashboard:       true,
+    can_manage_users:         true,
+    can_delete_users:         false,
+    can_view_revenue:         true,
+    can_manage_payments:      true,
+    can_view_messages:        true,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       true,
+    can_manage_blog:          true,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         true,
+    can_manage_hq:            true,
+    can_manage_security:      false,
+    can_perform_refunds:      true,
+  },
+
+  // admin = alias rétrocompat direction
   admin: {
-    can_view_dashboard:    true,
-    can_manage_users:      true,
-    can_delete_users:      false,
-    can_view_revenue:      true,
-    can_manage_payments:   true,
-    can_view_messages:     true,
-    can_manage_settings:   false,
-    can_manage_admins:     false,
-    can_view_audit_log:    true,
-    can_manage_blog:       true,
-    can_view_analytics:    true,
+    can_view_dashboard:       true,
+    can_manage_users:         true,
+    can_delete_users:         false,
+    can_view_revenue:         true,
+    can_manage_payments:      true,
+    can_view_messages:        true,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       true,
+    can_manage_blog:          true,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         true,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      true,
   },
+
+  // Responsable financier : paiements, remboursements, revenus — pas de gestion users/settings
+  finance: {
+    can_view_dashboard:       true,
+    can_manage_users:         false,
+    can_delete_users:         false,
+    can_view_revenue:         true,
+    can_manage_payments:      true,
+    can_view_messages:        false,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       true,   // audit log financier
+    can_manage_blog:          false,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         false,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      true,
+  },
+
+  // Commercial : clients, abonnements, plans — pas d'accès financier direct
+  commercial: {
+    can_view_dashboard:       true,
+    can_manage_users:         true,
+    can_delete_users:         false,
+    can_view_revenue:         true,   // lecture revenus (reporting)
+    can_manage_payments:      false,
+    can_view_messages:        true,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       false,
+    can_manage_blog:          true,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         true,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      false,
+  },
+
+  // Support client : messages, tickets, lecture clients
   support: {
-    can_view_dashboard:    true,
-    can_manage_users:      false,
-    can_delete_users:      false,
-    can_view_revenue:      false,
-    can_manage_payments:   false,
-    can_view_messages:     true,
-    can_manage_settings:   false,
-    can_manage_admins:     false,
-    can_view_audit_log:    false,
-    can_manage_blog:       false,
-    can_view_analytics:    false,
+    can_view_dashboard:       true,
+    can_manage_users:         false,
+    can_delete_users:         false,
+    can_view_revenue:         false,
+    can_manage_payments:      false,
+    can_view_messages:        true,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       false,
+    can_manage_blog:          false,
+    can_view_analytics:       false,
+    manage_subscriptions:     false,
+    can_manage_plans:         false,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      false,
   },
+
+  // Informatique : logs, monitoring, maintenance — pas d'accès métier
+  tech: {
+    can_view_dashboard:       true,
+    can_manage_users:         false,
+    can_delete_users:         false,
+    can_view_revenue:         false,
+    can_manage_payments:      false,
+    can_view_messages:        false,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       true,
+    can_manage_blog:          false,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         false,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      false,
+  },
+
+  // Lecture seule : autres employés
   viewer: {
-    can_view_dashboard:    true,
-    can_manage_users:      false,
-    can_delete_users:      false,
-    can_view_revenue:      false,
-    can_manage_payments:   false,
-    can_view_messages:     false,
-    can_manage_settings:   false,
-    can_manage_admins:     false,
-    can_view_audit_log:    false,
-    can_manage_blog:       false,
-    can_view_analytics:    true,
+    can_view_dashboard:       true,
+    can_manage_users:         false,
+    can_delete_users:         false,
+    can_view_revenue:         false,
+    can_manage_payments:      false,
+    can_view_messages:        false,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       false,
+    can_manage_blog:          false,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         false,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      false,
   },
+};
+
+/** Rôles pour lesquels le MFA est obligatoire, indépendamment du flag mfa_required. */
+export const ROLES_REQUIRING_MFA: ReadonlySet<AdminRole> = new Set([
+  "super_admin",
+  "direction",
+  "admin",    // alias rétrocompat
+  "finance",
+]);
+
+/** Libellés lisibles par rôle */
+export const ROLE_LABELS: Record<AdminRole, string> = {
+  super_admin: "Super Admin",
+  direction:   "Direction",
+  admin:       "Admin (rétrocompat)",
+  finance:     "Responsable Financier",
+  commercial:  "Commercial",
+  support:     "Support Client",
+  tech:        "Informatique",
+  viewer:      "Autres employés",
 };
 
 export function hasPermission(admin: AdminUser, permission: string): boolean {
@@ -145,7 +278,7 @@ async function checkMfaLevel(
   const sb = createSupabaseAdmin();
   const { data, error } = await sb
     .from("admin_users")
-    .select("mfa_required")
+    .select("mfa_required, role")
     .eq("id", adminUser.id)
     .maybeSingle();
 
@@ -154,7 +287,11 @@ async function checkMfaLevel(
     return false; // fail-closed
   }
 
-  if (!data.mfa_required) return true; // non obligatoire → accès direct
+  // MFA obligatoire si flag activé OU si rôle à haut privilège
+  const mfaNeeded = data.mfa_required ||
+    ROLES_REQUIRING_MFA.has(data.role as AdminRole);
+
+  if (!mfaNeeded) return true;
 
   const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aalError || !aalData) {
@@ -286,12 +423,14 @@ export async function requireAdminUser(
           .maybeSingle();
 
         if (adminData) {
-          // Faille 2 : vérifier que le niveau AAL de la session est suffisant
-          if (adminData.mfa_required && sess.aal !== "aal2") {
+          // MFA obligatoire si mfa_required=true OU si rôle dans ROLES_REQUIRING_MFA
+          const mfaNeeded = adminData.mfa_required ||
+            ROLES_REQUIRING_MFA.has(adminData.role as AdminRole);
+          if (mfaNeeded && sess.aal !== "aal2") {
             await logAdminAction({
               admin: null, action: "ACCESS_DENIED_SESSION_AAL_INSUFFICIENT",
               ip, userAgent,
-              details: { admin_id: adminData.id, session_aal: sess.aal ?? "aal1" },
+              details: { admin_id: adminData.id, session_aal: sess.aal ?? "aal1", role: adminData.role },
               severity: "warning",
             });
             return {

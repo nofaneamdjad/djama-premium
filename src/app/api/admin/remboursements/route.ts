@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin }       from "@/lib/supabase-server";
 import { requireAdminUser, hasPermission, logAdminAction } from "@/lib/admin-auth-v2";
 import { checkFinancialRateLimit }   from "@/lib/financial-rate-limit";
+import { verifyReauthToken }         from "@/app/api/admin/auth/reauth/route";
 
 export async function GET(req: NextRequest) {
   const { deny } = await requireAdminUser(req, {
@@ -56,8 +57,18 @@ export async function PATCH(req: NextRequest) {
   const rl = await checkFinancialRateLimit("admin_refund_process", admin!.id);
   if (!rl.allowed) return rl.response429!;
 
-  if (!hasPermission(admin!, "manage_subscriptions")) {
+  if (!hasPermission(admin!, "manage_subscriptions") && !hasPermission(admin!, "can_perform_refunds")) {
     return NextResponse.json({ error: "Permission insuffisante" }, { status: 403 });
+  }
+
+  // Re-auth obligatoire pour les remboursements (action critique irréversible)
+  const reauthToken = req.headers.get("x-reauth-token") ?? "";
+  const reauth = await verifyReauthToken(reauthToken, admin!.id);
+  if (!reauth.valid || reauth.purpose !== "refund") {
+    return NextResponse.json(
+      { error: "Ré-authentification requise.", reauthRequired: true, purpose: "refund" },
+      { status: 403 },
+    );
   }
 
   const { invoice_id, action } = await req.json() as {

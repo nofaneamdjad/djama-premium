@@ -108,11 +108,12 @@ const NAV_GROUPS: NavGroup[] = [
   {
     id: "securite", label: "Sécurité & Paramètres", icon: Settings,
     items: [
-      { href: "/admin/securite",   label: "Journal d'audit",  icon: ShieldCheck },
-      { href: "/admin/emails",     label: "Emails système",   icon: Send        },
-      { href: "/admin/settings",   label: "Identité SaaS",    icon: Building2   },
-      { href: "/admin/parametres", label: "Paramètres",       icon: Settings    },
-      { href: "/admin/permissions",label: "Permissions",      icon: Lock        },
+      { href: "/admin/administrateurs", label: "Administrateurs",  icon: UserCog     },
+      { href: "/admin/securite",       label: "Journal d'audit",  icon: ShieldCheck },
+      { href: "/admin/emails",         label: "Emails système",   icon: Send        },
+      { href: "/admin/settings",       label: "Identité SaaS",    icon: Building2   },
+      { href: "/admin/parametres",     label: "Paramètres",       icon: Settings    },
+      { href: "/admin/permissions",    label: "Permissions",      icon: Lock        },
     ],
   },
   /* ── Site vitrine (hors périmètre SaaS — masqué par défaut) */
