@@ -10,7 +10,7 @@ import {
   sendCancellationEmail,
 } from "@/lib/email";
 import { createLogger } from "@/lib/logger";
-import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
+import { syncSubscriptionAccess, recordPaymentTransaction } from "@/lib/subscription-helpers";
 
 const log = createLogger("webhook/stripe");
 
@@ -509,6 +509,30 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   /* ── 4. Envoyer l'email de bienvenue avec lien d'accès ───── */
   await sendWelcomeEmail({ email, fullName, accessLink, isNewUser });
 
+  /* ── 5. Enregistrement financier (idempotent) ─────────────── */
+  // payment_intent présent pour le premier paiement d'un abonnement
+  const piId = typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : (session.payment_intent as Stripe.PaymentIntent | null)?.id ?? null;
+
+  if (piId && session.amount_total && session.amount_total > 0) {
+    await recordPaymentTransaction({
+      userId:                 userId!,
+      providerTransactionId:  piId,
+      providerSubscriptionId: stripeSubId,
+      provider:               "stripe",
+      transactionType:        "subscription",
+      amountOriginal:         session.amount_total / 100,
+      currencyOriginal:       (session.currency ?? "eur").toUpperCase(),
+      status:                 "succeeded",
+      planName:               "outils_djama",
+      billingInterval:        "monthly",
+      description:            `Stripe checkout ${session.id} — activation abonnement`,
+      rawMetadata:            { session_id: session.id, subscription_id: stripeSubId },
+    });
+    log.info(`payment_transactions: checkout enregistré — ${session.amount_total / 100} ${session.currency}`);
+  }
+
   log.info(`✅ Abonnement Stripe activé — ${isNewUser ? "nouveau client" : "existant"} → ${email}`);
 }
 
@@ -625,6 +649,38 @@ export async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
 
       if (isSubscriptionInvoice) {
         await confirmSubscriptionActive(invoice.customer as string);
+
+        // Enregistrement financier (idempotent via provider_transaction_id)
+        const invoiceUser = await findUserByStripeCustomerId(invoice.customer as string);
+        if (invoiceUser) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const inv = invoice as any;
+          const piRaw = inv.payment_intent ?? null;
+          const piId = typeof piRaw === "string" ? piRaw : (piRaw as Stripe.PaymentIntent | null)?.id ?? null;
+          const txId = piId ?? invoice.id;  // payment_intent absent sur factures à 0€
+          const subId: string | null = typeof inv.subscription === "string" ? inv.subscription : null;
+
+          if (invoice.amount_paid > 0) {
+            await recordPaymentTransaction({
+              userId:                  invoiceUser.id,
+              providerTransactionId:   txId,
+              providerSubscriptionId:  subId,
+              provider:                "stripe",
+              transactionType:         "subscription",
+              amountOriginal:          invoice.amount_paid / 100,
+              currencyOriginal:        invoice.currency.toUpperCase(),
+              status:                  "succeeded",
+              planName:                "outils_djama",
+              billingInterval:         "monthly",
+              periodStart:             invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : null,
+              periodEnd:               invoice.period_end   ? new Date(invoice.period_end   * 1000).toISOString() : null,
+              description:             `Stripe invoice ${invoice.id} — ${invoice.billing_reason ?? "subscription"}`,
+              rawMetadata:             { invoice_id: invoice.id, billing_reason: invoice.billing_reason },
+            });
+            log.info(`payment_transactions: Stripe invoice enregistré — ${invoice.amount_paid / 100} ${invoice.currency}`);
+          }
+        }
+
         // Email de renouvellement uniquement pour les cycles récurrents
         if (invoice.billing_reason === "subscription_cycle") {
           const renewUser = await findUserByStripeCustomerId(invoice.customer as string);

@@ -6,6 +6,8 @@ import {
   activateOrCreateUser,
   deactivateUserByPayPalSubId,
   confirmActiveByPayPalSubId,
+  findUserByPayPalSubId,
+  recordPaymentTransaction,
 } from "@/lib/subscription-helpers";
 import { sendCoachingIAEmail } from "@/lib/email";
 import { createLogger }        from "@/lib/logger";
@@ -40,8 +42,9 @@ function getResourceType(eventType: string): string {
    Types
 ─────────────────────────────────────────────────────────────── */
 interface PayPalWebhookEvent {
-  id?:        string;
-  event_type: string;
+  id?:          string;
+  event_type:   string;
+  create_time?: string;   // ISO-8601 — horodatage métier pour détection désordre d'événements
   resource: {
     id:         string;
     status?:    string;
@@ -55,6 +58,26 @@ interface PayPalWebhookEvent {
       email_address?: string;
       name?: { given_name?: string; surname?: string };
     };
+    // Montant de capture (PAYMENT.CAPTURE.COMPLETED + BILLING.SUBSCRIPTION.RENEWED)
+    amount?: {
+      value:         string;
+      currency_code: string;
+    };
+    // Informations de facturation (BILLING.SUBSCRIPTION.RENEWED)
+    billing_info?: {
+      last_payment?: {
+        amount?: { value: string; currency_code: string };
+        time?:   string;
+      };
+      next_billing_time?: string;
+    };
+    // IDs liés (PAYMENT.CAPTURE.COMPLETED)
+    supplementary_data?: {
+      related_ids?: {
+        subscription_id?: string;
+        order_id?:        string;
+      };
+    };
   };
 }
 
@@ -66,6 +89,7 @@ interface PayPalWebhookEvent {
 export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<void> {
   const { event_type, resource } = event;
   const subscriptionId = resource.id;
+  const eventTime      = event.create_time ?? null;   // pour stale-event check dans les helpers
   const supabase = getSupabaseAdmin();
 
   switch (event_type) {
@@ -140,6 +164,28 @@ export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<vo
       } catch { /* fallback */ }
 
       await sendCoachingIAEmail({ email, fullName, accessLink, isNewUser });
+
+      // Enregistrement financier (capture coaching IA)
+      const captureAmount = (resource as unknown as { amount?: { value: string; currency_code: string } }).amount;
+      const captureSubId  = (resource as unknown as { supplementary_data?: { related_ids?: { subscription_id?: string } } }).supplementary_data?.related_ids?.subscription_id;
+      if (captureAmount?.value && user) {
+        await recordPaymentTransaction({
+          userId:                 user.id,
+          providerTransactionId:  resource.id,       // capture ID PayPal
+          providerSubscriptionId: captureSubId ?? null,
+          provider:               "paypal",
+          transactionType:        "one_time",
+          amountOriginal:         parseFloat(captureAmount.value),
+          currencyOriginal:       captureAmount.currency_code,
+          status:                 "succeeded",
+          planName:               "coaching_ia",
+          billingInterval:        "one_time",
+          description:            `PayPal capture ${resource.id} — coaching IA`,
+          rawMetadata:            { event_id: event.id, event_type },
+        });
+        log.info(`payment_transactions: PayPal coaching IA enregistré — ${captureAmount.value} ${captureAmount.currency_code}`);
+      }
+
       log.info("Coaching IA activé (PayPal) -> " + email);
       break;
     }
@@ -153,7 +199,7 @@ export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<vo
       const userId   = resource.custom_id ?? null;
       if (!email) { log.warn("ACTIVATED: pas d'email"); break; }
       try {
-        await activateOrCreateUser({ email, fullName, providedUserId: userId, paypalSubscriptionId: subscriptionId });
+        await activateOrCreateUser({ email, fullName, providedUserId: userId, paypalSubscriptionId: subscriptionId, eventTime, eventType: event_type });
         log.info("ACTIVATED -> " + email);
       } catch (err) { log.error("ACTIVATED error", err); throw err; }
       break;
@@ -163,7 +209,41 @@ export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<vo
     case "BILLING.SUBSCRIPTION.RENEWED":
     case "PAYMENT.SALE.COMPLETED": {
       // resource.id = identifiant de l'abonnement (I-xxxx)
-      await confirmActiveByPayPalSubId(subscriptionId);
+      await confirmActiveByPayPalSubId(subscriptionId, eventTime, event_type);
+
+      // Enregistrement financier du renouvellement
+      const renewUser = await findUserByPayPalSubId(subscriptionId);
+      if (renewUser) {
+        // Montant depuis billing_info.last_payment (BILLING.SUBSCRIPTION.RENEWED)
+        // ou depuis resource.amount (PAYMENT.SALE.COMPLETED)
+        const lastPmt  = resource.billing_info?.last_payment;
+        const saleAmt  = resource.amount;
+        const amount   = lastPmt?.amount ?? saleAmt ?? null;
+
+        if (amount?.value) {
+          // Idempotence : composé de subscriptionId + date du dernier paiement
+          const paidTime  = lastPmt?.time ?? eventTime ?? new Date().toISOString();
+          const txIdKey   = `${subscriptionId}_renewal_${paidTime.slice(0, 10)}`;
+          const txId      = `paypal_renewal_${createHash("sha256").update(txIdKey).digest("hex").slice(0, 16)}`;
+
+          await recordPaymentTransaction({
+            userId:                  renewUser.id,
+            providerTransactionId:   txId,
+            providerSubscriptionId:  subscriptionId,
+            provider:                "paypal",
+            transactionType:         "subscription",
+            amountOriginal:          parseFloat(amount.value),
+            currencyOriginal:        amount.currency_code,
+            status:                  "succeeded",
+            planName:                "outils_djama",
+            billingInterval:         "monthly",
+            description:             `PayPal renewal ${subscriptionId} — ${paidTime.slice(0, 10)}`,
+            rawMetadata:             { event_id: event.id, event_type, paid_time: paidTime },
+          });
+          log.info(`payment_transactions: PayPal renewal enregistré — ${amount.value} ${amount.currency_code}`);
+        }
+      }
+
       log.info(`${event_type} -> confirmé actif: ${subscriptionId}`);
       break;
     }
@@ -173,7 +253,8 @@ export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<vo
     case "BILLING.SUBSCRIPTION.SUSPENDED":
     case "BILLING.SUBSCRIPTION.EXPIRED": {
       // resource.id = identifiant de l'abonnement (I-xxxx)
-      await deactivateUserByPayPalSubId(subscriptionId);
+      // eventTime transmis pour ignorer les événements obsolètes (désordre de livraison)
+      await deactivateUserByPayPalSubId(subscriptionId, eventTime, event_type);
       log.info(`${event_type} -> accès désactivé: ${subscriptionId}`);
       break;
     }
@@ -199,8 +280,8 @@ export async function POST(req: Request) {
   // ── Guard : PAYPAL_WEBHOOK_ID requis ───────────────────────
   const webhookId = process.env.PAYPAL_WEBHOOK_ID;
   if (!webhookId) {
-    log.error("PAYPAL_WEBHOOK_ID absent — webhook rejeté (500)");
-    return NextResponse.json({ error: "Configuration webhook manquante" }, { status: 500 });
+    log.error("PAYPAL_WEBHOOK_ID absent — webhook rejeté (503)");
+    return NextResponse.json({ error: "Configuration webhook manquante" }, { status: 503 });
   }
 
   const rawBody = await req.text();
@@ -301,24 +382,35 @@ export async function POST(req: Request) {
     );
   }
 
-  // ── Déduplication métier : event_id déjà traité par une autre livraison ──
-  // Protège contre les livraisons dupliquées du même événement financier
+  // ── Acquisition atomique du droit de dispatcher l'event_id ────────────────
+  // Garantit qu'un seul dispatch s'exécute même en cas de livraisons parallèles
+  // (deux transmission_id différents pour le même event_id).
+  // SELECT+dispatch non-atomique remplacé par INSERT/UPDATE atomique sur paypal_event_dispatches.
   if (eventId) {
-    const { data: alreadyProcessed } = await supabaseAdmin
-      .from("paypal_webhook_events")
-      .select("id")
-      .eq("event_id", eventId)
-      .eq("status", "processed")
-      .neq("id", transmissionId)
-      .maybeSingle();
+    const { data: claimed, error: claimErr } = await supabaseAdmin.rpc(
+      "claim_paypal_event_dispatch",
+      { p_event_id: eventId, p_transmission_id: transmissionId }
+    );
 
-    if (alreadyProcessed) {
+    if (claimErr) {
+      log.error("claim_paypal_event_dispatch error", claimErr.message);
+      await supabaseAdmin
+        .from("paypal_webhook_events")
+        .update({ status: "failed", failed_at: new Date().toISOString(), error: claimErr.message.slice(0, 500) })
+        .eq("id", transmissionId);
+      return NextResponse.json(
+        { error: "Erreur interne — réessai automatique en cours" },
+        { status: 503 }
+      );
+    }
+
+    if (!claimed) {
       await supabaseAdmin
         .from("paypal_webhook_events")
         .update({ status: "processed", processed_at: new Date().toISOString() })
         .eq("id", transmissionId);
-      log.info(`Livraison dupliquée ${transmissionId} — event_id ${eventId} déjà traité par ${alreadyProcessed.id}`);
-      return NextResponse.json({ received: true, skipped: true, reason: "duplicate_delivery" });
+      log.info(`Livraison dupliquée (atomic) ${transmissionId} — event_id ${eventId} déjà revendiqué`);
+      return NextResponse.json({ received: true, skipped: true, reason: "atomic_event_dedup" });
     }
   }
 
@@ -336,6 +428,15 @@ export async function POST(req: Request) {
       })
       .eq("id", transmissionId);
 
+    // Libérer le claim d'event_id (succès)
+    if (eventId) {
+      await supabaseAdmin.rpc("release_paypal_event_dispatch", {
+        p_event_id: eventId,
+        p_success:  true,
+        p_error:    null,
+      });
+    }
+
     log.info(`PayPal tx ${transmissionId} (${event_type}) traité avec succès`);
     return NextResponse.json({ received: true });
 
@@ -351,6 +452,15 @@ export async function POST(req: Request) {
         error:     msg.slice(0, 500),
       })
       .eq("id", transmissionId);
+
+    // Libérer le claim d'event_id (échec — reclaimable par le prochain retry)
+    if (eventId) {
+      await supabaseAdmin.rpc("release_paypal_event_dispatch", {
+        p_event_id: eventId,
+        p_success:  false,
+        p_error:    msg.slice(0, 500),
+      });
+    }
 
     return NextResponse.json(
       { error: "Erreur lors du traitement — réessai automatique en cours" },

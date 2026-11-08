@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
 
     // Abonnés actifs maintenant
     sb.from("user_subscriptions")
-      .select("user_id, plan_name, provider, mrr_eur, currency, billing_interval, country_code")
+      .select("user_id, plan_name, provider, mrr_eur, currency, billing_interval, country_code, mrr_data_state")
       .eq("is_active", true),
 
     // Abonnés actifs le mois dernier (pour churn)
@@ -92,19 +92,43 @@ export async function GET(req: NextRequest) {
   const providerTxs  = byProviderRes.data  ?? [];
 
   // ── MRR depuis user_subscriptions (source de vérité) ─────────────
-  const mrrTotal = activeSubs.reduce((s, r) => s + (Number(r.mrr_eur) || 0), 0);
+  // RÈGLE : on n'impute PAS de montant quand mrr_data_state != 'synced'.
+  // Un abonnement 'unsynced' est compté dans active_count mais contribue
+  // 0€ au MRR jusqu'à ce qu'un paiement soit enregistré dans payment_transactions.
+  // Cela garantit que MRR = 0 est une information juste (aucun paiement tracé),
+  // et non un résultat d'un fallback silencieux sur des prix hardcodés.
 
-  // Fallback: si mrr_eur non renseigné, utiliser prix hardcodés
-  const PLAN_PRICES: Record<string, number> = {
-    outils_djama:  49, entreprise: 199, premium: 49,
+  type SubRow = {
+    user_id: string;
+    plan_name: string | null;
+    provider: string | null;
+    mrr_eur: number | null;
+    currency: string | null;
+    billing_interval: string | null;
+    country_code: string | null;
+    mrr_data_state?: string | null;
   };
-  const mrrFallback = activeSubs
-    .filter(r => !r.mrr_eur || r.mrr_eur === 0)
-    .reduce((s, r) => s + (PLAN_PRICES[r.plan_name ?? ""] ?? 0), 0);
-  const mrr = mrrTotal > 0 ? mrrTotal : mrrFallback;
 
+  // Répartition par état MRR
+  const syncedSubs    = (activeSubs as SubRow[]).filter(r => r.mrr_data_state === "synced" && Number(r.mrr_eur) > 0);
+  const unsyncedSubs  = (activeSubs as SubRow[]).filter(r => !r.mrr_data_state || r.mrr_data_state === "unsynced" || (r.mrr_data_state === "unknown" && (!r.mrr_eur || Number(r.mrr_eur) === 0)));
+  const freeSubs      = (activeSubs as SubRow[]).filter(r => r.mrr_data_state === "free");
+
+  // MRR = somme des abonnements synchronisés uniquement (montants réels)
+  const mrr  = syncedSubs.reduce((s, r) => s + (Number(r.mrr_eur) || 0), 0);
   const arr  = mrr * 12;
-  const arpu = activeSubs.length > 0 ? Math.round((mrr / activeSubs.length) * 100) / 100 : 0;
+  const arpu = syncedSubs.length > 0 ? Math.round((mrr / syncedSubs.length) * 100) / 100 : 0;
+
+  const mrrStateBreakdown = {
+    synced_count:   syncedSubs.length,
+    unsynced_count: unsyncedSubs.length,
+    free_count:     freeSubs.length,
+    total_active:   activeSubs.length,
+    // Signal qualité de donnée : ratio synced / total
+    data_completeness_pct: activeSubs.length > 0
+      ? Math.round((syncedSubs.length / activeSubs.length) * 10000) / 100
+      : 100,
+  };
 
   // Churn rate = résiliations ce mois / actifs mois dernier
   const prevActiveCount = prevMonthActiveRes.count ?? 0;
@@ -169,6 +193,8 @@ export async function GET(req: NextRequest) {
       churned_count:    churnedCount,
       new_mrr_eur:      Math.round(newMrr  * 100) / 100,
       prev_mrr_eur:     Math.round(prevMrr * 100) / 100,
+      // Qualité de donnée — transparent sur l'état réel
+      mrr_state:        mrrStateBreakdown,
     },
     monthly:    monthlyRows,
     by_plan:    planRows,

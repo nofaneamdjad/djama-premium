@@ -7,6 +7,7 @@
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { sendWelcomeEmail, sendCancellationEmail } from "@/lib/email";
+import { convertToEur } from "@/lib/currency-helpers";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -105,8 +106,10 @@ export async function activateOrCreateUser(opts: {
   fullName:             string | null;
   providedUserId:       string | null;   // client_reference_id ou custom_id PayPal
   paypalSubscriptionId: string;
+  eventTime?:           string | null;
+  eventType?:           string;
 }): Promise<{ userId: string; isNewUser: boolean; accessLink: string }> {
-  const { email, fullName, providedUserId, paypalSubscriptionId } = opts;
+  const { email, fullName, providedUserId, paypalSubscriptionId, eventTime, eventType } = opts;
   const supabase = getSupabaseAdmin();
 
   /* ── 1. Trouver ou créer le compte Supabase ──────────────── */
@@ -160,6 +163,8 @@ export async function activateOrCreateUser(opts: {
     provider:       "paypal",
     subscriptionId: paypalSubscriptionId,
     userData:       existingUser?.user_metadata ?? {},
+    eventTime:      eventTime ?? undefined,
+    eventType,
   });
 
   /* ── 3. Générer le lien d'accès ──────────────────────────── */
@@ -190,7 +195,11 @@ export async function activateOrCreateUser(opts: {
 /* ─────────────────────────────────────────────────────────────
    Désactiver un abonnement PayPal
 ───────────────────────────────────────────────────────────── */
-export async function deactivateUserByPayPalSubId(paypalSubId: string) {
+export async function deactivateUserByPayPalSubId(
+  paypalSubId: string,
+  eventTime?: string | null,
+  eventType?: string,
+) {
   const user = await findUserByPayPalSubId(paypalSubId);
 
   if (!user) {
@@ -205,6 +214,8 @@ export async function deactivateUserByPayPalSubId(paypalSubId: string) {
     provider:       "paypal",
     subscriptionId: paypalSubId,
     userData:       user.user_metadata,
+    eventTime:      eventTime ?? undefined,
+    eventType,
   });
 
   if (user.email) {
@@ -218,7 +229,11 @@ export async function deactivateUserByPayPalSubId(paypalSubId: string) {
 /* ─────────────────────────────────────────────────────────────
    Confirmer l'abonnement actif (renouvellement PayPal)
 ───────────────────────────────────────────────────────────── */
-export async function confirmActiveByPayPalSubId(paypalSubId: string) {
+export async function confirmActiveByPayPalSubId(
+  paypalSubId: string,
+  eventTime?: string | null,
+  eventType?: string,
+) {
   const user = await findUserByPayPalSubId(paypalSubId);
   if (!user?.email) {
     console.warn("[SubHelpers] ⚠️ confirm: user not found for PayPal sub:", paypalSubId);
@@ -231,7 +246,131 @@ export async function confirmActiveByPayPalSubId(paypalSubId: string) {
     provider:       "paypal",
     subscriptionId: paypalSubId,
     userData:       user.user_metadata,
+    eventTime:      eventTime ?? undefined,
+    eventType,
   });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ENREGISTREMENT IDEMPOTENT — recordPaymentTransaction
+   ═══════════════════════════════════════════════════════════════
+   Source de vérité financière unique pour tous les paiements.
+   Idempotent via UNIQUE(provider_transaction_id).
+   Ne doit PAS être appelé pour les remboursements (transaction_type="refund") —
+   utiliser la route /api/admin/revenue/transactions pour ceux-là.
+══════════════════════════════════════════════════════════════= */
+export async function recordPaymentTransaction(opts: {
+  userId:                  string;
+  providerTransactionId:   string;        // PI Stripe, capture ID PayPal, invoice ID…
+  providerSubscriptionId?: string | null;
+  provider:                "stripe" | "paypal" | "virement" | "admin";
+  transactionType:         "subscription" | "one_time" | "refund" | "adjustment";
+  amountOriginal:          number;
+  currencyOriginal:        string;        // ISO 4217
+  status:                  "succeeded" | "failed" | "pending" | "refunded";
+  planName?:               string | null;
+  billingInterval?:        "monthly" | "annual" | "one_time" | "custom" | null;
+  discountPercent?:        number | null;
+  periodStart?:            string | null;
+  periodEnd?:              string | null;
+  description?:            string | null;
+  countryCode?:            string | null;
+  stripeRate?:             number;        // taux depuis balance_transaction
+  paypalRate?:             number;        // taux depuis PayPal conversion_info
+  rateDate?:               string;        // date du taux si fourni par le provider
+  rawMetadata?:            Record<string, unknown>;
+}): Promise<{ inserted: boolean; txId: string | null }> {
+  const supabase = getSupabaseAdmin();
+
+  // Conversion devise
+  const conv = convertToEur(opts.amountOriginal, opts.currencyOriginal, {
+    stripeRate: opts.stripeRate,
+    paypalRate: opts.paypalRate,
+    rateDate:   opts.rateDate,
+  });
+
+  const row: Record<string, unknown> = {
+    user_id:                   opts.userId,
+    provider:                  opts.provider,
+    provider_transaction_id:   opts.providerTransactionId,
+    provider_subscription_id:  opts.providerSubscriptionId ?? null,
+    amount_original:           opts.amountOriginal,
+    currency_original:         opts.currencyOriginal.toUpperCase(),
+    amount_eur:                conv.amountEur,
+    exchange_rate:             conv.exchangeRate,
+    // S3V2 columns (added via migration 000006)
+    rate_source:               conv.rateSource,
+    rate_date:                 conv.rateDate,
+    decimal_places:            conv.decimalPlaces,
+    transaction_type:          opts.transactionType,
+    plan_name:                 opts.planName ?? null,
+    billing_interval:          opts.billingInterval ?? "monthly",
+    discount_percent:          opts.discountPercent ?? 0,
+    status:                    opts.status,
+    country_code:              opts.countryCode ?? null,
+    period_start:              opts.periodStart ?? null,
+    period_end:                opts.periodEnd ?? null,
+    description:               opts.description ?? null,
+    raw_metadata:              opts.rawMetadata ?? {},
+    updated_at:                new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from("payment_transactions")
+    .upsert(row, { onConflict: "provider_transaction_id", ignoreDuplicates: false })
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    // 23505 = already exists (idempotent OK)
+    if (error.code === "23505") return { inserted: false, txId: null };
+    console.error("[SubHelpers] ❌ recordPaymentTransaction error:", error.message);
+    return { inserted: false, txId: null };
+  }
+
+  // Met à jour mrr_eur sur user_subscriptions si abonnement actif mensuel
+  if (
+    opts.transactionType === "subscription" &&
+    opts.status === "succeeded" &&
+    conv.amountEur > 0 &&
+    (opts.billingInterval === "monthly" || opts.billingInterval == null)
+  ) {
+    await supabase
+      .from("user_subscriptions")
+      .update({
+        mrr_eur:        conv.amountEur,
+        mrr_data_state: "synced",
+        currency:       opts.currencyOriginal.toUpperCase(),
+        amount_original: opts.amountOriginal,
+        billing_interval: opts.billingInterval ?? "monthly",
+        updated_at:     new Date().toISOString(),
+      })
+      .eq("user_id", opts.userId);
+  } else if (
+    opts.transactionType === "subscription" &&
+    opts.status === "succeeded" &&
+    conv.amountEur > 0 &&
+    opts.billingInterval === "annual"
+  ) {
+    // Annuel → MRR = montant / 12
+    await supabase
+      .from("user_subscriptions")
+      .update({
+        mrr_eur:          round12(conv.amountEur / 12),
+        mrr_data_state:   "synced",
+        currency:         opts.currencyOriginal.toUpperCase(),
+        amount_original:  opts.amountOriginal,
+        billing_interval: "annual",
+        updated_at:       new Date().toISOString(),
+      })
+      .eq("user_id", opts.userId);
+  }
+
+  return { inserted: true, txId: data?.id ?? null };
+}
+
+function round12(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -253,10 +392,35 @@ export async function syncSubscriptionAccess(opts: {
   stripeCustomerId?: string;
   periodEnd?:        string;
   userData?:         Record<string, unknown>;
+  eventTime?:        string;
+  eventType?:        string;
 }) {
-  const { email, userId, active, provider, subscriptionId, stripeCustomerId, periodEnd, userData } = opts;
+  const { email, userId, active, provider, subscriptionId, stripeCustomerId, periodEnd, userData, eventTime, eventType } = opts;
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
+
+  /* ── 0. Protection désordre d'événements ──────────────────── */
+  // Pour les désactivations uniquement : ignorer si l'événement est plus ancien
+  // que le dernier événement enregistré (livraison hors-ordre ou tardive).
+  // Les activations sont toujours appliquées (idempotent, sans risque).
+  if (!active && eventTime) {
+    const { data: sub } = await supabase
+      .from("user_subscriptions")
+      .select("last_event_time, last_event_type")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (sub?.last_event_time) {
+      const lastMs = new Date(sub.last_event_time).getTime();
+      const thisMs = new Date(eventTime).getTime();
+      if (thisMs < lastMs) {
+        console.warn(
+          `[SubHelpers] ⚠️ Événement obsolète ignoré: ${eventType ?? "?"} @ ${eventTime} < last_event_time ${sub.last_event_time} (${sub.last_event_type ?? "?"})`
+        );
+        return;
+      }
+    }
+  }
 
   /* ── 1. user_subscriptions (source sécurisée, service_role only) */
   const subPatch: Record<string, unknown> = {
@@ -272,6 +436,11 @@ export async function syncSubscriptionAccess(opts: {
   }
   if (stripeCustomerId) subPatch.stripe_customer_id = stripeCustomerId;
   if (periodEnd)        subPatch.current_period_end  = periodEnd;
+  // Enregistrer l'horodatage et le type de l'événement source (détection désordre futur)
+  if (eventTime) {
+    subPatch.last_event_time = eventTime;
+    subPatch.last_event_type = eventType ?? null;
+  }
   await supabase.from("user_subscriptions").upsert(subPatch, { onConflict: "user_id" });
 
   /* ── 1b. Sync plan de l'organisation du propriétaire ────────── */
