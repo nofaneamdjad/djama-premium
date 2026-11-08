@@ -18,7 +18,7 @@
  *   - Ne jamais exposer les clés API dans les réponses
  */
 
-import { createHash }              from "crypto";
+import { createHash, randomUUID }  from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin }       from "@/lib/supabase-server";
 import {
@@ -33,15 +33,30 @@ import {
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
 
-function buildIdempotencyKey(
-  source_id: string,
-  amount: number,
-  admin_id: string,
-): string {
-  return createHash("sha256")
-    .update(`${source_id}|${amount}|${admin_id}`)
-    .digest("hex");
+/**
+ * Clé d'idempotence S6 V2 — par demande, pas par {source, montant, admin}.
+ *
+ * Ancienne logique : SHA256(source_id|amount|admin_id)
+ *   → deux remboursements partiels distincts du même montant par le même admin
+ *     produisent la même clé → le deuxième est rejeté à tort.
+ *
+ * Nouvelle logique :
+ *   - Le client fournit un `request_key` stable par soumission de formulaire
+ *     (UUID généré côté client à l'ouverture du formulaire).
+ *   - Le serveur hash ce request_key → clé DB unique et opaque.
+ *   - Si le client ne fournit pas de request_key (ancien client) → UUID aléatoire
+ *     (aucune protection double-clic, mais aucun blocage de remboursement légitime).
+ */
+function buildIdempotencyKey(request_key?: string): string {
+  if (request_key?.trim()) {
+    return createHash("sha256")
+      .update(`djama_refund_v2|${request_key.trim()}`)
+      .digest("hex");
+  }
+  return randomUUID();
 }
+
+import { sendRefundNotificationEmail } from "@/lib/email";
 
 /* ── GET — liste des demandes de remboursement ────────────────────── */
 
@@ -75,7 +90,7 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
-  const VALID_STATUTS = ["pending","approved","processing","succeeded","failed","rejected","cancelled"];
+  const VALID_STATUTS = ["pending","approved","processing","uncertain","succeeded","failed","rejected","cancelled"];
   if (statut && VALID_STATUTS.includes(statut)) {
     q = q.eq("status", statut);
   }
@@ -122,9 +137,10 @@ export async function POST(req: NextRequest) {
     amount?:         number;
     reason?:         string;
     provider:        string;
+    request_key?:    string;   // UUID stable par soumission (double-clic protection)
   };
 
-  const { transaction_id, invoice_id, reason, provider } = body;
+  const { transaction_id, invoice_id, reason, provider, request_key } = body;
 
   if (!transaction_id && !invoice_id) {
     return NextResponse.json({ error: "transaction_id ou invoice_id requis" }, { status: 400 });
@@ -183,9 +199,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
   }
 
-  // Clé d'idempotence
-  const source_id      = transaction_id ?? invoice_id!;
-  const idempotencyKey = buildIdempotencyKey(source_id, amount_requested, admin!.id);
+  // Clé d'idempotence S6 V2 — par demande (request_key fourni par le client)
+  const idempotencyKey = buildIdempotencyKey(request_key);
 
   // Double-protection : vérifier si une demande identique existe déjà
   const { data: existing } = await sb
@@ -325,8 +340,8 @@ export async function PATCH(req: NextRequest) {
 
   // ── Approbation + traitement provider ────────────────────────────────
 
-  // Marquer processing (bail anti-doublon)
-  const { error: updateErr } = await sb
+  // Marquer processing (bail anti-doublon — condition atomique sur status=pending)
+  const { data: updatedRows, error: updateErr } = await sb
     .from("admin_refund_requests")
     .update({
       status:               "processing",
@@ -334,10 +349,39 @@ export async function PATCH(req: NextRequest) {
       approved_at:          new Date().toISOString(),
     })
     .eq("id", refund_id)
-    .eq("status", "pending");   // condition atomique
+    .eq("status", "pending")   // condition atomique
+    .select("id");
 
-  if (updateErr) {
+  if (updateErr || !updatedRows?.length) {
     return NextResponse.json({ error: "Conflit concurrent — réessayez" }, { status: 409 });
+  }
+
+  // Re-vérification du solde remboursable APRÈS avoir acquis l'état processing
+  // (reservation model : get_already_refunded compte maintenant cette demande)
+  if (refundReq.transaction_id) {
+    const { data: balanceCheck } = await sb
+      .rpc("get_already_refunded", { p_transaction_id: refundReq.transaction_id as string });
+
+    const { data: txForBalance } = await sb
+      .from("payment_transactions")
+      .select("amount_original")
+      .eq("id", refundReq.transaction_id as string)
+      .single();
+
+    if (txForBalance) {
+      const reserved      = Number(balanceCheck) || 0;
+      const amountOrig    = Number(txForBalance.amount_original) || 0;
+      const stillAvail    = amountOrig - reserved + Number(refundReq.amount_requested); // ajouter ce qui vient d'être reservé
+      const otherReserved = reserved - Number(refundReq.amount_requested);
+      if (otherReserved > amountOrig - Number(refundReq.amount_requested)) {
+        // Les autres demandes en cours ont épuisé le solde pendant notre traitement
+        await sb.from("admin_refund_requests")
+          .update({ status: "failed", provider_error: "solde_insuffisant_concurrent" })
+          .eq("id", refund_id);
+        return NextResponse.json({ error: "Solde insuffisant — un autre remboursement concurrent a épuisé le solde" }, { status: 409 });
+      }
+      void stillAvail; // utilisé pour la vérification ci-dessus
+    }
   }
 
   // Récupérer les données de transaction si disponible
@@ -365,52 +409,85 @@ export async function PATCH(req: NextRequest) {
   const idemKey    = `s6_${refundReq.idempotency_key as string}`;
 
   let result;
+  let providerCallSent = false; // true après envoi de la requête provider (avant réponse)
 
-  if (provider === "stripe") {
-    result = await processStripeRefund({
-      charge_id:         chargeId ?? undefined,
-      payment_intent_id: paymentIntentId ?? undefined,
-      amount_cents:      Math.round(amountReq * 100),
-      currency,
-      idempotency_key:   idemKey,
-      reason:            "requested_by_customer",
-      metadata: {
-        refund_request_id: refund_id,
-        admin_id:          admin!.id,
-      },
-    });
+  try {
+    if (provider === "stripe") {
+      providerCallSent = true;
+      result = await processStripeRefund({
+        charge_id:         chargeId ?? undefined,
+        payment_intent_id: paymentIntentId ?? undefined,
+        amount_cents:      Math.round(amountReq * 100),
+        currency,
+        idempotency_key:   idemKey,
+        reason:            "requested_by_customer",
+        metadata: {
+          refund_request_id: refund_id,
+          admin_id:          admin!.id,
+        },
+      });
 
-  } else if (provider === "paypal") {
-    if (!paypalCaptureId) {
-      await sb
-        .from("admin_refund_requests")
-        .update({ status: "failed", provider_error: "paypal_capture_id manquant" })
-        .eq("id", refund_id);
+    } else if (provider === "paypal") {
+      if (!paypalCaptureId) {
+        await sb
+          .from("admin_refund_requests")
+          .update({ status: "failed", provider_error: "paypal_capture_id manquant" })
+          .eq("id", refund_id);
 
-      return NextResponse.json({ error: "Référence PayPal (capture_id) manquante" }, { status: 400 });
+        return NextResponse.json({ error: "Référence PayPal (capture_id) manquante" }, { status: 400 });
+      }
+
+      providerCallSent = true;
+      result = await processPayPalRefund({
+        capture_id:      paypalCaptureId,
+        amount:          amountReq,
+        currency,
+        idempotency_key: idemKey,
+        note_to_payer:   "Remboursement DJAMA",
+        invoice_id:      refundReq.invoice_id as string | undefined,
+      });
+
+    } else {
+      // Manual — mettre à jour le statut sans appel provider
+      result = {
+        ok:                 true,
+        provider_refund_id: `manual_${Date.now()}`,
+        amount_refunded:    amountReq,
+        currency,
+        status:             "succeeded" as const,
+        error:              null,
+        raw:                { manual: true },
+        sandbox:            false,
+      };
     }
+  } catch (err) {
+    // Panne réseau APRÈS envoi de la requête → état incertain
+    // On ne sait pas si le provider a traité le remboursement.
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const finalSt = providerCallSent ? "uncertain" : "failed";
 
-    result = await processPayPalRefund({
-      capture_id:      paypalCaptureId,
-      amount:          amountReq,
-      currency,
-      idempotency_key: idemKey,
-      note_to_payer:   "Remboursement DJAMA",
-      invoice_id:      refundReq.invoice_id as string | undefined,
+    await sb.from("admin_refund_requests").update({
+      status:        finalSt,
+      provider_error: errMsg,
+      processed_at:  new Date().toISOString(),
+    }).eq("id", refund_id);
+
+    await logAdminAction({
+      admin:      admin!,
+      action:     providerCallSent ? "REFUND_UNCERTAIN" : "REFUND_FAILED",
+      resource:   "admin_refund_requests",
+      resourceId: refund_id,
+      details:    { provider, error: errMsg, provider_call_sent: providerCallSent },
+      severity:   "critical",
     });
 
-  } else {
-    // Manual — mettre à jour le statut sans appel provider
-    result = {
-      ok:                 true,
-      provider_refund_id: `manual_${Date.now()}`,
-      amount_refunded:    amountReq,
-      currency,
-      status:             "succeeded" as const,
-      error:              null,
-      raw:                { manual: true },
-      sandbox:            false,
-    };
+    return NextResponse.json({
+      error:    providerCallSent
+        ? "Réponse provider inconnue — statut mis à 'uncertain'. Vérifiez le dashboard provider."
+        : errMsg,
+      status:   finalSt,
+      uncertain: providerCallSent,
+    }, { status: 502 });
   }
 
   // Mise à jour selon résultat
@@ -470,6 +547,40 @@ export async function PATCH(req: NextRequest) {
     },
     severity: result.ok ? "warning" : "critical",
   });
+
+  // Notification client — uniquement si remboursement confirmé par le provider
+  // et notification pas encore envoyée (anti-doublon via notification_sent_at)
+  if (result.ok && finalStatus === "succeeded" && refundReq.transaction_id) {
+    const { data: txForNotif } = await sb
+      .from("payment_transactions")
+      .select("user_id")
+      .eq("id", refundReq.transaction_id as string)
+      .single();
+
+    if (txForNotif?.user_id) {
+      const { data: authUser } = await sb.auth.admin.getUserById(txForNotif.user_id as string);
+      const clientEmail = authUser?.user?.email ?? null;
+      const clientName  = (authUser?.user?.user_metadata?.full_name as string | null) ?? null;
+
+      if (clientEmail) {
+        const notifResult = await sendRefundNotificationEmail({
+          toEmail:          clientEmail,
+          clientName,
+          amountRefunded:   result.amount_refunded,
+          currency,
+          providerRefundId: result.provider_refund_id ?? null,
+          invoiceRef:       refundReq.invoice_id as string | null,
+          sandbox:          result.sandbox,
+        });
+
+        if (notifResult.sent) {
+          await sb.from("admin_refund_requests")
+            .update({ notification_sent_at: new Date().toISOString() })
+            .eq("id", refund_id);
+        }
+      }
+    }
+  }
 
   if (!result.ok) {
     return NextResponse.json({

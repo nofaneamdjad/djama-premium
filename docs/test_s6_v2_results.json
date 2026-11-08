@@ -1,0 +1,189 @@
+{
+  "timestamp": "2026-11-08T21:23:04.291Z",
+  "sprint": "S6_V2",
+  "score": "100%",
+  "pass": 34,
+  "fail": 0,
+  "blocked": 0,
+  "total": 34,
+  "failures": [],
+  "details": [
+    {
+      "id": "F01",
+      "result": "PASS",
+      "msg": "Remboursement total créé (pending) — id: 4daa3289-9fe0-457c-ac33-42670b69fe90"
+    },
+    {
+      "id": "F02",
+      "result": "PASS",
+      "msg": "Remboursement partiel 30/50 EUR créé — id: c9d5a892-72e3-48f7-942a-4bec72243b0e"
+    },
+    {
+      "id": "F03",
+      "result": "PASS",
+      "msg": "Deuxième remboursement partiel 20/50 EUR créé — cumul 50/50"
+    },
+    {
+      "id": "C01",
+      "result": "PASS",
+      "msg": "Double-clic : 1 création + 1 idempotent (200,201) — ✓"
+    },
+    {
+      "id": "C02",
+      "result": "PASS",
+      "msg": "Deux admins distincts créent chacun une demande différente — cumul 120/200 EUR ✓"
+    },
+    {
+      "id": "M01",
+      "result": "PASS",
+      "msg": "Montant dépassé → 400 avec max_refundable=60"
+    },
+    {
+      "id": "M02",
+      "result": "PASS",
+      "msg": "Transaction inexistante → 404 ✓"
+    },
+    {
+      "id": "M03",
+      "result": "PASS",
+      "msg": "Transaction déjà remboursée → 400 ✓"
+    },
+    {
+      "id": "A01",
+      "result": "PASS",
+      "msg": "GET sans cookie → 401 ✓"
+    },
+    {
+      "id": "A02",
+      "result": "PASS",
+      "msg": "POST sans cookie → 401 ✓"
+    },
+    {
+      "id": "A03",
+      "result": "PASS",
+      "msg": "PATCH sans reauth → 403 reauthRequired ✓"
+    },
+    {
+      "id": "A04",
+      "result": "PASS",
+      "msg": "Token reauth invalide → 403 ✓"
+    },
+    {
+      "id": "A05",
+      "result": "PASS",
+      "msg": "Provider invalide → 400 ✓"
+    },
+    {
+      "id": "R01",
+      "result": "PASS",
+      "msg": "get_already_refunded = 50 EUR (réservé par pending) ✓"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "msg": "Dépassement avec réservation → 400 ✓ (pending 50 + tentative 40 > 80)"
+    },
+    {
+      "id": "SB01",
+      "result": "PASS",
+      "msg": "refund-providers.ts : sandbox distinct du statut production ✓"
+    },
+    {
+      "id": "SB02",
+      "result": "PASS",
+      "msg": "Statut \"uncertain\" accepté par la contrainte CHECK ✓"
+    },
+    {
+      "id": "SB03",
+      "result": "PASS",
+      "msg": "Colonne notification_sent_at présente ✓"
+    },
+    {
+      "id": "W01",
+      "result": "PASS",
+      "msg": "Handler \"charge.refunded\" présent dans webhook Stripe ✓"
+    },
+    {
+      "id": "W02",
+      "result": "PASS",
+      "msg": "Handler \"charge.refund.updated\" présent dans webhook Stripe ✓"
+    },
+    {
+      "id": "W03",
+      "result": "PASS",
+      "msg": "Handler \"PAYMENT.CAPTURE.REFUNDED\" présent dans webhook PayPal ✓"
+    },
+    {
+      "id": "W04",
+      "result": "PASS",
+      "msg": "Anti-doublon notification_sent_at vérifié dans webhook Stripe ✓"
+    },
+    {
+      "id": "W05",
+      "result": "PASS",
+      "msg": "Index webhook provider_refund_id créé ✓"
+    },
+    {
+      "id": "W06",
+      "result": "PASS",
+      "msg": "Simulation webhook : processing → succeeded (5 EUR) ✓"
+    },
+    {
+      "id": "N01",
+      "result": "PASS",
+      "msg": "sendRefundNotificationEmail exportée depuis email.ts ✓"
+    },
+    {
+      "id": "N02",
+      "result": "PASS",
+      "msg": "Guard sandbox dans sendRefundNotificationEmail ✓"
+    },
+    {
+      "id": "N03",
+      "result": "PASS",
+      "msg": "notification_sent_at mis à jour dans la route PATCH ✓"
+    },
+    {
+      "id": "N04",
+      "result": "PASS",
+      "msg": "Audit log REFUND_SUCCEEDED et REFUND_FAILED ✓"
+    },
+    {
+      "id": "N05",
+      "result": "PASS",
+      "msg": "Audit log REFUND_UNCERTAIN pour pannes réseau ✓"
+    },
+    {
+      "id": "D01",
+      "result": "PASS",
+      "msg": "get_already_refunded V2 : somme amount_requested pour pending/processing ✓"
+    },
+    {
+      "id": "D02",
+      "result": "PASS",
+      "msg": "Index idx_refund_req_tx_active présent ✓"
+    },
+    {
+      "id": "D03",
+      "result": "PASS",
+      "msg": "Re-vérification solde après acquisition processing ✓"
+    },
+    {
+      "id": "D04",
+      "result": "PASS",
+      "msg": "Idempotence par request_key (V2) ✓"
+    },
+    {
+      "id": "D05",
+      "result": "PASS",
+      "msg": "buildIdempotencyKey ne contient plus admin_id dans la clé ✓"
+    }
+  ],
+  "corrections": [
+    "Idempotence par request_key (non plus SHA256(source|amount|admin))",
+    "Modèle de réservation : get_already_refunded somme amount_requested",
+    "Statut uncertain pour pannes réseau post-envoi provider",
+    "Webhooks charge.refunded / charge.refund.updated / PAYMENT.CAPTURE.REFUNDED",
+    "Notifications client avec anti-doublon notification_sent_at"
+  ]
+}

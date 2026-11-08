@@ -259,6 +259,99 @@ export async function dispatchPayPalEvent(event: PayPalWebhookEvent): Promise<vo
       break;
     }
 
+    /* ── Remboursement capture confirmé ────────────────────────── */
+    case "PAYMENT.CAPTURE.REFUNDED": {
+      // resource.id = identifiant du remboursement PayPal (RF-xxx)
+      const refundId     = resource.id as string;
+      const refundStatus = (resource as unknown as { status?: string }).status ?? "COMPLETED";
+      const captureId    = (resource as unknown as {
+        links?: { rel: string; href: string }[];
+        supplementary_data?: { related_ids?: { capture_id?: string } };
+      })?.supplementary_data?.related_ids?.capture_id ?? null;
+
+      // Chercher la demande admin par provider_refund_id = refundId
+      const { data: refundReqByRefund } = await supabase
+        .from("admin_refund_requests")
+        .select("id, status, transaction_id, invoice_id, currency, notification_sent_at, amount_requested")
+        .eq("provider_refund_id", refundId)
+        .maybeSingle();
+
+      // Fallback : chercher par capture_id dans payment_transactions
+      let refundReqFound = refundReqByRefund;
+      if (!refundReqFound && captureId) {
+        const { data: txByCap } = await supabase
+          .from("payment_transactions")
+          .select("id")
+          .eq("paypal_capture_id", captureId)
+          .maybeSingle();
+
+        if (txByCap) {
+          const { data: reqByTx } = await supabase
+            .from("admin_refund_requests")
+            .select("id, status, transaction_id, invoice_id, currency, notification_sent_at, amount_requested")
+            .eq("transaction_id", txByCap.id as string)
+            .in("status", ["processing", "uncertain", "approved"])
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          refundReqFound = reqByTx;
+        }
+      }
+
+      if (!refundReqFound) {
+        log.info(`PAYMENT.CAPTURE.REFUNDED: ${refundId} sans demande admin — ignoré`);
+        break;
+      }
+
+      // Idempotence : déjà terminal ?
+      const curStatus = refundReqFound.status as string;
+      if (["succeeded", "failed", "rejected", "cancelled"].includes(curStatus)) {
+        log.info(`PAYMENT.CAPTURE.REFUNDED: ${refundId} déjà ${curStatus} — ignoré`);
+        break;
+      }
+
+      const webhookFinalStatus = refundStatus === "COMPLETED" ? "succeeded" : "failed";
+      const amountRefunded = Number(refundReqFound.amount_requested) || 0;
+
+      await supabase.from("admin_refund_requests").update({
+        status:          webhookFinalStatus,
+        amount_refunded: webhookFinalStatus === "succeeded" ? amountRefunded : 0,
+        provider_refund_id: refundId,
+        processed_at:    new Date().toISOString(),
+      }).eq("id", refundReqFound.id as string);
+
+      // Notification client si succès et pas encore envoyée
+      if (webhookFinalStatus === "succeeded" && !refundReqFound.notification_sent_at) {
+        const txId = refundReqFound.transaction_id as string | null;
+        if (txId) {
+          const { data: txForNotif } = await supabase.from("payment_transactions").select("user_id").eq("id", txId).single();
+          if (txForNotif?.user_id) {
+            const { data: authUser } = await supabase.auth.admin.getUserById(txForNotif.user_id as string);
+            const clientEmail = authUser?.user?.email ?? null;
+            if (clientEmail) {
+              const notif = await (await import("@/lib/email")).sendRefundNotificationEmail({
+                toEmail:          clientEmail,
+                clientName:       (authUser?.user?.user_metadata?.full_name as string | null) ?? null,
+                amountRefunded:   amountRefunded,
+                currency:         (refundReqFound.currency as string) ?? "EUR",
+                providerRefundId: refundId,
+                invoiceRef:       refundReqFound.invoice_id as string | null,
+                sandbox:          false,
+              });
+              if (notif.sent) {
+                await supabase.from("admin_refund_requests")
+                  .update({ notification_sent_at: new Date().toISOString() })
+                  .eq("id", refundReqFound.id as string);
+              }
+            }
+          }
+        }
+      }
+
+      log.info(`PAYMENT.CAPTURE.REFUNDED: ${refundId} → ${webhookFinalStatus}`);
+      break;
+    }
+
     default:
       log.info(`Event PayPal non géré: ${event_type}`);
   }

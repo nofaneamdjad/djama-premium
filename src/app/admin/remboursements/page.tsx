@@ -10,7 +10,7 @@ import { V } from "@/components/hq";
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
-type RefundStatus = "pending" | "approved" | "processing" | "succeeded" | "failed" | "rejected" | "cancelled";
+type RefundStatus = "pending" | "approved" | "processing" | "succeeded" | "failed" | "rejected" | "cancelled" | "uncertain";
 
 interface RefundRequest {
   id:                    string;
@@ -51,13 +51,14 @@ function fmt(iso: string | null) {
 }
 
 const STATUS_CFG: Record<RefundStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
-  pending:    { label: "En attente",  color: "#fbbf24", bg: "rgba(251,191,36,0.10)",  icon: Clock       },
-  approved:   { label: "Approuvée",   color: "#60a5fa", bg: "rgba(96,165,250,0.10)",  icon: CheckCircle2},
-  processing: { label: "Traitement",  color: "#a78bfa", bg: "rgba(167,139,250,0.10)", icon: Loader2     },
-  succeeded:  { label: "Réussi",      color: "#4ade80", bg: "rgba(74,222,128,0.10)",  icon: CheckCircle2},
-  failed:     { label: "Échoué",      color: "#f87171", bg: "rgba(248,113,113,0.10)", icon: XCircle     },
-  rejected:   { label: "Rejeté",      color: "#94a3b8", bg: "rgba(148,163,184,0.10)", icon: Ban         },
-  cancelled:  { label: "Annulé",      color: "#6b7280", bg: "rgba(107,114,128,0.10)", icon: XCircle     },
+  pending:    { label: "En attente",  color: "#fbbf24", bg: "rgba(251,191,36,0.10)",  icon: Clock         },
+  approved:   { label: "Approuvée",   color: "#60a5fa", bg: "rgba(96,165,250,0.10)",  icon: CheckCircle2  },
+  processing: { label: "Traitement",  color: "#a78bfa", bg: "rgba(167,139,250,0.10)", icon: Loader2       },
+  succeeded:  { label: "Réussi",      color: "#4ade80", bg: "rgba(74,222,128,0.10)",  icon: CheckCircle2  },
+  failed:     { label: "Échoué",      color: "#f87171", bg: "rgba(248,113,113,0.10)", icon: XCircle       },
+  rejected:   { label: "Rejeté",      color: "#94a3b8", bg: "rgba(148,163,184,0.10)", icon: Ban           },
+  cancelled:  { label: "Annulé",      color: "#6b7280", bg: "rgba(107,114,128,0.10)", icon: XCircle       },
+  uncertain:  { label: "Incertain",   color: "#fb923c", bg: "rgba(251,146,60,0.10)",  icon: AlertTriangle },
 };
 
 /* ── Composant principal ──────────────────────────────────────────────────── */
@@ -75,6 +76,7 @@ export default function RemboursementsPage() {
 
   // ── Formulaire création ───────────────────────────────────────────────────
   const [showCreate,  setShowCreate]  = useState(false);
+  const [requestKey,  setRequestKey]  = useState(() => crypto.randomUUID());
   const [newTxId,     setNewTxId]     = useState("");
   const [newAmount,   setNewAmount]   = useState("");
   const [newProvider, setNewProvider] = useState<"stripe" | "paypal" | "manual">("stripe");
@@ -137,8 +139,8 @@ export default function RemboursementsPage() {
   async function handleCreate() {
     setCreating(true); setErr(null);
     try {
-      const body: Record<string, unknown> = { provider: newProvider };
-      if (newTxId.trim())  body.transaction_id = newTxId.trim();
+      const body: Record<string, unknown> = { provider: newProvider, request_key: requestKey };
+      if (newTxId.trim())   body.transaction_id = newTxId.trim();
       if (newAmount.trim()) body.amount = parseFloat(newAmount);
       if (newReason.trim()) body.reason = newReason.trim();
 
@@ -151,6 +153,7 @@ export default function RemboursementsPage() {
       if (!r.ok) throw new Error(d.error ?? "Erreur");
       setSuccess(d.idempotent ? "Demande identique déjà enregistrée." : `Demande créée (ID: ${d.refund_id?.slice(0, 8)}…)`);
       setShowCreate(false); setNewTxId(""); setNewAmount(""); setNewReason("");
+      setRequestKey(crypto.randomUUID()); // nouveau UUID pour la prochaine soumission
       await load(true);
     } catch (e) { setErr(e instanceof Error ? e.message : "Erreur"); }
     finally { setCreating(false); }
@@ -205,6 +208,7 @@ export default function RemboursementsPage() {
     { id: "pending",    label: "En attente"  },
     { id: "succeeded",  label: "Réussis"     },
     { id: "failed",     label: "Échoués"     },
+    { id: "uncertain",  label: "Incertains"  },
     { id: "rejected",   label: "Rejetés"     },
   ];
 
@@ -302,7 +306,7 @@ export default function RemboursementsPage() {
             <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
             Actualiser
           </button>
-          <button onClick={() => setShowCreate(s => !s)}
+          <button onClick={() => { if (!showCreate) setRequestKey(crypto.randomUUID()); setShowCreate(s => !s); }}
             className="flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-[0.78rem] font-bold"
             style={{ background: V.gold, color: "#000" }}>
             <Plus size={13} />
@@ -518,6 +522,12 @@ export default function RemboursementsPage() {
                               ✓ {r.provider_refund_id?.slice(0, 12)}
                             </span>
                           )}
+                          {r.status === "uncertain" && (
+                            <span className="inline-flex items-center gap-1 text-[0.72rem]" style={{ color: "#fb923c" }}>
+                              <AlertTriangle size={11} />
+                              Vérifier auprès du provider
+                            </span>
+                          )}
                           {r.status === "failed" && r.provider_error && (
                             <span className="text-[0.72rem]" style={{ color: "#f87171" }}>
                               {r.provider_error.slice(0, 32)}
@@ -547,6 +557,44 @@ export default function RemboursementsPage() {
                                 </div>
                               )}
                             </div>
+                            {/* Historique remboursements partiels pour cette transaction */}
+                            {r.transaction_id && (() => {
+                              const siblings = rows.filter(s => s.transaction_id === r.transaction_id && s.id !== r.id);
+                              if (siblings.length === 0) return null;
+                              const cumul = rows
+                                .filter(s => s.transaction_id === r.transaction_id && (s.status === "succeeded" || s.status === "uncertain"))
+                                .reduce((acc, s) => acc + s.amount_refunded, 0);
+                              return (
+                                <div className="mt-4 rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
+                                  <p className="mb-2 text-[0.69rem] font-bold uppercase tracking-wide" style={{ color: V.textFaint }}>
+                                    Remboursements partiels sur cette transaction ({rows.filter(s => s.transaction_id === r.transaction_id).length} demandes)
+                                  </p>
+                                  <div className="space-y-1.5">
+                                    {rows.filter(s => s.transaction_id === r.transaction_id).map(s => {
+                                      const sc = STATUS_CFG[s.status];
+                                      return (
+                                        <div key={s.id} className="flex items-center gap-3 text-[0.75rem]">
+                                          <span className="font-mono" style={{ color: V.textFaint }}>{s.id.slice(0, 8)}…</span>
+                                          <span className="font-semibold" style={{ color: "#f87171" }}>
+                                            -{s.amount_requested.toLocaleString("fr-FR")} {s.currency}
+                                          </span>
+                                          <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0 text-[0.68rem] font-bold"
+                                            style={{ background: sc.bg, color: sc.color }}>
+                                            {sc.label}
+                                          </span>
+                                          <span style={{ color: V.textFaint }}>{fmt(s.created_at)}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  {cumul > 0 && (
+                                    <p className="mt-2 text-[0.75rem] font-bold" style={{ color: "#f87171" }}>
+                                      Cumul remboursé (succeeded+uncertain) : {cumul.toLocaleString("fr-FR")} {r.currency}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
                         </tr>
                       )}

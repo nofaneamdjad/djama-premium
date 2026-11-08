@@ -772,6 +772,145 @@ export async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
       break;
     }
 
+    /* ── Remboursement confirmé (charge.refunded) ─────────────── */
+    case "charge.refunded": {
+      const charge = event.data.object as Stripe.Charge;
+      const sb     = getSupabaseAdmin();
+
+      // Traiter chaque remboursement de la charge
+      for (const refund of charge.refunds?.data ?? []) {
+        // Chercher la demande admin correspondante par provider_refund_id
+        const { data: refundReq } = await sb
+          .from("admin_refund_requests")
+          .select("id, status, transaction_id, invoice_id, currency, notification_sent_at")
+          .eq("provider_refund_id", refund.id)
+          .maybeSingle();
+
+        if (!refundReq) {
+          log.info(`charge.refunded: remboursement ${refund.id} sans demande admin — ignoré`);
+          continue;
+        }
+
+        // Idempotence : déjà traité ?
+        if ((refundReq.status as string) === "succeeded") {
+          log.info(`charge.refunded: ${refund.id} déjà succeeded — ignoré`);
+          continue;
+        }
+
+        const webhookStatus = refund.status === "succeeded" ? "succeeded" : "failed";
+        const amountRefunded = refund.amount / 100;
+
+        await sb.from("admin_refund_requests").update({
+          status:         webhookStatus,
+          amount_refunded: amountRefunded,
+          processed_at:   new Date().toISOString(),
+        }).eq("id", refundReq.id as string);
+
+        // Notification client si succès et pas encore envoyée
+        if (webhookStatus === "succeeded" && !refundReq.notification_sent_at) {
+          const txId = refundReq.transaction_id as string | null;
+          if (txId) {
+            const { data: tx } = await sb.from("payment_transactions").select("user_id").eq("id", txId).single();
+            if (tx?.user_id) {
+              const { data: authUser } = await sb.auth.admin.getUserById(tx.user_id as string);
+              const clientEmail = authUser?.user?.email ?? null;
+              if (clientEmail) {
+                const notif = await (await import("@/lib/email")).sendRefundNotificationEmail({
+                  toEmail:          clientEmail,
+                  clientName:       (authUser?.user?.user_metadata?.full_name as string | null) ?? null,
+                  amountRefunded:   amountRefunded,
+                  currency:         (refundReq.currency as string) ?? "EUR",
+                  providerRefundId: refund.id,
+                  invoiceRef:       refundReq.invoice_id as string | null,
+                  sandbox:          false,
+                });
+                if (notif.sent) {
+                  await sb.from("admin_refund_requests")
+                    .update({ notification_sent_at: new Date().toISOString() })
+                    .eq("id", refundReq.id as string);
+                }
+              }
+            }
+          }
+        }
+
+        log.info(`charge.refunded: ${refund.id} → ${webhookStatus}`);
+      }
+      break;
+    }
+
+    /* ── Mise à jour statut remboursement (charge.refund.updated) ── */
+    case "charge.refund.updated": {
+      const refund = event.data.object as Stripe.Refund;
+      const sb     = getSupabaseAdmin();
+
+      // Chercher par provider_refund_id
+      const { data: refundReq } = await sb
+        .from("admin_refund_requests")
+        .select("id, status, transaction_id, invoice_id, currency, notification_sent_at")
+        .eq("provider_refund_id", refund.id)
+        .maybeSingle();
+
+      if (!refundReq) {
+        log.info(`charge.refund.updated: ${refund.id} sans demande admin — ignoré`);
+        break;
+      }
+
+      // Idempotence : déjà dans un état terminal ?
+      const currentStatus = refundReq.status as string;
+      if (["succeeded", "failed", "rejected", "cancelled"].includes(currentStatus)) {
+        log.info(`charge.refund.updated: ${refund.id} déjà ${currentStatus} — ignoré`);
+        break;
+      }
+
+      const webhookStatus = refund.status === "succeeded" ? "succeeded"
+        : refund.status === "failed"    ? "failed"
+        : null; // pending/requires_action → ne pas changer l'état
+
+      if (!webhookStatus) {
+        log.info(`charge.refund.updated: ${refund.id} statut intermédiaire ${refund.status} — ignoré`);
+        break;
+      }
+
+      const amountRefunded = refund.amount / 100;
+      await sb.from("admin_refund_requests").update({
+        status:          webhookStatus,
+        amount_refunded: webhookStatus === "succeeded" ? amountRefunded : 0,
+        processed_at:    new Date().toISOString(),
+      }).eq("id", refundReq.id as string);
+
+      // Notification client si succès et pas encore envoyée
+      if (webhookStatus === "succeeded" && !refundReq.notification_sent_at) {
+        const txId = refundReq.transaction_id as string | null;
+        if (txId) {
+          const { data: tx } = await sb.from("payment_transactions").select("user_id").eq("id", txId).single();
+          if (tx?.user_id) {
+            const { data: authUser } = await sb.auth.admin.getUserById(tx.user_id as string);
+            const clientEmail = authUser?.user?.email ?? null;
+            if (clientEmail) {
+              const notif = await (await import("@/lib/email")).sendRefundNotificationEmail({
+                toEmail:          clientEmail,
+                clientName:       (authUser?.user?.user_metadata?.full_name as string | null) ?? null,
+                amountRefunded:   amountRefunded,
+                currency:         (refundReq.currency as string) ?? "EUR",
+                providerRefundId: refund.id,
+                invoiceRef:       refundReq.invoice_id as string | null,
+                sandbox:          false,
+              });
+              if (notif.sent) {
+                await sb.from("admin_refund_requests")
+                  .update({ notification_sent_at: new Date().toISOString() })
+                  .eq("id", refundReq.id as string);
+              }
+            }
+          }
+        }
+      }
+
+      log.info(`charge.refund.updated: ${refund.id} → ${webhookStatus}`);
+      break;
+    }
+
     default:
       log.info(`Event non géré : ${event.type} — ignoré`);
   }
