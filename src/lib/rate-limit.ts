@@ -22,6 +22,12 @@ interface RateLimitEntry {
 const store = new Map<string, RateLimitEntry>();
 let lastCleanup = Date.now();
 
+/** Vide tous les compteurs in-memory — UNIQUEMENT pour tests en développement. */
+export function resetRateLimitStore(): void {
+  store.clear();
+  lastCleanup = Date.now();
+}
+
 function maybeCleanup() {
   const now = Date.now();
   if (now - lastCleanup < 60_000) return;

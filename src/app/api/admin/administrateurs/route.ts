@@ -177,6 +177,12 @@ export async function PATCH(req: NextRequest) {
       { error: "Impossible de modifier son propre rôle." }, { status: 403 },
     );
   }
+  // Empêcher l'escalade de privilèges via override de permissions sur son propre compte
+  if (target.id === admin!.id && body.permissions !== undefined) {
+    return NextResponse.json(
+      { error: "Impossible de modifier ses propres permissions." }, { status: 403 },
+    );
+  }
   if (body.role && !VALID_ROLES.includes(body.role as AdminRole)) {
     return NextResponse.json(
       { error: `Rôle invalide.` }, { status: 400 },

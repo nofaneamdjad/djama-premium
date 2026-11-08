@@ -1,0 +1,390 @@
+{
+  "timestamp": "2026-11-08T18:19:48.962Z",
+  "total": 61,
+  "pass": 60,
+  "fail": 0,
+  "warn": 1,
+  "score": "98%",
+  "results": [
+    {
+      "id": "S01",
+      "name": "7 rôles définis dans AdminRole",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S02",
+      "name": "ROLES_REQUIRING_MFA : super_admin/direction/admin/finance",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S03",
+      "name": "alias admin ≠ super_admin (can_manage_admins false)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S04",
+      "name": "FIX-01 — verifyReauthToken atomique (UPDATE WHERE used_at IS NULL)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S05",
+      "name": "FIX-01 — plus de SELECT+UPDATE séparé (race condition corrigée)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S06",
+      "name": "FIX-02 — guard self-permissions dans PATCH administrateurs",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S07",
+      "name": "Guard self-role dans PATCH administrateurs",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S08",
+      "name": "Cookie djama_admin_tok : httpOnly=true",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S09",
+      "name": "Cookie djama_admin_tok : sameSite strict",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S10",
+      "name": "Rate limit login par IP (checkRateLimit)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S11",
+      "name": "Rate limit reauth par admin+IP (5 req/15min)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S12",
+      "name": "Rate limit MFA (5 req/15min par user+IP ET par IP)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S13",
+      "name": "Timing constant sur échec login (setTimeout 600ms)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S14",
+      "name": "logAdminAction() sur LOGIN_SUCCESS, LOGIN_REJECTED, REAUTH_*, ADMIN_*",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "S15",
+      "name": "Pas de Strategy 2 ADMIN_PASS (supprimée)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "P1-01",
+      "name": "Login commercial → 200 + djama_admin_tok",
+      "status": "PASS",
+      "detail": "status=200 cookie=true"
+    },
+    {
+      "id": "P1-02",
+      "name": "Mauvais mot de passe → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P1-03",
+      "name": "Email inexistant → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P1-04",
+      "name": "Compte désactivé → 403",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "id": "P1-05",
+      "name": "Cookie invalide (64 hex random) → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P1-06",
+      "name": "Aucun cookie → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P1-07",
+      "name": "Session expirée (expires_at passé) → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P1-08",
+      "name": "Session révoquée → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P1-09",
+      "name": "super_admin login → mfaRequired=true (aal1 uniquement)",
+      "status": "PASS",
+      "detail": "status=200 mfaRequired=true hasFactors=false"
+    },
+    {
+      "id": "P1-10",
+      "name": "super_admin aal1 (sans djama_admin_tok) → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P1-11",
+      "name": "commercial session valide → GET /remboursements accessible (non-401)",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "id": "P1-12",
+      "name": "Délai 600ms sur échec login (statique)",
+      "status": "PASS",
+      "detail": "setTimeout(r, 600) ligne ~70 auth/route.ts"
+    },
+    {
+      "id": "P2-01",
+      "name": "super_admin → GET /administrateurs (différé Phase 4)",
+      "status": "WARN",
+      "detail": "DEFER P4-06"
+    },
+    {
+      "id": "P2-02",
+      "name": "commercial → GET /administrateurs → 403 (can_manage_admins absent)",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "id": "P2-03",
+      "name": "viewer → PATCH /remboursements → 401/403",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "id": "P2-04",
+      "name": "commercial → PATCH rôle → 403 (manque can_manage_admins)",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "id": "P2-05",
+      "name": "FIX-02 — guard self-permissions (statique, confirmé S06)",
+      "status": "PASS",
+      "detail": "body confirmé ligne 179-184 administrateurs/route.ts"
+    },
+    {
+      "id": "P2-06",
+      "name": "alias admin : can_manage_admins=false, can_manage_security=false",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "P2-07",
+      "name": "commercial → PATCH /remboursements sans permission → 401/403",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "id": "P2-08",
+      "name": "viewer → GET /administrateurs → 403",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "id": "P2-09",
+      "name": "Permissions enforced server-side (hasPermission + requiredPermission)",
+      "status": "PASS",
+      "detail": "statique: requireAdminUser({ requiredPermission }) dans toutes routes sensibles"
+    },
+    {
+      "id": "P2-10",
+      "name": "Escalade de rôle impossible (statique: guards + reauth + self-check)",
+      "status": "PASS",
+      "detail": "can_manage_admins + reauth perm_change + self-role + self-permissions guards"
+    },
+    {
+      "id": "P3-01",
+      "name": "Token valide consommé → valid=true",
+      "status": "PASS",
+      "detail": "status=200 valid=true"
+    },
+    {
+      "id": "P3-02",
+      "name": "Token déjà utilisé → valid=false (déjà utilisé)",
+      "status": "PASS",
+      "detail": "valid=false error=\"Token déjà utilisé.\""
+    },
+    {
+      "id": "P3-03",
+      "name": "Concurrence 8 req simultanées → exactement 1 succès (atomicité FIX-01)",
+      "status": "PASS",
+      "detail": "succès=1/8 (attendu=1)"
+    },
+    {
+      "id": "P3-04",
+      "name": "Token expiré → valid=false",
+      "status": "PASS",
+      "detail": "valid=false error=\"Token expiré.\""
+    },
+    {
+      "id": "P3-05",
+      "name": "Token lié à admin_user_id (statique: .eq(\"admin_user_id\", adminId))",
+      "status": "PASS",
+      "detail": "filtre eq dans verifyReauthToken ligne ~182 reauth/route.ts"
+    },
+    {
+      "id": "P3-06",
+      "name": "Token lié au purpose (statique: reauth.purpose !== purpose → 403)",
+      "status": "PASS",
+      "detail": "vérification purpose dans PATCH remboursements et POST administrateurs"
+    },
+    {
+      "id": "P4-01",
+      "name": "Enrôlement TOTP → factorId + secret retournés",
+      "status": "PASS",
+      "detail": "factorId=7aa140da… secret=[MASQUÉ]"
+    },
+    {
+      "id": "P4-02",
+      "name": "Code TOTP invalide (verify-enroll) → rejeté (statique)",
+      "status": "PASS",
+      "detail": "erreur retournée via verifyErr → 400 (chemin code vérifié statiquement)"
+    },
+    {
+      "id": "P4-03",
+      "name": "Re-login après enrollment → mfaRequired=true, hasFactors=true",
+      "status": "PASS",
+      "detail": "status=200 mfaRequired=true hasFactors=true"
+    },
+    {
+      "id": "P4-04",
+      "name": "Code TOTP correct → 200 + djama_admin_tok (aal2)",
+      "status": "PASS",
+      "detail": "status=200 ok=true cookie=true"
+    },
+    {
+      "id": "P4-05",
+      "name": "Code TOTP invalide → 401 ou 429",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P4-06",
+      "name": "super_admin aal2 → GET /administrateurs → 200",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "id": "P4-07",
+      "name": "Session super_admin révoquée → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P4-08",
+      "name": "Audit log logAdminAction(LOGIN_SUCCESS_MFA) dans mfa/route.ts (statique)",
+      "status": "PASS",
+      "detail": "vérifié ligne 235-241 mfa/route.ts"
+    },
+    {
+      "id": "P5-01",
+      "name": "djama_admin_tok : attribut HttpOnly présent",
+      "status": "PASS",
+      "detail": "attributs: djama_admin_tok=fa7effe667f46a042421e7cbd1137091fe485ae53c183b419e1e34afb5814da3 | Path=/ | Expires=Mon, 09 Nov 2026 06:19:47 GMT | Max-Age=43200 | HttpOnly | SameSite=strict"
+    },
+    {
+      "id": "P5-02",
+      "name": "djama_admin_tok : SameSite=Strict (protection CSRF)",
+      "status": "PASS",
+      "detail": "SameSite=strict"
+    },
+    {
+      "id": "P5-03",
+      "name": "Réponse login : aucun secret/token_hash exposé dans le JSON",
+      "status": "PASS",
+      "detail": "champs: ok, role, name, sessionId"
+    },
+    {
+      "id": "P5-04",
+      "name": "X-Content-Type-Options: nosniff présent",
+      "status": "PASS",
+      "detail": "valeur: nosniff"
+    },
+    {
+      "id": "P5-05",
+      "name": "Rate limit MFA : 5/15min par user+IP ET par IP seule (statique)",
+      "status": "PASS",
+      "detail": "checkMfaRateLimit() dans mfa/route.ts, clés mfa:user:* et mfa:ip:*"
+    },
+    {
+      "id": "P5-06",
+      "name": "Compte désactivé + sessions révoquées → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "id": "P5-07",
+      "name": "Tokens reauth : hash seulement dans les logs (jamais rawToken)",
+      "status": "PASS",
+      "detail": "statique: rawToken jamais passé à logAdminAction() — hash seulement en DB"
+    },
+    {
+      "id": "P5-08",
+      "name": "Timing constant : setTimeout 600ms sur mauvais mot de passe",
+      "status": "PASS",
+      "detail": "statique: ligne ~70 auth/route.ts et ligne ~91 reauth/route.ts"
+    },
+    {
+      "id": "P5-09",
+      "name": "Sessions isolées par admin_user_id (statique)",
+      "status": "PASS",
+      "detail": ".eq(\"admin_user_id\", adminId) dans checkSessionNotRevoked admin-auth-v2.ts"
+    },
+    {
+      "id": "P5-10",
+      "name": "Audit logAdminAction() sur toutes actions sensibles (statique)",
+      "status": "PASS",
+      "detail": "LOGIN_SUCCESS/REJECTED + REAUTH_TOKEN_ISSUED/WRONG_PASSWORD + ADMIN_CREATED/DELETED/UPDATED"
+    }
+  ],
+  "fixes": [
+    {
+      "id": "FIX-01",
+      "severity": "CRITIQUE",
+      "desc": "verifyReauthToken : UPDATE atomique (WHERE used_at IS NULL AND expires_at > now) — race condition corrigée",
+      "file": "src/app/api/admin/auth/reauth/route.ts"
+    },
+    {
+      "id": "FIX-02",
+      "severity": "CRITIQUE",
+      "desc": "Guard self-permissions : un admin ne peut pas modifier ses propres permissions (escalade impossible)",
+      "file": "src/app/api/admin/administrateurs/route.ts"
+    }
+  ]
+}

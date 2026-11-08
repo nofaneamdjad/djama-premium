@@ -170,23 +170,36 @@ export async function verifyReauthToken(
     const sb        = createSupabaseAdmin();
     const now       = new Date().toISOString();
 
+    // UPDATE atomique : marque le token comme utilisé seulement s'il est encore valide.
+    // Un SELECT+UPDATE séparé permettrait à deux requêtes concurrentes de consommer
+    // le même token (race condition). Le UPDATE WHERE used_at IS NULL est atomique
+    // en PostgreSQL — une seule requête peut obtenir la ligne modifiée.
     const { data, error } = await sb
       .from("admin_reauth_tokens")
-      .select("id, purpose, expires_at, used_at")
+      .update({ used_at: now })
       .eq("token_hash",    tokenHash)
       .eq("admin_user_id", adminId)
+      .is("used_at",       null)
+      .gt("expires_at",    now)
+      .select("id, purpose, expires_at")
       .maybeSingle();
 
     if (error) return { valid: false, error: "Erreur de vérification." };
-    if (!data)             return { valid: false, error: "Token invalide." };
-    if (data.used_at)      return { valid: false, error: "Token déjà utilisé." };
-    if (data.expires_at < now) return { valid: false, error: "Token expiré." };
 
-    // Consommer le token (usage unique)
-    await sb
-      .from("admin_reauth_tokens")
-      .update({ used_at: now })
-      .eq("id", data.id);
+    if (!data) {
+      // Lecture secondaire pour distinguer token inconnu / déjà utilisé / expiré
+      const { data: check } = await sb
+        .from("admin_reauth_tokens")
+        .select("used_at, expires_at")
+        .eq("token_hash",    tokenHash)
+        .eq("admin_user_id", adminId)
+        .maybeSingle();
+
+      if (!check)                   return { valid: false, error: "Token invalide." };
+      if (check.used_at)            return { valid: false, error: "Token déjà utilisé." };
+      if (check.expires_at < now)   return { valid: false, error: "Token expiré." };
+      return { valid: false, error: "Token invalide." };
+    }
 
     return { valid: true, purpose: data.purpose, expires_at: data.expires_at };
   } catch {
