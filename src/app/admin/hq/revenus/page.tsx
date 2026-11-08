@@ -13,7 +13,18 @@ function monthLabel(key: string) {
   return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
 }
 
-type Kpi = { mrrMois: number; mrrPrev: number; arr: number; totalAnnee: number; echecsMois: number };
+type Kpi = {
+  mrr_eur: number; arr_eur: number; arpu_eur: number;
+  churn_rate: number; mrr_growth_pct: number;
+  active_count: number; churned_count: number;
+  new_mrr_eur: number; prev_mrr_eur: number;
+  // Compat legacy
+  mrrMois?: number; mrrPrev?: number; arr?: number; totalAnnee?: number; echecsMois?: number;
+};
+type MonthlyRow = {
+  month: string; revenue_eur: number | null; success_count: number | null;
+  failure_count: number | null; unique_payers: number | null;
+};
 type Invoice = {
   id: string; total: number; payment_status: string; created_at: string;
   client_id?: string; clients?: { name: string; email: string } | null;
@@ -27,28 +38,51 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
 };
 
 export default function RevenusPage() {
-  const [kpi, setKpi]       = useState<Kpi | null>(null);
-  const [months, setMonths] = useState<string[]>([]);
-  const [revenus, setRevenus] = useState<number[]>([]);
+  const [kpi, setKpi]           = useState<Kpi | null>(null);
+  const [months, setMonths]     = useState<string[]>([]);
+  const [revenus, setRevenus]   = useState<number[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading]   = useState(true);
   const [tick, setTick]         = useState(0);
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/admin/hq/revenue")
-      .then(r => r.json())
-      .then(d => {
-        setKpi(d.kpi);
-        setMonths(d.charts?.months ?? []);
-        setRevenus(d.charts?.revenus ?? []);
-        setInvoices(d.recentInvoices ?? []);
+    // Essayer le nouvel endpoint S3 (MRR réel), fallback sur l'ancien
+    Promise.all([
+      fetch("/api/admin/revenue/mrr").then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch("/api/admin/hq/revenue").then(r => r.ok ? r.json() : null).catch(() => null),
+    ])
+      .then(([mrrData, legacyData]) => {
+        if (mrrData?.kpi) {
+          setKpi(mrrData.kpi);
+          // Revenus mensuels depuis la vue admin_revenue_monthly
+          const mRows: MonthlyRow[] = mrrData.monthly ?? [];
+          setMonths(mRows.map((r: MonthlyRow) => r.month?.slice(0, 7) ?? ""));
+          setRevenus(mRows.map((r: MonthlyRow) => Number(r.revenue_eur) || 0));
+        } else if (legacyData?.kpi) {
+          // Compat legacy
+          const lkpi = legacyData.kpi;
+          setKpi({
+            mrr_eur:        lkpi.mrrMois ?? 0,
+            arr_eur:        lkpi.arr ?? 0,
+            arpu_eur:       0,
+            churn_rate:     0,
+            mrr_growth_pct: lkpi.mrrPrev > 0 ? ((lkpi.mrrMois - lkpi.mrrPrev) / lkpi.mrrPrev * 100) : 0,
+            active_count:   0,
+            churned_count:  lkpi.echecsMois ?? 0,
+            new_mrr_eur:    lkpi.mrrMois ?? 0,
+            prev_mrr_eur:   lkpi.mrrPrev ?? 0,
+          });
+          setMonths(legacyData.charts?.months ?? []);
+          setRevenus(legacyData.charts?.revenus ?? []);
+        }
+        setInvoices(legacyData?.recentInvoices ?? []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [tick]);
 
-  const mrrDiff = kpi ? kpi.mrrMois - kpi.mrrPrev : 0;
+  const mrrDiff = kpi ? (kpi.new_mrr_eur ?? kpi.mrr_eur) - (kpi.prev_mrr_eur ?? 0) : 0;
   const maxRev  = Math.max(...revenus, 1);
 
   return (
@@ -77,29 +111,29 @@ export default function RevenusPage() {
         {[
           {
             label: "MRR ce mois",
-            value: loading ? "—" : fmt(kpi?.mrrMois ?? 0),
-            sub: kpi?.mrrPrev ? `Prec. ${fmt(kpi.mrrPrev)}` : "",
+            value: loading ? "—" : fmt(kpi?.mrr_eur ?? kpi?.mrrMois ?? 0),
+            sub: kpi?.prev_mrr_eur ? `Préc. ${fmt(kpi.prev_mrr_eur)}` : "",
             color: "#22c55e",
             trend: kpi ? mrrDiff : null,
           },
           {
             label: "ARR estimé",
-            value: loading ? "—" : fmt(kpi?.arr ?? 0),
+            value: loading ? "—" : fmt(kpi?.arr_eur ?? kpi?.arr ?? 0),
             sub: "MRR × 12",
             color: "#3b82f6",
             trend: null,
           },
           {
-            label: "Total 12 mois",
-            value: loading ? "—" : fmt(kpi?.totalAnnee ?? 0),
-            sub: "",
+            label: "ARPU",
+            value: loading ? "—" : (kpi?.arpu_eur ? fmt(kpi.arpu_eur) : "—"),
+            sub: `${kpi?.active_count ?? 0} abonnés actifs`,
             color: V.gold,
             trend: null,
           },
           {
-            label: "Échecs ce mois",
-            value: loading ? "—" : String(kpi?.echecsMois ?? 0),
-            sub: "Paiements échoués",
+            label: "Churn ce mois",
+            value: loading ? "—" : (kpi?.churn_rate != null ? `${kpi.churn_rate}%` : "—"),
+            sub: `${kpi?.churned_count ?? 0} résiliation${(kpi?.churned_count ?? 0) !== 1 ? "s" : ""}`,
             color: "#ef4444",
             trend: null,
           },

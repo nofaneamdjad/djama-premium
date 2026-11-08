@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdminUser } from "@/lib/admin-auth-v2";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const { deny } = await requireAdminUser(req, {
+    logAction:   "VIEW_HQ_REVENUE",
+    logResource: "revenue",
+  });
   if (deny) return deny;
 
   const sb = createSupabaseAdmin();
