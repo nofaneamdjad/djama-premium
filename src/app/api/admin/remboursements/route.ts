@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin }       from "@/lib/supabase-server";
 import { requireAdminUser, hasPermission, logAdminAction } from "@/lib/admin-auth-v2";
+import { checkFinancialRateLimit }   from "@/lib/financial-rate-limit";
 
 export async function GET(req: NextRequest) {
   const { deny } = await requireAdminUser(req, {
@@ -51,6 +52,9 @@ export async function PATCH(req: NextRequest) {
     logResource: "remboursements",
   });
   if (deny) return deny;
+
+  const rl = await checkFinancialRateLimit("admin_refund_process", admin!.id);
+  if (!rl.allowed) return rl.response429!;
 
   if (!hasPermission(admin!, "manage_subscriptions")) {
     return NextResponse.json({ error: "Permission insuffisante" }, { status: 403 });

@@ -15,6 +15,7 @@ import { createClient }              from "@supabase/supabase-js";
 import { createServerClient }        from "@supabase/ssr";
 import { cookies }                   from "next/headers";
 import { syncPaymentToTreasury, unsyncPaymentFromTreasury } from "@/lib/treasury-sync";
+import { checkFinancialRateLimit }   from "@/lib/financial-rate-limit";
 
 export const runtime = "nodejs";
 
@@ -105,6 +106,9 @@ async function recalcAndUpdate(documentId: string): Promise<{
 export async function POST(req: NextRequest) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  const rl = await checkFinancialRateLimit("user_payment_create", user.id);
+  if (!rl.allowed) return rl.response429!;
 
   const body = await req.json().catch(() => ({})) as {
     document_id?: string;
@@ -197,6 +201,9 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  const rl = await checkFinancialRateLimit("user_payment_delete", user.id);
+  if (!rl.allowed) return rl.response429!;
 
   const { payment_id } = await req.json().catch(() => ({})) as { payment_id?: string };
   if (!payment_id) {

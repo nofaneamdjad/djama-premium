@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdminUser, logAdminAction } from "@/lib/admin-auth-v2";
+import { checkFinancialRateLimit }          from "@/lib/financial-rate-limit";
 import { createLogger } from "@/lib/logger";
 import { dispatchStripeEvent } from "@/app/api/webhook/stripe/route";
 
@@ -49,6 +50,9 @@ export async function POST(req: NextRequest) {
     logResource:        "stripe_webhook_events",
   });
   if (deny) return deny;
+
+  const rl = await checkFinancialRateLimit("admin_webhook_retry", admin!.id);
+  if (!rl.allowed) return rl.response429!;
 
   // ── Validation du body ──────────────────────────────────────────
   let event_id: string;

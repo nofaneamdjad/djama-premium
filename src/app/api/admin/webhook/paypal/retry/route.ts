@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse }     from "next/server";
 import { createClient }                   from "@supabase/supabase-js";
 import { requireAdminUser, logAdminAction } from "@/lib/admin-auth-v2";
+import { checkFinancialRateLimit }          from "@/lib/financial-rate-limit";
 import { createLogger }                   from "@/lib/logger";
 import { dispatchPayPalEvent }             from "@/app/api/webhook/paypal/route";
 
@@ -48,6 +49,9 @@ export async function POST(req: NextRequest) {
     logResource:        "paypal_webhook_events",
   });
   if (deny) return deny;
+
+  const rl = await checkFinancialRateLimit("admin_webhook_retry", admin!.id);
+  if (!rl.allowed) return rl.response429!;
 
   // ── 2. Validation du body ────────────────────────────────────
   let transmission_id: string;
@@ -149,25 +153,30 @@ export async function POST(req: NextRequest) {
     }, { status: 422 });
   }
 
-  // ── 5. Déduplication event_id ────────────────────────────────
-  // Si le même événement métier a déjà été traité par une autre livraison,
-  // marquer comme processed sans redéclencher les effets financiers.
+  // ── 5. Acquisition atomique du claim event_id ───────────────
+  // Même mécanique que la route POST : un seul dispatch possible par event_id.
+  // Un admin retry est légitime sur les claims 'failed' et les bails expirés.
   if (storedRow.event_id) {
-    const { data: alreadyProcessed } = await supabaseAdmin
-      .from("paypal_webhook_events")
-      .select("id, status")
-      .eq("event_id", storedRow.event_id)
-      .eq("status", "processed")
-      .neq("id", transmission_id)
-      .maybeSingle();
+    const { data: claimed, error: claimErr } = await supabaseAdmin.rpc(
+      "claim_paypal_event_dispatch",
+      { p_event_id: storedRow.event_id, p_transmission_id: transmission_id }
+    );
 
-    if (alreadyProcessed) {
+    if (claimErr) {
+      log.error("claim_paypal_event_dispatch error (retry)", claimErr.message);
+      return NextResponse.json(
+        { error: "Erreur DB lors de l'acquisition du claim event_id", detail: claimErr.message },
+        { status: 503 }
+      );
+    }
+
+    if (!claimed) {
       await supabaseAdmin
         .from("paypal_webhook_events")
         .update({ status: "processed", processed_at: new Date().toISOString() })
         .eq("id", transmission_id);
 
-      log.info(`event_id ${storedRow.event_id} déjà traité par ${alreadyProcessed.id} — livraison ${transmission_id} marquée processed`);
+      log.info(`event_id ${storedRow.event_id} déjà dispatché (atomic) — livraison ${transmission_id} marquée processed`);
 
       await logAdminAction({
         admin,
@@ -175,15 +184,14 @@ export async function POST(req: NextRequest) {
         resource:   "paypal_webhook_events",
         resourceId: transmission_id,
         ip, userAgent,
-        details:    { event_type: lease.event_type, attempt_count: lease.attempt_count, reason: "duplicate_delivery_dedup" },
+        details:    { event_type: lease.event_type, attempt_count: lease.attempt_count, reason: "atomic_event_dedup" },
         severity:   "info",
       });
 
       return NextResponse.json({
-        ok:            true,
-        skipped:       true,
-        reason:        "event_already_processed_by_other_delivery",
-        processed_by:  alreadyProcessed.id,
+        ok:             true,
+        skipped:        true,
+        reason:         "atomic_event_dedup",
         transmission_id,
       });
     }
@@ -215,6 +223,15 @@ export async function POST(req: NextRequest) {
         error:        null,
       })
       .eq("id", transmission_id);
+
+    // Libérer le claim event_id (succès)
+    if (storedRow.event_id) {
+      await supabaseAdmin.rpc("release_paypal_event_dispatch", {
+        p_event_id: storedRow.event_id,
+        p_success:  true,
+        p_error:    null,
+      });
+    }
 
     log.info(`PayPal tx ${transmission_id} retraité avec succès (tentative #${lease.attempt_count})`);
 
@@ -248,6 +265,15 @@ export async function POST(req: NextRequest) {
         error:     msg.slice(0, 500),
       })
       .eq("id", transmission_id);
+
+    // Libérer le claim event_id (échec — reclaimable)
+    if (storedRow.event_id) {
+      await supabaseAdmin.rpc("release_paypal_event_dispatch", {
+        p_event_id: storedRow.event_id,
+        p_success:  false,
+        p_error:    msg.slice(0, 500),
+      });
+    }
 
     await logAdminAction({
       admin,

@@ -68,24 +68,17 @@ async function checkRateLimitUpstash(
   const now       = Date.now();
   const resetAt   = now + windowMs;
 
-  // Sliding window using Upstash REST API (INCR + EXPIRE)
-  const incrRes = await fetch(`${url}/incr/${encodeURIComponent(key)}`, {
+  // Atomic INCR+EXPIRE via Lua EVAL — avoids race where INCR succeeds but EXPIRE never runs
+  const luaScript = `local c=redis.call('INCR',KEYS[1]) if c==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]) end return c`;
+  const evalRes = await fetch(`${url}/eval`, {
     method:  "POST",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body:    JSON.stringify([luaScript, 1, key, String(windowSec)]),
     cache:   "no-store",
   });
 
-  const incrData = await incrRes.json() as { result?: number };
-  const count    = incrData.result ?? 1;
-
-  if (count === 1) {
-    // First request in this window — set TTL
-    await fetch(`${url}/expire/${encodeURIComponent(key)}/${windowSec}`, {
-      method:  "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      cache:   "no-store",
-    });
-  }
+  const evalData = await evalRes.json() as { result?: number };
+  const count    = evalData.result ?? 1;
 
   if (count > maxReq) {
     return { allowed: false, remaining: 0, resetAt };

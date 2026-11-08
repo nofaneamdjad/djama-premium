@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin }       from "@/lib/supabase-server";
 import { requireAdminUser }          from "@/lib/admin-auth-v2";
+import { checkFinancialRateLimit }   from "@/lib/financial-rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -120,12 +121,15 @@ export async function GET(req: NextRequest) {
  * Corps JSON : PaymentTransactionInput
  */
 export async function POST(req: NextRequest) {
-  const { deny } = await requireAdminUser(req, {
+  const { admin, deny } = await requireAdminUser(req, {
     requiredPermission: "can_manage_payments",
     logAction:   "CREATE_TRANSACTION",
     logResource: "payment_transactions",
   });
   if (deny) return deny;
+
+  const rl = await checkFinancialRateLimit("admin_tx_create", admin!.id);
+  if (!rl.allowed) return rl.response429!;
 
   let body: Record<string, unknown>;
   try {

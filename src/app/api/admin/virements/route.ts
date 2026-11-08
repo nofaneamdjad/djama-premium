@@ -10,7 +10,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }   from "@supabase/supabase-js";
 import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
-import { requireAdmin }   from "@/lib/admin-auth";
+import { requireAdminUser } from "@/lib/admin-auth-v2";
+import { checkFinancialRateLimit } from "@/lib/financial-rate-limit";
 import { createLogger }   from "@/lib/logger";
 import { logAdminAction, getRequestMeta } from "@/lib/admin-log";
 
@@ -34,7 +35,7 @@ function nextPaymentDate(jourPrelevement: number): string {
 
 /* ─── GET — liste ─────────────────────────────────────── */
 export async function GET(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const { deny } = await requireAdminUser(req);
   if (deny) return deny;
 
   const sb = getAdmin();
@@ -49,8 +50,15 @@ export async function GET(req: NextRequest) {
 
 /* ─── POST — création ─────────────────────────────────── */
 export async function POST(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const { admin, deny } = await requireAdminUser(req, {
+    requiredPermission: "can_manage_payments",
+    logAction:          "VIREMENT_CREATE",
+    logResource:        "virements",
+  });
   if (deny) return deny;
+
+  const rl = await checkFinancialRateLimit("admin_virement_mutate", admin!.id);
+  if (!rl.allowed) return rl.response429!;
   const body = await req.json() as {
     email: string; nom: string; montant?: number;
     jour_prelevement?: number; notes?: string;
@@ -76,8 +84,15 @@ export async function POST(req: NextRequest) {
 
 /* ─── PATCH — paiement reçu / bloquer ────────────────── */
 export async function PATCH(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const { admin, deny } = await requireAdminUser(req, {
+    requiredPermission: "can_manage_payments",
+    logAction:          "VIREMENT_UPDATE",
+    logResource:        "virements",
+  });
   if (deny) return deny;
+
+  const rl = await checkFinancialRateLimit("admin_virement_mutate", admin!.id);
+  if (!rl.allowed) return rl.response429!;
   const body = await req.json() as {
     id: string; action: "paye" | "bloquer"; email: string; nom?: string;
   };
@@ -180,8 +195,15 @@ export async function PATCH(req: NextRequest) {
 
 /* ─── DELETE ──────────────────────────────────────────── */
 export async function DELETE(req: NextRequest) {
-  const deny = await requireAdmin(req);
+  const { admin, deny } = await requireAdminUser(req, {
+    requiredPermission: "can_manage_payments",
+    logAction:          "VIREMENT_DELETE",
+    logResource:        "virements",
+  });
   if (deny) return deny;
+
+  const rl = await checkFinancialRateLimit("admin_virement_mutate", admin!.id);
+  if (!rl.allowed) return rl.response429!;
   const { id } = await req.json() as { id: string };
   if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
 

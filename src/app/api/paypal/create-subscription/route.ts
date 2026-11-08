@@ -1,6 +1,7 @@
 import { NextResponse }              from "next/server";
 import { createPayPalSubscription }  from "@/lib/paypal";
 import { checkRateLimitAsync as checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { createServerClient }        from "@supabase/ssr";
 import { createLogger }              from "@/lib/logger";
 
 const log = createLogger("paypal/create-subscription");
@@ -40,6 +41,41 @@ export async function POST(req: Request) {
     userEmail = body.userEmail ?? undefined;
   } catch {
     /* body absent → pas grave */
+  }
+
+  // Si un userId est fourni dans le body, vérifier qu'il correspond au user connecté
+  // (protège contre l'usurpation de custom_id PayPal)
+  if (userId) {
+    const authHeader = req.headers.get("authorization");
+    const bearerToken = authHeader?.replace("Bearer ", "")?.trim();
+    const cookieHeader = req.headers.get("cookie") ?? "";
+    if (bearerToken || cookieHeader) {
+      try {
+        const supabaseAuth = createServerClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            cookies: {
+              getAll: () => cookieHeader.split(";").map(c => {
+                const [name, ...rest] = c.trim().split("=");
+                return { name: name.trim(), value: rest.join("=") };
+              }),
+              setAll: () => {},
+            },
+          },
+        );
+        const { data: { user } } = await supabaseAuth.auth.getUser();
+        if (user && user.id !== userId) {
+          log.warn(`userId mismatch — body:${userId} vs session:${user.id}`);
+          return NextResponse.json(
+            { error: "Identifiant utilisateur incohérent." },
+            { status: 403 },
+          );
+        }
+      } catch {
+        // Auth non disponible — continuer (flow public possible)
+      }
+    }
   }
 
   try {

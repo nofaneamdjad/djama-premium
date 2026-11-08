@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { checkFinancialRateLimit } from "@/lib/financial-rate-limit";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,9 @@ export async function GET(req: NextRequest) {
   const admin = getAdmin();
   const { data: { user }, error: authErr } = await admin.auth.getUser(token);
   if (authErr || !user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+
+  const rl = await checkFinancialRateLimit("user_billing_read", user.id);
+  if (!rl.allowed) return rl.response429!;
 
   /* Récupère stripe_customer_id depuis clients (par email = conflict key du webhook) */
   const { data: clientRow } = await admin
