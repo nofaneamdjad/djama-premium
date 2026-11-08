@@ -685,9 +685,11 @@ async function phase5(env, accts) {
     const r = await freshLogin();
     const sc = typeof r.headers.getSetCookie === 'function' ? r.headers.getSetCookie() : [r.headers.get('set-cookie') ?? ''];
     const c = sc.find(x => x.startsWith('djama_admin_tok='));
+    // Masque la valeur du cookie (hash SHA-256) dans le détail — jamais de secret dans les logs
+    const cMasked = c ? c.replace(/^(djama_admin_tok=)[0-9a-f]+/, '$1[MASQUE]') : null;
     t('P5-01','djama_admin_tok : attribut HttpOnly présent',
       c ? c.toLowerCase().includes('httponly') : null,
-      c ? `attributs: ${c.split(';').map(s=>s.trim()).join(' | ')}` : 'cookie absent');
+      cMasked ? `attributs: ${cMasked.split(';').map(s=>s.trim()).join(' | ')}` : 'cookie absent');
   }
 
   // P5-02 SameSite=Strict

@@ -316,7 +316,7 @@
       "id": "P5-01",
       "name": "djama_admin_tok : attribut HttpOnly présent",
       "status": "PASS",
-      "detail": "attributs: djama_admin_tok=fa7effe667f46a042421e7cbd1137091fe485ae53c183b419e1e34afb5814da3 | Path=/ | Expires=Mon, 09 Nov 2026 06:19:47 GMT | Max-Age=43200 | HttpOnly | SameSite=strict"
+      "detail": "attributs: djama_admin_tok=[MASQUE] | Path=/ | Expires=Mon, 09 Nov 2026 06:19:47 GMT | Max-Age=43200 | HttpOnly | SameSite=strict"
     },
     {
       "id": "P5-02",
