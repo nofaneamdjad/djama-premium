@@ -5,6 +5,15 @@
  * mais la réponse n'est pas revenue (timeout réseau, coupure, crash).
  * Ce module interroge le provider pour connaître le statut réel.
  *
+ * Stratégie RES-06 (C-01) :
+ *   Si provider_refund_id est NULL, l'absence d'ID ne signifie PAS que le
+ *   remboursement n'a pas été exécuté chez le provider. L'appel a peut-être
+ *   abouti mais la réponse n'est jamais arrivée.
+ *   → Réessai idempotent via l'idempotency_key stocké en base.
+ *   → Si le provider confirme : résoudre définitivement.
+ *   → Si le provider est injoignable : garder "uncertain" + alerter admin.
+ *   → Ne jamais passer automatiquement à "failed" sur cette seule base.
+ *
  * Contraintes :
  *   - Aucun appel réel en mode sandbox (DJAMA_REFUND_SANDBOX=true ou NODE_ENV=test)
  *   - Reprises idempotentes : ne modifie l'état que si le provider confirme
@@ -15,7 +24,8 @@
 
 import Stripe from "stripe";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { sendRefundNotificationEmail } from "@/lib/email";
+import { sendRefundNotificationEmail, sendAdminUncertainRefundAlert } from "@/lib/email";
+import { processStripeRefund, processPayPalRefund } from "@/lib/refund-providers";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("refund-reconciliation");
@@ -36,6 +46,12 @@ function getPayPalBase(): string {
     : "https://api-m.sandbox.paypal.com";
 }
 
+function getAdminEmail(): string | null {
+  return process.env.DJAMA_ADMIN_EMAIL?.trim()
+    || process.env.ADMIN_EMAIL?.trim()
+    || null;
+}
+
 /* ── Types ───────────────────────────────────────────────── */
 
 export type ReconStatus = "succeeded" | "failed" | "pending" | "unknown";
@@ -50,12 +66,11 @@ export interface ReconResult {
   error?:      string;
 }
 
-/* ── Consulter le statut Stripe d'un remboursement ───────── */
+/* ── Consulter le statut Stripe d'un remboursement (par ID) ─ */
 async function checkStripeRefundStatus(
   providerRefundId: string
 ): Promise<{ status: ReconStatus; raw: Record<string, unknown> }> {
   if (isSandbox()) {
-    // Simulation déterministe : les IDs sandbox se terminent par 0=succeeded, sinon pending
     const fakeStatus: ReconStatus = providerRefundId.endsWith("0") ? "succeeded" : "pending";
     return { status: fakeStatus, raw: { sandbox: true, fake_status: fakeStatus } };
   }
@@ -76,7 +91,7 @@ async function checkStripeRefundStatus(
   }
 }
 
-/* ── Consulter le statut PayPal d'un remboursement ──────── */
+/* ── Consulter le statut PayPal d'un remboursement (par ID) ─ */
 async function checkPayPalRefundStatus(
   providerRefundId: string
 ): Promise<{ status: ReconStatus; raw: Record<string, unknown> }> {
@@ -121,6 +136,42 @@ async function checkPayPalRefundStatus(
   }
 }
 
+/* ── Envoi d'alerte admin (anti-doublon via alert_admin_at) ─ */
+async function maybeSendAdminAlert(
+  sb:            ReturnType<typeof createSupabaseAdmin>,
+  refundId:      string,
+  alertAdminAt:  string | null | undefined,
+): Promise<void> {
+  // Anti-doublon : ne renvoyer l'alerte que si aucune n'a encore été envoyée
+  if (alertAdminAt) return;
+
+  const adminEmail = getAdminEmail();
+  if (!adminEmail) {
+    log.warn(`[reconcile] Alerte admin impossible pour refund ${refundId} : DJAMA_ADMIN_EMAIL non configuré`);
+    return;
+  }
+
+  try {
+    const sent = await sendAdminUncertainRefundAlert({
+      refundId,
+      adminEmail,
+      sandbox: isSandbox(),
+    });
+    if (sent) {
+      await sb
+        .from("admin_refund_requests")
+        .update({
+          alert_admin_at: new Date().toISOString(),
+          updated_at:     new Date().toISOString(),
+        })
+        .eq("id", refundId);
+      log.info(`[reconcile] Alerte admin envoyée pour refund ${refundId}`);
+    }
+  } catch (alertErr) {
+    log.warn(`[reconcile] Échec alerte admin pour refund ${refundId}: ${alertErr}`);
+  }
+}
+
 /* ── Guard : vérifier si un uncertain bloque la transaction ─ */
 export async function hasUncertainRefundForTransaction(
   transactionId: string | null
@@ -138,12 +189,15 @@ export async function hasUncertainRefundForTransaction(
 
 /* ── Réconciliation d'un seul remboursement uncertain ──────── */
 async function reconcileOne(row: {
-  id:                string;
-  provider:          string;
-  provider_refund_id: string | null;
-  amount_refunded:   number;
-  currency:          string;
-  transaction_id:    string | null;
+  id:                   string;
+  provider:             string;
+  provider_refund_id:   string | null;
+  amount_requested:     number;
+  amount_refunded:      number;
+  currency:             string;
+  transaction_id:       string | null;
+  idempotency_key?:     string | null;
+  alert_admin_at?:      string | null;
   notification_sent_at?: string | null;
 }): Promise<ReconResult> {
   const result: ReconResult = {
@@ -155,35 +209,171 @@ async function reconcileOne(row: {
     needs_human: false,
   };
 
+  const sb = createSupabaseAdmin();
+
   if (!row.provider_refund_id) {
-    // Aucun ID provider → le remboursement n'a jamais été émis côté provider
-    result.new_status  = "failed";
-    result.needs_human = true;
-    result.error       = "provider_refund_id absent — remboursement non émis";
-  } else {
-    let status: ReconStatus;
-    let raw: Record<string, unknown>;
+    // provider_refund_id absent : l'appel provider a peut-être abouti mais
+    // la réponse n'est jamais arrivée (panne réseau post-envoi).
+    // NE PAS conclure à "failed" automatiquement — tenter un réessai idempotent.
+
+    if (!row.idempotency_key) {
+      result.needs_human = true;
+      result.error = "provider_refund_id et idempotency_key absents — intervention humaine requise";
+      await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
+      return result;
+    }
+
+    // La clé d'idempotence provider = "s6_" + idempotency_key stocké en base
+    const idemKey = `s6_${row.idempotency_key}`;
+
+    // Charger les références provider depuis payment_transactions
+    type TxRefs = {
+      stripe_charge_id?: string | null;
+      stripe_payment_intent_id?: string | null;
+      paypal_capture_id?: string | null;
+    };
+    let txRefs: TxRefs = {};
+    if (row.transaction_id) {
+      const { data: tx } = await sb
+        .from("payment_transactions")
+        .select("stripe_charge_id, stripe_payment_intent_id, paypal_capture_id")
+        .eq("id", row.transaction_id)
+        .maybeSingle();
+      if (tx) txRefs = tx as TxRefs;
+    }
 
     if (row.provider === "stripe") {
-      ({ status, raw } = await checkStripeRefundStatus(row.provider_refund_id));
+      if (!txRefs.stripe_charge_id && !txRefs.stripe_payment_intent_id) {
+        result.needs_human = true;
+        result.error = "Références Stripe introuvables (charge_id / payment_intent_id) — intervention requise";
+        await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
+        return result;
+      }
+
+      const retryResult = await processStripeRefund({
+        charge_id:         txRefs.stripe_charge_id   ?? undefined,
+        payment_intent_id: txRefs.stripe_payment_intent_id ?? undefined,
+        amount_cents:      Math.round(Number(row.amount_requested) * 100),
+        currency:          row.currency,
+        idempotency_key:   idemKey,
+      });
+
+      if (retryResult.ok && retryResult.provider_refund_id) {
+        const confirmedStatus: ReconStatus =
+          retryResult.status === "succeeded" || retryResult.status === "sandbox"
+            ? "succeeded"
+            : retryResult.status === "pending"
+            ? "pending"
+            : "failed";
+
+        await sb
+          .from("admin_refund_requests")
+          .update({
+            provider_refund_id: retryResult.provider_refund_id,
+            status:             confirmedStatus,
+            amount_refunded:    retryResult.amount_refunded,
+            processed_at:       new Date().toISOString(),
+            updated_at:         new Date().toISOString(),
+          })
+          .eq("id", row.id)
+          .eq("status", "uncertain");
+
+        result.new_status = confirmedStatus;
+        result.updated    = true;
+        log.info(
+          `[reconcile] ${row.id} : uncertain → ${confirmedStatus} ` +
+          `(réessai idempotent Stripe, refund_id=${retryResult.provider_refund_id})`
+        );
+        return result;
+      }
+
+      // Provider injoignable ou erreur — garder uncertain, alerter admin
+      result.needs_human = true;
+      result.error = `Réessai idempotent Stripe échoué — ${retryResult.error ?? "provider injoignable"}`;
+      await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
+      return result;
+
     } else if (row.provider === "paypal") {
-      ({ status, raw } = await checkPayPalRefundStatus(row.provider_refund_id));
+      if (!txRefs.paypal_capture_id) {
+        result.needs_human = true;
+        result.error = "capture_id PayPal introuvable — intervention requise";
+        await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
+        return result;
+      }
+
+      const retryResult = await processPayPalRefund({
+        capture_id:      txRefs.paypal_capture_id,
+        amount:          Number(row.amount_requested),
+        currency:        row.currency,
+        idempotency_key: idemKey,
+      });
+
+      if (retryResult.ok && retryResult.provider_refund_id) {
+        const confirmedStatus: ReconStatus =
+          retryResult.status === "succeeded" || retryResult.status === "sandbox"
+            ? "succeeded"
+            : retryResult.status === "pending"
+            ? "pending"
+            : "failed";
+
+        await sb
+          .from("admin_refund_requests")
+          .update({
+            provider_refund_id: retryResult.provider_refund_id,
+            status:             confirmedStatus,
+            amount_refunded:    retryResult.amount_refunded,
+            processed_at:       new Date().toISOString(),
+            updated_at:         new Date().toISOString(),
+          })
+          .eq("id", row.id)
+          .eq("status", "uncertain");
+
+        result.new_status = confirmedStatus;
+        result.updated    = true;
+        log.info(
+          `[reconcile] ${row.id} : uncertain → ${confirmedStatus} ` +
+          `(réessai idempotent PayPal, refund_id=${retryResult.provider_refund_id})`
+        );
+        return result;
+      }
+
+      result.needs_human = true;
+      result.error = `Réessai idempotent PayPal échoué — ${retryResult.error ?? "provider injoignable"}`;
+      await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
+      return result;
+
     } else {
       result.needs_human = true;
-      result.error       = `Provider inconnu : ${row.provider}`;
+      result.error = `Provider inconnu : ${row.provider}`;
+      await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
       return result;
     }
-
-    if (status === "unknown") {
-      result.needs_human = true;
-      result.error       = `Provider injoignable — statut inconnu (raw: ${JSON.stringify(raw)})`;
-      return result;
-    }
-
-    result.new_status = status;
   }
 
-  const sb = createSupabaseAdmin();
+  // ── Cas nominal : provider_refund_id présent → lookup direct ──────────
+  let status: ReconStatus;
+  let raw: Record<string, unknown>;
+
+  if (row.provider === "stripe") {
+    ({ status, raw } = await checkStripeRefundStatus(row.provider_refund_id));
+  } else if (row.provider === "paypal") {
+    ({ status, raw } = await checkPayPalRefundStatus(row.provider_refund_id));
+  } else {
+    result.needs_human = true;
+    result.error       = `Provider inconnu : ${row.provider}`;
+    await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
+    return result;
+  }
+
+  if (status === "unknown") {
+    result.needs_human = true;
+    result.error       = `Provider injoignable — statut inconnu (raw: ${JSON.stringify(raw)})`;
+    await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
+    return result;
+  }
+
+  result.new_status = status;
+
   const isTerminal = result.new_status === "succeeded" || result.new_status === "failed";
 
   if (isTerminal) {
@@ -259,7 +449,10 @@ export async function reconcileAllUncertain(): Promise<{
   const sb = createSupabaseAdmin();
   const { data: rows, error } = await sb
     .from("admin_refund_requests")
-    .select("id, provider, provider_refund_id, amount_refunded, currency, transaction_id, notification_sent_at")
+    .select(
+      "id, provider, provider_refund_id, amount_requested, amount_refunded, " +
+      "currency, transaction_id, notification_sent_at, idempotency_key, alert_admin_at"
+    )
     .eq("status", "uncertain")
     .order("created_at", { ascending: true });
 
@@ -270,7 +463,7 @@ export async function reconcileAllUncertain(): Promise<{
 
   const results: ReconResult[] = [];
   for (const row of rows) {
-    const r = await reconcileOne(row as Parameters<typeof reconcileOne>[0]);
+    const r = await reconcileOne(row as unknown as Parameters<typeof reconcileOne>[0]);
     results.push(r);
   }
 
