@@ -30,6 +30,7 @@ import {
   processStripeRefund,
   processPayPalRefund,
 } from "@/lib/refund-providers";
+import { hasUncertainRefundForTransaction } from "@/lib/refund-reconciliation";
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
 
@@ -102,11 +103,20 @@ export async function GET(req: NextRequest) {
   const { data, error, count } = await q;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // S3-01 : stats calculées sur toutes les données autorisées, indépendamment de la pagination
+  let statsQuery = sb.from("admin_refund_requests").select("status, amount_refunded");
+  if (statut && ["pending","approved","processing","uncertain","succeeded","failed","rejected","cancelled"].includes(statut)) {
+    statsQuery = statsQuery.eq("status", statut);
+  }
+  if (provider === "stripe" || provider === "paypal" || provider === "manual") {
+    statsQuery = statsQuery.eq("provider", provider);
+  }
+  const { data: allRows } = await statsQuery;
   const stats = {
-    total_succeeded: (data ?? []).filter(r => r.status === "succeeded").length,
-    total_pending:   (data ?? []).filter(r => r.status === "pending").length,
-    total_failed:    (data ?? []).filter(r => r.status === "failed").length,
-    montant_rembourse: (data ?? [])
+    total_succeeded:   (allRows ?? []).filter(r => r.status === "succeeded").length,
+    total_pending:     (allRows ?? []).filter(r => r.status === "pending").length,
+    total_failed:      (allRows ?? []).filter(r => r.status === "failed").length,
+    montant_rembourse: (allRows ?? [])
       .filter(r => r.status === "succeeded")
       .reduce((s, r) => s + (Number(r.amount_refunded) || 0), 0),
   };
@@ -178,6 +188,15 @@ export async function POST(req: NextRequest) {
 
     if (maxRefundable <= 0) {
       return NextResponse.json({ error: "Transaction déjà entièrement remboursée" }, { status: 400 });
+    }
+
+    // Guard uncertain : aucun nouveau remboursement si un uncertain est déjà actif sur cette transaction
+    const hasUncertain = await hasUncertainRefundForTransaction(transaction_id);
+    if (hasUncertain) {
+      return NextResponse.json({
+        error: "Un remboursement au statut 'uncertain' est déjà actif pour cette transaction. Lancez la réconciliation avant de créer une nouvelle demande.",
+        uncertain_active: true,
+      }, { status: 409 });
     }
 
     // Si montant non précisé → remboursement total

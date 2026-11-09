@@ -34,9 +34,10 @@ export async function GET(req: NextRequest, { params }: Params) {
   return NextResponse.json({ subscription: subRes.data, client: clientRes.data });
 }
 
+// S5-01 : stripe_customer_id et stripe_sub_id retirés — toute modification de ces
+// identifiants Stripe passe par la procédure auditée /api/admin/subscriptions/[userId]/stripe-override.
 const PATCHABLE = new Set([
   "is_active", "plan_name", "provider",
-  "stripe_customer_id", "stripe_sub_id",
   "current_period_end",
   "beta_access", "beta_expires_at",
 ]);

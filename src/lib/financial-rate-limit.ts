@@ -19,6 +19,7 @@ export type FinancialOperation =
   | "user_billing_read"       // GET stripe/billing
   | "user_payment_create"     // POST factures/paiement
   | "user_payment_delete"     // DELETE factures/paiement
+  | "admin_reconcile"        // POST admin/remboursements/reconcile
   | "public_paypal_subscribe"; // POST paypal/create-subscription
 
 /** Limites par opération : [maxRequêtes, fenêtreMs] */
@@ -28,6 +29,7 @@ const LIMITS: Record<FinancialOperation, [number, number]> = {
   admin_webhook_retry:     [30,  60 * 60 * 1000],  // 30 req/h
   admin_virement_mutate:   [30,  60 * 60 * 1000],  // 30 req/h
   admin_subscription_edit: [30,  60 * 60 * 1000],  // 30 req/h
+  admin_reconcile:         [5,   60 * 60 * 1000],  // 5 req/h — réconciliation uncertain
   user_billing_read:       [60,  60 * 60 * 1000],  // 60 req/h
   user_payment_create:     [30,  60 * 60 * 1000],  // 30 req/h
   user_payment_delete:     [10,  60 * 60 * 1000],  // 10 req/h — destructif

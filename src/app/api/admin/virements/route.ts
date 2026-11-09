@@ -10,10 +10,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }   from "@supabase/supabase-js";
 import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
-import { requireAdminUser } from "@/lib/admin-auth-v2";
+import { requireAdminUser, logAdminAction } from "@/lib/admin-auth-v2";
 import { checkFinancialRateLimit } from "@/lib/financial-rate-limit";
 import { createLogger }   from "@/lib/logger";
-import { logAdminAction, getRequestMeta } from "@/lib/admin-log";
 
 const log = createLogger("admin/virements");
 
@@ -126,16 +125,19 @@ export async function PATCH(req: NextRequest) {
 
     /* 4. Débloquer l'accès dans user_access + user_metadata */
     try {
-      // Trouver userId
-      const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
-      const user = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-      if (user) {
+      // S2-02 : lookup par clients.email → user_id, sans listUsers paginé
+      const { data: clientRow } = await sb
+        .from("clients").select("user_id").eq("email", email.toLowerCase()).maybeSingle();
+      const userId = clientRow?.user_id as string | undefined;
+      if (userId) {
+        const { data: authData } = await sb.auth.admin.getUserById(userId);
+        const authUser = authData?.user;
         await syncSubscriptionAccess({
           email,
-          userId:   user.id,
+          userId,
           active:   true,
           provider: "paypal", // virement traité comme paiement manuel
-          userData: user.user_metadata,
+          userData: authUser?.user_metadata ?? {},
         });
       } else {
         /* Pas encore de compte — créer juste user_access */
@@ -152,8 +154,9 @@ export async function PATCH(req: NextRequest) {
       console.error("[virements] sync error:", e);
     }
 
-    const meta = getRequestMeta(req);
-    await logAdminAction({ action: "virement_paye", target_type: "virement", target_id: email, details: { id, prochain }, ...meta });
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const userAgent = req.headers.get("user-agent") ?? "unknown";
+    await logAdminAction({ admin: admin!, action: "VIREMENT_PAYE", resource: "virements", resourceId: email, details: { id, prochain }, ip, userAgent });
     return NextResponse.json({ success: true, action: "paye", prochain });
 
   } else {
@@ -165,15 +168,18 @@ export async function PATCH(req: NextRequest) {
 
     /* Révoquer l'accès */
     try {
-      const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
-      const user = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-      if (user) {
+      const { data: clientRow } = await sb
+        .from("clients").select("user_id").eq("email", email.toLowerCase()).maybeSingle();
+      const userId = clientRow?.user_id as string | undefined;
+      if (userId) {
+        const { data: authData } = await sb.auth.admin.getUserById(userId);
+        const authUser = authData?.user;
         await syncSubscriptionAccess({
           email,
-          userId:   user.id,
+          userId,
           active:   false,
           provider: "paypal",
-          userData: user.user_metadata,
+          userData: authUser?.user_metadata ?? {},
         });
       } else {
         await sb.from("user_access").update({
@@ -187,8 +193,9 @@ export async function PATCH(req: NextRequest) {
       console.error("[virements] revoke error:", e);
     }
 
-    const meta = getRequestMeta(req);
-    await logAdminAction({ action: "virement_bloquer", target_type: "virement", target_id: email, details: { id }, ...meta });
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const userAgent = req.headers.get("user-agent") ?? "unknown";
+    await logAdminAction({ admin: admin!, action: "VIREMENT_BLOQUER", resource: "virements", resourceId: email, details: { id }, ip, userAgent });
     return NextResponse.json({ success: true, action: "bloquer" });
   }
 }
@@ -210,7 +217,8 @@ export async function DELETE(req: NextRequest) {
   const sb = getAdmin();
   const { error } = await sb.from("virements").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const meta = getRequestMeta(req);
-  await logAdminAction({ action: "virement_delete", target_type: "virement", target_id: id, ...meta });
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const userAgent = req.headers.get("user-agent") ?? "unknown";
+  await logAdminAction({ admin: admin!, action: "VIREMENT_DELETE", resource: "virements", resourceId: id, ip, userAgent });
   return NextResponse.json({ success: true });
 }

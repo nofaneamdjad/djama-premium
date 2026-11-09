@@ -1,0 +1,151 @@
+{
+  "suite": "S7 V2 — Intégration après corrections",
+  "timestamp": "2026-11-09T14:04:45.489Z",
+  "run_id": "d990e63e",
+  "server": "http://localhost:3000",
+  "summary": {
+    "total": 27,
+    "pass": 27,
+    "fail": 0,
+    "skip": 0,
+    "blocked": 0,
+    "defer": 0
+  },
+  "results": [
+    {
+      "id": "NEW-01a",
+      "result": "PASS",
+      "msg": "src/lib/paypal.ts : cache (_tokenCache) et mutex (_tokenPending) présents"
+    },
+    {
+      "id": "NEW-01b",
+      "result": "PASS",
+      "msg": "Cache PayPal : expiration anticipée (TOKEN_EARLY_EXPIRY_MS, expiresAt) présente"
+    },
+    {
+      "id": "NEW-01c",
+      "result": "PASS",
+      "msg": "Cache PayPal : mutex (pending map) correctement implémenté"
+    },
+    {
+      "id": "NEW-01d",
+      "result": "PASS",
+      "msg": "Cache PayPal : expires_in lu depuis la réponse OAuth"
+    },
+    {
+      "id": "NEW-02a",
+      "result": "PASS",
+      "msg": "virements.ts : appel .listUsers() supprimé (seul commentaire éventuel conservé) ✓"
+    },
+    {
+      "id": "NEW-02b",
+      "result": "PASS",
+      "msg": "virements.ts : lookup via clients table + getUserById ✓"
+    },
+    {
+      "id": "NEW-02c",
+      "result": "PASS",
+      "msg": "virements.ts : import admin-log supprimé (S5-02 corrigé) ✓"
+    },
+    {
+      "id": "NEW-02d",
+      "result": "PASS",
+      "msg": "virements.ts : logAdminAction depuis admin-auth-v2 (admin_audit_log) ✓"
+    },
+    {
+      "id": "NEW-03a",
+      "result": "PASS",
+      "msg": "Stats DB complètes : 2 succeeded, montant=300 EUR (sans pagination) ✓"
+    },
+    {
+      "id": "NEW-03b",
+      "result": "PASS",
+      "msg": "Code source : statsQuery présente et sans .range() (stats globales) ✓"
+    },
+    {
+      "id": "NEW-04a",
+      "result": "PASS",
+      "msg": "PATCHABLE : stripe_customer_id et stripe_sub_id retirés ✓"
+    },
+    {
+      "id": "NEW-04b",
+      "result": "PASS",
+      "msg": "PATCHABLE : champs légitimes (is_active, plan_name, beta_access) toujours présents ✓"
+    },
+    {
+      "id": "NEW-04c",
+      "result": "PASS",
+      "msg": "PATCHABLE : référence à procédure auditée pour stripe_customer_id ✓"
+    },
+    {
+      "id": "NEW-04d",
+      "result": "PASS",
+      "msg": "PATCH subscriptions protégé (401/403 sans auth valide) ✓"
+    },
+    {
+      "id": "NEW-05a",
+      "result": "PASS",
+      "msg": "Route /reconcile existe et est protégée (401) ✓"
+    },
+    {
+      "id": "NEW-05b",
+      "result": "PASS",
+      "msg": "reconcile/route.ts : reconcileAllUncertain + permission can_perform_refunds ✓"
+    },
+    {
+      "id": "NEW-06a",
+      "result": "PASS",
+      "msg": "Remboursement uncertain créé en DB pour la transaction test ✓"
+    },
+    {
+      "id": "NEW-06b",
+      "result": "PASS",
+      "msg": "refund-reconciliation.ts : hasUncertainRefundForTransaction présente ✓"
+    },
+    {
+      "id": "NEW-06c",
+      "result": "PASS",
+      "msg": "remboursements/route.ts : guard uncertain (409 si actif) ✓"
+    },
+    {
+      "id": "NEW-06d",
+      "result": "PASS",
+      "msg": "Guard uncertain HTTP protégé (401) — guard vérifié via code source ✓"
+    },
+    {
+      "id": "NEW-07a",
+      "result": "PASS",
+      "msg": "virements.ts : import admin-log supprimé ✓"
+    },
+    {
+      "id": "NEW-07b",
+      "result": "PASS",
+      "msg": "virements.ts : logAdminAction depuis admin-auth-v2 (→ admin_audit_log) ✓"
+    },
+    {
+      "id": "NEW-07c",
+      "result": "PASS",
+      "msg": "virements.ts : 3 appels logAdminAction avec admin! ✓"
+    },
+    {
+      "id": "NEW-07d",
+      "result": "PASS",
+      "msg": "Destination unifiée : admin_audit_log (admin-auth-v2) ✓"
+    },
+    {
+      "id": "NEW-08a",
+      "result": "PASS",
+      "msg": "refund-reconciliation.ts : filtre status=uncertain → les terminaux ne sont pas touchés ✓"
+    },
+    {
+      "id": "NEW-08b",
+      "result": "PASS",
+      "msg": "Guard concurrentiel : .eq(status, uncertain) sur l'UPDATE DB ✓"
+    },
+    {
+      "id": "NEW-08c",
+      "result": "PASS",
+      "msg": "Remboursement terminal non modifié lors d'une réconciliation ✓"
+    }
+  ]
+}

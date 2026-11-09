@@ -14,29 +14,61 @@ const PAYPAL_BASE =
     ? "https://api-m.paypal.com"
     : "https://api-m.sandbox.paypal.com";
 
-/* ── Token OAuth 2.0 ──────────────────────────────────────── */
+/* ── Token OAuth 2.0 — cache sécurisé ────────────────────── */
+// Cache par base URL pour supporter sandbox / live sans collision.
+// Expiration anticipée de 60 s pour éviter les tokens proches d'expiration.
+// Mutex via Promise partagée : les requêtes concurrentes attendent le fetch
+// en cours au lieu de déclencher N appels OAuth simultanés.
+interface TokenEntry { token: string; expiresAt: number }
+const _tokenCache = new Map<string, TokenEntry>();
+const _tokenPending = new Map<string, Promise<string>>();
+const TOKEN_EARLY_EXPIRY_MS = 60_000;
+
 async function getAccessToken(): Promise<string> {
-  const creds = Buffer.from(
-    `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
-  ).toString("base64");
-
-  const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
-    method:  "POST",
-    headers: {
-      Authorization:  `Basic ${creds}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body:  "grant_type=client_credentials",
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`PayPal token error: ${err}`);
+  const cached = _tokenCache.get(PAYPAL_BASE);
+  if (cached && Date.now() < cached.expiresAt - TOKEN_EARLY_EXPIRY_MS) {
+    return cached.token;
   }
 
-  const data = await res.json() as { access_token: string };
-  return data.access_token;
+  // Si un fetch OAuth est déjà en cours pour cette base URL, attendre son résultat.
+  const existing = _tokenPending.get(PAYPAL_BASE);
+  if (existing) return existing;
+
+  const fetching = (async (): Promise<string> => {
+    try {
+      const creds = Buffer.from(
+        `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
+      ).toString("base64");
+
+      const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
+        method:  "POST",
+        headers: {
+          Authorization:  `Basic ${creds}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body:  "grant_type=client_credentials",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`PayPal token error: ${err}`);
+      }
+
+      const data = await res.json() as { access_token: string; expires_in?: number };
+      const expiresIn = (data.expires_in ?? 32400) * 1000; // défaut PayPal : 9 h
+      _tokenCache.set(PAYPAL_BASE, {
+        token:     data.access_token,
+        expiresAt: Date.now() + expiresIn,
+      });
+      return data.access_token;
+    } finally {
+      _tokenPending.delete(PAYPAL_BASE);
+    }
+  })();
+
+  _tokenPending.set(PAYPAL_BASE, fetching);
+  return fetching;
 }
 
 /* ── Créer un abonnement et retourner l'URL d'approbation ─── */
