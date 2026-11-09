@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-08T18:19:48.962Z",
+  "timestamp": "2026-11-08T21:36:03.928Z",
   "total": 61,
   "pass": 60,
   "fail": 0,
@@ -268,7 +268,7 @@
       "id": "P4-01",
       "name": "Enrôlement TOTP → factorId + secret retournés",
       "status": "PASS",
-      "detail": "factorId=7aa140da… secret=[MASQUÉ]"
+      "detail": "factorId=61d633c2… secret=[MASQUÉ]"
     },
     {
       "id": "P4-02",
@@ -316,7 +316,7 @@
       "id": "P5-01",
       "name": "djama_admin_tok : attribut HttpOnly présent",
       "status": "PASS",
-      "detail": "attributs: djama_admin_tok=[MASQUE] | Path=/ | Expires=Mon, 09 Nov 2026 06:19:47 GMT | Max-Age=43200 | HttpOnly | SameSite=strict"
+      "detail": "attributs: djama_admin_tok=[MASQUE] | Path=/ | Expires=Mon, 09 Nov 2026 09:36:03 GMT | Max-Age=43200 | HttpOnly | SameSite=strict"
     },
     {
       "id": "P5-02",
