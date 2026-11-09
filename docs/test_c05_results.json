@@ -1,0 +1,134 @@
+{
+  "timestamp": "2026-11-09T16:17:01.475Z",
+  "passed": 21,
+  "failed": 0,
+  "total": 21,
+  "results": [
+    {
+      "id": "TU-01",
+      "label": "Connexion valide — session listée",
+      "status": "PASS",
+      "detail": "1 session(s) ✓"
+    },
+    {
+      "id": "TU-02",
+      "label": "Deux sessions simultanées visibles",
+      "status": "PASS",
+      "detail": "2 sessions actives ✓"
+    },
+    {
+      "id": "TU-03",
+      "label": "Session actuelle identifiée (is_current)",
+      "status": "PASS",
+      "detail": "id=57dd0891…"
+    },
+    {
+      "id": "TU-04",
+      "label": "Révocation session ciblée",
+      "status": "PASS",
+      "detail": "HTTP 200 — revoked_at=2026-11-09T16:16:57.258+00:00 ✓"
+    },
+    {
+      "id": "TU-05",
+      "label": "Session révoquée → 401",
+      "status": "PASS",
+      "detail": "HTTP 401 ✓"
+    },
+    {
+      "id": "TU-06",
+      "label": "Vue globale sessions (super_admin)",
+      "status": "PASS",
+      "detail": "3 session(s), admin_info=true ✓"
+    },
+    {
+      "id": "TU-07",
+      "label": "scope=all refusé hors super_admin",
+      "status": "PASS",
+      "detail": "HTTP 403 ✓"
+    },
+    {
+      "id": "TU-08",
+      "label": "Lecture sessions admin inférieur (cross-admin)",
+      "status": "PASS",
+      "detail": "1 session(s), admin=test-c05-commercial@djama.test ✓"
+    },
+    {
+      "id": "TU-09",
+      "label": "Révocation sessions cross-admin",
+      "status": "PASS",
+      "detail": "HTTP 200 — 0 sessions révoquées ✓"
+    },
+    {
+      "id": "TU-10",
+      "label": "Session cross-admin révoquée → 401",
+      "status": "PASS",
+      "detail": "HTTP 401 ✓"
+    },
+    {
+      "id": "TU-11",
+      "label": "Révocation d'un admin supérieur bloquée",
+      "status": "PASS",
+      "detail": "HTTP 401 ✓"
+    },
+    {
+      "id": "TU-12",
+      "label": "Compte désactivé → 401 (trigger révocation)",
+      "status": "PASS",
+      "detail": "HTTP 401 ✓"
+    },
+    {
+      "id": "TU-13",
+      "label": "Changement de rôle → sessions révoquées (trigger)",
+      "status": "PASS",
+      "detail": "HTTP 401 après role change ✓"
+    },
+    {
+      "id": "TU-14",
+      "label": "Session expirée → 401",
+      "status": "PASS",
+      "detail": "HTTP 401 ✓"
+    },
+    {
+      "id": "TU-15",
+      "label": "Accès 403 — scope=all hors super_admin",
+      "status": "PASS",
+      "detail": "HTTP 403 ✓"
+    },
+    {
+      "id": "TU-16",
+      "label": "Token inexistant → 401",
+      "status": "PASS",
+      "detail": "HTTP 401 ✓"
+    },
+    {
+      "id": "TU-17",
+      "label": "5 requêtes concurrentes — aucune corruption",
+      "status": "PASS",
+      "detail": "200,200,200,200,200 ✓"
+    },
+    {
+      "id": "TU-18",
+      "label": "last_seen_at mis à jour après requête",
+      "status": "PASS",
+      "detail": "2026-11-09T16:17:00.372+00:00 → 2026-11-09T16:17:00.592+00:00 ✓"
+    },
+    {
+      "id": "TU-19",
+      "label": "Journaux d'audit SESSION_REVOKE présents",
+      "status": "PASS",
+      "detail": "9 log(s) ✓"
+    },
+    {
+      "id": "TU-20",
+      "label": "MFA obligatoire → finance+aal1 refusée (401)",
+      "status": "PASS",
+      "detail": "HTTP 401 ✓"
+    },
+    {
+      "id": "TU-21",
+      "label": "Lockdown → rate limit actif (429)",
+      "status": "PASS",
+      "detail": "HTTP 429 — protection rate limit ✓"
+    }
+  ]
+}

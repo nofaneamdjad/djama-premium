@@ -109,6 +109,7 @@ const NAV_GROUPS: NavGroup[] = [
     id: "securite", label: "Sécurité & Paramètres", icon: Settings,
     items: [
       { href: "/admin/administrateurs", label: "Administrateurs",  icon: UserCog     },
+      { href: "/admin/sessions",       label: "Sessions actives", icon: Lock        },
       { href: "/admin/securite",       label: "Journal d'audit",  icon: ShieldCheck },
       { href: "/admin/emails",         label: "Emails système",   icon: Send        },
       { href: "/admin/settings",       label: "Identité SaaS",    icon: Building2   },

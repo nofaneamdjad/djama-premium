@@ -233,6 +233,18 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
   viewer:      "Autres employés",
 };
 
+/** Hiérarchie numérique des rôles — utilisée pour les contrôles cross-admin. */
+export const ROLE_HIERARCHY: Record<AdminRole, number> = {
+  super_admin: 7,
+  direction:   6,
+  admin:       5,
+  finance:     4,
+  commercial:  3,
+  support:     2,
+  tech:        1,
+  viewer:      0,
+};
+
 export function hasPermission(admin: AdminUser, permission: string): boolean {
   // Overrides individuels prioritaires
   if (permission in admin.permissions) return admin.permissions[permission];
@@ -423,6 +435,14 @@ export async function requireAdminUser(
           .maybeSingle();
 
         if (adminData) {
+          // Mise à jour last_seen_at non-bloquante (IIFE pour déclencher l'exécution lazy)
+          void (async () => {
+            await sb0.from("admin_sessions")
+              .update({ last_seen_at: new Date().toISOString() })
+              .eq("token_hash", tokenHash0)
+              .is("revoked_at", null);
+          })();
+
           // MFA obligatoire si mfa_required=true OU si rôle dans ROLES_REQUIRING_MFA
           const mfaNeeded = adminData.mfa_required ||
             ROLES_REQUIRING_MFA.has(adminData.role as AdminRole);
