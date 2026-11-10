@@ -3,15 +3,16 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdminUser, logAdminAction } from "@/lib/admin-auth-v2";
 import { checkFinancialRateLimit }          from "@/lib/financial-rate-limit";
+import { verifyReauthToken }                from "@/app/api/admin/auth/reauth/route";
 import { createLogger } from "@/lib/logger";
 import { dispatchStripeEvent } from "@/app/api/webhook/stripe/route";
 
 const log = createLogger("admin/webhook/stripe/retry");
 
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2026-03-25.dahlia",
-  });
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY non configurée");
+  return new Stripe(key, { apiVersion: "2026-03-25.dahlia" });
 }
 
 function getSupabaseAdmin() {
@@ -54,20 +55,30 @@ export async function POST(req: NextRequest) {
   const rl = await checkFinancialRateLimit("admin_webhook_retry", admin!.id);
   if (!rl.allowed) return rl.response429!;
 
-  // ── Validation du body ──────────────────────────────────────────
+  // ── 1b. Ré-authentification obligatoire (rejouer un paiement = opération sensible) ──
   let event_id: string;
   let lease_secs: number = 300;
+  let reauthToken: string | undefined;
   try {
-    const body = await req.json() as { event_id?: string; lease_secs?: number };
+    const body = await req.json() as { event_id?: string; lease_secs?: number; reauth_token?: string };
     if (!body.event_id || typeof body.event_id !== "string") {
       return NextResponse.json({ error: "event_id requis" }, { status: 400 });
     }
-    event_id = body.event_id.trim();
+    event_id    = body.event_id.trim();
+    reauthToken = body.reauth_token?.trim();
     if (body.lease_secs && typeof body.lease_secs === "number") {
       lease_secs = body.lease_secs;
     }
   } catch {
     return NextResponse.json({ error: "Body JSON invalide" }, { status: 400 });
+  }
+
+  if (!reauthToken) {
+    return NextResponse.json({ error: "Ré-authentification requise (reauth_token manquant)." }, { status: 403 });
+  }
+  const reauthOk = await verifyReauthToken(admin!.id, reauthToken, "payment_retry");
+  if (!reauthOk) {
+    return NextResponse.json({ error: "Token de ré-authentification invalide ou expiré." }, { status: 403 });
   }
 
   const supabaseAdmin = getSupabaseAdmin();

@@ -33,12 +33,12 @@ const log = createLogger("webhook/stripe");
      RESEND_API_KEY  (optionnel — email non envoyé si absent)
 ─────────────────────────────────────────────────────────────── */
 
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2026-03-25.dahlia",
-  });
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY non configurée");
+  return new Stripe(key, { apiVersion: "2026-03-25.dahlia" });
 }
-const stripe = getStripe();
+// NE PAS instancier au niveau module — clé lue à chaque requête pour supporter la rotation
 
 /* ── Supabase Admin (service role — serveur uniquement) ────── */
 function getSupabaseAdmin() {
@@ -939,6 +939,13 @@ export async function POST(req: Request) {
   }
 
   let event: Stripe.Event;
+  let stripe: Stripe;
+  try {
+    stripe = getStripe();
+  } catch {
+    log.error("STRIPE_SECRET_KEY non configurée");
+    return NextResponse.json({ error: "Configuration Stripe manquante" }, { status: 500 });
+  }
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
