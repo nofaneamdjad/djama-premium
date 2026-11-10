@@ -30,37 +30,33 @@
   forced-color-adjust: none;
 
   /* ═══════════════════════════════════════
-     PALETTE OR — identité DJAMA
+     JAUNE DJAMA — identité officielle
+     #FFB900 — Jamais or, jamais doré
   ═══════════════════════════════════════ */
-  --gold:      201, 165, 90;     /* RGB brut pour rgba() */
-  --gold-100:  #f5e6c8;
-  --gold-200:  #e8cc94;
-  --gold-400:  #c9a55a;
-  --gold-500:  #b08d57;
-  --gold-600:  #8c6d3f;
-  --gold-rgb:  176 141 87;       /* pour color-mix / oklch */
-  --gold-text: var(--gold-200);  /* texte or sur fond sombre */
+  --djama-yellow:    #FFB900;
+  --djama-yellow-h:  #FFC41A;               /* hover */
+  --djama-yellow-d:  #D4A000;               /* actif / pressed */
+  --djama-yellow-bg: rgba(255,185,0,0.10);  /* fond subtil */
+  --djama-yellow-b:  rgba(255,185,0,0.20);  /* bordure */
+  --djama-yellow-on: #101114;               /* texte SUR fond jaune */
+
+  /* Alias accent (rétrocompatibilité) */
+  --accent:        #FFB900;
+  --accent-hover:  #FFC41A;
+  --accent-muted:  #D4A000;
+  --accent-bg:     rgba(255,185,0,.10);
+  --accent-border: rgba(255,185,0,.20);
+  --accent-glow:   rgba(255,185,0,.18);
+  --accent-on:     #101114;                 /* texte noir sur bouton jaune */
 
   /* ═══════════════════════════════════════
-     ACCENT — token sémantique principal
-     Utilisé dans tous les composants pour
-     cohérence totale de l'identité DJAMA.
+     RADIUS — compacts, style professionnel
   ═══════════════════════════════════════ */
-  --accent:        #c9a55a;                  /* or premium DJAMA */
-  --accent-hover:  #d4b06a;                  /* or survol */
-  --accent-muted:  #b08d57;                  /* or atténué */
-  --accent-bg:     rgba(201,165,90,.10);     /* fond accent subtil */
-  --accent-border: rgba(201,165,90,.25);     /* bordure accent */
-  --accent-glow:   rgba(201,165,90,.22);     /* halo accent */
-  --accent-on:     #ffffff;                  /* texte sur fond accent */
-
-  /* ═══════════════════════════════════════
-     RADIUS
-  ═══════════════════════════════════════ */
-  --radius-sm: 0.75rem;
-  --radius-md: 1.25rem;
-  --radius-lg: 1.75rem;
-  --radius-xl: 2.25rem;
+  --radius-xs: 0.25rem;   /*  4px */
+  --radius-sm: 0.375rem;  /*  6px */
+  --radius-md: 0.5rem;    /*  8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
 
   /* ═══════════════════════════════════════
      FONDS — thème clair

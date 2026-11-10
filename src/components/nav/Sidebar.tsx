@@ -12,7 +12,7 @@ import {
 import { useTheme } from "@/lib/theme-context";
 import { getAppById } from "@/lib/app-registry";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 const FREE_NAV = [
   { href: "/client",          label: "Accueil",          icon: Home,        exact: true  },

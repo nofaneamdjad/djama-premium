@@ -317,7 +317,7 @@ export default function RemboursementsPage() {
 
       {/* ── Formulaire création ──────────────────────────────────────────── */}
       {showCreate && (
-        <div className="rounded-2xl border p-5 space-y-4"
+        <div className="rounded-xl border p-4 space-y-4"
           style={{ background: V.card, borderColor: "rgba(251,191,36,0.2)" }}>
           <p className="font-bold text-[0.88rem]" style={{ color: V.text }}>Nouvelle demande de remboursement</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

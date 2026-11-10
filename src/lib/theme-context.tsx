@@ -11,12 +11,12 @@ export interface AccentOption {
 }
 
 export const ACCENT_OPTIONS: AccentOption[] = [
-  { name: "gold",    value: "#c9a55a", label: "Or"       },
-  { name: "indigo",  value: "#6366f1", label: "Indigo"   },
-  { name: "emerald", value: "#10b981", label: "Émeraude" },
-  { name: "rose",    value: "#f43f5e", label: "Rose"     },
-  { name: "sky",     value: "#0ea5e9", label: "Ciel"     },
-  { name: "violet",  value: "#8b5cf6", label: "Violet"   },
+  { name: "yellow",  value: "#FFB900", label: "Jaune DJAMA" },
+  { name: "indigo",  value: "#6366f1", label: "Indigo"      },
+  { name: "emerald", value: "#10b981", label: "Émeraude"    },
+  { name: "rose",    value: "#f43f5e", label: "Rose"        },
+  { name: "sky",     value: "#0ea5e9", label: "Ciel"        },
+  { name: "violet",  value: "#8b5cf6", label: "Violet"      },
 ];
 
 interface ThemeState {
@@ -43,8 +43,8 @@ function autoIsDark(): boolean {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ThemeState>({
     mode:       "dark",
-    accent:     "#c9a55a",
-    accentName: "gold",
+    accent:     "#FFB900",
+    accentName: "yellow",
   });
   const [resolvedDark, setResolvedDark] = useState(false);
 

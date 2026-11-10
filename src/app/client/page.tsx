@@ -16,7 +16,7 @@ import { useSubscription } from "@/lib/use-require-subscription";
 import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 const AI_SUGGESTIONS = [
   "Analyse mon activité",
@@ -46,15 +46,15 @@ const PINNED_APPS = [
 
 function tok(isDark: boolean) {
   return {
-    bg:         isDark ? "#111111"                : "#f8f8f5",
+    bg:         isDark ? "#101114"                : "#F4F5F7",
     glass:      isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.025)",
     glassMd:    isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
     border:     isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)",
     borderSoft: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-    text:       isDark ? "#e8e2d6"                : "#1a1a1a",
-    text2:      isDark ? "#a09880"                : "#4a4a4a",
-    text3:      isDark ? "#6b6256"                : "#7a7a7a",
-    text4:      isDark ? "#4a4540"                : "#9a9a9a",
+    text:       isDark ? "#F0F0F0"                : "#101114",
+    text2:      isDark ? "#8C909C"                : "#3C4150",
+    text3:      isDark ? "#5E6472"                : "#6B7280",
+    text4:      isDark ? "#454B59"                : "#9CA3AF",
   };
 }
 
