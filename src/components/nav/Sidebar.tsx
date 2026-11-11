@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -114,16 +115,21 @@ export function DesktopSidebar({
         }}
       >
         <Link href="/client" className="flex items-center gap-2.5 min-w-0">
-          <div
-            className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md"
-            style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}
-          >
-            <Sparkles size={12} style={{ color: accent }} />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0 leading-none">
-              <p className="text-base font-bold truncate" style={{ color: accent }}>DJAMA</p>
-              <p className="text-xs uppercase tracking-widest mt-0.5"
+          {collapsed ? (
+            <div
+              className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md"
+              style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}
+            >
+              <Sparkles size={12} style={{ color: accent }} />
+            </div>
+          ) : (
+            <div className="min-w-0 flex flex-col gap-0.5">
+              <Image
+                src={isDark ? "/logo-white.png" : "/logo-transparent.png"}
+                alt="DJAMA" width={96} height={32}
+                className="h-[26px] w-auto object-contain"
+              />
+              <p className="text-xs uppercase tracking-widest"
                 style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                 {isPremium ? "PRO · Actif" : "Plan Gratuit"}
               </p>
@@ -328,13 +334,13 @@ export function MobileSidebar({
             <div className="flex h-[52px] shrink-0 items-center justify-between px-4"
               style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
               <Link href="/client" className="flex items-center gap-2.5" onClick={onClose}>
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-                  style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}>
-                  <Sparkles size={13} style={{ color: accent }} />
-                </div>
-                <div className="leading-none">
-                  <p className="text-sm font-bold" style={{ color: accent }}>DJAMA</p>
-                  <p className="mt-0.5 text-[10px] uppercase tracking-widest"
+                <div className="flex flex-col gap-0.5">
+                  <Image
+                    src={isDark ? "/logo-white.png" : "/logo-transparent.png"}
+                    alt="DJAMA" width={96} height={32}
+                    className="h-[24px] w-auto object-contain"
+                  />
+                  <p className="text-[10px] uppercase tracking-widest"
                     style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                     {isPremium ? "PRO · Actif" : "Plan Gratuit"}
                   </p>

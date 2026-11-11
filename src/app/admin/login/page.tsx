@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter }                   from "next/navigation";
+import Image                           from "next/image";
 import { Eye, EyeOff, Lock, ShieldCheck, Mail, QrCode, RefreshCw } from "lucide-react";
 
 type MfaStep = "none" | "challenge" | "enroll-qr" | "enroll-verify";
@@ -217,21 +218,21 @@ export default function AdminLogin() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f8f9fa] px-4">
       {/* Background glow */}
-      <div className="pointer-events-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full bg-[rgba(201,165,90,0.06)] blur-[120px]" />
+      <div className="pointer-events-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full bg-[rgba(255,185,0,0.06)] blur-[120px]" />
 
       <div className="relative w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <p className="text-[1.6rem] font-black tracking-tight text-gray-900">DJAMA</p>
-          <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]">Espace Admin</p>
+        <div className="mb-8 flex flex-col items-center gap-1">
+          <Image src="/logo-transparent.png" alt="DJAMA" width={120} height={40} className="h-9 w-auto object-contain" />
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#FFB900]">Espace Admin</p>
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-7 shadow-[0_8px_40px_rgba(0,0,0,0.08)]">
           {/* Icône */}
           <div className="mb-6 flex justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(201,165,90,0.1)] border border-[rgba(201,165,90,0.2)]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(255,185,0,0.1)] border border-[rgba(255,185,0,0.2)]">
               {isMfaScreen
-                ? (isEnrollQr ? <QrCode size={19} className="text-[#c9a55a]" /> : <ShieldCheck size={19} className="text-[#c9a55a]" />)
-                : <Lock size={19} className="text-[#c9a55a]" />
+                ? (isEnrollQr ? <QrCode size={19} className="text-[#FFB900]" /> : <ShieldCheck size={19} className="text-[#FFB900]" />)
+                : <Lock size={19} className="text-[#FFB900]" />
               }
             </div>
           </div>
@@ -263,7 +264,7 @@ export default function AdminLogin() {
                   onChange={e => { setEmail(e.target.value); clearErr(); }}
                   placeholder="Email administrateur"
                   autoFocus
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pl-10 text-[0.85rem] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pl-10 text-[0.85rem] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(255,185,0,0.5)] focus:bg-white"
                 />
               </div>
 
@@ -273,7 +274,7 @@ export default function AdminLogin() {
                   value={password}
                   onChange={e => { setPassword(e.target.value); clearErr(); }}
                   placeholder="Mot de passe"
-                  className={`w-full rounded-xl border bg-gray-50 px-4 py-3 pr-11 text-[0.85rem] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white ${
+                  className={`w-full rounded-xl border bg-gray-50 px-4 py-3 pr-11 text-[0.85rem] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(255,185,0,0.5)] focus:bg-white ${
                     error ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -291,7 +292,7 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={loading || !email.trim() || !password}
-                className="w-full rounded-xl bg-[#c9a55a] py-3 text-[0.88rem] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="w-full rounded-xl bg-[#FFB900] py-3 text-[0.88rem] font-bold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {loading ? "Vérification…" : "Accéder à l'administration"}
               </button>
@@ -328,7 +329,7 @@ export default function AdminLogin() {
               <button
                 onClick={() => { setMfaCode(""); setMfaStep("enroll-verify"); }}
                 disabled={loading}
-                className="w-full rounded-xl bg-[#c9a55a] py-3 text-[0.88rem] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="w-full rounded-xl bg-[#FFB900] py-3 text-[0.88rem] font-bold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 Continuer →
               </button>
@@ -356,7 +357,7 @@ export default function AdminLogin() {
                 onChange={e => { setMfaCode(e.target.value.replace(/\D/g, "")); clearErr(); }}
                 placeholder="Code à 6 chiffres"
                 autoComplete="one-time-code"
-                className={`w-full rounded-xl border bg-gray-50 px-4 py-3 text-center text-[1.1rem] font-mono tracking-[0.3em] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white ${
+                className={`w-full rounded-xl border bg-gray-50 px-4 py-3 text-center text-[1.1rem] font-mono tracking-[0.3em] text-gray-800 placeholder-gray-400 outline-none transition-colors focus:border-[rgba(255,185,0,0.5)] focus:bg-white ${
                   error ? "border-red-300" : "border-gray-200"
                 }`}
               />
@@ -366,7 +367,7 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={loading || mfaCode.length < 6}
-                className="w-full rounded-xl bg-[#c9a55a] py-3 text-[0.88rem] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="w-full rounded-xl bg-[#FFB900] py-3 text-[0.88rem] font-bold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {loading ? "Vérification…" : isEnrollVfy ? "Confirmer l'enrôlement" : "Valider"}
               </button>
