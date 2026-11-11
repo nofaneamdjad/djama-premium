@@ -40,24 +40,29 @@ function autoIsDark(): boolean {
   return h >= 20 || h < 7;
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ThemeState>({
-    mode:       "dark",
-    accent:     "#FFB900",
-    accentName: "yellow",
-  });
-  const [resolvedDark, setResolvedDark] = useState(false);
+function loadInitialState(): ThemeState {
+  const defaults: ThemeState = { mode: "dark", accent: "#FFB900", accentName: "yellow" };
+  if (typeof window === "undefined") return defaults;
+  try {
+    const saved = localStorage.getItem(KEY);
+    if (saved) return { ...defaults, ...JSON.parse(saved) };
+  } catch {}
+  return defaults;
+}
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(KEY);
-      if (saved) setState(prev => ({ ...prev, ...JSON.parse(saved) }));
-    } catch {}
-  }, []);
+function computeDark(mode: ThemeMode): boolean {
+  if (mode === "dark") return true;
+  if (mode === "light") return false;
+  return autoIsDark();
+}
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<ThemeState>(loadInitialState);
+  const [resolvedDark, setResolvedDark] = useState(() => computeDark(loadInitialState().mode));
 
   useEffect(() => {
     function compute() {
-      const dark = state.mode === "auto" ? autoIsDark() : state.mode === "dark";
+      const dark = computeDark(state.mode);
       setResolvedDark(dark);
       document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
       document.documentElement.style.colorScheme = dark ? "dark" : "light";
@@ -68,6 +73,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       return () => clearInterval(interval);
     }
   }, [state.mode]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--accent", state.accent);
+    document.documentElement.style.setProperty("--djama-yellow", state.accent);
+  }, [state.accent]);
 
   function save(next: Partial<ThemeState>) {
     setState(prev => {

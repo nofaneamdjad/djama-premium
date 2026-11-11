@@ -276,6 +276,48 @@ select:focus {
 button:focus:not(:focus-visible) { outline: none; }
 a:focus:not(:focus-visible)      { outline: none; }
 
+/* ══════════════════════════════════════════════
+   DESIGN TOKENS — SCOPE CLIENT APP
+   Tokens sémantiques pour l'espace client dark.
+   Usage cible (migration progressive) :
+     bg-[var(--cs0)]  au lieu de  bg-[#07080e]
+     bg-[var(--cs1)]  au lieu de  bg-[#0f1117]
+     text-[color:var(--ct1)]  au lieu de  text-white
+   Ces variables remplacent chaque groupe de règles
+   !important dans la section LIGHT MODE OVERRIDES.
+   Ne pas supprimer les overrides sans avoir migré
+   les composants correspondants.
+══════════════════════════════════════════════ */
+.client-app {
+  /* Surfaces */
+  --cs0: #07080e;    /* fond page — le plus sombre */
+  --cs1: #0f1117;    /* cartes niveau 1 */
+  --cs2: #161b22;    /* cartes niveau 2 / raised */
+  --cs3: #1f2937;    /* cartes niveau 3 / selected */
+  /* Texte */
+  --ct1: rgba(255,255,255,0.90);  /* primaire */
+  --ct2: rgba(255,255,255,0.65);  /* secondaire */
+  --ct3: rgba(255,255,255,0.38);  /* tertiaire */
+  /* Bordures */
+  --cb1: rgba(255,255,255,0.08);  /* normale */
+  --cb2: rgba(255,255,255,0.05);  /* subtile */
+}
+
+.client-app[data-theme="light"] {
+  /* Surfaces */
+  --cs0: #f4f5f9;
+  --cs1: #ffffff;
+  --cs2: #f8f9fa;
+  --cs3: #f0f2f5;
+  /* Texte */
+  --ct1: rgba(17,24,39,0.92);
+  --ct2: rgba(17,24,39,0.65);
+  --ct3: rgba(17,24,39,0.38);
+  /* Bordures */
+  --cb1: rgba(0,0,0,0.09);
+  --cb2: rgba(0,0,0,0.06);
+}
+
 /* ── DARK SELECT — pages client (.client-app) ───
    color-scheme:dark sur le div racine → tous les native controls héritent.
    Les règles option ci-dessous renforcent sur Chrome Windows qui ne colore
