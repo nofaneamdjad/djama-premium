@@ -109,9 +109,9 @@
   /* ═══════════════════════════════════════
      GLOWS — luminosité maîtrisée (thème clair)
   ═══════════════════════════════════════ */
-  --glow-gold:    rgba(176,141,87,.12); /* halo or doux */
-  --glow-gold-hi: rgba(176,141,87,.16); /* halo or prononcé */
-  --glow-soft:    rgba(176,141,87,.07); /* halo or très discret */
+  --glow-gold:    rgba(204,148,0,.12); /* halo or doux */
+  --glow-gold-hi: rgba(204,148,0,.16); /* halo or prononcé */
+  --glow-soft:    rgba(204,148,0,.07); /* halo or très discret */
   --glow-blue:    rgba(96,165,250,.12);
   --glow-green:   rgba(37,211,102,.12);
   --glow-purple:  rgba(167,139,250,.12);
@@ -122,7 +122,7 @@
   --shadow-sm:   0 1px 4px rgba(0,0,0,.06);
   --shadow-card: 0 4px 20px rgba(0,0,0,.08), 0 1px 4px rgba(0,0,0,.04);
   --shadow-lg:   0 16px 56px rgba(0,0,0,.12), 0 6px 20px rgba(0,0,0,.06);
-  --shadow-gold: 0 0 40px rgba(176,141,87,.18), 0 8px 24px rgba(176,141,87,.10);
+  --shadow-gold: 0 0 40px rgba(204,148,0,.18), 0 8px 24px rgba(204,148,0,.10);
 
   /* ═══════════════════════════════════════
      DÉCORATIONS (thème clair)
@@ -178,8 +178,8 @@ body {
 }
 
 @keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201,165,90,0); }
-  50%       { box-shadow: 0 0 0 8px rgba(201,165,90,0.12); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,185,0,0); }
+  50%       { box-shadow: 0 0 0 8px rgba(255,185,0,0.12); }
 }
 
 @keyframes pulse-ring {
@@ -193,8 +193,8 @@ body {
 }
 
 @keyframes border-glow {
-  0%, 100% { border-color: rgba(201,165,90,0.18); box-shadow: 0 0 0 0 rgba(201,165,90,0); }
-  50%       { border-color: rgba(201,165,90,0.36); box-shadow: 0 0 28px rgba(201,165,90,0.1); }
+  0%, 100% { border-color: rgba(255,185,0,0.18); box-shadow: 0 0 0 0 rgba(255,185,0,0); }
+  50%       { border-color: rgba(255,185,0,0.36); box-shadow: 0 0 28px rgba(255,185,0,0.1); }
 }
 
 @keyframes shimmer-sweep {
@@ -258,7 +258,7 @@ body {
 
 /* ── ACCESSIBILITÉ — focus clavier ─────────── */
 :focus-visible {
-  outline: 2px solid rgba(201,165,90,.65);
+  outline: 2px solid rgba(255,185,0,.65);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -267,8 +267,8 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(201,165,90,.32) !important;
-  border-color: rgba(201,165,90,.42) !important;
+  box-shadow: 0 0 0 2px rgba(255,185,0,.32) !important;
+  border-color: rgba(255,185,0,.42) !important;
 }
 
 /* Supprime le focus-visible natif sur les éléments
@@ -302,6 +302,13 @@ a:focus:not(:focus-visible)      { outline: none; }
 /* ── SCROLLBAR THIN ─────────────────────────── */
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── BETA WIDGET — position adaptée mobile ───
+   Desktop (lg+) : 24px depuis le bas (pas de nav basse)
+   Mobile (<lg)  : 88px = 64px nav + 24px marge
+──────────────────────────────────────────────── */
+.beta-widget-btn { bottom: 24px; }
+@media (max-width: 1023px) { .beta-widget-btn { bottom: 88px; } }
 .animate-glow-pulse    { animation: glow-pulse    2.5s ease-in-out infinite; }
 .animate-border-glow   { animation: border-glow   4s ease-in-out infinite; }
 .animate-fade-in-up    { animation: fade-in-up    0.55s cubic-bezier(0.16,1,0.3,1) both; }
@@ -366,7 +373,7 @@ a:focus:not(:focus-visible)      { outline: none; }
 .hero-btn {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg,#c9a55a 0%,#e0c07a 40%,#c9a55a 70%,#a8864a 100%);
+  background: linear-gradient(135deg,#FFB900 0%,#FFD166 40%,#FFB900 70%,#CC9400 100%);
   background-size: 250% 250%;
   animation: btnGradientShift 5s ease infinite;
 }
@@ -385,8 +392,8 @@ a:focus:not(:focus-visible)      { outline: none; }
 .hero-dark {
   background-color: var(--bg-base);
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,165,90,0.06) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 40% at 80% 60%,  rgba(201,165,90,0.03) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,185,0,0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 80% 60%,  rgba(255,185,0,0.03) 0%, transparent 60%);
 }
 
 .hero-grid {
@@ -424,7 +431,7 @@ a:focus:not(:focus-visible)      { outline: none; }
 
 /* ── GRADIENT TEXTE ────────────────────────── */
 .text-gold {
-  background: linear-gradient(135deg, #e8cc94 0%, #c9a55a 40%, #b08d57 70%, #8c6d3f 100%);
+  background: linear-gradient(135deg, #FFE57A 0%, #FFB900 40%, #CC9400 70%, #8c6d3f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -433,7 +440,7 @@ a:focus:not(:focus-visible)      { outline: none; }
 .text-gold-subtle { color: var(--gold-400); }
 
 .text-gradient-animate {
-  background: linear-gradient(270deg, #e8cc94, #c9a55a, #b08d57, #c9a55a, #e8cc94);
+  background: linear-gradient(270deg, #FFE57A, #FFB900, #CC9400, #FFB900, #FFE57A);
   background-size: 300% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -450,10 +457,10 @@ a:focus:not(:focus-visible)      { outline: none; }
   padding: 0.875rem 1.75rem;
   font-weight: 700;
   font-size: 0.9375rem;
-  background: linear-gradient(135deg, #c9a55a 0%, #b08d57 100%);
+  background: linear-gradient(135deg, #FFB900 0%, #CC9400 100%);
   color: #09090b;
-  border: 1px solid rgba(201,165,90,0.35);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 4px 16px rgba(176,141,87,0.2);
+  border: 1px solid rgba(255,185,0,0.35);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 4px 16px rgba(204,148,0,0.2);
   transition: box-shadow 0.3s ease, filter 0.3s ease, transform 0.2s ease;
   position: relative;
   overflow: hidden;
@@ -469,7 +476,7 @@ a:focus:not(:focus-visible)      { outline: none; }
 }
 .btn-primary:hover::before { animation: shimmer-sweep 0.65s ease forwards; }
 .btn-primary:hover {
-  box-shadow: 0 0 32px rgba(176,141,87,0.42), 0 8px 24px rgba(176,141,87,0.22), 0 1px 0 rgba(255,255,255,0.15) inset;
+  box-shadow: 0 0 32px rgba(204,148,0,0.42), 0 8px 24px rgba(204,148,0,0.22), 0 1px 0 rgba(255,255,255,0.15) inset;
   filter: brightness(1.06);
   transform: translateY(-1px);
 }
@@ -557,7 +564,7 @@ a:focus:not(:focus-visible)      { outline: none; }
 .card-premium:hover {
   transform: translateY(-7px);
   box-shadow: var(--shadow-lg);
-  border-color: rgba(176,141,87,0.28);
+  border-color: rgba(204,148,0,0.28);
 }
 
 /* ── GRADIENT BORDER ────────────────────────── */
@@ -567,7 +574,7 @@ a:focus:not(:focus-visible)      { outline: none; }
   position: absolute; inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(201,165,90,0.5), rgba(201,165,90,0.1), rgba(167,139,250,0.3));
+  background: linear-gradient(135deg, rgba(255,185,0,0.5), rgba(255,185,0,0.1), rgba(167,139,250,0.3));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -589,15 +596,15 @@ a:focus:not(:focus-visible)      { outline: none; }
 
 .badge-gold-dark,
 .badge-gold-light {
-  background: rgba(201,165,90,0.10);
-  border: 1px solid rgba(201,165,90,0.28);
-  color: #c9a55a;
+  background: rgba(255,185,0,0.10);
+  border: 1px solid rgba(255,185,0,0.28);
+  color: #FFB900;
 }
 
 /* ── DIVIDER ───────────────────────────────── */
 .divider-gold {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(176,141,87,0.45), transparent);
+  background: linear-gradient(90deg, transparent, rgba(204,148,0,0.45), transparent);
 }
 
 .divider-subtle {
@@ -634,17 +641,17 @@ a:focus:not(:focus-visible)      { outline: none; }
   border-radius: 99px;
   transition: background 0.3s;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(176,141,87,0.5); }
+::-webkit-scrollbar-thumb:hover { background: rgba(204,148,0,0.5); }
 
 /* ── SELECTION ─────────────────────────────── */
 ::selection {
-  background: rgba(201,165,90,0.22);
+  background: rgba(255,185,0,0.22);
   color: rgba(17,24,39,0.95);
 }
 
 /* ── FOCUS RING ────────────────────────────── */
 :focus-visible {
-  outline: 2px solid rgba(201,165,90,0.6);
+  outline: 2px solid rgba(255,185,0,0.6);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -658,9 +665,9 @@ a:focus:not(:focus-visible)      { outline: none; }
     90deg,
     currentColor 0%,
     currentColor 35%,
-    #e8cc94 46%,
+    #FFE57A 46%,
     #fffbf0 50%,
-    #e8cc94 54%,
+    #FFE57A 54%,
     currentColor 65%,
     currentColor 100%
   );
@@ -704,7 +711,7 @@ a:focus:not(:focus-visible)      { outline: none; }
   transition: text-shadow 0.35s ease, color 0.35s ease;
 }
 .hover-glow-gold:hover {
-  text-shadow: 0 0 18px rgba(201,165,90,0.55), 0 0 36px rgba(201,165,90,0.28);
+  text-shadow: 0 0 18px rgba(255,185,0,0.55), 0 0 36px rgba(255,185,0,0.28);
 }
 
 .hover-glow-white {
@@ -720,7 +727,7 @@ a:focus:not(:focus-visible)      { outline: none; }
   position: absolute;
   bottom: -2px; left: 0; right: 0;
   height: 1.5px;
-  background: #c9a55a;
+  background: #FFB900;
   border-radius: 99px;
   transform: scaleX(0);
   transform-origin: left;
@@ -781,7 +788,7 @@ a:focus:not(:focus-visible)      { outline: none; }
 
 /*
  * Fond dégradé vivant :
- *   or DJAMA (#c9a55a) · violet · bleu profond — très désaturés
+ *   or DJAMA (#FFB900) · violet · bleu profond — très désaturés
  *   background-size 400% → le mouvement est très doux, quasi imperceptible
  *   Animation 22 s : lent → premium, jamais distrayant
  */
@@ -834,9 +841,9 @@ a:focus:not(:focus-visible)      { outline: none; }
   background: linear-gradient(
     90deg,
     transparent              0%,
-    rgba(201,165,90,0.09)   25%,
+    rgba(255,185,0,0.09)   25%,
     rgba(255,255,255,0.40)  50%,
-    rgba(201,165,90,0.09)   75%,
+    rgba(255,185,0,0.09)   75%,
     transparent             100%
   );
   animation: partners-sweep 11s cubic-bezier(0.37, 0, 0.63, 1) infinite;
@@ -1142,7 +1149,7 @@ html:has(.client-app[data-theme="light"]) {
   .text-gradient-animate {
     background: none;
     -webkit-text-fill-color: unset;
-    color: #c9a55a;
+    color: #FFB900;
     animation: none;
   }
   .shimmer-gold,
@@ -1258,7 +1265,7 @@ html:has(.client-app[data-theme="light"]) {
   --shell-divider:        rgba(255,255,255,0.06);
   --surface-raised:       rgba(255,255,255,0.04);
   --surface-hover:        rgba(255,255,255,0.07);
-  --nav-active-bg:        rgba(201,165,90,0.16);
+  --nav-active-bg:        rgba(255,185,0,0.16);
 }
 
 /* ── Tokens light ── */
@@ -1270,19 +1277,19 @@ html:has(.client-app[data-theme="light"]) {
   --shell-divider:        rgba(0,0,0,0.07);
   --surface-raised:       rgba(255,255,255,0.85);
   --surface-hover:        rgba(0,0,0,0.04);
-  --nav-active-bg:        rgba(201,165,90,0.11);
+  --nav-active-bg:        rgba(255,185,0,0.11);
 }
 
 /* Fond fluide — orbe gold subtile */
 .djama-app-shell {
   background-color: var(--app-bg);
   background-image:
-    radial-gradient(ellipse 55% 50% at 6% 92%,  rgba(201,165,90,0.045) 0%, transparent 58%);
+    radial-gradient(ellipse 55% 50% at 6% 92%,  rgba(255,185,0,0.045) 0%, transparent 58%);
   background-attachment: fixed;
 }
 .client-app[data-theme="light"] .djama-app-shell {
   background-image:
-    radial-gradient(ellipse 50% 44% at 5% 92%,  rgba(201,165,90,0.050) 0%, transparent 55%);
+    radial-gradient(ellipse 50% 44% at 5% 92%,  rgba(255,185,0,0.050) 0%, transparent 55%);
 }
 
 @media (prefers-reduced-motion: reduce) {

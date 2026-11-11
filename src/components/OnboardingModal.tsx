@@ -9,7 +9,7 @@ import {
   Zap, type LucideIcon,
 } from "lucide-react";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const ease = [0.16, 1, 0.3, 1] as const;
 const STORAGE_KEY = "djama_onboarded";
 
@@ -90,7 +90,7 @@ const STEPS: Step[] = [
             </div>
           ))}
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-[rgba(201,165,90,0.15)] bg-[rgba(201,165,90,0.07)] px-3 py-2.5">
+        <div className="flex items-center gap-2 rounded-xl border border-[rgba(255,185,0,0.15)] bg-[rgba(255,185,0,0.07)] px-3 py-2.5">
           <Crown size={13} style={{ color: GOLD }} />
           <p className="text-xs text-white/45">
             Débloquez <span className="font-bold text-white/70">15+ outils PRO</span> avec DJAMA PRO

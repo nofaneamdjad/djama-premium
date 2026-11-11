@@ -9,7 +9,7 @@ import type { ModuleItem, ModuleGroup } from "@/lib/module-groups";
 import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 function lighten(hex: string, t = 0.32): string {
   const r = parseInt(hex.slice(1, 3), 16);

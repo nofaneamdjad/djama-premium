@@ -88,9 +88,9 @@ export default function AssistantDJAMA() {
               style={{ height: "520px" }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-gray-100 bg-[rgba(201,165,90,0.04)] px-5 py-4">
+              <div className="flex items-center justify-between border-b border-gray-100 bg-[rgba(255,185,0,0.04)] px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
+                  <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FFB900] to-[#CC9400]">
                     <Bot size={16} className="text-white" />
                     <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-400" />
                   </div>
@@ -115,7 +115,7 @@ export default function AssistantDJAMA() {
                     className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                   >
                     {msg.role === "assistant" && (
-                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
+                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#FFB900] to-[#CC9400]">
                         <Sparkles size={10} className="text-white" />
                       </div>
                     )}
@@ -134,7 +134,7 @@ export default function AssistantDJAMA() {
                 {/* Typing indicator */}
                 {loading && (
                   <div className="flex gap-2.5">
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f]">
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#FFB900] to-[#CC9400]">
                       <Sparkles size={10} className="text-white" />
                     </div>
                     <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-white border border-gray-200 px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,.05)]">
@@ -201,7 +201,7 @@ export default function AssistantDJAMA() {
           onClick={() => setOpen((v) => !v)}
           whileHover={{ scale: 1.07 }}
           whileTap={{ scale: 0.95 }}
-          className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#c9a55a] to-[#8c6d3f] shadow-[0_8px_32px_rgba(201,165,90,0.40)] transition-shadow hover:shadow-[0_12px_40px_rgba(201,165,90,0.55)]"
+          className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFB900] to-[#CC9400] shadow-[0_8px_32px_rgba(255,185,0,0.40)] transition-shadow hover:shadow-[0_12px_40px_rgba(255,185,0,0.55)]"
           aria-label="Ouvrir l'assistant DJAMA"
         >
           <AnimatePresence mode="wait">
@@ -228,9 +228,9 @@ export default function AssistantDJAMA() {
 
           {/* Ping d'attention */}
           {!open && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#c9a55a]">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9a55a] opacity-60" />
-              <span className="relative h-3 w-3 rounded-full bg-[#c9a55a]" />
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFB900]">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFB900] opacity-60" />
+              <span className="relative h-3 w-3 rounded-full bg-[#FFB900]" />
             </span>
           )}
         </motion.button>

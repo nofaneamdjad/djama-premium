@@ -61,7 +61,7 @@ interface UnderlineDrawProps {
 export function UnderlineDraw({
   children,
   className = "",
-  lineColor = "#c9a55a",
+  lineColor = "#FFB900",
   thickness = 1.5,
   offset = 2,
 }: UnderlineDrawProps) {

@@ -12,8 +12,8 @@ import { useLanguage } from "@/lib/language-context";
 import type { Lang } from "@/lib/language-context";
 
 const ease   = [0.22, 1, 0.36, 1] as const;
-const GOLD   = "#c9a55a";
-const GOLDR  = "201,165,90";
+const GOLD   = "#FFB900";
+const GOLDR  = "255,185,0";
 
 const LANG_CYCLE: Record<Lang, Lang> = { fr: "en", en: "ar", ar: "fr" };
 const LANG_LABELS: Record<Lang, string> = { fr: "FR", en: "EN", ar: "AR" };
@@ -113,7 +113,7 @@ export default function Navbar() {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
             >
               <motion.div
-                whileHover={{ scale: 1.05, filter: "drop-shadow(0 0 12px rgba(201,165,90,0.5))", transition: { duration: 0.25 } }}
+                whileHover={{ scale: 1.05, filter: "drop-shadow(0 0 12px rgba(255,185,0,0.5))", transition: { duration: 0.25 } }}
                 whileTap={{ scale: 0.95, transition: { duration: 0.12 } }}
               >
                 <Image
@@ -257,7 +257,7 @@ export default function Navbar() {
 
             <Link
               href="/espace-client"
-              className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[0.88rem] font-extrabold text-black transition-all hover:opacity-90 hover:shadow-[0_4px_20px_rgba(201,165,90,0.35)]"
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[0.88rem] font-extrabold text-black transition-all hover:opacity-90 hover:shadow-[0_4px_20px_rgba(255,185,0,0.35)]"
               style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
             >
               {dict.nav.freeQuote}

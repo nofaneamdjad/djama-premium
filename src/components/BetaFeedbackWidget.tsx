@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { MessageSquare, Bug, Lightbulb, AlertCircle, Star, X, Send, Loader2, CheckCircle, ChevronDown } from "lucide-react";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const TYPES = [
   { id: "bug",        label: "Signaler un bug",        icon: Bug,          color: "#ef4444" },
   { id: "feature",    label: "Proposer une fonctionnalité", icon: Lightbulb, color: "#3b82f6" },
@@ -72,12 +72,13 @@ export function BetaFeedbackWidget() {
 
   return (
     <>
-      {/* Bouton flottant */}
+      {/* Bouton flottant — bottom adapté : 88px sur mobile (64px nav + 24px), 24px sur desktop */}
       <button
         onClick={() => setOpen(o => !o)}
         aria-label="Donner mon avis"
+        className="beta-widget-btn"
         style={{
-          position: "fixed", bottom: 24, right: 24, zIndex: 40,
+          position: "fixed", right: 16, zIndex: 40,
           background: "#111827", border: "1px solid rgba(255,255,255,0.12)",
           borderRadius: 50, padding: "10px 16px",
           display: "flex", alignItems: "center", gap: 8,
@@ -114,7 +115,7 @@ export function BetaFeedbackWidget() {
               padding: "1rem 1.25rem", borderBottom: "1px solid rgba(255,255,255,0.07)",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ background: "rgba(201,165,90,0.12)", borderRadius: 8, padding: "5px 8px", fontSize: "0.65rem", fontWeight: 700, color: GOLD, letterSpacing: "0.08em" }}>BÊTA</span>
+                <span style={{ background: "rgba(255,185,0,0.12)", borderRadius: 8, padding: "5px 8px", fontSize: "0.65rem", fontWeight: 700, color: GOLD, letterSpacing: "0.08em" }}>BÊTA</span>
                 <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#fff" }}>Donner mon avis</span>
               </div>
               <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}>
@@ -144,8 +145,8 @@ export function BetaFeedbackWidget() {
                           style={{
                             display: "flex", alignItems: "center", gap: 6,
                             padding: "0.5rem 0.75rem", borderRadius: 8, cursor: "pointer",
-                            background: type === t.id ? "rgba(201,165,90,0.1)" : "rgba(255,255,255,0.03)",
-                            border: `1px solid ${type === t.id ? "rgba(201,165,90,0.3)" : "rgba(255,255,255,0.07)"}`,
+                            background: type === t.id ? "rgba(255,185,0,0.1)" : "rgba(255,255,255,0.03)",
+                            border: `1px solid ${type === t.id ? "rgba(255,185,0,0.3)" : "rgba(255,255,255,0.07)"}`,
                             color: type === t.id ? GOLD : "rgba(255,255,255,0.5)",
                             fontSize: "0.75rem", fontWeight: type === t.id ? 600 : 400,
                             transition: "all 0.1s",
@@ -245,9 +246,9 @@ export function BetaFeedbackWidget() {
                   type="submit"
                   disabled={loading}
                   style={{
-                    background: loading ? "rgba(201,165,90,0.15)" : "rgba(201,165,90,0.12)",
-                    border: "1px solid rgba(201,165,90,0.3)", borderRadius: 10,
-                    color: loading ? "rgba(201,165,90,0.5)" : GOLD,
+                    background: loading ? "rgba(255,185,0,0.15)" : "rgba(255,185,0,0.12)",
+                    border: "1px solid rgba(255,185,0,0.3)", borderRadius: 10,
+                    color: loading ? "rgba(255,185,0,0.5)" : GOLD,
                     padding: "0.65rem", fontSize: "0.875rem", fontWeight: 600,
                     cursor: loading ? "not-allowed" : "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
