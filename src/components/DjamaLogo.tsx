@@ -1,35 +1,28 @@
 "use client";
 
+import Image from "next/image";
+
 interface Props {
-  /** true = footer sombre (lettres blanches + j jaune), false = navbar claire (lettres noires + j jaune) */
+  /** true = fond sombre (lettres blanches + j jaune), false = fond clair (lettres noires + j jaune) */
   dark?: boolean;
-  /** Hauteur en px */
+  /** Hauteur en px — largeur calculée automatiquement (ratio 1600:533) */
   size?: number;
   className?: string;
 }
 
-const YELLOW = "#f5a623"; // couleur exacte du "j" dans le logo original
-
 export default function DjamaLogo({ dark = false, size = 36, className = "" }: Props) {
-  const color = dark ? "#ffffff" : "#1a1a1a";
+  const src    = dark ? "/logo-white.png" : "/logo-transparent.png";
+  const height = size;
+  const width  = Math.round(size * (1600 / 533));
 
   return (
-    <span
-      role="img"
-      aria-label="DJAMA"
-      className={`inline-flex items-baseline select-none ${className}`}
-      style={{
-        fontFamily: "'Baloo 2', 'Nunito', sans-serif",
-        fontWeight: 800,
-        fontSize: size,
-        lineHeight: 1,
-        letterSpacing: "-0.01em",
-        color,
-      }}
-    >
-      d
-      <span style={{ color: YELLOW }}>j</span>
-      ama
-    </span>
+    <Image
+      src={src}
+      alt="DJAMA"
+      width={width}
+      height={height}
+      className={`object-contain select-none ${className}`}
+      style={{ height, width: "auto" }}
+    />
   );
 }

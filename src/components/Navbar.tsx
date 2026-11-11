@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import DjamaLogo from "@/components/DjamaLogo";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
