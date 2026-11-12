@@ -3,6 +3,7 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AssistantDJAMA from "@/components/AssistantDJAMA";
+import DjamaRobot from "@/components/DjamaRobot";
 import { LanguageProvider } from "@/lib/language-context";
 
 import { useEffect, useRef, useState } from "react";
@@ -1046,6 +1047,17 @@ function HomeContent() {
           >
             {lang === "ar" ? "↗ 11,90€ شهريًا لجميع الأدوات الـ 48" : lang === "en" ? "↗ 11.90€/month for ALL 48 tools" : "↗ 11,90€/mois pour TOUS les 48 outils"}
           </motion.p>
+
+          {/* Le Compagnon IA V2 — mascotte du hero */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease, delay: 0.55 }}
+            className="mt-8 flex justify-center"
+            aria-hidden="true"
+          >
+            <DjamaRobot size={88} state="greeting" theme="light" />
+          </motion.div>
         </motion.div>
       </section>
 

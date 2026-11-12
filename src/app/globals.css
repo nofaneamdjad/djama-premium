@@ -1339,3 +1339,74 @@ html:has(.client-app[data-theme="light"]) {
     background-image: none;
   }
 }
+
+/* ══════════════════════════════════════════════
+   DJAMA ROBOT V2 — Composant DjamaRobot
+   Classes .djama-robot--{state} sur le <span>
+   wrapper, .r-* sur les éléments SVG internes.
+══════════════════════════════════════════════ */
+
+/* Base: transform-box pour les éléments SVG animés */
+.djama-robot-wrap .r-head,
+.djama-robot-wrap .r-body,
+.djama-robot-wrap .r-arm-l,
+.djama-robot-wrap .r-arm-r  { transform-box: fill-box; transform-origin: center; }
+.djama-robot-wrap .r-eye-l,
+.djama-robot-wrap .r-eye-r  { transform-box: fill-box; transform-origin: center; }
+.djama-robot-wrap .r-brow-l,
+.djama-robot-wrap .r-brow-r { transform-box: fill-box; transform-origin: 50% 100%; }
+.djama-robot-wrap .r-arm-r-grp { transform-box: fill-box; transform-origin: 50% 10%; }
+.djama-robot-wrap .r-think-dot { transform-box: fill-box; transform-origin: center; }
+
+/* ── Keyframes ── */
+@keyframes djama-idle-float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes djama-idle-blink    { 0%,88%,100%{transform:scaleY(1)} 90%,97%{transform:scaleY(0.08)} }
+@keyframes djama-antenna-pulse { from{opacity:.6} to{opacity:1} }
+
+@keyframes djama-greet-nod  { 0%{transform:rotate(0)} 50%{transform:rotate(-10deg)} 100%{transform:rotate(5deg)} }
+@keyframes djama-greet-wave { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-28deg)} 75%{transform:rotate(20deg)} }
+@keyframes djama-brow-raise { to{transform:translateY(-4px)} }
+@keyframes djama-greet-bob  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+@keyframes djama-think-tilt     { to{transform:rotate(6deg)} }
+@keyframes djama-think-squint   { to{transform:scaleY(.55)} }
+@keyframes djama-brow-raise-one { to{transform:translateY(-5px)} }
+@keyframes djama-dot-pop        { from{opacity:0;transform:scale(.4)} to{opacity:1;transform:scale(1)} }
+@keyframes djama-led-think      { from{opacity:.3} to{opacity:1} }
+
+@keyframes djama-chat-pop   { from{transform:scale(.82)} to{transform:scale(1)} }
+@keyframes djama-bubble-in  { from{opacity:0;transform:translate(6px,4px) scale(.85)} to{opacity:1;transform:translate(0,0) scale(1)} }
+@keyframes djama-eyes-widen { to{transform:scaleY(1.25)} }
+
+/* ── État : Idle (flottement + clignement) ── */
+.djama-robot--idle .r-robot   { animation: djama-idle-float 3.2s ease-in-out infinite; }
+.djama-robot--idle .r-eye-l,
+.djama-robot--idle .r-eye-r   { animation: djama-idle-blink 5s 1.5s ease-in-out infinite; }
+.djama-robot--idle .r-antenna { animation: djama-antenna-pulse 1.4s ease-in-out infinite alternate; }
+
+/* ── État : Greeting (salut + hoche la tête) ── */
+.djama-robot--greeting .r-head      { animation: djama-greet-nod .65s ease-in-out 0s 2 alternate; }
+.djama-robot--greeting .r-arm-r-grp { animation: djama-greet-wave 1.1s ease-in-out infinite; }
+.djama-robot--greeting .r-brow-l,
+.djama-robot--greeting .r-brow-r    { animation: djama-brow-raise .4s ease-out forwards; }
+.djama-robot--greeting .r-robot     { animation: djama-greet-bob 1.1s ease-in-out infinite; }
+
+/* ── État : Thinking (réflexion + points) ── */
+.djama-robot--thinking .r-head      { animation: djama-think-tilt .4s ease-out forwards; }
+.djama-robot--thinking .r-eye-l,
+.djama-robot--thinking .r-eye-r     { animation: djama-think-squint .3s ease-out forwards; }
+.djama-robot--thinking .r-brow-r    { animation: djama-brow-raise-one .4s ease-out forwards; }
+.djama-robot--thinking .r-think-dot { opacity: 0; animation: djama-dot-pop .3s ease-out forwards; }
+.djama-robot--thinking .r-led-1     { animation: djama-led-think .6s ease-in-out infinite alternate; }
+
+/* ── État : Chat (pop-in + bulle) ── */
+.djama-robot--chat .r-robot       { animation: djama-chat-pop .5s cubic-bezier(.34,1.56,.64,1) forwards; }
+.djama-robot--chat .r-chat-bubble { opacity: 0; animation: djama-bubble-in .45s .3s ease-out forwards; }
+.djama-robot--chat .r-eye-l,
+.djama-robot--chat .r-eye-r       { animation: djama-eyes-widen .4s ease-out forwards; }
+
+/* ── Accessibilité : mouvement réduit ── */
+.djama-robot--reduced * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+@media (prefers-reduced-motion: reduce) {
+  .djama-robot-wrap * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}

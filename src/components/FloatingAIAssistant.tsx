@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Send, RotateCcw } from "lucide-react";
+import { X, Send, RotateCcw } from "lucide-react";
+import DjamaRobot from "@/components/DjamaRobot";
 import { useTheme } from "@/lib/theme-context";
 
 const GOLD = "#FFB900";
@@ -292,7 +293,7 @@ export default function FloatingAIAssistant() {
             : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
         } ${open ? (isDark ? "bg-white/[0.08] !text-white/80" : "bg-gray-100 !text-gray-600") : ""}`}
       >
-        <Sparkles size={15} style={open ? { color: GOLD } : undefined} />
+        <DjamaRobot size={16} state={loading ? "thinking" : open ? "chat" : "idle"} theme={isDark ? "dark" : "light"} />
         {/* gold dot indicator when conversation active */}
         {messages.length > 0 && !open && (
           <span
@@ -333,7 +334,7 @@ export default function FloatingAIAssistant() {
                     border: "1px solid rgba(255,185,0,0.3)",
                   }}
                 >
-                  <Sparkles size={12} style={{ color: GOLD }} />
+                  <DjamaRobot size={14} state={loading ? "thinking" : "chat"} theme={isDark ? "dark" : "light"} />
                 </div>
                 <div>
                   <p className="text-xs font-bold" style={{ color: titleColor }}>Assistant IA</p>
@@ -396,7 +397,7 @@ export default function FloatingAIAssistant() {
                         className="mt-0.5 shrink-0 flex h-6 w-6 items-center justify-center rounded-lg"
                         style={{ background: "rgba(255,185,0,0.14)", border: "1px solid rgba(255,185,0,0.22)" }}
                       >
-                        <Sparkles size={10} style={{ color: GOLD }} />
+                        <DjamaRobot size={14} state="idle" theme={isDark ? "dark" : "light"} />
                       </div>
                     )}
                     <div
@@ -422,7 +423,7 @@ export default function FloatingAIAssistant() {
                     className="mt-0.5 shrink-0 flex h-6 w-6 items-center justify-center rounded-lg"
                     style={{ background: "rgba(255,185,0,0.14)", border: "1px solid rgba(255,185,0,0.22)" }}
                   >
-                    <Sparkles size={10} style={{ color: GOLD }} />
+                    <DjamaRobot size={14} state="thinking" theme={isDark ? "dark" : "light"} />
                   </div>
                   <div
                     className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm px-4 py-3"

@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Bot, Sparkles, ArrowRight } from "lucide-react";
+import { X, Send, ArrowRight } from "lucide-react";
+import DjamaRobot, { type RobotState } from "@/components/DjamaRobot";
 
 interface Message {
   role: "user" | "assistant";
@@ -26,14 +27,30 @@ export default function AssistantDJAMA() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [hasGreeted, setHasGreeted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const robotState: RobotState = loading
+    ? "thinking"
+    : !open
+    ? "idle"
+    : !hasGreeted
+    ? "greeting"
+    : "chat";
 
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 350);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open && !hasGreeted) {
+      const t = setTimeout(() => setHasGreeted(true), 1600);
+      return () => clearTimeout(t);
+    }
+  }, [open, hasGreeted]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -91,7 +108,7 @@ export default function AssistantDJAMA() {
               <div className="flex items-center justify-between border-b border-gray-100 bg-[rgba(255,185,0,0.04)] px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FFB900] to-[#CC9400]">
-                    <Bot size={16} className="text-white" />
+                    <DjamaRobot size={28} state={robotState} theme="gold" />
                     <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-400" />
                   </div>
                   <div>
@@ -116,7 +133,7 @@ export default function AssistantDJAMA() {
                   >
                     {msg.role === "assistant" && (
                       <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#FFB900] to-[#CC9400]">
-                        <Sparkles size={10} className="text-white" />
+                        <DjamaRobot size={16} state="idle" theme="gold" />
                       </div>
                     )}
                     <div
@@ -135,7 +152,7 @@ export default function AssistantDJAMA() {
                 {loading && (
                   <div className="flex gap-2.5">
                     <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#FFB900] to-[#CC9400]">
-                      <Sparkles size={10} className="text-white" />
+                      <DjamaRobot size={16} state="thinking" theme="gold" />
                     </div>
                     <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-white border border-gray-200 px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,.05)]">
                       {[0, 1, 2].map((d) => (
@@ -204,27 +221,15 @@ export default function AssistantDJAMA() {
           className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFB900] to-[#CC9400] shadow-[0_8px_32px_rgba(255,185,0,0.40)] transition-shadow hover:shadow-[0_12px_40px_rgba(255,185,0,0.55)]"
           aria-label="Ouvrir l'assistant DJAMA"
         >
-          <AnimatePresence mode="wait">
-            {open ? (
-              <motion.span key="close"
-                initial={{ opacity: 0, rotate: -90, scale: 0.7 }}
-                animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                exit={{ opacity: 0, rotate: 90, scale: 0.7 }}
-                transition={{ duration: 0.2 }}
-              >
-                <X size={22} className="text-white" />
-              </motion.span>
-            ) : (
-              <motion.span key="open"
-                initial={{ opacity: 0, rotate: 90, scale: 0.7 }}
-                animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                exit={{ opacity: 0, rotate: -90, scale: 0.7 }}
-                transition={{ duration: 0.2 }}
-              >
-                <MessageCircle size={22} className="text-white" />
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <motion.span
+            key={robotState}
+            initial={{ opacity: 0, scale: 0.75 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.75 }}
+            transition={{ duration: 0.22 }}
+          >
+            <DjamaRobot size={40} state={robotState} theme="gold" />
+          </motion.span>
 
           {/* Ping d'attention */}
           {!open && (
