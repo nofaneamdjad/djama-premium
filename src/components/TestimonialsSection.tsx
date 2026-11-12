@@ -109,7 +109,7 @@ export default function TestimonialsSection({
           <motion.div
             variants={fadeIn}
             className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,.4)] bg-[rgba(255,185,0,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.24em]"
-            style={{ color: "#b08d57" }}
+            style={{ color: "#FFB900" }}
           >
             <Star size={10} fill="#FFB900" style={{ color: "#FFB900" }} /> {badge}
           </motion.div>
