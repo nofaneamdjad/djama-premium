@@ -240,7 +240,7 @@ function BookingCalendar({
                 {isSel && (
                   <motion.div
                     layoutId="cal-selected"
-                    className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#c9a55a] to-[#b08d45] shadow-[0_4px_14px_rgba(201,165,90,0.4)]"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#FFB900] to-[#FFB900] shadow-[0_4px_14px_rgba(255,185,0,0.4)]"
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -257,7 +257,7 @@ function BookingCalendar({
       {/* Légende */}
       <div className="flex items-center gap-4 border-t border-[var(--border)] px-5 py-3 text-[0.65rem] text-[var(--muted)]">
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-gradient-to-br from-[#c9a55a] to-[#b08d45]" />
+          <span className="h-2 w-2 rounded-full bg-gradient-to-br from-[#FFB900] to-[#FFB900]" />
           Jour sélectionné
         </span>
         <span className="flex items-center gap-1.5">
@@ -310,7 +310,7 @@ function CreneauPicker({
                   whileTap={{ scale: 0.96 }}
                   className={`relative overflow-hidden rounded-xl border py-3 text-xs font-bold transition-all duration-200 ${
                     active
-                      ? "border-[rgba(var(--gold),0.6)] bg-[rgba(var(--gold),0.08)] text-[rgb(var(--gold))] shadow-[0_2px_12px_rgba(201,165,90,0.2)]"
+                      ? "border-[rgba(var(--gold),0.6)] bg-[rgba(var(--gold),0.08)] text-[rgb(var(--gold))] shadow-[0_2px_12px_rgba(255,185,0,0.2)]"
                       : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[rgba(var(--gold),0.35)] hover:bg-[rgba(var(--gold),0.04)] hover:text-[var(--ink)]"
                   }`}
                 >
@@ -649,7 +649,7 @@ export default function SoutienScolairePage() {
           <div className="relative">
             {/* Ligne de connexion desktop */}
             <div className="pointer-events-none absolute left-0 right-0 top-[2.6rem] hidden h-px lg:block"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(201,165,90,0.2) 15%, rgba(201,165,90,0.2) 85%, transparent)" }}
+              style={{ background: "linear-gradient(90deg, transparent, rgba(255,185,0,0.2) 15%, rgba(255,185,0,0.2) 85%, transparent)" }}
             />
 
             <motion.div
@@ -695,7 +695,7 @@ export default function SoutienScolairePage() {
                   <div className="relative flex flex-col flex-1 rounded-2xl border border-white/8 bg-white/[0.04] p-6 backdrop-blur-sm transition-all duration-300 group-hover:border-[rgba(var(--gold),0.25)] group-hover:bg-white/[0.07] group-hover:shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
                     {/* Numéro + icône */}
                     <div className="mb-5 flex items-start justify-between">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[rgba(var(--gold),0.2)] bg-[rgba(var(--gold),0.08)] transition-all duration-300 group-hover:border-[rgba(var(--gold),0.45)] group-hover:bg-[rgba(var(--gold),0.14)] group-hover:shadow-[0_0_20px_rgba(201,165,90,0.15)]">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[rgba(var(--gold),0.2)] bg-[rgba(var(--gold),0.08)] transition-all duration-300 group-hover:border-[rgba(var(--gold),0.45)] group-hover:bg-[rgba(var(--gold),0.14)] group-hover:shadow-[0_0_20px_rgba(255,185,0,0.15)]">
                         <Icon size={20} className="text-[rgb(var(--gold))]" />
                       </div>
                       <span className="text-3xl font-extrabold tabular-nums text-white/8 transition-colors duration-300 group-hover:text-[rgba(var(--gold),0.18)]">
@@ -980,7 +980,7 @@ export default function SoutienScolairePage() {
                 whileHover={{ scale: 1.015, y: -2 }}
                 whileTap={{ scale: 0.985 }}
                 disabled={loading}
-                className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-6 py-4 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_24px_rgba(201,165,90,0.35)] transition-shadow duration-300 hover:shadow-[0_8px_40px_rgba(201,165,90,0.5)] disabled:opacity-60"
+                className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#FFB900] to-[#FFB900] px-6 py-4 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_24px_rgba(255,185,0,0.35)] transition-shadow duration-300 hover:shadow-[0_8px_40px_rgba(255,185,0,0.5)] disabled:opacity-60"
               >
                 <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                 <span className="relative flex items-center justify-center gap-2.5">

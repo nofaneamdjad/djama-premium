@@ -175,7 +175,7 @@ function PreviewModal({
               className={[
                 "shrink-0 rounded-full px-3 py-1 text-[0.65rem] font-bold transition-all duration-150",
                 active === t.id
-                  ? "bg-[#c9a55a] text-white"
+                  ? "bg-[#FFB900] text-white"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100",
               ].join(" ")}
             >
@@ -226,7 +226,7 @@ function PreviewModal({
                 onClick={() => setActive(t.id)}
                 className={[
                   "rounded-full transition-all duration-200",
-                  active === t.id ? "w-5 h-1.5 bg-[#c9a55a]" : "w-1.5 h-1.5 bg-gray-200 hover:bg-gray-300",
+                  active === t.id ? "w-5 h-1.5 bg-[#FFB900]" : "w-1.5 h-1.5 bg-gray-200 hover:bg-gray-300",
                 ].join(" ")}
               />
             ))}
@@ -239,8 +239,8 @@ function PreviewModal({
             className={[
               "flex items-center gap-1.5 rounded-xl px-4 py-2 text-[0.73rem] font-bold transition-all duration-150",
               isSelected
-                ? "bg-[#c9a55a]/15 text-[#c9a55a] cursor-default"
-                : "bg-[#c9a55a] text-white hover:bg-[#d4af6a] shadow-[0_4px_16px_rgba(201,165,90,0.3)]",
+                ? "bg-[#FFB900]/15 text-[#FFB900] cursor-default"
+                : "bg-[#FFB900] text-white hover:bg-[#FFB900] shadow-[0_4px_16px_rgba(255,185,0,0.3)]",
             ].join(" ")}
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -282,7 +282,7 @@ function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardP
       className={[
         "group relative cursor-pointer rounded-2xl border-2 bg-white transition-colors duration-200",
         selected
-          ? "border-[#c9a55a] shadow-[0_0_0_1px_rgba(201,165,90,0.2),0_8px_28px_rgba(201,165,90,0.1)]"
+          ? "border-[#FFB900] shadow-[0_0_0_1px_rgba(255,185,0,0.2),0_8px_28px_rgba(255,185,0,0.1)]"
           : "border-gray-200 hover:border-gray-300 shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
       ].join(" ")}
     >
@@ -308,7 +308,7 @@ function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardP
             animate={{ scale: 1, opacity: 1 }}
             exit={{    scale: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 500, damping: 26 }}
-            className="absolute -top-2 -right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#c9a55a] shadow-[0_2px_8px_rgba(201,165,90,0.55)]"
+            className="absolute -top-2 -right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#FFB900] shadow-[0_2px_8px_rgba(255,185,0,0.55)]"
           >
             <Check size={9} className="text-white" strokeWidth={3.5} />
           </motion.div>
@@ -320,7 +320,7 @@ function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardP
         <div
           className={[
             "overflow-hidden rounded-xl border transition-colors duration-200",
-            selected ? "border-[#c9a55a]/20" : "border-gray-100",
+            selected ? "border-[#FFB900]/20" : "border-gray-100",
           ].join(" ")}
         >
           <LazyThumbnail type={info.id} data={data} />
@@ -332,7 +332,7 @@ function PreviewCard({ info, selected, data, onSelect, onPreview }: PreviewCardP
         <p
           className={[
             "text-[0.62rem] font-bold truncate transition-colors duration-150",
-            selected ? "text-[#c9a55a]" : "text-gray-500 group-hover:text-gray-700",
+            selected ? "text-[#FFB900]" : "text-gray-500 group-hover:text-gray-700",
           ].join(" ")}
         >
           {info.label}

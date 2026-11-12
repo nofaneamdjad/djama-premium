@@ -78,7 +78,7 @@ export default function PWAManager() {
             <div className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_-4px_40px_rgba(0,0,0,0.12)]">
               <div className="h-[2px] bg-gradient-to-r from-transparent via-[#FFB900] to-transparent" />
               <div className="flex items-center gap-4 px-5 py-4">
-                <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(135deg,#FFB900,#b08d45)" }}>
+                <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(135deg,#FFB900,#FFB900)" }}>
                   <Sparkles size={22} color="#fff" />
                 </div>
                 <div className="min-w-0 flex-1">

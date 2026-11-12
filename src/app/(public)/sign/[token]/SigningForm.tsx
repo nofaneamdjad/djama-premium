@@ -3,7 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { CheckCircle2, PenLine, Eraser, AlertCircle, XCircle, Loader2, ShieldCheck } from "lucide-react";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 interface SignerInfo {
   id: string;
@@ -177,7 +177,7 @@ export default function SigningForm({ token }: { token: string }) {
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
         <div style={{
-          background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
+          background: `linear-gradient(135deg, ${GOLD}, #FFB900)`,
           borderRadius: 8,
           width: 32,
           height: 32,
@@ -198,8 +198,8 @@ export default function SigningForm({ token }: { token: string }) {
         gap: "0.4rem",
         padding: "0.35rem 0.8rem",
         borderRadius: 999,
-        background: "rgba(201,165,90,0.08)",
-        border: `1px solid rgba(201,165,90,0.25)`,
+        background: "rgba(255,185,0,0.08)",
+        border: `1px solid rgba(255,185,0,0.25)`,
         fontSize: "0.7rem",
         fontWeight: 700,
         color: GOLD,
@@ -403,7 +403,7 @@ export default function SigningForm({ token }: { token: string }) {
               padding: "0.75rem",
               borderRadius: 12,
               border: action === "sign" ? `2px solid ${GOLD}` : "2px solid #e5e7eb",
-              background: action === "sign" ? `rgba(201,165,90,0.08)` : "#fff",
+              background: action === "sign" ? `rgba(255,185,0,0.08)` : "#fff",
               cursor: "pointer",
               fontWeight: 700,
               fontSize: "0.85rem",
@@ -446,7 +446,7 @@ export default function SigningForm({ token }: { token: string }) {
             borderRadius: 16,
             border: `1px solid ${GOLD}33`,
             padding: "1.5rem",
-            boxShadow: `0 4px 20px rgba(201,165,90,0.08)`,
+            boxShadow: `0 4px 20px rgba(255,185,0,0.08)`,
             marginBottom: "1rem",
           }}>
             {/* Canvas signature */}
@@ -621,7 +621,7 @@ export default function SigningForm({ token }: { token: string }) {
             cursor: canSign ? "pointer" : "not-allowed",
             background: canSign
               ? action === "sign"
-                ? `linear-gradient(135deg, ${GOLD}, #b08d45)`
+                ? `linear-gradient(135deg, ${GOLD}, #FFB900)`
                 : "linear-gradient(135deg, #ef4444, #dc2626)"
               : "#e5e7eb",
             color: canSign ? (action === "sign" ? "#0a0a0a" : "#fff") : "#9ca3af",
@@ -634,7 +634,7 @@ export default function SigningForm({ token }: { token: string }) {
             transition: "all 0.2s",
             boxShadow: canSign
               ? action === "sign"
-                ? "0 4px 16px rgba(201,165,90,0.3)"
+                ? "0 4px 16px rgba(255,185,0,0.3)"
                 : "0 4px 16px rgba(239,68,68,0.25)"
               : "none",
           }}

@@ -10,7 +10,7 @@ export default function Securite() {
       {/* ─── Résumé visuel ─── */}
       <div className="not-prose mb-10 grid gap-4 sm:grid-cols-2">
         {[
-          { icon: Lock,          color: "#c9a55a", title: "Données chiffrées",     desc: "Toutes les communications sont chiffrées en transit (TLS 1.3). Données au repos chiffrées par Supabase." },
+          { icon: Lock,          color: "#FFB900", title: "Données chiffrées",     desc: "Toutes les communications sont chiffrées en transit (TLS 1.3). Données au repos chiffrées par Supabase." },
           { icon: Shield,        color: "#60a5fa", title: "Authentification forte", desc: "Tokens JWT à durée limitée, Row Level Security sur toutes les tables — chaque utilisateur n'accède qu'à ses propres données." },
           { icon: Server,        color: "#4ade80", title: "Hébergement EU",         desc: "Infrastructure hébergée en Europe (AWS eu-west-3, Paris) avec sauvegardes automatiques quotidiennes et rétention." },
           { icon: AlertTriangle, color: "#f59e0b", title: "Divulgation responsable",desc: "Vulnérabilité découverte ? Contactez-nous à contact@djama.space avant toute divulgation publique." },

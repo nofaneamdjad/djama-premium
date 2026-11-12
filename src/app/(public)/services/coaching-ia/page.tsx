@@ -16,7 +16,7 @@ import { FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
 import { supabase } from "@/lib/supabase";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const ease = [0.16, 1, 0.3, 1] as const;
 
 /* ── 20 COURS ─────────────────────────────────────────────── */
@@ -30,7 +30,7 @@ const COURS = [
   { num: "07", title: "Création d'images avec IA",    icon: ImageIcon,      color: "#f472b6" },
   { num: "08", title: "Analyse de données",           icon: BarChart2,      color: "#38bdf8" },
   { num: "09", title: "IA pour entrepreneurs",        icon: Briefcase,      color: "#4ade80" },
-  { num: "10", title: "IA pour optimiser son temps",  icon: GraduationCap,  color: "#c9a55a" },
+  { num: "10", title: "IA pour optimiser son temps",  icon: GraduationCap,  color: "#FFB900" },
   { num: "11", title: "IA pour le marketing",         icon: Megaphone,      color: "#fb923c" },
   { num: "12", title: "Automatisation des tâches",    icon: Zap,            color: "#818cf8" },
   { num: "13", title: "Création de contenu",          icon: PenLine,        color: "#2dd4bf" },
@@ -40,7 +40,7 @@ const COURS = [
   { num: "17", title: "IA et business en ligne",      icon: ShoppingBag,    color: "#67e8f9" },
   { num: "18", title: "IA et programmation",          icon: Code2,          color: "#86efac" },
   { num: "19", title: "Cas pratiques",                icon: Rocket,         color: "#fda4af" },
-  { num: "20", title: "Projet final & Certification", icon: Star,           color: "#c9a55a" },
+  { num: "20", title: "Projet final & Certification", icon: Star,           color: "#FFB900" },
 ];
 
 /* ── 6 ACTIVITÉS ─────────────────────────────────────────── */
@@ -123,9 +123,9 @@ function CoachingPayButton() {
     <button
       onClick={pay}
       disabled={loading}
-      className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl border border-[rgba(201,165,90,0.3)] bg-white px-6 py-4 text-sm font-extrabold text-[var(--ink)] shadow-sm transition-all hover:border-[rgba(201,165,90,0.5)] hover:shadow-[0_4px_20px_rgba(201,165,90,0.15)] disabled:cursor-not-allowed disabled:opacity-70"
+      className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl border border-[rgba(255,185,0,0.3)] bg-white px-6 py-4 text-sm font-extrabold text-[var(--ink)] shadow-sm transition-all hover:border-[rgba(255,185,0,0.5)] hover:shadow-[0_4px_20px_rgba(255,185,0,0.15)] disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {loading ? <><Loader2 size={15} className="animate-spin" />Redirection…</> : <><Wallet size={15} className="text-[#c9a55a]" />Acheter — 190€</>}
+      {loading ? <><Loader2 size={15} className="animate-spin" />Redirection…</> : <><Wallet size={15} className="text-[#FFB900]" />Acheter — 190€</>}
     </button>
   );
 }
@@ -338,7 +338,7 @@ export default function ServicesCoachingIAPage() {
 
           {/* 6 Badges */}
           <FadeReveal delay={0.2} className="mb-4 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.07)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest" style={{ color: GOLD }}>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.07)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest" style={{ color: GOLD }}>
               <Award size={11} />
               6 badges à débloquer
             </div>

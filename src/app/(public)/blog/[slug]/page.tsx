@@ -45,7 +45,7 @@ export default function BlogArticlePage({ params }: { params: Promise<{ slug: st
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-100 border-t-[#c9a55a]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-100 border-t-[#FFB900]" />
       </div>
     );
   }
@@ -55,7 +55,7 @@ export default function BlogArticlePage({ params }: { params: Promise<{ slug: st
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white">
         <BookOpen size={40} className="text-gray-300" />
         <h1 className="text-xl font-black text-gray-800">Article introuvable</h1>
-        <Link href="/blog" className="flex items-center gap-2 text-sm text-[#c9a55a] hover:underline">
+        <Link href="/blog" className="flex items-center gap-2 text-sm text-[#FFB900] hover:underline">
           <ArrowLeft size={13} /> Retour au blog
         </Link>
       </div>
@@ -98,7 +98,7 @@ export default function BlogArticlePage({ params }: { params: Promise<{ slug: st
         >
           <div className="mb-4 flex flex-wrap items-center gap-3">
             {article.categorie && (
-              <div className="flex items-center gap-1.5 rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.07)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-[#c9a55a]">
+              <div className="flex items-center gap-1.5 rounded-full border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.07)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-[#FFB900]">
                 <Tag size={9} /> {article.categorie}
               </div>
             )}
@@ -113,7 +113,7 @@ export default function BlogArticlePage({ params }: { params: Promise<{ slug: st
           </h1>
 
           {article.extrait && (
-            <p className="mb-8 text-base leading-relaxed text-gray-500 border-l-2 border-[rgba(201,165,90,0.4)] pl-4">
+            <p className="mb-8 text-base leading-relaxed text-gray-500 border-l-2 border-[rgba(255,185,0,0.4)] pl-4">
               {article.extrait}
             </p>
           )}
@@ -130,8 +130,8 @@ export default function BlogArticlePage({ params }: { params: Promise<{ slug: st
             prose-a:text-[#6366f1] prose-a:no-underline hover:prose-a:underline
             prose-strong:text-gray-800
             prose-ul:text-gray-600 prose-ol:text-gray-600
-            prose-li:marker:text-[#c9a55a]
-            prose-blockquote:border-[#c9a55a] prose-blockquote:text-gray-500 prose-blockquote:bg-gray-50
+            prose-li:marker:text-[#FFB900]
+            prose-blockquote:border-[#FFB900] prose-blockquote:text-gray-500 prose-blockquote:bg-gray-50
             prose-code:text-[#6366f1] prose-code:bg-gray-100 prose-code:rounded prose-code:px-1
             prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-pre:rounded-2xl"
           dangerouslySetInnerHTML={{ __html: article.contenu }}

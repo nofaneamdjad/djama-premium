@@ -96,7 +96,7 @@ export const DEMO_DATA: PreviewData = {
   client_email: "marie@example.com",
   client_company: "Société Exemple SAS",
   subject:      "Création site web premium",
-  color:        "#c9a55a",
+  color:        "#FFB900",
   items: [
     { description: "Conception & Design UI/UX", quantity: 1, unit_price: 1200, total: 1200 },
     { description: "Développement Next.js",     quantity: 1, unit_price: 2400, total: 2400 },

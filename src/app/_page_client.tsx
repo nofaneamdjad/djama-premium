@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -32,8 +32,8 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import StripeButton from "@/components/ui/StripeButton";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
+const GOLD  = "#FFB900";
+const GOLDR = "255,185,0";
 
 function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
   const [count, setCount] = useState(0);
@@ -67,9 +67,9 @@ function SmartStat({ value }: { value: string }) {
 }
 
 const HOME_CURSIVE: React.CSSProperties = {
-  fontFamily: "'Georgia', 'Times New Roman', serif",
-  fontStyle: "italic",
-  fontWeight: 700,
+  fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+  fontStyle: "normal",
+  fontWeight: 800,
 };
 
 const SCHEMA_STEPS = [
@@ -224,7 +224,7 @@ const RIVAL_PRICES: Record<typeof ESPACE_TOOLS_20[number], number> = {
 type ToolEntry = { name: string; rival: string; price: number; icon: React.ElementType; g: string };
 const TOOLS_DATA_48: ToolEntry[] = [
   // ── Finance & Compta ──
-  { name: "Factures & Devis",      rival: "QuickBooks",       price: 29, icon: Receipt,        g: "linear-gradient(135deg,#f59e0b,#c9a55a)" },
+  { name: "Factures & Devis",      rival: "QuickBooks",       price: 29, icon: Receipt,        g: "linear-gradient(135deg,#f59e0b,#FFB900)" },
   { name: "Dépenses",              rival: "Expensify",        price: 8,  icon: CreditCard,     g: "linear-gradient(135deg,#f43f5e,#be123c)" },
   { name: "Trésorerie",            rival: "Sage",             price: 25, icon: Wallet,         g: "linear-gradient(135deg,#34d399,#059669)" },
   { name: "Comptabilité",          rival: "FreshBooks",       price: 15, icon: Banknote,       g: "linear-gradient(135deg,#4ade80,#16a34a)" },
@@ -276,12 +276,12 @@ const TOOLS_DATA_48: ToolEntry[] = [
 const PUBLIC_APP_ICONS = [
   /* 0 – Factures & devis */
   <svg key="p0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-    <defs><linearGradient id="pub0" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f59e0b"/><stop offset="1" stopColor="#c9a55a"/></linearGradient></defs>
+    <defs><linearGradient id="pub0" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f59e0b"/><stop offset="1" stopColor="#FFB900"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub0)"/>
     <rect x="12" y="10" width="20" height="26" rx="3" fill="white" fillOpacity="0.95"/>
-    <rect x="15" y="16" width="14" height="2" rx="1" fill="#c9a55a"/>
-    <rect x="15" y="20" width="11" height="2" rx="1" fill="#c9a55a" fillOpacity="0.6"/>
-    <rect x="15" y="24" width="9" height="2" rx="1" fill="#c9a55a" fillOpacity="0.4"/>
+    <rect x="15" y="16" width="14" height="2" rx="1" fill="#FFB900"/>
+    <rect x="15" y="20" width="11" height="2" rx="1" fill="#FFB900" fillOpacity="0.6"/>
+    <rect x="15" y="24" width="9" height="2" rx="1" fill="#FFB900" fillOpacity="0.4"/>
     <circle cx="31" cy="33" r="7" fill="#f59e0b"/>
     <path d="M27.5 33l2.5 2.5 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>,
@@ -735,7 +735,7 @@ function DjamaVideoSection() {
     <section className="py-0" style={{ background: "linear-gradient(160deg, #0d1f37 0%, #0f2744 45%, #0a1929 100%)" }}>
       {/* Dot grid overlay */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden"
-        style={{ backgroundImage: "radial-gradient(circle, rgba(201,165,90,0.055) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+        style={{ backgroundImage: "radial-gradient(circle, rgba(255,185,0,0.055) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
 
       {/* Hero text */}
       <div className="relative px-6 pb-10 pt-20 text-center sm:pt-28">
@@ -745,7 +745,7 @@ function DjamaVideoSection() {
             Bienvenue dans la nouvelle ère
           </p>
           <h2 className="text-[2.8rem] font-black leading-[1.05] text-white sm:text-[4.5rem]"
-            style={{ fontFamily: "'Caveat', cursive" }}>
+            style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
             Votre business,{" "}
             <span style={{ background: `linear-gradient(90deg, ${GOLD}, #e8c97a)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               enfin unifié.
@@ -925,7 +925,7 @@ function CoachingPayButton() {
   }
   return (
     <button onClick={pay} disabled={loading}
-      className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#c9a55a] disabled:opacity-60">
+      className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#FFB900] disabled:opacity-60">
       {loading ? <Gem size={11} className="animate-spin" style={{ color: GOLD }} /> : null}
       {loading ? "…" : <><ArrowRight size={11} /> Acheter</>}
     </button>
@@ -971,7 +971,7 @@ function HomeContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease, delay: 0.05 }}
             className="text-[3.6rem] leading-[1.12] text-gray-900 sm:text-[5.8rem]"
-            style={{ fontFamily: lang === "ar" ? "inherit" : "'Caveat', cursive", fontWeight: 800 }}
+            style={{ fontFamily: lang === "ar" ? "inherit" : "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 800 }}
           >
             {lang === "ar" ? "كل أعمالك على " : lang === "en" ? "Your entire business on " : "Tout votre business sur "}
             <span
@@ -993,7 +993,7 @@ function HomeContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease, delay: 0.15 }}
             className="mt-4 text-[2rem] leading-[1.15] text-gray-600 sm:text-[2.9rem]"
-            style={{ fontFamily: lang === "ar" ? "inherit" : "'Caveat', cursive", fontWeight: 600 }}
+            style={{ fontFamily: lang === "ar" ? "inherit" : "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 600 }}
           >
             {lang === "ar" ? (
               <>بسيط، فعّال، و<span className="relative inline-block">بأسعار معقولة !<svg aria-hidden viewBox="0 0 220 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C40 1, 90 9, 140 5 C185 2, 210 8, 218 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
@@ -1020,7 +1020,7 @@ function HomeContent() {
               />
               <Link href="/espace-client"
                 className="relative flex items-center justify-center gap-2 overflow-hidden rounded-2xl px-9 py-4 text-[1rem] font-black text-[#100800]"
-                style={{ background: `linear-gradient(135deg,${GOLD} 0%,#e2ba70 45%,#b08d45 100%)`, boxShadow: `0 8px 30px rgba(${GOLDR},0.45)` }}>
+                style={{ background: GOLD, boxShadow: `0 8px 30px rgba(${GOLDR},0.45)` }}>
                 <motion.div animate={{ x: ["-100%","220%"] }} transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2.8, ease: "easeInOut" }}
                   className="pointer-events-none absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                 <Gem size={15} className="relative z-10 shrink-0" />
@@ -1042,7 +1042,7 @@ function HomeContent() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-5 text-[1.05rem] text-gray-400"
-            style={{ fontFamily: "'Caveat', cursive" }}
+            style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
           >
             {lang === "ar" ? "↗ 11,90€ شهريًا لجميع الأدوات الـ 48" : lang === "en" ? "↗ 11.90€/month for ALL 48 tools" : "↗ 11,90€/mois pour TOUS les 48 outils"}
           </motion.p>
@@ -1103,7 +1103,7 @@ function HomeContent() {
             viewport={viewport} transition={{ duration: 0.5, ease }}
             className="mb-10 text-center">
             <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[3.4rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
+              style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 800 }}>
               Calculez vos économies
             </h2>
             <p className="mt-3 text-[0.95rem] text-gray-500">
@@ -1249,7 +1249,7 @@ function HomeContent() {
                       className="rounded-2xl border border-gray-100 bg-white px-5 py-5 text-center shadow-sm">
                       <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-widest text-gray-400">Vos économies</p>
                       <p className="text-[2.4rem] font-black leading-none"
-                        style={{ fontFamily: "'Caveat', cursive" }}>
+                        style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
                         <span style={{ background: `rgba(${GOLDR},0.28)`, borderRadius: "6px", padding: "0 8px", color: "#6b4200" }}>
                           {saving.toFixed(0)}€/mois
                         </span>
@@ -1264,8 +1264,8 @@ function HomeContent() {
 
               {/* CTA */}
               <Link href="/tarification"
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[0.9rem] font-black text-black transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
-                style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[0.9rem] font-black text-black transition-all hover:shadow-[0_6px_24px_rgba(255,185,0,0.35)]"
+                style={{ background: GOLD }}>
                 <Gem size={13} /> Voir les offres <ArrowRight size={13} />
               </Link>
             </div>
@@ -1297,7 +1297,7 @@ function HomeContent() {
           <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
             <img src="/avatars/men-76.jpg" alt="" className="w-full h-full object-cover" />
           </div>
-          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-[18px] opacity-70" style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }} />
+          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-[18px] opacity-70" style={{ background: GOLD }} />
           <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
             <img src="/avatars/women-22.jpg" alt="" className="w-full h-full object-cover" />
           </div>
@@ -1314,11 +1314,11 @@ function HomeContent() {
         <div className="my-10 px-6 text-center">
           <div className="relative inline-block">
             <span className="absolute -top-7 right-2"
-              style={{ fontFamily: "'Caveat', cursive", color: GOLD, fontSize: "1.35rem", fontWeight: 700, display: "inline-block", transform: "rotate(-5deg)" }}>
+              style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", color: GOLD, fontSize: "1.35rem", fontWeight: 700, display: "inline-block", transform: "rotate(-5deg)" }}>
               heureux
             </span>
             <h2 className="text-[2.6rem] font-black leading-tight text-gray-900 sm:text-[4rem]"
-              style={{ fontFamily: "'Caveat', cursive" }}>
+              style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
               Rejoignez{" "}
               <span style={{ color: GOLD }}>1 200</span>{" "}
               Utilisateurs
@@ -1329,8 +1329,8 @@ function HomeContent() {
           </p>
           <motion.div className="mt-7 inline-block" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
             <Link href="/espace-client"
-              className="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-[0.9rem] font-extrabold text-black transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
-              style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
+              className="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-[0.9rem] font-extrabold text-black transition-all hover:shadow-[0_6px_24px_rgba(255,185,0,0.35)]"
+              style={{ background: GOLD }}>
               Commencer gratuitement <ArrowRight size={15} />
             </Link>
           </motion.div>
@@ -1468,7 +1468,7 @@ function HomeContent() {
             viewport={viewport} transition={{ duration: 0.65, ease }}
             className="mb-14 text-center">
             <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[4rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
+              style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 800 }}>
               Tout ce dont vous avez{" "}
               <span className="relative inline-block whitespace-nowrap">
                 besoin.
@@ -1762,7 +1762,7 @@ function HomeContent() {
             >
               <span
                 className="text-[2rem] leading-none sm:text-[2.4rem]"
-                style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, color: GOLD }}
+                style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 700, color: GOLD }}
               >
                 {n}
               </span>
@@ -1805,19 +1805,19 @@ function HomeContent() {
 
           {/* Titre */}
           <p className="text-[3rem] leading-none text-gray-900 sm:text-[4rem]"
-            style={{ fontFamily: "'Caveat', cursive", fontWeight: 700 }}>
+            style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 700 }}>
             Libérez
           </p>
           <p className="mb-10 text-[2.4rem] leading-tight sm:text-[3.2rem]"
-            style={{ fontFamily: "'Caveat', cursive", fontStyle: "italic", fontWeight: 600, color: "#5dc8be" }}>
+            style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontStyle: "italic", fontWeight: 600, color: "#5dc8be" }}>
             votre potentiel de croissance
           </p>
 
           {/* Bouton principal */}
           <Link
             href="/client"
-            className="inline-flex items-center justify-center rounded-2xl px-10 py-4 text-[1rem] font-bold text-white transition-all duration-200 hover:scale-[1.03] hover:opacity-90 active:scale-[.97]"
-            style={{ background: "#5c3d60", boxShadow: "0 8px 32px rgba(92,61,96,0.30)" }}
+            className="inline-flex items-center justify-center rounded-2xl px-10 py-4 text-[1rem] font-bold text-black transition-all duration-200 hover:scale-[1.03] hover:opacity-90 active:scale-[.97]"
+            style={{ background: GOLD, boxShadow: `0 8px 32px rgba(${GOLDR},0.30)` }}
           >
             Lancez-vous — C&apos;est gratuit !
           </Link>

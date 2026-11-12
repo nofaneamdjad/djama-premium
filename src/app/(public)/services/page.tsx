@@ -68,12 +68,12 @@ const CAT_CONFIG = {
   },
   "Coaching": {
     bg:          "from-[#0e0a02] via-[#160e04] to-[#1a1206]",
-    glow:        "rgba(201,165,90,0.28)",
-    glowDark:    "rgba(201,165,90,0.13)",
-    accent:      "#c9a55a",
-    accentRgb:   "201,165,90",
-    border:      "rgba(201,165,90,0.28)",
-    hoverShadow: "0 32px 72px rgba(201,165,90,0.16), 0 8px 20px rgba(0,0,0,0.08)",
+    glow:        "rgba(255,185,0,0.28)",
+    glowDark:    "rgba(255,185,0,0.13)",
+    accent:      "#FFB900",
+    accentRgb:   "255,185,0",
+    border:      "rgba(255,185,0,0.28)",
+    hoverShadow: "0 32px 72px rgba(255,185,0,0.16), 0 8px 20px rgba(0,0,0,0.08)",
     label:       "Coaching",
     emoji:       "◉",
   },
@@ -504,14 +504,14 @@ function CategoryFilter({
               className="relative flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-200"
               style={{
                 color: isActive
-                  ? config ? config.accent : "#c9a55a"
+                  ? config ? config.accent : "#FFB900"
                   : "rgba(0,0,0,0.45)",
                 background: isActive
-                  ? config ? `rgba(${config.accentRgb}, 0.08)` : "rgba(201,165,90,0.08)"
+                  ? config ? `rgba(${config.accentRgb}, 0.08)` : "rgba(255,185,0,0.08)"
                   : "rgba(0,0,0,0.03)",
                 border: `1.5px solid ${
                   isActive
-                    ? config ? config.border : "rgba(201,165,90,0.32)"
+                    ? config ? config.border : "rgba(255,185,0,0.32)"
                     : "rgba(0,0,0,0.07)"
                 }`,
               }}
@@ -524,7 +524,7 @@ function CategoryFilter({
                   style={{
                     background: config
                       ? `rgba(${config.accentRgb}, 0.06)`
-                      : "rgba(201,165,90,0.06)",
+                      : "rgba(255,185,0,0.06)",
                   }}
                   transition={{ type: "spring", bounce: 0.14, duration: 0.44 }}
                 />
@@ -539,10 +539,10 @@ function CategoryFilter({
                 className="relative z-10 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[0.52rem] font-black"
                 style={{
                   background: isActive
-                    ? config ? `rgba(${config.accentRgb}, 0.15)` : "rgba(201,165,90,0.15)"
+                    ? config ? `rgba(${config.accentRgb}, 0.15)` : "rgba(255,185,0,0.15)"
                     : "rgba(0,0,0,0.06)",
                   color: isActive
-                    ? config ? config.accent : "#c9a55a"
+                    ? config ? config.accent : "#FFB900"
                     : "rgba(0,0,0,0.3)",
                 }}
               >
@@ -644,7 +644,7 @@ export default function ServicesPage() {
           <div className="hero-orb-1 absolute -top-32 -right-24 h-[480px] w-[480px] rounded-full blur-[90px]"
             style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 68%)" }} />
           <div className="hero-orb-2 absolute -bottom-16 -left-28 h-[380px] w-[380px] rounded-full blur-[80px]"
-            style={{ background: "radial-gradient(circle, rgba(201,165,90,0.18) 0%, transparent 68%)" }} />
+            style={{ background: "radial-gradient(circle, rgba(255,185,0,0.18) 0%, transparent 68%)" }} />
           <div className="hero-orb-3 absolute top-0 left-1/2 -translate-x-1/2 h-[340px] w-[560px] rounded-full blur-[100px]"
             style={{ background: "radial-gradient(circle, rgba(168,85,247,0.07) 0%, transparent 70%)" }} />
         </div>
@@ -656,7 +656,7 @@ export default function ServicesPage() {
           {/* Badge */}
           <motion.div variants={fadeIn}
             className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em]"
-            style={{ borderColor: "rgba(201,165,90,0.25)", background: "rgba(201,165,90,0.07)", color: "#c9a55a" }}
+            style={{ borderColor: "rgba(255,185,0,0.25)", background: "rgba(255,185,0,0.07)", color: "#FFB900" }}
           >
             <Sparkles size={11} /> {s.hero.badge}
           </motion.div>
@@ -668,7 +668,7 @@ export default function ServicesPage() {
             {lang === "fr" ? "Nos services," : "Our services,"}<br />
             <span className="relative inline whitespace-nowrap">
               <span aria-hidden className="hero-marker absolute inset-x-[-2px] bottom-[2px]"
-                style={{ height: "38%", background: "linear-gradient(90deg,rgba(201,165,90,0.72) 0%,rgba(201,165,90,0.38) 100%)", borderRadius: "4px", zIndex: 0 }} />
+                style={{ height: "38%", background: "linear-gradient(90deg,rgba(255,185,0,0.72) 0%,rgba(255,185,0,0.38) 100%)", borderRadius: "4px", zIndex: 0 }} />
               <span className="relative z-10">{lang === "fr" ? "votre croissance" : "your growth"}</span>
             </span>.
           </motion.h1>
@@ -684,7 +684,7 @@ export default function ServicesPage() {
           <motion.div variants={fadeIn} className="mt-9 flex flex-col gap-3">
             <Link href="/contact"
               className="hero-btn w-full rounded-2xl py-4 text-center text-[1rem] font-bold text-white shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.015] active:scale-[.98]"
-              style={{ background: "linear-gradient(135deg,#c9a55a 0%,#e0c07a 40%,#c9a55a 70%,#a8864a 100%)" }}
+              style={{ background: "linear-gradient(135deg,#FFB900 0%,#e0c07a 40%,#FFB900 70%,#a8864a 100%)" }}
             >
               {lang === "fr" ? "Démarrer un projet →" : "Start a project →"}
             </Link>
@@ -706,10 +706,10 @@ export default function ServicesPage() {
             ] as const).map(({ value, label, Icon }) => (
               <div key={label}
                 className="flex flex-col items-center gap-2.5 rounded-2xl px-2 py-4"
-                style={{ background: "rgba(201,165,90,0.06)" }}
+                style={{ background: "rgba(255,185,0,0.06)" }}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a" }}
+                  style={{ background: "rgba(255,185,0,0.12)", color: "#FFB900" }}
                 >
                   <Icon size={18} />
                 </div>
@@ -737,14 +737,14 @@ export default function ServicesPage() {
             transition={{ duration: 0.65, ease }}
             className="mb-10"
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.24)] bg-[rgba(201,165,90,0.07)] px-3.5 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.24)] bg-[rgba(255,185,0,0.07)] px-3.5 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#FFB900]">
               <Sparkles size={9} />
               {lang === "fr" ? "14 services disponibles" : "14 services available"}
             </span>
             <h2 className="mt-4 text-[2rem] font-extrabold leading-[1.12] text-gray-900 sm:text-[2.5rem]">
               {lang === "fr"
-                ? <>Tous nos <span style={{ color: "#c9a55a" }}>services</span></>
-                : <>All our <span style={{ color: "#c9a55a" }}>services</span></>}
+                ? <>Tous nos <span style={{ color: "#FFB900" }}>services</span></>
+                : <>All our <span style={{ color: "#FFB900" }}>services</span></>}
             </h2>
             <p className="mt-2.5 max-w-xl text-[0.92rem] leading-relaxed text-gray-500">
               {lang === "fr"
@@ -808,7 +808,7 @@ export default function ServicesPage() {
       >
         {/* Gold top line */}
         <div className="h-[3px] w-full mb-0 -mt-20 sm:-mt-28"
-          style={{ background: "linear-gradient(90deg,transparent,#c9a55a,transparent)" }}
+          style={{ background: "linear-gradient(90deg,transparent,#FFB900,transparent)" }}
         />
         <div className="mx-auto max-w-5xl pt-20 sm:pt-28">
 
@@ -820,13 +820,13 @@ export default function ServicesPage() {
             transition={{ duration: 0.6, ease }}
             className="mb-16 text-center"
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.30)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#c9a55a]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.30)] bg-[rgba(255,185,0,0.08)] px-4 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#FFB900]">
               <Sparkles size={9} /> {lang === "fr" ? "Notre approche" : "Our approach"}
             </span>
             <h2 className="mt-4 text-[2rem] font-extrabold leading-[1.12] text-white sm:text-[2.5rem]">
               {lang === "fr"
-                ? <>Votre projet, <span style={{ color: "#c9a55a" }}>notre mission.</span></>
-                : <>Your project, <span style={{ color: "#c9a55a" }}>our mission.</span></>}
+                ? <>Votre projet, <span style={{ color: "#FFB900" }}>notre mission.</span></>
+                : <>Your project, <span style={{ color: "#FFB900" }}>our mission.</span></>}
             </h2>
             <p className="mt-3 text-[0.9rem] text-white/45">
               {lang === "fr"
@@ -849,8 +849,8 @@ export default function ServicesPage() {
               {
                 num: "02",
                 icon: Zap,
-                color: "#c9a55a",
-                rgb: "201,165,90",
+                color: "#FFB900",
+                rgb: "255,185,0",
                 title: lang === "fr" ? "DJAMA réalise" : "DJAMA delivers",
                 desc:  lang === "fr" ? "Notre équipe conçoit, développe et livre avec soin." : "Our team designs, builds and delivers with care.",
               },
@@ -913,7 +913,7 @@ export default function ServicesPage() {
                       whileInView={{ scaleY: 1, opacity: 1 }}
                       viewport={viewport}
                       transition={{ duration: 0.5, ease, delay: i * 0.18 + 0.28 }}
-                      style={{ background: "linear-gradient(180deg,rgba(201,165,90,0.12),rgba(201,165,90,0.5),rgba(201,165,90,0.12))", transformOrigin: "top" }}
+                      style={{ background: "linear-gradient(180deg,rgba(255,185,0,0.12),rgba(255,185,0,0.5),rgba(255,185,0,0.12))", transformOrigin: "top" }}
                     />
                     {/* Horizontal arrow — desktop */}
                     <motion.svg
@@ -926,7 +926,7 @@ export default function ServicesPage() {
                     >
                       <motion.path
                         d="M2 9 L36 9 M29 3 L36 9 L29 15"
-                        stroke="rgba(201,165,90,0.45)"
+                        stroke="rgba(255,185,0,0.45)"
                         strokeWidth="1.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -952,7 +952,7 @@ export default function ServicesPage() {
             className="mt-16 grid grid-cols-2 gap-2.5 sm:grid-cols-4"
           >
             {([
-              { icon: Zap,             color: "#c9a55a", rgb: "201,165,90", label: lang === "fr" ? "Livraison rapide"     : "Fast delivery"         },
+              { icon: Zap,             color: "#FFB900", rgb: "255,185,0", label: lang === "fr" ? "Livraison rapide"     : "Fast delivery"         },
               { icon: Shield,          color: "#7c6fcd", rgb: "124,111,205", label: lang === "fr" ? "Qualité garantie"    : "Quality guaranteed"    },
               { icon: HeartHandshake,  color: "#34d399", rgb: "52,211,153",  label: lang === "fr" ? "Suivi personnalisé"  : "Personal follow-up"    },
               { icon: TrendingUp,      color: "#f9a826", rgb: "249,168,38",  label: lang === "fr" ? "Résultats mesurables": "Measurable results"    },
@@ -990,7 +990,7 @@ export default function ServicesPage() {
             { icon: Sparkles,      color: "#dc5078", label: lang === "fr" ? "E-commerce"                 : "E-commerce"           },
             { icon: MessageSquare, color: "#f9a826", label: lang === "fr" ? "Application mobile"         : "Mobile app"           },
             { icon: Layers,        color: "#7c6fcd", label: lang === "fr" ? "Plateforme web"             : "Web platform"         },
-            { icon: Zap,           color: "#c9a55a", label: lang === "fr" ? "Automatisation & IA"        : "AI automation"        },
+            { icon: Zap,           color: "#FFB900", label: lang === "fr" ? "Automatisation & IA"        : "AI automation"        },
             { icon: TrendingUp,    color: "#34d399", label: lang === "fr" ? "Montage vidéo"              : "Video editing"        },
             { icon: Star,          color: "#f9a826", label: lang === "fr" ? "Retouche photo"             : "Photo retouching"     },
           ];
@@ -999,7 +999,7 @@ export default function ServicesPage() {
             { icon: Users,         color: "#f9a826", label: lang === "fr" ? "Soutien scolaire"           : "Tutoring"             },
             { icon: Shield,        color: "#7c6fcd", label: lang === "fr" ? "Création auto-entrepreneur" : "Business registration" },
             { icon: Clock,         color: "#dc5078", label: lang === "fr" ? "Déclarations URSSAF"        : "URSSAF declarations"  },
-            { icon: Settings2,     color: "#c9a55a", label: lang === "fr" ? "Assistance administrative"  : "Admin assistance"     },
+            { icon: Settings2,     color: "#FFB900", label: lang === "fr" ? "Assistance administrative"  : "Admin assistance"     },
             { icon: ArrowRight,    color: "#34d399", label: lang === "fr" ? "Marchés publics"            : "Public tenders"       },
             { icon: Users2,        color: "#f9a826", label: lang === "fr" ? "Recherche fournisseurs"     : "Supplier sourcing"    },
           ];
@@ -1051,13 +1051,13 @@ export default function ServicesPage() {
           style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e1b4b 60%,#1e1035 100%)" }}
         >
           {/* Gold top line */}
-          <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg,#c9a55a,#e8cc94,#c9a55a)" }} />
+          <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg,#FFB900,#FFB900,#FFB900)" }} />
 
           <div className="flex flex-col items-center gap-5 px-8 py-10 text-center">
             <h2 className="text-[1.55rem] font-extrabold leading-[1.18] text-white sm:text-[1.9rem]">
               {lang === "fr"
-                ? <>Lancez votre projet <span style={{ color: "#c9a55a" }}>dès aujourd&apos;hui.</span></>
-                : <>Launch your project <span style={{ color: "#c9a55a" }}>today.</span></>}
+                ? <>Lancez votre projet <span style={{ color: "#FFB900" }}>dès aujourd&apos;hui.</span></>
+                : <>Launch your project <span style={{ color: "#FFB900" }}>today.</span></>}
             </h2>
 
             {/* 3 trust bullets */}
@@ -1068,7 +1068,7 @@ export default function ServicesPage() {
                 { icon: Shield,     label: lang === "fr" ? "Sans engagement"  : "No commitment"    },
               ].map(({ icon: Icon, label }) => (
                 <span key={label} className="flex items-center gap-1.5 text-[0.72rem] font-semibold text-white/55">
-                  <Icon size={11} style={{ color: "#c9a55a" }} /> {label}
+                  <Icon size={11} style={{ color: "#FFB900" }} /> {label}
                 </span>
               ))}
             </div>
@@ -1079,7 +1079,7 @@ export default function ServicesPage() {
                 <Link
                   href="/contact"
                   className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-extrabold text-[#0f172a] transition-all duration-300 hover:brightness-110"
-                  style={{ background: "linear-gradient(90deg,#c9a55a,#e8cc94,#c9a55a)", backgroundSize: "200% 100%" }}
+                  style={{ background: "linear-gradient(90deg,#FFB900,#FFB900,#FFB900)", backgroundSize: "200% 100%" }}
                 >
                   {lang === "fr" ? "Demander un devis" : "Request a quote"}
                   <motion.span animate={{ x: [0, 3, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>

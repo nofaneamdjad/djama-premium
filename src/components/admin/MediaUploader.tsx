@@ -397,7 +397,7 @@ export function MediaUploader({
             onClick={() => setTab(t)}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[0.74rem] font-bold transition-all ${
               tab === t
-                ? "bg-[rgba(201,165,90,0.15)] text-[#c9a55a]"
+                ? "bg-[rgba(255,185,0,0.15)] text-[#FFB900]"
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -425,9 +425,9 @@ export function MediaUploader({
               "relative flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2.5",
               "rounded-2xl border-2 border-dashed transition-all duration-200 select-none",
               uploading
-                ? "pointer-events-none border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.04)]"
+                ? "pointer-events-none border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.04)]"
                 : dragOver
-                  ? "border-[rgba(201,165,90,0.6)] bg-[rgba(201,165,90,0.06)] scale-[1.01]"
+                  ? "border-[rgba(255,185,0,0.6)] bg-[rgba(255,185,0,0.06)] scale-[1.01]"
                   : success
                     ? "border-emerald-200 bg-emerald-50"
                     : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100",
@@ -436,13 +436,13 @@ export function MediaUploader({
             {/* Upload en cours */}
             {uploading && (
               <>
-                <Loader2 size={22} className="animate-spin text-[#c9a55a]" />
+                <Loader2 size={22} className="animate-spin text-[#FFB900]" />
                 <p className="text-[0.74rem] font-semibold text-gray-500">
                   {isImage ? "Traitement et upload…" : "Upload en cours…"}
                 </p>
                 <div className="absolute bottom-3 left-5 right-5 h-[3px] overflow-hidden rounded-full bg-gray-200">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#c9a55a] to-[#e8cc94] transition-all duration-300"
+                    className="h-full rounded-full bg-gradient-to-r from-[#FFB900] to-[#FFB900] transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -480,7 +480,7 @@ export function MediaUploader({
                     {isImage ? "JPG, PNG, WebP, SVG · max 5 MB" : "MP4, WebM · max 50 MB"}
                   </p>
                   {isImage && (
-                    <p className="mt-1 text-[0.62rem] text-[rgba(201,165,90,0.55)]">
+                    <p className="mt-1 text-[0.62rem] text-[rgba(255,185,0,0.55)]">
                       ✦ Converti automatiquement en WebP
                     </p>
                   )}
@@ -528,7 +528,7 @@ export function MediaUploader({
               ? "https://… (jpg, png, webp, svg)"
               : "https://youtube.com/… · https://vimeo.com/… · ou lien direct .mp4"
           }
-          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 placeholder:text-gray-400 outline-none transition-colors focus:border-[rgba(201,165,90,0.5)] focus:bg-white"
+          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[0.84rem] text-gray-700 placeholder:text-gray-400 outline-none transition-colors focus:border-[rgba(255,185,0,0.5)] focus:bg-white"
         />
       )}
 

@@ -14,8 +14,8 @@ import { FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
+const GOLD  = "#FFB900";
+const GOLDR = "255,185,0";
 const BG    = "linear-gradient(175deg, #1a0c35 0%, #0d0821 50%, #060c18 100%)";
 
 /* ── Données ───────────────────────────────────────────────── */
@@ -136,7 +136,7 @@ export default function AProposPage() {
             transition={{ duration: 0.5, ease, delay: 0.3 }}
             className="mt-10 flex flex-wrap justify-center gap-3"
           >
-            <Link href="/contact" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl px-7 py-3.5 text-sm font-extrabold text-black shadow-[0_4px_20px_rgba(201,165,90,0.35)] transition-shadow hover:shadow-[0_8px_36px_rgba(201,165,90,0.5)]" style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
+            <Link href="/contact" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl px-7 py-3.5 text-sm font-extrabold text-black shadow-[0_4px_20px_rgba(255,185,0,0.35)] transition-shadow hover:shadow-[0_8px_36px_rgba(255,185,0,0.5)]" style={{ background: GOLD }}>
               <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
               <span className="relative flex items-center gap-2">Démarrer un projet <ArrowRight size={15} /></span>
             </Link>
@@ -425,7 +425,7 @@ export default function AProposPage() {
           </FadeReveal>
           <FadeReveal delay={0.2}>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link href="/contact" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl px-7 py-3.5 text-sm font-extrabold text-black shadow-[0_4px_20px_rgba(201,165,90,0.35)] transition-shadow hover:shadow-[0_8px_36px_rgba(201,165,90,0.5)]" style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}>
+              <Link href="/contact" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl px-7 py-3.5 text-sm font-extrabold text-black shadow-[0_4px_20px_rgba(255,185,0,0.35)] transition-shadow hover:shadow-[0_8px_36px_rgba(255,185,0,0.5)]" style={{ background: GOLD }}>
                 <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                 <span className="relative flex items-center gap-2">Démarrer un projet <ArrowRight size={15} /></span>
               </Link>

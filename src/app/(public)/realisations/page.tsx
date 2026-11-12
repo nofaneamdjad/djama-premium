@@ -21,8 +21,8 @@ import { fetchRealisations } from "@/lib/db/realisations";
 import { WordLift } from "@/components/ui/HoverText";
 import type { RealisationRow } from "@/types/db";
 
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
+const GOLD  = "#FFB900";
+const GOLDR = "255,185,0";
 const ease  = [0.16, 1, 0.3, 1] as const;
 
 /* ══════════════════════════════════════════════════
@@ -64,7 +64,7 @@ function hexToRgb(hex: string): string {
 }
 
 const GRADIENT_MAP: Record<string, string> = {
-  "#c9a55a": "from-[#0e0a02] via-[#160e04] to-[#1a1206]",
+  "#FFB900": "from-[#0e0a02] via-[#160e04] to-[#1a1206]",
   "#60a5fa": "from-[#0d1a2a] via-[#0f2235] to-[#0a1928]",
   "#a78bfa": "from-[#1a0d2e] via-[#1e0f3a] to-[#130a24]",
   "#4ade80": "from-[#0f1a10] via-[#152218] to-[#0d1a10]",
@@ -171,8 +171,8 @@ const CASE_STUDIES = [
     icon: Briefcase,
     profile: "Consultant IT freelance",
     sector: "Services B2B · Indépendant",
-    color: "#c9a55a",
-    rgb: "201,165,90",
+    color: "#FFB900",
+    rgb: "255,185,0",
     solution: "DJAMA Pro",
     solutionHref: "/abonnement",
     problem: "7 abonnements éparpillés (Notion, Calendly, Stripe, Pennylane, Slack, Zoom, DocuSign) pour 120€/mois — 4h perdues en admin chaque semaine, aucune vision centralisée.",
@@ -180,7 +180,7 @@ const CASE_STUDIES = [
     stats: [
       { value: "-108€",  label: "économisés / mois",  icon: TrendingUp, color: "#34d399" },
       { value: "-4h",    label: "admin / semaine",    icon: Timer,      color: "#60a5fa" },
-      { value: "20+",    label: "outils centralisés", icon: Zap,        color: "#c9a55a" },
+      { value: "20+",    label: "outils centralisés", icon: Zap,        color: "#FFB900" },
     ],
   },
   {
@@ -197,7 +197,7 @@ const CASE_STUDIES = [
     stats: [
       { value: "+40%",    label: "contacts entrants", icon: TrendingUp, color: "#34d399" },
       { value: "10 j",    label: "délai de livraison",icon: Zap,        color: "#60a5fa" },
-      { value: "+9 600€", label: "de CA en 6 mois",   icon: Star,       color: "#c9a55a" },
+      { value: "+9 600€", label: "de CA en 6 mois",   icon: Star,       color: "#FFB900" },
     ],
   },
   {
@@ -214,7 +214,7 @@ const CASE_STUDIES = [
     stats: [
       { value: "-2h",   label: "rédaction / jour",          icon: Timer,      color: "#4ade80" },
       { value: "4×",    label: "fiches produits plus vite", icon: Zap,        color: "#a78bfa" },
-      { value: "+28%",  label: "de conversion boutique",    icon: TrendingUp, color: "#c9a55a" },
+      { value: "+28%",  label: "de conversion boutique",    icon: TrendingUp, color: "#FFB900" },
     ],
   },
   {
@@ -231,7 +231,7 @@ const CASE_STUDIES = [
     stats: [
       { value: "+22 pts",  label: "de marge brute",   icon: TrendingUp,  color: "#34d399" },
       { value: "-31 000€", label: "d'achats / an",    icon: Star,        color: "#f59e0b" },
-      { value: "40%",      label: "marge atteinte",   icon: CheckCircle2,color: "#c9a55a" },
+      { value: "40%",      label: "marge atteinte",   icon: CheckCircle2,color: "#FFB900" },
     ],
   },
 ] as const;

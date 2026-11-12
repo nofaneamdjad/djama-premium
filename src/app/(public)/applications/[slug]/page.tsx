@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Calendar, CheckCircle2, Users, Star, Zap as ZapIcon } from "lucide-react";
 import { getAppBySlug } from "@/lib/applications-data";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const ease = [0.22, 1, 0.36, 1] as const;
 const viewport = { once: true, margin: "-60px" };
 
@@ -301,7 +301,7 @@ export default function AppDetailPage({ params }: { params: Promise<{ slug: stri
           >
             <span
               className="text-[1.25rem] italic text-gray-400"
-              style={{ fontFamily: "'Caveat', cursive" }}
+              style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 800 }}
             >
               Facile à prendre en main
             </span>
@@ -334,7 +334,7 @@ export default function AppDetailPage({ params }: { params: Promise<{ slug: stri
             <Link
               href="/login"
               className="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-[0.95rem] font-extrabold text-black shadow-lg transition-all hover:opacity-90 hover:shadow-xl"
-              style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+              style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)` }}
             >
               {"Lancez-vous — C'est gratuit !"} <ArrowRight size={16} />
             </Link>
@@ -394,7 +394,7 @@ export default function AppDetailPage({ params }: { params: Promise<{ slug: stri
                     {/* Titre manuscrit style Odoo */}
                     <h3
                       className="mb-5 text-[3rem] font-bold leading-snug text-gray-900 sm:text-[3.8rem]"
-                      style={{ fontFamily: "'Caveat', cursive" }}
+                      style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 800 }}
                     >
                       {feat.title}
                     </h3>
@@ -437,7 +437,7 @@ export default function AppDetailPage({ params }: { params: Promise<{ slug: stri
               <div key={label} className="px-4 py-5">
                 <Icon size={18} className="mx-auto mb-2" style={{ color: app.color }} />
                 <p className="text-[2.4rem] font-bold leading-none text-gray-900 sm:text-[3rem]"
-                  style={{ fontFamily: "'Caveat', cursive" }}>{n}</p>
+                  style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 800 }}>{n}</p>
                 <p className="mt-1 text-[0.72rem] font-medium uppercase tracking-wider text-gray-400">{label}</p>
               </div>
             ))}
@@ -467,7 +467,7 @@ export default function AppDetailPage({ params }: { params: Promise<{ slug: stri
               <div>
                 <p
                   className="mb-1 text-[1.5rem] font-bold leading-snug text-gray-800"
-                  style={{ fontFamily: "'Caveat', cursive" }}
+                  style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 800 }}
                 >
                   {"Vous cherchez à aller plus loin ?"}
                 </p>
@@ -496,7 +496,7 @@ export default function AppDetailPage({ params }: { params: Promise<{ slug: stri
         >
           <p
             className="mb-3 text-[3rem] font-bold leading-tight text-gray-900 sm:text-[3.8rem]"
-            style={{ fontFamily: "'Caveat', cursive" }}
+            style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 800 }}
           >
             {"Prêt à vous lancer ?"}
           </p>
@@ -507,7 +507,7 @@ export default function AppDetailPage({ params }: { params: Promise<{ slug: stri
             <Link
               href="/login"
               className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-[1rem] font-extrabold text-black shadow-lg transition-all hover:opacity-90 hover:shadow-xl"
-              style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+              style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)` }}
             >
               Commencer gratuitement <ArrowRight size={16} />
             </Link>

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 type ServiceId =
   | "vitrine" | "ecommerce" | "app" | "plateforme"
@@ -177,14 +177,14 @@ export default function CalculateurPage() {
       <section className="relative overflow-hidden bg-[#07080e] pt-[108px] pb-14">
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="h-[300px] w-[500px] rounded-full blur-[100px]"
-            style={{ background: "rgba(201,165,90,0.08)" }} />
+            style={{ background: "rgba(255,185,0,0.08)" }} />
         </div>
         <div className="absolute inset-x-0 top-0 h-[1.5px]"
-          style={{ background: "linear-gradient(90deg,transparent,rgba(201,165,90,0.7) 40%,rgba(201,165,90,0.3) 70%,transparent)" }} />
+          style={{ background: "linear-gradient(90deg,transparent,rgba(255,185,0,0.7) 40%,rgba(255,185,0,0.3) 70%,transparent)" }} />
 
         <div className="relative mx-auto max-w-2xl px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease }}>
-            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#c9a55a]">
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.08)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#FFB900]">
               <Sparkles size={11} /> Calculateur de tarifs
             </span>
           </motion.div>
@@ -206,15 +206,15 @@ export default function CalculateurPage() {
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-all duration-300 ${
                     step >= n
-                      ? "shadow-[0_0_14px_rgba(201,165,90,0.5)] text-[#0a0a0a]"
+                      ? "shadow-[0_0_14px_rgba(255,185,0,0.5)] text-[#0a0a0a]"
                       : "border border-white/20 text-white/30"
                   }`}
-                  style={step >= n ? { background: `linear-gradient(135deg, ${GOLD}, #b08d45)` } : {}}
+                  style={step >= n ? { background: `linear-gradient(135deg, ${GOLD}, #FFB900)` } : {}}
                 >
                   {step > n ? <Check size={13} /> : n}
                 </div>
                 {n < 3 && (
-                  <div className={`h-px w-10 transition-all duration-500 ${step > n ? "bg-[#c9a55a]/50" : "bg-white/10"}`} />
+                  <div className={`h-px w-10 transition-all duration-500 ${step > n ? "bg-[#FFB900]/50" : "bg-white/10"}`} />
                 )}
               </div>
             ))}
@@ -239,11 +239,11 @@ export default function CalculateurPage() {
                     whileHover={{ y: -3, scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => pickService(s)}
-                    className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:border-[rgba(201,165,90,0.35)] hover:shadow-lg"
+                    className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:border-[rgba(255,185,0,0.35)] hover:shadow-lg"
                   >
                     <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                      style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,165,90,0.06) 0%, transparent 70%)" }} />
-                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.06)]">
+                      style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,185,0,0.06) 0%, transparent 70%)" }} />
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.06)]">
                       <s.Icon size={18} style={{ color: GOLD }} />
                     </div>
                     <p className="text-sm font-extrabold text-gray-900">{s.title}</p>
@@ -251,7 +251,7 @@ export default function CalculateurPage() {
                     <p className="mt-3 text-xs font-bold" style={{ color: GOLD }}>
                       dès {fmtEur(s.baseMin)}{s.unit ? " " + s.unit : ""}
                     </p>
-                    <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-[#c9a55a]" />
+                    <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-[#FFB900]" />
                   </motion.button>
                 ))}
               </div>
@@ -269,7 +269,7 @@ export default function CalculateurPage() {
               </button>
 
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.07)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.07)]">
                   <service.Icon size={18} style={{ color: GOLD }} />
                 </div>
                 <div>
@@ -289,12 +289,12 @@ export default function CalculateurPage() {
                     <button key={opt.id} onClick={() => toggle(opt.id)}
                       className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 ${
                         checked
-                          ? "border-[rgba(201,165,90,0.5)] bg-[rgba(201,165,90,0.06)]"
+                          ? "border-[rgba(255,185,0,0.5)] bg-[rgba(255,185,0,0.06)]"
                           : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white"
                       }`}
                     >
                       <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all ${
-                        checked ? "border-[#c9a55a] bg-[#c9a55a]" : "border-gray-300 bg-white"
+                        checked ? "border-[#FFB900] bg-[#FFB900]" : "border-gray-300 bg-white"
                       }`}>
                         {checked && <Check size={11} className="text-white" />}
                       </div>
@@ -317,7 +317,7 @@ export default function CalculateurPage() {
               </div>
 
               <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-                <div className="flex-1 rounded-2xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.04)] p-4">
+                <div className="flex-1 rounded-2xl border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.04)] p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Estimation actuelle</p>
                   <p className="mt-1 text-2xl font-black text-gray-900">
                     {fmtEur(min)}
@@ -330,7 +330,7 @@ export default function CalculateurPage() {
                 </div>
                 <button onClick={() => setStep(3)}
                   className="flex shrink-0 items-center justify-center gap-2 rounded-2xl px-7 py-4 text-sm font-bold text-[#0a0a0a] transition hover:opacity-90"
-                  style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, boxShadow: "0 4px 18px rgba(201,165,90,0.38)" }}
+                  style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)`, boxShadow: "0 4px 18px rgba(255,185,0,0.38)" }}
                 >
                   Voir l&apos;estimation <ArrowRight size={14} />
                 </button>
@@ -349,12 +349,12 @@ export default function CalculateurPage() {
                 <ArrowLeft size={14} /> Modifier les options
               </button>
 
-              <div className="w-full max-w-lg rounded-3xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.04)] p-8 text-center shadow-xl">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-[#c9a55a]">
+              <div className="w-full max-w-lg rounded-3xl border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.04)] p-8 text-center shadow-xl">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.08)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-[#FFB900]">
                   <Sparkles size={10} /> Estimation DJAMA
                 </span>
 
-                <div className="mx-auto mt-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.1)]">
+                <div className="mx-auto mt-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.1)]">
                   <service.Icon size={22} style={{ color: GOLD }} />
                 </div>
                 <p className="mt-3 text-sm font-semibold text-gray-500">{service.title}</p>
@@ -391,7 +391,7 @@ export default function CalculateurPage() {
                 <Link
                   href={`/contact?service=${service.id}&estMin=${min}&estMax=${max}`}
                   className="inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-[#0a0a0a] transition hover:opacity-90"
-                  style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, boxShadow: "0 4px 20px rgba(201,165,90,0.38)" }}
+                  style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)`, boxShadow: "0 4px 20px rgba(255,185,0,0.38)" }}
                 >
                   Obtenir mon devis gratuit <ArrowRight size={14} />
                 </Link>

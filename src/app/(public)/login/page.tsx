@@ -9,12 +9,12 @@ import { Eye, EyeOff, AlertCircle, RefreshCw, CheckCircle2, ChevronLeft } from "
 import { supabase } from "@/lib/supabase";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 /* ── Spinner ── */
 function Spinner({ light = false }: { light?: boolean }) {
   const c = light ? "rgba(255,255,255,0.8)" : GOLD;
-  const f = light ? "rgba(255,255,255,0.2)" : "rgba(201,165,90,0.2)";
+  const f = light ? "rgba(255,255,255,0.2)" : "rgba(255,185,0,0.2)";
   return (
     <motion.span
       animate={{ rotate: 360 }}
@@ -159,11 +159,11 @@ function LoginPageInner() {
   return (
     <>
       <style>{`
-        .btn-gold { background-color: #c9a55a; color: #fff; }
+        .btn-gold { background-color: #FFB900; color: #fff; }
         .btn-gold:hover:not(:disabled) { background-color: #d4b06a; }
         .btn-outline:hover { background-color: #f8f9fa; }
-        .field-wrap:focus-within { border-color: #c9a55a !important; }
-        .link-gold { color: #c9a55a; }
+        .field-wrap:focus-within { border-color: #FFB900 !important; }
+        .link-gold { color: #FFB900; }
         .link-gold:hover { text-decoration: underline; text-underline-offset: 2px; }
       `}</style>
 

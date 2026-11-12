@@ -25,7 +25,7 @@ export default function ApplicationsPage() {
           className="mb-14 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl"
         >
           Un besoin,{" "}
-          <span className="italic" style={{ color: "#c9a55a" }}>une app.</span>
+          <span className="font-extrabold" style={{ color: "#FFB900" }}>une app.</span>
         </motion.h1>
 
         {/* Catégories */}

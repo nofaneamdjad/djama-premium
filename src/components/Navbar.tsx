@@ -90,7 +90,7 @@ export default function Navbar() {
     <>
       {/* Scroll progress bar */}
       <motion.div
-        style={{ scaleX, transformOrigin: "left", background: `linear-gradient(90deg, ${GOLD}, #e8cc94, ${GOLD})` }}
+        style={{ scaleX, transformOrigin: "left", background: GOLD }}
         className="fixed top-0 left-0 right-0 z-[60] h-[2px] origin-left"
       />
 
@@ -219,7 +219,7 @@ export default function Navbar() {
                         href="/espace-client"
                         onClick={() => setAppsOpen(false)}
                         className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-[0.85rem] font-extrabold text-black"
-                        style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                        style={{ background: GOLD }}
                       >
                         {dict.nav.freeQuote} <ArrowRight size={13} />
                       </Link>
@@ -257,7 +257,7 @@ export default function Navbar() {
             <Link
               href="/espace-client"
               className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[0.88rem] font-extrabold text-black transition-all hover:opacity-90 hover:shadow-[0_4px_20px_rgba(255,185,0,0.35)]"
-              style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+              style={{ background: GOLD }}
             >
               {dict.nav.freeQuote}
             </Link>
@@ -352,7 +352,7 @@ export default function Navbar() {
                 href="/espace-client"
                 onClick={() => setMenuOpen(false)}
                 className="flex-1 rounded-xl py-2.5 text-center text-sm font-extrabold text-black"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                style={{ background: GOLD }}
               >
                 {dict.nav.freeQuote}
               </Link>

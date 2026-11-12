@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
 import { APP_REGISTRY } from "@/lib/app-registry";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 type SearchHit = {
   id: string;
@@ -42,8 +42,8 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   const rowsRef  = useRef<Record<number, HTMLElement | null>>({});
 
   const c = isDark
-    ? { bg: "#161718", sur: "#1e2022", bdr: "rgba(255,255,255,0.08)", tx: "rgba(255,255,255,0.90)", tx2: "rgba(255,255,255,0.52)", tx3: "rgba(255,255,255,0.28)", hov: "rgba(255,255,255,0.045)", sel: "rgba(201,165,90,0.09)" }
-    : { bg: "#ffffff", sur: "#f6f7f9", bdr: "rgba(0,0,0,0.09)",       tx: "rgba(0,0,0,0.85)",       tx2: "rgba(0,0,0,0.50)",       tx3: "rgba(0,0,0,0.35)",       hov: "rgba(0,0,0,0.030)",      sel: "rgba(201,165,90,0.07)" };
+    ? { bg: "#161718", sur: "#1e2022", bdr: "rgba(255,255,255,0.08)", tx: "rgba(255,255,255,0.90)", tx2: "rgba(255,255,255,0.52)", tx3: "rgba(255,255,255,0.28)", hov: "rgba(255,255,255,0.045)", sel: "rgba(255,185,0,0.09)" }
+    : { bg: "#ffffff", sur: "#f6f7f9", bdr: "rgba(0,0,0,0.09)",       tx: "rgba(0,0,0,0.85)",       tx2: "rgba(0,0,0,0.50)",       tx3: "rgba(0,0,0,0.35)",       hov: "rgba(0,0,0,0.030)",      sel: "rgba(255,185,0,0.07)" };
 
   const close = useCallback(() => {
     setQuery(""); setHits([]); setSelIdx(0); onClose();

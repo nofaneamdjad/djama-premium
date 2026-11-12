@@ -7,30 +7,29 @@ import { ArrowRight, Send, Mail, MessageCircle, Phone, Calendar } from "lucide-r
 import { getSiteData } from "@/lib/site-data";
 
 const siteData = getSiteData();
-const GOLD = "#c9a55a";
-const TEAL = "#0d9488";
+const GOLD = "#FFB900";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const CARDS = [
   {
     label: "Prendre rendez-vous",
     href: "/reserver-appel",
-    color: TEAL,
+    color: GOLD,
   },
   {
     label: "Demander une démonstration",
     href: "/contact?besoin=Démonstration",
-    color: TEAL,
+    color: GOLD,
   },
   {
     label: "Devenir partenaire",
     href: "/contact?besoin=Partenariat",
-    color: TEAL,
+    color: GOLD,
   },
   {
     label: "Signaler un problème",
     href: "/contact?besoin=Support+technique",
-    color: TEAL,
+    color: GOLD,
   },
 ];
 
@@ -41,12 +40,11 @@ const CONTACTS = [
   { icon: Calendar,      label: "Appel",     value: "15 min · gratuit",        href: "/reserver-appel" },
 ];
 
-/* Style manuscrit via CSS — pas besoin d'import de font externe */
 const handwriting: React.CSSProperties = {
-  fontFamily: "'Georgia', 'Times New Roman', serif",
-  fontStyle: "italic",
-  fontWeight: 700,
-  letterSpacing: "-0.01em",
+  fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+  fontStyle: "normal",
+  fontWeight: 800,
+  letterSpacing: "-0.02em",
 };
 
 export default function ContactPage() {
@@ -68,7 +66,7 @@ export default function ContactPage() {
                 Besoin d&apos;aide&nbsp;?
               </h1>
               {/* Soulignement teal */}
-              <div className="mt-1 h-[4px] w-[70%] rounded-full" style={{ background: TEAL }} />
+              <div className="mt-1 h-[4px] w-[70%] rounded-full" style={{ background: GOLD }} />
             </div>
 
             {/* Barre de recherche IA + bouton ticket */}
@@ -85,7 +83,7 @@ export default function ContactPage() {
                 <Link
                   href={`/client/assistant${query ? `?q=${encodeURIComponent(query)}` : ""}`}
                   className="mr-2 flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:opacity-80"
-                  style={{ background: TEAL }}
+                  style={{ background: GOLD }}
                 >
                   <Send size={14} className="text-white" />
                 </Link>

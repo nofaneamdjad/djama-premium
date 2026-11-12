@@ -70,7 +70,7 @@ const TIME_BLOCKS = [
     border: "rgba(249,168,38,0.25)",
     slots: [
       { time: "07h00", label: "Objectifs du jour", tag: "Focus", tagColor: "#f9a826" },
-      { time: "08h00", label: "Bloc de travail profond", tag: "Priorité", tagColor: "#c9a55a" },
+      { time: "08h00", label: "Bloc de travail profond", tag: "Priorité", tagColor: "#FFB900" },
       { time: "09h30", label: "Réunion équipe", tag: "RDV", tagColor: "#7c6fcd" },
       { time: "11h00", label: "Traitement emails", tag: "Tâche", tagColor: "#34d399" },
     ],
@@ -78,9 +78,9 @@ const TIME_BLOCKS = [
   {
     period: "Après-midi",
     icon: Sunset,
-    color: "#c9a55a",
-    bg: "rgba(201,165,90,0.08)",
-    border: "rgba(201,165,90,0.25)",
+    color: "#FFB900",
+    bg: "rgba(255,185,0,0.08)",
+    border: "rgba(255,185,0,0.25)",
     slots: [
       { time: "14h00", label: "Appel client — Projet X", tag: "RDV", tagColor: "#7c6fcd" },
       { time: "15h30", label: "Révisions / Formation", tag: "Études", tagColor: "#34d399" },
@@ -104,9 +104,9 @@ const PERSONAS = [
   {
     icon: Briefcase,
     label: "Entrepreneur",
-    color: "#c9a55a",
-    bg: "rgba(201,165,90,0.08)",
-    border: "rgba(201,165,90,0.2)",
+    color: "#FFB900",
+    bg: "rgba(255,185,0,0.08)",
+    border: "rgba(255,185,0,0.2)",
     features: ["Planifier clients & projets", "Suivre les deadlines", "Gérer les priorités business", "Bloquer du temps de création"],
   },
   {
@@ -182,13 +182,13 @@ const INITIAL_TASKS = [
 
 const APPOINTMENTS = [
   { time: "09h30", label: "Stand-up équipe",         color: "#7c6fcd", done: true },
-  { time: "11h00", label: "Appel client — M. Dupont", color: "#c9a55a", done: false },
+  { time: "11h00", label: "Appel client — M. Dupont", color: "#FFB900", done: false },
   { time: "14h00", label: "Formation IA en ligne",    color: "#34d399", done: false },
   { time: "16h30", label: "Bilan de sprint",          color: "#f9a826", done: false },
 ];
 
 const OBJECTIVES = [
-  { label: "Terminer la formation IA",   progress: 72, color: "#c9a55a" },
+  { label: "Terminer la formation IA",   progress: 72, color: "#FFB900" },
   { label: "Préparer le bilan mensuel",  progress: 45, color: "#7c6fcd" },
   { label: "Lancer la campagne marketing",progress: 20, color: "#34d399" },
 ];
@@ -208,7 +208,7 @@ const DEADLINES = [
 
 const WEEK_DAYS = ["Lu","Ma","Me","Je","Ve","Sa","Di"];
 const WEEK_EVENTS: Record<number, { color: string; count: number }> = {
-  1: { color: "#c9a55a", count: 2 },
+  1: { color: "#FFB900", count: 2 },
   3: { color: "#7c6fcd", count: 3 },
   4: { color: "#34d399", count: 1 },
   6: { color: "#f9a826", count: 2 },
@@ -275,8 +275,8 @@ function PlanningDashboard() {
       >
         {/* Date */}
         <div className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-white px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)]">
-            <CalendarDays size={18} style={{ color: "#c9a55a" }} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.07)]">
+            <CalendarDays size={18} style={{ color: "#FFB900" }} />
           </div>
           <div>
             <p className="text-[0.6rem] font-bold uppercase tracking-widest text-[var(--muted)]">Date du jour</p>
@@ -335,10 +335,10 @@ function PlanningDashboard() {
         >
           <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
             <div className="flex items-center gap-2">
-              <ListTodo size={15} style={{ color: "#c9a55a" }} />
+              <ListTodo size={15} style={{ color: "#FFB900" }} />
               <span className="text-xs font-extrabold text-[var(--ink)]">Tâches du jour</span>
             </div>
-            <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold" style={{ background: "rgba(201,165,90,0.1)", color: "#c9a55a" }}>
+            <span className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold" style={{ background: "rgba(255,185,0,0.1)", color: "#FFB900" }}>
               {doneTasks}/{tasks.length}
             </span>
           </div>
@@ -445,7 +445,7 @@ function PlanningDashboard() {
         >
           <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
             <div className="flex items-center gap-2">
-              <Calendar size={15} style={{ color: "#c9a55a" }} />
+              <Calendar size={15} style={{ color: "#FFB900" }} />
               <span className="text-xs font-extrabold text-[var(--ink)]">Calendrier — Semaine</span>
             </div>
             <span className="text-[0.6rem] text-[var(--muted)]">Semaine 14</span>
@@ -455,7 +455,7 @@ function PlanningDashboard() {
             <div className="grid grid-cols-7 gap-1 mb-2">
               {WEEK_DAYS.map((d, i) => (
                 <div key={d} className={`text-center text-[0.6rem] font-bold uppercase py-1 rounded-lg ${i === 2 ? "text-white" : "text-[var(--muted)]"}`}
-                  style={i === 2 ? { background: "linear-gradient(135deg,#c9a55a,#b08d45)" } : {}}>
+                  style={i === 2 ? { background: "linear-gradient(135deg,#FFB900,#FFB900)" } : {}}>
                   {d}
                 </div>
               ))}
@@ -469,7 +469,7 @@ function PlanningDashboard() {
                   const filled = ev && Math.random() > 0.6; // decorative
                   return (
                     <div key={di}
-                      className={`h-6 rounded-md transition-colors ${isToday ? "border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.05)]" : "bg-[var(--surface)]"}`}
+                      className={`h-6 rounded-md transition-colors ${isToday ? "border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.05)]" : "bg-[var(--surface)]"}`}
                       style={ev && di === di && parseInt(hour) % (4 - ev.count) === 0 ? { background: `${ev.color}20`, borderLeft: `2px solid ${ev.color}` } : {}}
                     />
                   );
@@ -479,7 +479,7 @@ function PlanningDashboard() {
             {/* Légende événements */}
             <div className="mt-3 flex flex-wrap gap-2">
               {[
-                { color: "#c9a55a", label: "RDV client" },
+                { color: "#FFB900", label: "RDV client" },
                 { color: "#7c6fcd", label: "Réunion" },
                 { color: "#34d399", label: "Formation" },
                 { color: "#f9a826", label: "Perso" },
@@ -610,7 +610,7 @@ const MINI_CAL = [
   [19, 20, 21, 22, 23, 24, 25],
   [26, 27, 28, 29, 30, 31, null],
 ];
-const EVENTS: Record<number, string> = { 8: "#c9a55a", 14: "#7c6fcd", 15: "#c9a55a", 22: "#34d399", 28: "#dc5078" };
+const EVENTS: Record<number, string> = { 8: "#FFB900", 14: "#7c6fcd", 15: "#FFB900", 22: "#34d399", 28: "#dc5078" };
 
 function MiniCalendar() {
   const [selected, setSelected] = useState(15);
@@ -646,13 +646,13 @@ function MiniCalendar() {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.93 }}
                   className={`relative flex h-8 w-full items-center justify-center rounded-lg text-xs font-semibold transition-all duration-150 ${
-                    isSel ? "text-white" : "text-[var(--ink)] hover:bg-[rgba(201,165,90,0.08)]"
+                    isSel ? "text-white" : "text-[var(--ink)] hover:bg-[rgba(255,185,0,0.08)]"
                   }`}
                 >
                   {isSel && (
                     <motion.div
                       layoutId="mini-cal-sel"
-                      className="absolute inset-0 rounded-lg bg-gradient-to-br from-[#c9a55a] to-[#b08d45]"
+                      className="absolute inset-0 rounded-lg bg-gradient-to-br from-[#FFB900] to-[#FFB900]"
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -673,7 +673,7 @@ function MiniCalendar() {
         </p>
         {[
           { time: "09h30", label: "Réunion équipe", color: "#7c6fcd" },
-          { time: "14h00", label: "Appel client", color: "#c9a55a" },
+          { time: "14h00", label: "Appel client", color: "#FFB900" },
         ].map((ev) => (
           <div key={ev.label} className="flex items-center gap-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
             <div className="h-2 w-2 shrink-0 rounded-full" style={{ background: ev.color }} />
@@ -696,7 +696,7 @@ export default function PlanningAgendaPage() {
       {/* ═══ HERO ══════════════════════════════════════════ */}
       <section className="hero-dark hero-grid relative overflow-hidden px-4 pb-14 pt-20 sm:pb-28">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-[rgba(201,165,90,0.07)] blur-[120px]" />
+          <div className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-[rgba(255,185,0,0.07)] blur-[120px]" />
           <div className="absolute left-[-100px] bottom-0 h-[300px] w-[300px] rounded-full bg-[rgba(124,111,205,0.06)] blur-[80px]" />
           <div className="absolute right-[-60px] top-1/3 h-[250px] w-[250px] rounded-full bg-[rgba(52,211,153,0.04)] blur-[70px]" />
         </div>
@@ -706,7 +706,7 @@ export default function PlanningAgendaPage() {
             {/* Texte gauche */}
             <div>
               <FadeReveal delay={0.05}>
-                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] px-4 py-2 text-xs font-bold uppercase tracking-widest" style={{ color: "#c9a55a" }}>
+                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.08)] px-4 py-2 text-xs font-bold uppercase tracking-widest" style={{ color: "#FFB900" }}>
                   <CalendarDays size={13} />
                   Planning & Agenda premium
                 </div>
@@ -733,7 +733,7 @@ export default function PlanningAgendaPage() {
                 <div className="mt-8 flex flex-wrap gap-6">
                   {STATS.map(({ value, label }) => (
                     <div key={label} className="flex flex-col gap-0.5">
-                      <span className="text-2xl font-extrabold" style={{ color: "#c9a55a" }}>{value}</span>
+                      <span className="text-2xl font-extrabold" style={{ color: "#FFB900" }}>{value}</span>
                       <span className="text-xs uppercase tracking-wider text-white/35">{label}</span>
                     </div>
                   ))}
@@ -744,7 +744,7 @@ export default function PlanningAgendaPage() {
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link
                     href="/contact"
-                    className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-7 py-3.5 text-sm font-extrabold text-black shadow-[0_4px_24px_rgba(201,165,90,0.4)] transition-shadow hover:shadow-[0_8px_40px_rgba(201,165,90,0.55)]"
+                    className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#FFB900] to-[#FFB900] px-7 py-3.5 text-sm font-extrabold text-black shadow-[0_4px_24px_rgba(255,185,0,0.4)] transition-shadow hover:shadow-[0_8px_40px_rgba(255,185,0,0.55)]"
                   >
                     <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                     <span className="relative flex items-center gap-2">
@@ -788,7 +788,7 @@ export default function PlanningAgendaPage() {
       {/* ═══ TABLEAU DE BORD ════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 py-10 sm:py-20">
         <FadeReveal className="mb-4 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.05)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest" style={{ color: "#c9a55a" }}>
+          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.05)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest" style={{ color: "#FFB900" }}>
             <Inbox size={11} />
             Tableau de bord interactif
           </div>
@@ -796,7 +796,7 @@ export default function PlanningAgendaPage() {
         <FadeReveal delay={0.1} className="mb-10 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight md:text-4xl">
             Tout votre quotidien,{" "}
-            <span style={{ color: "#c9a55a" }}>en un seul endroit</span>
+            <span style={{ color: "#FFB900" }}>en un seul endroit</span>
           </h2>
           <p className="mt-3 mx-auto max-w-xl text-sm text-[var(--muted)]">
             Date, heure, tâches, rendez-vous, priorités, objectifs, rappels, deadlines et notes
@@ -811,7 +811,7 @@ export default function PlanningAgendaPage() {
       {/* ═══ FONCTIONNALITÉS ════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 py-10 sm:py-20">
         <FadeReveal className="mb-4 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.05)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest" style={{ color: "#c9a55a" }}>
+          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.05)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest" style={{ color: "#FFB900" }}>
             <Sparkles size={11} />
             Tout ce dont vous avez besoin
           </div>
@@ -819,7 +819,7 @@ export default function PlanningAgendaPage() {
         <FadeReveal delay={0.1} className="mb-12 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight md:text-4xl">
             12 fonctionnalités pour{" "}
-            <span style={{ color: "#c9a55a" }}>tout organiser</span>
+            <span style={{ color: "#FFB900" }}>tout organiser</span>
           </h2>
           <p className="mt-3 mx-auto max-w-xl text-sm text-[var(--muted)]">
             Un outil complet pensé pour les actifs, les étudiants et toute personne
@@ -839,10 +839,10 @@ export default function PlanningAgendaPage() {
               key={title}
               variants={cardReveal}
               whileHover={{ y: -4, scale: 1.02 }}
-              className="group rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-shadow duration-300 hover:border-[rgba(201,165,90,0.35)] hover:shadow-[0_10px_30px_rgba(201,165,90,0.1)]"
+              className="group rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-shadow duration-300 hover:border-[rgba(255,185,0,0.35)] hover:shadow-[0_10px_30px_rgba(255,185,0,0.1)]"
             >
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] transition-colors duration-300 group-hover:bg-[rgba(201,165,90,0.14)]">
-                <Icon size={18} style={{ color: "#c9a55a" }} />
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.07)] transition-colors duration-300 group-hover:bg-[rgba(255,185,0,0.14)]">
+                <Icon size={18} style={{ color: "#FFB900" }} />
               </div>
               <h3 className="text-sm font-extrabold text-[var(--ink)]">{title}</h3>
               <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">{desc}</p>
@@ -855,13 +855,13 @@ export default function PlanningAgendaPage() {
       <section className="bg-[#f9f7f4] py-10 sm:py-20">
         <div className="mx-auto max-w-5xl px-6">
           <FadeReveal className="mb-12 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#c9a55a" }}>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.07)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#FFB900" }}>
               <Clock size={11} />
               Organisation par créneaux
             </div>
             <h2 className="text-3xl font-extrabold tracking-tight md:text-4xl">
               Votre journée,{" "}
-              <span style={{ color: "#c9a55a" }}>heure par heure</span>
+              <span style={{ color: "#FFB900" }}>heure par heure</span>
             </h2>
             <p className="mt-3 mx-auto max-w-xl text-sm text-[var(--muted)]">
               Divisez votre journée en blocs de temps intelligents. Matin, après-midi, soirée —
@@ -925,7 +925,7 @@ export default function PlanningAgendaPage() {
         <FadeReveal className="mb-12 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight md:text-4xl">
             Toutes les vues dont{" "}
-            <span style={{ color: "#c9a55a" }}>vous avez besoin</span>
+            <span style={{ color: "#FFB900" }}>vous avez besoin</span>
           </h2>
           <p className="mt-3 text-sm text-[var(--muted)]">
             Passez d'une vue à l'autre selon votre contexte : focus du moment, planification de la semaine, bilan mensuel.
@@ -944,10 +944,10 @@ export default function PlanningAgendaPage() {
               key={label}
               variants={cardReveal}
               whileHover={{ y: -4 }}
-              className="group flex gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[rgba(201,165,90,0.35)] hover:shadow-[0_10px_30px_rgba(201,165,90,0.08)]"
+              className="group flex gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[rgba(255,185,0,0.35)] hover:shadow-[0_10px_30px_rgba(255,185,0,0.08)]"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] transition-colors duration-300 group-hover:bg-[rgba(201,165,90,0.14)]">
-                <Icon size={18} style={{ color: "#c9a55a" }} />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.07)] transition-colors duration-300 group-hover:bg-[rgba(255,185,0,0.14)]">
+                <Icon size={18} style={{ color: "#FFB900" }} />
               </div>
               <div>
                 <h3 className="text-sm font-extrabold text-[var(--ink)]">{label}</h3>
@@ -961,19 +961,19 @@ export default function PlanningAgendaPage() {
       {/* ═══ CAS D'USAGE ════════════════════════════════════ */}
       <section className="relative overflow-hidden bg-[#0f1117] py-12 sm:py-24">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/3 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-[rgba(201,165,90,0.05)] blur-[90px]" />
+          <div className="absolute left-1/3 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-[rgba(255,185,0,0.05)] blur-[90px]" />
           <div className="absolute right-0 bottom-0 h-[300px] w-[300px] rounded-full bg-[rgba(124,111,205,0.05)] blur-[80px]" />
         </div>
 
         <div className="relative mx-auto max-w-5xl px-6">
           <FadeReveal className="mb-14 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] px-4 py-2 text-xs font-bold uppercase tracking-widest mb-5" style={{ color: "#c9a55a" }}>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.08)] px-4 py-2 text-xs font-bold uppercase tracking-widest mb-5" style={{ color: "#FFB900" }}>
               <Users size={12} />
               Pour tout le monde
             </div>
             <h2 className="text-3xl font-extrabold text-white md:text-4xl">
               Un outil adapté à{" "}
-              <span style={{ color: "#c9a55a" }}>votre profil</span>
+              <span style={{ color: "#FFB900" }}>votre profil</span>
             </h2>
             <p className="mt-3 text-sm text-white/50 max-w-lg mx-auto">
               Que vous soyez entrepreneur, étudiant, parent ou professionnel — le planning s'adapte à votre réalité.
@@ -991,7 +991,7 @@ export default function PlanningAgendaPage() {
                 whileTap={{ scale: 0.96 }}
                 className={`flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
                   activePersona === i
-                    ? "border-[rgba(201,165,90,0.5)] bg-[rgba(201,165,90,0.1)] text-white"
+                    ? "border-[rgba(255,185,0,0.5)] bg-[rgba(255,185,0,0.1)] text-white"
                     : "border-white/10 bg-white/[0.03] text-white/50 hover:border-white/20 hover:text-white/80"
                 }`}
               >
@@ -1068,13 +1068,13 @@ export default function PlanningAgendaPage() {
               key={text}
               variants={cardReveal}
               whileHover={{ scale: 1.02, y: -3 }}
-              className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[rgba(201,165,90,0.4)] hover:shadow-[0_8px_28px_rgba(201,165,90,0.1)]"
+              className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[rgba(255,185,0,0.4)] hover:shadow-[0_8px_28px_rgba(255,185,0,0.1)]"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.07)] transition-colors group-hover:bg-[rgba(201,165,90,0.14)]">
-                <Icon size={18} style={{ color: "#c9a55a" }} />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.07)] transition-colors group-hover:bg-[rgba(255,185,0,0.14)]">
+                <Icon size={18} style={{ color: "#FFB900" }} />
               </div>
               <span className="text-sm font-semibold text-[var(--ink)]">{text}</span>
-              <CheckCircle2 size={14} className="ml-auto shrink-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ color: "#c9a55a" }} />
+              <CheckCircle2 size={14} className="ml-auto shrink-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ color: "#FFB900" }} />
             </motion.div>
           ))}
         </motion.div>
@@ -1085,10 +1085,10 @@ export default function PlanningAgendaPage() {
         <FadeReveal>
           <div className="relative overflow-hidden rounded-3xl bg-[#0f1117] p-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
             <div className="pointer-events-none absolute inset-0">
-              <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(201,165,90,0.07)] blur-[90px]" />
+              <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(255,185,0,0.07)] blur-[90px]" />
             </div>
             <div className="relative">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.08)] px-4 py-2 text-xs font-bold uppercase tracking-widest" style={{ color: "#c9a55a" }}>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.08)] px-4 py-2 text-xs font-bold uppercase tracking-widest" style={{ color: "#FFB900" }}>
                 <CalendarDays size={11} />
                 Prêt à vous organiser&nbsp;?
               </div>
@@ -1101,7 +1101,7 @@ export default function PlanningAgendaPage() {
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <Link
                   href="/contact"
-                  className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-8 py-4 text-sm font-extrabold text-black shadow-[0_4px_24px_rgba(201,165,90,0.4)] transition-shadow hover:shadow-[0_8px_40px_rgba(201,165,90,0.55)]"
+                  className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#FFB900] to-[#FFB900] px-8 py-4 text-sm font-extrabold text-black shadow-[0_4px_24px_rgba(255,185,0,0.4)] transition-shadow hover:shadow-[0_8px_40px_rgba(255,185,0,0.55)]"
                 >
                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                   <span className="relative flex items-center gap-2">
@@ -1120,7 +1120,7 @@ export default function PlanningAgendaPage() {
               <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
                 {["Sur mesure","Livraison rapide","Support inclus"].map((t) => (
                   <span key={t} className="flex items-center gap-1.5 text-xs text-white/35">
-                    <CheckCircle2 size={11} style={{ color: "#c9a55a" }} /> {t}
+                    <CheckCircle2 size={11} style={{ color: "#FFB900" }} /> {t}
                   </span>
                 ))}
               </div>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Trash2, Plus, FileText, Eye, Printer, X } from "lucide-react";
 
 /* ─── Constante couleur or DJAMA ─── */
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 /* ─── Types ─── */
 interface Item {
@@ -59,7 +59,7 @@ function genNumero(type: "facture" | "devis") {
 
 /* ─── Styles partagés ─── */
 const inputCls =
-  "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#c9a55a] focus:ring-2 focus:ring-[rgba(201,165,90,0.15)]";
+  "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#FFB900] focus:ring-2 focus:ring-[rgba(255,185,0,0.15)]";
 
 const labelCls = "block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5";
 
@@ -368,8 +368,8 @@ export default function CreerMaFacturePage() {
                 onClick={handlePrint}
                 className="flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-bold text-black transition hover:opacity-90"
                 style={{
-                  background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
-                  boxShadow: "0 3px 14px rgba(201,165,90,0.35)",
+                  background: `linear-gradient(135deg, ${GOLD}, #FFB900)`,
+                  boxShadow: "0 3px 14px rgba(255,185,0,0.35)",
                 }}
               >
                 <Printer size={14} />
@@ -460,7 +460,7 @@ export default function CreerMaFacturePage() {
                     onClick={() => handleTypeChange(t)}
                     className={`rounded-xl border py-3 text-sm font-bold transition-all duration-200 ${
                       form.type === t
-                        ? "border-[rgba(201,165,90,0.5)] bg-[rgba(201,165,90,0.08)] text-gray-900"
+                        ? "border-[rgba(255,185,0,0.5)] bg-[rgba(255,185,0,0.08)] text-gray-900"
                         : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
                     }`}
                   >
@@ -692,7 +692,7 @@ export default function CreerMaFacturePage() {
                 <button
                   onClick={addItem}
                   disabled={items.length >= 10}
-                  className="mt-2 flex items-center gap-2 rounded-xl border border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:border-[#c9a55a] hover:text-[#c9a55a] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="mt-2 flex items-center gap-2 rounded-xl border border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:border-[#FFB900] hover:text-[#FFB900] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Plus size={14} />
                   Ajouter une ligne
@@ -775,8 +775,8 @@ export default function CreerMaFacturePage() {
               }}
               className="flex items-center gap-2 rounded-2xl px-7 py-3 text-sm font-bold text-black transition hover:opacity-90"
               style={{
-                background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
-                boxShadow: "0 4px 18px rgba(201,165,90,0.35)",
+                background: `linear-gradient(135deg, ${GOLD}, #FFB900)`,
+                boxShadow: "0 4px 18px rgba(255,185,0,0.35)",
               }}
             >
               <Printer size={15} />
@@ -838,7 +838,7 @@ export default function CreerMaFacturePage() {
             <a
               href="/register"
               style={{
-                background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
+                background: `linear-gradient(135deg, ${GOLD}, #FFB900)`,
                 color: "#000",
                 padding: "14px 32px",
                 borderRadius: 16,

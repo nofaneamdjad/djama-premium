@@ -12,7 +12,7 @@ import { FadeReveal } from "@/components/ui/WordReveal";
 import { staggerContainerFast, cardReveal, viewport } from "@/lib/animations";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 interface Article {
   id: string;
@@ -84,7 +84,7 @@ export default function BlogPage() {
         style={{ background: "linear-gradient(160deg, #1a0e30 0%, #0d1829 50%, #071525 100%)" }}
       >
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-0 h-[500px] w-[600px] -translate-x-1/2 -translate-y-1/3 rounded-full blur-[120px]" style={{ background: `rgba(201,165,90,0.07)` }} />
+          <div className="absolute left-1/2 top-0 h-[500px] w-[600px] -translate-x-1/2 -translate-y-1/3 rounded-full blur-[120px]" style={{ background: `rgba(255,185,0,0.07)` }} />
           <div className="absolute right-0 bottom-0 h-[250px] w-[250px] rounded-full bg-[rgba(167,139,250,0.05)] blur-[80px]" />
         </div>
 
@@ -128,7 +128,7 @@ export default function BlogPage() {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Rechercher un article…"
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.07] py-3.5 pl-11 pr-4 text-sm text-white placeholder-white/30 outline-none transition focus:border-[rgba(201,165,90,0.4)] focus:bg-white/[0.10]"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.07] py-3.5 pl-11 pr-4 text-sm text-white placeholder-white/30 outline-none transition focus:border-[rgba(255,185,0,0.4)] focus:bg-white/[0.10]"
               />
             </div>
           </motion.div>
@@ -189,7 +189,7 @@ export default function BlogPage() {
                     <Link href={`/blog/${a.slug}`}>
                       <motion.div
                         whileHover={{ scale: 1.02, y: -3 }}
-                        className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-3xl border border-[var(--border)] bg-white shadow-sm transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-[rgba(201,165,90,0.25)]"
+                        className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-3xl border border-[var(--border)] bg-white shadow-sm transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-[rgba(255,185,0,0.25)]"
                       >
                         {a.image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -206,7 +206,7 @@ export default function BlogPage() {
                               <span className="text-[0.58rem] font-bold uppercase tracking-widest" style={{ color: GOLD + "80" }}>{a.categorie}</span>
                             </div>
                           )}
-                          <h2 className="mb-2 text-sm font-extrabold leading-snug text-[var(--ink)] transition group-hover:text-[#c9a55a]">
+                          <h2 className="mb-2 text-sm font-extrabold leading-snug text-[var(--ink)] transition group-hover:text-[#FFB900]">
                             {a.titre}
                           </h2>
                           {a.extrait && (
@@ -238,7 +238,7 @@ export default function BlogPage() {
                 <p className="text-lg font-black text-[var(--ink)]">Aucun résultat</p>
                 <p className="text-sm text-[var(--muted)]">Essayez un autre filtre ou mot-clé.</p>
                 <button onClick={() => { setCat("Tous"); setQuery(""); }}
-                  className="mt-2 rounded-2xl border border-[var(--border)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--ink)] transition hover:border-[rgba(201,165,90,0.3)]">
+                  className="mt-2 rounded-2xl border border-[var(--border)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--ink)] transition hover:border-[rgba(255,185,0,0.3)]">
                   Réinitialiser
                 </button>
               </motion.div>
@@ -258,7 +258,7 @@ export default function BlogPage() {
                   <div className="mt-6 flex flex-wrap justify-center gap-3">
                     <Link href="/contact"
                       className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-extrabold text-black transition hover:opacity-90"
-                      style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, boxShadow: `0 4px 16px rgba(201,165,90,0.25)` }}>
+                      style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)`, boxShadow: `0 4px 16px rgba(255,185,0,0.25)` }}>
                       Nous contacter <ArrowRight size={14} />
                     </Link>
                     <Link href="/services"
@@ -311,7 +311,7 @@ export default function BlogPage() {
         style={{ background: "linear-gradient(160deg, #1a0e30 0%, #0d1829 55%, #071525 100%)" }}
       >
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-1/2 h-[400px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px]" style={{ background: `rgba(201,165,90,0.06)` }} />
+          <div className="absolute left-1/2 top-1/2 h-[400px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px]" style={{ background: `rgba(255,185,0,0.06)` }} />
         </div>
         <div className="relative mx-auto max-w-xl px-6 text-center">
           <FadeReveal>
@@ -330,7 +330,7 @@ export default function BlogPage() {
             <Link
               href="/contact"
               className="group relative mt-7 inline-flex items-center gap-2 overflow-hidden rounded-2xl px-8 py-3.5 text-sm font-extrabold text-black transition hover:opacity-90"
-              style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, boxShadow: `0 4px 20px rgba(201,165,90,0.3)` }}
+              style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)`, boxShadow: `0 4px 20px rgba(255,185,0,0.3)` }}
             >
               <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
               <span className="relative flex items-center gap-2">Nous contacter <ArrowRight size={14} /></span>

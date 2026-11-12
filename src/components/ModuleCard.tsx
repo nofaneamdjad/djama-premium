@@ -85,7 +85,7 @@ export function ModuleCard({
             <div
               className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full"
               style={{
-                background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
+                background: `linear-gradient(135deg, ${GOLD}, #FFB900)`,
                 border: "1.5px solid rgba(0,0,0,0.4)",
                 boxShadow: `0 2px 6px ${GOLD}40`,
               }}

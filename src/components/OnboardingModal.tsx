@@ -292,7 +292,7 @@ export default function OnboardingModal({ name }: Props) {
                       href={current.cta.href}
                       onClick={dismiss}
                       className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-extrabold text-[#0a0a0a] transition hover:opacity-90"
-                      style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                      style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)` }}
                     >
                       {current.cta.label} <ArrowRight size={14} />
                     </Link>
@@ -305,7 +305,7 @@ export default function OnboardingModal({ name }: Props) {
                         ? "border border-white/10 bg-white/5 text-white/45 hover:bg-white/8 hover:text-white/65"
                         : "font-extrabold py-3.5 hover:opacity-90"
                     }`}
-                    style={!current.cta ? { background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a" } : undefined}
+                    style={!current.cta ? { background: `linear-gradient(135deg, ${GOLD}, #FFB900)`, color: "#0a0a0a" } : undefined}
                   >
                     {isLast ? (
                       <><CheckCircle2 size={14} /> Commencer</>

@@ -60,7 +60,7 @@ export default function ResetPasswordPage() {
     : 3;
 
   const strengthLabel  = ["", "Trop court", "Correct", "Fort", "Très fort"][strength];
-  const strengthColor  = ["", "#ef4444",    "#c9a55a", "#22c55e", "#22c55e"][strength];
+  const strengthColor  = ["", "#ef4444",    "#FFB900", "#22c55e", "#22c55e"][strength];
 
   /* ── Soumission ─────────────────────────────────────── */
   async function handleSubmit(e: React.FormEvent) {
@@ -102,7 +102,7 @@ export default function ResetPasswordPage() {
         transition={{ duration: 0.6, ease }}
         className="relative z-10 w-full max-w-[420px]"
       >
-        <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-[rgba(201,165,90,0.12)] to-transparent opacity-70 blur-sm" />
+        <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-[rgba(255,185,0,0.12)] to-transparent opacity-70 blur-sm" />
 
         <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f1117]/90 p-8 shadow-[0_32px_80px_rgba(0,0,0,0.6)] backdrop-blur-xl">
 
@@ -130,7 +130,7 @@ export default function ResetPasswordPage() {
               </p>
               <Link
                 href="/login"
-                className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#c9a55a] transition-colors hover:text-[#e8cc94]"
+                className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#FFB900] transition-colors hover:text-[#FFB900]"
               >
                 <ArrowLeft size={13} /> Se connecter maintenant
               </Link>
@@ -140,8 +140,8 @@ export default function ResetPasswordPage() {
             /* ── Formulaire ─────────────────────────── */
             <>
               <div className="mb-7 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(201,165,90,0.25)] bg-[rgba(201,165,90,0.09)]">
-                  <Lock size={22} style={{ color: "#c9a55a" }} />
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.09)]">
+                  <Lock size={22} style={{ color: "#FFB900" }} />
                 </div>
                 <h1 className="text-2xl font-extrabold text-white">Nouveau mot de passe</h1>
                 <p className="mt-2 text-sm text-white/35">
@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
                       placeholder="Minimum 8 caractères"
                       required
                       autoComplete="new-password"
-                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 pr-11 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.5)]"
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 pr-11 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/20 focus:border-[rgba(255,185,0,0.5)]"
                     />
                     <button
                       type="button"
@@ -216,7 +216,7 @@ export default function ResetPasswordPage() {
                       placeholder="Répétez votre mot de passe"
                       required
                       autoComplete="new-password"
-                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 pr-11 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.5)]"
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 pr-11 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/20 focus:border-[rgba(255,185,0,0.5)]"
                     />
                     <button
                       type="button"
@@ -260,7 +260,7 @@ export default function ResetPasswordPage() {
                         {error.includes("expiré") && (
                           <Link
                             href="/forgot-password"
-                            className="mt-1.5 inline-block text-[0.7rem] font-semibold text-[#c9a55a] underline underline-offset-2 hover:text-[#e8cc94]"
+                            className="mt-1.5 inline-block text-[0.7rem] font-semibold text-[#FFB900] underline underline-offset-2 hover:text-[#FFB900]"
                           >
                             Demander un nouveau lien →
                           </Link>
@@ -273,7 +273,7 @@ export default function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading || !sessionReady}
-                  className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] py-4 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_20px_rgba(201,165,90,0.3)] transition hover:shadow-[0_8px_32px_rgba(201,165,90,0.45)] disabled:opacity-60"
+                  className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#FFB900] to-[#FFB900] py-4 text-sm font-extrabold text-[#0a0a0a] shadow-[0_4px_20px_rgba(255,185,0,0.3)] transition hover:shadow-[0_8px_32px_rgba(255,185,0,0.45)] disabled:opacity-60"
                 >
                   <span className="flex items-center justify-center gap-2">
                     {loading && <Loader2 size={15} className="animate-spin" />}

@@ -17,8 +17,8 @@ import {
 } from "@/lib/animations";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
+const GOLD  = "#FFB900";
+const GOLDR = "255,185,0";
 
 /* ══════════════════════════════════════════════════════
    DONNÉES
@@ -236,7 +236,7 @@ export default function OffresPage() {
 
       {/* ══════════════════════ HERO ══════════════════════════ */}
       <section className="relative overflow-hidden bg-white pt-[108px] pb-28 sm:pt-[128px]">
-        <div className="pointer-events-none absolute -left-32 -top-16 h-[500px] w-[500px] animate-float-slow rounded-full bg-[rgba(201,165,90,.05)] blur-[130px]" />
+        <div className="pointer-events-none absolute -left-32 -top-16 h-[500px] w-[500px] animate-float-slow rounded-full bg-[rgba(255,185,0,.05)] blur-[130px]" />
         <div className="pointer-events-none absolute right-[-60px] top-[30%] h-[350px] w-[350px] animate-float-delayed rounded-full bg-[rgba(167,139,250,.04)] blur-[100px]" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
@@ -246,7 +246,7 @@ export default function OffresPage() {
             transition={{ duration: 0.5, ease }}
             className="mb-7"
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.4)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]" style={{ color: "#b08d57" }}>
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,.4)] bg-[rgba(255,185,0,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]" style={{ color: "#FFB900" }}>
               <Sparkles size={10} />
               Tarifs transparents &amp; profils adaptés
             </span>
@@ -293,7 +293,7 @@ export default function OffresPage() {
 
       {/* ══════════════════════ PROFILS ═══════════════════════ */}
       <section className="relative overflow-hidden bg-[#f8f9fa] py-20 sm:py-28">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[rgba(201,165,90,.03)] blur-[160px]" />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[rgba(255,185,0,.03)] blur-[160px]" />
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={viewport}
@@ -304,7 +304,7 @@ export default function OffresPage() {
           <div className="mb-12 text-center">
             <motion.div
               variants={fadeIn}
-              className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]"
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,.3)] bg-[rgba(255,185,0,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]"
               style={{ color: GOLD }}
             >
               <Users size={11} /> Quel est votre profil ?
@@ -498,7 +498,7 @@ export default function OffresPage() {
           <div className="mb-14 text-center">
             <motion.div
               variants={fadeIn}
-              className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.3)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]"
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,.3)] bg-[rgba(255,185,0,.08)] px-4 py-1.5 text-[0.67rem] font-black uppercase tracking-[.24em]"
               style={{ color: GOLD }}
             >
               <Receipt size={11} /> Grille tarifaire complète

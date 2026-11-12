@@ -2,7 +2,7 @@
 import { Download, FileText, FileSpreadsheet, FileImage, File, CheckCircle2, Loader2, Eye, Pencil } from "lucide-react";
 import type { ArtifactData } from "@/lib/ai/tool-registry";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 function formatSize(bytes?: number): string {
   if (!bytes) return "";
