@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function DjamaLogo({ dark = false, size = 36, className = "" }: Props) {
-  const src    = dark ? "/logo-white.png" : "/logo-transparent.png";
+  const src    = dark ? "/djama-logo-white-v2.png" : "/djama-logo-v2.png";
   const height = size;
   const width  = Math.round(size * (1600 / 533));
 

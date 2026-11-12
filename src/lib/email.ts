@@ -1353,7 +1353,7 @@ function buildInvitationHtml(opts: {
 
         <!-- Logo -->
         <tr><td style="padding-bottom:32px;" align="center">
-          <img src="${getSite()}/logo-navbar.png" alt="DJAMA" height="36" style="display:block;height:36px;">
+          <img src="${getSite()}/djama-logo-navbar-v2.png" alt="DJAMA" height="36" style="display:block;height:36px;">
         </td></tr>
 
         <!-- Card -->

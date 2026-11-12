@@ -116,7 +116,7 @@ export default function Navbar() {
                 whileTap={{ scale: 0.95, transition: { duration: 0.12 } }}
               >
                 <Image
-                  src="/logo-transparent.png"
+                  src="/djama-logo-v2.png"
                   alt="Logo DJAMA"
                   width={320} height={107} priority
                   className="h-[34px] w-auto object-contain"

@@ -99,7 +99,7 @@ export default function Footer() {
       <div className="flex justify-center pt-14 pb-10">
         <Link href="/">
           <Image
-            src="/logo-white.png" alt="DJAMA" width={320} height={107}
+            src="/djama-logo-white-v2.png" alt="DJAMA" width={320} height={107}
             className="h-[40px] w-auto object-contain opacity-90 transition-opacity hover:opacity-100"
             style={{ mixBlendMode: "screen" }}
             priority
@@ -208,7 +208,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-1 text-[0.70rem] text-white/30">
             <span>Plateforme réalisée avec</span>
-            <Image src="/logo-white.png" alt="DJAMA" width={60} height={20} className="h-[14px] w-auto opacity-30" style={{ mixBlendMode: "screen" }} />
+            <Image src="/djama-logo-white-v2.png" alt="DJAMA" width={60} height={20} className="h-[14px] w-auto opacity-30" style={{ mixBlendMode: "screen" }} />
           </div>
         </div>
       </div>

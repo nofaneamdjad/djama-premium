@@ -176,7 +176,7 @@ function MembreLoginInner() {
         `}</style>
         <div className="w-full max-w-[400px]">
           <div className="mb-6 flex flex-col items-center gap-3">
-            <Image src="/logo-transparent.png" alt="DJAMA" width={120} height={40} className="h-[36px] w-auto object-contain" />
+            <Image src="/djama-logo-v2.png" alt="DJAMA" width={120} height={40} className="h-[36px] w-auto object-contain" />
             <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
               Choisissez votre organisation
             </h1>
@@ -225,7 +225,7 @@ function MembreLoginInner() {
         {/* Logo + titres */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <Image
-            src="/logo-transparent.png"
+            src="/djama-logo-v2.png"
             alt="DJAMA"
             width={140}
             height={48}

@@ -247,7 +247,7 @@ export default function PrelaunchPage() {
 
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
       <header className="pl-header">
-        <Image src="/logo-transparent.png" alt="DJAMA"
+        <Image src="/djama-logo-v2.png" alt="DJAMA"
           width={108} height={36}
           style={{ height:28, width:"auto", objectFit:"contain" }} priority/>
         <a href="#waitlist" className="pl-header-cta"
@@ -405,7 +405,7 @@ export default function PrelaunchPage() {
       {/* ── FOOTER ──────────────────────────────────────────────────────── */}
       <footer className="pl-footer">
         <div className="pl-footer-inner">
-          <Image src="/logo-transparent.png" alt="DJAMA" width={80} height={27}
+          <Image src="/djama-logo-v2.png" alt="DJAMA" width={80} height={27}
             style={{ height:22, width:"auto", objectFit:"contain", opacity:0.6 }}/>
           <p className="pl-copyright">© 2026 DJAMA — Tous droits réservés.</p>
           <nav className="pl-footer-links" aria-label="Liens légaux">

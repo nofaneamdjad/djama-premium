@@ -68,7 +68,7 @@ function SplashScreen({ visible }: { visible: boolean }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.07, ease }}
           >
-            <Image src="/logo-white.png" alt="DJAMA" width={200} height={50} className="h-[44px] w-auto object-contain" />
+            <Image src="/djama-logo-white-v2.png" alt="DJAMA" width={200} height={50} className="h-[44px] w-auto object-contain" />
           </motion.div>
           <div className="absolute bottom-12 left-8 right-8 h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.10)" }}>
             <motion.div
@@ -189,7 +189,7 @@ function LoginPageInner() {
                 <div className="flex flex-col items-center gap-6 text-center w-full">
                   <Link href="/" className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded-sm" style={{ "--tw-ring-color": GOLD } as React.CSSProperties}>
                     <Image
-                      src="/logo-transparent.png"
+                      src="/djama-logo-v2.png"
                       alt="DJAMA"
                       width={160}
                       height={54}
@@ -316,7 +316,7 @@ function LoginPageInner() {
                 <div className="mb-7 flex justify-center">
                   <Link href="/">
                     <Image
-                      src="/logo-transparent.png"
+                      src="/djama-logo-v2.png"
                       alt="DJAMA"
                       width={140}
                       height={47}

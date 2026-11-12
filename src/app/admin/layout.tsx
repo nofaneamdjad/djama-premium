@@ -428,7 +428,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           className="flex min-w-0 flex-1 items-center gap-2.5"
         >
           <Image
-            src="/logo-white.png"
+            src="/djama-logo-white-v2.png"
             alt="DJAMA"
             width={108}
             height={36}

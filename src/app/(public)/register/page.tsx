@@ -122,7 +122,7 @@ function SplashScreen({ visible }: { visible: boolean }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.06, ease }}
           >
-            <Image src="/logo-navbar.png" alt="DJAMA" width={220} height={50} className="h-[44px] w-auto object-contain" />
+            <Image src="/djama-logo-navbar-v2.png" alt="DJAMA" width={220} height={50} className="h-[44px] w-auto object-contain" />
           </motion.div>
           <div className="absolute bottom-12 left-8 right-8 h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.10)" }}>
             <motion.div

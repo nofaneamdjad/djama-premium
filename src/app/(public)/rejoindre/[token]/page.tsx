@@ -78,7 +78,7 @@ export default function RejoindreTokenPage() {
       {/* Logo */}
       <div className="mb-10">
         <Link href="/">
-          <Image src="/logo-navbar.png" alt="DJAMA" width={160} height={36} className="h-9 w-auto object-contain" />
+          <Image src="/djama-logo-navbar-v2.png" alt="DJAMA" width={160} height={36} className="h-9 w-auto object-contain" />
         </Link>
       </div>
 

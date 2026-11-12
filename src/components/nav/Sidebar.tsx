@@ -125,7 +125,7 @@ export function DesktopSidebar({
           ) : (
             <div className="min-w-0 flex flex-col gap-0.5">
               <Image
-                src={isDark ? "/logo-white.png" : "/logo-transparent.png"}
+                src={isDark ? "/djama-logo-white-v2.png" : "/djama-logo-v2.png"}
                 alt="DJAMA" width={96} height={32}
                 className="h-[26px] w-auto object-contain"
               />
@@ -336,7 +336,7 @@ export function MobileSidebar({
               <Link href="/client" className="flex items-center gap-2.5" onClick={onClose}>
                 <div className="flex flex-col gap-0.5">
                   <Image
-                    src={isDark ? "/logo-white.png" : "/logo-transparent.png"}
+                    src={isDark ? "/djama-logo-white-v2.png" : "/djama-logo-v2.png"}
                     alt="DJAMA" width={96} height={32}
                     className="h-[24px] w-auto object-contain"
                   />

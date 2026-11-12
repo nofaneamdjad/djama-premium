@@ -222,7 +222,7 @@ export default function AdminLogin() {
 
       <div className="relative w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-1">
-          <Image src="/logo-transparent.png" alt="DJAMA" width={120} height={40} className="h-9 w-auto object-contain" />
+          <Image src="/djama-logo-v2.png" alt="DJAMA" width={120} height={40} className="h-9 w-auto object-contain" />
           <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#FFB900]">Espace Admin</p>
         </div>
 
