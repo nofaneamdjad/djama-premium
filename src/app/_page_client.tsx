@@ -35,36 +35,6 @@ const ease = [0.16, 1, 0.3, 1] as const;
 const GOLD  = "#FFB900";
 const GOLDR = "255,185,0";
 
-function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-  const ref  = useRef<HTMLSpanElement>(null);
-  const done = useRef(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !done.current) {
-        done.current = true;
-        let n = 0;
-        const step = Math.max(1, Math.ceil(to / 40));
-        const id = setInterval(() => {
-          n = Math.min(n + step, to);
-          setCount(n);
-          if (n >= to) clearInterval(id);
-        }, 22);
-      }
-    }, { threshold: 0.5 });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [to]);
-  return <span ref={ref}>{count}{suffix}</span>;
-}
-
-function SmartStat({ value }: { value: string }) {
-  const match = value.match(/^(\d+)(.*)$/);
-  if (!match) return <>{value}</>;
-  return <><CountUp to={parseInt(match[1], 10)} />{match[2]}</>;
-}
 
 const HOME_CURSIVE: React.CSSProperties = {
   fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
@@ -1043,95 +1013,6 @@ function HomeContent() {
         </div>
       </section></> }
 
-      {/* ── Chiffres clés ── */}
-      <section className="bg-white pb-4 pt-0">
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
-          className="mx-auto grid max-w-2xl grid-cols-3 divide-x divide-gray-100 px-6"
-        >
-          {[
-            { n: "44", label: "outils inclus" },
-            { n: "1 200+", label: "entrepreneurs actifs" },
-            { n: "1 clic", label: "pour installer" },
-          ].map(({ n, label }) => (
-            <motion.div
-              key={label}
-              variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
-              className="flex flex-col items-center gap-1 px-4 py-6 text-center"
-            >
-              <span
-                className="text-[2rem] leading-none sm:text-[2.4rem]"
-                style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 700, color: GOLD }}
-              >
-                {n}
-              </span>
-              <span className="text-[0.72rem] font-medium uppercase tracking-widest text-gray-400">
-                {label}
-              </span>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* ── Final CTA — style manifeste ── */}
-      <section className="relative overflow-hidden bg-white px-5 py-24 text-center sm:py-32">
-        <motion.div
-          initial={{ opacity: 0, y: 28 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, ease }}
-          className="relative z-10 mx-auto max-w-2xl"
-        >
-          {/* Burst décoratif doré */}
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center">
-            <svg viewBox="0 0 96 96" width="96" height="96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-              {/* Cœur */}
-              <path d="M48 32c0-6-5-10-10-10s-10 5-10 10c0 10 20 22 20 22s20-12 20-22c0-5-5-10-10-10s-10 4-10 10z"
-                fill="none" stroke={GOLD} strokeWidth="1.8" strokeLinejoin="round" opacity="0.7"/>
-              {/* Rayons */}
-              <line x1="48" y1="4" x2="48" y2="14" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/>
-              <line x1="48" y1="82" x2="48" y2="92" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/>
-              <line x1="4" y1="48" x2="14" y2="48" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/>
-              <line x1="82" y1="48" x2="92" y2="48" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/>
-              <line x1="14" y1="14" x2="21" y2="21" stroke={GOLD} strokeWidth="2" strokeLinecap="round"/>
-              <line x1="75" y1="75" x2="82" y2="82" stroke={GOLD} strokeWidth="2" strokeLinecap="round"/>
-              <line x1="82" y1="14" x2="75" y2="21" stroke={GOLD} strokeWidth="2" strokeLinecap="round"/>
-              <line x1="14" y1="82" x2="21" y2="75" stroke={GOLD} strokeWidth="2" strokeLinecap="round"/>
-              <line x1="48" y1="4" x2="52" y2="10" stroke={GOLD} strokeWidth="1.4" strokeLinecap="round" opacity="0.5"/>
-              <line x1="48" y1="4" x2="44" y2="10" stroke={GOLD} strokeWidth="1.4" strokeLinecap="round" opacity="0.5"/>
-            </svg>
-          </div>
-
-          {/* Titre */}
-          <p className="text-[3rem] leading-none text-gray-900 sm:text-[4rem]"
-            style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 700 }}>
-            Libérez
-          </p>
-          <p className="mb-10 text-[2.4rem] leading-tight sm:text-[3.2rem]"
-            style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontStyle: "italic", fontWeight: 600, color: "#5dc8be" }}>
-            votre potentiel de croissance
-          </p>
-
-          {/* Bouton principal */}
-          <Link
-            href="/client"
-            className="inline-flex items-center justify-center rounded-2xl px-10 py-4 text-[1rem] font-bold text-black transition-all duration-200 hover:scale-[1.03] hover:opacity-90 active:scale-[.97]"
-            style={{ background: GOLD, boxShadow: `0 8px 32px rgba(${GOLDR},0.30)` }}
-          >
-            Lancez-vous — C&apos;est gratuit !
-          </Link>
-
-          {/* Flèche + réassurance */}
-          <div className="mt-6 flex flex-col items-center gap-1">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#5dc8be" aria-hidden>
-              <path d="M12 4l-1.4 1.4L17.2 11H4v2h13.2l-6.6 5.6L12 20l9-8-9-8z" transform="rotate(-90 12 12)"/>
-            </svg>
-            <p className="text-[0.82rem] text-gray-400">Aucune carte de crédit requise</p>
-            <p className="text-[0.82rem] text-gray-400">Accès instantané</p>
-          </div>
-        </motion.div>
-      </section>
 
     </div>
   );
