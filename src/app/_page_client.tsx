@@ -658,7 +658,7 @@ function HomeContent() {
       {/* ══════════════════════════════════════════════════════
            APPLICATIONS — catalogue complet 45 apps
       ══════════════════════════════════════════════════════ */}
-      <section id="outils" className="bg-white pb-10 pt-10">
+      <section id="outils" className="pb-10 pt-10" style={{ background: "#f4f5f7" }}>
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
 
           {/* En-tête de section — aligné à gauche, compact */}
@@ -686,50 +686,50 @@ function HomeContent() {
             <motion.div key={cat}
               initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={viewport} transition={{ duration: 0.35, ease, delay: gi * 0.04 }}
-              className="mb-10"
+              className="mb-6"
             >
-              {/* En-tête catégorie — accent jaune + titre noir + compteur */}
-              <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-3">
-                <div style={{ width: 3, height: 15, background: GOLD, borderRadius: 2, flexShrink: 0 }} />
-                <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-gray-900">
-                  {cat}
-                </span>
-                <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[0.6rem] font-semibold text-gray-400">
-                  {apps.length}
-                </span>
-              </div>
+              {/* Titre catégorie — bold italic, style App Library */}
+              <h3 className="mb-3 text-[1.35rem] text-gray-900 sm:text-[1.5rem]"
+                style={{ fontWeight: 800, fontStyle: "italic", letterSpacing: "-0.01em" }}>
+                {cat}
+              </h3>
 
-              {/* Grille d'apps */}
-              <div className="grid grid-cols-2 gap-2.5 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
-                {apps.map((app) => {
-                  const Icon = app.icon;
-                  return (
-                    <Link
-                      key={app.slug}
-                      href={`/applications/${app.slug}`}
-                      className="group flex flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white px-2 py-3.5 text-center outline-none transition-all duration-150 hover:border-[rgba(255,185,0,0.35)] hover:shadow-[0_2px_10px_rgba(0,0,0,0.07)] focus-visible:ring-2 focus-visible:ring-[rgba(255,185,0,0.5)]"
-                    >
-                      {/* Icône iOS squircle */}
-                      <div style={{
-                        width: 46, height: 46, borderRadius: "27%",
-                        background: app.color, flexShrink: 0,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 3px 10px rgba(0,0,0,0.16), 0 1px 3px rgba(0,0,0,0.07)",
-                        position: "relative", overflow: "hidden",
-                      }}>
+              {/* Carte blanche contenant la grille */}
+              <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <div className="grid grid-cols-3 gap-y-5 gap-x-2 sm:grid-cols-4 lg:grid-cols-6">
+                  {apps.map((app) => {
+                    const Icon = app.icon;
+                    return (
+                      <Link
+                        key={app.slug}
+                        href={`/applications/${app.slug}`}
+                        className="group flex flex-col items-center gap-2 text-center outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,185,0,0.5)] rounded-xl"
+                      >
+                        {/* Icône iOS squircle — taille augmentée */}
                         <div style={{
-                          position: "absolute", inset: 0,
-                          background: "linear-gradient(150deg, rgba(255,255,255,0.20) 0%, transparent 52%)",
-                          borderRadius: "inherit", pointerEvents: "none",
-                        }} />
-                        <Icon size={22} color="white" strokeWidth={1.75} style={{ position: "relative", zIndex: 1 }} />
-                      </div>
-                      <p className="w-full text-[0.68rem] font-semibold leading-tight text-gray-700 group-hover:text-gray-900">
-                        {app.label}
-                      </p>
-                    </Link>
-                  );
-                })}
+                          width: 66, height: 66, borderRadius: "27%",
+                          background: app.color, flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.08)",
+                          position: "relative", overflow: "hidden",
+                          transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                        }}
+                          className="group-hover:scale-105 group-hover:shadow-[0_6px_18px_rgba(0,0,0,0.22)]"
+                        >
+                          <div style={{
+                            position: "absolute", inset: 0,
+                            background: "linear-gradient(150deg, rgba(255,255,255,0.22) 0%, transparent 52%)",
+                            borderRadius: "inherit", pointerEvents: "none",
+                          }} />
+                          <Icon size={30} color="white" strokeWidth={1.6} style={{ position: "relative", zIndex: 1 }} />
+                        </div>
+                        <p className="w-full text-[0.72rem] font-semibold leading-tight text-gray-700 group-hover:text-gray-900">
+                          {app.label}
+                        </p>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             </motion.div>
           ))}
