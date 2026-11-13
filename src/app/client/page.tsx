@@ -362,6 +362,7 @@ export default function AccueilPage() {
   const [taskCount, setTaskCount]       = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [chartMonths, setChartMonths]   = useState<MonthPoint[]>([]);
+  const [fetchError, setFetchError]     = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -411,116 +412,123 @@ export default function AccueilPage() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     const today      = localDateStr(0);
     const todayStart = `${today}T00:00:00`;
     const todayEnd   = `${today}T23:59:59`;
 
-    const [
-      docsRes, prevDocsRes,
-      expRes, prevExpRes,
-      tasksRes,
-      todayEventsRes,
-      recentDocsRes,
-      recentExpRes,
-      taskCountRes,
-    ] = await Promise.all([
-      supabase.from("documents")
-        .select("id, total_ttc, statut, date_document, date_echeance")
-        .eq("type", "facture")
-        .gte("date_document", dateFrom)
-        .lte("date_document", dateTo),
-      supabase.from("documents")
-        .select("total_ttc, statut")
-        .eq("type", "facture")
-        .gte("date_document", prevFrom)
-        .lte("date_document", prevTo),
-      supabase.from("expenses")
-        .select("amount")
-        .gte("date", dateFrom)
-        .lte("date", dateTo),
-      supabase.from("expenses")
-        .select("amount")
-        .gte("date", prevFrom)
-        .lte("date", prevTo),
-      supabase.from("productivity_tasks")
-        .select("id, title, status, due_date, priority")
-        .lte("due_date", today)
-        .neq("status", "done")
-        .order("due_date")
-        .limit(8),
-      supabase.from("planning_events")
-        .select("id, title, start_at, end_at")
-        .gte("start_at", todayStart)
-        .lte("start_at", todayEnd)
-        .order("start_at")
-        .limit(10),
-      supabase.from("documents")
-        .select("id, numero, client_nom, statut, total_ttc, type, date_document")
-        .in("type", ["facture", "devis"])
-        .order("date_document", { ascending: false })
-        .limit(6),
-      supabase.from("expenses")
-        .select("id, amount, category, date")
-        .order("date", { ascending: false })
-        .limit(4),
-      supabase.from("productivity_tasks")
-        .select("id", { count: "exact", head: true })
-        .neq("status", "done"),
-    ]);
+    try {
+      const [
+        docsRes, prevDocsRes,
+        expRes, prevExpRes,
+        tasksRes,
+        todayEventsRes,
+        recentDocsRes,
+        recentExpRes,
+        taskCountRes,
+      ] = await Promise.all([
+        supabase.from("documents")
+          .select("id, total_ttc, statut, date_document, date_echeance")
+          .eq("type", "facture")
+          .gte("date_document", dateFrom)
+          .lte("date_document", dateTo),
+        supabase.from("documents")
+          .select("total_ttc, statut")
+          .eq("type", "facture")
+          .gte("date_document", prevFrom)
+          .lte("date_document", prevTo),
+        supabase.from("expenses")
+          .select("amount")
+          .gte("date", dateFrom)
+          .lte("date", dateTo),
+        supabase.from("expenses")
+          .select("amount")
+          .gte("date", prevFrom)
+          .lte("date", prevTo),
+        supabase.from("productivity_tasks")
+          .select("id, title, status, due_date, priority")
+          .lte("due_date", today)
+          .neq("status", "done")
+          .order("due_date")
+          .limit(8),
+        supabase.from("planning_events")
+          .select("id, title, start_at, end_at")
+          .gte("start_at", todayStart)
+          .lte("start_at", todayEnd)
+          .order("start_at")
+          .limit(10),
+        supabase.from("documents")
+          .select("id, numero, client_nom, statut, total_ttc, type, date_document")
+          .in("type", ["facture", "devis"])
+          .order("date_document", { ascending: false })
+          .limit(6),
+        supabase.from("expenses")
+          .select("id, amount, category, date")
+          .order("date", { ascending: false })
+          .limit(4),
+        supabase.from("productivity_tasks")
+          .select("id", { count: "exact", head: true })
+          .neq("status", "done"),
+      ]);
 
-    const docs     = docsRes.data     ?? [];
-    const prevDocs = prevDocsRes.data ?? [];
-    const exps     = expRes.data      ?? [];
-    const prevExps = prevExpRes.data  ?? [];
+      const docs     = docsRes.data     ?? [];
+      const prevDocs = prevDocsRes.data ?? [];
+      const exps     = expRes.data      ?? [];
+      const prevExps = prevExpRes.data  ?? [];
 
-    const newCA   = docs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
-    const prevCA  = prevDocs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
-    const newDep  = exps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
-    const prevDep = prevExps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
+      const newCA   = docs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
+      const prevCA  = prevDocs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
+      const newDep  = exps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
+      const prevDep = prevExps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
 
-    setCa(newCA); setCaPrev(prevCA);
-    setDepenses(newDep); setDepPrev(prevDep);
-    setResultat(newCA - newDep); setResultatPrev(prevCA - prevDep);
+      setCa(newCA); setCaPrev(prevCA);
+      setDepenses(newDep); setDepPrev(prevDep);
+      setResultat(newCA - newDep); setResultatPrev(prevCA - prevDep);
 
-    const aEnc    = docs.filter(d => d.statut === "envoyé" || d.statut === "en_attente");
-    const retards = docs.filter(d =>
-      d.statut === "en_retard" ||
-      (d.date_echeance && d.date_echeance < today && d.statut !== "payé")
-    );
-    setAEncaisser(aEnc.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
-    setEnRetard(retards.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
-    setPendingCount(aEnc.length);
-    setTaskCount(taskCountRes.count ?? 0);
+      const aEnc    = docs.filter(d => d.statut === "envoyé" || d.statut === "en_attente");
+      const retards = docs.filter(d =>
+        d.statut === "en_retard" ||
+        (d.date_echeance && d.date_echeance < today && d.statut !== "payé")
+      );
+      setAEncaisser(aEnc.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
+      setEnRetard(retards.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
+      setPendingCount(aEnc.length);
+      setTaskCount(taskCountRes.count ?? 0);
 
-    setTodayEvents((todayEventsRes.data ?? []) as TodayEvent[]);
-    setTodayTasks((tasksRes.data ?? []) as TodayTask[]);
+      setTodayEvents((todayEventsRes.data ?? []) as TodayEvent[]);
+      setTodayTasks((tasksRes.data ?? []) as TodayTask[]);
 
-    const recentDocs = recentDocsRes.data ?? [];
-    const recentExps = recentExpRes.data  ?? [];
-    const activity: RecentItem[] = [
-      ...recentDocs.map(d => ({
-        id:       d.id,
-        label:    `${d.type === "facture" ? "Facture" : "Devis"} ${d.numero || ""}`.trim(),
-        sub:      d.client_nom || "",
-        date:     d.date_document || "",
-        href:     "/client/factures",
-        itemType: d.type as RecentItem["itemType"],
-      })),
-      ...recentExps.map(e => ({
-        id:       e.id,
-        label:    e.category || "Dépense",
-        sub:      fmtEurInt(e.amount ?? 0),
-        date:     e.date || "",
-        href:     "/client/depenses",
-        itemType: "expense" as const,
-      })),
-    ]
-      .filter(i => i.date)
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 8);
-    setRecentActivity(activity);
+      const recentDocs = recentDocsRes.data ?? [];
+      const recentExps = recentExpRes.data  ?? [];
+      const activity: RecentItem[] = [
+        ...recentDocs.map(d => ({
+          id:       d.id,
+          label:    `${d.type === "facture" ? "Facture" : "Devis"} ${d.numero || ""}`.trim(),
+          sub:      d.client_nom || "",
+          date:     d.date_document || "",
+          href:     "/client/factures",
+          itemType: d.type as RecentItem["itemType"],
+        })),
+        ...recentExps.map(e => ({
+          id:       e.id,
+          label:    e.category || "Dépense",
+          sub:      fmtEurInt(e.amount ?? 0),
+          date:     e.date || "",
+          href:     "/client/depenses",
+          itemType: "expense" as const,
+        })),
+      ]
+        .filter(i => i.date)
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 8);
+      setRecentActivity(activity);
 
-    setLoading(false);
+      setLoading(false);
+    } catch (err) {
+      console.error("[dashboard] fetch error:", err);
+      setFetchError("Impossible de charger les données. Vérifiez votre connexion.");
+      setLoading(false);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFrom, dateTo, prevFrom, prevTo]);
 
@@ -581,6 +589,23 @@ export default function AccueilPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ── Error banner ─────────────────────────────────────────────────── */}
+        {fetchError && (
+          <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-5"
+            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+            <AlertTriangle size={16} style={{ color: "#ef4444", flexShrink: 0 }} />
+            <span className="text-sm" style={{ color: "#ef4444" }}>{fetchError}</span>
+            <button
+              onClick={() => fetchAll()}
+              className="ml-auto flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-opacity hover:opacity-70"
+              style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}
+            >
+              <RefreshCw size={12} />
+              Réessayer
+            </button>
+          </div>
+        )}
 
         {/* ── Greeting ─────────────────────────────────────────────────────── */}
         <motion.div
@@ -809,9 +834,9 @@ export default function AccueilPage() {
 
           {/* Chart CA 6 mois */}
           <div className="mt-4 rounded-xl p-4" style={{ background: t.card, border: `1px solid ${t.border}` }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold" style={{ color: t.text }}>Évolution CA — 6 derniers mois</span>
-              <span className="text-xs" style={{ color: t.text4 }}>Factures encaissées</span>
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <span className="text-sm font-semibold" style={{ color: t.text }}>Évolution CA</span>
+              <span className="text-xs shrink-0" style={{ color: t.text4 }}>6 mois · encaissées</span>
             </div>
             <div style={{ height: 160 }}>
               {chartMonths.length > 0 ? (

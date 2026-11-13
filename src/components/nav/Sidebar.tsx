@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Home, ReceiptText, Calendar, Sparkles,
+  Home, ReceiptText, Calendar, Sparkles, Settings,
   Grid2x2, Pin, ChevronLeft, ChevronRight,
   Lock, LogOut, X,
 } from "lucide-react";
@@ -16,10 +16,11 @@ import { getAppById } from "@/lib/app-registry";
 const GOLD = "#FFB900";
 
 const FREE_NAV = [
-  { href: "/client",          label: "Accueil",          icon: Home,        exact: true  },
-  { href: "/client/factures", label: "Factures & Devis", icon: ReceiptText, exact: false },
-  { href: "/client/planning", label: "Planning",         icon: Calendar,    exact: false },
-  { href: "/client/ai-docs",  label: "DOC IA",           icon: Sparkles,    exact: false },
+  { href: "/client",             label: "Accueil",          icon: Home,        exact: true  },
+  { href: "/client/factures",    label: "Factures & Devis", icon: ReceiptText, exact: false },
+  { href: "/client/planning",    label: "Planning",         icon: Calendar,    exact: false },
+  { href: "/client/ai-docs",     label: "DOC IA",           icon: Sparkles,    exact: false },
+  { href: "/client/parametres",  label: "Paramètres",       icon: Settings,    exact: false },
 ] as const;
 
 function NavItem({
@@ -236,6 +237,12 @@ export function DesktopSidebar({
                 Épinglez vos apps depuis le lanceur
               </button>
             )}
+
+            {/* Paramètres */}
+            <div className={`mt-auto pt-2 ${collapsed ? "" : "mx-0"}`}
+              style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)", marginTop: "auto" }}>
+              <NavItem href="/client/parametres" label="Paramètres" icon={Settings} collapsed={collapsed} />
+            </div>
           </>
         )}
       </nav>
