@@ -12,7 +12,7 @@ import {
   Building2, Banknote, BookOpen, MessageSquare, Target, Globe,
   CalendarPlus, QrCode, PenLine, ShoppingBag, ShoppingCart,
   Mail, Bot, BarChart2, Store, Contact2, Briefcase,
-  TrendingUp, Clock, Shield, Sparkles, PlugZap, Layers,
+  TrendingUp, Clock, Shield, Sparkles, PlugZap, Layers, Lock,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -345,12 +345,33 @@ export const APPS_DATA: AppDetail[] = [
     ],
     crossSell: { slug: "factures", label: "Factures & Devis", teaser: "Vous cherchez à facturer vos heures directement ?" },
   },
+  {
+    slug: "espaces",
+    label: "Espaces Privés",
+    category: "Opérations",
+    color: "#0f766e",
+    bg: "#ccfbf1",
+    icon: Lock,
+    clientHref: "/client/espaces",
+    hero: {
+      title: "Des espaces de travail sécurisés pour vos équipes",
+      subtitle: "Créez des espaces collaboratifs privés pour vos projets, équipes et clients — avec contrôle total des accès et partage sécurisé.",
+    },
+    valueProposition: "Organisez vos informations sensibles dans des espaces dédiés, partagés uniquement avec les personnes que vous choisissez.",
+    features: [
+      { title: "Accès contrôlés", description: "Définissez précisément qui peut lire, modifier ou partager chaque espace.", icon: Lock },
+      { title: "Collaboration sécurisée", description: "Travaillez en équipe dans un environnement chiffré et tracé.", icon: Users },
+      { title: "Partage de documents", description: "Déposez, organisez et partagez vos documents dans chaque espace.", icon: FileText },
+      { title: "Historique d'activité", description: "Suivez toutes les actions effectuées dans vos espaces en temps réel.", icon: Clock },
+    ],
+    crossSell: { slug: "equipe", label: "Équipe", teaser: "Vous cherchez à gérer les accès de toute votre équipe ?" },
+  },
 
   /* ─── DJAMA DOC ──────────────────────────────────────── */
   {
     slug: "bloc-notes",
     label: "DJAMA Doc",
-    category: "Documents",
+    category: "Notes",
     color: "#92400e",
     bg: "#fef9c3",
     icon: StickyNote,
@@ -478,7 +499,7 @@ export const APPS_DATA: AppDetail[] = [
   {
     slug: "projets",
     label: "Projets",
-    category: "Intelligence",
+    category: "Opérations",
     color: "#d97706",
     bg: "#fff3e0",
     icon: FolderOpen,
@@ -537,6 +558,27 @@ export const APPS_DATA: AppDetail[] = [
       { title: "Progression suivie", description: "Visualisez votre progression et vos acquis au fil des semaines.", icon: TrendingUp },
     ],
     crossSell: { slug: "assistant", label: "Assistant IA", teaser: "Vous cherchez à appliquer vos apprentissages avec un assistant IA ?" },
+  },
+  {
+    slug: "ai-docs",
+    label: "DOC IA",
+    category: "Intelligence",
+    color: "#6d28d9",
+    bg: "#ede9fe",
+    icon: Sparkles,
+    clientHref: "/client/ai-docs",
+    hero: {
+      title: "Générez des documents professionnels par IA en secondes",
+      subtitle: "Rapports, propositions commerciales, plans d'affaires, synthèses — l'IA les rédige pour vous à partir d'un simple brief.",
+    },
+    valueProposition: "Transformez une idée ou un contexte en document structuré, professionnel et prêt à envoyer en quelques secondes.",
+    features: [
+      { title: "Génération sur mesure", description: "Décrivez le document souhaité, l'IA le structure et le rédige intégralement.", icon: Sparkles },
+      { title: "Types variés", description: "Rapports d'activité, propositions commerciales, plans stratégiques, comptes-rendus.", icon: FileText },
+      { title: "Ton et style ajustables", description: "Choisissez le registre — formel, concis, pédagogique — et l'IA s'adapte.", icon: Zap },
+      { title: "Export PDF", description: "Téléchargez vos documents générés en PDF prêt à partager.", icon: Brain },
+    ],
+    crossSell: { slug: "assistant", label: "Assistant IA", teaser: "Vous cherchez un assistant IA plus conversationnel ?" },
   },
 
   /* ─── VENTES ──────────────────────────────────────────── */
@@ -942,6 +984,28 @@ export const APPS_DATA: AppDetail[] = [
       { title: "Export CSV", description: "Exportez votre base prestataires en CSV pour vos tableaux de bord ou reportings externes.", icon: BarChart2 },
     ],
     crossSell: { slug: "projets", label: "Projets", teaser: "Vous gérez des projets ? Liez vos missions prestataires directement à vos projets." },
+  },
+  /* ─── TABLEAU DE BORD ─────────────────────────────────── */
+  {
+    slug: "dashboard",
+    label: "Tableau de bord",
+    category: "Gestion",
+    color: "#1d4ed8",
+    bg: "#dbeafe",
+    icon: BarChart2,
+    clientHref: "/client/dashboard",
+    hero: {
+      title: "Votre entreprise en un coup d'œil",
+      subtitle: "KPIs, chiffre d'affaires, activité récente — tout ce qui compte, sur un seul écran.",
+    },
+    valueProposition: "Pilotez votre activité en temps réel avec un tableau de bord intelligent qui consolide vos données Finance, Ventes et Opérations.",
+    features: [
+      { title: "Vue synthétique", description: "CA, dépenses, factures en attente, nouveaux clients — tous vos indicateurs clés en temps réel.", icon: BarChart2 },
+      { title: "Actions rapides", description: "Accédez en un clic aux actions les plus fréquentes : créer une facture, planifier un RDV, envoyer un devis.", icon: Zap },
+      { title: "Assistant IA intégré", description: "Votre assistant répond à vos questions business directement depuis le tableau de bord.", icon: Brain },
+      { title: "Personnalisable", description: "Réorganisez les blocs selon vos priorités. Chaque dirigeant a son tableau de bord unique.", icon: Star },
+    ],
+    crossSell: { slug: "analytics", label: "Analytics", teaser: "Besoin d'analyses web approfondies ?" },
   },
 ];
 
