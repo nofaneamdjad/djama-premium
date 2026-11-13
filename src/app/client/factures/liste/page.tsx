@@ -62,7 +62,7 @@ export default function ListeDocuments() {
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
+      if (!session) { router.replace("/login"); return; }
 
       const { data, error: sbErr } = await supabase
         .from("documents")                          // ✅ table correcte

@@ -128,10 +128,20 @@ export async function middleware(request: NextRequest) {
   // ── Feature API routes (free plan enforcement) ───────────────────────────
   const featureApiSlug = getSlugForApiPath(pathname);
   if (featureApiSlug !== null && process.env.NODE_ENV !== "development") {
+    let apiResponse = NextResponse.next({ request });
     const supabaseApi = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} } },
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            apiResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) => apiResponse.cookies.set(name, value, options));
+          },
+        },
+      },
     );
 
     const { data: { user: apiUser } } = await supabaseApi.auth.getUser();
@@ -207,8 +217,6 @@ export async function middleware(request: NextRequest) {
     && pathname !== "/membre/login";
 
   if (isMembreRoute) {
-    if (process.env.NODE_ENV === "development") return NextResponse.next();
-
     let memResponse = NextResponse.next({ request });
     const memSupabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -280,8 +288,7 @@ export async function middleware(request: NextRequest) {
 
   if (!isClientRoute) return NextResponse.next();
 
-  // Dev bypass
-  if (process.env.NODE_ENV === "development") return NextResponse.next();
+  // Dev bypass supprimé — auth requise en dev pour les tests E2E
 
   let response = NextResponse.next({ request });
 

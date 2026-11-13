@@ -118,11 +118,6 @@ export default function MembreLayout({ children }: { children: React.ReactNode }
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        if (process.env.NODE_ENV === "development") {
-          setMemberName("Aperçu Dev");
-          setChecking(false);
-          return;
-        }
         router.replace("/membre/login?redirect=" + encodeURIComponent(pathname));
         return;
       }
@@ -137,13 +132,8 @@ export default function MembreLayout({ children }: { children: React.ReactNode }
         .is("suspended_at", null);
 
       if (!memberships || memberships.length === 0) {
-        if (process.env.NODE_ENV !== "development") {
-          await supabase.auth.signOut();
-          router.replace("/membre/login");
-          return;
-        }
-        setMemberName(user.user_metadata?.name ?? user.email ?? "Membre");
-        setChecking(false);
+        await supabase.auth.signOut();
+        router.replace("/membre/login");
         return;
       }
 

@@ -1006,7 +1006,7 @@ export default function ProjetsPage() {
   const load = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
+      if (!user) { router.replace("/login"); return; }
       setUserId(user.id);
       const [projRes, tasksRes, milesRes, teamRes] = await Promise.all([
         supabase.from("projects").select("*").eq("user_id", user.id).order("created_at",{ascending:false}).limit(500),

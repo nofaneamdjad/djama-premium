@@ -32,16 +32,21 @@ if (_DJAMA_ENV === "production") {
   }
 }
 
-// Garde dev/prod : en mode développement, l'URL Supabase doit être locale.
-// Si ce n'est pas le cas, Next.js refuse de démarrer (T5 V1.6).
+// ── Garde dev/prod : Supabase URL doit être localhost en développement ───────
+// Protège contre la connexion accidentelle à Supabase cloud depuis dev.
+// Pour audits nécessitant le cloud (Docker indisponible) :
+//   définir DJAMA_ALLOW_CLOUD_SUPABASE_IN_DEV=true dans .env.local
 if (
   _DJAMA_ENV === "development" &&
+  !process.env.DJAMA_ALLOW_CLOUD_SUPABASE_IN_DEV &&
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
   !process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith("http://127.0.0.1:54321")
 ) {
   throw new Error(
-    `[DJAMA] Garde dev/prod : NEXT_PUBLIC_SUPABASE_URL="${process.env.NEXT_PUBLIC_SUPABASE_URL}" ` +
-    `n'est pas localhost. Utilisez .env.local.dev ou définissez NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321.`
+    `[DJAMA] Garde dev/prod : NEXT_PUBLIC_SUPABASE_URL="${process.env.NEXT_PUBLIC_SUPABASE_URL}" n'est pas localhost. ` +
+    `En développement, utilisez Supabase local (http://127.0.0.1:54321). ` +
+    `Pour utiliser intentionnellement le cloud en dev (audit sans Docker), ` +
+    `définissez DJAMA_ALLOW_CLOUD_SUPABASE_IN_DEV=true dans .env.local.`
   );
 }
 

@@ -270,7 +270,7 @@ export default function EquipePage() {
     const load = useCallback(async () => {
     try {
       const { data:{ user } } = await supabase.auth.getUser();
-      if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
+      if (!user) { router.replace("/login"); return; }
       const uid = user.id;
       setUid(uid);
       setMySenderName(user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Chef");

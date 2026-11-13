@@ -1867,7 +1867,7 @@ export default function TresoreriePage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) setUserId(data.user.id);
-      else if (process.env.NODE_ENV !== "development") router.replace("/login");
+      else router.replace("/login");
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
