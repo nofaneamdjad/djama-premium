@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowUpRight, X, Sparkles, Send, ChevronDown,
+  ArrowUpRight, X, Sparkles, Send, ChevronDown, Upload,
   ReceiptText, Users, CreditCard, CheckCircle2,
   AlertCircle, FileBarChart2, Briefcase, ChevronRight,
   RefreshCw, AlertTriangle, Calendar, BarChart3, Lock,
@@ -13,6 +13,15 @@ import {
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
 import { APPS_DATA } from "@/lib/applications-data";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip as ChartTooltip,
+} from "chart.js";
+ChartJS.register(CategoryScale, LinearScale, BarElement, ChartTooltip);
 import { useSubscription } from "@/lib/use-require-subscription";
 import { useTheme } from "@/lib/theme-context";
 
@@ -27,11 +36,11 @@ const AI_SUGGESTIONS = [
 ] as const;
 
 const QUICK_ACTIONS = [
-  { label: "Créer une facture",   href: "/client/factures",  Icon: ReceiptText },
-  { label: "Ajouter un client",   href: "/client/crm",       Icon: Users       },
-  { label: "Ajouter une dépense", href: "/client/depenses",  Icon: CreditCard  },
-  { label: "Créer un projet",     href: "/client/projets",   Icon: Briefcase   },
-  { label: "Créer avec DJAMA",    href: "/client/assistant", Icon: Sparkles    },
+  { label: "Créer une facture",      href: "/client/factures", Icon: ReceiptText },
+  { label: "Ajouter un client",      href: "/client/crm",      Icon: Users       },
+  { label: "Ajouter une dépense",    href: "/client/depenses", Icon: CreditCard  },
+  { label: "Créer un projet",        href: "/client/projets",  Icon: Briefcase   },
+  { label: "Importer un document",   href: "/client/scanner",  Icon: Upload      },
 ] as const;
 
 const PINNED_SLUGS = ["factures", "crm", "depenses", "tresorerie", "projets", "planning", "assistant", "contrats"] as const;
@@ -129,6 +138,42 @@ function TrendBadge({ pct }: { pct: number | null }) {
       {up ? "↑ +" : "↓ "}{Math.round(pct)}%
     </span>
   );
+}
+
+type MonthPoint = { label: string; amount: number };
+
+function RevChart({ months, isDark }: { months: MonthPoint[]; isDark: boolean }) {
+  const data = {
+    labels: months.map(m => m.label),
+    datasets: [{
+      data: months.map(m => m.amount),
+      backgroundColor: months.map((_, i) => i === months.length - 1 ? GOLD : `${GOLD}60`),
+      hoverBackgroundColor: months.map(() => GOLD),
+      borderRadius: 6,
+      borderSkipped: false,
+    }],
+  };
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx: { raw: unknown }) => ` ${fmtEurInt(ctx.raw as number)}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: isDark ? "#7E8290" : "#6B7280", font: { size: 11 as const } },
+        border: { display: false },
+      },
+      y: { display: false },
+    },
+  };
+  return <Bar data={data} options={options as never} />;
 }
 
 type Rapport = {
@@ -313,6 +358,10 @@ export default function AccueilPage() {
 
   const [rapportOpen, setRapportOpen] = useState(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState(true);
+  const [orgName, setOrgName]           = useState("");
+  const [taskCount, setTaskCount]       = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [chartMonths, setChartMonths]   = useState<MonthPoint[]>([]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -323,6 +372,35 @@ export default function AccueilPage() {
         || "";
       if (raw) setUserName(raw.charAt(0).toUpperCase() + raw.slice(1));
     });
+    supabase.from("user_settings").select("raison_sociale").single()
+      .then(({ data }) => { if (data?.raison_sociale) setOrgName(data.raison_sociale); });
+  }, []);
+
+  useEffect(() => {
+    const sixAgo = new Date();
+    sixAgo.setMonth(sixAgo.getMonth() - 5);
+    sixAgo.setDate(1);
+    supabase.from("documents")
+      .select("total_ttc, date_document")
+      .eq("type", "facture")
+      .eq("statut", "payé")
+      .gte("date_document", sixAgo.toISOString().slice(0, 10))
+      .then(({ data }) => {
+        const byMonth: Record<string, number> = {};
+        (data ?? []).forEach(d => {
+          const k = d.date_document?.slice(0, 7) ?? "";
+          if (k) byMonth[k] = (byMonth[k] ?? 0) + (d.total_ttc ?? 0);
+        });
+        const pts: MonthPoint[] = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date();
+          d.setMonth(d.getMonth() - i);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          const label = new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(new Date(d.getFullYear(), d.getMonth()));
+          pts.push({ label, amount: byMonth[key] ?? 0 });
+        }
+        setChartMonths(pts);
+      });
   }, []);
 
   useEffect(() => {
@@ -344,6 +422,7 @@ export default function AccueilPage() {
       todayEventsRes,
       recentDocsRes,
       recentExpRes,
+      taskCountRes,
     ] = await Promise.all([
       supabase.from("documents")
         .select("id, total_ttc, statut, date_document, date_echeance")
@@ -384,6 +463,9 @@ export default function AccueilPage() {
         .select("id, amount, category, date")
         .order("date", { ascending: false })
         .limit(4),
+      supabase.from("productivity_tasks")
+        .select("id", { count: "exact", head: true })
+        .neq("status", "done"),
     ]);
 
     const docs     = docsRes.data     ?? [];
@@ -407,6 +489,8 @@ export default function AccueilPage() {
     );
     setAEncaisser(aEnc.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
     setEnRetard(retards.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
+    setPendingCount(aEnc.length);
+    setTaskCount(taskCountRes.count ?? 0);
 
     setTodayEvents((todayEventsRes.data ?? []) as TodayEvent[]);
     setTodayTasks((tasksRes.data ?? []) as TodayTask[]);
@@ -507,9 +591,17 @@ export default function AccueilPage() {
           <h1 className="text-3xl font-bold tracking-tight" style={{ color: t.text }}>
             Bonjour{userName ? `, ${userName}` : ""}
           </h1>
-          <p className="text-sm mt-1.5 capitalize" style={{ color: t.text3 }}>
-            {new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}
-          </p>
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+            <p className="text-sm capitalize" style={{ color: t.text3 }}>
+              {new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}
+            </p>
+            {orgName && (
+              <>
+                <span style={{ color: t.borderSoft }}>·</span>
+                <span className="text-sm font-medium" style={{ color: t.text2 }}>{orgName}</span>
+              </>
+            )}
+          </div>
         </motion.div>
 
         {/* ── DJAMA AI ─────────────────────────────────────────────────────── */}
@@ -648,30 +740,36 @@ export default function AccueilPage() {
                 sub:     depenses === 0 ? "Aucune dépense" : "Sur la période",
               },
               {
-                label:      "Résultat",
-                val:        resultat,
-                prev:       resultatPrev,
-                color:      resultatPositif ? "#22c55e" : "#f87171",
-                Icon:       BarChart3,
-                href:       "/client/tresorerie",
-                sub:        resultatPositif ? "Bénéficiaire" : "Déficitaire",
-                isResultat: true,
-              },
-              {
-                label:    "En attente",
+                label:    "Factures en attente",
                 val:      aEncaisser,
                 prev:     0,
                 color:    enRetard > 0 ? "#f97316" : GOLD,
                 Icon:     AlertCircle,
                 href:     "/client/factures",
-                sub:      enRetard > 0 ? `${fmtEurInt(enRetard)} en retard` : "À encaisser",
+                sub:      pendingCount > 0
+                  ? `${pendingCount} facture${pendingCount > 1 ? "s" : ""}${enRetard > 0 ? " · retard" : ""}`
+                  : "Aucune en attente",
                 noTrend:  true,
+              },
+              {
+                label:   "Tâches en cours",
+                val:     taskCount,
+                prev:    0,
+                color:   taskCount > 0 ? "#3b82f6" : "#22c55e",
+                Icon:    CheckCircle2,
+                href:    "/client/productivite",
+                sub:     taskCount > 0 ? "À compléter" : "Tout est fait !",
+                noTrend: true,
+                isCount: true,
               },
             ].map((kpi) => {
               const KpiIcon = kpi.Icon;
-              const displayVal = (kpi as { isResultat?: boolean }).isResultat
-                ? (resultatPositif ? "+" : "−") + fmtEurInt(Math.abs(resultat))
-                : fmtEurInt(kpi.val);
+              const kpiExt = kpi as { isResultat?: boolean; isCount?: boolean };
+              const displayVal = kpiExt.isCount
+                ? String(kpi.val)
+                : kpiExt.isResultat
+                  ? (resultatPositif ? "+" : "−") + fmtEurInt(Math.abs(resultat))
+                  : fmtEurInt(kpi.val);
               return (
                 <Link
                   key={kpi.label}
@@ -708,6 +806,24 @@ export default function AccueilPage() {
               );
             })}
           </div>
+
+          {/* Chart CA 6 mois */}
+          <div className="mt-4 rounded-xl p-4" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold" style={{ color: t.text }}>Évolution CA — 6 derniers mois</span>
+              <span className="text-xs" style={{ color: t.text4 }}>Factures encaissées</span>
+            </div>
+            <div style={{ height: 160 }}>
+              {chartMonths.length > 0 ? (
+                <RevChart months={chartMonths} isDark={isDark} />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <span className="text-sm" style={{ color: t.text3 }}>Aucune donnée disponible</span>
+                </div>
+              )}
+            </div>
+          </div>
+
         </motion.section>
 
         {/* ── Aujourd'hui ──────────────────────────────────────────────────── */}
