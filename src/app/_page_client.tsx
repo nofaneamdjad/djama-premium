@@ -658,26 +658,26 @@ function HomeContent() {
       {/* ══════════════════════════════════════════════════════
            APPLICATIONS — catalogue complet 45 apps
       ══════════════════════════════════════════════════════ */}
-      <section id="outils" className="bg-white pb-16 pt-16">
+      <section id="outils" className="bg-white pb-10 pt-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
 
-          {/* En-tête de section */}
+          {/* En-tête de section — aligné à gauche, compact */}
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={viewport} transition={{ duration: 0.5, ease }}
-            className="mb-12 text-center"
+            className="mb-7"
           >
             <div
-              className="mb-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.22em]"
+              className="mb-3 inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-[0.63rem] font-bold uppercase tracking-[.22em]"
               style={{ borderColor: "rgba(255,185,0,0.35)", background: "rgba(255,185,0,0.07)", color: "#b45309" }}
             >
-              45 applications
+              Les applications DJAMA
             </div>
-            <h2 className="text-[1.9rem] font-extrabold leading-tight text-gray-900 sm:text-[2.3rem]">
-              Un logiciel. Toutes vos applications.
+            <h2 className="text-[1.5rem] font-extrabold leading-tight text-gray-900 sm:text-[1.75rem]">
+              Tous les outils pour gérer votre entreprise.
             </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-gray-500">
-              Finance, ventes, opérations, digital — chaque module est connecté aux autres.
+            <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-gray-500">
+              De la facturation à la gestion des équipes, DJAMA réunit vos applications professionnelles dans un seul espace.
             </p>
           </motion.div>
 
@@ -739,29 +739,6 @@ function HomeContent() {
       <PartnerLogosSection />
       <TestimonialsSection dynamic />
 
-      {/* ── Texte manifeste ───────────────────────── */}
-      <section className="bg-white py-24 sm:py-32">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.7, ease }}>
-            <p className="text-[1.15rem] font-black leading-snug text-gray-900 sm:text-[1.4rem]">
-              Imaginez une vaste collection d&apos;applications professionnelles à votre disposition.
-            </p>
-            <p className="mt-4 text-[1rem] leading-relaxed text-gray-500">
-              Vous avez quelque chose à améliorer ? Il existe une app pour ça.
-            </p>
-            <p className="text-[1rem] leading-relaxed text-gray-500">
-              Aucune complexité, aucun frais, une simple installation en un clic.
-            </p>
-            <p className="mt-8 text-[1rem] leading-relaxed text-gray-500">
-              Chaque application simplifie un processus et permet à davantage de personnes d&apos;agir.
-            </p>
-            <p className="text-[1rem] leading-relaxed text-gray-500">
-              Imaginez l&apos;impact lorsque chacun dispose de l&apos;outil adapté à ses besoins, enrichi par l&apos;IA native.
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
       {false && <><section className="overflow-hidden bg-[#f4f5f7] py-20 sm:py-28">
         <style>{`
