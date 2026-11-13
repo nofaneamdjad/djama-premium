@@ -7,11 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowUpRight, X, Sparkles, Send, ChevronDown,
   ReceiptText, Users, CreditCard, CheckCircle2,
-  AlertCircle, FileBarChart2, FileText, Briefcase, ChevronRight,
+  AlertCircle, FileBarChart2, Briefcase, ChevronRight,
   RefreshCw, AlertTriangle, Calendar, BarChart3, Lock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
+import { APPS_DATA } from "@/lib/applications-data";
 import { useSubscription } from "@/lib/use-require-subscription";
 import { useTheme } from "@/lib/theme-context";
 
@@ -33,28 +34,20 @@ const QUICK_ACTIONS = [
   { label: "Créer avec DJAMA",    href: "/client/assistant", Icon: Sparkles    },
 ] as const;
 
-const PINNED_APPS = [
-  { label: "Factures",     href: "/client/factures",    Icon: ReceiptText },
-  { label: "CRM",          href: "/client/crm",         Icon: Users       },
-  { label: "Dépenses",     href: "/client/depenses",    Icon: CreditCard  },
-  { label: "Trésorerie",   href: "/client/tresorerie",  Icon: BarChart3   },
-  { label: "Projets",      href: "/client/projets",     Icon: Briefcase   },
-  { label: "Planning",     href: "/client/planning",    Icon: Calendar    },
-  { label: "Assistant IA", href: "/client/assistant",   Icon: Sparkles    },
-  { label: "Contrats",     href: "/client/contrats",    Icon: FileText    },
-] as const;
+const PINNED_SLUGS = ["factures", "crm", "depenses", "tresorerie", "projets", "planning", "assistant", "contrats"] as const;
 
 function tok(isDark: boolean) {
   return {
     bg:         isDark ? "#101114"                : "#F4F5F7",
+    card:       isDark ? "rgba(255,255,255,0.06)" : "#ffffff",
     glass:      isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.025)",
     glassMd:    isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
     border:     isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)",
     borderSoft: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
     text:       isDark ? "#F0F0F0"                : "#101114",
-    text2:      isDark ? "#8C909C"                : "#3C4150",
-    text3:      isDark ? "#5E6472"                : "#6B7280",
-    text4:      isDark ? "#454B59"                : "#9CA3AF",
+    text2:      isDark ? "#A0A4AE"                : "#374151",
+    text3:      isDark ? "#7E8290"                : "#4B5563",
+    text4:      isDark ? "#636874"                : "#6B7280",
   };
 }
 
@@ -514,8 +507,8 @@ export default function AccueilPage() {
           <h1 className="text-3xl font-bold tracking-tight" style={{ color: t.text }}>
             Bonjour{userName ? `, ${userName}` : ""}
           </h1>
-          <p className="text-sm mt-1.5" style={{ color: t.text3 }}>
-            Voici l&apos;essentiel de votre activité aujourd&apos;hui.
+          <p className="text-sm mt-1.5 capitalize" style={{ color: t.text3 }}>
+            {new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}
           </p>
         </motion.div>
 
@@ -526,11 +519,10 @@ export default function AccueilPage() {
           className="mb-8"
         >
           <div
-            className="flex items-center gap-3 rounded-2xl px-5 py-4"
+            className="flex items-center gap-3 rounded-xl px-5 py-4"
             style={{
-              background: t.glass,
+              background: t.card,
               border: `1px solid ${t.border}`,
-              boxShadow: isDark ? "0 4px 28px rgba(0,0,0,0.25)" : "0 4px 28px rgba(0,0,0,0.06)",
             }}
           >
             <div
@@ -684,8 +676,8 @@ export default function AccueilPage() {
                 <Link
                   key={kpi.label}
                   href={kpi.href}
-                  className="group relative flex flex-col rounded-2xl p-4 transition-all hover:scale-[1.02]"
-                  style={{ background: t.glass, border: `1px solid ${t.border}` }}
+                  className="group relative flex flex-col rounded-xl p-4 transition-all hover:scale-[1.02]"
+                  style={{ background: t.card, border: `1px solid ${t.border}` }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div
@@ -727,7 +719,7 @@ export default function AccueilPage() {
           <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Aujourd&apos;hui</h2>
           <div className="grid lg:grid-cols-2 gap-4">
 
-            <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <div className="rounded-xl p-5" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Calendar size={15} style={{ color: GOLD }} />
@@ -764,7 +756,7 @@ export default function AccueilPage() {
               )}
             </div>
 
-            <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <div className="rounded-xl p-5" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={15} style={{ color: GOLD }} />
@@ -816,21 +808,16 @@ export default function AccueilPage() {
           className="mb-8"
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Actions rapides</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="flex flex-wrap gap-2">
             {QUICK_ACTIONS.map(({ label, href, Icon }) => (
               <Link
                 key={href}
                 href={href}
-                className="group flex flex-col items-center gap-3 rounded-2xl p-5 text-center transition-all hover:scale-[1.03] active:scale-[0.97]"
-                style={{ background: t.glass, border: `1px solid ${t.border}` }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-80 active:scale-[0.97]"
+                style={{ background: t.card, border: `1px solid ${t.border}`, color: t.text2 }}
               >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${GOLD}14` }}
-                >
-                  <Icon size={20} style={{ color: GOLD }} />
-                </div>
-                <span className="text-xs font-medium leading-snug" style={{ color: t.text2 }}>{label}</span>
+                <Icon size={14} style={{ color: GOLD }} />
+                {label}
               </Link>
             ))}
           </div>
@@ -846,7 +833,7 @@ export default function AccueilPage() {
           {loading ? (
             <div className="flex flex-col gap-1">{[...Array(5)].map((_, i) => <Skel key={i} h={52} />)}</div>
           ) : recentActivity.length === 0 ? (
-            <div className="py-10 text-center rounded-2xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <div className="py-10 text-center rounded-xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <p className="text-sm" style={{ color: t.text3 }}>Aucune activité récente</p>
               <p className="text-xs mt-1" style={{ color: t.text4 }}>Vos actions apparaîtront ici</p>
             </div>
@@ -892,23 +879,37 @@ export default function AccueilPage() {
               Toutes les applications <ChevronRight size={10} />
             </Link>
           </div>
-          <div className="grid grid-cols-4 lg:grid-cols-8 gap-3">
-            {PINNED_APPS.map(({ label, href, Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group flex flex-col items-center gap-2 py-4 px-1 rounded-2xl text-center transition-all hover:scale-[1.05] active:scale-[0.96]"
-                style={{ background: t.glass, border: `1px solid ${t.border}` }}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${GOLD}12` }}
-                >
-                  <Icon size={18} style={{ color: GOLD }} />
-                </div>
-                <span className="text-[11px] font-medium leading-snug" style={{ color: t.text3 }}>{label}</span>
-              </Link>
-            ))}
+          <div className="rounded-xl p-4" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+            <div className="grid grid-cols-4 lg:grid-cols-8 gap-y-5 gap-x-2">
+              {PINNED_SLUGS.map(slug => {
+                const app = APPS_DATA.find(a => a.slug === slug);
+                if (!app) return null;
+                const AppIcon = app.icon;
+                return (
+                  <Link
+                    key={slug}
+                    href={app.clientHref ?? `/client/${slug}`}
+                    className="group flex flex-col items-center gap-2 text-center transition-transform hover:scale-[1.06] active:scale-[0.96]"
+                  >
+                    <div style={{
+                      width: 52, height: 52, borderRadius: "27%",
+                      background: app.color,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: `0 2px 8px ${app.color}50`,
+                      position: "relative", overflow: "hidden",
+                    }}>
+                      <div style={{
+                        position: "absolute", inset: 0,
+                        background: "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 55%)",
+                        pointerEvents: "none",
+                      }} />
+                      <AppIcon size={24} color="white" strokeWidth={1.6} />
+                    </div>
+                    <span className="text-[11px] font-medium leading-snug w-full" style={{ color: t.text3 }}>{app.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </motion.section>
 
