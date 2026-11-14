@@ -142,6 +142,13 @@ function setFill(doc: jsPDF, rgb: RGB) { doc.setFillColor(rgb[0], rgb[1], rgb[2]
 function setDraw(doc: jsPDF, rgb: RGB) { doc.setDrawColor(rgb[0], rgb[1], rgb[2]); }
 function setTxt(doc:  jsPDF, rgb: RGB) { doc.setTextColor(rgb[0], rgb[1], rgb[2]); }
 
+// NotoSans si embedé, sinon helvetica (gracieux)
+function setFont(doc: jsPDF, weight: "normal" | "bold" | "italic") {
+  if (weight === "italic") { doc.setFont("helvetica", "italic"); return; }
+  try { doc.setFont("NotoSans", weight); }
+  catch { doc.setFont("helvetica", weight); }
+}
+
 function hLine(doc: jsPDF, y: number, color: RGB, lw = 0.25, x0 = ML, x1 = PW - MR) {
   setDraw(doc, color);
   doc.setLineWidth(lw);
@@ -210,14 +217,14 @@ function drawHeaderAccentBar(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, CS, Math.max(5, (H - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, CS, H / 2 + 2);
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, CS, H / 2 + 2);
@@ -226,24 +233,24 @@ function drawHeaderAccentBar(
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, 10, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, 22, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, 31, { align: "right" });
+  doc.text(`Émis le : ${fmtDate(data.issue_date)}`, RX, 31, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, 39, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, 39, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, 39, { align: "right" });
@@ -275,14 +282,14 @@ function drawHeaderMinimal(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, ML, Math.max(4, (headerH - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, MID + 3);
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, MID + 3);
@@ -291,22 +298,22 @@ function drawHeaderMinimal(
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, MID - 4, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, MID + 5, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le ${fmtDate(data.issue_date)}`, ML, headerH - 2);
+  doc.text(`Émis le${fmtDate(data.issue_date)}`, ML, headerH - 2);
   if (data.type === "invoice" && data.due_date) {
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, headerH - 2, { align: "right" });
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, headerH - 2, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, headerH - 2, { align: "right" });
   }
@@ -341,12 +348,12 @@ function drawHeaderStandard(
       if (lW > LOGO_MAX_W) { lW = LOGO_MAX_W; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, ML, Math.max(6, (headerH - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, headerH / 2 + 3);
       if (co.website || co.email) {
-        doc.setFont("helvetica", "normal");
+        setFont(doc, "normal");
         doc.setFontSize(7.5);
         setTxt(doc, theme.headerSubColor);
         doc.text(co.website || co.email, ML, headerH / 2 + 10);
@@ -354,7 +361,7 @@ function drawHeaderStandard(
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, headerH / 2 + 3);
@@ -363,27 +370,27 @@ function drawHeaderStandard(
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, 12, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, 25, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, 34, { align: "right" });
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX, 34, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     setTxt(doc, theme.headerRefColor);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, 42, { align: "right" });
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 42, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     setTxt(doc, theme.headerRefColor);
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, 42, { align: "right" });
   }
@@ -419,7 +426,7 @@ function drawHeaderSplit(
       doc.addImage(logoImg.dataUri, ML, TOP_PAD, lW, lH, "", "FAST");
       ly += lH + 3;
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, ly + 6);
@@ -427,7 +434,7 @@ function drawHeaderSplit(
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, ly + 6);
@@ -439,7 +446,7 @@ function drawHeaderSplit(
     }
   }
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, [90, 100, 115]);
   const maxLW = SPLIT - ML - 4;
@@ -459,28 +466,28 @@ function drawHeaderSplit(
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, 13, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, 26, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, 35, { align: "right" });
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX, 35, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     doc.setFontSize(8.5);
     setTxt(doc, theme.headerRefColor);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, 44, { align: "right" });
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 44, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     doc.setFontSize(8.5);
     setTxt(doc, theme.headerRefColor);
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, 44, { align: "right" });
@@ -521,14 +528,14 @@ function drawHeaderBand(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, ML, (BAND1_H - lH) / 2, lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, BAND1_H / 2 + 3);
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, BAND1_H / 2 + 3);
@@ -536,7 +543,7 @@ function drawHeaderBand(
     if (lt && logoImg) doc.addImage(logoImg.dataUri, lt.x, lt.y, lt.w, lt.h, "", "FAST");
   }
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerSubColor);
   const contactParts: string[] = [];
@@ -550,28 +557,28 @@ function drawHeaderBand(
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
   const midY2    = BAND1_H + BAND2_H / 2;
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(8);
   setTxt(doc, theme.headerNameColor);
   doc.text(docLabel, ML, midY2 - 2);
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, ML, midY2 + 5);
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, ML, midY2 + 5);
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, midY2 + 1, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
-    doc.setFont("helvetica", "normal");
+    setFont(doc, "normal");
     doc.setFontSize(7.5);
     setTxt(doc, theme.headerDateColor);
     doc.text(`Ech. : ${fmtDate(data.due_date)}`, RX, midY2 + 7.5, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
-    doc.setFont("helvetica", "normal");
+    setFont(doc, "normal");
     doc.setFontSize(7.5);
     setTxt(doc, theme.headerDateColor);
     doc.text(`Val. : ${fmtDate(data.valid_until)}`, RX, midY2 + 7.5, { align: "right" });
@@ -612,14 +619,14 @@ function drawHeaderGridLine(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, ML, Math.max(6, (H - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
@@ -628,23 +635,23 @@ function drawHeaderGridLine(
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, H / 2 - 6, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, H / 2 + 4, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le ${fmtDate(data.issue_date)}`, ML, H - 3);
+  doc.text(`Émis le${fmtDate(data.issue_date)}`, ML, H - 3);
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, H - 3, { align: "right" });
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, H - 3, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Valable : ${fmtDate(data.valid_until)}`, RX, H - 3, { align: "right" });
@@ -684,12 +691,12 @@ function drawHeaderCentered(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, CX - lW / 2, Math.max(6, (H - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, CX, H / 2 + 2, { align: "center" });
       if (co.website || co.email) {
-        doc.setFont("helvetica", "normal");
+        setFont(doc, "normal");
         doc.setFontSize(7.5);
         setTxt(doc, theme.headerSubColor);
         doc.text(co.website || co.email, CX, H / 2 + 8, { align: "center" });
@@ -697,7 +704,7 @@ function drawHeaderCentered(
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, CX, H / 2 + 2, { align: "center" });
@@ -707,24 +714,24 @@ function drawHeaderCentered(
 
   // Référence à droite
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, 10, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, 20, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, 28, { align: "right" });
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX, 28, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, 36, { align: "right" });
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 36, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Val. : ${fmtDate(data.valid_until)}`, RX, 36, { align: "right" });
@@ -767,7 +774,7 @@ function drawHeaderColumnLeft(
       doc.addImage(logoImg.dataUri, (SW - lW) / 2, sy, lW, lH, "", "FAST");
       sy += lH + 5;
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(9);
       setTxt(doc, STXT);
       const nameLines = doc.splitTextToSize(co.name, SW - 10) as string[];
@@ -780,7 +787,7 @@ function drawHeaderColumnLeft(
   }
 
   // Infos société dans la sidebar
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(6.5);
   setTxt(doc, STXT);
   const sideInfos: string[] = [];
@@ -799,24 +806,24 @@ function drawHeaderColumnLeft(
   const headerH = theme.headerH;
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, CX, 12);
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, 22, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, CX, 32);
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, CX, 32);
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, CX, 40);
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, CX, 40);
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, CX, 40);
@@ -856,14 +863,14 @@ function drawHeaderDarkFull(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, ML, Math.max(5, (H - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
@@ -872,24 +879,24 @@ function drawHeaderDarkFull(
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, 10, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.accentColor);
   doc.text(data.reference, RX, 22, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, 31, { align: "right" });
+  doc.text(`Émis le : ${fmtDate(data.issue_date)}`, RX, 31, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, 40, { align: "right" });
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 40, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, 40, { align: "right" });
@@ -923,12 +930,12 @@ function drawHeaderFullBlock(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, CX - lW / 2, (H - lH) / 2, lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, CX, H / 2 + 2, { align: "center" });
       if (co.website || co.email) {
-        doc.setFont("helvetica", "normal");
+        setFont(doc, "normal");
         doc.setFontSize(7.5);
         setTxt(doc, theme.headerSubColor);
         doc.text(co.website || co.email, CX, H / 2 + 8, { align: "center" });
@@ -936,7 +943,7 @@ function drawHeaderFullBlock(
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, CX, H / 2 + 2, { align: "center" });
@@ -945,20 +952,20 @@ function drawHeaderFullBlock(
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, 10, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, 20, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, 28, { align: "right" });
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX, 28, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.headerSubColor);
@@ -1002,14 +1009,14 @@ function drawHeaderAngled(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, ML, Math.max(5, (H - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
@@ -1019,24 +1026,24 @@ function drawHeaderAngled(
 
   // Référence dans la zone blanche
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.mutedText);
   doc.text(docLabel, RX, 10, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, 22, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.mutedText);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, 30, { align: "right" });
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX, 30, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.headerBg);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, 38, { align: "right" });
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 38, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.headerBg);
     doc.text(`Val. : ${fmtDate(data.valid_until)}`, RX, 38, { align: "right" });
@@ -1077,14 +1084,14 @@ function drawHeaderFramed(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, ML, Math.max(8, (H - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
@@ -1093,20 +1100,20 @@ function drawHeaderFramed(
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX - PAD - 2, 11, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX - PAD - 2, 22, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX - PAD - 2, 30, { align: "right" });
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX - PAD - 2, 30, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
@@ -1142,12 +1149,12 @@ function drawHeaderVibrant(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, ML, Math.max(8, (H - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
       if (co.website || co.email) {
-        doc.setFont("helvetica", "normal");
+        setFont(doc, "normal");
         doc.setFontSize(8);
         setTxt(doc, theme.headerSubColor);
         doc.text(co.website || co.email, ML, H / 2 + 9);
@@ -1155,7 +1162,7 @@ function drawHeaderVibrant(
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name, ML, H / 2 + 2);
@@ -1165,27 +1172,27 @@ function drawHeaderVibrant(
 
   // Bloc référence centré droite avec fond légèrement différent
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(8);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, 12, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, 26, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, 36, { align: "right" });
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX, 36, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     setTxt(doc, theme.headerRefColor);
     doc.text(`Ech. : ${fmtDate(data.due_date)}`, RX, 45, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     setTxt(doc, theme.headerRefColor);
     doc.text(`Val. : ${fmtDate(data.valid_until)}`, RX, 45, { align: "right" });
   }
@@ -1233,14 +1240,14 @@ function drawHeaderTechDark(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, ML + theme.accentW + 4, Math.max(5, (H - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.accentColor);
       doc.text(co.name, ML + theme.accentW + 4, H / 2 + 2);
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.accentColor);
       doc.text(co.name, ML + theme.accentW + 4, H / 2 + 2);
@@ -1249,24 +1256,24 @@ function drawHeaderTechDark(
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.headerSubColor);
   doc.text(docLabel, RX, 10, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerNameColor);
   doc.text(data.reference, RX, 22, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, RX, 30, { align: "right" });
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX, 30, { align: "right" });
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, 38, { align: "right" });
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 38, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Valable : ${fmtDate(data.valid_until)}`, RX, 38, { align: "right" });
@@ -1317,7 +1324,7 @@ function drawHeaderDeco(
       if (lW > maxW) { lW = maxW; lH = lW / ratio; }
       doc.addImage(logoImg.dataUri, CX - lW / 2, Math.max(10, (H - lH) / 2), lW, lH, "", "FAST");
     } else if (co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       // Uppercase pour effet art déco
@@ -1325,7 +1332,7 @@ function drawHeaderDeco(
     }
   } else {
     if (!logoImg && co.name) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(theme.headerFontSize);
       setTxt(doc, theme.headerNameColor);
       doc.text(co.name.toUpperCase(), CX, H / 2 + 2, { align: "center" });
@@ -1335,24 +1342,24 @@ function drawHeaderDeco(
 
   // Référence à droite
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.accentColor);
   doc.text(docLabel, RX, 14, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(theme.refFontSize);
   setTxt(doc, theme.headerRefColor);
   doc.text(data.reference, RX, 24, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Emis le : ${fmtDate(data.issue_date)}`, ML, H - 7);
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, ML, H - 7);
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Echeance : ${fmtDate(data.due_date)}`, RX, H - 7, { align: "right" });
+    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, H - 7, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Val. : ${fmtDate(data.valid_until)}`, RX, H - 7, { align: "right" });
@@ -1401,27 +1408,27 @@ function drawAddressesAccentBar(
   const RX    = PW - MR;
   let   y     = startY;
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(6);
   setTxt(doc, theme.labelColor);
-  doc.text("EMETTEUR", CS, y);
-  doc.text(data.type === "invoice" ? "FACTURER A" : "DEVIS POUR", RCOL, y);
+  doc.text("ÉMETTEUR", CS, y);
+  doc.text(data.type === "invoice" ? "FACTURÉ À" : "DEVIS POUR", RCOL, y);
   y += 6;
 
   const showName = co.name && !(co.logoHideName && co.logoUrl);
   if (showName) {
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     doc.setFontSize(10);
     setTxt(doc, theme.sectionNameColor);
     doc.text(co.name, CS, y);
   }
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(10);
   setTxt(doc, theme.sectionNameColor);
   doc.text(data.client_name, RCOL, y);
   y += 5.5;
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8);
 
   let ey = y;
@@ -1486,22 +1493,22 @@ function drawAddresses(
   const RX     = PW - MR;
   let   y      = startY;
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(6.5);
   setTxt(doc, theme.labelColor);
   doc.text("DE :", xStart, y + 4);
-  doc.text(data.type === "invoice" ? "FACTURE A :" : "DEVIS POUR :", RX_COL, y + 4);
+  doc.text(data.type === "invoice" ? "FACTURÉ À :" : "DEVIS POUR :", RX_COL, y + 4);
   y += 8;
 
   const showEmetteurName = co.name && !(co.logoHideName && logoImg);
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(10);
   setTxt(doc, theme.sectionNameColor);
   if (showEmetteurName) doc.text(co.name, xStart, y);
   doc.text(data.client_name, RX_COL, y);
   y += 5.5;
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8);
   setTxt(doc, theme.mutedText);
 
@@ -1574,21 +1581,21 @@ function drawDocumentTitle(
   const m     = data.reference.match(/(\d+)$/);
   const num   = m ? parseInt(m[1], 10).toString() : data.reference;
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(14);
   setTxt(doc, accentRgb);
   doc.text(`${label} n° ${num}`, xStart, y);
   y += 9;
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8);
   setTxt(doc, theme.mutedText);
-  doc.text(`Date d'emission : ${fmtDate(data.issue_date)}`, xStart, y);
+  doc.text(`Date d'émission : ${fmtDate(data.issue_date)}`, xStart, y);
 
   const RX = PW - MR;
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.bodyText);
-    doc.text(`Date d'echeance : ${fmtDate(data.due_date)}`, RX, y, { align: "right" });
+    doc.text(`Date d'échéance : ${fmtDate(data.due_date)}`, RX, y, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.bodyText);
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, y, { align: "right" });
@@ -1618,12 +1625,12 @@ function drawSubject(
   setFill(doc, theme.subjectBg);
   doc.rect(xStart, y - 1, PW - MR - xStart, BAR_H, "F");
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(6.5);
   setTxt(doc, theme.labelColor);
   doc.text("OBJET", xStart + 3, y + 4);
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(9);
   setTxt(doc, theme.bodyText);
   lines.forEach((line, i) => { doc.text(line, xStart + LABEL_W, y + 4 + i * 5.5); });
@@ -1648,16 +1655,16 @@ function drawItemsTable(
   setFill(doc, theme.tableHeaderBg);
   doc.rect(xStart, y, RX - xStart, HEADER_H, "F");
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.tableHeaderText);
 
   const hY = y + 6;
-  doc.text("Designation",    XC0 + colOffset + 3,              hY);
-  doc.text("Qte",            XC1 + colOffset + COL_QTY  - 2,   hY, { align: "right" });
-  doc.text("Unite",          XC2 + colOffset + COL_UNIT - 2,   hY, { align: "right" });
+  doc.text("Désignation",    XC0 + colOffset + 3,              hY);
+  doc.text("Qté",            XC1 + colOffset + COL_QTY  - 2,   hY, { align: "right" });
+  doc.text("Unité",          XC2 + colOffset + COL_UNIT - 2,   hY, { align: "right" });
   doc.text("Prix HT",        XC3 + colOffset + COL_PRICE - 2,  hY, { align: "right" });
-  doc.text("TVA%",           XC4 + colOffset + COL_TVA  - 2,   hY, { align: "right" });
+  doc.text("TVA %",          XC4 + colOffset + COL_TVA  - 2,   hY, { align: "right" });
   doc.text("Montant HT",     RX - 2,                            hY, { align: "right" });
   y += HEADER_H;
 
@@ -1688,11 +1695,11 @@ function drawItemsTable(
     const ox = colOffset;
 
     if (mainLines.length > 1 || subLines.length > 0) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(8.5);
       setTxt(doc, theme.tableText);
       doc.text(mainLines[0] ?? "", XC0 + ox + 3, tY);
-      doc.setFont("helvetica", "normal");
+      setFont(doc, "normal");
       doc.setFontSize(8.5);
       let ly = tY + 5;
       mainLines.slice(1).forEach(l => { doc.text(l, XC0 + ox + 3, ly); ly += 4.8; });
@@ -1702,13 +1709,13 @@ function drawItemsTable(
         subLines.forEach(l => { doc.text(l, XC0 + ox + 3, ly); ly += 4.5; });
       }
     } else {
-      doc.setFont("helvetica", "normal");
+      setFont(doc, "normal");
       doc.setFontSize(8.5);
       setTxt(doc, theme.tableText);
       doc.text(mainLines[0] ?? "", XC0 + ox + 3, tY);
     }
 
-    doc.setFont("helvetica", "normal");
+    setFont(doc, "normal");
     doc.setFontSize(8.5);
     setTxt(doc, theme.tableText);
 
@@ -1721,11 +1728,11 @@ function drawItemsTable(
     setTxt(doc, theme.mutedText);
     doc.text(`${itemTva}%`, XC4 + ox + COL_TVA - 2, tY, { align: "right" });
 
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     doc.setFontSize(8.5);
     setTxt(doc, theme.tableText);
     doc.text(fmtAmt(item.total, cur), RX - 2, tY, { align: "right" });
-    doc.setFont("helvetica", "normal");
+    setFont(doc, "normal");
 
     y += rowH;
   });
@@ -1756,7 +1763,7 @@ function drawTotals(
 
   // Notes côté gauche
   if (data.notes) {
-    doc.setFont("helvetica", "italic");
+    setFont(doc, "italic");
     doc.setFontSize(7);
     setTxt(doc, theme.mutedText);
     const noteLines = doc.splitTextToSize(data.notes, MID_L - xStart - 2) as string[];
@@ -1764,7 +1771,7 @@ function drawTotals(
     noteLines.slice(0, 8).forEach(l => { doc.text(l, xStart, ny); ny += 4.5; });
   }
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(9);
 
   if (data.subtotal !== data.total || (data.tax_amount ?? 0) > 0 || (data.discount ?? 0) > 0) {
@@ -1830,12 +1837,12 @@ function drawTotals(
   setFill(doc, boxColor);
   doc.roundedRect(TX - 2, y - 1.5, BLOCK_W + 2, BOX_H, 2, 2, "F");
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(8);
   setTxt(doc, theme.totalBoxText);
   doc.text("TOTAL TTC", TX + 3, y + 5.5);
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(12);
   setTxt(doc, theme.totalBoxText);
   doc.text(fmtAmt(data.total, cur), RX - 3, y + 6.5, { align: "right" });
@@ -1843,10 +1850,10 @@ function drawTotals(
   y += BOX_H + 4;
 
   if (data.deposit && data.deposit > 0) {
-    doc.setFont("helvetica", "normal");
+    setFont(doc, "normal");
     doc.setFontSize(9);
     setTxt(doc, theme.mutedText);
-    doc.text(data.deposit_label ?? "Acompte verse", TX, y);
+    doc.text(data.deposit_label ?? "Acompte versé", TX, y);
     setTxt(doc, theme.bodyText);
     doc.text(`- ${fmtAmt(data.deposit, cur)}`, RX, y, { align: "right" });
     y += 8;
@@ -1854,10 +1861,10 @@ function drawTotals(
     y = maybePageBreak(doc, y, 14, theme);
     setFill(doc, boxColor);
     doc.roundedRect(TX - 2, y - 1.5, BLOCK_W + 2, 11, 2, 2, "F");
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     doc.setFontSize(8.5);
     setTxt(doc, theme.totalBoxText);
-    doc.text("Net a payer", TX + 3, y + 5.5);
+    doc.text("Net à payer", TX + 3, y + 5.5);
     doc.setFontSize(11);
     doc.text(fmtAmt(r2(data.total - data.deposit), cur), RX - 3, y + 5.5, { align: "right" });
     y += 14;
@@ -1883,10 +1890,10 @@ function drawPaymentInfo(
   const xStart = getContentX(theme);
   let   y      = maybePageBreak(doc, startY, 30, theme);
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.labelColor);
-  doc.text("REGLEMENT", xStart, y);
+  doc.text("RÈGLEMENT", xStart, y);
   y += 7;
 
   setFill(doc, theme.subjectBg);
@@ -1894,32 +1901,32 @@ function drawPaymentInfo(
 
   const MID2 = xStart + (PW - MR - xStart) / 2 + 4;
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.mutedText);
-  doc.text("Titulaire", xStart + 4, y + 3);
+  if (titulaire && titulaire.trim()) doc.text("Titulaire", xStart + 4, y + 3);
   if (banque) doc.text("Banque", MID2, y + 3);
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8.5);
   setTxt(doc, theme.bodyText);
-  doc.text(titulaire, xStart + 4, y + 9);
+  if (titulaire && titulaire.trim()) doc.text(titulaire, xStart + 4, y + 9);
   if (banque) doc.text(banque, MID2, y + 9);
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(7);
   setTxt(doc, theme.mutedText);
   doc.text("IBAN", xStart + 4, y + 15);
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(8.5);
   setTxt(doc, theme.bodyText);
   const ibanFmt = iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
   doc.text(ibanFmt, xStart + 16, y + 21);
   if (bic) {
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     doc.setFontSize(7);
     setTxt(doc, theme.mutedText);
     doc.text("BIC", MID2, y + 15);
-    doc.setFont("helvetica", "normal");
+    setFont(doc, "normal");
     doc.setFontSize(8.5);
     setTxt(doc, theme.bodyText);
     doc.text(bic, MID2 + 10, y + 21);
@@ -1945,10 +1952,10 @@ function drawPaymentInfoModern(
   const BOX_H   = hasRib ? 30 : 26;
   let   y       = maybePageBreak(doc, startY, BOX_H + 12, theme);
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(6.5);
   setTxt(doc, theme.labelColor);
-  doc.text("REGLEMENT", CS_BAR, y);
+  doc.text("RÈGLEMENT", CS_BAR, y);
   y += 6;
 
   const cardW = qrDataUrl ? PW - MR - CS_BAR - QR_SIZE - 10 : PW - MR - CS_BAR;
@@ -1959,42 +1966,42 @@ function drawPaymentInfoModern(
     const colR   = CS_BAR + cardW / 2 + 2;
     const card_x = CS_BAR + 5;
 
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     doc.setFontSize(6.5);
     setTxt(doc, theme.mutedText);
     doc.text("TITULAIRE", card_x, y + 4);
-    doc.setFont("helvetica", "normal");
+    setFont(doc, "normal");
     doc.setFontSize(9);
     setTxt(doc, theme.bodyText);
     doc.text(titulaire, card_x, y + 10);
 
     if (banque) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(6.5);
       setTxt(doc, theme.mutedText);
       doc.text("BANQUE", colR, y + 4);
-      doc.setFont("helvetica", "normal");
+      setFont(doc, "normal");
       doc.setFontSize(9);
       setTxt(doc, theme.bodyText);
       doc.text(banque, colR, y + 10);
     }
 
-    doc.setFont("helvetica", "bold");
+    setFont(doc, "bold");
     doc.setFontSize(6.5);
     setTxt(doc, theme.mutedText);
     doc.text("IBAN", card_x, y + 16);
-    doc.setFont("helvetica", "normal");
+    setFont(doc, "normal");
     doc.setFontSize(8);
     setTxt(doc, theme.bodyText);
     const ibanFmt = iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
     doc.text(ibanFmt, card_x, y + 22.5);
 
     if (bic) {
-      doc.setFont("helvetica", "bold");
+      setFont(doc, "bold");
       doc.setFontSize(6.5);
       setTxt(doc, theme.mutedText);
       doc.text("BIC", colR, y + 16);
-      doc.setFont("helvetica", "normal");
+      setFont(doc, "normal");
       doc.setFontSize(9);
       setTxt(doc, theme.bodyText);
       doc.text(bic, colR, y + 22.5);
@@ -2013,7 +2020,7 @@ function drawPaymentInfoModern(
     doc.roundedRect(qrBoxX - 1, qrBoxY, QR_SIZE + 6, 2, 1, 1, "F");
     doc.rect(qrBoxX - 1, qrBoxY + 1, QR_SIZE + 6, 1, "F");
     doc.addImage(qrDataUrl, "PNG", qrBoxX + 1.5, qrBoxY + 3, QR_SIZE, QR_SIZE, "", "FAST");
-    doc.setFont("helvetica", "normal");
+    setFont(doc, "normal");
     doc.setFontSize(4.5);
     setTxt(doc, theme.mutedText);
     doc.text("Virement SEPA", qrBoxX + (QR_SIZE + 6) / 2 - 1, qrBoxY + QR_SIZE + 5.5, { align: "center" });
@@ -2023,7 +2030,7 @@ function drawPaymentInfoModern(
 
   if (data.footer_text) {
     y = maybePageBreak(doc, y, 12, theme);
-    doc.setFont("helvetica", "italic");
+    setFont(doc, "italic");
     doc.setFontSize(7.5);
     setTxt(doc, theme.mutedText);
     const fLines = doc.splitTextToSize(data.footer_text, CW - BAR) as string[];
@@ -2048,18 +2055,18 @@ function drawLegalMentions(
   const xStart = getContentX(theme);
   const textW  = PW - MR - xStart;
 
-  doc.setFont("helvetica", "bold");
+  setFont(doc, "bold");
   doc.setFontSize(6.5);
   setTxt(doc, theme.labelColor);
   doc.text("CONDITIONS DE PAIEMENT", xStart, y);
   y += 5;
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(7);
   setTxt(doc, theme.mutedText);
 
-  const penalite  = "En cas de retard de paiement, des penalites de retard au taux de 3 fois le taux d'interet legal seront exigibles a compter du lendemain de la date d'echeance, sans mise en demeure prealable (art. L.441-10 C. com.).";
-  const indemnite = "Indemnite forfaitaire pour frais de recouvrement : 40 EUR (art. D.441-5 C. com.).";
+  const penalite  = "En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal seront exigibles à compter du lendemain de la date d'échéance, sans mise en demeure préalable (art. L.441-10 C. com.).";
+  const indemnite = "Indemnité forfaitaire pour frais de recouvrement : 40 EUR (art. D.441-5 C. com.).";
 
   const penLines = doc.splitTextToSize(penalite, textW) as string[];
   penLines.forEach(l => { doc.text(l, xStart, y); y += 4.2; });
@@ -2111,7 +2118,7 @@ function drawPageFooter(
     }
   }
 
-  doc.setFont("helvetica", "normal");
+  setFont(doc, "normal");
   doc.setFontSize(6.5);
   setTxt(doc, theme.footerText);
 
