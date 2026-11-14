@@ -19,17 +19,22 @@ import { PremiumTemplate }   from "./templates/PremiumTemplate";
 import { ColorfulTemplate }  from "./templates/ColorfulTemplate";
 
 export interface InvoiceTemplateProps {
-  type: TemplateType;
+  type: TemplateType | string;
   data: PreviewData;
 }
 
 export function InvoiceTemplate({ type, data }: InvoiceTemplateProps) {
+  // Famille → composant preview HTML (5 visuels hérités)
+  if (type.startsWith("min-")) return <MinimalTemplate  data={data} />;
+  if (type.startsWith("corp-") || type.startsWith("serv-") || type.startsWith("comm-")) return <ClassicTemplate data={data} />;
+  if (type.startsWith("prem-")) return <PremiumTemplate data={data} />;
+  if (type.startsWith("creat-") || type.startsWith("tech-")) return <ColorfulTemplate data={data} />;
+  // Legacy + défaut
   switch (type) {
-    case "minimal":   return <MinimalTemplate  data={data} />;
-    case "classic":   return <ClassicTemplate  data={data} />;
-    case "premium":   return <PremiumTemplate  data={data} />;
-    case "colorful":  return <ColorfulTemplate data={data} />;
-    case "modern":
-    default:          return <ModernTemplate   data={data} />;
+    case "minimal":  return <MinimalTemplate  data={data} />;
+    case "classic":  return <ClassicTemplate  data={data} />;
+    case "premium":  return <PremiumTemplate  data={data} />;
+    case "colorful": return <ColorfulTemplate data={data} />;
+    default:         return <ModernTemplate   data={data} />;
   }
 }

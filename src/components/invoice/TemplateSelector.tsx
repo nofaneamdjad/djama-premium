@@ -65,7 +65,7 @@ export function ScaledA4({ children }: { children: React.ReactNode }) {
 function LazyThumbnail({ type, data }: { type: TemplateType; data: PreviewData }) {
   const ref     = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
-  const headerColor = TEMPLATE_INFO.find(t => t.id === type)?.headerColor ?? "#1a1a1a";
+  const headerColor = TEMPLATE_INFO.find(t => t.id === type)?.previewColor ?? "#1a1a1a";
 
   useEffect(() => {
     const el = ref.current;

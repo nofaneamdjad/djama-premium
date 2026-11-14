@@ -79,7 +79,7 @@ const EMPTY_FORM: QuoteForm = {
   client_name: "", client_email: "", client_phone: "", client_company: "",
   client_address: "", subject: "", description: "", budget: "",
   status: "brouillon", issue_date: TODAY(), valid_until: "", tax_rate: 20,
-  notes: "", template: "modern", items: [],
+  notes: "", template: "min-ligne", items: [],
 };
 
 function newItem(): FormItem {

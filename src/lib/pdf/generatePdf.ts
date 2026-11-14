@@ -77,13 +77,12 @@ export interface PdfData {
 export async function generatePdf(data: PdfData, download = true): Promise<void> {
   const { jsPDF } = await import("jspdf");
 
-  const template: TemplateType = data.template ?? "modern";
+  const template: TemplateType = (data.template ?? "min-ligne") as TemplateType;
   let theme = getTheme(template);
 
-  // ── Couleur d'accent personnalisée (template Modern uniquement) ──────────────
   if (data.accentColor && theme.variant === "accent-bar") {
     const rgb = hexToRgb(data.accentColor);
-    theme = { ...theme, accentBarColor: rgb, labelColor: rgb };
+    theme = { ...theme, accentColor: rgb, labelColor: rgb };
   }
 
   // ── Paramètres entreprise (avec valeurs par défaut) ───────────────────────

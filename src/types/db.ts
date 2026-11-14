@@ -243,13 +243,8 @@ export type VideoProjectRow = {
 };
 
 // ── Templates factures / devis ────────────────────────────────
-/** Modèle visuel utilisé pour le rendu PDF */
-export type TemplateType =
-  | 'modern'    // header sombre, accents dorés (défaut DJAMA)
-  | 'minimal'   // tout blanc, lignes fines
-  | 'classic'   // bleu marine corporate
-  | 'premium'   // fond sombre, luxe
-  | 'colorful'; // header indigo, SaaS
+import type { TemplateType as _TemplateType } from "@/lib/pdf/types";
+export type TemplateType = _TemplateType;
 
 // ── Factures (migration 010) ──────────────────────────────────
 export type InvoiceStatus        = 'brouillon' | 'envoyée' | 'payée' | 'en retard' | 'annulée';

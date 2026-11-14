@@ -684,7 +684,7 @@ export default function ParametresFacturesPage() {
                           }`}>
                           {/* Swatch couleur */}
                           <div className="h-7 w-7 shrink-0 rounded-md border border-white/[0.12]"
-                            style={{ backgroundColor: tpl.headerColor }} />
+                            style={{ backgroundColor: tpl.previewColor }} />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold text-white">{tpl.label}</p>
                             <p className="truncate text-xs text-white/30">{tpl.description}</p>

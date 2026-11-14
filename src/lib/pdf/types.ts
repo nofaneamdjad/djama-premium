@@ -1,29 +1,110 @@
 /**
  * Types partagés pour le système de templates PDF factures / devis.
- * Source de vérité pour TemplateType et PdfTemplateData.
+ * Source de vérité pour TemplateType, TemplateFamily, PdfTemplateData.
+ *
+ * 24 modèles répartis en 6 familles × 4 modèles.
  */
 
 import type { CompanySettings } from "./companySettings";
 
-// ─── Template type ────────────────────────────────────────────────────────────
+// ─── Familles ─────────────────────────────────────────────────────────────────
+
+export type TemplateFamily =
+  | "minimaliste"
+  | "corporate"
+  | "premium"
+  | "creatif"
+  | "technologie"
+  | "services";
+
+// ─── 24 Types de templates ────────────────────────────────────────────────────
 
 export type TemplateType =
-  | "modern"    // header sombre, accents dorés
-  | "minimal"   // tout blanc, lignes fines, épuré
-  | "classic"   // bleu marine corporate, traditionnel
-  | "premium"   // fond sombre intégral, texte or, luxe
-  | "colorful"; // header violet/indigo, moderne SaaS
+  // ── Minimaliste (4) ──────────────────────────────────────────────────
+  | "min-blanc"    // Rien que texte + séparateurs fins
+  | "min-ligne"    // Ligne épaisse unique en haut + layout colonnes
+  | "min-grille"   // Grille éditoriale légère
+  | "min-mono"     // Monochrome gris, typographie seule
+
+  // ── Corporate (4) ────────────────────────────────────────────────────
+  | "corp-marine"  // Header marine plein (institutionnel classique)
+  | "corp-bipart"  // Header bipartite : logo droite / infos gauche
+  | "corp-tampon"  // Nom d'entreprise centré, style tampon officiel
+  | "corp-lateral" // Colonne latérale gauche, contenu principal à droite
+
+  // ── Premium (4) ──────────────────────────────────────────────────────
+  | "prem-or"      // Header quasi-noir, accents or
+  | "prem-nuit"    // Full dark : fond noir, texte clair
+  | "prem-creme"   // Papier crème/ivoire, tons chauds
+  | "prem-deco"    // Art déco : géométrie, majuscules
+
+  // ── Créatif (4) ──────────────────────────────────────────────────────
+  | "creat-bloc"   // Grand bloc couleur H=50mm, logo centré dedans
+  | "creat-angle"  // Coin coloré haut-gauche, structure asymétrique
+  | "creat-cadre"  // Cadre couleur intérieur autour du contenu
+  | "creat-vif"    // Couleurs vives, style SaaS / startup
+
+  // ── Technologie (4) ──────────────────────────────────────────────────
+  | "tech-sombre"  // Fond gris sombre, accents bleu électrique
+  | "tech-code"    // Style terminal, lignes horizontales fines
+  | "tech-schema"  // Blueprint : lignes de grille légères
+  | "tech-circuit" // Accents géométriques, style circuit imprimé
+
+  // ── Services & Commerce (4) ──────────────────────────────────────────
+  | "serv-chaud"   // Tons terracotta/ocre, chaleureux
+  | "serv-nature"  // Tons verts, éco-responsable
+  | "comm-boutique"// Colonnes larges, style e-commerce
+  | "comm-classique"; // Commercial traditionnel avec bordures
+
+// ─── Rétrocompatibilité (anciens noms → nouveaux noms) ───────────────────────
+
+/** @deprecated Utilise TemplateType directement */
+export type LegacyTemplateType =
+  | "modern"    // → "min-blanc" (ou "prem-or" selon contexte)
+  | "minimal"   // → "min-blanc"
+  | "classic"   // → "corp-marine"
+  | "premium"   // → "corp-bipart"
+  | "colorful"; // → "serv-chaud"
+
+export function normalizeLegacyTemplate(t: string): TemplateType {
+  const map: Record<string, TemplateType> = {
+    modern:   "min-ligne",
+    minimal:  "min-blanc",
+    classic:  "corp-marine",
+    premium:  "corp-bipart",
+    colorful: "serv-chaud",
+  };
+  return (map[t] as TemplateType) ?? "min-ligne";
+}
+
+// ─── Variante de rendu (layout structure) ────────────────────────────────────
+
+export type LayoutVariant =
+  | "accent-bar"    // Barre d'accent gauche + header épuré
+  | "minimal"       // Lignes fines, sans fond
+  | "standard"      // Header coloré plein
+  | "split"         // Header bipartite (logo droite / infos gauche)
+  | "band"          // Double bande horizontale
+  | "column-left"   // Colonne latérale gauche + contenu à droite
+  | "full-block"    // Grand bloc couleur en haut (45mm)
+  | "dark-full"     // Full dark : fond sombre, texte clair
+  | "centered"      // Nom d'entreprise centré, style officiel
+  | "grid-line"     // Grille légère + ligne d'accent en haut
+  | "deco"          // Art déco avec ornements géométriques
+  | "angled"        // Coin coloré asymétrique
+  | "framed"        // Cadre intérieur coloré
+  | "vibrant"       // Header épais couleur vive + blanc
+  | "tech-dark";    // Tech sombre avec accents
 
 // ─── Line item ────────────────────────────────────────────────────────────────
 
 export interface PdfLineItem {
   description: string;
-  /** Unité de mesure (h, j, mois, forfait…) */
   unit?:       string | null;
   quantity:    number;
   unit_price:  number;
   total:       number;
-  /** Taux TVA spécifique à cette ligne (optionnel — sinon utilise data.tax_rate) */
+  /** Taux TVA spécifique (optionnel — sinon utilise data.tax_rate) */
   tax_rate?:   number | null;
 }
 
@@ -31,7 +112,7 @@ export interface PdfLineItem {
 
 export interface PdfTemplateData {
   type:            "quote" | "invoice";
-  template:        TemplateType;
+  template:        TemplateType | LegacyTemplateType | string;
   reference:       string;
   issue_date:      string;
   valid_until?:    string | null;
@@ -48,22 +129,23 @@ export interface PdfTemplateData {
   client_address?: string | null;
   client_vat?:     string | null;
 
-  /* Objet du document */
+  /* Objet */
   subject:         string;
 
   /* Lignes */
   items:           PdfLineItem[];
 
-  /* Devise */
-  currency?:       string;   // "EUR" | "USD" | "MAD" …  (défaut EUR)
+  /* Devise & localisation */
+  currency?:       string;   // "EUR" | "USD" | "MAD" …
+  locale?:         string;   // "fr-FR" | "en-US" | "ar-MA" … (formatage montants)
 
   /* Totaux */
-  subtotal:        number;   // HT brut (avant remise)
-  discount_rate?:  number | null;  // % remise
-  discount?:       number | null;  // montant remise HT
+  subtotal:        number;
+  discount_rate?:  number | null;
+  discount?:       number | null;
   tax_rate:        number;
   tax_amount:      number;
-  total:           number;         // TTC (après remise, avant acompte)
+  total:           number;
 
   /* Acompte */
   deposit?:        number | null;
@@ -79,20 +161,20 @@ export interface PdfTemplateData {
   notes?:          string | null;
   footer_text?:    string | null;
 
-  /**
-   * Position/taille personnalisée du logo (en mm, repère A4 210×297).
-   * Si null, le renderer utilise la position par défaut (SIZE_MAP).
-   */
+  /* Couleur d'accent personnalisée (hex, ex: "#c9a55a") */
+  accentColor?:    string | null;
+
+  /* Position/taille personnalisée du logo (mm, repère A4 210×297) */
   logoTransform?:  { x: number; y: number; w: number; h: number } | null;
 }
 
-// ─── Theme ────────────────────────────────────────────────────────────────────
+// ─── Thème ────────────────────────────────────────────────────────────────────
 
 export type RGB = [number, number, number];
 
 export interface PdfTheme {
-  /** Identifiant du template */
-  id: TemplateType;
+  id:      TemplateType;
+  variant: LayoutVariant;
 
   // Header
   headerBg:          RGB;
@@ -101,6 +183,10 @@ export interface PdfTheme {
   headerSubColor:    RGB;
   headerRefColor:    RGB;
   headerDateColor:   RGB;
+
+  // Accent (barre, cadre, angle, etc.)
+  accentColor:       RGB;
+  accentW:           number;   // largeur/épaisseur de l'accent (mm)
 
   // Corps
   bodyBg:            RGB;
@@ -131,11 +217,26 @@ export interface PdfTheme {
   footerBg:          RGB;
   footerText:        RGB;
 
-  // Variante de rendu
-  variant: "standard" | "minimal" | "dark" | "accent-bar" | "split" | "band";
+  // Colonne gauche (column-left uniquement)
+  sidebarBg?:        RGB;
+  sidebarText?:      RGB;
+  sidebarW?:         number;  // largeur sidebar en mm
 
-  /** Couleur de la barre d'accent latérale (variant "accent-bar" uniquement) */
-  accentBarColor?: RGB;
-  /** Largeur de la barre d'accent en mm (défaut 4.5) */
-  accentBarW?: number;
+  // Typographie
+  headerFontSize:    number;
+  refFontSize:       number;
+  bodyFontSize:      number;
+}
+
+// ─── Métadonnées UI (galerie + sélecteur) ────────────────────────────────────
+
+export interface TemplateInfo {
+  id:          TemplateType;
+  family:      TemplateFamily;
+  label:       string;
+  description: string;
+  badge:       { label: string; textColor: string; bgColor: string };
+  /** Couleur représentative pour la miniature (hex) */
+  previewColor: string;
+  previewBg:    string;
 }

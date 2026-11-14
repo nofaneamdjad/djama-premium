@@ -138,7 +138,7 @@ const EMPTY: InvForm = {
   client_name: "", client_email: "", client_phone: "", client_company: "",
   client_address: "", subject: "", description: "", status: "brouillon",
   payment_status: "non payée", payment_method: "", issue_date: TODAY(),
-  due_date: "", tax_rate: 20, notes: "", footer_text: "", template: "modern", items: [],
+  due_date: "", tax_rate: 20, notes: "", footer_text: "", template: "min-ligne", items: [],
 };
 
 function newItem(): FormItem {

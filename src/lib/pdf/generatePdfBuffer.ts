@@ -62,12 +62,12 @@ async function loadLogoImageNode(url: string): Promise<{
 export async function generatePdfBuffer(data: PdfData): Promise<Buffer> {
   const { jsPDF } = await import("jspdf");
 
-  const template: TemplateType = data.template ?? "modern";
+  const template: TemplateType = (data.template ?? "min-ligne") as TemplateType;
   let theme = getTheme(template);
 
   if (data.accentColor && theme.variant === "accent-bar") {
     const rgb = hexToRgb(data.accentColor);
-    theme = { ...theme, accentBarColor: rgb, labelColor: rgb };
+    theme = { ...theme, accentColor: rgb, labelColor: rgb };
   }
 
   const co: Required<CompanySettings> = {
