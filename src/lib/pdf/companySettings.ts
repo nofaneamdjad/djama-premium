@@ -16,11 +16,28 @@ export interface CompanySettings {
   postal_code:      string;
   city:             string;
   country:          string;
+  /** Code ISO 3166-1 alpha-2 (FR, KM, MG, US…) — peut être vide pour les anciens comptes */
+  country_code:     string;
+  // Champs fiscaux France (backward compat)
   siret:            string;
   ape:              string;
   vat_number:       string;
+  // Champs fiscaux internationaux génériques
+  tax_id_1:         string;
+  tax_id_1_label:   string;
+  tax_id_2:         string;
+  tax_id_2_label:   string;
+  tax_id_3:         string;
+  tax_id_3_label:   string;
+  // Banque SEPA (backward compat)
   iban:             string;
   bic:              string;
+  // Banque internationale
+  bank_name:        string;
+  routing_number:   string;
+  sort_code:        string;
+  account_number:   string;
+  mobile_money:     string;
   /** Forme juridique légale : SARL, SAS, SASU, EI, Auto-entrepreneur… */
   forme_juridique:  string;
   /** Capital social (ex: "10 000 €") */
@@ -49,11 +66,23 @@ const DEFAULTS: CompanySettings = {
   postal_code:      "",
   city:             "",
   country:          "",
+  country_code:     "",
   siret:            "",
   ape:              "",
   vat_number:       "",
+  tax_id_1:         "",
+  tax_id_1_label:   "",
+  tax_id_2:         "",
+  tax_id_2_label:   "",
+  tax_id_3:         "",
+  tax_id_3_label:   "",
   iban:             "",
   bic:              "",
+  bank_name:        "",
+  routing_number:   "",
+  sort_code:        "",
+  account_number:   "",
+  mobile_money:     "",
   forme_juridique:  "",
   capital_social:   "",
   garantie:         "",
@@ -82,11 +111,23 @@ async function settingsFromRows(
     postal_code:  map["brand.postal_code"] || DEFAULTS.postal_code,
     city:         map["brand.city"]        || DEFAULTS.city,
     country:      map["brand.country"]     || DEFAULTS.country,
+    country_code:     map["brand.country_code"]    || DEFAULTS.country_code,
     siret:            map["brand.siret"]            || DEFAULTS.siret,
     ape:              map["brand.ape"]              || DEFAULTS.ape,
     vat_number:       map["brand.vat_number"]       || DEFAULTS.vat_number,
+    tax_id_1:         map["brand.tax_id_1"]         || DEFAULTS.tax_id_1,
+    tax_id_1_label:   map["brand.tax_id_1_label"]   || DEFAULTS.tax_id_1_label,
+    tax_id_2:         map["brand.tax_id_2"]         || DEFAULTS.tax_id_2,
+    tax_id_2_label:   map["brand.tax_id_2_label"]   || DEFAULTS.tax_id_2_label,
+    tax_id_3:         map["brand.tax_id_3"]         || DEFAULTS.tax_id_3,
+    tax_id_3_label:   map["brand.tax_id_3_label"]   || DEFAULTS.tax_id_3_label,
     iban:             map["brand.iban"]             || DEFAULTS.iban,
     bic:              map["brand.bic"]              || DEFAULTS.bic,
+    bank_name:        map["brand.bank_name"]        || DEFAULTS.bank_name,
+    routing_number:   map["brand.routing_number"]   || DEFAULTS.routing_number,
+    sort_code:        map["brand.sort_code"]        || DEFAULTS.sort_code,
+    account_number:   map["brand.account_number"]   || DEFAULTS.account_number,
+    mobile_money:     map["brand.mobile_money"]     || DEFAULTS.mobile_money,
     forme_juridique:  map["brand.forme_juridique"]  || DEFAULTS.forme_juridique,
     capital_social:   map["brand.capital_social"]   || DEFAULTS.capital_social,
     garantie:         map["brand.garantie"]         || DEFAULTS.garantie,

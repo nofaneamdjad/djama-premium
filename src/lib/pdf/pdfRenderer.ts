@@ -17,6 +17,9 @@
  *   vibrant      → Header épais vif
  *   tech-dark    → Terminal sombre
  *   deco         → Art déco
+ *   letterhead   → En-tête français (bloc adresse gauche, réf encadrée droite)
+ *   luxury       → Luxe centré (double règle or, société au centre)
+ *   dark-header  → Header sombre + corps blanc imprimable
  */
 
 import type { jsPDF } from "jspdf";
@@ -29,7 +32,7 @@ const PH  = 297;
 const ML  = 18;
 const MR  = 18;
 const CW  = PW - ML - MR;   // 174
-const FY  = 274;             // y début footer
+const FY  = 280;             // y début footer
 const BAR = 5;               // barre accent-bar
 
 // ─── Colonnes tableau (174 mm total) ─────────────────────────────────────────
@@ -311,9 +314,9 @@ function drawHeaderMinimal(
   setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Émis le${fmtDate(data.issue_date)}`, ML, headerH - 2);
+  doc.text(`Émis le : ${fmtDate(data.issue_date)}`, ML, headerH - 2);
   if (data.type === "invoice" && data.due_date) {
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, headerH - 2, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, headerH - 2, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, headerH - 2, { align: "right" });
   }
@@ -388,7 +391,7 @@ function drawHeaderStandard(
   if (data.type === "invoice" && data.due_date) {
     setFont(doc, "bold");
     setTxt(doc, theme.headerRefColor);
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 42, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, 42, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setFont(doc, "bold");
     setTxt(doc, theme.headerRefColor);
@@ -459,10 +462,15 @@ function drawHeaderSplit(
   }
   if (co.phone && ly < H - 3) { doc.text(co.phone, ML, ly); ly += 4.3; }
   if (co.email && ly < H - 3) { doc.text(co.email, ML, ly); ly += 4.3; }
-  if (co.siret && ly < H) {
+  if ((co.siret || co.tax_id_1) && ly < H) {
     doc.setFontSize(6.5);
     setTxt(doc, [130, 140, 155]);
-    doc.text(`SIRET : ${co.siret}`, ML, ly);
+    if (co.siret) {
+      doc.text(`SIRET : ${co.siret}`, ML, ly);
+    } else {
+      const lbl = co.tax_id_1_label || "ID fiscal";
+      doc.text(`${lbl} : ${co.tax_id_1}`, ML, ly);
+    }
   }
 
   const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
@@ -485,7 +493,7 @@ function drawHeaderSplit(
     setFont(doc, "bold");
     doc.setFontSize(8.5);
     setTxt(doc, theme.headerRefColor);
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 44, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, 44, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setFont(doc, "bold");
     doc.setFontSize(8.5);
@@ -648,10 +656,10 @@ function drawHeaderGridLine(
   setFont(doc, "normal");
   doc.setFontSize(7.5);
   setTxt(doc, theme.headerDateColor);
-  doc.text(`Émis le${fmtDate(data.issue_date)}`, ML, H - 3);
+  doc.text(`Émis le : ${fmtDate(data.issue_date)}`, ML, H - 3);
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, H - 3, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, H - 3, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Valable : ${fmtDate(data.valid_until)}`, RX, H - 3, { align: "right" });
@@ -731,7 +739,7 @@ function drawHeaderCentered(
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 36, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, 36, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Val. : ${fmtDate(data.valid_until)}`, RX, 36, { align: "right" });
@@ -795,7 +803,11 @@ function drawHeaderColumnLeft(
   if (co.city)    sideInfos.push(co.city);
   if (co.phone)   sideInfos.push(co.phone);
   if (co.email)   sideInfos.push(co.email);
-  if (co.siret)   sideInfos.push(`SIRET : ${co.siret}`);
+  if (co.siret) {
+    sideInfos.push(`SIRET : ${co.siret}`);
+  } else if (co.tax_id_1) {
+    sideInfos.push(`${co.tax_id_1_label || "ID fiscal"} : ${co.tax_id_1}`);
+  }
   sideInfos.forEach(info => {
     if (sy > 90) return;
     const infoLines = doc.splitTextToSize(info, SW - 10) as string[];
@@ -823,7 +835,7 @@ function drawHeaderColumnLeft(
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, CX, 40);
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, CX, 40);
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, CX, 40);
@@ -896,7 +908,7 @@ function drawHeaderDarkFull(
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 40, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, 40, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Valable jusqu'au : ${fmtDate(data.valid_until)}`, RX, 40, { align: "right" });
@@ -1043,7 +1055,7 @@ function drawHeaderAngled(
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.headerBg);
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 38, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, 38, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.headerBg);
     doc.text(`Val. : ${fmtDate(data.valid_until)}`, RX, 38, { align: "right" });
@@ -1273,7 +1285,7 @@ function drawHeaderTechDark(
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, 38, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, 38, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Valable : ${fmtDate(data.valid_until)}`, RX, 38, { align: "right" });
@@ -1309,11 +1321,6 @@ function drawHeaderDeco(
   doc.line(ML, H - 3, RX, H - 3);
   doc.setLineWidth(1.2);
   doc.line(ML, H, RX, H);
-
-  // Petits ornements aux coins
-  setFill(doc, theme.accentColor);
-  doc.rect(ML, 3, 6, 5, "F");
-  doc.rect(RX - 6, 3, 6, 5, "F");
 
   // Logo / Nom (légèrement centré ou gauche selon logo)
   if (!lt) {
@@ -1359,13 +1366,327 @@ function drawHeaderDeco(
 
   if (data.type === "invoice" && data.due_date) {
     setTxt(doc, theme.accentColor);
-    doc.text(`Échéance :${fmtDate(data.due_date)}`, RX, H - 7, { align: "right" });
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, H - 7, { align: "right" });
   } else if (data.type === "quote" && data.valid_until) {
     setTxt(doc, theme.accentColor);
     doc.text(`Val. : ${fmtDate(data.valid_until)}`, RX, H - 7, { align: "right" });
   }
 
   return H + 7;
+}
+
+// ── letterhead ───────────────────────────────────────────────────────────────
+// En-tête français : bloc société gauche, date formelle + réf encadrée à droite.
+// Structure radicalement différente de "minimal" (pas de barre, deux colonnes, boîte référence).
+
+function drawHeaderLetterhead(
+  doc: jsPDF, data: PdfTemplateData, co: Required<CompanySettings>,
+  theme: PdfTheme, logoImg: LogoImg,
+): number {
+  const H  = theme.headerH;    // 52 mm
+  const RX = PW - MR;
+  const lt = data.logoTransform ?? null;
+  const RCOL = 130;            // colonne droite : date + réf
+
+  // Fond header (blanc)
+  setFill(doc, theme.headerBg);
+  doc.rect(0, 0, PW, H, "F");
+
+  // Ligne fine haute
+  setDraw(doc, theme.accentColor);
+  doc.setLineWidth(0.3);
+  doc.line(ML, 3, RX, 3);
+
+  // ── Colonne gauche : logo ou nom + adresse complète ───────────────────────
+  let ly = 10;
+  if (!lt) {
+    if (logoImg) {
+      const maxW = 60, maxH = 20;
+      const ratio = logoImg.naturalW / logoImg.naturalH;
+      let lH = maxH, lW = lH * ratio;
+      if (lW > maxW) { lW = maxW; lH = lW / ratio; }
+      doc.addImage(logoImg.dataUri, ML, ly - 2, lW, lH, "", "FAST");
+      ly += lH + 3;
+    } else if (co.name) {
+      setFont(doc, "bold");
+      doc.setFontSize(theme.headerFontSize);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, ML, ly);
+      ly += 7;
+    }
+  } else {
+    if (!logoImg && co.name) {
+      setFont(doc, "bold");
+      doc.setFontSize(theme.headerFontSize);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, ML, ly);
+      ly += 7;
+    }
+    if (lt && logoImg) { doc.addImage(logoImg.dataUri, lt.x, lt.y, lt.w, lt.h, "", "FAST"); ly += 22; }
+  }
+
+  setFont(doc, "normal");
+  doc.setFontSize(7.5);
+  setTxt(doc, theme.headerSubColor);
+  if (co.address) { doc.text(co.address, ML, ly); ly += 4.5; }
+  if (co.city || co.country) {
+    doc.text([co.city, co.country].filter(Boolean).join(", "), ML, ly); ly += 4.5;
+  }
+  if (co.phone) { doc.text(co.phone, ML, ly); ly += 4.5; }
+  if (co.email) { doc.text(co.email, ML, ly); }
+
+  // ── Colonne droite : date formelle + boîte référence ─────────────────────
+  const city  = co.city ?? "Paris";
+  setFont(doc, "normal");
+  doc.setFontSize(7.5);
+  setTxt(doc, theme.headerSubColor);
+  doc.text(`${city}, le ${fmtDate(data.issue_date)}`, RX, 11, { align: "right" });
+
+  // Boîte référence
+  const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
+  const boxX = RCOL - 2, boxW = RX - boxX + 2, boxY = 15, boxH = 20;
+  setDraw(doc, theme.accentColor);
+  doc.setLineWidth(0.4);
+  doc.rect(boxX, boxY, boxW, boxH);
+
+  setFont(doc, "bold");
+  doc.setFontSize(6);
+  setTxt(doc, theme.headerSubColor);
+  doc.text(docLabel, (boxX + RX) / 2, boxY + 5, { align: "center" });
+
+  setFont(doc, "bold");
+  doc.setFontSize(theme.refFontSize ?? 13);
+  setTxt(doc, theme.headerRefColor);
+  doc.text(data.reference, (boxX + RX) / 2, boxY + 12, { align: "center" });
+
+  if (data.type === "invoice" && data.due_date) {
+    setFont(doc, "normal");
+    doc.setFontSize(6.5);
+    setTxt(doc, theme.headerDateColor);
+    doc.text(`Éch. : ${fmtDate(data.due_date)}`, (boxX + RX) / 2, boxY + 17, { align: "center" });
+  }
+
+  // Ligne fine basse
+  doc.setLineWidth(0.3);
+  setDraw(doc, theme.accentColor);
+  doc.line(ML, H - 1, RX, H - 1);
+
+  return H + 8;
+}
+
+// ── luxury ───────────────────────────────────────────────────────────────────
+// Société centrée, double règle or en haut et en bas, bande référence dessous.
+// Structure différente d'accent-bar (centré vs gauche) et de deco (sans fond, logo libre).
+
+function drawHeaderLuxury(
+  doc: jsPDF, data: PdfTemplateData, co: Required<CompanySettings>,
+  theme: PdfTheme, logoImg: LogoImg,
+): number {
+  const H  = theme.headerH;    // 54 mm
+  const CX = PW / 2;
+  const RX = PW - MR;
+  const lt = data.logoTransform ?? null;
+
+  // Fond crème ivoire
+  setFill(doc, theme.headerBg);
+  doc.rect(0, 0, PW, H, "F");
+
+  // Double règle dorée haute
+  setDraw(doc, theme.accentColor);
+  doc.setLineWidth(1.5);
+  doc.line(ML, 4, RX, 4);
+  doc.setLineWidth(0.3);
+  doc.line(ML, 7, RX, 7);
+
+  // Double règle dorée basse
+  doc.setLineWidth(0.3);
+  doc.line(ML, H - 6, RX, H - 6);
+  doc.setLineWidth(1.5);
+  doc.line(ML, H - 3, RX, H - 3);
+
+  // ── Société centrée ───────────────────────────────────────────────────────
+  const contentTop = 11;
+  const contentH   = H - 18;    // zone entre les règles
+  const midY       = contentTop + contentH / 2;
+
+  if (!lt) {
+    if (logoImg) {
+      const maxW = 70, maxH = 20;
+      const ratio = logoImg.naturalW / logoImg.naturalH;
+      let lH = maxH, lW = lH * ratio;
+      if (lW > maxW) { lW = maxW; lH = lW / ratio; }
+      doc.addImage(logoImg.dataUri, CX - lW / 2, midY - lH / 2 - 3, lW, lH, "", "FAST");
+    } else if (co.name) {
+      setFont(doc, "bold");
+      doc.setFontSize(theme.headerFontSize);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, CX, midY - 2, { align: "center" });
+    }
+  } else {
+    if (!logoImg && co.name) {
+      setFont(doc, "bold");
+      doc.setFontSize(theme.headerFontSize);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, CX, midY - 2, { align: "center" });
+    }
+    if (lt && logoImg) doc.addImage(logoImg.dataUri, lt.x, lt.y, lt.w, lt.h, "", "FAST");
+  }
+
+  // Sous-infos centrées (email ou site)
+  const subInfo = co.website || co.email || "";
+  if (subInfo) {
+    setFont(doc, "normal");
+    doc.setFontSize(7);
+    setTxt(doc, theme.headerSubColor);
+    doc.text(subInfo, CX, midY + 5, { align: "center" });
+  }
+
+  // Référence à droite (en dehors du bloc central)
+  const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
+  setFont(doc, "bold");
+  doc.setFontSize(6);
+  setTxt(doc, theme.headerSubColor);
+  doc.text(docLabel, RX, 14, { align: "right" });
+
+  setFont(doc, "bold");
+  doc.setFontSize(theme.refFontSize ?? 13);
+  setTxt(doc, theme.headerRefColor);
+  doc.text(data.reference, RX, 22, { align: "right" });
+
+  setFont(doc, "normal");
+  doc.setFontSize(7);
+  setTxt(doc, theme.headerDateColor);
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX, 28, { align: "right" });
+
+  if (data.type === "invoice" && data.due_date) {
+    setTxt(doc, theme.accentColor);
+    doc.text(`Éch. : ${fmtDate(data.due_date)}`, RX, 33, { align: "right" });
+  }
+
+  return H + 8;
+}
+
+// ── dark-header ───────────────────────────────────────────────────────────────
+// Header sombre (H mm) + corps blanc imprimable.
+// Si H >= 60 : client inclus dans le header (séparation par ligne or), corps commence à OBJET.
+// Si H < 60  : header sombre société seule, drawAddresses s'occupe du client dans le corps blanc.
+
+function drawHeaderDarkHeader(
+  doc: jsPDF, data: PdfTemplateData, co: Required<CompanySettings>,
+  theme: PdfTheme, logoImg: LogoImg,
+): number {
+  const H  = theme.headerH;
+  const RX = PW - MR;
+  const lt = data.logoTransform ?? null;
+  const includeClient = H >= 60;
+
+  // Corps blanc d'abord (fond page)
+  setFill(doc, theme.bodyBg);
+  doc.rect(0, 0, PW, PH, "F");
+
+  // Header sombre
+  setFill(doc, theme.headerBg);
+  doc.rect(0, 0, PW, H, "F");
+
+  // Ligne accent en bas du header
+  setFill(doc, theme.accentColor);
+  doc.rect(0, H, PW, 1.5, "F");
+
+  // ── Logo / Nom société ────────────────────────────────────────────────────
+  const companyAreaBottom = includeClient ? H * 0.56 : H - 8;
+  let   nameY = 12;
+
+  if (!lt) {
+    if (logoImg) {
+      const maxW = 55, maxH = 18;
+      const ratio = logoImg.naturalW / logoImg.naturalH;
+      let lH = maxH, lW = lH * ratio;
+      if (lW > maxW) { lW = maxW; lH = lW / ratio; }
+      doc.addImage(logoImg.dataUri, ML, 7, lW, lH, "", "FAST");
+      nameY = 7 + lH + 3;
+    } else if (co.name) {
+      setFont(doc, "bold");
+      doc.setFontSize(theme.headerFontSize);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, ML, nameY);
+      nameY += 7;
+    }
+  } else {
+    if (!logoImg && co.name) {
+      setFont(doc, "bold");
+      doc.setFontSize(theme.headerFontSize);
+      setTxt(doc, theme.headerNameColor);
+      doc.text(co.name, ML, nameY);
+      nameY += 7;
+    }
+    if (lt && logoImg) { doc.addImage(logoImg.dataUri, lt.x, lt.y, lt.w, lt.h, "", "FAST"); nameY += 22; }
+  }
+
+  if (nameY < companyAreaBottom - 4) {
+    setFont(doc, "normal");
+    doc.setFontSize(7.5);
+    setTxt(doc, theme.headerSubColor);
+    if (co.email) {
+      doc.text(co.email, ML, nameY); nameY += 4.5;
+    }
+    if (co.phone && nameY < companyAreaBottom) {
+      doc.text(co.phone, ML, nameY);
+    }
+  }
+
+  // ── Référence (haut-droite du header) ────────────────────────────────────
+  const docLabel = data.type === "invoice" ? "FACTURE" : "DEVIS";
+  setFont(doc, "bold");
+  doc.setFontSize(6);
+  setTxt(doc, theme.headerSubColor);
+  doc.text(docLabel, RX, 11, { align: "right" });
+
+  setFont(doc, "bold");
+  doc.setFontSize(theme.refFontSize ?? 14);
+  setTxt(doc, theme.accentColor);
+  doc.text(data.reference, RX, 20, { align: "right" });
+
+  setFont(doc, "normal");
+  doc.setFontSize(7.5);
+  setTxt(doc, theme.headerSubColor);
+  doc.text(`Émis le: ${fmtDate(data.issue_date)}`, RX, 27, { align: "right" });
+
+  if (data.type === "invoice" && data.due_date) {
+    doc.text(`Échéance : ${fmtDate(data.due_date)}`, RX, 32, { align: "right" });
+  }
+
+  // ── Bloc client intégré au header (si H >= 60) ────────────────────────────
+  if (includeClient) {
+    const dividerY = Math.round(H * 0.60);
+
+    // Ligne séparatrice or
+    setDraw(doc, theme.accentColor);
+    doc.setLineWidth(0.5);
+    doc.line(ML, dividerY, RX, dividerY);
+
+    const cy = dividerY + 5;
+    setFont(doc, "bold");
+    doc.setFontSize(6);
+    setTxt(doc, theme.accentColor);
+    doc.text(data.type === "invoice" ? "FACTURÉ À" : "DEVIS POUR", ML, cy);
+
+    setFont(doc, "bold");
+    doc.setFontSize(9.5);
+    setTxt(doc, theme.headerNameColor);
+    doc.text(data.client_name, ML, cy + 5);
+
+    setFont(doc, "normal");
+    doc.setFontSize(7.5);
+    setTxt(doc, theme.headerSubColor);
+    let clientY = cy + 10;
+    if (data.client_company) { doc.text(data.client_company, ML, clientY); clientY += 4.5; }
+    if (data.client_address) {
+      const short = data.client_address.split(",")[0];
+      doc.text(short, ML, clientY);
+    }
+  }
+
+  return H + (includeClient ? 10 : 8);
 }
 
 // ── Router ────────────────────────────────────────────────────────────────────
@@ -1390,6 +1711,9 @@ function drawHeader(
     case "vibrant":      return drawHeaderVibrant(doc, data, co, theme, logoImg);
     case "tech-dark":    return drawHeaderTechDark(doc, data, co, theme, logoImg);
     case "deco":         return drawHeaderDeco(doc, data, co, theme, logoImg);
+    case "letterhead":   return drawHeaderLetterhead(doc, data, co, theme, logoImg);
+    case "luxury":       return drawHeaderLuxury(doc, data, co, theme, logoImg);
+    case "dark-header":  return drawHeaderDarkHeader(doc, data, co, theme, logoImg);
     default:             return drawHeaderStandard(doc, data, co, theme, logoImg);
   }
 }
@@ -1443,15 +1767,25 @@ function drawAddressesAccentBar(
   if (co.phone)   { doc.text(co.phone,   CS, ey); ey += 4.8; }
   if (co.email)   { doc.text(co.email,   CS, ey); ey += 4.8; }
   if (co.website) { doc.text(co.website, CS, ey); ey += 4.8; }
-  if (co.siret) {
+  if (co.siret || co.tax_id_1) {
     doc.setFontSize(7);
     setTxt(doc, [130, 130, 140]);
-    doc.text(`SIRET : ${co.siret}`, CS, ey); ey += 4.5;
+    if (co.siret) {
+      doc.text(`SIRET : ${co.siret}`, CS, ey);
+    } else {
+      doc.text(`${co.tax_id_1_label || "ID fiscal"} : ${co.tax_id_1}`, CS, ey);
+    }
+    ey += 4.5;
   }
-  if (co.vat_number) {
+  if (co.vat_number || co.tax_id_3) {
     doc.setFontSize(7);
     setTxt(doc, [130, 130, 140]);
-    doc.text(`TVA : ${co.vat_number}`, CS, ey); ey += 4.5;
+    if (co.vat_number) {
+      doc.text(`TVA : ${co.vat_number}`, CS, ey);
+    } else {
+      doc.text(`${co.tax_id_3_label || "TVA"} : ${co.tax_id_3}`, CS, ey);
+    }
+    ey += 4.5;
   }
 
   let cy = y;
@@ -1523,17 +1857,21 @@ function drawAddresses(
   if (co.phone)   { doc.text(co.phone,   xStart, ey); ey += 4.8; }
   if (co.email)   { doc.text(co.email,   xStart, ey); ey += 4.8; }
   if (co.website) { doc.text(co.website, xStart, ey); ey += 4.8; }
-  if (co.siret) {
+  const _id1 = co.siret || co.tax_id_1;
+  const _id1lbl = co.siret ? "SIRET" : (co.tax_id_1_label || "ID fiscal");
+  const _id3 = co.vat_number || co.tax_id_3;
+  const _id3lbl = co.vat_number ? "TVA" : (co.tax_id_3_label || "TVA");
+  if (_id1 || _id3) {
     doc.setFontSize(7);
     setTxt(doc, [130, 130, 140]);
-    doc.text(`SIRET : ${co.siret}`, xStart, ey); ey += 4.5;
-    doc.setFontSize(8);
-    setTxt(doc, theme.mutedText);
-  }
-  if (co.vat_number) {
-    doc.setFontSize(7);
-    setTxt(doc, [130, 130, 140]);
-    doc.text(`TVA : ${co.vat_number}`, xStart, ey); ey += 4.5;
+    if (_id1 && _id3) {
+      doc.text(`${_id1lbl} : ${_id1}   ${_id3lbl} : ${_id3}`, xStart, ey);
+    } else if (_id1) {
+      doc.text(`${_id1lbl} : ${_id1}`, xStart, ey);
+    } else {
+      doc.text(`${_id3lbl} : ${_id3}`, xStart, ey);
+    }
+    ey += 4.5;
     doc.setFontSize(8);
     setTxt(doc, theme.mutedText);
   }
@@ -1635,7 +1973,7 @@ function drawSubject(
   setTxt(doc, theme.bodyText);
   lines.forEach((line, i) => { doc.text(line, xStart + LABEL_W, y + 4 + i * 5.5); });
 
-  return y + BAR_H + 5;
+  return y + BAR_H + 3;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1648,6 +1986,7 @@ function drawItemsTable(
   let y       = startY;
   const HEADER_H = 9;
   const cur      = data.currency || "EUR";
+  const r2 = (n: number) => Math.round(n * 100) / 100;
   const RX       = PW - MR;
   const xStart   = getContentX(theme);
   const colOffset = xStart - ML;
@@ -1675,7 +2014,8 @@ function drawItemsTable(
     subParts.forEach(p => {
       (doc.splitTextToSize(p || " ", COL_DESC - 5) as string[]).forEach(l => subLines.push(l));
     });
-    const rowH = Math.max(9, (mainLines.length + subLines.length) * 5 + 4);
+    const hasLineDiscount = (item.discount_pct ?? 0) > 0;
+    const rowH = Math.max(9, (mainLines.length + subLines.length + (hasLineDiscount ? 1 : 0)) * 5 + 4);
 
     y = maybePageBreak(doc, y, rowH, theme);
 
@@ -1708,11 +2048,25 @@ function drawItemsTable(
         doc.setFontSize(7.5);
         subLines.forEach(l => { doc.text(l, XC0 + ox + 3, ly); ly += 4.5; });
       }
+      if (hasLineDiscount) {
+        const gross = r2((item.quantity ?? 1) * (item.unit_price ?? 0));
+        const remAmt = r2(gross * (item.discount_pct!) / 100);
+        setTxt(doc, theme.mutedText);
+        doc.setFontSize(7);
+        doc.text(`Remise ${item.discount_pct}% (-${fmtAmt(remAmt, cur)})`, XC0 + ox + 3, ly);
+      }
     } else {
       setFont(doc, "normal");
       doc.setFontSize(8.5);
       setTxt(doc, theme.tableText);
       doc.text(mainLines[0] ?? "", XC0 + ox + 3, tY);
+      if (hasLineDiscount) {
+        const gross = r2((item.quantity ?? 1) * (item.unit_price ?? 0));
+        const remAmt = r2(gross * (item.discount_pct!) / 100);
+        setTxt(doc, theme.mutedText);
+        doc.setFontSize(7);
+        doc.text(`Remise ${item.discount_pct}% (-${fmtAmt(remAmt, cur)})`, XC0 + ox + 3, tY + 4.5);
+      }
     }
 
     setFont(doc, "normal");
@@ -1793,11 +2147,20 @@ function drawTotals(
 
   if (data.tax_amount > 0) {
     const tvaMap = new Map<number, { ht: number; tva: number }>();
+    // Facteur de remise globale : même logique que calcInvoiceTotals
+    const gFactor = data.discount_rate && data.discount_rate > 0
+      ? 1 - data.discount_rate / 100
+      : (data.discount && data.subtotal && data.subtotal > 0
+          ? r2(1 - data.discount / data.subtotal)
+          : 1);
     for (const item of data.items) {
       const rate = item.tax_rate ?? data.tax_rate;
       if (rate === 0) continue;
-      const prev = tvaMap.get(rate) ?? { ht: 0, tva: 0 };
-      tvaMap.set(rate, { ht: r2(prev.ht + item.total), tva: r2(prev.tva + item.total * rate / 100) });
+      // Recalcule le HT net après remises ligne + remise globale (pas item.total qui peut être erroné)
+      const lineHT = r2((item.quantity ?? 1) * (item.unit_price ?? 0) * (1 - (item.discount_pct ?? 0) / 100));
+      const netHT  = r2(lineHT * gFactor);
+      const prev   = tvaMap.get(rate) ?? { ht: 0, tva: 0 };
+      tvaMap.set(rate, { ht: r2(prev.ht + netHT), tva: r2(prev.tva + netHT * rate / 100) });
     }
     if (tvaMap.size > 1) {
       Array.from(tvaMap.entries()).sort(([a], [b]) => a - b).forEach(([rate, { ht, tva }]) => {
@@ -2028,15 +2391,6 @@ function drawPaymentInfoModern(
 
   y += BOX_H + 5;
 
-  if (data.footer_text) {
-    y = maybePageBreak(doc, y, 12, theme);
-    setFont(doc, "italic");
-    doc.setFontSize(7.5);
-    setTxt(doc, theme.mutedText);
-    const fLines = doc.splitTextToSize(data.footer_text, CW - BAR) as string[];
-    fLines.slice(0, 6).forEach(l => { doc.text(l, CS_BAR, y); y += 4.8; });
-  }
-
   return y + 4;
 }
 
@@ -2050,45 +2404,55 @@ function drawLegalMentions(
 ): number {
   if (data.type !== "invoice") return startY;
 
-  let y = maybePageBreak(doc, startY, 24, theme);
-
   const xStart = getContentX(theme);
   const textW  = PW - MR - xStart;
 
-  setFont(doc, "bold");
-  doc.setFontSize(6.5);
-  setTxt(doc, theme.labelColor);
-  doc.text("CONDITIONS DE PAIEMENT", xStart, y);
-  y += 5;
+  // Mention pénalités + indemnité sur 1 ligne compacte
+  const penalite = "Pénalités de retard : 3× le taux légal, sans mise en demeure (art. L.441-10 C.com.). Indemnité forfaitaire de recouvrement : 40 €.";
+  const penLines = doc.splitTextToSize(penalite, textW) as string[];
+
+  // Mentions légales emetteur sur 1 ligne
+  const legalParts: string[] = [];
+  const fj = co.forme_juridique ?? "";
+  const noCapital = !fj.toLowerCase().includes("capital");
+  if (fj) {
+    legalParts.push(co.capital_social && noCapital
+      ? `${fj} au capital de ${Number(co.capital_social).toLocaleString("fr-FR")} €`
+      : fj);
+  }
+  const siren = co.siret?.replace(/\s/g, "").slice(0, 9);
+  if (siren && siren.length === 9 && co.city) legalParts.push(`RCS ${co.city} ${siren}`);
+  if (co.ape) legalParts.push(`APE : ${co.ape}`);
+  if (co.vat_number) legalParts.push(`N° TVA : ${co.vat_number}`);
+
+  // Hauteur réelle du contenu (vérifiée avant saut de page)
+  const legalLineCount = legalParts.length ? 1 : 0;
+  const needed = (penLines.length + legalLineCount) * 3.8 + 2;
+  // Saut de page seulement si vraiment nécessaire (8 mm de marge de sécurité)
+  let y = maybePageBreak(doc, startY, Math.min(needed, 8), theme);
 
   setFont(doc, "normal");
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   setTxt(doc, theme.mutedText);
+  penLines.forEach(l => { doc.text(l, xStart, y); y += 3.8; });
 
-  const penalite  = "En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal seront exigibles à compter du lendemain de la date d'échéance, sans mise en demeure préalable (art. L.441-10 C. com.).";
-  const indemnite = "Indemnité forfaitaire pour frais de recouvrement : 40 EUR (art. D.441-5 C. com.).";
-
-  const penLines = doc.splitTextToSize(penalite, textW) as string[];
-  penLines.forEach(l => { doc.text(l, xStart, y); y += 4.2; });
-  y += 1;
-  doc.text(indemnite, xStart, y); y += 5;
-
-  if (co.forme_juridique || co.siret || co.vat_number || co.ape) {
-    const legalParts: string[] = [];
-    if (co.forme_juridique && co.capital_social) legalParts.push(`${co.forme_juridique} au capital de ${co.capital_social}`);
-    else if (co.forme_juridique) legalParts.push(co.forme_juridique);
-    const siren = co.siret?.replace(/\s/g, "").slice(0, 9);
-    if (siren && siren.length === 9 && co.city) legalParts.push(`RCS ${co.city} ${siren}`);
-    if (co.ape) legalParts.push(`APE : ${co.ape}`);
-    if (co.vat_number) legalParts.push(`N° TVA : ${co.vat_number}`);
-    if (legalParts.length) {
-      doc.setFontSize(6.5);
-      doc.text(legalParts.join("  —  "), xStart, y);
-      y += 5;
-    }
+  if (legalParts.length) {
+    doc.setFontSize(5.5);
+    const legalLine = legalParts.join("  —  ");
+    const legalLines = doc.splitTextToSize(legalLine, textW) as string[];
+    legalLines.forEach(l => { doc.text(l, xStart, y); y += 3.5; });
   }
 
-  return y;
+  // footer_text personnalisé (déplacé depuis drawPaymentInfoModern pour le regrouper ici)
+  if (data.footer_text) {
+    y += 1;
+    setFont(doc, "italic");
+    doc.setFontSize(6.5);
+    const fLines = doc.splitTextToSize(data.footer_text, textW) as string[];
+    fLines.slice(0, 4).forEach(l => { doc.text(l, xStart, y); y += 3.8; });
+  }
+
+  return y + 2;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2124,10 +2488,12 @@ function drawPageFooter(
 
   function buildLegalLine(): string {
     const parts: string[] = [];
-    if (co.forme_juridique && co.capital_social) {
-      parts.push(`${co.forme_juridique} au capital de ${co.capital_social}`);
-    } else if (co.forme_juridique) {
-      parts.push(co.forme_juridique);
+    const fj = co.forme_juridique ?? "";
+    const noCapital = !fj.toLowerCase().includes("capital");
+    if (fj) {
+      parts.push(co.capital_social && noCapital
+        ? `${fj} au capital de ${Number(co.capital_social).toLocaleString("fr-FR")} €`
+        : fj);
     }
     const siren = co.siret?.replace(/\s/g, "").slice(0, 9);
     if (siren && siren.length === 9 && co.city) parts.push(`RCS ${co.city} ${siren}`);
@@ -2169,6 +2535,287 @@ function drawPageFooter(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// BLOC INDIVISIBLE — estimation hauteur queue (totaux + paiement + mentions)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function computeTailHeight(
+  data: PdfTemplateData,
+  co: Required<CompanySettings>,
+  isAccentBar: boolean,
+): number {
+  // ── drawTotals ─────────────────────────────────────────────────────────────
+  let h = 8; // séparateur initial
+  if (data.subtotal !== data.total || (data.tax_amount ?? 0) > 0 || (data.discount ?? 0) > 0) {
+    h += 7; // ligne sous-total HT
+  }
+  if (data.discount && data.discount > 0) h += 7; // ligne remise
+
+  if ((data.tax_amount ?? 0) > 0) {
+    const rates = new Set<number>();
+    for (const it of (data.items ?? [])) {
+      const r = it.tax_rate ?? data.tax_rate ?? 0;
+      if (r !== 0) rates.add(r);
+    }
+    h += (rates.size > 1 ? rates.size : 1) * 7; // 1 ligne par taux TVA
+  } else {
+    h += 7; // ligne Total HT (sans TVA)
+  }
+
+  h += 5 + 16; // séparateur (5) + boîte TTC (BOX_H=12 + gap=4)
+
+  if (data.deposit && data.deposit > 0) {
+    h += 8 + 14; // ligne acompte (8) + boîte net-à-payer (11 + 3)
+  }
+
+  // ── drawPaymentInfo / drawPaymentInfoModern ────────────────────────────────
+  const iban = data.rib_iban || co.iban;
+  if (data.type === "invoice" && iban) {
+    h += 4; // gap appelant (+4)
+    if (isAccentBar) {
+      h += 45; // 6 (RÈGLEMENT) + 30 (BOX_H) + 5 + 4 = 45
+    } else {
+      h += 36; // 7 (RÈGLEMENT) + 29 (rect + offset retour) = 36
+    }
+  }
+
+  // ── drawLegalMentions ──────────────────────────────────────────────────────
+  if (data.type === "invoice") {
+    h += 2;  // gap appelant (+2)
+    h += 20; // contenu légal : ~2 lignes pénalités + ~2 lignes mentions (borne haute)
+  }
+
+  return h;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// QUEUE CÔTE-À-CÔTE (variants non-accent-bar)
+// Totaux en colonne droite, notes + coordonnées bancaires en colonne gauche.
+// Un seul pré-check garantit l'indivisibilité du bloc.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function computeTailHeightCompact(
+  data: PdfTemplateData,
+  co:   Required<CompanySettings>,
+): number {
+  // Colonne droite : totaux compacts (lignes à 5mm, espacements réduits)
+  let rh = 0;
+  if (data.subtotal !== data.total || (data.tax_amount ?? 0) > 0 || (data.discount ?? 0) > 0) rh += 5;
+  if (data.discount && data.discount > 0) rh += 5;
+  if ((data.tax_amount ?? 0) > 0) {
+    const rates = new Set<number>();
+    for (const it of (data.items ?? [])) {
+      const r = it.tax_rate ?? data.tax_rate ?? 0;
+      if (r !== 0) rates.add(r);
+    }
+    rh += (rates.size > 1 ? rates.size : 1) * 5;
+  } else {
+    rh += 5;
+  }
+  rh += 3 + 11 + 2; // séparateur (3) + boîte TTC (11) + gap (2)
+  if (data.deposit && data.deposit > 0) rh += 5 + 11; // acompte (5) + net-à-payer (11)
+
+  // Colonne gauche : notes + coordonnées bancaires
+  let lh = 0;
+  if (data.notes) lh += Math.min(7, Math.max(1, Math.ceil(data.notes.length / 55))) * 4.5 + 3;
+  if (data.type === "invoice") {
+    const iban = data.rib_iban || co.iban;
+    if (iban) {
+      lh += 5.5; // en-tête
+      lh += 4.5; // titulaire
+      lh += 4.5; // iban
+      if (data.rib_bic || co.bic) lh += 4.5;
+      if (data.rib_banque) lh += 4.5;
+    }
+  }
+
+  return 3 + Math.max(rh, lh) + 2 + (data.type === "invoice" ? 12 : 0);
+}
+
+function drawTailSideBySide(
+  doc:     jsPDF,
+  data:    PdfTemplateData,
+  co:      Required<CompanySettings>,
+  theme:   PdfTheme,
+  startY:  number,
+): void {
+  const xStart  = getContentX(theme);
+  const BLOCK_W = 82;
+  const TX      = PW - MR - BLOCK_W;
+  const RX      = PW - MR;
+  const LEFT_RX = TX - 6;
+  const cur     = data.currency || "EUR";
+  const r2      = (n: number) => Math.round(n * 100) / 100;
+  const DBG     = process.env.PDF_DEBUG === "1";
+
+  const tailH = computeTailHeightCompact(data, co);
+  let y = startY;
+
+  if (DBG) console.log(`[PDF_DIAG] drawTailSideBySide: startY=${y.toFixed(1)} tailH=${tailH.toFixed(1)} FY=${FY} disponible=${(FY - y).toFixed(1)}`);
+
+  // Pré-check indivisible : si tout ne tient pas, nouvelle page
+  if (y + tailH > FY) {
+    if (DBG) console.log(`[PDF_DIAG] → saut de page (${(y + tailH).toFixed(1)} > ${FY})`);
+    doc.addPage();
+    if (isDarkVariant(theme)) { setFill(doc, theme.bodyBg); doc.rect(0, 0, PW, PH, "F"); }
+    if (theme.variant === "column-left") {
+      const sw = theme.sidebarW ?? 48;
+      setFill(doc, theme.sidebarBg ?? theme.headerBg); doc.rect(0, 0, sw, PH, "F");
+    } else if (theme.variant !== "minimal" && theme.variant !== "grid-line") {
+      setFill(doc, theme.tableHeaderBg); doc.rect(0, 0, PW, 2.5, "F");
+    }
+    y = 14;
+  }
+
+  // Séparateur horizontal
+  setDraw(doc, theme.tableBorder ?? [210, 210, 215]);
+  doc.setLineWidth(0.4);
+  doc.line(xStart, y, RX, y);
+  y += 3;
+  const bodyStart = y;
+
+  // ═══ COLONNE GAUCHE : notes + coordonnées bancaires ═══════════════════════
+  let ly = bodyStart;
+
+  if (data.notes) {
+    setFont(doc, "italic");
+    doc.setFontSize(7);
+    setTxt(doc, theme.mutedText);
+    const nLines = doc.splitTextToSize(data.notes, LEFT_RX - xStart - 2) as string[];
+    nLines.slice(0, 7).forEach(l => { doc.text(l, xStart, ly); ly += 4.5; });
+    ly += 3;
+  }
+
+  if (data.type === "invoice") {
+    const iban = data.rib_iban || co.iban;
+    if (iban) {
+      const ibanFmt   = iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
+      const titulaire = data.rib_titulaire || co.name;
+      const bic       = data.rib_bic || co.bic || "";
+      const banque    = data.rib_banque || "";
+
+      setFont(doc, "bold"); doc.setFontSize(6.5); setTxt(doc, theme.labelColor);
+      doc.text("COORDONNÉES BANCAIRES", xStart, ly); ly += 5.5;
+
+      setFont(doc, "normal"); doc.setFontSize(7.5);
+      if (titulaire) {
+        setFont(doc, "bold"); doc.setFontSize(6.5); setTxt(doc, theme.mutedText);
+        doc.text("Titulaire", xStart, ly);
+        setFont(doc, "normal"); doc.setFontSize(7.5); setTxt(doc, theme.bodyText);
+        doc.text(titulaire, xStart + 18, ly); ly += 4.5;
+      }
+      setFont(doc, "bold"); doc.setFontSize(6.5); setTxt(doc, theme.mutedText);
+      doc.text("IBAN", xStart, ly);
+      setFont(doc, "normal"); doc.setFontSize(7.5); setTxt(doc, theme.bodyText);
+      doc.text(ibanFmt, xStart + 18, ly); ly += 4.5;
+      if (bic) {
+        setFont(doc, "bold"); doc.setFontSize(6.5); setTxt(doc, theme.mutedText);
+        doc.text("BIC", xStart, ly);
+        setFont(doc, "normal"); doc.setFontSize(7.5); setTxt(doc, theme.bodyText);
+        const bicLine = banque ? `${bic}  (${banque})` : bic;
+        doc.text(bicLine, xStart + 18, ly); ly += 4.5;
+      } else if (banque) {
+        setFont(doc, "bold"); doc.setFontSize(6.5); setTxt(doc, theme.mutedText);
+        doc.text("Banque", xStart, ly);
+        setFont(doc, "normal"); doc.setFontSize(7.5); setTxt(doc, theme.bodyText);
+        doc.text(banque, xStart + 18, ly); ly += 4.5;
+      }
+    }
+  }
+
+  if (DBG) console.log(`[PDF_DIAG] colGauche ly=${ly.toFixed(1)}`);
+
+  // ═══ COLONNE DROITE : totaux compacts ═════════════════════════════════════
+  let ry = bodyStart;
+
+  // Facteur de remise globale (même logique que drawTotals)
+  const gFactor = data.discount_rate && data.discount_rate > 0
+    ? 1 - data.discount_rate / 100
+    : (data.discount && data.subtotal && data.subtotal > 0
+        ? r2(1 - data.discount / data.subtotal)
+        : 1);
+
+  if (data.subtotal !== data.total || (data.tax_amount ?? 0) > 0 || (data.discount ?? 0) > 0) {
+    setFont(doc, "normal"); doc.setFontSize(9);
+    setTxt(doc, theme.mutedText); doc.text("Sous-total HT", TX, ry);
+    setTxt(doc, theme.bodyText);  doc.text(fmtAmt(data.subtotal, cur), RX, ry, { align: "right" });
+    ry += 5;
+  }
+
+  if (data.discount && data.discount > 0) {
+    setFont(doc, "normal"); doc.setFontSize(9);
+    setTxt(doc, theme.mutedText);
+    doc.text(data.discount_rate ? `Remise (${data.discount_rate}%)` : "Remise", TX, ry);
+    doc.setTextColor(200, 65, 65);
+    doc.text(`- ${fmtAmt(data.discount, cur)}`, RX, ry, { align: "right" });
+    ry += 5;
+  }
+
+  if ((data.tax_amount ?? 0) > 0) {
+    const tvaMap = new Map<number, { ht: number; tva: number }>();
+    for (const item of data.items) {
+      const rate = item.tax_rate ?? data.tax_rate;
+      if (!rate || rate === 0) continue;
+      const lineHT = r2((item.quantity ?? 1) * (item.unit_price ?? 0) * (1 - (item.discount_pct ?? 0) / 100));
+      const netHT  = r2(lineHT * gFactor);
+      const prev   = tvaMap.get(rate) ?? { ht: 0, tva: 0 };
+      tvaMap.set(rate, { ht: r2(prev.ht + netHT), tva: r2(prev.tva + netHT * rate / 100) });
+    }
+    if (tvaMap.size > 1) {
+      Array.from(tvaMap.entries()).sort(([a], [b]) => a - b).forEach(([rate, { ht, tva }]) => {
+        setFont(doc, "normal"); doc.setFontSize(8); setTxt(doc, theme.mutedText);
+        doc.text(`TVA ${rate}%  (base ${fmtAmt(ht, cur)})`, TX, ry);
+        setTxt(doc, theme.bodyText); doc.setFontSize(9);
+        doc.text(fmtAmt(tva, cur), RX, ry, { align: "right" }); ry += 5;
+      });
+    } else {
+      setFont(doc, "normal"); doc.setFontSize(9); setTxt(doc, theme.mutedText);
+      doc.text(`TVA (${data.tax_rate}%)`, TX, ry);
+      setTxt(doc, theme.bodyText);
+      doc.text(fmtAmt(data.tax_amount!, cur), RX, ry, { align: "right" }); ry += 5;
+    }
+  } else {
+    setFont(doc, "normal"); doc.setFontSize(9);
+    setTxt(doc, theme.mutedText); doc.text("Total HT", TX, ry);
+    setTxt(doc, theme.bodyText);  doc.text(fmtAmt(data.subtotal, cur), RX, ry, { align: "right" }); ry += 5;
+  }
+
+  // Séparateur + boîte TTC
+  setDraw(doc, theme.tableBorder ?? [210, 210, 215]);
+  doc.setLineWidth(0.35);
+  doc.line(TX - 2, ry, RX, ry); ry += 3;
+
+  const BOX_H    = 11;
+  const boxColor = theme.totalBoxBg;
+  setFill(doc, boxColor);
+  doc.roundedRect(TX - 2, ry - 1.5, BLOCK_W + 2, BOX_H, 2, 2, "F");
+  setFont(doc, "bold"); doc.setFontSize(8); setTxt(doc, theme.totalBoxText);
+  doc.text("TOTAL TTC", TX + 3, ry + 5);
+  doc.setFontSize(12);
+  doc.text(fmtAmt(data.total, cur), RX - 3, ry + 6, { align: "right" });
+  ry += BOX_H + 2;
+
+  if (data.deposit && data.deposit > 0) {
+    setFont(doc, "normal"); doc.setFontSize(9);
+    setTxt(doc, theme.mutedText); doc.text(data.deposit_label ?? "Acompte versé", TX, ry);
+    setTxt(doc, theme.bodyText);  doc.text(`- ${fmtAmt(data.deposit, cur)}`, RX, ry, { align: "right" }); ry += 5;
+
+    setFill(doc, boxColor);
+    doc.roundedRect(TX - 2, ry - 1.5, BLOCK_W + 2, 11, 2, 2, "F");
+    setFont(doc, "bold"); doc.setFontSize(8.5); setTxt(doc, theme.totalBoxText);
+    doc.text("Net à payer", TX + 3, ry + 5);
+    doc.setFontSize(11);
+    doc.text(fmtAmt(r2(data.total - data.deposit), cur), RX - 3, ry + 5, { align: "right" });
+    ry += 11;
+  }
+
+  if (DBG) console.log(`[PDF_DIAG] colDroite ry=${ry.toFixed(1)}`);
+
+  const tailEnd = Math.max(ly, ry);
+  if (DBG) console.log(`[PDF_DIAG] tailEnd=${tailEnd.toFixed(1)} mentions à y=${(tailEnd + 2).toFixed(1)}`);
+  drawLegalMentions(doc, data, co, theme, tailEnd + 2);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // EXPORT PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -2185,43 +2832,27 @@ export async function renderPdfWithTheme(
     doc.rect(0, 0, PW, PH, "F");
   }
 
-  // QR SEPA (accent-bar uniquement, factures EUR avec IBAN)
-  let qrDataUrl: string | null = null;
-  if (theme.variant === "accent-bar" && data.type === "invoice") {
-    const iban  = data.rib_iban || co.iban;
-    const isEur = !data.currency || data.currency === "EUR";
-    if (iban && isEur && data.total > 0) {
-      qrDataUrl = await generateSepaQrUrl({
-        iban,
-        bic:       data.rib_bic || co.bic || null,
-        name:      data.rib_titulaire || co.name,
-        amount:    data.total,
-        reference: data.reference,
-      });
-    }
-  }
-
   // Rendu selon variant
   if (theme.variant === "accent-bar") {
     let y = drawHeaderAccentBar(doc, data, co, theme, logoImg);
     y = drawAddressesAccentBar(doc, data, co, theme, y);
     if (data.subject) y = drawSubject(doc, data, theme, y);
     y = drawItemsTable(doc, data, theme, y);
-    y = drawTotals(doc, data, theme, y);
-    if (data.type === "invoice") y = drawPaymentInfoModern(doc, data, co, theme, y + 4, qrDataUrl);
-    drawLegalMentions(doc, data, co, theme, y + 2);
+    drawTailSideBySide(doc, data, co, theme, y);
   } else {
     let y = drawHeader(doc, data, co, theme, logoImg);
-    y = drawAddresses(doc, data, co, theme, y, logoImg);
+    // dark-header avec H >= 60 : client déjà tracé dans le header
+    const skipAddresses = theme.variant === "dark-header" && theme.headerH >= 60;
+    if (!skipAddresses) {
+      y = drawAddresses(doc, data, co, theme, y, logoImg);
+    }
     // drawDocumentTitle pour les variants sans info complète dans le header
     if (theme.variant === "minimal" || theme.variant === "grid-line" || theme.variant === "deco") {
       y = drawDocumentTitle(doc, data, theme, y);
     }
     if (data.subject) y = drawSubject(doc, data, theme, y);
     y = drawItemsTable(doc, data, theme, y);
-    y = drawTotals(doc, data, theme, y);
-    if (data.type === "invoice") y = drawPaymentInfo(doc, data, co, theme, y + 4);
-    drawLegalMentions(doc, data, co, theme, y + 2);
+    drawTailSideBySide(doc, data, co, theme, y);
   }
 
   // Footer sur toutes les pages
