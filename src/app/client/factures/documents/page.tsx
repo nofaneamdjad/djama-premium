@@ -11,7 +11,9 @@ import {
   TrendingUp, Clock, AlertCircle, DollarSign, Settings2, BarChart3,
   PanelLeftClose, PanelLeftOpen, Maximize2,
   Repeat2, PenLine, Upload, BellRing, Share2, Sparkles, Lock, BookmarkPlus, FileCode2,
+  Mic, MicOff, ChevronUp, Wand2,
 } from "lucide-react";
+import type { AICreateResult } from "@/app/api/factures/ai-create/route";
 import { supabase } from "@/lib/supabase";
 import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
 import { fmtEur, fmtDate } from "@/lib/format";
@@ -977,6 +979,15 @@ export default function FacturesPage() {
   const csvInputRef    = useRef<HTMLInputElement>(null);
   const logoInputRef   = useRef<HTMLInputElement>(null);
 
+  // ── Assistant IA de création ─────────────────────────────────────────────────
+  const [aiCreateOpen,    setAiCreateOpen]    = useState(false);
+  const [aiCreateStep,    setAiCreateStep]    = useState<"input"|"generating"|"preview">("input");
+  const [aiCreatePrompt,  setAiCreatePrompt]  = useState("");
+  const [aiCreateType,    setAiCreateType]    = useState<"facture"|"devis">("facture");
+  const [aiCreateResult,  setAiCreateResult]  = useState<AICreateResult|null>(null);
+  const [aiCreateMic,     setAiCreateMic]     = useState(false);
+  const aiCreateRecogRef = useRef<{ stop(): void }|null>(null);
+
   // ── Paiements partiels ───────────────────────────────────────────────────────
   const [payModal,     setPayModal]     = useState(false);
   const [payments,     setPayments]     = useState<DocumentPayment[]>([]);
@@ -1436,7 +1447,11 @@ export default function FacturesPage() {
     setMobileView("editor");
   }
 
-  async function newDoc(type: DocType = "facture") {
+  async function newDoc(
+    type: DocType = "facture",
+    initialDraft?: Partial<DraftDoc>,
+    initialItems?: DocItem[],
+  ) {
     const co = companyDefaults;
     setSelected(null);
     // Numéro local provisoire affiché immédiatement
@@ -1471,11 +1486,128 @@ export default function FacturesPage() {
       mentions_legales: regimeFiscal
         ? (REGIMES_FISCAUX.find(r => r.id === regimeFiscal)?.mentions ?? "")
         : (co?.mentions_legales || ""),
+      // Surcharge optionnelle (ex. : depuis l'assistant IA)
+      ...(initialDraft ?? {}),
     });
-    setItems([EMPTY_ITEM()]);
+    setItems(initialItems ?? [EMPTY_ITEM()]);
     setDirty(true);
     setMobileView("editor");
   }
+
+  /* ── Assistant IA ──────────────────────────────────────────────────────────── */
+
+  type AiSR = {
+    continuous: boolean; interimResults: boolean; lang: string;
+    start(): void; stop(): void;
+    onresult: ((e: { results: Iterable<{ [n: number]: { transcript: string } }> }) => void) | null;
+    onerror: (() => void) | null;
+    onend: (() => void) | null;
+  };
+
+  function openAiModal(type: "facture"|"devis" = "facture") {
+    setAiCreateType(type);
+    setAiCreatePrompt("");
+    setAiCreateResult(null);
+    setAiCreateStep("input");
+    setAiCreateOpen(true);
+  }
+
+  function closeAiModal() {
+    if (aiCreateMic) { aiCreateRecogRef.current?.stop(); setAiCreateMic(false); }
+    setAiCreateOpen(false);
+  }
+
+  function toggleAiMic() {
+    if (aiCreateMic) {
+      aiCreateRecogRef.current?.stop();
+      setAiCreateMic(false);
+      return;
+    }
+    const SR = (typeof window !== "undefined")
+      ? ((window as unknown as Record<string, unknown>).SpeechRecognition ||
+         (window as unknown as Record<string, unknown>).webkitSpeechRecognition) as (new () => AiSR) | undefined
+      : undefined;
+    if (!SR) { showToast("error", "Dictée non supportée par ce navigateur."); return; }
+    const r = new SR();
+    r.continuous = true; r.interimResults = true; r.lang = "fr-FR";
+    r.onresult = (e: { results: Iterable<{ [n: number]: { transcript: string } }> }) => {
+      const transcript = Array.from(e.results).map((res: { [n: number]: { transcript: string } }) => res[0].transcript).join(" ");
+      setAiCreatePrompt(transcript);
+    };
+    r.onerror = () => setAiCreateMic(false);
+    r.onend   = () => setAiCreateMic(false);
+    aiCreateRecogRef.current = r;
+    r.start();
+    setAiCreateMic(true);
+  }
+
+  async function handleAiCreate() {
+    if (!aiCreatePrompt.trim()) return;
+    setAiCreateStep("generating");
+    try {
+      const res = await fetch("/api/factures/ai-create", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ prompt: aiCreatePrompt, type: aiCreateType }),
+      });
+      if (!res.ok) {
+        const err = await res.json() as { error?: string };
+        showToast("error", err.error ?? "Erreur lors de la génération IA");
+        setAiCreateStep("input");
+        return;
+      }
+      const data = await res.json() as { result: AICreateResult };
+      setAiCreateResult(data.result);
+      setAiCreateStep("preview");
+    } catch {
+      showToast("error", "Erreur réseau — réessayez");
+      setAiCreateStep("input");
+    }
+  }
+
+  async function applyAiResult() {
+    if (!aiCreateResult) return;
+    let clientData: Partial<DraftDoc> = {};
+    if (aiCreateResult.client_ref) {
+      const { data: c } = await supabase.from("contacts").select("*").eq("id", aiCreateResult.client_ref).maybeSingle();
+      if (c) clientData = {
+        client_nom:       (c as { name?: string }).name        ?? "",
+        client_societe:   (c as { company?: string }).company  ?? "",
+        client_email:     (c as { email?: string }).email      ?? "",
+        client_telephone: (c as { phone?: string }).phone      ?? "",
+        client_adresse:   (c as { address?: string }).address  ?? "",
+        contact_id:       aiCreateResult.client_ref,
+      };
+    } else if (aiCreateResult.client_new) {
+      clientData = {
+        client_nom:     aiCreateResult.client_new.name    ?? "",
+        client_societe: aiCreateResult.client_new.company ?? "",
+        client_email:   aiCreateResult.client_new.email   ?? "",
+      };
+    }
+    const aiItems: DocItem[] = aiCreateResult.items.map((it, i) => ({
+      position:        i,
+      description:     it.description,
+      sub_description: it.sub_description ?? "",
+      unit:            it.unit ?? "",
+      quantity:        it.quantity ?? 1,
+      unit_price:      it.unit_price ?? 0,
+      vat_rate:        it.vat_rate ?? 0,
+      remise_pct:      0,
+    }));
+    await newDoc(aiCreateType, {
+      sujet:      aiCreateResult.sujet     ?? "",
+      conditions: aiCreateResult.conditions ?? "",
+      notes:      aiCreateResult.notes     ?? "",
+      remise_pct: aiCreateResult.remise_pct ?? 0,
+      acompte:    aiCreateResult.acompte   ?? 0,
+      template:   (aiCreateResult.template as TemplateType) ?? "modern",
+      ...clientData,
+    }, aiItems.length > 0 ? aiItems : undefined);
+    closeAiModal();
+  }
+
+  /* ── fin Assistant IA ──────────────────────────────────────────────────────── */
 
   function updDraft(k: keyof DraftDoc, v: string|number) {
     // Numéro immuable après émission (conformité légale)
@@ -2404,6 +2536,11 @@ export default function FacturesPage() {
                 <FileDown size={12}/> CSV
               </button>
             )}
+            <button onClick={() => openAiModal("facture")}
+              className={`hidden items-center gap-1.5 rounded-xl border border-[rgba(255,185,0,0.35)] bg-[rgba(255,185,0,0.08)] px-3 py-2 text-xs font-semibold transition hover:bg-[rgba(255,185,0,0.15)] sm:flex`}
+              style={{ color:"#FFB900" }}>
+              <Sparkles size={11}/> Créer avec l'IA
+            </button>
             <button onClick={() => newDoc("devis")}
               className={`hidden items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-3 py-2 text-xs font-semibold ${tw3} transition sm:flex`}>
               <Plus size={12}/> Devis
@@ -4393,6 +4530,262 @@ export default function FacturesPage() {
       {/* ── Toast ── */}
       <AnimatePresence>
         {toast && <Toast toast={toast} onClose={() => setToast(null)}/>}
+      </AnimatePresence>
+
+      {/* ════════════════════ MODAL ASSISTANT IA ════════════════════ */}
+      <AnimatePresence>
+        {aiCreateOpen && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background:"rgba(0,0,0,0.7)", backdropFilter:"blur(6px)" }}>
+            <motion.div initial={{ scale:0.95, opacity:0, y:12 }}
+              animate={{ scale:1, opacity:1, y:0 }} exit={{ scale:0.95, opacity:0, y:12 }}
+              transition={{ duration:0.22, ease:[0.16,1,0.3,1] }}
+              className={`relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl ${isDark ? "bg-[#141414] border border-white/[0.08]" : "bg-white border border-gray-200"}`}
+              style={{ maxHeight:"90vh" }}>
+
+              {/* En-tête */}
+              <div className={`flex shrink-0 items-center justify-between border-b px-5 py-4 ${isDark ? "border-white/[0.07]" : "border-gray-100"}`}>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background:"rgba(255,185,0,0.15)" }}>
+                    <Wand2 size={14} style={{ color:"#FFB900" }}/>
+                  </div>
+                  <div>
+                    <p className={`text-sm font-bold ${tw1}`}>Assistant IA</p>
+                    <p className={`text-[11px] ${tw5}`}>
+                      {aiCreateStep === "preview" ? "Document généré — vérifiez et confirmez" : `Création rapide d'un ${aiCreateType}`}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={closeAiModal} className={`rounded-lg p-1.5 transition ${isDark ? "hover:bg-white/5" : "hover:bg-gray-100"}`}>
+                  <X size={15} className={tw4}/>
+                </button>
+              </div>
+
+              {/* Corps */}
+              <div className="flex-1 overflow-y-auto">
+
+                {/* ── Étape : saisie ── */}
+                {(aiCreateStep === "input" || aiCreateStep === "generating") && (
+                  <div className="space-y-4 p-5">
+                    {/* Type toggle */}
+                    <div className={`flex gap-1 rounded-xl border p-1 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
+                      {(["facture","devis"] as const).map(t => (
+                        <button key={t} onClick={() => setAiCreateType(t)}
+                          className={`flex-1 rounded-lg py-1.5 text-xs font-bold uppercase tracking-wider transition ${aiCreateType === t ? "shadow-sm" : ""}`}
+                          style={aiCreateType === t ? { background:"#FFB900", color:"#0a0a0a" } : {}}>
+                          {t === "facture" ? "Facture" : "Devis"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Textarea */}
+                    <div className="space-y-1.5">
+                      <label className={`block text-xs font-semibold ${tw4}`}>Décrivez votre {aiCreateType}</label>
+                      <div className="relative">
+                        <textarea
+                          value={aiCreatePrompt}
+                          onChange={e => setAiCreatePrompt(e.target.value)}
+                          disabled={aiCreateStep === "generating"}
+                          rows={6}
+                          placeholder={`Ex : Facture pour ANASA — 3 jours de conseil en stratégie à 800€/j, remise 10%, TVA 20%, paiement 30 jours nets, client : Marie Dupont`}
+                          className={`w-full resize-none rounded-xl border px-4 py-3 text-sm leading-relaxed outline-none transition ${isDark ? "bg-white/[0.04] border-white/[0.09] text-white placeholder:text-white/20 focus:border-[rgba(255,185,0,0.4)]" : "bg-gray-50 border-gray-200 text-gray-800 placeholder:text-gray-300 focus:border-[rgba(255,185,0,0.5)]"} disabled:opacity-50`}
+                        />
+                        {/* Compteur + mic */}
+                        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-2">
+                          <span className={`text-[10px] font-mono ${tw5}`}>{aiCreatePrompt.length}/2000</span>
+                          <button onClick={toggleAiMic}
+                            disabled={aiCreateStep === "generating"}
+                            title={aiCreateMic ? "Arrêter la dictée" : "Dicter"}
+                            className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${aiCreateMic ? "border-red-400/50 bg-red-400/10 text-red-400" : `${tbd1} ${tw4} hover:border-[rgba(255,185,0,0.4)] hover:text-[#FFB900]`}`}>
+                            {aiCreateMic ? <MicOff size={12}/> : <Mic size={12}/>}
+                          </button>
+                        </div>
+                      </div>
+                      {aiCreateMic && (
+                        <p className="flex items-center gap-1 text-[11px] text-red-400">
+                          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-400"/>
+                          Dictée active — parlez maintenant
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Conseils rapides */}
+                    <div className={`rounded-xl border p-3 ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-100 bg-gray-50"}`}>
+                      <p className={`mb-1.5 text-[10px] font-bold uppercase tracking-widest ${tw5}`}>Conseils</p>
+                      <ul className={`space-y-0.5 text-[11px] ${tw5}`}>
+                        {["Mentionnez le nom du client ou de la société", "Décrivez chaque prestation avec sa quantité et son prix si possible", "Indiquez la remise, l'acompte ou les conditions si nécessaire"].map((tip, i) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <span style={{ color:"#FFB900" }}>·</span> {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Étape : aperçu résultat ── */}
+                {aiCreateStep === "preview" && aiCreateResult && (
+                  <div className="space-y-3 p-5">
+                    {/* Interprétation */}
+                    {aiCreateResult.interpretation && (
+                      <div className={`rounded-xl border p-3 ${isDark ? "border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.05)]" : "border-amber-200 bg-amber-50"}`}>
+                        <p className="flex items-start gap-2 text-xs" style={{ color:"#FFB900" }}>
+                          <Sparkles size={11} className="mt-0.5 shrink-0"/>
+                          {aiCreateResult.interpretation}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Champs manquants */}
+                    {aiCreateResult.missing_fields.length > 0 && (
+                      <div className={`rounded-xl border p-3 ${isDark ? "border-amber-500/30 bg-amber-500/5" : "border-amber-300 bg-amber-50"}`}>
+                        <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-amber-500">
+                          <AlertTriangle size={11}/> Informations à compléter dans l'éditeur
+                        </p>
+                        <ul className="space-y-0.5">
+                          {aiCreateResult.missing_fields.map((f, i) => (
+                            <li key={i} className="text-[11px] text-amber-400/80">· {f}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Client */}
+                    <div className={`rounded-xl border px-4 py-3 ${tbd1} ${tbg2}`}>
+                      <p className={`mb-1 text-[10px] font-bold uppercase tracking-widest ${tw5}`}>Client</p>
+                      {aiCreateResult.client_ref || aiCreateResult.client_new ? (
+                        <div className="flex items-center gap-2">
+                          <User size={12} className={tw4}/>
+                          <div>
+                            <p className={`text-sm font-semibold ${tw2}`}>
+                              {aiCreateResult.client_new?.name || (aiCreateResult.client_ref ? "Contact trouvé ✓" : "—")}
+                            </p>
+                            {aiCreateResult.client_new?.company && (
+                              <p className={`text-xs ${tw5}`}>{aiCreateResult.client_new.company}</p>
+                            )}
+                            {aiCreateResult.client_ref && !aiCreateResult.client_new && (
+                              <p className="text-xs text-emerald-400">Correspond à un contact enregistré</p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="flex items-center gap-1.5 text-xs text-amber-400">
+                          <AlertTriangle size={10}/> À compléter dans l'éditeur
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Objet */}
+                    <div className={`rounded-xl border px-4 py-3 ${tbd1} ${tbg2}`}>
+                      <p className={`mb-1 text-[10px] font-bold uppercase tracking-widest ${tw5}`}>Objet</p>
+                      <p className={`text-sm font-semibold ${tw2}`}>{aiCreateResult.sujet || <span className="text-amber-400">À compléter</span>}</p>
+                    </div>
+
+                    {/* Prestations */}
+                    <div className={`rounded-xl border ${tbd1} overflow-hidden`}>
+                      <div className={`border-b px-4 py-2 ${tbd1} ${tbg2}`}>
+                        <p className={`text-[10px] font-bold uppercase tracking-widest ${tw5}`}>Prestations ({aiCreateResult.items.length})</p>
+                      </div>
+                      {aiCreateResult.items.length === 0 ? (
+                        <p className="px-4 py-3 text-xs text-amber-400">Aucune prestation extraite — à ajouter dans l'éditeur</p>
+                      ) : (
+                        <div className="divide-y" style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }}>
+                          {aiCreateResult.items.map((it, i) => (
+                            <div key={i} className="flex items-start justify-between gap-3 px-4 py-2.5">
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-medium ${tw2}`}>{it.description}</p>
+                                {it.sub_description && (
+                                  <p className={`text-[11px] ${tw5}`}>{it.sub_description}</p>
+                                )}
+                                <p className={`text-[11px] ${tw5}`}>
+                                  Qté: {it.quantity}{it.unit ? ` ${it.unit}` : ""}
+                                </p>
+                              </div>
+                              <div className="shrink-0 text-right">
+                                {it.unit_price !== null ? (
+                                  <p className={`text-sm font-semibold ${tw2}`}>{it.unit_price.toLocaleString("fr-FR")}€</p>
+                                ) : (
+                                  <p className="flex items-center gap-1 text-xs text-amber-400">
+                                    <AlertTriangle size={9}/> Prix à définir
+                                  </p>
+                                )}
+                                {it.vat_rate > 0 && (
+                                  <p className={`text-[10px] ${tw5}`}>TVA {it.vat_rate}%</p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Remise / acompte */}
+                    {(aiCreateResult.remise_pct > 0 || aiCreateResult.acompte > 0) && (
+                      <div className="flex gap-2">
+                        {aiCreateResult.remise_pct > 0 && (
+                          <div className={`flex-1 rounded-xl border px-3 py-2 ${tbd1} ${tbg2}`}>
+                            <p className={`text-[10px] ${tw5}`}>Remise</p>
+                            <p className={`text-sm font-semibold ${tw2}`}>{aiCreateResult.remise_pct}%</p>
+                          </div>
+                        )}
+                        {aiCreateResult.acompte > 0 && (
+                          <div className={`flex-1 rounded-xl border px-3 py-2 ${tbd1} ${tbg2}`}>
+                            <p className={`text-[10px] ${tw5}`}>Acompte</p>
+                            <p className={`text-sm font-semibold ${tw2}`}>{aiCreateResult.acompte.toLocaleString("fr-FR")}€</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Conditions */}
+                    {aiCreateResult.conditions && (
+                      <div className={`rounded-xl border px-4 py-3 ${tbd1} ${tbg2}`}>
+                        <p className={`mb-1 text-[10px] font-bold uppercase tracking-widest ${tw5}`}>Conditions</p>
+                        <p className={`text-xs ${tw3}`}>{aiCreateResult.conditions}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Pied — boutons d'action */}
+              <div className={`shrink-0 border-t px-5 py-4 ${isDark ? "border-white/[0.07]" : "border-gray-100"}`}>
+                {(aiCreateStep === "input" || aiCreateStep === "generating") && (
+                  <div className="flex gap-2">
+                    <button onClick={closeAiModal}
+                      className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${tbd1} ${tw3} ${isDark ? "hover:bg-white/5" : "hover:bg-gray-50"}`}>
+                      Annuler
+                    </button>
+                    <button onClick={() => void handleAiCreate()}
+                      disabled={!aiCreatePrompt.trim() || aiCreateStep === "generating"}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold transition disabled:opacity-40"
+                      style={{ background:"#FFB900", color:"#0a0a0a" }}>
+                      {aiCreateStep === "generating" ? (
+                        <><Loader2 size={14} className="animate-spin"/> Génération…</>
+                      ) : (
+                        <><Wand2 size={13}/> Générer</>
+                      )}
+                    </button>
+                  </div>
+                )}
+                {aiCreateStep === "preview" && (
+                  <div className="flex gap-2">
+                    <button onClick={() => { setAiCreateStep("input"); setAiCreateResult(null); }}
+                      className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${tbd1} ${tw3} ${isDark ? "hover:bg-white/5" : "hover:bg-gray-50"}`}>
+                      <ChevronUp size={12}/> Modifier
+                    </button>
+                    <button onClick={() => void applyAiResult()}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-extrabold transition hover:opacity-90"
+                      style={{ background:"#FFB900", color:"#0a0a0a" }}>
+                      <FileText size={13}/> Ouvrir dans l'éditeur
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
