@@ -201,48 +201,45 @@ function CountrySelector({
       </button>
 
       {open && (
-        <div
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-white/[0.1] shadow-2xl"
-          style={{ background: "#1a1f2e" }}
-        >
-          <div className="sticky top-0 border-b border-white/[0.07]" style={{ background: "#1a1f2e" }}>
+        <div className="ent-country-dropdown absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border shadow-2xl">
+          <div className="ent-country-search-header sticky top-0 border-b">
             <div className="relative p-2">
-              <Search size={12} className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-white/30" />
+              <Search size={12} className="ent-search-icon pointer-events-none absolute left-5 top-1/2 -translate-y-1/2" />
               <input
                 autoFocus
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Rechercher un pays…"
-                className="w-full rounded-lg bg-white/[0.06] py-2 pl-8 pr-3 text-sm text-white placeholder:text-white/25 outline-none"
+                className="ent-country-input w-full rounded-lg py-2 pl-8 pr-3 text-sm outline-none"
               />
             </div>
           </div>
           {filtered.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-white/30">Aucun résultat</p>
+            <p className="ent-country-empty px-4 py-3 text-sm">Aucun résultat</p>
           ) : (
             filtered.map(c => {
               const badge = supportBadge[c.support_level];
+              const isSelected = c.code === value;
               return (
                 <button
                   key={c.code}
                   type="button"
                   onClick={() => select(c)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition hover:bg-white/[0.06]"
-                  style={c.code === value ? { background: GOLD_DIM } : {}}
+                  className={`ent-country-row flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition${isSelected ? " ent-country-row-selected" : ""}`}
                 >
                   <span className="flex items-center gap-2">
-                    <span className="font-medium text-white">{c.name}</span>
-                    <span className="text-xs text-white/35">{c.code}</span>
+                    <span className="ent-country-name font-medium">{c.name}</span>
+                    <span className="ent-country-code text-xs">{c.code}</span>
                     {c.frameworks.length > 0 && (
-                      <span className="rounded px-1 text-[10px]" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
+                      <span className="ent-country-fw-badge rounded px-1 text-[10px]">
                         {c.frameworks[0]}
                       </span>
                     )}
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
-                    <span className="text-xs text-white/30">{c.currency}</span>
-                    <span className="text-[10px]" style={{ color: badge.color }}>
+                    <span className="ent-country-currency text-xs">{c.currency}</span>
+                    <span className="ent-country-support-badge text-[10px]" data-level={c.support_level}>
                       {badge.label}
                     </span>
                   </span>
@@ -635,6 +632,67 @@ export default function MonEntreprise() {
         .ent-light input:focus, .ent-light select:focus, .ent-light textarea:focus {
           border-color: rgba(201,165,90,0.5) !important;
         }
+
+        /* ── CountrySelector dropdown — mode clair ─────────────────────── */
+        .ent-light .ent-country-dropdown {
+          background: #ffffff !important;
+          border-color: #e5e7eb !important;
+        }
+        .ent-light .ent-country-search-header {
+          background: #f9fafb !important;
+          border-color: #e5e7eb !important;
+        }
+        .ent-light .ent-country-input {
+          background: #ffffff !important;
+          color: #111827 !important;
+          border: 1px solid #e5e7eb !important;
+        }
+        .ent-light .ent-country-input::placeholder { color: #9ca3af !important; }
+        .ent-light .ent-search-icon { color: #9ca3af !important; }
+        .ent-light .ent-country-row { color: #111827 !important; }
+        .ent-light .ent-country-row:hover { background: rgba(0,0,0,0.04) !important; }
+        .ent-light .ent-country-row-selected { background: rgba(201,165,90,0.08) !important; }
+        .ent-light .ent-country-name { color: #111827 !important; }
+        .ent-light .ent-country-code { color: #6b7280 !important; }
+        .ent-light .ent-country-currency { color: #9ca3af !important; }
+        .ent-light .ent-country-empty { color: #9ca3af !important; }
+        .ent-light .ent-country-fw-badge {
+          background: rgba(0,0,0,0.06) !important;
+          color: #374151 !important;
+        }
+        .ent-light .ent-country-support-badge[data-level="full"]    { color: #15803d !important; }
+        .ent-light .ent-country-support-badge[data-level="partial"] { color: #b45309 !important; }
+        .ent-light .ent-country-support-badge[data-level="basic"]   { color: #6b7280 !important; }
+
+        /* ── CountrySelector dropdown — mode sombre ────────────────────── */
+        .ent-dark .ent-country-dropdown {
+          background: #1a1f2e;
+          border-color: rgba(255,255,255,0.1);
+        }
+        .ent-dark .ent-country-search-header {
+          background: #1a1f2e;
+          border-color: rgba(255,255,255,0.07);
+        }
+        .ent-dark .ent-country-input {
+          background: rgba(255,255,255,0.06);
+          color: #ffffff;
+        }
+        .ent-dark .ent-country-input::placeholder { color: rgba(255,255,255,0.25); }
+        .ent-dark .ent-search-icon { color: rgba(255,255,255,0.3); }
+        .ent-dark .ent-country-row { color: #ffffff; }
+        .ent-dark .ent-country-row:hover { background: rgba(255,255,255,0.06); }
+        .ent-dark .ent-country-row-selected { background: rgba(201,165,90,0.12); }
+        .ent-dark .ent-country-name { color: #ffffff; }
+        .ent-dark .ent-country-code { color: rgba(255,255,255,0.35); }
+        .ent-dark .ent-country-currency { color: rgba(255,255,255,0.3); }
+        .ent-dark .ent-country-empty { color: rgba(255,255,255,0.3); }
+        .ent-dark .ent-country-fw-badge {
+          background: rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.5);
+        }
+        .ent-dark .ent-country-support-badge[data-level="full"]    { color: rgba(74,222,128,0.85); }
+        .ent-dark .ent-country-support-badge[data-level="partial"] { color: rgba(251,191,36,0.85); }
+        .ent-dark .ent-country-support-badge[data-level="basic"]   { color: rgba(148,163,184,0.7); }
       `}</style>
 
       <div className="px-6 py-6">
