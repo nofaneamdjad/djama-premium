@@ -923,6 +923,20 @@ export default function FacturesPage() {
     }
   };
 
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast("error", "Logo trop volumineux (max 2 Mo)."); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const url = ev.target?.result as string;
+      setDraft(d => d ? { ...d, emetteur_logo: url } : d);
+      setDirty(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
   const [emailModal,   setEmailModal]   = useState(false);
   const [emailTo,      setEmailTo]      = useState("");
   const [emailSubject, setEmailSubject] = useState("");
@@ -961,6 +975,7 @@ export default function FacturesPage() {
   const [csvRows,       setCsvRows]       = useState<{ nom: string; email: string; societe?: string; telephone?: string }[]>([]);
   const [csvImporting,  setCsvImporting]  = useState(false);
   const csvInputRef    = useRef<HTMLInputElement>(null);
+  const logoInputRef   = useRef<HTMLInputElement>(null);
 
   // ── Paiements partiels ───────────────────────────────────────────────────────
   const [payModal,     setPayModal]     = useState(false);
@@ -995,6 +1010,7 @@ export default function FacturesPage() {
   const [previewWidthPct, setPreviewWidthPct]   = useState(48);
   const cyclePreviewWidth = () =>
     setPreviewWidthPct(w => w < 50 ? 55 : w < 60 ? 65 : 48);
+  const [previewZoom, setPreviewZoom] = useState(100);
 
   const totals = useMemo(
     () => calcTotals(items, draft?.remise_pct ?? 0, draft?.acompte ?? 0),
@@ -1731,6 +1747,12 @@ export default function FacturesPage() {
 
   async function handleStatut(statut: DocStatut) {
     if (!selected) return;
+    // Validation avant émission définitive
+    if (statut === "envoyé" || statut === "payé") {
+      if (!draft?.sujet?.trim()) { showToast("error", "L'objet / intitulé est requis avant émission."); return; }
+      if (!draft?.client_nom?.trim() && !draft?.client_societe?.trim()) { showToast("error", "Le client est requis avant émission."); return; }
+      if (items.length === 0 || items.every(it => !it.description?.trim())) { showToast("error", "Au moins une prestation est requise."); return; }
+    }
     const previous = selected.statut;
     try {
       const res = await fetch("/api/factures/statut", {
@@ -3028,6 +3050,11 @@ export default function FacturesPage() {
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
+                        {!draft.sujet?.trim() && (
+                          <p className="mt-1 flex items-center gap-1 text-[11px] text-amber-400/80">
+                            <AlertTriangle size={9}/> Requis — apparaît sur la facture PDF
+                          </p>
+                        )}
                       </div>
                       <button
                         title="Générer l'intitulé avec l'IA"
@@ -3317,9 +3344,91 @@ export default function FacturesPage() {
                 {activeEditorTab === "design" && (
                 <div className="space-y-6">
 
+                  {/* ── Logo ── */}
+                  <div className="space-y-3">
+                    <SectionLabel icon={<ImagePlus size={10}/>} label="Logo"/>
+                    {/* Aperçu + actions logo */}
+                    <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
+                      <div className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border ${tbd1} ${tbg1}`}>
+                        {draft?.emetteur_logo ? (
+                          <img src={draft.emetteur_logo} alt="Logo" className="h-full w-full object-contain p-1"/>
+                        ) : (
+                          <Building2 size={18} className={tw5}/>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <button
+                          onClick={() => logoInputRef.current?.click()}
+                          className="flex items-center gap-1.5 rounded-lg border border-[rgba(255,185,0,0.3)] px-3 py-1.5 text-xs font-semibold transition hover:bg-[rgba(255,185,0,0.08)]"
+                          style={{ color:"#FFB900" }}>
+                          <Upload size={10}/> {draft?.emetteur_logo ? "Remplacer" : "Importer un logo"}
+                        </button>
+                        {draft?.emetteur_logo && (
+                          <button onClick={() => { setDraft(d => d ? { ...d, emetteur_logo: "" } : d); setDirty(true); }}
+                            className={`flex items-center gap-1 text-xs text-red-400/50 transition hover:text-red-400`}>
+                            <X size={9}/> Supprimer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden"/>
+
+                    {/* Taille logo */}
+                    <div className="space-y-1.5">
+                      <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${tw5}`}>Taille</p>
+                      <div className="flex gap-2">
+                        {(["sm","md","lg"] as const).map(s => (
+                          <button key={s} onClick={() => { setLogoSize(s); localStorage.setItem("pdf.logo_size", s); }}
+                            className={`flex-1 rounded-lg border py-1.5 text-xs font-bold uppercase tracking-wider transition ${logoSize === s ? "border-[rgba(255,185,0,0.5)] bg-[rgba(255,185,0,0.12)] text-[#FFB900]" : `${tbd1} ${tw4} ${isDark ? "hover:border-white/20" : "hover:border-gray-300"}`}`}>
+                            {s === "sm" ? "S" : s === "md" ? "M" : "L"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Position logo */}
+                    <div className="space-y-1.5">
+                      <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${tw5}`}>Position</p>
+                      <div className="flex gap-2">
+                        {([
+                          { label:"G", title:"Gauche",  x: 18 },
+                          { label:"C", title:"Centre",  x: 81 },
+                          { label:"D", title:"Droite",  x: 148 },
+                        ] as const).map(({ label, title, x }) => {
+                          const isActive = logoTransform ? Math.abs(logoTransform.x - x) < 10 : (label === "G");
+                          return (
+                            <button key={label} onClick={() => saveLt({ x, y: logoTransform?.y ?? 5, w: logoTransform?.w ?? 48, h: logoTransform?.h ?? 18 })}
+                              title={title}
+                              className={`flex-1 rounded-lg border py-1.5 text-xs font-bold uppercase tracking-wider transition ${isActive ? "border-[rgba(255,185,0,0.5)] bg-[rgba(255,185,0,0.12)] text-[#FFB900]" : `${tbd1} ${tw4} ${isDark ? "hover:border-white/20" : "hover:border-gray-300"}`}`}>
+                              {label}
+                            </button>
+                          );
+                        })}
+                        {logoTransform && (
+                          <button onClick={() => saveLt(null)} title="Réinitialiser"
+                            className={`rounded-lg border ${tbd1} px-3 py-1.5 text-xs ${tw5} transition hover:text-red-400`}>
+                            ↺
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Masquer le nom de l'entreprise */}
+                    <label className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
+                      <div>
+                        <p className={`text-xs font-semibold ${tw2}`}>Masquer le nom de l'entreprise</p>
+                        <p className={`text-[11px] ${tw5}`}>Affiche uniquement le logo, sans répéter le nom</p>
+                      </div>
+                      <div className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${logoHideName ? "bg-[#FFB900]" : isDark ? "bg-white/10" : "bg-gray-200"}`}
+                        onClick={() => { setLogoHideName(v => { const nv = !v; localStorage.setItem("pdf.logo_hide_name", String(nv)); return nv; }); }}>
+                        <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${logoHideName ? "translate-x-4" : "translate-x-0.5"}`}/>
+                      </div>
+                    </label>
+                  </div>
+
                   {/* ── Apparence ── */}
                   <div className="space-y-3">
-                    <SectionLabel icon={<Palette size={10}/>} label="Apparence"/>
+                    <SectionLabel icon={<Palette size={10}/>} label="Modèle & couleur"/>
                     <TemplateSelector
                       value={normalizeLegacyTemplate(draft?.template ?? "min-ligne")}
                       onChange={v => updDraft("template", v)}
@@ -3414,37 +3523,44 @@ export default function FacturesPage() {
                 {/* TAB: Paiements */}
                 {activeEditorTab === "paiements" && (
                 <div className="space-y-6">
-                  {selected?.type === "facture" ? (
+                  {(selected?.type ?? draft?.type) === "facture" ? (
                     <>
-                      <div className="rounded-2xl border p-5" style={{ borderColor:"rgba(251,191,36,0.2)", background:"rgba(251,191,36,0.04)" }}>
-                        <div className="mb-4 flex items-center justify-between">
-                          <p className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.6)" }}>Paiements reçus</p>
-                          <button onClick={() => setPayModal(true)}
-                            className="flex items-center gap-1.5 rounded-lg border border-[rgba(251,191,36,0.3)] px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
-                            style={{ color:"#fbbf24" }}>
-                            <Plus size={10}/> Ajouter
-                          </button>
+                      {!selected ? (
+                        <div className={`flex items-start gap-2 rounded-xl border ${tbd1} p-4`}>
+                          <AlertCircle size={13} className="mt-0.5 shrink-0" style={{ color:"#FFB900" }}/>
+                          <p className={`text-sm ${tw3}`}>Enregistrez la facture pour activer le suivi des paiements.</p>
                         </div>
-                        <div className="mb-2 flex items-center justify-between text-sm">
-                          <span style={{ color:"rgba(251,191,36,0.7)" }}>{fmtEur(selected.montant_paye ?? 0)} / {fmtEur(selected.total_ttc)}</span>
-                          <span className="font-bold" style={{ color:"#fbbf24" }}>
-                            {Math.min(100, Math.round(((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100))}%
-                          </span>
+                      ) : (
+                        <div className="rounded-2xl border p-5" style={{ borderColor:"rgba(251,191,36,0.2)", background:"rgba(251,191,36,0.04)" }}>
+                          <div className="mb-4 flex items-center justify-between">
+                            <p className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.6)" }}>Paiements reçus</p>
+                            <button onClick={() => setPayModal(true)}
+                              className="flex items-center gap-1.5 rounded-lg border border-[rgba(251,191,36,0.3)] px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
+                              style={{ color:"#fbbf24" }}>
+                              <Plus size={10}/> Ajouter
+                            </button>
+                          </div>
+                          <div className="mb-2 flex items-center justify-between text-sm">
+                            <span style={{ color:"rgba(251,191,36,0.7)" }}>{fmtEur(selected.montant_paye ?? 0)} / {fmtEur(selected.total_ttc)}</span>
+                            <span className="font-bold" style={{ color:"#fbbf24" }}>
+                              {Math.min(100, Math.round(((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100))}%
+                            </span>
+                          </div>
+                          <div className="mb-4 h-2 w-full overflow-hidden rounded-full" style={{ background:"rgba(251,191,36,0.12)" }}>
+                            <div className="h-full rounded-full transition-all duration-500" style={{
+                              background:"#fbbf24",
+                              width:`${Math.min(100, ((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100)}%`,
+                            }}/>
+                          </div>
+                          {(selected.total_ttc - (selected.montant_paye ?? 0)) > 0.01 ? (
+                            <p className={`text-sm font-semibold ${tw2}`}>
+                              Reste à encaisser : <span style={{ color:"#fbbf24" }}>{fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}</span>
+                            </p>
+                          ) : (
+                            <p className="text-sm font-semibold text-emerald-400">Facture intégralement payée</p>
+                          )}
                         </div>
-                        <div className="mb-4 h-2 w-full overflow-hidden rounded-full" style={{ background:"rgba(251,191,36,0.12)" }}>
-                          <div className="h-full rounded-full transition-all duration-500" style={{
-                            background:"#fbbf24",
-                            width:`${Math.min(100, ((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100)}%`,
-                          }}/>
-                        </div>
-                        {(selected.total_ttc - (selected.montant_paye ?? 0)) > 0.01 ? (
-                          <p className={`text-sm font-semibold ${tw2}`}>
-                            Reste à encaisser : <span style={{ color:"#fbbf24" }}>{fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}</span>
-                          </p>
-                        ) : (
-                          <p className="text-sm font-semibold text-emerald-400">Facture intégralement payée</p>
-                        )}
-                      </div>
+                      )}
                     </>
                   ) : (
                     <p className={`text-sm ${tw4}`}>Le suivi des paiements est disponible pour les factures uniquement.</p>
@@ -3594,8 +3710,15 @@ export default function FacturesPage() {
             <div className="flex items-center gap-2">
               <Eye size={11} style={{ color: activeColor }}/>
               <span className={`text-xs font-semibold uppercase tracking-widest ${tw4}`}>Aperçu live</span>
-              {/* Indicateur de largeur */}
-              <span className="text-[10px] font-mono opacity-40">{previewWidthPct}%</span>
+              {/* Zoom manuel */}
+              <div className={`flex items-center rounded-lg border ${tbd1} overflow-hidden`}>
+                <button onClick={() => setPreviewZoom(z => Math.max(50, z - 10))}
+                  className={`px-2 py-0.5 text-xs ${tw4} transition ${isDark ? "hover:bg-white/5" : "hover:bg-gray-100"}`}>−</button>
+                <span className="border-x px-2 text-[10px] font-mono opacity-50 select-none" style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }}>{previewZoom}%</span>
+                <button onClick={() => setPreviewZoom(z => Math.min(150, z + 10))}
+                  className={`px-2 py-0.5 text-xs ${tw4} transition ${isDark ? "hover:bg-white/5" : "hover:bg-gray-100"}`}>+</button>
+              </div>
+              <button onClick={() => setPreviewZoom(100)} className={`text-[10px] ${tw5} transition hover:opacity-80`} title="100%">↺</button>
             </div>
             <div className="flex items-center gap-1.5">
               <button
@@ -3631,10 +3754,10 @@ export default function FacturesPage() {
             </div>
           </div>
 
-          {/* Feuille A4 scalée — padding augmenté pour meilleure lisibilité */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          {/* Feuille A4 scalée avec zoom */}
+          <div className="flex-1 overflow-auto">
             <div className="flex min-h-full flex-col items-center py-8 px-6">
-              <div className="w-full" style={{ maxWidth: 620 }}>
+              <div style={{ width: `${previewZoom}%`, maxWidth: `${Math.round(620 * previewZoom / 100)}px`, minWidth: 240, transition: "width 0.2s, max-width 0.2s" }}>
                 <div className="overflow-hidden rounded-[2px] bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22),0_1px_4px_rgba(0,0,0,0.10)]">
                   <ScaledA4>
                     <InvoiceTemplate
