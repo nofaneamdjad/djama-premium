@@ -1,4233 +1,550 @@
 ﻿"use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+/**
+ * Vue d'ensemble — Factures & Devis
+ * Dashboard principal avec KPIs réels et documents récents.
+ * Thème clair/sombre via useTheme().
+ */
+
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
-  ReceiptText, Plus, Trash2, FileDown, Save, X, Search,
-  Loader2, ArrowLeft, ChevronDown, ChevronLeft, ChevronRight,
-  RefreshCw, Building2, User, FileText, Send, BadgeCheck,
-  AlertTriangle, ImagePlus, Palette, Landmark, Eye, Percent,
-  Mail, Link2, Copy, Check, Globe, CopyPlus, Users,
-  TrendingUp, Clock, AlertCircle, DollarSign, Settings2, BarChart3,
-  PanelLeftClose, PanelLeftOpen, Maximize2,
-  Repeat2, PenLine, Upload, BellRing, Share2, Sparkles, Lock, BookmarkPlus, FileCode2,
+  TrendingUp, Clock, AlertTriangle, CheckCircle2,
+  Plus, ArrowRight, ReceiptText, FileSignature, Users,
+  Loader2, RefreshCw, ChevronRight, Sparkles, Building2,
+  FileText, Send, BadgeCheck, DollarSign,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import ModuleHeaderIcon from "@/components/ModuleHeaderIcon";
-import { fmtEur, fmtDate } from "@/lib/format";
-import Toast, { type ToastData } from "@/components/ui/Toast";
-import type { TemplateType } from "@/lib/pdf/types";
-import type { PreviewData } from "@/components/invoice/shared";
-import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
-import { TemplateSelector, ScaledA4 } from "@/components/invoice/TemplateSelector";
-import type { LogoTransform } from "@/components/invoice/LogoDragResize";
-import { fetchCompanySettings, fetchOrgSettings } from "@/lib/pdf/companySettings";
-import type { CompanySettings } from "@/lib/pdf/companySettings";
-import { usePagination } from "@/hooks/usePagination";
 import { useTheme } from "@/lib/theme-context";
 
-type DocType   = "facture" | "devis" | "avoir";
+const GOLD = "#FFB900";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type DocStatut = "brouillon" | "envoyé" | "payé" | "en_retard" | "partiellement_payé";
 
-interface DocumentPayment {
-  id:          string;
-  document_id: string;
-  amount:      number;
-  date:        string;
-  method:      string;
-  notes:       string;
-  created_at:  string;
+interface Doc {
+  id:            string;
+  type:          "facture" | "devis" | "avoir";
+  numero:        string;
+  statut:        DocStatut;
+  client_nom:    string;
+  client_societe:string;
+  date_document: string;
+  date_echeance: string | null;
+  total_ttc:     number;
+  montant_paye:  number;
 }
 
-interface DocItem {
-  id?:             string;
-  position:        number;
-  description:     string;
-  sub_description: string;
-  unit:            string;
-  quantity:        number;
-  unit_price:      number;
-  vat_rate:        number;
-  remise_pct:      number;
+interface KPI {
+  total_facture: number;
+  total_encaisse: number;
+  total_attente:  number;
+  total_retard:   number;
+  nb_factures:    number;
+  nb_devis:       number;
+  nb_clients:     number;
 }
 
-interface CatalogItem {
-  id:          string;
-  description: string;
-  unit:        string;
-  unit_price:  number;
-  vat_rate:    number;
-}
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-interface Document {
-  id:               string;
-  user_id:          string;
-  type:             DocType;
-  numero:           string;
-  statut:           DocStatut;
-  sujet:            string;
-  emetteur_nom:          string;
-  emetteur_email:        string;
-  emetteur_adresse:      string;
-  emetteur_ville:        string;
-  emetteur_code_postal:  string;
-  emetteur_pays:         string;
-  emetteur_siret:        string;
-  emetteur_tva:          string;
-  emetteur_logo:         string;
-  client_nom:          string;
-  client_societe:      string;
-  client_email:        string;
-  client_telephone:    string;
-  client_adresse:      string;
-  client_ville:        string;
-  client_code_postal:  string;
-  client_pays:         string;
-  client_tva:          string;
-  date_document:    string;
-  date_echeance:    string;
-  remise_pct:       number;
-  acompte:          number;
-  devise:           string;
-  rib_titulaire:    string;
-  rib_iban:         string;
-  rib_bic:          string;
-  rib_banque:       string;
-  notes:            string;
-  conditions:       string;
-  mentions_legales: string;
-  couleur:          string;
-  template:         TemplateType;
-  total_ht:         number;
-  total_tva:        number;
-  total_ttc:        number;
-  montant_paye?:    number;
-  created_at:       string;
-  updated_at:       string;
-  share_token?:     string;
-  source_id?:       string | null;
-  signed_at?:       string;
-  signed_by?:       string;
-  signature_data?:  string | null;
-  recur_freq?:       string | null;
-  recur_next_date?:  string | null;
-  organization_id?:  string | null;
-  contact_id?:       string | null;
-}
-
-type DraftDoc = Omit<Document,
-  "id"|"user_id"|"created_at"|"updated_at"|"total_ht"|"total_tva"|"total_ttc">;
-
-interface CrmClient {
-  id:       string;
-  name:     string;
-  company?: string;
-  email?:   string;
-  phone?:   string;
-  address?: string;
-}
-
-interface AuditEntry {
-  id:         string;
-  action:     string;
-  details:    Record<string, string>;
-  created_at: string;
-}
-
-const ease = [0.16, 1, 0.3, 1] as const;
-
-const B  = "bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.09)]";
-const BH = "hover:border-[rgba(255,255,255,0.18)]";
-const BF = "focus:border-[rgba(255,185,0,0.4)]";
-function useInputTheme() {
-  const { isDark } = useTheme();
-  return {
-    iB : isDark ? "bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.09)]" : "bg-white border border-gray-200",
-    iBH: isDark ? "hover:border-[rgba(255,255,255,0.18)]" : "hover:border-gray-300",
-    iBG: isDark ? "bg-[rgba(255,255,255,0.04)]" : "bg-gray-50",
-    txt: isDark ? "text-white placeholder:text-white/20" : "text-gray-800 placeholder:text-gray-300",
-    lbl: isDark ? "text-white/35" : "text-gray-500",
-    isDark,
-  };
-}
-
-const STATUTS: Record<DocStatut,{label:string;color:string;bg:string;border:string;Icon:React.ElementType}> = {
-  brouillon: { label:"Brouillon", color:"#94a3b8", bg:"rgba(148,163,184,0.1)", border:"rgba(148,163,184,0.25)", Icon:FileText     },
-  envoyé:    { label:"Envoyé",    color:"#FFB900", bg:"rgba(255,185,0,0.10)", border:"rgba(255,185,0,0.25)",  Icon:Send          },
-  payé:      { label:"Payé",      color:"#4ade80", bg:"rgba(34,197,94,0.1)",   border:"rgba(34,197,94,0.25)",   Icon:BadgeCheck    },
-  en_retard:          { label:"En retard",  color:"#f87171", bg:"rgba(239,68,68,0.1)",   border:"rgba(239,68,68,0.25)",   Icon:AlertTriangle },
-  partiellement_payé: { label:"Part. payé", color:"#fbbf24", bg:"rgba(251,191,36,0.1)",  border:"rgba(251,191,36,0.25)",  Icon:DollarSign    },
+const STATUTS: Record<DocStatut, { label: string; color: string; bg: string }> = {
+  brouillon:          { label: "Brouillon",   color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
+  envoyé:             { label: "Envoyé",      color: GOLD,      bg: "rgba(255,185,0,0.12)"   },
+  payé:               { label: "Payé",        color: "#4ade80", bg: "rgba(74,222,128,0.12)"  },
+  en_retard:          { label: "En retard",   color: "#f87171", bg: "rgba(248,113,113,0.12)" },
+  partiellement_payé: { label: "Part. payé",  color: "#fbbf24", bg: "rgba(251,191,36,0.12)"  },
 };
-
-const DOC_TYPE_LABELS: Record<DocType, string> = {
-  facture: "Facture",
-  devis:   "Devis",
-  avoir:   "Avoir",
-};
-const AVOIR_BADGE = { color:"#f472b6", bg:"rgba(244,114,182,0.1)", border:"rgba(244,114,182,0.3)" };
-
-const COLOR_PRESETS = [
-  { hex:"#FFB900", label:"Jaune DJAMA" },
-  { hex:"#60a5fa", label:"Bleu"     },
-  { hex:"#4ade80", label:"Vert"     },
-  { hex:"#FFB900", label:"Violet"   },
-  { hex:"#f97316", label:"Orange"   },
-  { hex:"#f472b6", label:"Rose"     },
-  { hex:"#e2e8f0", label:"Blanc"    },
-];
-
-const PAYMENT_METHODS = [
-  { val:"virement",  label:"Virement bancaire" },
-  { val:"cheque",    label:"Chèque"            },
-  { val:"especes",   label:"Espèces"           },
-  { val:"carte",     label:"Carte bancaire"    },
-  { val:"paypal",    label:"PayPal"            },
-  { val:"autre",     label:"Autre"             },
-];
-
-const VAT_RATES = [0, 2.1, 5.5, 8.5, 10, 20];
-
-const UNITS = [
-  { val: "",        label: "—"       },
-  { val: "h",       label: "h"       },
-  { val: "j",       label: "j"       },
-  { val: "forfait", label: "forfait" },
-  { val: "pièce",   label: "pièce"   },
-  { val: "m²",      label: "m²"      },
-  { val: "km",      label: "km"      },
-  { val: "kg",      label: "kg"      },
-  { val: "mois",    label: "mois"    },
-  { val: "lot",     label: "lot"     },
-];
-
-const CURRENCIES = [
-  { val: "EUR", symbol: "€",  label: "Euro (€)"       },
-  { val: "USD", symbol: "$",  label: "Dollar US ($)"  },
-  { val: "GBP", symbol: "£",  label: "Livre (£)"      },
-  { val: "CHF", symbol: "Fr", label: "Franc suisse"   },
-  { val: "CAD", symbol: "C$", label: "Dollar CA"      },
-  { val: "MAD", symbol: "DH", label: "Dirham (DH)"    },
-  { val: "XOF", symbol: "CFA",label: "Franc CFA"      },
-  { val: "DZD", symbol: "DA", label: "Dinar (DA)"     },
-];
-
-const CONDITIONS_PRESETS = [
-  { label: "30 j nets",  val: "Paiement à 30 jours nets à compter de la date de facturation." },
-  { label: "45 j nets",  val: "Paiement à 45 jours nets à compter de la date de facturation." },
-  { label: "60 j nets",  val: "Paiement à 60 jours nets à compter de la date de facturation." },
-  { label: "Comptant",   val: "Paiement comptant à réception de la facture." },
-];
-
-const MENTIONS_PRESETS = [
-  { label: "Auto-entrepreneur", val: "TVA non applicable, art. 293 B du CGI." },
-  { label: "Franchise TVA",     val: "TVA non applicable, art. 293 B du CGI." },
-  { label: "Pénalités retard",  val: "En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal seront appliquées, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement." },
-];
-
-const PENALITES = "En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal seront appliquées, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement (art. D441-5 du Code de commerce).";
-
-const REGIMES_FISCAUX = [
-  {
-    id: "micro",
-    label: "Micro / AE",
-    hint: "TVA non applicable · art. 293 B CGI",
-    mentions: `TVA non applicable, art. 293 B du CGI.\n${PENALITES}`,
-  },
-  {
-    id: "reel",
-    label: "Régime réel",
-    hint: "TVA collectée · pénalités de retard obligatoires",
-    mentions: PENALITES,
-  },
-  {
-    id: "autoliquidation",
-    label: "Auto-liquidation",
-    hint: "Sous-traitance ou intracommunautaire",
-    mentions: `TVA auto-liquidée par le preneur — art. 283-1 du CGI / Directive 2006/112/CE art. 196.\n${PENALITES}`,
-  },
-  {
-    id: "cga",
-    label: "CGA",
-    hint: "Centre de gestion agréé",
-    mentions: `Membre d'un centre de gestion agréé — le règlement des honoraires par chèque est accepté.\n${PENALITES}`,
-  },
-] as const;
-type RegimeFiscal = typeof REGIMES_FISCAUX[number]["id"] | null;
-
-function r2(n: number) { return Math.round(n * 100) / 100; }
-
-function fmtAmount(n: number, devise = "EUR") {
-  const cur = CURRENCIES.find(c => c.val === devise);
-  const symbol = cur?.symbol ?? "€";
-  const formatted = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
-  return devise === "EUR" ? `${formatted} €` : `${formatted} ${symbol}`;
-}
-
-function calcTotals(items: DocItem[], globalRemise = 0, acompte = 0) {
-  const tvaByRate = new Map<number, { ht: number; tva: number }>();
-  let htRaw = 0, tvaRaw = 0;
-  for (const it of items) {
-    const gross   = r2(it.quantity * it.unit_price);
-    const lineRem = r2(gross * (it.remise_pct || 0) / 100);
-    const lineHT  = r2(gross - lineRem);
-    const lineTVA = r2(lineHT * it.vat_rate / 100);
-    htRaw  += lineHT;
-    tvaRaw += lineTVA;
-    const cur = tvaByRate.get(it.vat_rate) ?? { ht: 0, tva: 0 };
-    tvaByRate.set(it.vat_rate, { ht: r2(cur.ht + lineHT), tva: r2(cur.tva + lineTVA) });
-  }
-  const subtotal_ht = r2(htRaw);
-  const remise      = r2(subtotal_ht * globalRemise / 100);
-  const ht          = r2(subtotal_ht - remise);
-  const factor      = subtotal_ht > 0 ? ht / subtotal_ht : 1;
-  const tva         = r2(tvaRaw * factor);
-  const ttc         = r2(ht + tva);
-  const acompteVal  = r2(Math.min(acompte, ttc));
-  return { subtotal_ht, remise, ht, tva, ttc, acompte: acompteVal, tvaByRate };
-}
-
-function newNumero(type: DocType, docs: Document[]): string {
-  const prefix = type === "facture" ? "FAC" : type === "avoir" ? "AVO" : "DEV";
-  const year   = new Date().getFullYear();
-  const yearDocs = docs.filter(d => d.type === type && d.numero?.includes(String(year)));
-  const nums = yearDocs
-    .map(d => parseInt(d.numero.split("-").pop() ?? "0", 10))
-    .filter(n => !isNaN(n));
-  const next = nums.length ? Math.max(...nums) + 1 : 1;
-  return `${prefix}-${year}-${String(next).padStart(3, "0")}`;
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return [isNaN(r)?201:r, isNaN(g)?165:g, isNaN(b)?90:b];
-}
-function contrastColor(hex: string): "#0a0a0a"|"#ffffff" {
-  const [r,g,b] = hexToRgb(hex);
-  return (0.299*r+0.587*g+0.114*b)/255 > 0.55 ? "#0a0a0a" : "#ffffff";
-}
-
-const EMPTY_ITEM = (): DocItem => ({
-  position:0, description:"", sub_description:"", unit:"", quantity:1, unit_price:0, vat_rate:20, remise_pct:0,
-});
-
-const EMPTY_DRAFT = (): DraftDoc => ({
-  type:"facture", numero:"", statut:"brouillon",
-  sujet:"",
-  emetteur_nom:"", emetteur_email:"", emetteur_adresse:"",
-  emetteur_ville:"", emetteur_code_postal:"", emetteur_pays:"",
-  emetteur_siret:"", emetteur_tva:"", emetteur_logo:"",
-  client_nom:"", client_societe:"", client_email:"", client_telephone:"", client_adresse:"",
-  client_ville:"", client_code_postal:"", client_pays:"", client_tva:"",
-  date_document: new Date().toISOString().slice(0,10),
-  date_echeance:"",
-  remise_pct:0, acompte:0, devise:"EUR",
-  rib_titulaire:"", rib_iban:"", rib_bic:"", rib_banque:"",
-  notes:"", conditions:"", mentions_legales:"",
-  couleur:"#FFB900",
-  template:"modern" as TemplateType,
-});
-
-const RECUR_FREQS = [
-  { val: "hebdo",       label: "Hebdomadaire", days: 7   },
-  { val: "mensuel",     label: "Mensuel",      days: 30  },
-  { val: "trimestriel", label: "Trimestriel",  days: 90  },
-  { val: "annuel",      label: "Annuel",       days: 365 },
-] as const;
-type RecurFreq = typeof RECUR_FREQS[number]["val"];
-
-function nextRecurDate(from: string, freq: RecurFreq): string {
-  const d = new Date(from);
-  const days = RECUR_FREQS.find(f => f.val === freq)?.days ?? 30;
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function parseCSV(text: string): { nom: string; email: string; societe?: string; telephone?: string }[] {
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) return [];
-  const sep  = lines[0].includes(";") ? ";" : ",";
-  const hdrs = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
-  const get  = (row: string[], ...keys: string[]) => {
-    for (const k of keys) { const i = hdrs.indexOf(k); if (i >= 0 && row[i]) return row[i].trim().replace(/^"|"$/g, ""); }
-    return "";
-  };
-  return lines.slice(1).map(l => {
-    const row = l.split(sep);
-    const nom  = get(row, "nom", "name", "prenom_nom", "prénom_nom") || get(row, "prenom", "prénom");
-    const email = get(row, "email", "mail", "e-mail", "e_mail", "courriel");
-    return {
-      nom,
-      email,
-      societe:   get(row, "societe", "société", "company", "entreprise") || undefined,
-      telephone: get(row, "telephone", "téléphone", "tel", "phone", "portable") || undefined,
-    };
-  }).filter(r => r.nom || r.email);
-}
-
-async function exportPDFWithTemplate(
-  draft:          DraftDoc,
-  items:          DocItem[],
-  totals:         ReturnType<typeof calcTotals>,
-  logoSize?:      "sm"|"md"|"lg",
-  logoHideName?:  boolean,
-  logoTransform?: LogoTransform | null,
-  coDefaults?:    CompanySettings | null,
-) {
-  const { generatePdf } = await import("@/lib/pdf/generatePdf");
-  const mainTaxRate = items[0]?.vat_rate ?? 20;
-  const footerParts = [draft.conditions, draft.mentions_legales, coDefaults?.garantie].filter(Boolean);
-  await generatePdf({
-    type:        draft.type === "facture" ? "invoice" : "quote",
-    template:    draft.template ?? "modern",
-    accentColor: draft.couleur || "#FFB900",
-    reference:   draft.numero || (draft.type === "facture" ? "FACTURE" : "DEVIS"),
-    issue_date:  draft.date_document,
-    due_date:    draft.type === "facture" ? (draft.date_echeance || null) : null,
-    valid_until: draft.type === "devis"   ? (draft.date_echeance || null) : null,
-    client_name:    draft.client_nom     || "(Client)",
-    client_company: draft.client_societe || null,
-    client_email:   draft.client_email,
-    client_phone:   draft.client_telephone || null,
-    client_address: [
-      draft.client_adresse,
-      [draft.client_code_postal, draft.client_ville].filter(Boolean).join(" "),
-      draft.client_pays,
-    ].filter(Boolean).join("\n") || null,
-    client_vat:     draft.client_tva || null,
-    subject:     draft.sujet || draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
-    items: items.map(it => {
-      const gross  = r2(it.quantity * it.unit_price);
-      const lineRem = r2(gross * (it.remise_pct||0) / 100);
-      const lineHT  = r2(gross - lineRem);
-      const fullDesc = [it.description, it.sub_description].filter(Boolean).join("\n") || "(description)";
-      return { description: fullDesc, unit: it.unit || "", quantity: it.quantity, unit_price: it.unit_price, total: lineHT, tax_rate: it.vat_rate };
-    }),
-    subtotal:      totals.subtotal_ht,
-    discount_rate: draft.remise_pct > 0 ? draft.remise_pct : null,
-    discount:      totals.remise > 0    ? totals.remise    : null,
-    tax_rate:      mainTaxRate,
-    tax_amount:    totals.tva,
-    total:         totals.ttc,
-    deposit:       draft.acompte > 0 ? draft.acompte   : null,
-    deposit_label: draft.acompte > 0 ? "Acompte versé" : null,
-    rib_titulaire: draft.rib_titulaire || null,
-    rib_iban:      draft.rib_iban      || null,
-    rib_bic:       draft.rib_bic       || null,
-    rib_banque:    draft.rib_banque    || null,
-    notes:         draft.notes || null,
-    footer_text:   footerParts.join("\n\n") || null,
-    currency:      (draft.devise || "EUR") as string,
-    logoTransform: logoTransform ?? null,
-    company: {
-      logoUrl:          draft.emetteur_logo    || null,
-      name:             draft.emetteur_nom     || "",
-      email:            draft.emetteur_email   || "",
-      phone:            coDefaults?.phone      || "",
-      website:          coDefaults?.website    || "",
-      address:          [
-        draft.emetteur_adresse,
-        [draft.emetteur_code_postal, draft.emetteur_ville].filter(Boolean).join(" "),
-        draft.emetteur_pays,
-      ].filter(Boolean).join("\n") || "",
-      city:             draft.emetteur_ville   || "",
-      postal_code:      draft.emetteur_code_postal || "",
-      country:          draft.emetteur_pays    || "",
-      siret:            draft.emetteur_siret   || "",
-      ape:              coDefaults?.ape        || "",
-      vat_number:       draft.emetteur_tva     || "",
-      iban:             draft.rib_iban         || "",
-      bic:              draft.rib_bic          || "",
-      forme_juridique:  coDefaults?.forme_juridique  || "",
-      capital_social:   coDefaults?.capital_social   || "",
-      logoSize:         logoSize     ?? "md",
-      logoHideName:     logoHideName ?? false,
-    },
-  });
-}
-
-function draftToPreviewData(draft: DraftDoc, items: DocItem[], totals: ReturnType<typeof calcTotals>, lSize: "sm"|"md"|"lg" = "md"): PreviewData {
-  return {
-    type:           draft.type === "devis" ? "quote" : "invoice",
-    reference:      draft.numero || (draft.type === "facture" ? "FAC-2026-001" : draft.type === "avoir" ? "AVO-2026-001" : "DEV-2026-001"),
-    issue_date:     draft.date_document,
-    due_date:       draft.date_echeance || null,
-    client_name:    draft.client_nom   || "Client",
-    client_email:   draft.client_email,
-    client_company: draft.client_societe || null,
-    client_address: [
-      draft.client_adresse,
-      [draft.client_code_postal, draft.client_ville].filter(Boolean).join(" "),
-      draft.client_pays,
-    ].filter(Boolean).join("\n") || null,
-    subject:        draft.sujet || draft.numero || (draft.type === "facture" ? "Facture" : "Devis"),
-    items: items.map(it => {
-      const gross = r2(it.quantity * it.unit_price);
-      return {
-        description: it.description || "Prestation",
-        quantity:    it.quantity,
-        unit_price:  it.unit_price,
-        total:       r2(gross * (1 - (it.remise_pct || 0) / 100)),
-      };
-    }),
-    subtotal:      totals.subtotal_ht,
-    discount_rate: draft.remise_pct > 0 ? draft.remise_pct : null,
-    discount:      totals.remise > 0    ? totals.remise    : null,
-    tax_rate:      items[0]?.vat_rate ?? 20,
-    tax_amount:    totals.tva,
-    total:         totals.ttc,
-    notes:         draft.notes || null,
-    color:         draft.couleur || "#FFB900",
-    valid_until:   draft.type !== "facture" ? (draft.date_echeance || null) : null,
-    company: {
-      name:     draft.emetteur_nom   || "DJAMA",
-      email:    draft.emetteur_email,
-      logoUrl:  draft.emetteur_logo || null,
-      logoSize: lSize,
-    },
-  };
-}
 
 function StatutBadge({ statut }: { statut: DocStatut }) {
-  const s = STATUTS[statut];
+  const s = STATUTS[statut] ?? STATUTS.brouillon;
   return (
-    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider"
-      style={{ color:s.color, background:s.bg, border:`1px solid ${s.border}` }}>
-      <s.Icon size={9}/>{s.label}
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
+      style={{ color: s.color, background: s.bg }}
+    >
+      {s.label}
     </span>
   );
 }
 
-function DInput({ label, value, onChange, placeholder, type="text", small, disabled, lockTitle }:
-  { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; small?:boolean; disabled?:boolean; lockTitle?:string }) {
-  const { iB, iBH, txt, lbl, isDark } = useInputTheme();
-  const [focused, setFocused] = useState(false);
-  const disabledCls = disabled
-    ? (isDark ? "opacity-50 cursor-not-allowed bg-white/[0.02]" : "opacity-50 cursor-not-allowed bg-gray-100")
-    : "";
-  const cls = small
-    ? `w-full rounded-lg ${iB} ${disabled ? "" : iBH} px-2.5 py-1.5 text-xs ${txt} outline-none transition ${disabledCls}`
-    : `w-full rounded-xl ${iB} ${disabled ? "" : iBH} focus:border-[rgba(255,185,0,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition ${disabledCls}`;
-  return (
-    <div title={disabled && lockTitle ? lockTitle : undefined}>
-      {label && <label className={`mb-1 block text-xs font-medium ${lbl}`}>{label}</label>}
-      <div className="relative">
-        {!disabled && (
-          <motion.div animate={{ opacity: focused ? 1 : 0 }} transition={{ duration:0.15 }}
-            className="pointer-events-none absolute inset-0 rounded-xl"
-            style={{ boxShadow:"0 0 0 2px rgba(255,185,0,0.35)" }}/>
-        )}
-        <input type={type} value={value} onChange={e => !disabled && onChange(e.target.value)}
-          onFocus={() => !disabled && setFocused(true)} onBlur={() => setFocused(false)}
-          placeholder={placeholder} readOnly={disabled} className={cls}/>
-        {disabled && (
-          <Lock size={11} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-30"/>
-        )}
-      </div>
-    </div>
-  );
+function clientLabel(doc: Doc) {
+  return doc.client_societe || doc.client_nom || "—";
 }
 
-function DSelect({ label, value, onChange, options, small }:
-  { label?:string; value:string; onChange:(v:string)=>void; options:{val:string;label:string}[]; small?:boolean }) {
-  const { iB, iBH, txt, lbl, isDark } = useInputTheme();
-  const optBg = isDark ? "#181818" : "#ffffff";
-  const cls = small
-    ? `w-full rounded-lg ${iB} ${iBH} px-2 py-1.5 text-xs ${txt} outline-none transition appearance-none cursor-pointer`
-    : `w-full rounded-xl ${iB} ${iBH} focus:border-[rgba(255,185,0,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition appearance-none cursor-pointer`;
-  return (
-    <div>
-      {label && <label className={`mb-1 block text-xs font-medium ${lbl}`}>{label}</label>}
-      <div className="relative">
-        <select value={value} onChange={e => onChange(e.target.value)} className={cls}>
-          {options.map(o => <option key={o.val} value={o.val} style={{ background: optBg }}>{o.label}</option>)}
-        </select>
-        <ChevronDown size={10} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? "text-white/30" : "text-gray-400"}`}/>
-      </div>
-    </div>
-  );
+// ─── KPI Tile ─────────────────────────────────────────────────────────────────
+
+interface KpiTileProps {
+  label:   string;
+  value:   string;
+  sub?:    string;
+  icon:    React.ElementType;
+  color:   string;
+  bg:      string;
+  border:  string;
+  loading?: boolean;
+  isDark:  boolean;
 }
 
-function DTextarea({ label, value, onChange, placeholder, rows=3, hint }:
-  { label?:string; value:string; onChange:(v:string)=>void; placeholder?:string; rows?:number; hint?:string }) {
-  const { iB, iBH, txt, lbl, isDark } = useInputTheme();
+function KpiTile({ label, value, sub, icon: Icon, color, bg, border, loading, isDark }: KpiTileProps) {
+  const cardBg     = isDark ? "rgba(255,255,255,0.03)" : "#ffffff";
+  const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb";
+  const labelCol   = isDark ? "rgba(255,255,255,0.40)" : "#6b7280";
+  const valueCol   = isDark ? "#ffffff"                : "#111827";
+  const subCol     = isDark ? "rgba(255,255,255,0.30)" : "#9ca3af";
+  const shimmerBg  = isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6";
+
   return (
-    <div>
-      {label && (
-        <div className="mb-1 flex items-center justify-between">
-          <label className={`text-xs font-medium ${lbl}`}>{label}</label>
-          {hint && <span className={`text-[11px] ${isDark ? "text-white/20" : "text-gray-300"}`}>{hint}</span>}
+    <div
+      className="flex flex-col gap-3 rounded-2xl p-5"
+      style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
+    >
+      <div className="flex items-start justify-between">
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: labelCol }}>
+          {label}
+        </span>
+        <div
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+          style={{ background: bg, border: `1px solid ${border}` }}
+        >
+          <Icon size={14} style={{ color }} />
+        </div>
+      </div>
+      {loading ? (
+        <div className="h-7 w-24 animate-pulse rounded-lg" style={{ background: shimmerBg }} />
+      ) : (
+        <div>
+          <div className="text-2xl font-bold tracking-tight" style={{ color: valueCol, fontVariantNumeric: "tabular-nums" }}>
+            {value}
+          </div>
+          {sub && <div className="mt-0.5 text-xs" style={{ color: subCol }}>{sub}</div>}
         </div>
       )}
-      <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-        className={`w-full resize-none rounded-xl ${iB} ${iBH} focus:border-[rgba(255,185,0,0.4)] px-3.5 py-2.5 text-sm ${txt} outline-none transition`}/>
     </div>
   );
 }
 
-function ColorPicker({ value, onChange }: { value:string; onChange:(v:string)=>void }) {
-  const ref = useRef<HTMLInputElement>(null);
-  const isPreset = COLOR_PRESETS.some(p => p.hex === value);
-  return (
-    <div>
-      <label className="mb-2 block text-xs font-medium text-white/35">
-        <Palette size={9} className="mr-1 inline-block"/>Couleur du document
-      </label>
-      <div className="flex flex-wrap items-center gap-2">
-        {COLOR_PRESETS.map(p => (
-          <button key={p.hex} title={p.label} onClick={() => onChange(p.hex)}
-            className="relative h-7 w-7 rounded-full border-2 transition-transform hover:scale-110"
-            style={{ background:p.hex, borderColor: value === p.hex ? "#fff" : "transparent" }}>
-            {value === p.hex && (
-              <span className="absolute inset-0 flex items-center justify-center">
-                <span className="h-2 w-2 rounded-full" style={{ background: contrastColor(p.hex) }}/>
-              </span>
-            )}
-          </button>
-        ))}
-        <div className="relative">
-          <div className="h-7 w-7 cursor-pointer overflow-hidden rounded-full border-2 transition-transform hover:scale-110"
-            style={{ background: isPreset ? "conic-gradient(red,yellow,lime,cyan,blue,magenta,red)" : value,
-                     borderColor: !isPreset ? "#fff" : "transparent" }}
-            onClick={() => ref.current?.click()}/>
-          <input ref={ref} type="color" value={value} onChange={e => onChange(e.target.value)}
-            className="absolute inset-0 h-0 w-0 opacity-0 pointer-events-none"/>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
-function LogoUploader({ value, onChange }: { value:string; onChange:(b64:string)=>void }) {
-  const ref = useRef<HTMLInputElement>(null);
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => onChange(ev.target?.result as string);
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  }
-  return (
-    <div>
-      <label className="mb-2 block text-xs font-medium text-white/35">
-        <ImagePlus size={9} className="mr-1 inline-block"/>Logo entreprise
-      </label>
-      <div className="flex items-center gap-3">
-        {value ? (
-          <div className="relative group">
-            <img src={value} alt="Logo" className={`h-12 w-auto max-w-[120px] rounded-lg ${B} object-contain p-1`}/>
-            <button onClick={() => onChange("")}
-              className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full border border-red-500/30 bg-[#0a0f1e] text-red-400 transition group-hover:flex">
-              <X size={10}/>
-            </button>
-          </div>
-        ) : (
-          <div onClick={() => ref.current?.click()}
-            className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/3 text-white/25 transition hover:border-white/30`}>
-            <ImagePlus size={18}/>
-          </div>
-        )}
-        <button onClick={() => ref.current?.click()}
-          className="text-xs font-semibold text-white/35 underline-offset-2 transition hover:text-white/60 hover:underline">
-          {value ? "Remplacer" : "Importer le logo"}
-        </button>
-        <input ref={ref} type="file" accept="image/*" onChange={handleFile} className="hidden"/>
-      </div>
-    </div>
-  );
-}
-
-/** Textarea qui grandit automatiquement avec son contenu */
-function DAutoGrow({ value, onChange, placeholder, onFocus, onBlur }: {
-  value: string; onChange: (v: string) => void; placeholder?: string;
-  onFocus?: () => void; onBlur?: () => void;
-}) {
-  const { iB, iBH, txt } = useInputTheme();
-  const ref = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    if (!ref.current) return;
-    ref.current.style.height = "auto";
-    ref.current.style.height = ref.current.scrollHeight + "px";
-  }, [value]);
-  return (
-    <textarea
-      ref={ref}
-      rows={1}
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      placeholder={placeholder}
-      style={{ resize: "none", overflow: "auto", minHeight: "28px", maxHeight: "72px" }}
-      className={`w-full rounded-lg ${iB} ${iBH} px-2.5 py-1.5 text-xs ${txt} outline-none transition`}
-    />
-  );
-}
-
-/** Ligne de prestation — composant séparé pour pouvoir utiliser useState (subs) */
-function ItemRow({ it, idx, totalItems, updItem, removeItem, activeColor, devise, catalogItems, onSaveToCatalog }: {
-  it: DocItem; idx: number; totalItems: number;
-  updItem: (i: number, k: keyof DocItem, v: string|number) => void;
-  removeItem: (i: number) => void;
-  activeColor: string; devise: string;
-  catalogItems: CatalogItem[];
-  onSaveToCatalog: (item: DocItem) => void;
-}) {
+export default function VueEnsemble() {
   const { isDark } = useTheme();
-  const [showSugg, setShowSugg] = useState(false);
-  const suggestions = useMemo(() => {
-    if (it.description.length < 2) return [];
-    const q = it.description.toLowerCase();
-    return catalogItems.filter(c => c.description.toLowerCase().includes(q)).slice(0, 6);
-  }, [it.description, catalogItems]);
-  // État local pour les sous-descriptions (évite le bug join [""] = "")
-  const [subs, setSubs] = useState<string[]>(() =>
-    it.sub_description ? it.sub_description.split("\n") : []
-  );
-  // Synchronisation si la fiche change (chargement d'un document)
-  const prevSub = useRef(it.sub_description);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [docs,      setDocs]      = useState<Doc[]>([]);
+  const [kpi,       setKpi]       = useState<KPI | null>(null);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState("");
+  const [dupNums,   setDupNums]   = useState<string[]>([]);
+
+  // ── Tokens thème ────────────────────────────────────────────────────────────
+  const pageBg       = isDark ? "bg-[#0f1117]" : "bg-gray-50";
+  const textPrimary  = isDark ? "#ffffff"                : "#111827";
+  const textSecond   = isDark ? "rgba(255,255,255,0.55)" : "#4b5563";
+  const textTertiary = isDark ? "rgba(255,255,255,0.40)" : "#6b7280";
+  const cardBg       = isDark ? "rgba(255,255,255,0.03)" : "#ffffff";
+  const cardBorder   = isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb";
+  const divider      = isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6";
+  const rowHover     = isDark ? "rgba(255,255,255,0.03)" : "#f9fafb";
+  const rowDivider   = isDark ? "rgba(255,255,255,0.04)" : "#f3f4f6";
+  const btnBg        = isDark ? "rgba(255,255,255,0.05)" : "#f9fafb";
+  const btnText      = isDark ? "rgba(255,255,255,0.40)" : "#6b7280";
+  const btnBorder    = isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb";
+  const actionBg     = isDark ? "rgba(255,255,255,0.04)" : "#f9fafb";
+  const actionText   = isDark ? "rgba(255,255,255,0.65)" : "#374151";
+  const actionBorder = isDark ? "rgba(255,255,255,0.07)" : "#e5e7eb";
+  const emptyIcon    = isDark ? "rgba(255,255,255,0.10)" : "#d1d5db";
+  const emptyText    = isDark ? "rgba(255,255,255,0.30)" : "#9ca3af";
+
+  // Redirection transparente si l'URL porte des params d'ouverture de l'éditeur
   useEffect(() => {
-    if (it.sub_description !== prevSub.current) {
-      prevSub.current = it.sub_description;
-      setSubs(it.sub_description ? it.sub_description.split("\n") : []);
+    const hasEditorParams = searchParams.has("new") || searchParams.has("type") || searchParams.has("from_contrat");
+    if (hasEditorParams) {
+      router.replace(`/client/factures/documents?${searchParams.toString()}`);
     }
-  }, [it.sub_description]);
+  }, [searchParams, router]);
 
-  function applySubs(next: string[]) {
-    setSubs(next);
-    updItem(idx, "sub_description", next.join("\n"));
-  }
-
-  const gross   = r2(it.quantity * it.unit_price);
-  const lineRem = r2(gross * (it.remise_pct || 0) / 100);
-  const lineHT  = r2(gross - lineRem);
-
-  return (
-    <motion.div layout initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, x:-16 }}
-      transition={{ duration:0.2, ease }}
-      className={`group rounded-xl border px-3 py-2.5 space-y-2 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-
-      {/* Ligne 1 : description + boutons */}
-      <div className="flex items-start gap-2">
-        <div className="flex-1 space-y-1">
-          <div className="relative">
-            <DAutoGrow
-              value={it.description}
-              onChange={v => { updItem(idx,"description", v.replace(/\n/g, " ")); setShowSugg(true); }}
-              onFocus={() => setShowSugg(true)}
-              onBlur={() => setTimeout(() => setShowSugg(false), 200)}
-              placeholder="Description de la prestation"
-            />
-            {showSugg && suggestions.length > 0 && (
-              <div className={`absolute left-0 top-full z-50 mt-0.5 w-full overflow-hidden rounded-xl border shadow-xl ${isDark ? "border-white/[0.08] bg-[#1a1a1a]" : "border-gray-200 bg-white"}`}>
-                {suggestions.map(s => (
-                  <button key={s.id}
-                    onMouseDown={e => e.preventDefault()}
-                    onClick={() => {
-                      updItem(idx, "description", s.description);
-                      updItem(idx, "unit", s.unit);
-                      updItem(idx, "unit_price", s.unit_price);
-                      updItem(idx, "vat_rate", s.vat_rate);
-                      setShowSugg(false);
-                    }}
-                    className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs transition ${isDark ? "hover:bg-white/[0.06] text-white/70" : "hover:bg-gray-50 text-gray-700"}`}>
-                    <span className="truncate font-medium">{s.description}</span>
-                    <span className={`shrink-0 text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                      {s.unit_price > 0 ? `${s.unit_price} €` : ""}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          {subs.map((line, li) => (
-            <div key={li} className="flex items-center gap-1 opacity-60">
-              <DInput small value={line}
-                onChange={v => { const n=[...subs]; n[li]=v; applySubs(n); }}
-                placeholder="Sous-description…"/>
-              <button onClick={() => applySubs(subs.filter((_,i)=>i!==li))}
-                className="shrink-0 text-white/20 transition hover:text-red-400">
-                <X size={9}/>
-              </button>
-            </div>
-          ))}
-          <button onClick={() => applySubs([...subs, ""])}
-            className="flex items-center gap-1 self-start text-xs text-white/20 transition hover:text-white/50">
-            <Plus size={8}/> sous-description
-          </button>
-        </div>
-        <div className="flex gap-1">
-          <button
-            onClick={() => onSaveToCatalog(it)}
-            title="Enregistrer dans le catalogue"
-            className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-amber-500/15 text-amber-400/40 transition hover:border-amber-500/35 hover:text-amber-400 opacity-0 group-hover:opacity-100 ${!it.description.trim() ? "invisible" : ""}`}>
-            <BookmarkPlus size={10}/>
-          </button>
-          <button onClick={() => removeItem(idx)} disabled={totalItems === 1}
-            className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-red-500/15 text-red-400/40 transition hover:border-red-500/35 hover:text-red-400 disabled:opacity-20 opacity-0 group-hover:opacity-100">
-            <Trash2 size={10}/>
-          </button>
-        </div>
-      </div>
-
-      {/* Ligne 2 : champs numériques — 2 lignes sur mobile, 1 ligne sur desktop */}
-      <div className="space-y-1.5 sm:space-y-0">
-        {/* Ligne 2a (toujours visible) : Unité + Qté + Prix HT */}
-        <div className="grid grid-cols-3 gap-1.5 sm:hidden">
-          <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
-          <DInput small type="number" value={String(it.quantity)}
-            onChange={v => updItem(idx,"quantity", v===""?0:isNaN(parseFloat(v))?it.quantity:parseFloat(v))} placeholder="1"/>
-          <DInput small type="number" value={String(it.unit_price)}
-            onChange={v => updItem(idx,"unit_price", v===""?0:isNaN(parseFloat(v))?it.unit_price:parseFloat(v))} placeholder="0.00"/>
-        </div>
-        {/* Ligne 2b (mobile) : Remise + TVA + Total */}
-        <div className="grid grid-cols-[1fr_1fr_auto] gap-1.5 items-center sm:hidden">
-          <div className="relative">
-            <DInput small type="number" value={String(it.remise_pct||"")}
-              onChange={v => updItem(idx,"remise_pct", v===""?0:isNaN(parseFloat(v))?it.remise_pct:parseFloat(v))} placeholder="0"/>
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white/30 pointer-events-none">%</span>
-          </div>
-          <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
-            options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
-          <span className="text-right text-xs font-bold whitespace-nowrap" style={{ color:activeColor }}>{fmtAmount(lineHT, devise)}</span>
-        </div>
-        {/* Ligne 2 (desktop) : tout en une ligne */}
-        <div className="hidden sm:grid grid-cols-[68px_46px_72px_60px_60px_1fr] gap-1.5 items-center">
-          <DSelect small value={it.unit} onChange={v => updItem(idx,"unit",v)} options={UNITS}/>
-          <DInput small type="number" value={String(it.quantity)}
-            onChange={v => updItem(idx,"quantity", v===""?0:isNaN(parseFloat(v))?it.quantity:parseFloat(v))} placeholder="1"/>
-          <DInput small type="number" value={String(it.unit_price)}
-            onChange={v => updItem(idx,"unit_price", v===""?0:isNaN(parseFloat(v))?it.unit_price:parseFloat(v))} placeholder="0.00"/>
-          <div className="relative">
-            <DInput small type="number" value={String(it.remise_pct||"")}
-              onChange={v => updItem(idx,"remise_pct", v===""?0:isNaN(parseFloat(v))?it.remise_pct:parseFloat(v))} placeholder="0"/>
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white/30 pointer-events-none">%</span>
-          </div>
-          <DSelect small value={String(it.vat_rate)} onChange={v => updItem(idx,"vat_rate",parseFloat(v))}
-            options={VAT_RATES.map(r => ({ val:String(r), label:`${r}%` }))}/>
-          <span className="text-right text-xs font-bold" style={{ color:activeColor }}>{fmtAmount(lineHT, devise)}</span>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function SectionLabel({ icon, label, hint }: { icon?: React.ReactNode; label: string; hint?: string }) {
-  const { isDark } = useTheme();
-  return (
-    <div className="flex items-center gap-2.5">
-      {icon && <span className={`shrink-0 ${isDark ? "text-white/25" : "text-gray-400"}`}>{icon}</span>}
-      <span className={`shrink-0 text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>{label}</span>
-      <div className={`flex-1 h-px ${isDark ? "bg-white/[0.06]" : "bg-gray-200"}`}/>
-      {hint && <span className={`shrink-0 text-[11px] ${isDark ? "text-white/20" : "text-gray-300"}`}>{hint}</span>}
-    </div>
-  );
-}
-
-export default function FacturesPage() {
-  const { isDark } = useTheme();
-
-  // ── Tokens thème ─────────────────────────────────────────────────────────────
-  const tw1  = isDark ? "text-white"        : "text-gray-900";
-  const tw2  = isDark ? "text-white/60"     : "text-gray-600";
-  const tw3  = isDark ? "text-white/40"     : "text-gray-500";
-  const tw4  = isDark ? "text-white/30"     : "text-gray-400";
-  const tw5  = isDark ? "text-white/25"     : "text-gray-400";
-  const tw6  = isDark ? "text-white/20"     : "text-gray-300";
-  const tbd1 = isDark ? "border-white/[0.08]" : "border-gray-200";
-  const tbd2 = isDark ? "border-white/[0.07]" : "border-gray-100";
-  const tbg1 = isDark ? "bg-white/[0.04]"  : "bg-gray-100";
-  const tbg2 = isDark ? "bg-white/[0.03]"  : "bg-gray-50";
-  const tbg3 = isDark ? "bg-white/[0.01]"  : "bg-white";
-  const tsep = isDark ? "bg-white/[0.05]"  : "bg-gray-100";
-  const tiB  = isDark
-    ? "bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.09)]"
-    : "bg-white border border-gray-200";
-  const tiBH = isDark ? "hover:border-[rgba(255,255,255,0.18)]" : "hover:border-gray-300";
-  const headerCls = isDark
-    ? "border-white/[0.07] bg-[rgba(17,17,17,0.97)]"
-    : "border-gray-200/80 bg-white/97";
-  const [documents,    setDocuments]    = useState<Document[]>([]);
-  const [selected,     setSelected]     = useState<Document|null>(null);
-  const [draft,        setDraft]        = useState<DraftDoc|null>(null);
-  const [items,        setItems]        = useState<DocItem[]>([EMPTY_ITEM()]);
-  const [dirty,        setDirty]        = useState(false);
-  const [loadingAll,   setLoadingAll]   = useState(true);
-  const [uid,          setUid]          = useState<string|null>(null);
-  const [activeOrgId,  setActiveOrgId]  = useState<string|null>(null);
-  const [activeOrgName,setActiveOrgName]= useState<string|null>(null);
-  const [saving,       setSaving]       = useState(false);
-  const [deleting,     setDeleting]     = useState(false);
-  const [converting,   setConverting]   = useState(false);
-  const [duplicating,  setDuplicating]  = useState(false);
-  const [toast,        setToast]        = useState<ToastData|null>(null);
-  const [query,        setQuery]        = useState("");
-  const [filterType,   setFilterType]   = useState<"tous"|DocType>("tous");
-  const [filterStatut, setFilterStatut] = useState<"tous"|DocStatut>("tous");
-  const [sortBy,       setSortBy]       = useState<"date"|"montant"|"echeance">("date");
-  const [mobileView,   setMobileView]   = useState<"list"|"editor"|"preview">("list");
-  const [sidebarOpen,  setSidebarOpen]  = useState(true);
-  const [confirmDel,   setConfirmDel]   = useState(false);
-  const [showPreview,  setShowPreview]  = useState(false);
-  const [sendingRelance,   setSendingRelance]   = useState(false);
-  const [isRelanceModal,   setIsRelanceModal]   = useState(false);
-  const [relanceAiLoading, setRelanceAiLoading] = useState(false);
-  const [showAiBox,    setShowAiBox]    = useState(false);
-  const [aiPrompt,     setAiPrompt]     = useState("");
-  const [aiLoading,    setAiLoading]    = useState(false);
-
-  const [logoSize,     setLogoSize]     = useState<"sm"|"md"|"lg">(() =>
-    typeof window !== "undefined" ? ((localStorage.getItem("pdf.logo_size") as "sm"|"md"|"lg") ?? "md") : "md");
-  const [logoHideName, setLogoHideName] = useState<boolean>(() =>
-    typeof window !== "undefined" ? localStorage.getItem("pdf.logo_hide_name") === "true" : false);
-  const [logoTransform, setLogoTransform] = useState<LogoTransform | null>(() => {
-    if (typeof window === "undefined") return null;
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      const s = localStorage.getItem("pdf.logo_transform");
-      return s ? (JSON.parse(s) as LogoTransform) : null;
-    } catch { return null; }
-  });
-  const saveLt = (t: LogoTransform | null) => {
-    setLogoTransform(t);
-    if (t) {
-      localStorage.setItem("pdf.logo_transform", JSON.stringify(t));
-      // Persiste aussi en base pour tous les appareils
-      if (uid) {
-        supabase.from("user_settings").upsert(
-          { user_id: uid, key: "brand.logo_transform", value: JSON.stringify(t) },
-          { onConflict: "user_id,key" }
-        ).then(() => {});
-      }
-    } else {
-      localStorage.removeItem("pdf.logo_transform");
-      if (uid) {
-        supabase.from("user_settings")
-          .delete().eq("user_id", uid).eq("key", "brand.logo_transform")
-          .then(() => {});
-      }
-    }
-  };
-
-  const [emailModal,   setEmailModal]   = useState(false);
-  const [emailTo,      setEmailTo]      = useState("");
-  const [emailSubject, setEmailSubject] = useState("");
-  const [emailMsg,     setEmailMsg]     = useState("");
-  const [sendingEmail, setSendingEmail] = useState(false);
-
-  const [payLinkModal,   setPayLinkModal]   = useState(false);
-  const [payLinkLoading, setPayLinkLoading] = useState(false);
-  const [payLinkUrl,     setPayLinkUrl]     = useState("");
-  const [copied,         setCopied]         = useState(false);
-
-  const [portalModal,   setPortalModal]   = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [portalUrl,     setPortalUrl]     = useState("");
-  const [portalCopied,  setPortalCopied]  = useState(false);
-
-  const [crmModal,      setCrmModal]      = useState(false);
-  const [crmQuery,      setCrmQuery]      = useState("");
-  const [crmClients,    setCrmClients]    = useState<CrmClient[]>([]);
-  const [crmLoading,    setCrmLoading]    = useState(false);
-
-  // ── Récurrence ──────────────────────────────────────────────────────────────
-  const [recurModal,    setRecurModal]    = useState(false);
-  const [recurFreq,     setRecurFreq]     = useState<RecurFreq>("mensuel");
-  const [docRecurCfg,   setDocRecurCfg]   = useState<{ freq: RecurFreq; next_date: string } | null>(null);
-
-  // ── Signature électronique ──────────────────────────────────────────────────
-  const [sigModal,      setSigModal]      = useState(false);
-  const [sigDrawing,    setSigDrawing]    = useState(false);
-  const sigCanvasRef   = useRef<HTMLCanvasElement>(null);
-  const sigLastPos     = useRef<{ x: number; y: number } | null>(null);
-  const [docSignature,  setDocSignature]  = useState<string | null>(null);
-
-  // ── Import CSV ──────────────────────────────────────────────────────────────
-  const [csvModal,      setCsvModal]      = useState(false);
-  const [csvRows,       setCsvRows]       = useState<{ nom: string; email: string; societe?: string; telephone?: string }[]>([]);
-  const [csvImporting,  setCsvImporting]  = useState(false);
-  const csvInputRef    = useRef<HTMLInputElement>(null);
-
-  // ── Paiements partiels ───────────────────────────────────────────────────────
-  const [payModal,     setPayModal]     = useState(false);
-  const [payments,     setPayments]     = useState<DocumentPayment[]>([]);
-  const [payAmount,    setPayAmount]    = useState("");
-  const [payDate,      setPayDate]      = useState(() => new Date().toISOString().slice(0, 10));
-  const [payMethod,    setPayMethod]    = useState("virement");
-  const [payNotes,     setPayNotes]     = useState("");
-  const [payLoading,   setPayLoading]   = useState(false);
-
-  // ── Rappels groupés ─────────────────────────────────────────────────────────
-  const [remindersModal, setRemindersModal] = useState(false);
-  const [sendingBulk,    setSendingBulk]   = useState(false);
-
-  // ── Paramètres entreprise (pré-remplissage) ───────────────────────────────
-  const [companyDefaults, setCompanyDefaults] = useState<CompanySettings | null>(null);
-
-  // ── Catalogue articles ────────────────────────────────────────────────────
-  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
-
-  // ── Régime fiscal ─────────────────────────────────────────────────────────
-  const [regimeFiscal, setRegimeFiscal] = useState<RegimeFiscal>(null);
-
-  // ── Journal d'audit ───────────────────────────────────────────────────────
-  const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
-
-  // ── UI état éditeur tabulé ─────────────────────────────────────────────────
-  type EditorTab = "general"|"client"|"lignes"|"design"|"options"|"paiements"|"historique";
-  const [activeEditorTab, setActiveEditorTab] = useState<EditorTab>("general");
-  const [previewPanelOpen, setPreviewPanelOpen] = useState(true);
-
-  const totals = useMemo(
-    () => calcTotals(items, draft?.remise_pct ?? 0, draft?.acompte ?? 0),
-    [items, draft?.remise_pct, draft?.acompte]
-  );
-
-  const stats = useMemo(() => {
-    const factures  = documents.filter(d => d.type === "facture");
-    const ca = factures
-      .filter(d => d.statut === "payé")
-      .reduce((s,d) => s + (d.total_ttc||0), 0)
-      + factures
-      .filter(d => d.statut === "partiellement_payé")
-      .reduce((s,d) => s + (d.montant_paye||0), 0);
-    const pendingAmt = factures
-      .filter(d => d.statut === "envoyé" || d.statut === "partiellement_payé")
-      .reduce((s,d) => s + ((d.total_ttc||0) - (d.montant_paye||0)), 0);
-    const overdueAmt = factures.filter(d => d.statut === "en_retard").reduce((s,d) => s + (d.total_ttc||0), 0);
-    return { ca, pendingAmt, overdueAmt };
-  }, [documents]);
-
-  const overdueWithEmail = useMemo(
-    () => documents.filter(d => d.type === "facture" && d.statut === "en_retard" && d.client_email),
-    [documents]
-  );
-
-  const caByMonth = useMemo(() => {
-    const now = new Date();
-    const months: { key: string; label: string; ca: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
-      months.push({ key, label, ca: 0 });
-    }
-    documents
-      .filter(d => d.type === "facture" && d.statut === "payé" && d.date_document)
-      .forEach(d => {
-        const key = d.date_document.slice(0, 7);
-        const m = months.find(mo => mo.key === key);
-        if (m) m.ca += d.total_ttc || 0;
-      });
-    return months;
-  }, [documents]);
-
-  // ── Liens Avoir ↔ Facture source ─────────────────────────────────────────
-  const docById = useMemo(() => new Map(documents.map(d => [d.id, d])), [documents]);
-  const avoirsBySourceId = useMemo(() => {
-    const map = new Map<string, Document[]>();
-    documents.filter(d => d.type === "avoir" && d.source_id).forEach(d => {
-      const arr = map.get(d.source_id!) ?? [];
-      arr.push(d);
-      map.set(d.source_id!, arr);
-    });
-    return map;
-  }, [documents]);
-
-  const fetchDocs = useCallback(async () => {
-    setLoadingAll(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoadingAll(false); return; }
-    setUid(user.id);
-
-    // Detect org context: user is owner or admin of an org
-    const { data: myOrgs } = await supabase
-      .from("organization_members")
-      .select("organization_id, role, organizations!inner(name)")
-      .eq("user_id", user.id)
-      .in("role", ["owner", "admin"])
-      .is("suspended_at", null)
-      .limit(1);
-    let orgId: string | null = null;
-    if (myOrgs?.length) {
-      orgId = myOrgs[0].organization_id as string;
-      const orgRow = myOrgs[0].organizations as { name: string } | { name: string }[] | null;
-      const orgName = Array.isArray(orgRow) ? orgRow[0]?.name : orgRow?.name ?? null;
-      setActiveOrgId(orgId);
-      setActiveOrgName(orgName ?? null);
-    }
-
-    // If in org context, RLS returns personal docs (docs_select_own) + org docs
-    // (org_select_documents). No client-side user_id filter needed.
-    let q = supabase.from("documents").select("*").order("updated_at", { ascending: false }).limit(1000);
-    if (!orgId) q = q.eq("user_id", user.id);
-    const { data, error } = await q;
-    if (error) { showToast("error", `Chargement impossible : ${error.message}`); setLoadingAll(false); return; }
-    const docs = (data as Document[]) ?? [];
-    // Auto-passage en_retard pour les factures envoyées dont l'échéance est dépassée
-    const today = new Date().toISOString().slice(0, 10);
-    const toOverdue = docs.filter(d =>
-      d.type === "facture" && d.statut === "envoyé" &&
-      d.date_echeance && d.date_echeance < today
-    );
-    if (toOverdue.length) {
-      await supabase.from("documents").update({ statut: "en_retard" }).in("id", toOverdue.map(d => d.id));
-      toOverdue.forEach(d => { d.statut = "en_retard"; });
-    }
-    setDocuments(docs);
-    setLoadingAll(false);
-  }, []);
-
-  useEffect(() => { fetchDocs(); }, [fetchDocs]);
-
-  // Charger les paramètres entreprise (org settings si contexte org, sinon user settings)
-  useEffect(() => {
-    if (activeOrgId) {
-      fetchOrgSettings(activeOrgId).then(org => {
-        // Fall back to user settings for any unset org keys
-        fetchCompanySettings().then(user => {
-          setCompanyDefaults({
-            logoUrl:         org.logoUrl         || user.logoUrl,
-            name:            org.name            || user.name,
-            email:           org.email           || user.email,
-            website:         org.website         || user.website,
-            phone:           org.phone           || user.phone,
-            address:         org.address         || user.address,
-            postal_code:     org.postal_code     || user.postal_code,
-            city:            org.city            || user.city,
-            country:         org.country         || user.country,
-            siret:           org.siret           || user.siret,
-            ape:             org.ape             || user.ape,
-            vat_number:      org.vat_number      || user.vat_number,
-            iban:            org.iban            || user.iban,
-            bic:             org.bic             || user.bic,
-            forme_juridique: org.forme_juridique || user.forme_juridique,
-            capital_social:  org.capital_social  || user.capital_social,
-            garantie:        org.garantie        || user.garantie,
-            mentions_legales:org.mentions_legales|| user.mentions_legales,
-            logoSize:        org.logoSize        !== "md" ? org.logoSize  : user.logoSize,
-            logoHideName:    org.logoHideName    || user.logoHideName,
-            template:        org.template        !== "modern" ? org.template : user.template,
-            color:           org.color           !== "#FFB900" ? org.color  : user.color,
-            logoTransform:   org.logoTransform   ?? user.logoTransform,
-          });
-        });
-      });
-    } else {
-      fetchCompanySettings().then(setCompanyDefaults);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeOrgId]);
-
-  // Appliquer logoTransform depuis la DB si localStorage n'en a pas
-  useEffect(() => {
-    if (companyDefaults?.logoTransform && logoTransform === null) {
-      setLogoTransform(companyDefaults.logoTransform);
-    }
-  // logoTransform intentionnellement absent des deps : on ne re-applique qu'au premier chargement
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyDefaults]);
-
-  // Charger le catalogue d'articles
-  useEffect(() => {
-    fetch("/api/catalog").then(r => r.json()).then(({ items }) => {
-      if (Array.isArray(items)) setCatalogItems(items);
-    }).catch(() => {});
-  }, []);
-
-  // Charger le régime fiscal sauvegardé
-  useEffect(() => {
-    supabase.from("user_settings").select("value").eq("key", "brand.regime_fiscal").maybeSingle()
-      .then(({ data }) => { if (data?.value) setRegimeFiscal(data.value as RegimeFiscal); });
-  }, []);
-
-  // Charger les paiements quand une facture est sélectionnée
-  useEffect(() => {
-    if (!selected || selected.type !== "facture") { setPayments([]); return; }
-    supabase.from("document_payments")
-      .select("*")
-      .eq("document_id", selected.id)
-      .order("date", { ascending: false })
-      .then(({ data }) => setPayments((data ?? []) as DocumentPayment[]));
-  }, [selected?.id]);
-
-  // Avertir si l'utilisateur quitte la page avec des modifications non sauvegardées
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
-
-  // Auto-save avec debounce 2s (documents existants uniquement)
-  // On utilise un ref pour éviter la stale-closure : le timer capture toujours
-  // la dernière version de handleSave (avec le bon `selected` / `draft`).
-  const autoSaveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleSaveRef  = useRef(handleSave);
-  useEffect(() => { handleSaveRef.current = handleSave; }); // sync à chaque render
-
-  useEffect(() => {
-    if (!dirty || !selected) return;
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => { handleSaveRef.current(); }, 2000);
-    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [dirty, selected]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Charger le journal d'audit quand un document est ouvert
-  useEffect(() => {
-    if (!selected) { setAuditLog([]); return; }
-    fetch(`/api/factures/audit?document_id=${selected.id}`)
-      .then(r => r.json())
-      .then(({ entries }: { entries?: AuditEntry[] }) => setAuditLog(entries ?? []))
-      .catch(() => {});
-  }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Charger signature + récurrence depuis le document DB
-  useEffect(() => {
-    if (!selected) { setDocSignature(null); setDocRecurCfg(null); return; }
-    setDocSignature(selected.signature_data ?? null);
-    if (selected.recur_freq && selected.recur_next_date) {
-      setDocRecurCfg({ freq: selected.recur_freq as RecurFreq, next_date: selected.recur_next_date });
-    } else {
-      setDocRecurCfg(null);
-    }
-  }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function showToast(type: "success"|"error", msg: string) { setToast({ type, msg } as ToastData); }
-
-  async function applyRegime(regimeId: RegimeFiscal) {
-    if (!regimeId) return;
-    const regime = REGIMES_FISCAUX.find(r => r.id === regimeId);
-    if (!regime) return;
-    setRegimeFiscal(regimeId);
-    updDraft("mentions_legales", regime.mentions);
-    if (uid) {
-      await supabase.from("user_settings").upsert(
-        { user_id: uid, key: "brand.regime_fiscal", value: regimeId, updated_at: new Date().toISOString() },
-        { onConflict: "user_id,key" }
-      );
-      showToast("success", `Régime "${regime.label}" mémorisé`);
-    }
-  }
-
-  async function clearRegime() {
-    setRegimeFiscal(null);
-    updDraft("mentions_legales", "");
-    if (uid) {
-      await supabase.from("user_settings")
-        .delete()
-        .eq("user_id", uid)
-        .eq("key", "brand.regime_fiscal");
-    }
-  }
-
-  const saveToCatalog = useCallback(async (item: DocItem) => {
-    if (!item.description.trim()) return;
-    try {
-      const res = await fetch("/api/catalog", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          description: item.description.trim(),
-          unit: item.unit || "",
-          unit_price: item.unit_price || 0,
-          vat_rate: item.vat_rate || 20,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      const { item: newItem } = await res.json();
-      setCatalogItems(prev => [newItem, ...prev]);
-      showToast("success", "Article enregistré dans le catalogue");
-    } catch {
-      showToast("error", "Impossible d'enregistrer dans le catalogue");
-    }
-  }, []);
-
-  const logAudit = useCallback(async (
-    action: string,
-    docId?: string,
-    details?: Record<string, string>,
-  ) => {
-    const id = docId ?? selected?.id;
-    if (!id) return;
-    try {
-      const res = await fetch("/api/factures/audit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ document_id: id, action, details: details ?? {} }),
-      });
-      if (res.ok) {
-        const { entry } = await res.json() as { entry: AuditEntry };
-        setAuditLog(prev => [entry, ...prev]);
-      }
-    } catch { /* audit failure is non-blocking */ }
-  }, [selected?.id]);
-
-  const downloadXml = useCallback(async () => {
-    if (!draft) return;
-    const { generateFacturX } = await import("@/lib/pdf/facturx");
-    const fxItems = items.map(it => {
-      const gross   = r2(it.quantity * it.unit_price);
-      const lineRem = r2(gross * (it.remise_pct || 0) / 100);
-      return {
-        description: [it.description, it.sub_description].filter(Boolean).join(" — ") || "(description)",
-        quantity:    it.quantity,
-        unit:        it.unit || "",
-        unit_price:  it.unit_price,
-        total_ht:    r2(gross - lineRem),
-        vat_rate:    it.vat_rate,
-      };
-    });
-    const xml = generateFacturX({
-      type:     draft.type === "avoir" ? "credit_note" : "invoice",
-      reference: draft.numero || (draft.type === "avoir" ? "AVOIR" : "FACTURE"),
-      issue_date: draft.date_document,
-      due_date:   draft.date_echeance || null,
-      seller: {
-        name:        draft.emetteur_nom,
-        address:     draft.emetteur_adresse,
-        postal_code: draft.emetteur_code_postal,
-        city:        draft.emetteur_ville,
-        country:     draft.emetteur_pays || "France",
-        siret:       draft.emetteur_siret || undefined,
-        vat_number:  draft.emetteur_tva  || undefined,
-        email:       draft.emetteur_email || undefined,
-      },
-      buyer: {
-        name:        draft.client_nom,
-        company:     draft.client_societe || undefined,
-        address:     draft.client_adresse || undefined,
-        postal_code: draft.client_code_postal || undefined,
-        city:        draft.client_ville || undefined,
-        country:     draft.client_pays || undefined,
-        vat_number:  draft.client_tva  || undefined,
-        email:       draft.client_email || undefined,
-      },
-      items:    fxItems,
-      totals,
-      currency: draft.devise || "EUR",
-      payment_conditions: draft.conditions || null,
-      notes:    draft.notes  || null,
-      rib_iban: draft.rib_iban || null,
-      regime:   regimeFiscal,
-    });
-    const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
-    const url  = URL.createObjectURL(blob);
-    const a    = Object.assign(document.createElement("a"), {
-      href: url,
-      download: `${draft.numero || "facture"}-facturx.xml`,
-    });
-    a.click();
-    URL.revokeObjectURL(url);
-    void logAudit("xml_exporté", undefined, { reference: draft.numero });
-  }, [draft, items, totals, regimeFiscal, logAudit]);
-
-  async function openDoc(doc: Document) {
-    setSelected(doc);
-    setDraft({
-      type:             doc.type,
-      numero:           doc.numero,
-      statut:           doc.statut,
-      sujet:            doc.sujet             ?? "",
-      emetteur_nom:          doc.emetteur_nom         ?? "",
-      emetteur_email:        doc.emetteur_email       ?? "",
-      emetteur_adresse:      doc.emetteur_adresse     ?? "",
-      emetteur_ville:        doc.emetteur_ville       ?? "",
-      emetteur_code_postal:  doc.emetteur_code_postal ?? "",
-      emetteur_pays:         doc.emetteur_pays        ?? "",
-      emetteur_siret:        doc.emetteur_siret       ?? "",
-      emetteur_tva:     doc.emetteur_tva      ?? "",
-      emetteur_logo:    doc.emetteur_logo     ?? "",
-      client_nom:          doc.client_nom          ?? "",
-      client_societe:      doc.client_societe      ?? "",
-      client_email:        doc.client_email        ?? "",
-      client_telephone:    doc.client_telephone    ?? "",
-      client_adresse:      doc.client_adresse      ?? "",
-      client_ville:        doc.client_ville        ?? "",
-      client_code_postal:  doc.client_code_postal  ?? "",
-      client_pays:         doc.client_pays         ?? "",
-      client_tva:          doc.client_tva          ?? "",
-      date_document:    doc.date_document,
-      date_echeance:    doc.date_echeance     ?? "",
-      remise_pct:       doc.remise_pct        ?? 0,
-      acompte:          doc.acompte           ?? 0,
-      devise:           doc.devise            ?? "EUR",
-      rib_titulaire:    doc.rib_titulaire     ?? "",
-      rib_iban:         doc.rib_iban          ?? "",
-      rib_bic:          doc.rib_bic           ?? "",
-      rib_banque:       doc.rib_banque        ?? "",
-      notes:            doc.notes             ?? "",
-      conditions:       doc.conditions        ?? "",
-      mentions_legales: doc.mentions_legales  ?? "",
-      couleur:          doc.couleur           ?? "#FFB900",
-      template:         (doc.template as TemplateType) ?? "modern",
-      contact_id:       doc.contact_id        ?? null,
-    });
-    const { data } = await supabase.from("document_items").select("*").eq("document_id", doc.id).order("position");
-    setItems((data as DocItem[])?.length
-      ? (data as DocItem[]).map(it => {
-          const [main, ...rest] = (it.description || "").split("\n");
-          return { ...it, description: main || "", sub_description: rest.join("\n") };
-        })
-      : [EMPTY_ITEM()]);
-    setDirty(false);
-    setConfirmDel(false);   // évite que la modale de suppression reste ouverte sur le mauvais doc
-    setShowPreview(false);  // ferme le panneau aperçu du doc précédent
-    setMobileView("editor");
-  }
-
-  async function newDoc(type: DocType = "facture") {
-    const co = companyDefaults;
-    setSelected(null);
-    // Numéro local provisoire affiché immédiatement
-    let numero = newNumero(type, documents);
-    try {
-      const res = await fetch("/api/factures/numero", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
-      });
-      if (res.ok) { const d = await res.json() as { numero?: string }; if (d.numero) numero = d.numero; }
-    } catch { /* garder numéro local */ }
-    setDraft({
-      ...EMPTY_DRAFT(),
-      type,
-      numero,
-      template: (co?.template as TemplateType) ?? "modern",
-      couleur:  co?.color ?? "#FFB900",
-      // Pré-remplissage depuis les paramètres entreprise
-      emetteur_nom:         co?.name        || "",
-      emetteur_email:       co?.email       || "",
-      emetteur_adresse:     co?.address     || "",
-      emetteur_ville:       co?.city        || "",
-      emetteur_code_postal: co?.postal_code || "",
-      emetteur_pays:        co?.country     || "",
-      emetteur_siret:       co?.siret       || "",
-      emetteur_tva:     co?.vat_number  || "",
-      emetteur_logo:    co?.logoUrl     || "",
-      rib_iban:         co?.iban        || "",
-      rib_bic:          co?.bic         || "",
-      rib_titulaire:    co?.name        || "",
-      mentions_legales: regimeFiscal
-        ? (REGIMES_FISCAUX.find(r => r.id === regimeFiscal)?.mentions ?? "")
-        : (co?.mentions_legales || ""),
-    });
-    setItems([EMPTY_ITEM()]);
-    setDirty(true);
-    setMobileView("editor");
-  }
-
-  function updDraft(k: keyof DraftDoc, v: string|number) {
-    // Numéro immuable après émission (conformité légale)
-    if (k === "numero" && draft?.statut !== "brouillon") return;
-    setDraft(d => d ? { ...d, [k]: v } : d);
-    setDirty(true);
-  }
-
-  function updItem(idx: number, k: keyof DocItem, v: string|number) {
-    setItems(p => p.map((it, i) => i === idx ? { ...it, [k]: v } : it));
-    setDirty(true);
-  }
-  function addItem()  { setItems(p => [...p, { ...EMPTY_ITEM(), position: p.length }]); setDirty(true); }
-  function removeItem(idx: number) {
-    setItems(p => p.filter((_,i) => i !== idx).map((it,i) => ({ ...it, position:i })));
-    setDirty(true);
-  }
-
-  async function newAvoir(sourceDoc: Document) {
-    if (!uid) return;
-    setConverting(true);
-    try {
-      // Charger les lignes de la facture source
-      const { data: srcItems } = await supabase
-        .from("document_items")
-        .select("*")
-        .eq("document_id", sourceDoc.id)
-        .order("position");
-      let avoirNum = newNumero("avoir", documents);
-      try {
-        const numRes = await fetch("/api/factures/numero", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "avoir" }),
-        });
-        if (numRes.ok) { const nd = await numRes.json() as { numero?: string }; if (nd.numero) avoirNum = nd.numero; }
-      } catch { /* garder numéro local */ }
-      const { data: avoirDoc, error } = await supabase.from("documents").insert({
-        user_id:           uid,
-        type:              "avoir",
-        numero:            avoirNum,
-        statut:            "brouillon",
-        source_id:         sourceDoc.id,
-        sujet:             `Avoir sur facture ${sourceDoc.numero}`,
-        emetteur_nom:      sourceDoc.emetteur_nom,
-        emetteur_email:    sourceDoc.emetteur_email,
-        emetteur_adresse:  sourceDoc.emetteur_adresse,
-        emetteur_ville:    sourceDoc.emetteur_ville,
-        emetteur_code_postal: sourceDoc.emetteur_code_postal,
-        emetteur_pays:     sourceDoc.emetteur_pays,
-        emetteur_siret:    sourceDoc.emetteur_siret,
-        emetteur_tva:      sourceDoc.emetteur_tva,
-        emetteur_logo:     sourceDoc.emetteur_logo,
-        client_nom:        sourceDoc.client_nom,
-        client_societe:    sourceDoc.client_societe,
-        client_email:      sourceDoc.client_email,
-        client_telephone:  sourceDoc.client_telephone,
-        client_adresse:    sourceDoc.client_adresse,
-        client_ville:      sourceDoc.client_ville,
-        client_code_postal: sourceDoc.client_code_postal,
-        client_pays:       sourceDoc.client_pays,
-        client_tva:        sourceDoc.client_tva,
-        date_document:     new Date().toISOString().slice(0, 10),
-        devise:            sourceDoc.devise || "EUR",
-        couleur:           sourceDoc.couleur || "#FFB900",
-        template:          sourceDoc.template || "modern",
-        notes:             `Avoir relatif à la facture ${sourceDoc.numero} du ${fmtDate(sourceDoc.date_document)}.`,
-        conditions:        "",
-        mentions_legales:  "",
-        remise_pct:        0,
-        acompte:           0,
-        total_ht:          sourceDoc.total_ht,
-        total_tva:         sourceDoc.total_tva,
-        total_ttc:         sourceDoc.total_ttc,
-        ...(activeOrgId ? { organization_id: activeOrgId } : {}),
-      }).select().single();
-      if (error || !avoirDoc) { showToast("error", "Erreur création avoir."); return; }
-      if ((srcItems ?? []).length > 0) {
-        await supabase.from("document_items").insert(
-          (srcItems as DocItem[]).map((it, i) => ({
-            document_id:     (avoirDoc as Document).id,
-            position:        i,
-            description:     it.description,
-            sub_description: it.sub_description || "",
-            unit:            it.unit || "",
-            quantity:        it.quantity,
-            unit_price:      it.unit_price,
-            vat_rate:        it.vat_rate ?? 20,
-            remise_pct:      it.remise_pct ?? 0,
-          }))
-        );
-      }
-      await fetchDocs();
-      openDoc(avoirDoc as Document);
-      showToast("success", `Avoir ${avoirNum} créé`);
-      void logAudit("avoir_généré", sourceDoc.id, { avoir_numero: avoirNum });
-      void logAudit("créé", (avoirDoc as Document).id, { numero: avoirNum });
-    } catch {
-      showToast("error", "Erreur lors de la création de l'avoir.");
-    } finally {
-      setConverting(false);
-    }
-  }
-
-  async function handleAiGenerate() {
-    if (!aiPrompt.trim() || aiLoading) return;
-    setAiLoading(true);
-    try {
-      const res = await fetch("/api/assistant/generate-doc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: aiPrompt }),
-      });
-      if (!res.ok) {
-        const err = await res.json() as { error?: string };
-        showToast("error", err.error ?? "Erreur IA");
-        return;
-      }
-      const { docData } = await res.json() as { docData: Record<string, unknown> };
-      const aiItems = (docData.items as Array<{ description: string; quantity: number; unit_price: number }> | undefined) ?? [];
-      if (aiItems.length === 0) { showToast("error", "Aucune ligne générée."); return; }
-      const newItems: DocItem[] = aiItems.map((it, i) => ({
-        ...EMPTY_ITEM(),
-        position:    i,
-        description: it.description ?? "",
-        quantity:    Number(it.quantity)   || 1,
-        unit_price:  Number(it.unit_price) || 0,
-      }));
-      setItems(newItems);
-      if (draft && !draft.sujet.trim() && typeof docData.subject === "string") {
-        updDraft("sujet", docData.subject);
-      }
-      setDirty(true);
-      setShowAiBox(false);
-      setAiPrompt("");
-      showToast("success", `${newItems.length} ligne${newItems.length > 1 ? "s" : ""} générée${newItems.length > 1 ? "s" : ""} par l'IA`);
-    } catch {
-      showToast("error", "Erreur lors de la génération IA.");
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
-  async function handleSave() {
-    if (!draft) { showToast("error", "Aucun document ouvert."); return; }
-    // ── Validation des champs obligatoires ───────────────────────────────────
-    if (!draft.sujet.trim()) { showToast("error", "L'objet / intitulé est requis."); return; }
-    if (!draft.client_nom.trim() && !draft.client_societe.trim()) { showToast("error", "Le nom ou la société du client est requis."); return; }
-    if (items.length === 0 || items.every(it => !it.description.trim())) { showToast("error", "Ajoutez au moins une ligne de prestation."); return; }
-    // Auto-génère le numéro côté serveur si vide
-    let workingDraft = draft;
-    if (!workingDraft.numero.trim()) {
-      try {
-        const numRes = await fetch("/api/factures/numero", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: workingDraft.type }),
-        });
-        const numData = await numRes.json() as { numero?: string };
-        const autoNum = numData.numero || newNumero(workingDraft.type, documents);
-        updDraft("numero", autoNum);
-        workingDraft = { ...workingDraft, numero: autoNum };
-      } catch {
-        const autoNum = newNumero(workingDraft.type, documents);
-        updDraft("numero", autoNum);
-        workingDraft = { ...workingDraft, numero: autoNum };
-      }
-    }
-    setSaving(true);
-    const { data:{ user }, error:authErr } = await supabase.auth.getUser();
-    if (authErr || !user) { showToast("error", "Non connecté."); setSaving(false); return; }
-    // Vérification unicité du numéro (nouveau document)
-    if (!selected) {
-      const { data: existing } = await supabase.from("documents")
-        .select("id").eq("user_id", user.id).eq("numero", workingDraft.numero).maybeSingle();
-      if (existing) {
-        const safeNum = workingDraft.numero + "-" + Date.now().toString().slice(-3);
-        updDraft("numero", safeNum);
-        workingDraft = { ...workingDraft, numero: safeNum };
-      }
-    }
-    const sd = workingDraft;  // "save draft" — snapshot validé
-
-    const payload = {
-      type:             sd.type,
-      numero:           sd.numero,
-      statut:           sd.statut,
-      sujet:            sd.sujet,
-      emetteur_nom:          sd.emetteur_nom,
-      emetteur_email:        sd.emetteur_email,
-      emetteur_adresse:      sd.emetteur_adresse,
-      emetteur_ville:        sd.emetteur_ville,
-      emetteur_code_postal:  sd.emetteur_code_postal,
-      emetteur_pays:         sd.emetteur_pays,
-      emetteur_siret:        sd.emetteur_siret,
-      emetteur_tva:          sd.emetteur_tva,
-      emetteur_logo:         sd.emetteur_logo,
-      client_nom:         sd.client_nom,
-      client_societe:     sd.client_societe,
-      client_email:       sd.client_email,
-      client_telephone:   sd.client_telephone,
-      client_adresse:     sd.client_adresse,
-      client_ville:       sd.client_ville,
-      client_code_postal: sd.client_code_postal,
-      client_pays:        sd.client_pays,
-      client_tva:         sd.client_tva,
-      date_document:    sd.date_document,
-      date_echeance:    sd.date_echeance || null,
-      remise_pct:       sd.remise_pct,
-      acompte:          sd.acompte,
-      devise:           sd.devise || "EUR",
-      rib_titulaire:    sd.rib_titulaire,
-      rib_iban:         sd.rib_iban,
-      rib_bic:          sd.rib_bic,
-      rib_banque:       sd.rib_banque,
-      notes:            sd.notes,
-      conditions:       sd.conditions,
-      mentions_legales: sd.mentions_legales,
-      couleur:          sd.couleur,
-      template:         sd.template ?? "modern",
-      total_ht:         totals.ht,
-      total_tva:        totals.tva,
-      total_ttc:        totals.ttc,
-      contact_id:       sd.contact_id ?? null,
-    };
-
-    let docId = selected?.id;
-
-    if (selected) {
-      const { error } = await supabase.from("documents").update(payload).eq("id", selected.id);
-      if (error) {
-        showToast("error", `Erreur : ${[error.message, error.details, error.hint].filter(Boolean).join(" | ")}`);
-        setSaving(false); return;
-      }
-    } else {
-      const insertData: Record<string, unknown> = { ...payload, user_id: user.id };
-      if (activeOrgId) insertData.organization_id = activeOrgId;
-      const { data, error } = await supabase.from("documents").insert(insertData).select().single();
-      if (error) {
-        showToast("error", `Erreur : ${[error.message, error.details, error.hint].filter(Boolean).join(" | ")}`);
-        setSaving(false); return;
-      }
-      docId = (data as Document).id;
-    }
-
-    if (docId) {
-      // Sauvegarde des lignes existantes pour rollback si l'insert échoue
-      const { data: backup } = await supabase.from("document_items").select("*").eq("document_id", docId);
-      const { error: delErr } = await supabase.from("document_items").delete().eq("document_id", docId);
-      if (delErr) { showToast("error", `Suppression lignes : ${delErr.message}`); setSaving(false); return; }
-      if (items.length) {
-        const rows = items.map((it,i) => ({
-          document_id:  docId,
-          position:     i,
-          description:  [it.description, it.sub_description].filter(Boolean).join("\n"),
-          unit:         it.unit        || "",
-          quantity:     it.quantity,
-          unit_price:   it.unit_price,
-          vat_rate:     it.vat_rate,
-          remise_pct:   it.remise_pct  || 0,
-        }));
-        const { error: insErr } = await supabase.from("document_items").insert(rows);
-        if (insErr) {
-          // Rollback : restaurer les anciennes lignes en excluant les colonnes
-          // générées côté serveur (id, created_at) pour éviter un conflit de PK.
-          if (backup?.length) {
-            const clean = backup.map(({ id: _id, created_at: _ca, ...rest }) => rest);
-            await supabase.from("document_items").insert(clean);
-          }
-          showToast("error", `Lignes : ${insErr.message}`); setSaving(false); return;
-        }
-      }
-    }
-
-    const wasNew = !selected;
-    showToast("success", "Document enregistré");
-    setDirty(false); setSaving(false);
-    await fetchDocs();
-    if (docId) {
-      const { data } = await supabase.from("documents").select("*").eq("id", docId).single();
-      if (data) setSelected(data as Document);
-      void logAudit(wasNew ? "créé" : "modifié", docId, { numero: workingDraft.numero });
-    }
-  }
-
-  async function handleDelete() {
-    if (!selected) return;
-    setDeleting(true);
-    const { error } = await supabase
-      .from("documents")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", selected.id);
-    setDeleting(false); setConfirmDel(false);
-    if (error) { showToast("error", error.message); return; }
-    setDocuments(p => p.filter(d => d.id !== selected.id));
-    setSelected(null); setDraft(null); setMobileView("list");
-    showToast("success", "Document archivé.");
-  }
-
-  async function handleStatut(statut: DocStatut) {
-    if (!selected) return;
-    const previous = selected.statut;
-    try {
-      const res = await fetch("/api/factures/statut", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ document_id: selected.id, statut }),
-      });
-      const data = await res.json() as { ok?: boolean; statut?: string; error?: string };
-      if (!res.ok) { showToast("error", data.error ?? "Erreur changement statut"); return; }
-      setSelected(s => s ? { ...s, statut } : s);
-      setDraft(d => d ? { ...d, statut } : d);
-      setDocuments(p => p.map(d => d.id === selected.id ? { ...d, statut } : d));
-      showToast("success", `Statut : ${STATUTS[statut].label}`);
-      // Log already inserted server-side; sync UI state
-      const entry = { id: crypto.randomUUID(), action: "statut_changé", details: { de: previous, vers: statut }, created_at: new Date().toISOString() };
-      setAuditLog(prev => [entry, ...prev]);
-    } catch {
-      showToast("error", "Erreur lors du changement de statut");
-    }
-  }
-
-  async function handleConvert() {
-    if (!selected || selected.type !== "devis") return;
-    setConverting(true);
-    const { data:{ user } } = await supabase.auth.getUser();
-    if (!user) { setConverting(false); return; }
-    const newNum = newNumero("facture", documents);
-    const { data: newDoc, error } = await supabase.from("documents").insert({
-      user_id: user.id, type:"facture", numero:newNum, statut:"brouillon",
-      sujet:             selected.sujet ?? "",
-      emetteur_nom:         selected.emetteur_nom,         emetteur_email:       selected.emetteur_email,
-      emetteur_adresse:     selected.emetteur_adresse,
-      emetteur_ville:       selected.emetteur_ville       ?? "",
-      emetteur_code_postal: selected.emetteur_code_postal ?? "",
-      emetteur_pays:        selected.emetteur_pays        ?? "",
-      emetteur_siret:       selected.emetteur_siret,      emetteur_tva:         selected.emetteur_tva ?? "",
-      emetteur_logo:        selected.emetteur_logo        ?? "",
-      client_nom:         selected.client_nom,        client_societe:     selected.client_societe    ?? "",
-      client_email:       selected.client_email,      client_telephone:   selected.client_telephone  ?? "",
-      client_adresse:     selected.client_adresse,
-      client_ville:       selected.client_ville       ?? "",
-      client_code_postal: selected.client_code_postal ?? "",
-      client_pays:        selected.client_pays        ?? "",
-      client_tva:         selected.client_tva         ?? "",
-      date_document:     new Date().toISOString().slice(0,10),
-      date_echeance:     selected.date_echeance,
-      remise_pct:        selected.remise_pct ?? 0,    acompte:0,
-      devise:            selected.devise ?? "EUR",
-      rib_titulaire:     selected.rib_titulaire ?? "", rib_iban: selected.rib_iban ?? "",
-      rib_bic:           selected.rib_bic ?? "",       rib_banque: selected.rib_banque ?? "",
-      notes:             selected.notes,               conditions: selected.conditions,
-      mentions_legales:  selected.mentions_legales  ?? "",
-      couleur:           selected.couleur ?? "#FFB900", template: selected.template ?? "modern",
-      total_ht:          selected.total_ht,  total_tva: selected.total_tva, total_ttc: selected.total_ttc,
-      ...(activeOrgId ? { organization_id: activeOrgId } : {}),
-    }).select().single();
-    if (error || !newDoc) { showToast("error", "Erreur lors de la conversion."); setConverting(false); return; }
-    const { data: srcItems } = await supabase.from("document_items").select("*").eq("document_id", selected.id);
-    if (srcItems?.length) {
-      const { error: convItemsErr } = await supabase.from("document_items").insert(
-        (srcItems as (DocItem & { document_id:string })[]).map((it,i) => {
-          const [main, ...rest] = (it.description || "").split("\n");
-          return {
-            document_id: (newDoc as Document).id, position:i,
-            description: [main, rest.join("\n")].filter(Boolean).join("\n"),
-            unit: it.unit||"", quantity: it.quantity, unit_price: it.unit_price,
-            vat_rate: it.vat_rate, remise_pct: it.remise_pct||0,
-          };
-        })
-      );
-      if (convItemsErr) showToast("error", `Lignes copiées avec erreur : ${convItemsErr.message}`);
-    }
-    setConverting(false);
-    showToast("success", `Devis converti → ${newNum}`);
-    await fetchDocs();
-    openDoc(newDoc as Document);
-  }
-
-  async function handleDuplicate() {
-    if (!selected || !draft) return;
-    setDuplicating(true);
-    const { data:{ user } } = await supabase.auth.getUser();
-    if (!user) { setDuplicating(false); return; }
-    const newNum = newNumero(draft.type, documents);
-    const { data: newDoc, error } = await supabase.from("documents").insert({
-      user_id:           user.id,
-      type:              draft.type,
-      numero:            newNum,
-      statut:            "brouillon",
-      sujet:             draft.sujet,
-      emetteur_nom:         draft.emetteur_nom,         emetteur_email:       draft.emetteur_email,
-      emetteur_adresse:     draft.emetteur_adresse,
-      emetteur_ville:       draft.emetteur_ville,
-      emetteur_code_postal: draft.emetteur_code_postal,
-      emetteur_pays:        draft.emetteur_pays,
-      emetteur_siret:       draft.emetteur_siret,       emetteur_tva:         draft.emetteur_tva,
-      emetteur_logo:        draft.emetteur_logo,
-      client_nom:         draft.client_nom,          client_societe:     draft.client_societe,
-      client_email:       draft.client_email,        client_telephone:   draft.client_telephone,
-      client_adresse:     draft.client_adresse,
-      client_ville:       draft.client_ville,
-      client_code_postal: draft.client_code_postal,
-      client_pays:        draft.client_pays,
-      client_tva:         draft.client_tva,
-      date_document:     new Date().toISOString().slice(0,10),
-      date_echeance:     "",
-      remise_pct:        draft.remise_pct,          acompte:          0,
-      devise:            draft.devise || "EUR",
-      rib_titulaire:     draft.rib_titulaire,       rib_iban:         draft.rib_iban,
-      rib_bic:           draft.rib_bic,             rib_banque:       draft.rib_banque,
-      notes:             draft.notes,               conditions:       draft.conditions,
-      mentions_legales:  draft.mentions_legales,
-      couleur:           draft.couleur,             template:         draft.template ?? "modern",
-      total_ht:          totals.ht,                 total_tva:        totals.tva,
-      total_ttc:         totals.ttc,
-      ...(activeOrgId ? { organization_id: activeOrgId } : {}),
-    }).select().single();
-    if (error || !newDoc) { showToast("error", "Erreur duplication."); setDuplicating(false); return; }
-    if (items.length) {
-      const { error: dupItemsErr } = await supabase.from("document_items").insert(
-        items.map((it,i) => ({
-          document_id: (newDoc as Document).id, position:i,
-          description: [it.description, it.sub_description].filter(Boolean).join("\n"),
-          unit: it.unit||"", quantity: it.quantity, unit_price: it.unit_price,
-          vat_rate: it.vat_rate, remise_pct: it.remise_pct||0,
-        }))
-      );
-      if (dupItemsErr) showToast("error", `Lignes dupliquées avec erreur : ${dupItemsErr.message}`);
-    }
-    setDuplicating(false);
-    showToast("success", `Dupliqué → ${newNum}`);
-    void logAudit("dupliqué", undefined, { nouveau_numero: newNum });
-    void logAudit("créé", (newDoc as Document).id, { numero: newNum });
-    await fetchDocs();
-    openDoc(newDoc as Document);
-  }
-
-  function openEmailModal() {
-    if (!draft || !selected) return;
-    setIsRelanceModal(false);
-    setEmailTo(draft.client_email || "");
-    setEmailSubject(`${draft.type === "facture" ? "Facture" : "Devis"} ${draft.numero} — ${draft.emetteur_nom || "DJAMA"}`);
-    setEmailMsg(`Bonjour ${draft.client_nom || ""},\n\nVeuillez trouver ci-joint votre ${draft.type === "facture" ? "facture" : "devis"}.\n\nCordialement,\n${draft.emetteur_nom || "DJAMA"}`);
-    setEmailModal(true);
-  }
-
-  function openRelanceModal() {
-    if (!draft || !selected) return;
-    const daysLate = draft.date_echeance
-      ? Math.floor((Date.now() - new Date(draft.date_echeance).getTime()) / 86_400_000)
-      : 0;
-    setIsRelanceModal(true);
-    setEmailTo(draft.client_email || "");
-    setEmailSubject(`Relance paiement — Facture ${draft.numero} — ${draft.emetteur_nom || "DJAMA"}`);
-    setEmailMsg(
-      `Bonjour ${draft.client_nom || ""},\n\n` +
-      `Sauf erreur de notre part, nous n'avons pas encore reçu le règlement de la facture ${draft.numero} ` +
-      `d'un montant de ${fmt(totals.ttc)}` +
-      (draft.date_echeance ? `, dont l'échéance était le ${fmtDate(draft.date_echeance)}${daysLate > 0 ? ` (il y a ${daysLate} jour${daysLate > 1 ? "s" : ""})` : ""}` : "") +
-      `.\n\nPourriez-vous nous confirmer la date de règlement ou nous indiquer si vous avez besoin d'informations complémentaires ?\n\nCordialement,\n${draft.emetteur_nom || "DJAMA"}`
-    );
-    setEmailModal(true);
-  }
-
-  async function handleAiRelance() {
-    if (!draft || !selected || relanceAiLoading) return;
-    const daysLate = draft.date_echeance
-      ? Math.floor((Date.now() - new Date(draft.date_echeance).getTime()) / 86_400_000)
-      : 0;
-    setRelanceAiLoading(true);
-    try {
-      const res = await fetch("/api/assistant/relance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: draft.type,
-          id: selected.id,
-          client_name: draft.client_nom || "Client",
-          reference: draft.numero,
-          amount: totals.ttc,
-          days: Math.max(0, daysLate),
-        }),
-      });
-      if (!res.ok) throw new Error("Erreur IA");
-      const data = await res.json() as { subject?: string; message?: string };
-      if (data.subject) setEmailSubject(data.subject);
-      if (data.message) setEmailMsg(data.message);
-    } catch {
-      showToast("error", "Impossible de générer le message de relance.");
-    } finally {
-      setRelanceAiLoading(false);
-    }
-  }
-
-  async function handleSendEmail() {
-    if (!selected || !emailTo) return;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTo)) {
-      showToast("error", "Adresse email invalide."); return;
-    }
-    setSendingEmail(true);
-    try {
-      const res = await fetch("/api/factures/email", {
-        method:"POST", headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ document_id:selected.id, to_email:emailTo, to_name:draft?.client_nom, subject:emailSubject, message:emailMsg }),
-      });
-      if (!res.ok) throw new Error("Erreur envoi");
-      const data = await res.json() as { ok?: boolean; statut?: string };
-      showToast("success", "Email envoyé"); setEmailModal(false);
-
-      // Auto-statut : si le serveur a passé brouillon → envoyé, sync l'état local
-      if (data.statut && data.statut !== selected.statut) {
-        const newStatut = data.statut as DocStatut;
-        setSelected(s => s ? { ...s, statut: newStatut } : s);
-        setDraft(d => d ? { ...d, statut: newStatut } : d);
-        setDocuments(p => p.map(d => d.id === selected.id ? { ...d, statut: newStatut } : d));
-        const emailEntry = { id: crypto.randomUUID(), action: "email_envoyé", details: { destinataire: emailTo }, created_at: new Date().toISOString() };
-        const statutEntry = { id: crypto.randomUUID(), action: "statut_changé", details: { de: selected.statut, vers: newStatut, source: "email_auto" }, created_at: new Date().toISOString() };
-        setAuditLog(prev => [statutEntry, emailEntry, ...prev]);
-      } else {
-        void logAudit("email_envoyé", undefined, { destinataire: emailTo });
-      }
-    } catch { showToast("error", "Erreur lors de l'envoi de l'email"); }
-    finally { setSendingEmail(false); }
-  }
-
-  async function handlePaymentLink() {
-    if (!selected || !draft) return;
-    setPayLinkLoading(true); setPayLinkUrl(""); setPayLinkModal(true);
-    try {
-      const res = await fetch("/api/stripe/payment-link", {
-        method:"POST", headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ document_id: selected.id }),
-      });
-      const data = await res.json() as { url?:string; error?:string };
-      if (!res.ok || data.error) throw new Error(data.error || "Erreur Stripe");
-      setPayLinkUrl(data.url || "");
-    } catch (err) {
-      showToast("error", err instanceof Error ? err.message : "Erreur Stripe");
-      setPayLinkModal(false);
-    } finally { setPayLinkLoading(false); }
-  }
-
-  async function handleCopyLink() {
-    if (!payLinkUrl) return;
-    await navigator.clipboard.writeText(payLinkUrl);
-    setCopied(true); setTimeout(() => setCopied(false), 2000);
-  }
-
-  async function handlePortalLink() {
-    if (!draft) return;
-    setPortalLoading(true); setPortalUrl(""); setPortalModal(true);
-    try {
-      const { data:{ session } } = await supabase.auth.getSession();
-      const res = await fetch("/api/portail/generer", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${session?.access_token || ""}` },
-        body: JSON.stringify({ client_nom:draft.client_nom, client_email:draft.client_email, expires_days:30 }),
-      });
-      const data = await res.json() as { url?:string; error?:string };
-      if (!res.ok || data.error) throw new Error(data.error || "Erreur portail");
-      setPortalUrl(data.url || "");
-    } catch (err) {
-      showToast("error", err instanceof Error ? err.message : "Erreur portail");
-      setPortalModal(false);
-    } finally { setPortalLoading(false); }
-  }
-
-  async function handleCopyPortal() {
-    if (!portalUrl) return;
-    await navigator.clipboard.writeText(portalUrl);
-    setPortalCopied(true); setTimeout(() => setPortalCopied(false), 2000);
-  }
-
-  async function openCrmModal() {
-    setCrmModal(true); setCrmQuery(""); setCrmLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setCrmLoading(false); return; }
-    const { data } = await supabase.from("contacts")
-      .select("id,name,company,email,phone,address")
-      .eq("user_id", user.id)
-      .order("name")
-      .limit(50);
-    setCrmClients((data as CrmClient[]) ?? []);
-    setCrmLoading(false);
-  }
-
-  async function searchCrm(q: string) {
-    setCrmQuery(q); setCrmLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setCrmLoading(false); return; }
-    const { data } = await supabase.from("contacts")
-      .select("id,name,company,email,phone,address")
-      .eq("user_id", user.id)
-      .or(`name.ilike.%${q}%,company.ilike.%${q}%,email.ilike.%${q}%`)
-      .limit(20);
-    setCrmClients((data as CrmClient[]) ?? []);
-    setCrmLoading(false);
-  }
-
-  function exportCSV() {
-    const header = ["Numéro","Type","Statut","Client","Société","Date","Échéance","HT","TVA","TTC","Devise"];
-    const rows = documents.map(d => [
-      d.numero, d.type, d.statut,
-      d.client_nom, d.client_societe,
-      fmtDate(d.date_document), fmtDate(d.date_echeance),
-      d.total_ht, d.total_tva, d.total_ttc, d.devise || "EUR",
-    ]);
-    const csv = [header, ...rows]
-      .map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = `documents-${new Date().toISOString().slice(0,10)}.csv`;
-    a.click(); URL.revokeObjectURL(url);
-  }
-
-  function applyCrmClient(c: CrmClient) {
-    setDraft(d => d ? {
-      ...d,
-      client_nom:       c.name        || "",
-      client_societe:   c.company     || "",
-      client_email:     c.email       || "",
-      client_telephone: c.phone       || "",
-      client_adresse:   c.address     || "",
-      contact_id:       c.id,
-    } : d);
-    setDirty(true);
-    setCrmModal(false);
-  }
-
-  // ── Récurrence ──────────────────────────────────────────────────────────────
-  function activateRecur() {
-    if (!selected || !draft) return;
-    const base = draft.date_echeance || draft.date_document || new Date().toISOString().slice(0, 10);
-    const cfg = { freq: recurFreq, next_date: nextRecurDate(base, recurFreq) };
-    setDocRecurCfg(cfg);
-    setSelected(s => s ? { ...s, recur_freq: cfg.freq, recur_next_date: cfg.next_date } : s);
-    void supabase.from("documents").update({ recur_freq: cfg.freq, recur_next_date: cfg.next_date }).eq("id", selected.id).eq("user_id", uid ?? "");
-    setRecurModal(false);
-    showToast("success", `Récurrence ${RECUR_FREQS.find(f => f.val === recurFreq)?.label ?? ""} activée.`);
-  }
-
-  async function handleDuplicateRecur(freq: RecurFreq, nextDate: string) {
-    if (!selected || !draft) return;
-    setDuplicating(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setDuplicating(false); return; }
-    const newNum = newNumero(draft.type, documents);
-    const { data: newDoc, error } = await supabase.from("documents").insert({
-      user_id: user.id, type: draft.type, numero: newNum, statut: "brouillon",
-      sujet: draft.sujet,
-      emetteur_nom: draft.emetteur_nom, emetteur_email: draft.emetteur_email,
-      emetteur_adresse: draft.emetteur_adresse, emetteur_ville: draft.emetteur_ville,
-      emetteur_code_postal: draft.emetteur_code_postal, emetteur_pays: draft.emetteur_pays,
-      emetteur_siret: draft.emetteur_siret, emetteur_tva: draft.emetteur_tva, emetteur_logo: draft.emetteur_logo,
-      client_nom: draft.client_nom, client_societe: draft.client_societe, client_email: draft.client_email,
-      client_telephone: draft.client_telephone, client_adresse: draft.client_adresse,
-      client_ville: draft.client_ville, client_code_postal: draft.client_code_postal,
-      client_pays: draft.client_pays, client_tva: draft.client_tva,
-      date_document: nextDate,
-      date_echeance: nextRecurDate(nextDate, freq),
-      remise_pct: draft.remise_pct, acompte: 0,
-      devise: draft.devise || "EUR",
-      rib_titulaire: draft.rib_titulaire, rib_iban: draft.rib_iban, rib_bic: draft.rib_bic, rib_banque: draft.rib_banque,
-      notes: draft.notes, conditions: draft.conditions, mentions_legales: draft.mentions_legales,
-      couleur: draft.couleur, template: draft.template ?? "modern",
-      total_ht: totals.ht, total_tva: totals.tva, total_ttc: totals.ttc,
-      ...(activeOrgId ? { organization_id: activeOrgId } : {}),
-    }).select().single();
-    if (error || !newDoc) { showToast("error", "Erreur création récurrence."); setDuplicating(false); return; }
-    if (items.length) {
-      await supabase.from("document_items").insert(
-        items.map((it, i) => ({
-          document_id: (newDoc as Document).id, position: i,
-          description: [it.description, it.sub_description].filter(Boolean).join("\n"),
-          unit: it.unit || "", quantity: it.quantity, unit_price: it.unit_price,
-          vat_rate: it.vat_rate, remise_pct: it.remise_pct || 0,
-        }))
-      );
-    }
-    const newCfg = { freq, next_date: nextRecurDate(nextDate, freq) };
-    void supabase.from("documents").update({ recur_freq: newCfg.freq, recur_next_date: newCfg.next_date }).eq("id", selected.id).eq("user_id", uid ?? "");
-    setDocRecurCfg(newCfg);
-    setSelected(s => s ? { ...s, recur_freq: newCfg.freq, recur_next_date: newCfg.next_date } : s);
-    setDuplicating(false);
-    showToast("success", `Prochaine facture → ${newNum}`);
-    await fetchDocs();
-    openDoc(newDoc as Document);
-  }
-
-  // ── Signature électronique ──────────────────────────────────────────────────
-  function sigGetPointer(nativeEvent: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) {
-    const rect = canvas.getBoundingClientRect();
-    const src  = "touches" in nativeEvent ? nativeEvent.touches[0] : nativeEvent as MouseEvent;
-    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
-  }
-  function sigStart(e: React.MouseEvent<HTMLCanvasElement>) {
-    setSigDrawing(true);
-    const canvas = sigCanvasRef.current; if (!canvas) return;
-    sigLastPos.current = sigGetPointer(e.nativeEvent, canvas);
-  }
-  function sigStartTouch(e: React.TouchEvent<HTMLCanvasElement>) {
-    setSigDrawing(true);
-    const canvas = sigCanvasRef.current; if (!canvas) return;
-    sigLastPos.current = sigGetPointer(e.nativeEvent, canvas);
-  }
-  function sigDraw(nativeEvent: MouseEvent | TouchEvent) {
-    if (!sigDrawing || !sigCanvasRef.current || !sigLastPos.current) return;
-    const canvas = sigCanvasRef.current;
-    const ctx = canvas.getContext("2d"); if (!ctx) return;
-    const pos = sigGetPointer(nativeEvent, canvas);
-    ctx.beginPath();
-    ctx.moveTo(sigLastPos.current.x, sigLastPos.current.y);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.strokeStyle = "#FFB900"; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
-    ctx.stroke();
-    sigLastPos.current = pos;
-  }
-  function sigEnd() { setSigDrawing(false); sigLastPos.current = null; }
-  function sigClear() {
-    const canvas = sigCanvasRef.current; if (!canvas) return;
-    canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
-  }
-  function sigSave() {
-    if (!sigCanvasRef.current || !selected) return;
-    const dataUrl = sigCanvasRef.current.toDataURL("image/png");
-    void supabase.from("documents").update({ signature_data: dataUrl }).eq("id", selected.id).eq("user_id", uid ?? "");
-    setDocSignature(dataUrl);
-    setSelected(s => s ? { ...s, signature_data: dataUrl } : s);
-    setSigModal(false);
-    showToast("success", "Signature enregistrée.");
-  }
-  function sigDelete() {
-    if (!selected) return;
-    void supabase.from("documents").update({ signature_data: null }).eq("id", selected.id).eq("user_id", uid ?? "");
-    setDocSignature(null);
-    setSelected(s => s ? { ...s, signature_data: null } : s);
-    showToast("success", "Signature supprimée.");
-  }
-
-  // ── Import CSV ──────────────────────────────────────────────────────────────
-  function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const rows = parseCSV(ev.target?.result as string);
-      setCsvRows(rows);
-      setCsvModal(true);
-    };
-    reader.readAsText(file, "utf-8");
-    e.target.value = "";
-  }
-  async function handleCsvImport() {
-    if (!csvRows.length) return;
-    setCsvImporting(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setCsvImporting(false); return; }
-    const rows = csvRows.map(r => ({
-      user_id: user.id, nom: r.nom || r.email, email: r.email || null,
-      societe: r.societe || null, telephone: r.telephone || null,
-    }));
-    const { error } = await supabase.from("clients_crm").upsert(rows, { onConflict: "email", ignoreDuplicates: true });
-    setCsvImporting(false);
-    if (error) { showToast("error", `Erreur : ${error.message}`); return; }
-    showToast("success", `${rows.length} contact${rows.length > 1 ? "s" : ""} importé${rows.length > 1 ? "s" : ""}.`);
-    setCsvRows([]); setCsvModal(false);
-  }
-
-  // ── Lien de signature devis ─────────────────────────────────────────────────
-  async function handleShareDevis(docId: string) {
-    // Lit le token existant AVANT d'en générer un nouveau
-    const { data: existing } = await supabase
-      .from("documents")
-      .select("share_token, share_token_expires_at")
-      .eq("id", docId)
-      .single();
-
-    const currentToken  = (existing as { share_token?: string | null } | null)?.share_token ?? null;
-    const expiresAt     = (existing as { share_token_expires_at?: string | null } | null)?.share_token_expires_at ?? null;
-    const isExpired     = expiresAt ? new Date(expiresAt) <= new Date() : false;
-
-    let token = currentToken;
-    if (!token || isExpired) {
-      // Génère uniquement si absent ou expiré — ne jamais casser un lien déjà envoyé
-      token = crypto.randomUUID();
-      await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: orgMember } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .in("role", ["owner", "admin"])
+        .is("suspended_at", null)
+        .limit(1)
+        .maybeSingle();
+
+      let query = supabase
         .from("documents")
-        .update({ share_token: token, share_token_expires_at: null })
-        .eq("id", docId);
+        .select("id,type,numero,statut,client_nom,client_societe,date_document,date_echeance,total_ttc,montant_paye")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+
+      if (orgMember?.organization_id) {
+        query = query.eq("organization_id", orgMember.organization_id);
+      } else {
+        query = query.eq("user_id", user.id);
+      }
+
+      const { data, error: dbErr } = await query.limit(200);
+      if (dbErr) throw dbErr;
+
+      const all = (data ?? []) as Doc[];
+      setDocs(all);
+
+      const factures = all.filter(d => d.type === "facture");
+      const devis    = all.filter(d => d.type === "devis");
+
+      const totalFacture  = factures.reduce((s, d) => s + (d.total_ttc || 0), 0);
+      const totalEncaisse = factures.reduce((s, d) => {
+        if (d.statut === "payé")               return s + (d.total_ttc || 0);
+        if (d.statut === "partiellement_payé") return s + (d.montant_paye || 0);
+        return s;
+      }, 0);
+      const totalAttente  = factures.filter(d => d.statut === "envoyé" || d.statut === "partiellement_payé").reduce((s, d) => {
+        const restant = (d.total_ttc || 0) - (d.montant_paye || 0);
+        return s + Math.max(0, restant);
+      }, 0);
+      const totalRetard   = factures.filter(d => d.statut === "en_retard").reduce((s, d) => {
+        const restant = (d.total_ttc || 0) - (d.montant_paye || 0);
+        return s + Math.max(0, restant);
+      }, 0);
+      const clients = new Set(all.map(d => d.client_societe || d.client_nom).filter(Boolean));
+
+      // Diagnostic numérotation : détecter les doublons
+      const numCount: Record<string, number> = {};
+      all.forEach(d => { numCount[d.numero] = (numCount[d.numero] ?? 0) + 1; });
+      setDupNums(Object.entries(numCount).filter(([,c]) => c > 1).map(([n]) => n));
+
+      setKpi({
+        total_facture:  totalFacture,
+        total_encaisse: totalEncaisse,
+        total_attente:  totalAttente,
+        total_retard:   totalRetard,
+        nb_factures:    factures.length,
+        nb_devis:       devis.length,
+        nb_clients:     clients.size,
+      });
+    } catch (e) {
+      console.error("[VueEnsemble]", e);
+      setError("Impossible de charger les données.");
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    const link = `${window.location.origin}/devis/${token}`;
-    try {
-      await navigator.clipboard.writeText(link);
-      showToast("success", "Lien de signature copié dans le presse-papiers !");
-    } catch {
-      alert(`Lien de signature :\n${link}`);
-    }
+  useEffect(() => { load(); }, [load]);
+
+  const recent = docs.slice(0, 8);
+
+  function fmt(n: number) {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(".", ",") + " M€";
+    if (n >= 1_000)     return (n / 1_000).toFixed(1).replace(".", ",") + " k€";
+    return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n) + " €";
   }
-
-  // ── Paiements partiels ───────────────────────────────────────────────────────
-  async function handleAddPayment() {
-    if (!selected || !uid) return;
-    const amount = parseFloat(payAmount.replace(",", "."));
-    if (isNaN(amount) || amount <= 0) { showToast("error", "Montant invalide."); return; }
-    setPayLoading(true);
-    const res = await fetch("/api/factures/paiement", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        document_id: selected.id,
-        amount, date: payDate, method: payMethod, notes: payNotes,
-      }),
-    });
-    const json = await res.json();
-    setPayLoading(false);
-    if (!res.ok) { showToast("error", json.error ?? "Erreur lors de l'enregistrement."); return; }
-    const { payments, montant_paye: total, statut: newStatut } = json as {
-      payments: DocumentPayment[]; montant_paye: number; statut: DocStatut;
-    };
-    setPayments(payments);
-    setSelected(s => s ? { ...s, montant_paye: total, statut: newStatut } : s);
-    setDraft(d => d ? { ...d, statut: newStatut } : d);
-    setDocuments(p => p.map(d => d.id === selected.id ? { ...d, montant_paye: total, statut: newStatut } : d));
-    setPayAmount(""); setPayNotes("");
-    showToast("success", `Paiement de ${fmtEur(amount)} enregistré.`);
-    void logAudit("paiement_ajouté", undefined, { montant: String(amount), méthode: payMethod });
-  }
-
-  async function handleDeletePayment(paymentId: string) {
-    if (!selected) return;
-    const res = await fetch("/api/factures/paiement", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payment_id: paymentId }),
-    });
-    const json = await res.json();
-    if (!res.ok) { showToast("error", json.error ?? "Erreur lors de la suppression."); return; }
-    const { payments, montant_paye: total, statut: newStatut } = json as {
-      payments: DocumentPayment[]; montant_paye: number; statut: DocStatut;
-    };
-    setPayments(payments);
-    setSelected(s => s ? { ...s, montant_paye: total, statut: newStatut } : s);
-    setDraft(d => d ? { ...d, statut: newStatut } : d);
-    setDocuments(p => p.map(d => d.id === selected.id ? { ...d, montant_paye: total, statut: newStatut } : d));
-    showToast("success", "Paiement supprimé.");
-    void logAudit("paiement_supprimé", undefined, { montant_restant: String(total) });
-  }
-
-  // ── Rappels groupés ─────────────────────────────────────────────────────────
-  async function handleBulkReminders() {
-    if (!overdueWithEmail.length) return;
-    setSendingBulk(true);
-    let sent = 0;
-    for (const doc of overdueWithEmail) {
-      try {
-        const daysLate = doc.date_echeance
-          ? Math.floor((Date.now() - new Date(doc.date_echeance).getTime()) / 86_400_000)
-          : 0;
-        // Générer le message IA — fallback statique si l'appel échoue
-        let subject = `Relance paiement — Facture ${doc.numero}`;
-        let message = `Bonjour ${doc.client_nom || ""},\n\nSauf erreur, nous n'avons pas reçu le règlement de la facture ${doc.numero} d'un montant de ${fmtEur(doc.total_ttc)}${daysLate > 0 ? `, en retard de ${daysLate} jour${daysLate > 1 ? "s" : ""}` : ""}.\n\nMerci de procéder au règlement dans les meilleurs délais.\n\nCordialement`;
-        try {
-          const aiRes = await fetch("/api/assistant/relance", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: "facture",
-              id: doc.id,
-              client_name: doc.client_nom || "Client",
-              reference: doc.numero,
-              amount: doc.total_ttc,
-              days: Math.max(0, daysLate),
-            }),
-          });
-          if (aiRes.ok) {
-            const aiData = await aiRes.json() as { subject?: string; message?: string };
-            if (aiData.subject) subject = aiData.subject;
-            if (aiData.message) message = aiData.message;
-          }
-        } catch { /* fallback statique */ }
-
-        const res = await fetch("/api/factures/email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            document_id: doc.id, to_email: doc.client_email, to_name: doc.client_nom,
-            subject, message,
-          }),
-        });
-        if (res.ok) sent++;
-      } catch { /* continue */ }
-    }
-    setSendingBulk(false);
-    setRemindersModal(false);
-    showToast("success", `${sent} relance${sent > 1 ? "s" : ""} envoyée${sent > 1 ? "s" : ""}.`);
-  }
-
-  const filtered = useMemo(() => {
-    let list = [...documents];
-    if (filterType !== "tous") list = list.filter(d => d.type === filterType);
-    if (filterStatut !== "tous") list = list.filter(d => d.statut === filterStatut);
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      list = list.filter(d =>
-        d.numero?.toLowerCase().includes(q) ||
-        d.client_nom?.toLowerCase().includes(q) ||
-        d.sujet?.toLowerCase().includes(q)
-      );
-    }
-    if (sortBy === "montant")   list.sort((a,b) => (b.total_ttc||0) - (a.total_ttc||0));
-    if (sortBy === "echeance")  list.sort((a,b) => (a.date_echeance||"9999") < (b.date_echeance||"9999") ? -1 : 1);
-    // sortBy === "date" uses default order (updated_at desc from DB)
-    return list;
-  }, [documents, filterType, filterStatut, sortBy, query]);
-
-  const PAGE_SIZE = 20;
-  const { page: listPage, setPage: setListPage, paginated: paginatedDocs, totalPages: listTotalPages, reset: resetListPage, totalItems: listTotal } = usePagination(filtered, PAGE_SIZE);
-  useEffect(() => { resetListPage(); }, [filterType, filterStatut, sortBy, query, resetListPage]);
-
-  const activeColor = draft?.couleur || "#FFB900";
-  const devise      = draft?.devise  || "EUR";
-  const fmt         = (n: number) => fmtAmount(n, devise);
 
   return (
-    <div className={`flex h-[calc(100vh-56px)] flex-col overflow-hidden ${isDark ? "bg-[#111111]" : "bg-[#f8f8f8]"}`}>
+    <div className={`min-h-full px-6 py-6 ${pageBg}`}>
 
       {/* ── Header ── */}
-      <div className={`shrink-0 border-b px-5 py-3.5 backdrop-blur-xl sm:px-8 ${headerCls}`}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div>
-            <h1 className={`text-base font-extrabold ${tw1}`}>Factures & Devis</h1>
-            <div className="flex items-center gap-2">
-              <p className={`text-xs ${tw4}`}>{documents.length} document{documents.length !== 1 ? "s" : ""}</p>
-                {activeOrgName && (
-                  <span className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold"
-                    style={{ background: "rgba(255,185,0,0.12)", color: "#FFB900", border: "1px solid rgba(255,185,0,0.25)" }}>
-                    <Building2 size={9} />
-                    {activeOrgName}
-                  </span>
-                )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {documents.length > 0 && (
-              <button onClick={exportCSV} title="Exporter CSV"
-                className={`hidden items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-3 py-2 text-xs font-semibold ${tw3} transition sm:flex`}>
-                <FileDown size={12}/> CSV
-              </button>
-            )}
-            <button onClick={() => newDoc("devis")}
-              className={`hidden items-center gap-1.5 rounded-xl ${tiB} ${tiBH} px-3 py-2 text-xs font-semibold ${tw3} transition sm:flex`}>
-              <Plus size={12}/> Devis
-            </button>
-            <button onClick={() => newDoc("facture")}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition hover:opacity-90"
-              style={{ background:"#FFB900", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(255,185,0,0.35)" }}>
-              <Plus size={13}/> Facture
-            </button>
-          </div>
+      <div className="mb-7 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: textPrimary }}>Vue d&apos;ensemble</h1>
+          <p className="mt-0.5 text-sm" style={{ color: textSecond }}>
+            Tableau de bord de votre activité de facturation
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={load}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition hover:opacity-80"
+            style={{ background: btnBg, color: btnText, border: `1px solid ${btnBorder}` }}
+          >
+            <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+            Actualiser
+          </button>
+          <Link
+            href="/client/factures/documents?new=1&type=facture"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-black transition hover:opacity-90"
+            style={{ background: GOLD }}
+          >
+            <Plus size={13} />
+            Nouvelle facture
+          </Link>
         </div>
       </div>
 
-      {/* ── Bandeau rappels en retard ── */}
-      <AnimatePresence>
-        {overdueWithEmail.length > 0 && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="shrink-0 overflow-hidden border-b border-red-500/[0.12] bg-[rgba(239,68,68,0.04)]">
-            <div className="flex items-center gap-3 px-5 py-2 sm:px-8">
-              <BellRing size={13} className="shrink-0 text-red-400/70"/>
-              <p className="flex-1 text-xs text-red-300/60">
-                <strong className="text-red-300/90">{overdueWithEmail.length}</strong> facture{overdueWithEmail.length > 1 ? "s" : ""} en retard avec email
-              </p>
-              <button onClick={() => setRemindersModal(true)}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/25 px-3 py-1 text-xs font-semibold text-red-400 transition hover:bg-red-500/[0.08]">
-                Envoyer relances
-              </button>
+      {error && (
+        <div className="mb-5 rounded-xl px-4 py-3 text-sm"
+          style={{ background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.2)" }}>
+          {error}
+        </div>
+      )}
+
+      {dupNums.length > 0 && (
+        <div className="mb-5 rounded-xl px-4 py-3 text-sm"
+          style={{ background: "rgba(248,113,113,0.08)", color: "#f87171", border: "1px solid rgba(248,113,113,0.2)" }}>
+          <strong>Diagnostic numérotation :</strong> {dupNums.length} numéro{dupNums.length > 1 ? "s" : ""} en doublon détecté{dupNums.length > 1 ? "s" : ""} — {dupNums.join(", ")}.
+          Les doublons sont signalés par <span className="rounded px-1 text-[10px] font-bold" style={{ background: "rgba(248,113,113,0.2)" }}>×2</span> dans le tableau.
+          Vérifiez les documents concernés dans l&apos;éditeur avant toute action.
+        </div>
+      )}
+
+      {/* ── KPI tiles ── */}
+      <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiTile
+          label="Total facturé" value={kpi ? fmt(kpi.total_facture) : "—"}
+          sub={kpi ? `${kpi.nb_factures} facture${kpi.nb_factures > 1 ? "s" : ""}` : undefined}
+          icon={TrendingUp} color={GOLD} bg="rgba(255,185,0,0.10)" border="rgba(255,185,0,0.22)"
+          loading={loading} isDark={isDark}
+        />
+        <KpiTile
+          label="Encaissé"
+          value={kpi ? (kpi.nb_factures === 0 ? "—" : fmt(kpi.total_encaisse)) : "—"}
+          sub={kpi && kpi.total_facture > 0
+            ? `${Math.round(kpi.total_encaisse / kpi.total_facture * 100)} % du total`
+            : kpi?.nb_factures === 0 ? "Aucune facture émise" : undefined}
+          icon={CheckCircle2} color="#4ade80" bg="rgba(74,222,128,0.08)" border="rgba(74,222,128,0.2)"
+          loading={loading} isDark={isDark}
+        />
+        <KpiTile
+          label="En attente" value={kpi ? fmt(kpi.total_attente) : "—"}
+          sub="Envoyées, non réglées"
+          icon={Clock} color="#60a5fa" bg="rgba(96,165,250,0.08)" border="rgba(96,165,250,0.2)"
+          loading={loading} isDark={isDark}
+        />
+        <KpiTile
+          label="En retard" value={kpi ? fmt(kpi.total_retard) : "—"}
+          sub="Échéance dépassée"
+          icon={AlertTriangle} color="#f87171" bg="rgba(248,113,113,0.08)" border="rgba(248,113,113,0.2)"
+          loading={loading} isDark={isDark}
+        />
+      </div>
+
+      {/* ── Contenu en colonnes ── */}
+      <div className="grid gap-5 lg:grid-cols-3">
+
+        {/* ── Documents récents (2/3) ── */}
+        <div
+          className="lg:col-span-2 rounded-2xl overflow-hidden"
+          style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
+        >
+          <div
+            className="flex items-center justify-between px-5 py-3.5"
+            style={{ borderBottom: `1px solid ${divider}` }}
+          >
+            <span className="text-sm font-semibold" style={{ color: textPrimary }}>Documents récents</span>
+            <Link
+              href="/client/factures/documents"
+              className="flex items-center gap-1 text-xs font-medium transition hover:opacity-100"
+              style={{ color: GOLD, opacity: 0.85 }}
+            >
+              Voir tout <ChevronRight size={11} />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 size={20} className="animate-spin" style={{ color: textTertiary }} />
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ) : recent.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <ReceiptText size={28} style={{ color: emptyIcon }} />
+              <p className="text-sm" style={{ color: emptyText }}>Aucun document pour le moment</p>
+              <Link
+                href="/client/factures/documents?new=1&type=facture"
+                className="rounded-lg px-3 py-1.5 text-xs font-bold text-black"
+                style={{ background: GOLD }}
+              >
+                Créer une facture
+              </Link>
+            </div>
+          ) : (
+            <>
+              {/* ── Tableau desktop (≥ sm) ── */}
+              <div className="hidden sm:block">
+                <table className="w-full table-fixed">
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${divider}` }}>
+                      <th className="w-[6.5rem] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
+                        style={{ color: textTertiary }}>Numéro</th>
+                      <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
+                        style={{ color: textTertiary }}>Client</th>
+                      <th className="w-[5.5rem] px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
+                        style={{ color: textTertiary }}>Date</th>
+                      <th className="w-[6.5rem] px-2 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider"
+                        style={{ color: textTertiary }}>Montant</th>
+                      <th className="w-[6.5rem] px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
+                        style={{ color: textTertiary }}>Statut</th>
+                      <th className="w-7 px-1 py-2.5" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recent.map((doc, i) => {
+                      const isDup = dupNums.includes(doc.numero);
+                      return (
+                        <tr
+                          key={doc.id}
+                          className="group cursor-pointer transition-colors"
+                          style={{ borderBottom: i < recent.length - 1 ? `1px solid ${rowDivider}` : "none" }}
+                          onMouseEnter={e => (e.currentTarget.style.background = rowHover)}
+                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                          onClick={() => router.push(`/client/factures/documents?id=${doc.id}`)}
+                        >
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <span className="font-mono text-xs font-semibold" style={{ color: GOLD }}>
+                              {doc.numero}
+                            </span>
+                            {isDup && (
+                              <span title={`Numéro dupliqué (id: ${doc.id.slice(0,8)}…)`}
+                                className="ml-1 inline-block rounded px-1 text-[9px] font-bold uppercase"
+                                style={{ background: "rgba(248,113,113,0.15)", color: "#f87171" }}>
+                                ×2
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3">
+                            <span className="block truncate text-sm" style={{ color: textPrimary }}>
+                              {clientLabel(doc)}
+                            </span>
+                          </td>
+                          <td className="px-2 py-3 text-xs whitespace-nowrap" style={{ color: textTertiary }}>
+                            {doc.date_document ? new Date(doc.date_document).toLocaleDateString("fr-FR") : "—"}
+                          </td>
+                          <td className="px-2 py-3 text-right">
+                            <span className="text-xs font-semibold tabular-nums" style={{ color: textPrimary }}>
+                              {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(doc.total_ttc ?? 0)} €
+                            </span>
+                          </td>
+                          <td className="px-2 py-3">
+                            <StatutBadge statut={doc.statut} />
+                          </td>
+                          <td className="px-1 py-3">
+                            <ChevronRight size={13} className="opacity-0 transition group-hover:opacity-100" style={{ color: textTertiary }} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-      {/* ── 3-column body ── */}
-      <div className="flex w-full flex-1 overflow-hidden">
-
-        {/* ── LEFT: Document list ── */}
-        <aside className={`flex flex-col shrink-0 border-r ${tbd1} transition-[width] duration-200 overflow-hidden ${mobileView !== "list" ? "hidden sm:flex" : "flex"} ${draft ? "w-full sm:w-0 sm:overflow-hidden sm:border-0" : sidebarOpen ? "w-full sm:w-72" : "sm:w-0 hidden sm:hidden"}`}
-          style={{ background: isDark ? "rgba(17,17,17,0.98)" : "#ffffff" }}>
-
-
-          {/* KPI strip */}
-          {documents.length > 0 && (
-            <div className={`grid grid-cols-3 border-b ${tbd2}`} style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#fafafa" }}>
-              {[
-                { label: "Encaissé",  val: fmtEur(stats.ca),          color: "#4ade80", bg: "rgba(74,222,128,0.08)",  Icon: TrendingUp,   click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
-                { label: "En attente",val: fmtEur(stats.pendingAmt),  color: "#FFB900", bg: "rgba(255,185,0,0.08)", Icon: Clock,        click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
-                { label: "En retard", val: fmtEur(stats.overdueAmt),  color: "#f87171", bg: "rgba(248,113,113,0.08)", Icon: AlertTriangle, click: () => { setFilterType("facture"); setFilterStatut("en_retard"); } },
-              ].map((k, i) => (
-                <motion.button key={k.label} onClick={k.click}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ type: "spring", stiffness: 320, damping: 24 }}
-                  className={`relative flex flex-col items-start gap-1 px-3 py-3 transition ${isDark ? "hover:bg-white/[0.03]" : "hover:bg-gray-50"} ${i < 2 ? (isDark ? "border-r border-white/[0.07]" : "border-r border-gray-100") : ""}`}>
-                  <div className="flex w-full items-start justify-between">
-                    <span className="text-[1rem] font-black leading-tight tabular-nums" style={{ color: k.color }}>{k.val}</span>
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: k.bg }}>
-                      <k.Icon size={10} style={{ color: k.color }} />
+              {/* ── Cards mobile (< sm) ── */}
+              <div className="sm:hidden divide-y" style={{ borderColor: rowDivider }}>
+                {recent.map((doc) => {
+                  const isDup = dupNums.includes(doc.numero);
+                  return (
+                    <div
+                      key={doc.id}
+                      className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors active:opacity-70"
+                      style={{ background: "transparent" }}
+                      onClick={() => router.push(`/client/factures/documents?id=${doc.id}`)}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-semibold" style={{ color: GOLD }}>{doc.numero}</span>
+                          {isDup && (
+                            <span className="rounded px-1 text-[9px] font-bold uppercase"
+                              style={{ background: "rgba(248,113,113,0.15)", color: "#f87171" }}>×2</span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 truncate text-sm font-medium" style={{ color: textPrimary }}>{clientLabel(doc)}</p>
+                        <p className="mt-0.5 text-[11px]" style={{ color: textTertiary }}>
+                          {doc.date_document ? new Date(doc.date_document).toLocaleDateString("fr-FR") : "—"}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-sm font-semibold" style={{ color: textPrimary, fontVariantNumeric: "tabular-nums" }}>
+                          {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(doc.total_ttc ?? 0)}
+                        </div>
+                        <div className="mt-1"><StatutBadge statut={doc.statut} /></div>
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)" }}>{k.label}</span>
-                </motion.button>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
+        </div>
 
-          {/* CA mensuel chart */}
-          {documents.length > 0 && caByMonth.some(m => m.ca > 0) && (() => {
-            const maxCA  = Math.max(...caByMonth.map(m => m.ca), 1);
-            const W = 300; const H = 68; const BAR_W = 32; const GAP = (W - 6 * BAR_W) / 7;
-            const currentKey = new Date().toISOString().slice(0, 7);
-            return (
-              <div className={`border-b ${tbd2} px-3 pb-2 pt-2.5`}>
-                <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-[0.09em] ${tw5}`}>CA encaissé — 6 mois</p>
-                <svg viewBox={`0 0 ${W} ${H + 14}`} width="100%" style={{ display:"block" }}>
-                  {caByMonth.map((m, i) => {
-                    const barH  = m.ca > 0 ? Math.max(4, Math.round((m.ca / maxCA) * H)) : 2;
-                    const x     = GAP + i * (BAR_W + GAP);
-                    const y     = H - barH;
-                    const isCur = m.key === currentKey;
-                    const color = isCur ? "#4ade80" : (isDark ? "rgba(74,222,128,0.45)" : "rgba(34,197,94,0.45)");
-                    const textCol = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)";
-                    return (
-                      <g key={m.key}>
-                        <title>{m.label} {m.key.slice(0,4)} — {fmtEur(m.ca)}</title>
-                        <rect x={x} y={y} width={BAR_W} height={barH} rx={4} fill={color}/>
-                        {isCur && m.ca > 0 && (
-                          <text x={x + BAR_W / 2} y={y - 3} textAnchor="middle" fontSize={8} fill="#4ade80" fontWeight="700">
-                            {fmtEur(m.ca)}
-                          </text>
-                        )}
-                        <text x={x + BAR_W / 2} y={H + 11} textAnchor="middle" fontSize={8.5} fill={textCol} fontWeight={isCur ? "700" : "500"}>
-                          {m.label}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
-              </div>
-            );
-          })()}
+        {/* ── Colonne droite (1/3) ── */}
+        <div className="flex flex-col gap-4">
 
-          {/* Search + filter */}
-          <div className={`space-y-2.5 border-b ${tbd2} p-4`}>
-            <div className="relative">
-              <Search size={13} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${tw5}`}/>
-              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Numéro, client, objet…"
-                className={`w-full rounded-xl ${tiB} ${tiBH} focus:border-[rgba(255,185,0,0.4)] py-2.5 pl-9 pr-3 text-sm ${tw1} placeholder:${tw6} outline-none transition`}/>
-              {query && <button onClick={() => setQuery("")} className={`absolute right-3 top-1/2 -translate-y-1/2 ${tw4} hover:${tw2}`}><X size={12}/></button>}
-            </div>
-            {/* Type filter */}
-            <div className="flex gap-1.5">
-              {(["tous","facture","devis","avoir"] as const).map(t => (
-                <button key={t} onClick={() => setFilterType(t)}
-                  className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider transition ${filterType === t ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600")}`}>
-                  {t === "tous" ? "Tous" : t === "facture" ? "Factures" : t === "devis" ? "Devis" : "Avoirs"}
-                </button>
-              ))}
-              <div className="ml-auto flex items-center gap-1">
-                <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
-                  className={`appearance-none rounded-lg border ${tbd1} ${tbg1} px-2 py-0.5 text-xs font-bold uppercase ${tw4} outline-none cursor-pointer`}>
-                  <option value="date">Date</option>
-                  <option value="montant">Montant</option>
-                  <option value="echeance">Échéance</option>
-                </select>
-              </div>
-            </div>
-            {/* Statut filter */}
-            <div className="flex flex-wrap gap-1">
-              <button onClick={() => setFilterStatut("tous")}
-                className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider transition ${filterStatut === "tous" ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/20 hover:text-white/50" : "text-gray-400 hover:text-gray-600")}`}>
-                Tous
-              </button>
-              {(Object.keys(STATUTS) as DocStatut[]).map(s => {
-                const cfg = STATUTS[s];
-                const count = documents.filter(d => d.statut === s && (filterType === "tous" || d.type === filterType)).length;
-                if (!count && filterStatut !== s) return null;
+          {/* Actions rapides */}
+          <div
+            className="rounded-2xl p-4"
+            style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
+          >
+            <div className="mb-3 text-sm font-semibold" style={{ color: textPrimary }}>Actions rapides</div>
+            <div className="flex flex-col gap-2">
+              {[
+                { label: "Nouvelle facture", href: "/client/factures/documents?new=1&type=facture", icon: ReceiptText, gold: true },
+                { label: "Nouveau devis",    href: "/client/factures/documents?new=1&type=devis",   icon: FileSignature },
+                { label: "Mes clients",      href: "/client/factures/clients",                       icon: Users },
+                { label: "Mon entreprise",   href: "/client/factures/entreprise",                    icon: Building2 },
+              ].map(a => {
+                const Icon = a.icon;
                 return (
-                  <button key={s} onClick={() => setFilterStatut(prev => prev === s ? "tous" : s)}
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider transition`}
-                    style={filterStatut === s
-                      ? { background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }
-                      : { color: isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.35)" }}>
-                    {cfg.label} {count > 0 && <span className="opacity-60">{count}</span>}
-                  </button>
+                  <Link
+                    key={a.href}
+                    href={a.href}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:opacity-80"
+                    style={a.gold ? {
+                      background: GOLD, color: "#0a0a0a",
+                    } : {
+                      background: actionBg, color: actionText, border: `1px solid ${actionBorder}`,
+                    }}
+                  >
+                    <Icon size={13} />
+                    {a.label}
+                    <ArrowRight size={11} className="ml-auto shrink-0" />
+                  </Link>
                 );
               })}
             </div>
           </div>
 
-          {/* Doc list */}
-          <div className="flex-1 overflow-y-auto">
-            {loadingAll ? (
-              <div className="flex items-center justify-center py-14"><Loader2 size={20} className={`animate-spin ${tw6}`}/></div>
-            ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-14 text-center">
-                <ReceiptText size={22} className={tw6}/>
-                <p className={`text-sm ${tw5}`}>{query ? "Aucun résultat" : "Aucun document"}</p>
-                {!query && (
-                  <button onClick={() => newDoc("facture")}
-                    className="mt-1 flex items-center gap-1.5 rounded-xl border border-[rgba(255,185,0,0.25)] px-3 py-1.5 text-xs font-semibold text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.09)]">
-                    <Plus size={12}/> Créer un document
-                  </button>
-                )}
-              </div>
-            ) : (
-              <AnimatePresence initial={false}>
-                {paginatedDocs.map(doc => {
-                  const docColor = doc.couleur || "#FFB900";
-                  const isActive = selected?.id === doc.id;
+          {/* Résumé */}
+          {kpi && (
+            <div
+              className="rounded-2xl p-4"
+              style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
+            >
+              <div className="mb-3 text-sm font-semibold" style={{ color: textPrimary }}>Résumé</div>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  { label: "Devis en cours",  value: kpi.nb_devis,   icon: FileSignature, color: "#a78bfa" },
+                  { label: "Clients actifs",  value: kpi.nb_clients, icon: Users,         color: "#60a5fa" },
+                ].map(item => {
+                  const Icon = item.icon;
                   return (
-                    <motion.button key={doc.id} layout
-                      initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-12 }}
-                      transition={{ duration:0.22, ease }}
-                      onClick={() => openDoc(doc)}
-                      className={`group relative w-full text-left transition-all border-b ${tbd2} ${isActive ? (isDark ? "bg-white/[0.07]" : "bg-amber-50/60") : (isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50/80")}`}>
-                      {/* Barre latérale couleur active */}
-                      <motion.div className="absolute left-0 top-0 h-full w-[3px] rounded-r"
-                        animate={{ opacity: isActive ? 1 : 0, scaleY: isActive ? 1 : 0.4 }}
-                        transition={{ duration: 0.18 }}
-                        style={{ background: `linear-gradient(180deg, ${docColor}, ${docColor}88)` }}/>
-                      <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
-                        {/* Icône type document */}
-                        <div className="relative mt-0.5 flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[10px]"
-                          style={{
-                            background: doc.type === "facture"
-                              ? `linear-gradient(145deg, rgba(255,185,0,0.22), rgba(255,185,0,0.10))`
-                              : doc.type === "avoir"
-                              ? `linear-gradient(145deg, rgba(244,114,182,0.18), rgba(244,114,182,0.08))`
-                              : `linear-gradient(145deg, rgba(96,165,250,0.18), rgba(96,165,250,0.08))`,
-                            border: `1px solid ${doc.type === "facture" ? "rgba(255,185,0,0.22)" : doc.type === "avoir" ? "rgba(244,114,182,0.22)" : "rgba(96,165,250,0.22)"}`,
-                          }}>
-                          <span className="text-xs font-black"
-                            style={{ color: doc.type === "facture" ? "#FFB900" : doc.type === "avoir" ? "#f472b6" : "#60a5fa" }}>
-                            {doc.type === "facture" ? "F" : doc.type === "avoir" ? "A" : "D"}
-                          </span>
-                        </div>
-                        {/* Contenu */}
-                        <div className="min-w-0 flex-1">
-                          {/* Ligne 1 : référence + montant */}
-                          <div className="flex items-baseline justify-between gap-2">
-                            <p className={`text-sm font-extrabold leading-tight truncate ${tw1}`}>{doc.numero || "(sans numéro)"}</p>
-                            <span className="shrink-0 text-sm font-black" style={{ color: docColor }}>{fmtEur(doc.total_ttc)}</span>
-                          </div>
-                          {/* Ligne 2 : sujet */}
-                          {doc.sujet && <p className={`mt-0.5 text-xs truncate ${tw3}`}>{doc.sujet}</p>}
-                          {/* Ligne 3 : statut + date */}
-                          <div className="mt-1.5 flex items-center gap-1.5">
-                            <StatutBadge statut={doc.statut}/>
-                            <span className={`ml-auto text-[11px] ${tw6}`}>{fmtDate(doc.date_document)}</span>
-                          </div>
-                          {/* Ligne 4 : client + délai */}
-                          <div className="mt-0.5 flex items-center justify-between gap-1">
-                            {doc.client_nom && (
-                              <p className={`text-xs font-medium truncate ${tw4}`}>{doc.client_nom}</p>
-                            )}
-                            {doc.date_echeance && (doc.statut === "envoyé" || doc.statut === "en_retard") && (() => {
-                              const days = Math.floor((new Date(doc.date_echeance).getTime() - Date.now()) / 86_400_000);
-                              const late = days < 0;
-                              return (
-                                <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-                                  style={{ background: late ? "rgba(248,113,113,0.14)" : "rgba(251,191,36,0.14)", color: late ? "#f87171" : "#fbbf24" }}>
-                                  {late ? `−${Math.abs(days)}j` : `+${days}j`}
-                                </span>
-                              );
-                            })()}
-                          </div>
-                          {/* Ligne 5 : lien Avoir ↔ Facture source */}
-                        {doc.type === "avoir" && doc.source_id && docById.has(doc.source_id) && (
-                          <div className="mt-1 flex items-center gap-1">
-                            <span className="text-[10px] font-bold" style={{ color: "#f472b6", opacity: 0.6 }}>↗</span>
-                            <span className="text-xs font-semibold" style={{ color: "#f472b6" }}>
-                              {docById.get(doc.source_id)!.numero}
-                            </span>
-                          </div>
-                        )}
-                        {doc.type === "facture" && (avoirsBySourceId.get(doc.id)?.length ?? 0) > 0 && (
-                          <div className="mt-1 flex flex-wrap items-center gap-1">
-                            {avoirsBySourceId.get(doc.id)!.map(av => (
-                              <span key={av.id} className="rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-                                style={{ background: "rgba(244,114,182,0.1)", color: "#f472b6", border: "1px solid rgba(244,114,182,0.25)" }}>
-                                {av.numero}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                    <div key={item.label} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon size={12} style={{ color: item.color }} />
+                        <span className="text-xs" style={{ color: textSecond }}>{item.label}</span>
                       </div>
-                      </div>
-                    </motion.button>
+                      <span className="text-sm font-bold" style={{ color: textPrimary }}>{item.value}</span>
+                    </div>
                   );
                 })}
-              </AnimatePresence>
-            )}
-          </div>
-
-          {/* Pagination */}
-          {listTotalPages > 1 && (
-            <div className={`shrink-0 flex items-center justify-between gap-2 border-t ${tbd2} px-4 py-2`}>
-              <p className={`text-[11px] ${tw5}`}>
-                {(listPage-1)*PAGE_SIZE+1}–{Math.min(listPage*PAGE_SIZE, listTotal)} / {listTotal}
-              </p>
-              <div className="flex items-center gap-0.5">
-                <button onClick={() => setListPage(p => Math.max(1,p-1))} disabled={listPage===1}
-                  className={`h-6 w-6 flex items-center justify-center rounded-lg border ${tbd1} ${tw4} transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"} disabled:opacity-20`}>
-                  <ChevronLeft size={11}/>
-                </button>
-                {(listTotalPages <= 7
-                  ? Array.from({length: listTotalPages}, (_,i) => i+1)
-                  : [1, ...(listPage > 3 ? ["…"] : []), ...Array.from({length:3}, (_,i) => Math.max(2,listPage-1)+i).filter(p => p > 1 && p < listTotalPages), ...(listPage < listTotalPages-2 ? ["…"] : []), listTotalPages]
-                ).map((p, i) => p === "…" ? (
-                  <span key={`e${i}`} className={`px-1 text-xs ${tw6}`}>…</span>
-                ) : (
-                  <button key={p} onClick={() => setListPage(p as number)}
-                    className={`h-6 min-w-[1.5rem] px-1 rounded-lg text-xs font-bold transition ${p===listPage ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-900") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700")}`}>
-                    {p}
-                  </button>
-                ))}
-                <button onClick={() => setListPage(p => Math.min(listTotalPages,p+1))} disabled={listPage===listTotalPages}
-                  className={`h-6 w-6 flex items-center justify-center rounded-lg border ${tbd1} ${tw4} transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"} disabled:opacity-20`}>
-                  <ChevronRight size={11}/>
-                </button>
+                <div
+                  className="mt-1 rounded-lg px-3 py-2 text-xs"
+                  style={{ background: "rgba(255,185,0,0.08)", color: isDark ? "rgba(255,185,0,0.8)" : "#cc9400", border: "1px solid rgba(255,185,0,0.18)" }}
+                >
+                  <Sparkles size={9} className="mr-1 inline-block" />
+                  Données en temps réel · Organisation isolée
+                </div>
               </div>
             </div>
           )}
-
-          {/* Bouton création rapide bas de sidebar */}
-          <div className={`shrink-0 border-t ${tbd2} p-3 grid grid-cols-2 gap-2`}>
-            <button onClick={() => newDoc("devis")}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-400/20 py-2 text-xs font-bold text-blue-400/70 transition hover:bg-blue-400/10 hover:text-blue-400">
-              <Plus size={11}/> Devis
-            </button>
-            <button onClick={() => newDoc("facture")}
-              className="flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-extrabold transition hover:opacity-90"
-              style={{ background:"#FFB900", color:"#0a0a0a" }}>
-              <Plus size={11}/> Facture
-            </button>
-          </div>
-        </aside>
-
-        {/* ── CENTER: Éditeur tabulé ── */}
-        <main className={`flex flex-1 min-w-0 flex-col overflow-hidden ${mobileView === "editor" ? "flex" : "hidden sm:flex"}`}>
-          {!draft ? (
-            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-              className={`flex h-full flex-col items-center justify-center gap-4 p-8 text-center`}
-              style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#fafafa" }}>
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.07)]">
-                <ReceiptText size={28} style={{ color:"#FFB900" }}/>
-              </div>
-              <div>
-                <p className={`text-base font-bold ${tw1}`}>Sélectionnez ou créez un document</p>
-                <p className={`mt-1 text-sm ${tw4}`}>Factures et devis professionnels</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => newDoc("devis")}
-                  className="flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-400/[0.07] px-4 py-2 text-sm font-semibold text-blue-400 transition hover:bg-blue-400/15">
-                  <Plus size={14}/> Nouveau devis
-                </button>
-                <button onClick={() => newDoc("facture")}
-                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold transition hover:opacity-90"
-                  style={{ background:"#FFB900", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(255,185,0,0.3)" }}>
-                  <Plus size={14}/> Nouvelle facture
-                </button>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
-              transition={{ duration:0.25, ease }}
-              className="flex h-full flex-col overflow-hidden"
-              style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#ffffff" }}>
-
-              {/* ── Toolbar ── */}
-              <div className={`flex flex-wrap items-center gap-2 border-b ${tbd2} px-5 py-3`}>
-                {/* Toggle sidebar (desktop) */}
-                {/* ← Retour aux documents (desktop) */}
-                <button
-                  onClick={() => { setDraft(null); setSelected(null); setMobileView("list"); }}
-                  title="Retour aux documents"
-                  className={`hidden sm:flex items-center gap-1.5 h-7 rounded-lg border ${tbd1} px-2.5 ${tw4} text-xs font-medium transition ${isDark ? "hover:bg-white/[0.06] hover:text-white/60" : "hover:bg-gray-100 hover:text-gray-600"}`}>
-                  <ChevronLeft size={11}/> Documents
-                </button>
-                {/* ← Retour à la liste (mobile) */}
-                <button onClick={() => setMobileView("list")} className={`flex items-center gap-1.5 text-xs ${tw3} transition sm:hidden`}>
-                  <ArrowLeft size={13}/>
-                </button>
-                {/* Aperçu / Éditer toggle (mobile) */}
-                <button
-                  onClick={() => setMobileView(mv => mv === "preview" ? "editor" : "preview")}
-                  className={`flex items-center gap-1.5 text-sm font-medium transition sm:hidden ${mobileView === "preview" ? tw2 : tw4}`}>
-                  <Eye size={13}/> {mobileView === "preview" ? "Éditer" : "Aperçu"}
-                </button>
-                {/* Type toggle */}
-                <div className={`flex rounded-xl ${tiB} p-0.5`}>
-                  {(["facture","devis"] as DocType[]).map(t => (
-                    <button key={t} onClick={() => { updDraft("type", t); if (!selected) setDraft(d => d ? { ...d, numero: newNumero(t, documents) } : d); }}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition ${draft.type === t ? "text-[#0a0a0a]" : (isDark ? "text-white/40 hover:text-white/70" : "text-gray-400 hover:text-gray-700")}`}
-                      style={draft.type === t ? { background:`linear-gradient(135deg,${activeColor},${activeColor}cc)` } : {}}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                {/* Statut select */}
-                <div className="relative">
-                  <select value={draft.statut}
-                    onChange={e => selected ? handleStatut(e.target.value as DocStatut) : updDraft("statut", e.target.value)}
-                    className="appearance-none rounded-xl border py-1.5 pl-3 pr-7 text-xs font-bold uppercase tracking-wider outline-none cursor-pointer transition"
-                    style={(() => { const s = STATUTS[draft.statut]; return { color:s.color, background:s.bg, borderColor:s.border }; })()}>
-                    {(Object.keys(STATUTS) as DocStatut[]).map(s => (
-                      <option key={s} value={s} style={{ background:"#181818", color:"#fff" }}>{STATUTS[s].label}</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-current opacity-60"/>
-                </div>
-                {dirty && (
-                  <span className="flex items-center gap-1.5 rounded-full border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.08)] px-2.5 py-1 text-xs font-semibold text-[#FFB900]">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#FFB900]"/>
-                    <span className="hidden sm:inline">Non sauvegardé</span>
-                  </span>
-                )}
-                <div className="ml-auto flex items-center gap-1.5">
-                  {selected?.type === "devis" && (
-                    <button onClick={handleConvert} disabled={converting}
-                      className={`hidden items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400 disabled:opacity-40 sm:flex`}>
-                      {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
-                    </button>
-                  )}
-                  {selected?.type === "facture" && (selected.statut === "envoyé" || selected.statut === "payé" || selected.statut === "partiellement_payé") && (
-                    <button onClick={() => newAvoir(selected)} disabled={converting}
-                      title="Créer un avoir (note de crédit) pour cette facture"
-                      className="hidden items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition disabled:opacity-40 sm:flex"
-                      style={{ borderColor: AVOIR_BADGE.border, color: AVOIR_BADGE.color, background: AVOIR_BADGE.bg }}>
-                      {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Avoir
-                    </button>
-                  )}
-                  {selected && (
-                    <button onClick={handleDuplicate} disabled={duplicating}
-                      className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} disabled:opacity-40 sm:flex`}
-                      title="Dupliquer ce document">
-                      {duplicating ? <Loader2 size={12} className="animate-spin"/> : <CopyPlus size={12}/>} Dupliquer
-                    </button>
-                  )}
-                  <button onClick={() => setShowPreview(true)}
-                    className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} sm:flex`}>
-                    <Eye size={13}/> Aperçu
-                  </button>
-                  <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
-                    className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition hover:opacity-90 sm:flex"
-                    style={{ background:`${activeColor}20`, color:activeColor, border:`1px solid ${activeColor}45` }}>
-                    <FileDown size={13}/> PDF
-                  </button>
-                  {draft.type !== "devis" && (
-                    <button onClick={downloadXml}
-                      className={`hidden items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition ${isDark ? "hover:border-white/20 hover:text-white/70" : "hover:border-gray-300 hover:text-gray-700"} sm:flex`}
-                      title="Télécharger XML Factur-X (EN 16931)">
-                      <FileCode2 size={13}/> XML
-                    </button>
-                  )}
-                  {selected && (
-                    <button onClick={openEmailModal}
-                      className="hidden items-center gap-1.5 rounded-xl border border-sky-400/40 bg-sky-400/[0.08] px-3 py-2 text-xs font-semibold text-sky-400 transition hover:bg-sky-400/15 sm:flex">
-                      <Mail size={13}/> Email
-                    </button>
-                  )}
-                  {selected && draft.type === "facture" && (draft.statut === "envoyé" || draft.statut === "en_retard") && (
-                    <button onClick={openRelanceModal} disabled={sendingRelance}
-                      className="hidden items-center gap-1.5 rounded-xl border border-orange-400/25 px-3 py-2 text-xs font-semibold text-orange-400/80 transition hover:border-orange-400/50 hover:text-orange-400 disabled:opacity-40 sm:flex">
-                      {sendingRelance ? <Loader2 size={13} className="animate-spin"/> : <AlertCircle size={13}/>} Relancer
-                    </button>
-                  )}
-                  {selected && draft.type === "facture" && (draft.statut === "envoyé" || draft.statut === "en_retard" || draft.statut === "partiellement_payé") && (
-                    <button onClick={() => setPayModal(true)}
-                      className="hidden items-center gap-1.5 rounded-xl border border-green-400/25 px-3 py-2 text-xs font-semibold text-green-400/80 transition hover:border-green-400/50 hover:text-green-400 sm:flex">
-                      <DollarSign size={13}/> Encaisser
-                    </button>
-                  )}
-                  {selected && draft.type === "facture" && (
-                    <button onClick={handlePaymentLink} disabled={payLinkLoading}
-                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#FFB900]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#FFB900] disabled:opacity-40 sm:flex">
-                      {payLinkLoading ? <Loader2 size={13} className="animate-spin"/> : <Link2 size={13}/>} Paiement
-                    </button>
-                  )}
-                  {selected && draft.client_nom && (
-                    <button onClick={handlePortalLink} disabled={portalLoading}
-                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(34,211,238,0.2)] px-3 py-2 text-xs font-semibold text-[#22d3ee]/70 transition hover:border-[rgba(34,211,238,0.4)] hover:text-[#22d3ee] disabled:opacity-40 sm:flex">
-                      {portalLoading ? <Loader2 size={13} className="animate-spin"/> : <Globe size={13}/>} Portail
-                    </button>
-                  )}
-                  {selected && draft.type === "devis" && (
-                    <button onClick={() => handleShareDevis(selected.id)}
-                      className="hidden items-center gap-1.5 rounded-xl border border-[rgba(255,185,0,0.25)] px-3 py-2 text-xs font-semibold text-[#FFB900]/70 transition hover:border-[rgba(255,185,0,0.5)] hover:text-[#FFB900] sm:flex">
-                      <Share2 size={13}/> Copier le lien
-                    </button>
-                  )}
-                  {selected && (
-                    <button onClick={() => setConfirmDel(true)} disabled={deleting}
-                      className="flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 py-2 text-xs font-semibold text-red-400/70 transition hover:border-red-500/40 hover:text-red-400 disabled:opacity-40">
-                      {deleting ? <Loader2 size={13} className="animate-spin"/> : <Trash2 size={13}/>}
-                      <span className="hidden sm:inline">Supprimer</span>
-                    </button>
-                  )}
-                  <button onClick={handleSave} disabled={saving || !dirty}
-                    className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold shadow-[0_2px_12px_rgba(0,0,0,0.3)] transition hover:opacity-90 disabled:opacity-50"
-                    style={{
-                      background: saving||!dirty ? "rgba(100,100,100,0.3)" : `linear-gradient(135deg,${activeColor},${activeColor}bb)`,
-                      color: saving||!dirty ? "#666" : contrastColor(activeColor),
-                    }}>
-                    {saving ? <Loader2 size={13} className="animate-spin"/> : <Save size={13}/>}
-                    {saving ? "Enregistrement…" : "Enregistrer"}
-                  </button>
-                </div>
-              </div>
-
-              {/* ── Tab bar ── */}
-              <div className={`shrink-0 flex items-stretch border-b ${tbd2} overflow-x-auto`} style={{ minHeight:"40px" }}>
-                {([
-                  { id:"general",    label:"Général" },
-                  { id:"client",     label:"Client" },
-                  { id:"lignes",     label:"Lignes" },
-                  { id:"design",     label:"Design" },
-                  { id:"options",    label:"Options" },
-                  { id:"paiements",  label:"Paiements" },
-                  { id:"historique", label:"Historique" },
-                ] as { id: EditorTab; label: string }[]).map(tab => (
-                  <button key={tab.id} onClick={() => setActiveEditorTab(tab.id)}
-                    className={`flex items-center border-b-2 px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-all -mb-px
-                      ${activeEditorTab === tab.id
-                        ? "border-[#FFB900] text-[#FFB900]"
-                        : `border-transparent ${tw4} ${isDark ? "hover:text-white/60" : "hover:text-gray-600"}`
-                      }`}>
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* ── Tab content ── */}
-              <div className="flex-1 overflow-y-auto px-5 py-5">
-                {/* TAB: Général */}
-                {activeEditorTab === "general" && (
-                <div className="space-y-6">
-
-                  {/* Document identity card */}
-                  <div className={`overflow-hidden rounded-2xl border ${tbd2} ${tbg2}`}>
-                    {/* Barre couleur top */}
-                    <div className="h-[3px]" style={{ background: activeColor }}/>
-                    <div className="flex items-center gap-5 px-5 py-4">
-                      {/* Logo ou icône */}
-                      {draft.emetteur_logo ? (
-                        <img src={draft.emetteur_logo} alt="Logo" className="h-11 w-auto max-w-[80px] rounded-lg object-contain"/>
-                      ) : (
-                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${tbd1} ${tbg1}`}>
-                          <Building2 size={16} className={tw4}/>
-                        </div>
-                      )}
-                      {/* Centre : type + référence + sujet */}
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${tw4}`}>{draft.type === "facture" ? "Facture" : "Devis"}</p>
-                        <p className={`text-base font-extrabold leading-snug truncate ${tw1}`}>{draft.numero || "(numéro)"}</p>
-                        {draft.sujet && <p className={`text-xs truncate ${tw3}`}>{draft.sujet}</p>}
-                      </div>
-                      {/* Droite : montant + client */}
-                      <div className="shrink-0 text-right">
-                        <p className="text-xl font-black leading-none" style={{ color: activeColor }}>{fmt(totals.ttc)}</p>
-                        <p className={`mt-1 text-xs ${tw4}`}>{fmtDate(draft.date_document)}</p>
-                        {draft.client_nom && <p className={`text-xs font-semibold truncate max-w-[120px] ${tw2}`}>{draft.client_nom}</p>}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── Lien Avoir ↔ Facture source ── */}
-                  {selected?.type === "avoir" && selected.source_id && (
-                    <div className="rounded-2xl border p-4" style={{ borderColor: "rgba(244,114,182,0.2)", background: "rgba(244,114,182,0.04)" }}>
-                      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(244,114,182,0.5)" }}>
-                        Facture source
-                      </p>
-                      {docById.has(selected.source_id) ? (() => {
-                        const src = docById.get(selected.source_id!)!;
-                        return (
-                          <button onClick={() => openDoc(src)}
-                            className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition"
-                            style={{ background: "rgba(244,114,182,0.07)", border: "1px solid rgba(244,114,182,0.15)" }}
-                            onMouseEnter={e => (e.currentTarget.style.background = "rgba(244,114,182,0.13)")}
-                            onMouseLeave={e => (e.currentTarget.style.background = "rgba(244,114,182,0.07)")}>
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(244,114,182,0.12)" }}>
-                              <FileText size={14} style={{ color: "#f472b6" }}/>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-extrabold leading-tight" style={{ color: "#f9a8d4" }}>{src.numero}</p>
-                              <p className="text-xs" style={{ color: "rgba(244,114,182,0.5)" }}>
-                                {fmtDate(src.date_document)}{src.client_nom ? ` · ${src.client_nom}` : ""}
-                              </p>
-                            </div>
-                            <span className="shrink-0 text-sm font-black" style={{ color: "#f472b6" }}>{fmtEur(src.total_ttc)}</span>
-                            <ArrowLeft size={13} className="shrink-0 rotate-180 opacity-50" style={{ color: "#f472b6" }}/>
-                          </button>
-                        );
-                      })() : (
-                        <p className="text-xs" style={{ color: "rgba(244,114,182,0.35)" }}>Facture source introuvable</p>
-                      )}
-                    </div>
-                  )}
-                  {selected?.type === "facture" && (avoirsBySourceId.get(selected.id)?.length ?? 0) > 0 && (
-                    <div className="rounded-2xl border p-4" style={{ borderColor: "rgba(244,114,182,0.2)", background: "rgba(244,114,182,0.04)" }}>
-                      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(244,114,182,0.5)" }}>
-                        {avoirsBySourceId.get(selected.id)!.length > 1 ? "Avoirs liés" : "Avoir lié"}
-                      </p>
-                      <div className="space-y-2">
-                        {avoirsBySourceId.get(selected.id)!.map(av => (
-                          <button key={av.id} onClick={() => openDoc(av)}
-                            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition"
-                            style={{ background: "rgba(244,114,182,0.07)", border: "1px solid rgba(244,114,182,0.15)" }}
-                            onMouseEnter={e => (e.currentTarget.style.background = "rgba(244,114,182,0.13)")}
-                            onMouseLeave={e => (e.currentTarget.style.background = "rgba(244,114,182,0.07)")}>
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(244,114,182,0.12)" }}>
-                              <RefreshCw size={14} style={{ color: "#f472b6" }}/>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-extrabold leading-tight" style={{ color: "#f9a8d4" }}>{av.numero}</p>
-                              <p className="text-xs" style={{ color: "rgba(244,114,182,0.5)" }}>
-                                {fmtDate(av.date_document)} · <StatutBadge statut={av.statut}/>
-                              </p>
-                            </div>
-                            <span className="shrink-0 text-sm font-black" style={{ color: "#f472b6" }}>{fmtEur(av.total_ttc)}</span>
-                            <ArrowLeft size={13} className="shrink-0 rotate-180 opacity-50" style={{ color: "#f472b6" }}/>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Paiements reçus ── */}
-                  {selected?.type === "facture" && (selected.montant_paye ?? 0) > 0 && (
-                    <div className="rounded-2xl border p-4" style={{ borderColor:"rgba(251,191,36,0.2)", background:"rgba(251,191,36,0.04)" }}>
-                      <div className="mb-3 flex items-center justify-between">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.5)" }}>
-                          Paiements reçus
-                        </p>
-                        <button onClick={() => setPayModal(true)}
-                          className="rounded-lg border border-[rgba(251,191,36,0.3)] px-2 py-1 text-[11px] font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
-                          style={{ color:"#fbbf24" }}>
-                          + Ajouter
-                        </button>
-                      </div>
-                      <div className="mb-1.5 flex items-center justify-between text-xs">
-                        <span style={{ color:"rgba(251,191,36,0.7)" }}>
-                          {fmtEur(selected.montant_paye ?? 0)} / {fmtEur(selected.total_ttc)}
-                        </span>
-                        <span className="font-bold" style={{ color:"#fbbf24" }}>
-                          {Math.min(100, Math.round(((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100))}%
-                        </span>
-                      </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background:"rgba(251,191,36,0.12)" }}>
-                        <div className="h-full rounded-full transition-all duration-500" style={{
-                          background:"#fbbf24",
-                          width:`${Math.min(100, ((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100)}%`,
-                        }}/>
-                      </div>
-                      {(selected.total_ttc - (selected.montant_paye ?? 0)) > 0.01 && (
-                        <p className="mt-1.5 text-xs" style={{ color:"rgba(251,191,36,0.45)" }}>
-                          Solde restant : {fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ── Informations du document ── */}
-                  <div className="space-y-3">
-                    <SectionLabel icon={<FileText size={10}/>} label="Informations du document"/>
-                    <div className="grid grid-cols-2 gap-3">
-                      <DInput label="Numéro" value={draft.numero} onChange={v => updDraft("numero", v)} placeholder="FAC-2026-001"
-                        disabled={draft.statut !== "brouillon"}
-                        lockTitle="Numéro verrouillé — une facture émise ne peut plus être modifiée (conformité légale)"/>
-                      <DInput label="Date d'émission" type="date" value={draft.date_document} onChange={v => updDraft("date_document", v)}/>
-                      <DInput label={draft.type === "facture" ? "Date d'échéance" : "Valable jusqu'au"} type="date" value={draft.date_echeance} onChange={v => updDraft("date_echeance", v)}/>
-                      <DSelect label="Devise" value={draft.devise || "EUR"} onChange={v => updDraft("devise", v)} options={CURRENCIES.map(c => ({ val:c.val, label:c.val }))}/>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <DInput label="Objet / Intitulé *" value={draft.sujet} onChange={v => updDraft("sujet", v)} placeholder="Développement application web, Mission de conseil…"/>
-                      </div>
-                      <button
-                        title="Générer l'intitulé avec l'IA"
-                        onClick={() => { setShowAiBox(true); setTimeout(() => document.getElementById("ai-prompt-input")?.focus(), 50); }}
-                        className="mt-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.07)] text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.15)]">
-                        <Sparkles size={13}/>
-                      </button>
-                    </div>
-                  </div>
-
-                </div>)}
-
-                {/* TAB: Client */}
-                {activeEditorTab === "client" && (
-                <div className="space-y-6">
-
-                  {/* ── Client ── */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2.5">
-                      <User size={10} className="shrink-0 text-blue-400/60"/>
-                      <span className={`shrink-0 text-xs font-bold uppercase tracking-widest ${tw4}`}>Client</span>
-                      <div className={`flex-1 h-px ${tsep}`}/>
-                      <a href="/client/factures/parametres" title="Infos entreprise"
-                        className={`flex shrink-0 items-center gap-1 rounded-lg border ${tbd2} px-2 py-1 text-xs font-semibold ${tw5} transition ${isDark ? "hover:border-white/20 hover:text-white/50" : "hover:border-gray-300 hover:text-gray-500"}`}>
-                        <Building2 size={9}/> Mon entreprise
-                      </a>
-                      <button onClick={openCrmModal}
-                        className="flex shrink-0 items-center gap-1 rounded-lg border border-[rgba(96,165,250,0.2)] px-2 py-1 text-xs font-semibold text-blue-400/70 transition hover:border-blue-400/40 hover:text-blue-400">
-                        <Users size={9}/> CRM
-                      </button>
-                    </div>
-                    <div className="grid gap-2.5 sm:grid-cols-2">
-                      <DInput value={draft.client_nom}       onChange={v => updDraft("client_nom", v)}       placeholder="Prénom Nom du contact"/>
-                      <DInput value={draft.client_societe}   onChange={v => updDraft("client_societe", v)}   placeholder="Société / Entreprise"/>
-                      <DInput value={draft.client_email}     onChange={v => updDraft("client_email", v)}     placeholder="email@client.com"/>
-                      <DInput value={draft.client_telephone} onChange={v => updDraft("client_telephone", v)} placeholder="+33 6 00 00 00 00"/>
-                      <DInput value={draft.client_adresse}   onChange={v => updDraft("client_adresse", v)}   placeholder="Rue, numéro…"/>
-                      <div className="grid grid-cols-[80px_1fr] gap-2">
-                        <DInput value={draft.client_code_postal} onChange={v => updDraft("client_code_postal", v)} placeholder="75001"/>
-                        <DInput value={draft.client_ville}       onChange={v => updDraft("client_ville", v)}       placeholder="Ville"/>
-                      </div>
-                      <DInput value={draft.client_pays}     onChange={v => updDraft("client_pays", v)}     placeholder="Pays"/>
-                      <DInput value={draft.client_tva}      onChange={v => updDraft("client_tva", v)}      placeholder="N° TVA intracommunautaire"/>
-                    </div>
-                  </div>
-
-                </div>)}
-
-                {/* TAB: Lignes */}
-                {activeEditorTab === "lignes" && (
-                <div className="space-y-6">
-
-                  {/* ── Lignes de prestation ── */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2.5">
-                      <ReceiptText size={10} className={`shrink-0 ${tw5}`}/>
-                      <span className={`shrink-0 text-xs font-bold uppercase tracking-widest ${tw4}`}>Lignes de prestation</span>
-                      <div className={`flex-1 h-px ${tsep}`}/>
-                      <button onClick={addItem}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition hover:opacity-80"
-                        style={{ color:activeColor, borderColor:`${activeColor}44`, background:`${activeColor}11` }}>
-                        <Plus size={10}/> Ajouter une ligne
-                      </button>
-                      <button onClick={() => { setShowAiBox(v => !v); setTimeout(() => document.getElementById("ai-prompt-input")?.focus(), 50); }}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.07)] px-2.5 py-1 text-xs font-semibold text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.15)]">
-                        <Sparkles size={10}/> IA
-                      </button>
-                    </div>
-
-                    {/* ── IA : génération de lignes ── */}
-                    <AnimatePresence>
-                      {showAiBox && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.18 }}
-                          className="overflow-hidden"
-                        >
-                          <div className={`flex items-center gap-2 rounded-xl border ${isDark ? "border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.06)]" : "border-amber-200 bg-amber-50"} px-3 py-2.5`}>
-                            <Sparkles size={12} className="shrink-0 text-[#FFB900]"/>
-                            <input
-                              id="ai-prompt-input"
-                              type="text"
-                              value={aiPrompt}
-                              onChange={e => setAiPrompt(e.target.value)}
-                              onKeyDown={e => { if (e.key === "Enter") void handleAiGenerate(); if (e.key === "Escape") setShowAiBox(false); }}
-                              placeholder="Ex : Développement site e-commerce, 3 500€ HT, TVA 20%…"
-                              className={`flex-1 bg-transparent text-sm outline-none ${isDark ? "text-white placeholder:text-white/25" : "text-gray-700 placeholder:text-gray-400"}`}
-                            />
-                            <button
-                              onClick={() => void handleAiGenerate()}
-                              disabled={!aiPrompt.trim() || aiLoading}
-                              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#FFB900] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#d4af6a] disabled:opacity-40">
-                              {aiLoading ? <Loader2 size={10} className="animate-spin"/> : <Sparkles size={10}/>}
-                              {aiLoading ? "Génération…" : "Générer"}
-                            </button>
-                            <button onClick={() => setShowAiBox(false)} className={`shrink-0 ${isDark ? "text-white/25 hover:text-white/50" : "text-gray-400 hover:text-gray-600"}`}>
-                              <X size={12}/>
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Column headers */}
-                    <div className="mb-1 hidden grid-cols-[1fr_70px_60px_80px_70px_70px_80px_32px] gap-1.5 px-3 sm:grid">
-                      {["Description","Unité","Qté","Prix HT","Remise %","TVA %","Total HT",""].map(h => (
-                        <span key={h} className={`text-xs font-bold uppercase tracking-wider ${tw5}`}>{h}</span>
-                      ))}
-                    </div>
-                    <div className="space-y-2">
-                      <AnimatePresence initial={false}>
-                        {items.map((it, idx) => (
-                          <ItemRow
-                            key={it.id || `item-${idx}`}
-                            it={it} idx={idx}
-                            totalItems={items.length}
-                            updItem={updItem}
-                            removeItem={removeItem}
-                            activeColor={activeColor}
-                            devise={draft.devise || "EUR"}
-                            catalogItems={catalogItems}
-                            onSaveToCatalog={saveToCatalog}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-
-                  {/* ── Remise & Acompte ── */}
-                  <div className="space-y-3">
-                    <SectionLabel icon={<Percent size={10}/>} label="Remise & acompte"/>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
-                        <Percent size={13} style={{ color:activeColor }}/>
-                        <div className="flex-1">
-                          <p className={`mb-1 text-xs font-medium ${tw3}`}>Remise globale</p>
-                          <div className="flex items-center gap-2">
-                            <input type="number" min="0" max="100" step="0.5"
-                              value={draft.remise_pct || ""}
-                              onChange={e => updDraft("remise_pct", parseFloat(e.target.value)||0)}
-                              placeholder="0"
-                              className={`w-16 rounded-lg ${tiB} ${tiBH} focus:border-[rgba(255,185,0,0.4)] px-2.5 py-1.5 text-sm ${tw1} outline-none transition`}/>
-                            <span className={`text-sm ${tw3}`}>%</span>
-                            {totals.remise > 0 && <span className="text-sm font-bold text-red-400/80">− {fmt(totals.remise)}</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
-                        <BadgeCheck size={13} className="text-green-400"/>
-                        <div className="flex-1">
-                          <p className={`mb-1 text-xs font-medium ${tw3}`}>Acompte versé</p>
-                          <div className="flex items-center gap-2">
-                            <input type="number" min="0" step="0.01"
-                              value={draft.acompte || ""}
-                              onChange={e => updDraft("acompte", parseFloat(e.target.value)||0)}
-                              placeholder="0.00"
-                              className={`w-24 rounded-lg ${tiB} ${tiBH} focus:border-[rgba(255,185,0,0.4)] px-2.5 py-1.5 text-sm ${tw1} outline-none transition`}/>
-                            <span className={`text-sm ${tw3}`}>{CURRENCIES.find(c => c.val === devise)?.symbol ?? "€"}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Totaux */}
-                  <div className="flex justify-end">
-                    <div className={`w-full max-w-xs rounded-xl border ${tbd1} ${tbg2} p-5 space-y-2`}>
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm ${tw3}`}>Sous-total HT</span>
-                        <span className={`text-sm font-semibold ${tw2}`}>{fmt(totals.subtotal_ht)}</span>
-                      </div>
-                      {totals.remise > 0 && (
-                        <div className="flex items-center justify-between">
-                          <span className={`text-sm ${tw3}`}>Remise ({draft.remise_pct}%)</span>
-                          <span className="text-sm font-semibold text-red-400">− {fmt(totals.remise)}</span>
-                        </div>
-                      )}
-                      {/* TVA breakdown by rate */}
-                      {Array.from(totals.tvaByRate.entries())
-                        .sort(([a],[b]) => a - b)
-                        .map(([rate, { ht, tva }]) => rate > 0 && tva > 0 && (
-                          <div key={rate} className="flex items-center justify-between">
-                            <span className={`text-sm ${tw3}`}>TVA {rate}% <span className={`text-xs ${tw6}`}>(HT {fmt(ht)})</span></span>
-                            <span className={`text-sm font-semibold ${tw2}`}>{fmt(tva)}</span>
-                          </div>
-                        ))
-                      }
-                      {(totals.tvaByRate.size === 0 || !Array.from(totals.tvaByRate.entries()).some(([r, {tva}]) => r > 0 && tva > 0)) && (
-                        <div className="flex items-center justify-between">
-                          <span className={`text-sm ${tw3}`}>TVA</span>
-                          <span className={`text-sm font-semibold ${tw2}`}>{fmt(totals.tva)}</span>
-                        </div>
-                      )}
-                      <div className={`border-t ${tbd1} pt-2 flex items-center justify-between`}>
-                        <span className={`text-base font-extrabold ${tw1}`}>Total TTC</span>
-                        <span className="text-xl font-bold" style={{ color:activeColor }}>{fmt(totals.ttc)}</span>
-                      </div>
-                      {totals.acompte > 0 && (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <span className={`text-sm ${tw3}`}>Acompte versé</span>
-                            <span className="text-sm font-semibold text-green-400">− {fmt(totals.acompte)}</span>
-                          </div>
-                          <div className={`border-t ${tbd1} pt-2 flex items-center justify-between`}>
-                            <span className={`text-sm font-bold ${tw2}`}>Net à payer</span>
-                            <span className="text-base font-bold" style={{ color:activeColor }}>{fmt(totals.ttc - totals.acompte)}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                </div>)}
-
-                {/* TAB: Options */}
-                {activeEditorTab === "options" && (
-                <div className="space-y-6">
-
-                  {/* ── Notes & conditions ── */}
-                  <div className="space-y-3">
-                    <SectionLabel icon={<FileText size={10}/>} label="Notes & conditions"/>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <DTextarea label="Notes au client" value={draft.notes} onChange={v => updDraft("notes", v)} placeholder="Informations complémentaires…" rows={3}/>
-                      <div>
-                        <DTextarea label="Conditions de paiement" value={draft.conditions} onChange={v => updDraft("conditions", v)} placeholder="Paiement à 30 jours nets…" rows={3}/>
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {CONDITIONS_PRESETS.map(p => (
-                            <button key={p.label} onClick={() => updDraft("conditions", p.val)}
-                              className={`rounded-full border ${tbd1} px-2 py-0.5 text-xs font-semibold ${tw4} transition ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`}>
-                              {p.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── Mentions légales ── */}
-                  <div className="space-y-3">
-                    <SectionLabel icon={<FileText size={10}/>} label="Mentions légales" hint="apparaît en pied de PDF"/>
-
-                    {/* Sélecteur de régime fiscal */}
-                    <div className={`rounded-xl border ${tbd1} ${tbg2} p-3 space-y-2`}>
-                      <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-white/30" : "text-gray-400"}`}>Régime fiscal</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {REGIMES_FISCAUX.map(r => (
-                          <button key={r.id} onClick={() => applyRegime(r.id)}
-                            className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                              regimeFiscal === r.id
-                                ? "border-[rgba(255,185,0,0.4)] bg-[rgba(255,185,0,0.1)] text-[#FFB900]"
-                                : `${tbd1} ${tw4} ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`
-                            }`}>
-                            {r.label}
-                          </button>
-                        ))}
-                      </div>
-                      {regimeFiscal && (
-                        <p className={`text-[11px] leading-relaxed ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                          {REGIMES_FISCAUX.find(r => r.id === regimeFiscal)?.hint}
-                          {" · "}
-                          <button
-                            onClick={clearRegime}
-                            className="underline hover:opacity-70">
-                            Effacer
-                          </button>
-                        </p>
-                      )}
-                    </div>
-
-                    <DTextarea value={draft.mentions_legales} onChange={v => updDraft("mentions_legales", v)}
-                      placeholder="TVA non applicable art. 293B CGI — Pénalités de retard…" rows={3}/>
-                    <div className="flex flex-wrap gap-1.5">
-                      {MENTIONS_PRESETS.map(p => (
-                        <button key={p.label} onClick={() => updDraft("mentions_legales", draft.mentions_legales ? `${draft.mentions_legales}\n${p.val}` : p.val)}
-                          className={`flex items-center gap-1 rounded-full border ${tbd1} px-2.5 py-1 text-xs font-semibold ${tw4} transition ${isDark ? "hover:border-white/20 hover:text-white/60" : "hover:border-gray-300 hover:text-gray-600"}`}>
-                          <Plus size={8}/>{p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                </div>)}
-
-                {/* TAB: Design */}
-                {activeEditorTab === "design" && (
-                <div className="space-y-6">
-
-                  {/* ── Apparence ── */}
-                  <div className="space-y-3">
-                    <SectionLabel icon={<Palette size={10}/>} label="Apparence"/>
-                    <TemplateSelector
-                      value={draft?.template ?? "modern"}
-                      onChange={v => updDraft("template", v)}
-                      data={draft ? draftToPreviewData(draft, items, totals) : undefined}
-                    />
-                    <ColorPicker value={activeColor} onChange={v => updDraft("couleur", v)}/>
-                  </div>
-
-                </div>)}
-
-                {/* TAB: Options (suite — récurrence + signature) */}
-                {activeEditorTab === "options" && (
-                <div className="space-y-6">
-
-                  {/* ── Facturation récurrente ── */}
-                  {selected && draft.type === "facture" && (
-                    <div className="space-y-3">
-                      <SectionLabel icon={<Repeat2 size={10}/>} label="Facturation récurrente"/>
-                      <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
-                        {docRecurCfg ? (
-                          <>
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.08)]">
-                              <Repeat2 size={14} style={{ color:"#FFB900" }}/>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-xs font-semibold ${tw1}`}>{RECUR_FREQS.find(f => f.val === docRecurCfg.freq)?.label}</p>
-                              <p className={`text-xs ${tw3}`}>Prochaine : {fmtDate(docRecurCfg.next_date)}</p>
-                            </div>
-                            <button onClick={() => { setRecurFreq(docRecurCfg.freq); setRecurModal(true); }}
-                              className={`shrink-0 text-xs ${tw4} transition hover:${tw2}`}>Modifier</button>
-                            <button onClick={() => { void supabase.from("documents").update({ recur_freq: null, recur_next_date: null }).eq("id", selected.id).eq("user_id", uid ?? ""); setDocRecurCfg(null); setSelected(s => s ? { ...s, recur_freq: null, recur_next_date: null } : s); showToast("success", "Récurrence désactivée."); }}
-                              className="shrink-0 text-xs text-red-400/50 transition hover:text-red-400">Désactiver</button>
-                            <button onClick={() => handleDuplicateRecur(docRecurCfg.freq, docRecurCfg.next_date)} disabled={duplicating}
-                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(255,185,0,0.25)] px-3 py-1.5 text-xs font-bold transition hover:bg-[rgba(255,185,0,0.08)] disabled:opacity-40"
-                              style={{ color:"#FFB900" }}>
-                              {duplicating ? <Loader2 size={9} className="animate-spin"/> : <Repeat2 size={9}/>} Créer prochaine
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${tbd1} ${tbg1}`}>
-                              <Repeat2 size={14} className={tw5}/>
-                            </div>
-                            <p className={`flex-1 text-xs ${tw4}`}>Aucune récurrence configurée</p>
-                            <button onClick={() => setRecurModal(true)}
-                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(255,185,0,0.25)] px-3 py-1.5 text-xs font-semibold transition hover:bg-[rgba(255,185,0,0.08)]"
-                              style={{ color:"#FFB900" }}>
-                              <Plus size={9}/> Activer
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Signature électronique ── */}
-                  {selected && (
-                    <div className="space-y-3">
-                      <SectionLabel icon={<PenLine size={10}/>} label="Signature électronique"/>
-                      <div className={`flex items-center gap-3 rounded-xl border ${tbd1} ${tbg2} px-4 py-3`}>
-                        {docSignature ? (
-                          <>
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08]">
-                              <BadgeCheck size={15} className="text-emerald-400"/>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-emerald-400">Document signé</p>
-                              <img src={docSignature} alt="Signature" className="mt-1 h-8 w-auto max-w-[120px] opacity-80"/>
-                            </div>
-                            <button onClick={sigDelete}
-                              className="shrink-0 text-xs text-red-400/50 transition hover:text-red-400">Supprimer</button>
-                          </>
-                        ) : (
-                          <>
-                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${tbd1} ${tbg1}`}>
-                              <PenLine size={14} className={tw5}/>
-                            </div>
-                            <p className={`flex-1 text-xs ${tw4}`}>Aucune signature</p>
-                            <button onClick={() => setSigModal(true)}
-                              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-[rgba(255,185,0,0.25)] px-3 py-1.5 text-xs font-semibold transition hover:bg-[rgba(255,185,0,0.08)]"
-                              style={{ color:"#FFB900" }}>
-                              <PenLine size={9}/> Signer
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                </div>)}
-
-                {/* TAB: Paiements */}
-                {activeEditorTab === "paiements" && (
-                <div className="space-y-6">
-                  {selected?.type === "facture" ? (
-                    <>
-                      <div className="rounded-2xl border p-5" style={{ borderColor:"rgba(251,191,36,0.2)", background:"rgba(251,191,36,0.04)" }}>
-                        <div className="mb-4 flex items-center justify-between">
-                          <p className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color:"rgba(251,191,36,0.6)" }}>Paiements reçus</p>
-                          <button onClick={() => setPayModal(true)}
-                            className="flex items-center gap-1.5 rounded-lg border border-[rgba(251,191,36,0.3)] px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition hover:border-[rgba(251,191,36,0.6)]"
-                            style={{ color:"#fbbf24" }}>
-                            <Plus size={10}/> Ajouter
-                          </button>
-                        </div>
-                        <div className="mb-2 flex items-center justify-between text-sm">
-                          <span style={{ color:"rgba(251,191,36,0.7)" }}>{fmtEur(selected.montant_paye ?? 0)} / {fmtEur(selected.total_ttc)}</span>
-                          <span className="font-bold" style={{ color:"#fbbf24" }}>
-                            {Math.min(100, Math.round(((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100))}%
-                          </span>
-                        </div>
-                        <div className="mb-4 h-2 w-full overflow-hidden rounded-full" style={{ background:"rgba(251,191,36,0.12)" }}>
-                          <div className="h-full rounded-full transition-all duration-500" style={{
-                            background:"#fbbf24",
-                            width:`${Math.min(100, ((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100)}%`,
-                          }}/>
-                        </div>
-                        {(selected.total_ttc - (selected.montant_paye ?? 0)) > 0.01 ? (
-                          <p className={`text-sm font-semibold ${tw2}`}>
-                            Reste à encaisser : <span style={{ color:"#fbbf24" }}>{fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}</span>
-                          </p>
-                        ) : (
-                          <p className="text-sm font-semibold text-emerald-400">Facture intégralement payée</p>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <p className={`text-sm ${tw4}`}>Le suivi des paiements est disponible pour les factures uniquement.</p>
-                  )}
-                </div>)}
-
-                {/* TAB: Historique */}
-                {activeEditorTab === "historique" && (
-                <div className="space-y-6">
-
-                  {/* ── Historique / Journal d'audit ── */}
-                  {selected && (
-                    <div className="space-y-3">
-                      <SectionLabel icon={<Clock size={10}/>} label="Historique"/>
-                      {auditLog.length === 0 ? (
-                        <p className={`text-xs ${tw5}`}>Aucun événement enregistré.</p>
-                      ) : (
-                        <div className="relative space-y-0">
-                          {auditLog.map((entry, i) => {
-                            const AUDIT_META: Record<string, { label: (d: Record<string,string>) => string; color: string }> = {
-                              "créé":          { label: () => "Document créé",              color: "#FFB900" },
-                              "modifié":       { label: () => "Document modifié",           color: "#94a3b8" },
-                              "statut_changé": { label: d => `Statut → ${STATUTS[d.vers as DocStatut]?.label ?? d.vers}`, color: STATUTS[entry.details?.vers as DocStatut]?.color ?? "#60a5fa" },
-                              "email_envoyé":  { label: d => `Email envoyé à ${d.destinataire ?? ""}`, color: "#60a5fa" },
-                              "pdf_exporté":   { label: () => "PDF téléchargé",             color: "#94a3b8" },
-                              "xml_exporté":   { label: () => "XML Factur-X téléchargé",   color: "#6abf7b" },
-                              "avoir_généré":  { label: d => `Avoir ${d.avoir_numero ?? ""} généré`, color: "#f472b6" },
-                              "dupliqué":      { label: d => `Dupliqué → ${d.nouveau_numero ?? ""}`, color: "#94a3b8" },
-                            };
-                            const meta = AUDIT_META[entry.action] ?? { label: () => entry.action, color: "#94a3b8" };
-                            const dt = new Date(entry.created_at);
-                            const now = Date.now();
-                            const diff = Math.floor((now - dt.getTime()) / 1000);
-                            const relTime = diff < 60 ? "À l'instant"
-                              : diff < 3600  ? `il y a ${Math.floor(diff / 60)}min`
-                              : diff < 86400 ? `il y a ${Math.floor(diff / 3600)}h`
-                              : fmtDate(entry.created_at);
-                            const isLast = i === auditLog.length - 1;
-                            return (
-                              <div key={entry.id} className="flex gap-3">
-                                <div className="flex flex-col items-center">
-                                  <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full" style={{ background: meta.color }}/>
-                                  {!isLast && <div className={`mt-1 w-px flex-1 ${isDark ? "bg-white/[0.06]" : "bg-gray-200"}`}/>}
-                                </div>
-                                <div className="pb-3 min-w-0">
-                                  <p className={`text-sm font-medium ${tw2} leading-snug`}>{meta.label(entry.details)}</p>
-                                  <p className={`text-xs ${tw5} mt-0.5`}>{relTime}</p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                </div>)}
-
-                {/* Mobile actions */}
-                <div className="flex flex-wrap gap-3 sm:hidden">
-                    {selected?.type === "devis" && (
-                      <button onClick={handleConvert} disabled={converting}
-                        className="flex items-center gap-1.5 rounded-xl border border-blue-400/20 px-3 py-2 text-xs font-semibold text-blue-400 transition hover:bg-blue-400/10 disabled:opacity-40">
-                        {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Facture
-                      </button>
-                    )}
-                    {selected?.type === "facture" && (selected.statut === "envoyé" || selected.statut === "payé" || selected.statut === "partiellement_payé") && (
-                      <button onClick={() => newAvoir(selected)} disabled={converting}
-                        className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition disabled:opacity-40"
-                        style={{ borderColor: AVOIR_BADGE.border, color: AVOIR_BADGE.color, background: AVOIR_BADGE.bg }}>
-                        {converting ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>} Avoir
-                      </button>
-                    )}
-                    {selected && draft.type === "facture" && (draft.statut === "envoyé" || draft.statut === "en_retard" || draft.statut === "partiellement_payé") && (
-                      <button onClick={() => setPayModal(true)}
-                        className="flex items-center gap-1.5 rounded-xl border border-green-400/25 px-3 py-2 text-xs font-semibold text-green-400/80 transition hover:border-green-400/50 hover:text-green-400">
-                        <DollarSign size={13}/> Encaisser
-                      </button>
-                    )}
-                    {selected && (
-                      <button onClick={handleDuplicate} disabled={duplicating}
-                        className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition disabled:opacity-40`}>
-                        {duplicating ? <Loader2 size={12} className="animate-spin"/> : <CopyPlus size={12}/>} Dupliquer
-                      </button>
-                    )}
-                    <button onClick={() => setShowPreview(true)}
-                      className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition`}>
-                      <Eye size={13}/> Aperçu
-                    </button>
-                    <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
-                      className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition hover:opacity-90"
-                      style={{ background:`${activeColor}22`, color:activeColor, border:`1px solid ${activeColor}50` }}>
-                      <FileDown size={13}/> PDF
-                    </button>
-                    {draft.type !== "devis" && (
-                      <button onClick={downloadXml}
-                        className={`flex items-center gap-1.5 rounded-xl border ${tbd1} px-3 py-2 text-xs font-semibold ${tw3} transition`}
-                        title="Télécharger XML Factur-X (EN 16931)">
-                        <FileCode2 size={13}/> XML
-                      </button>
-                    )}
-                    {selected && (
-                      <button onClick={openEmailModal}
-                        className="flex items-center gap-1.5 rounded-xl border border-sky-400/40 bg-sky-400/[0.08] px-3 py-2 text-xs font-semibold text-sky-400 transition hover:bg-sky-400/15">
-                        <Mail size={13}/> Email
-                      </button>
-                    )}
-                    {selected && draft.type === "facture" && (
-                      <button onClick={handlePaymentLink} disabled={payLinkLoading}
-                        className="flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.2)] px-3 py-2 text-xs font-semibold text-[#FFB900]/70 transition hover:border-[rgba(167,139,250,0.4)] hover:text-[#FFB900] disabled:opacity-40">
-                        {payLinkLoading ? <Loader2 size={13} className="animate-spin"/> : <Link2 size={13}/>} Paiement
-                      </button>
-                    )}
-                    {selected && draft.client_nom && (
-                      <button onClick={handlePortalLink} disabled={portalLoading}
-                        className="flex items-center gap-1.5 rounded-xl border border-[rgba(34,211,238,0.2)] px-3 py-2 text-xs font-semibold text-[#22d3ee]/70 transition hover:border-[rgba(34,211,238,0.4)] hover:text-[#22d3ee] disabled:opacity-40">
-                        {portalLoading ? <Loader2 size={13} className="animate-spin"/> : <Globe size={13}/>} Portail
-                      </button>
-                    )}
-                    {selected && draft.type === "devis" && (
-                      <button onClick={() => handleShareDevis(selected.id)}
-                        className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,185,0,0.25)] px-3 py-2 text-xs font-semibold text-[#FFB900]/70 transition hover:border-[rgba(255,185,0,0.5)] hover:text-[#FFB900]">
-                        <Share2 size={13}/> Copier le lien
-                      </button>
-                    )}
-                </div>
-
-              </div>
-            </motion.div>
-          )}
-        </main>
-
-        {/* ── RIGHT: Aperçu live ── */}
-        {draft && (
-        <div className={`flex-col border-l ${tbd1} overflow-hidden flex-[0_0_48%] ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}
-          style={{ background: isDark ? "#0e0e0e" : "#ebebeb" }}>
-
-          {/* Barre de contrôles */}
-          <div className={`shrink-0 flex items-center justify-between border-b ${tbd1} px-3 py-2`}
-            style={{ background: isDark ? "#181818" : "#ffffff" }}>
-            <div className="flex items-center gap-2">
-              <Eye size={11} style={{ color: activeColor }}/>
-              <span className={`text-xs font-semibold uppercase tracking-widest ${tw4}`}>Aperçu live</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
-                className="flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold transition hover:opacity-90"
-                style={{ background: `${activeColor}1a`, color: activeColor, border: `1px solid ${activeColor}33` }}>
-                <FileDown size={9}/> PDF
-              </button>
-              {draft.type !== "devis" && (
-                <button
-                  onClick={downloadXml}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold transition hover:opacity-90"
-                  style={{ background: "rgba(100,200,120,0.10)", color: "#6abf7b", border: "1px solid rgba(100,200,120,0.20)" }}
-                  title="Télécharger XML Factur-X">
-                  <FileCode2 size={9}/> XML
-                </button>
-              )}
-              <button
-                onClick={() => setShowPreview(true)}
-                title="Plein écran"
-                className={`flex items-center justify-center h-6 w-6 rounded border ${tbd1} ${tw4} transition hover:opacity-80`}>
-                <Maximize2 size={10}/>
-              </button>
-            </div>
-          </div>
-
-          {/* Feuille A4 scalée */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden">
-            <div className="flex min-h-full flex-col items-center py-6 px-4">
-              <div className="w-full" style={{ maxWidth: 595 }}>
-                <div className="overflow-hidden rounded-[2px] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.18),0_1px_4px_rgba(0,0,0,0.10)]">
-                  <ScaledA4>
-                    <InvoiceTemplate
-                      type={draft.template ?? "modern"}
-                      data={draftToPreviewData(draft, items, totals, logoSize)}
-                    />
-                  </ScaledA4>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-        )}
       </div>
-
-      {/* ── Preview modal ── */}
-      <AnimatePresence>
-        {showPreview && draft && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm">
-            <div className="flex items-center justify-between border-b border-white/[0.07] bg-[rgba(10,11,16,0.97)] px-6 py-3">
-              <div className="flex items-center gap-3">
-                <Eye size={15} style={{ color:activeColor }}/>
-                <span className="text-sm font-bold text-white">Aperçu — {draft.numero || (draft.type === "facture" ? "Facture" : "Devis")}</span>
-                {draft.sujet && <span className="text-xs text-white/40">{draft.sujet}</span>}
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => exportPDFWithTemplate(draft, items, totals, logoSize, logoHideName, logoTransform, companyDefaults)}
-                  className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold transition hover:opacity-90"
-                  style={{ background:"#FFB900", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(255,185,0,0.3)" }}>
-                  <FileDown size={13}/> Télécharger PDF
-                </button>
-                {draft.type !== "devis" && (
-                  <button onClick={downloadXml}
-                    className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold transition hover:opacity-90"
-                    style={{ background:"rgba(100,200,120,0.15)", color:"#6abf7b", border:"1px solid rgba(100,200,120,0.3)" }}
-                    title="Factur-X EN 16931 — format légal France 2026">
-                    <FileCode2 size={13}/> XML Factur-X
-                  </button>
-                )}
-                <button onClick={() => setShowPreview(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.08] text-white/40 transition hover:border-white/20 hover:text-white/70">
-                  <X size={15}/>
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-8">
-              <div className="mx-auto w-full max-w-[620px]">
-                <div className="relative overflow-hidden rounded-lg shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
-                  <InvoiceTemplate type={draft.template ?? "modern"} data={draftToPreviewData(draft, items, totals, logoSize)}/>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── CRM modal ── */}
-      <AnimatePresence>
-        {crmModal && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-400/25 bg-blue-400/[0.08]">
-                    <Users size={15} className="text-blue-400"/>
-                  </div>
-                  <h3 className="text-sm font-extrabold text-white">Importer depuis le CRM</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { setCrmModal(false); csvInputRef.current?.click(); }}
-                    className="flex items-center gap-1.5 rounded-xl border border-white/[0.09] px-2.5 py-1.5 text-xs font-semibold text-white/40 transition hover:text-white/70">
-                    <Upload size={11}/> CSV
-                  </button>
-                  <button onClick={() => setCrmModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
-                </div>
-              </div>
-              <div className="relative mb-3">
-                <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25"/>
-                <input value={crmQuery}
-                  onChange={e => searchCrm(e.target.value)}
-                  placeholder="Rechercher un client…"
-                  className={`w-full rounded-xl ${B} ${BH} ${BF} py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/25 outline-none transition`}/>
-              </div>
-              <div className="max-h-64 overflow-y-auto space-y-1">
-                {crmLoading ? (
-                  <div className="flex justify-center py-6"><Loader2 size={18} className="animate-spin text-white/20"/></div>
-                ) : crmClients.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-white/30">Aucun client trouvé</p>
-                ) : crmClients.map(c => (
-                  <button key={c.id} onClick={() => applyCrmClient(c)}
-                    className="w-full rounded-xl border border-transparent px-3 py-2.5 text-left transition hover:border-white/[0.09] hover:bg-white/[0.04]">
-                    <p className="text-sm font-semibold text-white">{c.name}</p>
-                    {c.company && <p className="text-xs text-white/40">{c.company}</p>}
-                    {c.email   && <p className="text-xs text-white/30">{c.email}</p>}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Confirm delete ── */}
-      <AnimatePresence>
-        {confirmDel && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
-                <Trash2 size={18} className="text-red-400"/>
-              </div>
-              <h3 className="text-base font-extrabold text-white">Supprimer ce document ?</h3>
-              <p className="mt-1.5 text-sm text-white/40">Cette action est irréversible.</p>
-              <div className="mt-5 flex gap-3">
-                <button onClick={() => setConfirmDel(false)}
-                  className={`flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20`}>Annuler</button>
-                <button onClick={handleDelete} disabled={deleting}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-red-500 disabled:opacity-50">
-                  {deleting && <Loader2 size={13} className="animate-spin"/>}Supprimer
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Email modal ── */}
-      <AnimatePresence>
-        {emailModal && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-sky-400/25 bg-sky-400/[0.08]">
-                    <Mail size={15} className="text-sky-400"/>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">Envoyer par email</h3>
-                    <p className="text-xs text-white/30">{draft?.numero}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isRelanceModal && (
-                    <button
-                      onClick={() => void handleAiRelance()}
-                      disabled={relanceAiLoading}
-                      title="Générer un message de relance avec l'IA"
-                      className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.07)] px-2.5 py-1.5 text-xs font-bold text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.15)] disabled:opacity-50">
-                      {relanceAiLoading ? <Loader2 size={10} className="animate-spin"/> : <Sparkles size={10}/>}
-                      {relanceAiLoading ? "IA…" : "IA"}
-                    </button>
-                  )}
-                  <button onClick={() => setEmailModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-white/35">Destinataire</label>
-                  <input value={emailTo} onChange={e => setEmailTo(e.target.value)} placeholder="email@client.com"
-                    className={`w-full rounded-xl ${B} ${BH} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-400/40`}/>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-white/35">Objet</label>
-                  <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
-                    className={`w-full rounded-xl ${B} ${BH} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-400/40`}/>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-white/35">Message</label>
-                  <textarea value={emailMsg} onChange={e => setEmailMsg(e.target.value)} rows={4}
-                    className={`w-full resize-none rounded-xl ${B} ${BH} px-3.5 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition focus:border-sky-400/40`}/>
-                </div>
-              </div>
-              <div className="mt-5 flex gap-3">
-                <button onClick={() => setEmailModal(false)}
-                  className={`flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20`}>Annuler</button>
-                <button onClick={handleSendEmail} disabled={sendingEmail || !emailTo}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-sky-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500 disabled:opacity-50">
-                  {sendingEmail ? <Loader2 size={13} className="animate-spin"/> : <Send size={13}/>}
-                  {sendingEmail ? "Envoi…" : "Envoyer"}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Payment link modal ── */}
-      <AnimatePresence>
-        {payLinkModal && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)]">
-                    <Link2 size={15} className="text-[#FFB900]"/>
-                  </div>
-                  <h3 className="text-sm font-extrabold text-white">Lien de paiement</h3>
-                </div>
-                <button onClick={() => setPayLinkModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
-              </div>
-              {payLinkLoading ? (
-                <div className="flex flex-col items-center gap-3 py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#FFB900]"/>
-                  <p className="text-sm text-white/40">Génération du lien Stripe…</p>
-                </div>
-              ) : payLinkUrl ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-white/50">Lien créé pour <strong className="text-white">{fmt(totals.ttc)}</strong></p>
-                  <div className={`flex items-center gap-2 rounded-xl ${B} px-3.5 py-2.5`}>
-                    <span className="flex-1 truncate text-xs text-white/50">{payLinkUrl}</span>
-                    <button onClick={handleCopyLink} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.09] text-white/40 transition hover:text-white/70">
-                      {copied ? <Check size={13} className="text-emerald-400"/> : <Copy size={13}/>}
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={handleCopyLink}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.08)] py-2.5 text-sm font-semibold text-[#FFB900] transition hover:bg-[rgba(167,139,250,0.15)]">
-                      {copied ? <Check size={13}/> : <Copy size={13}/>} {copied ? "Copié !" : "Copier"}
-                    </button>
-                    <a href={payLinkUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#FFB900] to-[#FFB900] py-2.5 text-sm font-bold text-white transition hover:opacity-90">
-                      Ouvrir
-                    </a>
-                  </div>
-                </div>
-              ) : null}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Portal modal ── */}
-      <AnimatePresence>
-        {portalModal && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(34,211,238,0.25)] bg-[rgba(34,211,238,0.08)]">
-                    <Globe size={15} className="text-[#22d3ee]"/>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">Portail client</h3>
-                    <p className="text-xs text-white/35">{draft?.client_nom}</p>
-                  </div>
-                </div>
-                <button onClick={() => setPortalModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
-              </div>
-              {portalLoading ? (
-                <div className="flex flex-col items-center gap-3 py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#22d3ee]"/>
-                  <p className="text-sm text-white/40">Génération du lien…</p>
-                </div>
-              ) : portalUrl ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-white/50">Partagez ce lien sécurisé avec <strong className="text-white">{draft?.client_nom}</strong>.
-                    <br/><span className="text-xs text-white/25">Valide 30 jours.</span>
-                  </p>
-                  <div className={`flex items-center gap-2 rounded-xl ${B} px-3.5 py-2.5`}>
-                    <span className="flex-1 truncate text-xs text-white/50">{portalUrl}</span>
-                    <button onClick={handleCopyPortal} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.09] text-white/40 transition hover:text-white/70">
-                      {portalCopied ? <Check size={13} className="text-emerald-400"/> : <Copy size={13}/>}
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={handleCopyPortal}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[rgba(34,211,238,0.25)] bg-[rgba(34,211,238,0.08)] py-2.5 text-sm font-semibold text-[#22d3ee] transition hover:bg-[rgba(34,211,238,0.15)]">
-                      {portalCopied ? <Check size={13}/> : <Copy size={13}/>} {portalCopied ? "Copié !" : "Copier"}
-                    </button>
-                    <a href={portalUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#22d3ee] to-[#0ea5e9] py-2.5 text-sm font-bold text-[#09090b] transition hover:opacity-90">
-                      Aperçu
-                    </a>
-                  </div>
-                </div>
-              ) : null}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Input CSV caché */}
-      <input ref={csvInputRef} type="file" accept=".csv,text/csv" onChange={handleCsvFile} className="hidden"/>
-
-      {/* ── Modal Récurrence ── */}
-      <AnimatePresence>
-        {recurModal && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.08)]">
-                    <Repeat2 size={15} style={{ color:"#FFB900" }}/>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">Facturation récurrente</h3>
-                    <p className="text-xs text-white/30">Génère la prochaine facture automatiquement</p>
-                  </div>
-                </div>
-                <button onClick={() => setRecurModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-white/35">Fréquence</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {RECUR_FREQS.map(f => (
-                      <button key={f.val} onClick={() => setRecurFreq(f.val)}
-                        className="rounded-xl border px-3 py-2.5 text-sm font-semibold transition"
-                        style={recurFreq === f.val
-                          ? { color:"#0a0a0a", background:"#FFB900", borderColor:"transparent" }
-                          : { color:"rgba(255,255,255,0.45)", background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.09)" }}>
-                        {f.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {draft?.date_echeance && (
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-                    <p className="text-xs text-white/35">Prochaine facture le</p>
-                    <p className="mt-0.5 text-sm font-bold text-white">{fmtDate(nextRecurDate(draft.date_echeance, recurFreq))}</p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-5 flex gap-3">
-                <button onClick={() => setRecurModal(false)}
-                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20">Annuler</button>
-                <button onClick={activateRecur}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition hover:opacity-90"
-                  style={{ background:"#FFB900", color:"#0a0a0a" }}>
-                  <Repeat2 size={13}/> Activer
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Modal Signature ── */}
-      <AnimatePresence>
-        {sigModal && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(255,185,0,0.25)] bg-[rgba(255,185,0,0.08)]">
-                    <PenLine size={15} style={{ color:"#FFB900" }}/>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">Signature électronique</h3>
-                    <p className="text-xs text-white/30">Signez avec votre souris ou votre doigt</p>
-                  </div>
-                </div>
-                <button onClick={() => { setSigModal(false); sigClear(); }} className="text-white/25 hover:text-white/60"><X size={15}/></button>
-              </div>
-              <div className="overflow-hidden rounded-xl border border-white/[0.09] bg-white/[0.02]" style={{ touchAction:"none" }}>
-                <canvas
-                  ref={sigCanvasRef}
-                  width={440} height={160}
-                  style={{ display:"block", width:"100%", height:"160px", cursor:"crosshair", touchAction:"none" }}
-                  onMouseDown={sigStart}
-                  onMouseMove={e => sigDraw(e.nativeEvent)}
-                  onMouseUp={sigEnd}
-                  onMouseLeave={sigEnd}
-                  onTouchStart={sigStartTouch}
-                  onTouchMove={e => { e.preventDefault(); sigDraw(e.nativeEvent); }}
-                  onTouchEnd={sigEnd}
-                />
-              </div>
-              <p className="mt-2 text-center text-xs text-white/20">Signez dans la zone ci-dessus</p>
-              <div className="mt-4 flex gap-3">
-                <button onClick={sigClear}
-                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/40 transition hover:text-white/60">Effacer</button>
-                <button onClick={sigSave}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition hover:opacity-90"
-                  style={{ background:"#FFB900", color:"#0a0a0a" }}>
-                  <BadgeCheck size={13}/> Valider la signature
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Modal Import CSV ── */}
-      <AnimatePresence>
-        {csvModal && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-lg rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-400/25 bg-blue-400/[0.08]">
-                    <Upload size={15} className="text-blue-400"/>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">Import CSV — {csvRows.length} contact{csvRows.length !== 1 ? "s" : ""}</h3>
-                    <p className="text-xs text-white/30">Colonnes reconnues : nom, email, societe, telephone</p>
-                  </div>
-                </div>
-                <button onClick={() => { setCsvModal(false); setCsvRows([]); }} className="text-white/25 hover:text-white/60"><X size={15}/></button>
-              </div>
-              {csvRows.length === 0 ? (
-                <p className="py-6 text-center text-sm text-white/30">Aucun contact valide détecté.</p>
-              ) : (
-                <div className="mb-4 max-h-60 space-y-1.5 overflow-y-auto">
-                  {csvRows.slice(0, 50).map((r, i) => (
-                    <div key={i} className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-blue-400/[0.07] text-xs font-bold text-blue-400">
-                        {(r.nom || r.email || "?").charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-white truncate">{r.nom || "(sans nom)"}</p>
-                        {r.societe && <p className="text-xs text-white/35 truncate">{r.societe}</p>}
-                      </div>
-                      {r.email && <span className="shrink-0 max-w-[140px] truncate text-xs text-white/30">{r.email}</span>}
-                    </div>
-                  ))}
-                  {csvRows.length > 50 && <p className="text-center text-xs text-white/25">+{csvRows.length - 50} autres…</p>}
-                </div>
-              )}
-              <div className="flex gap-3">
-                <button onClick={() => { setCsvModal(false); setCsvRows([]); }}
-                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20">Annuler</button>
-                <button onClick={handleCsvImport} disabled={csvImporting || csvRows.length === 0}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500 disabled:opacity-50">
-                  {csvImporting ? <Loader2 size={13} className="animate-spin"/> : <Upload size={13}/>}
-                  {csvImporting ? "Import…" : `Importer ${csvRows.length} contact${csvRows.length !== 1 ? "s" : ""}`}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Modal Rappels groupés ── */}
-      <AnimatePresence>
-        {remindersModal && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/[0.08]">
-                    <BellRing size={15} className="text-red-400"/>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">Rappels automatiques</h3>
-                    <p className="text-xs text-white/30">{overdueWithEmail.length} facture{overdueWithEmail.length !== 1 ? "s" : ""} en retard avec email</p>
-                  </div>
-                </div>
-                <button onClick={() => setRemindersModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
-              </div>
-              <div className="mb-4 max-h-52 space-y-1.5 overflow-y-auto">
-                {overdueWithEmail.map(doc => {
-                  const daysLate = doc.date_echeance
-                    ? Math.floor((Date.now() - new Date(doc.date_echeance).getTime()) / 86_400_000)
-                    : 0;
-                  return (
-                    <div key={doc.id} className="flex items-center gap-3 rounded-xl border border-red-500/[0.09] bg-red-500/[0.04] px-3 py-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-white truncate">{doc.client_nom} — {doc.numero}</p>
-                        <p className="text-xs text-white/35">{doc.client_email}</p>
-                      </div>
-                      <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-bold text-red-400">+{daysLate}j</span>
-                      <span className="shrink-0 text-sm font-bold text-red-300/80">{fmtEur(doc.total_ttc)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setRemindersModal(false)}
-                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20">Annuler</button>
-                <button onClick={handleBulkReminders} disabled={sendingBulk}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/80 py-2.5 text-sm font-bold text-white transition hover:bg-red-500 disabled:opacity-50">
-                  {sendingBulk ? <Loader2 size={13} className="animate-spin"/> : <BellRing size={13}/>}
-                  {sendingBulk ? "Envoi…" : `Envoyer ${overdueWithEmail.length} relance${overdueWithEmail.length !== 1 ? "s" : ""}`}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Modal Encaisser / Paiements partiels ── */}
-      <AnimatePresence>
-        {payModal && selected && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
-            onClick={e => e.target === e.currentTarget && setPayModal(false)}>
-            <motion.div initial={{ scale:0.93, y:16, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }}
-              exit={{ scale:0.95, y:8, opacity:0 }} transition={{ duration:0.3, ease }}
-              className="w-full max-w-md rounded-2xl border border-white/[0.09] bg-[#0d1120] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
-              {/* Header */}
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.08)]">
-                    <DollarSign size={15} className="text-[#fbbf24]"/>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">Encaisser un paiement</h3>
-                    <p className="text-xs text-white/30">{selected.numero} · Total {fmtEur(selected.total_ttc)}</p>
-                  </div>
-                </div>
-                <button onClick={() => setPayModal(false)} className="text-white/25 hover:text-white/60"><X size={15}/></button>
-              </div>
-
-              {/* Progression */}
-              {(selected.montant_paye ?? 0) > 0 && (
-                <div className="mb-4 rounded-xl border border-[rgba(251,191,36,0.15)] bg-[rgba(251,191,36,0.06)] p-3">
-                  <div className="mb-1.5 flex items-center justify-between text-xs">
-                    <span style={{ color:"rgba(251,191,36,0.7)" }}>Déjà encaissé : {fmtEur(selected.montant_paye ?? 0)}</span>
-                    <span className="font-bold" style={{ color:"#fbbf24" }}>
-                      Reste : {fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}
-                    </span>
-                  </div>
-                  <div className="h-1 w-full overflow-hidden rounded-full" style={{ background:"rgba(251,191,36,0.12)" }}>
-                    <div className="h-full rounded-full" style={{
-                      background:"#fbbf24",
-                      width:`${Math.min(100, ((selected.montant_paye ?? 0) / (selected.total_ttc || 1)) * 100)}%`,
-                    }}/>
-                  </div>
-                </div>
-              )}
-
-              {/* Formulaire nouveau paiement */}
-              <div className="mb-5 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/40">Montant (€)</label>
-                    <input
-                      type="number" step="0.01" min="0.01"
-                      placeholder={`Max ${fmtEur(selected.total_ttc - (selected.montant_paye ?? 0))}`}
-                      value={payAmount}
-                      onChange={e => setPayAmount(e.target.value)}
-                      className="w-full rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-white/20 outline-none focus:border-[rgba(251,191,36,0.4)]"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/40">Date</label>
-                    <input
-                      type="date" value={payDate}
-                      onChange={e => setPayDate(e.target.value)}
-                      className="w-full rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(251,191,36,0.4)]"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/40">Mode de paiement</label>
-                  <select value={payMethod} onChange={e => setPayMethod(e.target.value)}
-                    className="w-full rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(251,191,36,0.4)]"
-                    style={{ colorScheme:"dark" }}>
-                    {PAYMENT_METHODS.map(m => (
-                      <option key={m.val} value={m.val} style={{ background:"#181818" }}>{m.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/40">Notes (optionnel)</label>
-                  <input
-                    type="text" placeholder="Référence virement, commentaire…"
-                    value={payNotes}
-                    onChange={e => setPayNotes(e.target.value)}
-                    className="w-full rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-white/20 outline-none focus:border-[rgba(251,191,36,0.4)]"
-                  />
-                </div>
-              </div>
-              <div className="mb-5 flex gap-3">
-                <button onClick={() => setPayModal(false)}
-                  className="flex-1 rounded-xl border border-white/[0.09] py-2.5 text-sm font-semibold text-white/50 transition hover:border-white/20">Annuler</button>
-                <button onClick={handleAddPayment} disabled={payLoading || !payAmount}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-[#0d1120] transition hover:opacity-90 disabled:opacity-40"
-                  style={{ background:"#fbbf24" }}>
-                  {payLoading ? <Loader2 size={13} className="animate-spin"/> : <DollarSign size={13}/>}
-                  {payLoading ? "Enregistrement…" : "Enregistrer"}
-                </button>
-              </div>
-
-              {/* Historique des paiements */}
-              {payments.length > 0 && (
-                <div>
-                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.15em] text-white/25">Historique</p>
-                  <div className="max-h-44 space-y-1.5 overflow-y-auto">
-                    {payments.map(p => (
-                      <div key={p.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-white">{fmtEur(p.amount)}</span>
-                            <span className="rounded-full border border-[rgba(251,191,36,0.2)] px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider" style={{ color:"#fbbf24" }}>
-                              {PAYMENT_METHODS.find(m => m.val === p.method)?.label ?? p.method}
-                            </span>
-                          </div>
-                          <p className="text-xs text-white/30">{fmtDate(p.date)}{p.notes ? ` · ${p.notes}` : ""}</p>
-                        </div>
-                        <button onClick={() => handleDeletePayment(p.id)}
-                          className="shrink-0 rounded-lg p-1.5 text-white/20 transition hover:bg-red-500/10 hover:text-red-400">
-                          <Trash2 size={12}/>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Toast ── */}
-      <AnimatePresence>
-        {toast && <Toast toast={toast} onClose={() => setToast(null)}/>}
-      </AnimatePresence>
     </div>
   );
 }
