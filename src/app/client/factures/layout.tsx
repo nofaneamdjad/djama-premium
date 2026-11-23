@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, FileText, FileSignature, Users, Palette,
+  LayoutDashboard, FileText, FileSignature, Users,
   Building2, Settings2, ChevronRight, ChevronLeft, ReceiptText,
   Bell, BarChart2, Grid3X3, Images,
 } from "lucide-react";
@@ -45,9 +45,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Outils",
     items: [
-      { href: "/client/factures/modeles",    label: "Modèles",        icon: Palette },
-      { href: "/client/factures/galerie",    label: "Galerie A4",     icon: Images },
-      { href: "/client/factures/catalogue",  label: "Catalogue",      icon: Grid3X3 },
+      { href: "/client/factures/galerie",    label: "Galerie des modèles", icon: Images },
+      { href: "/client/factures/catalogue",  label: "Catalogue",           icon: Grid3X3 },
     ],
   },
   {
