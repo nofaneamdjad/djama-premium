@@ -26,22 +26,22 @@ const AI_SUGGESTIONS = [
 ] as const;
 
 const QUICK_ACTIONS = [
-  { label: "Créer une facture",    href: "/client/factures/documents?new=1&type=facture", Icon: ReceiptText, color: "#FFB900" },
-  { label: "Ajouter un client",    href: "/client/crm",                                  Icon: Users,       color: "#3b82f6" },
-  { label: "Ajouter une dépense",  href: "/client/depenses",                             Icon: CreditCard,  color: "#ef4444" },
-  { label: "Créer un projet",      href: "/client/projets",                              Icon: Briefcase,   color: "#8b5cf6" },
-  { label: "Importer un document", href: "/client/bloc-notes",                           Icon: Upload,      color: "#0ea5e9" },
+  { label: "Créer une facture",    href: "/client/factures/documents?new=1&type=facture", Icon: ReceiptText },
+  { label: "Ajouter un client",    href: "/client/crm",                                  Icon: Users       },
+  { label: "Ajouter une dépense",  href: "/client/depenses",                             Icon: CreditCard  },
+  { label: "Créer un projet",      href: "/client/projets",                              Icon: Briefcase   },
+  { label: "Importer un document", href: "/client/bloc-notes",                           Icon: Upload      },
 ];
 
 const PINNED_APPS = [
-  { label: "Factures",     href: "/client/factures",    Icon: ReceiptText, color: "#FFB900" },
-  { label: "CRM",          href: "/client/crm",         Icon: Users,       color: "#3b82f6" },
-  { label: "Dépenses",     href: "/client/depenses",    Icon: CreditCard,  color: "#ef4444" },
-  { label: "Trésorerie",   href: "/client/tresorerie",  Icon: BarChart3,   color: "#22c55e" },
-  { label: "Projets",      href: "/client/projets",     Icon: Briefcase,   color: "#8b5cf6" },
-  { label: "Planning",     href: "/client/planning",    Icon: Calendar,    color: "#f97316" },
-  { label: "Assistant IA", href: "/client/assistant",   Icon: Sparkles,    color: "#ec4899" },
-  { label: "Contrats",     href: "/client/contrats",    Icon: FileText,    color: "#0ea5e9" },
+  { label: "Factures",     href: "/client/factures",    Icon: ReceiptText },
+  { label: "CRM",          href: "/client/crm",         Icon: Users       },
+  { label: "Dépenses",     href: "/client/depenses",    Icon: CreditCard  },
+  { label: "Trésorerie",   href: "/client/tresorerie",  Icon: BarChart3   },
+  { label: "Projets",      href: "/client/projets",     Icon: Briefcase   },
+  { label: "Planning",     href: "/client/planning",    Icon: Calendar    },
+  { label: "Assistant IA", href: "/client/assistant",   Icon: Sparkles    },
+  { label: "Contrats",     href: "/client/contrats",    Icon: FileText    },
 ];
 
 // ── Theme tokens ──────────────────────────────────────────────────────────────
@@ -872,7 +872,7 @@ export default function DashboardPage() {
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Actions rapides</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {QUICK_ACTIONS.map(({ label, href, Icon, color }) => (
+            {QUICK_ACTIONS.map(({ label, href, Icon }) => (
               <Link
                 key={href}
                 href={href}
@@ -881,9 +881,9 @@ export default function DashboardPage() {
               >
                 <div
                   className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${color}14` }}
+                  style={{ background: `${GOLD}14` }}
                 >
-                  <Icon size={20} style={{ color }} />
+                  <Icon size={20} style={{ color: GOLD }} />
                 </div>
                 <span className="text-xs font-medium leading-snug" style={{ color: t.text2 }}>{label}</span>
               </Link>
@@ -977,7 +977,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="grid grid-cols-4 lg:grid-cols-8 gap-3">
-            {PINNED_APPS.map(({ label, href, Icon, color }) => (
+            {PINNED_APPS.map(({ label, href, Icon }) => (
               <Link
                 key={href}
                 href={href}
@@ -986,9 +986,9 @@ export default function DashboardPage() {
               >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${color}12` }}
+                  style={{ background: `${GOLD}12` }}
                 >
-                  <Icon size={18} style={{ color }} />
+                  <Icon size={18} style={{ color: GOLD }} />
                 </div>
                 <span className="text-[11px] font-medium leading-snug" style={{ color: t.text3 }}>
                   {label}
