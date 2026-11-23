@@ -241,12 +241,16 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
+      suppressHydrationWarning
       style={{ colorScheme: "dark", backgroundColor: "#111111" }}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
-        {/* Anti-flash: lit le thème avant le premier rendu pour éviter le flash sombre */}
-        <script dangerouslySetInnerHTML={{ __html: `try{var _t=JSON.parse(localStorage.getItem('djama-theme')||'{}');if(_t.mode==='light'){document.documentElement.setAttribute('data-theme','light');document.documentElement.style.backgroundColor='#f8f8f8';document.documentElement.style.colorScheme='light';}}catch(e){}` }} />
+        {/* Anti-flash: synchronous inline script — runs before React hydration.
+            Handles all 3 modes (dark/light/auto) and restores accent CSS var.
+            suppressHydrationWarning on <html> prevents React mismatch warning
+            caused by this script mutating the DOM before hydration. */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var _t=JSON.parse(localStorage.getItem('djama-theme')||'{}');var _dark=true;if(_t.mode==='light'){_dark=false;}else if(_t.mode==='auto'){var _h=new Date().getHours();_dark=(_h>=20||_h<7);}if(!_dark){document.documentElement.setAttribute('data-theme','light');document.documentElement.style.backgroundColor='#f0f1f6';document.documentElement.style.colorScheme='light';}if(_t.accent){document.documentElement.style.setProperty('--accent',_t.accent);document.documentElement.style.setProperty('--djama-yellow',_t.accent);}}catch(e){}` }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

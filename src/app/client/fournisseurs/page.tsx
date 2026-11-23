@@ -65,7 +65,7 @@ export default function FournisseursPage() {
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { if (process.env.NODE_ENV !== "development") router.replace("/login"); return; }
+        if (!user) { router.replace("/login"); return; }
         setUserId(user.id);
         const [fRes, oRes, iRes] = await Promise.all([
           supabase.from("fournisseurs").select("*").eq("user_id", user.id).order("company_name").limit(500),

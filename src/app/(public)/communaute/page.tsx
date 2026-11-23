@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Users, BookOpen, MessageSquare, Star, Calendar, Globe } from "lucide-react";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const ease = [0.22, 1, 0.36, 1] as const;
 const viewport = { once: true, margin: "-40px" };
 
@@ -98,7 +98,7 @@ export default function CommunautePage() {
               <Link
                 href="/register"
                 className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-[0.92rem] font-extrabold text-black transition-all hover:opacity-90"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)` }}
               >
                 Rejoindre gratuitement <ArrowRight size={15} />
               </Link>
@@ -173,7 +173,7 @@ export default function CommunautePage() {
           <Link
             href="/register"
             className="mt-7 inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-[0.95rem] font-extrabold text-black transition-all hover:opacity-90"
-            style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+            style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)` }}
           >
             Commencer gratuitement <ArrowRight size={15} />
           </Link>

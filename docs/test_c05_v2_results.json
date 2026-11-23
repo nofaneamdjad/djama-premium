@@ -1,0 +1,114 @@
+{
+  "suite": "C-05 V2 — Validation complémentaire",
+  "date": "2026-11-10T04:08:29.962Z",
+  "summary": {
+    "total": 17,
+    "passed": 17,
+    "failed": 0,
+    "skipped": 0
+  },
+  "results": [
+    {
+      "id": "TU-22",
+      "label": "JWT bypass bloqué — aucun cookie → 401",
+      "status": "PASS",
+      "detail": "Status 401 — Strategy 0 et 1 refusent sans djama_admin_tok"
+    },
+    {
+      "id": "TU-23",
+      "label": "Strategy 1 fail-closed — faux JWT Supabase sans djama_admin_tok → 401",
+      "status": "PASS",
+      "detail": "Status 401 — checkSessionNotRevoked(!sessionToken) = false"
+    },
+    {
+      "id": "TU-24",
+      "label": "Révocation immédiate via Strategy 0 — 401 sans délai JWT",
+      "status": "PASS",
+      "detail": "Session révoquée en DB → HTTP 401 immédiat (pas d'attente 1h JWT Supabase)"
+    },
+    {
+      "id": "TU-25",
+      "label": "Compte désactivé → 401 immédiat (trigger DB + Strategy 0)",
+      "status": "PASS",
+      "detail": "trg_revoke_sessions_on_account_disabled a révoqué la session, HTTP 401"
+    },
+    {
+      "id": "TU-26",
+      "label": "Changement de rôle → 401 immédiat (trigger DB + Strategy 0)",
+      "status": "PASS",
+      "detail": "trg_revoke_sessions_on_role_change a révoqué la session, HTTP 401"
+    },
+    {
+      "id": "TU-27",
+      "label": "Lockdown global — 4 sessions révoquées",
+      "status": "PASS",
+      "detail": "HTTP 200, ok:true, sessions_revoked:4 ≥ 3 admins fictifs"
+    },
+    {
+      "id": "TU-28",
+      "label": "Sessions pré-lockdown → 401 (toutes bloquées)",
+      "status": "PASS",
+      "detail": "3/3 anciennes sessions retournent 401 après lockdown global"
+    },
+    {
+      "id": "TU-29",
+      "label": "Lockdown journalisé dans admin_security_events",
+      "status": "PASS",
+      "detail": "event_type:global_lockdown, sessions_affected:4, reason:test-c05-v2-lockdown"
+    },
+    {
+      "id": "TU-30",
+      "label": "Lockdown non autorisé (role:admin) → 403",
+      "status": "PASS",
+      "detail": "Seul super_admin peut déclencher un lockdown global — HTTP 403 confirmé"
+    },
+    {
+      "id": "TU-31",
+      "label": "Rate limit lockdown — 429 après quota épuisé",
+      "status": "PASS",
+      "detail": "HTTP 429, Retry-After: 600s — 1 lockdown/10min par admin"
+    },
+    {
+      "id": "TU-32",
+      "label": "MFA enforcement — finance+AAL1 → 401",
+      "status": "PASS",
+      "detail": "HTTP 401, requireAdminUser refuse aal1 pour role finance. MFA requis pour ce compte."
+    },
+    {
+      "id": "TU-33",
+      "label": "MFA enforcement — finance+AAL2 → 200",
+      "status": "PASS",
+      "detail": "HTTP 200, session aal2 acceptée pour role finance"
+    },
+    {
+      "id": "TU-34",
+      "label": "Trigger MFA — AAL1 révoquée en DB + HTTP 401 après mfa_required→true",
+      "status": "PASS",
+      "detail": "revoked_at=2026-11-10T04:08:27Z, HTTP 401 — trg_revoke_aal1_sessions_on_mfa_enabled OK"
+    },
+    {
+      "id": "TU-35",
+      "label": "Trigger MFA — toutes sessions révoquées + nouvelle AAL2 autorisée + AAL1 bloquée",
+      "status": "PASS",
+      "detail": "Ancienne aal2 révoquée (migration 178), nouvelle aal2 HTTP 200, nouvelle aal1 HTTP 401"
+    },
+    {
+      "id": "TU-36",
+      "label": "Purge sessions expirées — 1 session(s) supprimée(s)",
+      "status": "PASS",
+      "detail": "Idempotente: 1 session(s) purgée(s), audit events préservés (4/4)"
+    },
+    {
+      "id": "TU-36b",
+      "label": "Purge idempotente — 0 sur 2e appel",
+      "status": "PASS",
+      "detail": "purge_expired_admin_sessions retourne 0 au 2e appel (aucune double-suppression)"
+    },
+    {
+      "id": "TU-37",
+      "label": "Viewer voit ses propres sessions (liste restreinte)",
+      "status": "PASS",
+      "detail": "1 session(s) retournée(s) pour viewer"
+    }
+  ]
+}

@@ -5,18 +5,28 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowUpRight, X, Sparkles, Send, ChevronDown,
+  ArrowUpRight, X, Sparkles, Send, ChevronDown, Upload,
   ReceiptText, Users, CreditCard, CheckCircle2,
-  AlertCircle, FileBarChart2, FileText, Briefcase, ChevronRight,
+  AlertCircle, FileBarChart2, Briefcase, ChevronRight,
   RefreshCw, AlertTriangle, Calendar, BarChart3, Lock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
+import { APPS_DATA } from "@/lib/applications-data";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip as ChartTooltip,
+} from "chart.js";
+ChartJS.register(CategoryScale, LinearScale, BarElement, ChartTooltip);
 import { useSubscription } from "@/lib/use-require-subscription";
 import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 const AI_SUGGESTIONS = [
   "Analyse mon activité",
@@ -26,35 +36,27 @@ const AI_SUGGESTIONS = [
 ] as const;
 
 const QUICK_ACTIONS = [
-  { label: "Créer une facture",   href: "/client/factures",  Icon: ReceiptText },
-  { label: "Ajouter un client",   href: "/client/crm",       Icon: Users       },
-  { label: "Ajouter une dépense", href: "/client/depenses",  Icon: CreditCard  },
-  { label: "Créer un projet",     href: "/client/projets",   Icon: Briefcase   },
-  { label: "Créer avec DJAMA",    href: "/client/assistant", Icon: Sparkles    },
+  { label: "Créer une facture",      href: "/client/factures", Icon: ReceiptText },
+  { label: "Ajouter un client",      href: "/client/crm",      Icon: Users       },
+  { label: "Ajouter une dépense",    href: "/client/depenses", Icon: CreditCard  },
+  { label: "Créer un projet",        href: "/client/projets",  Icon: Briefcase   },
+  { label: "Importer un document",   href: "/client/scanner",  Icon: Upload      },
 ] as const;
 
-const PINNED_APPS = [
-  { label: "Factures",     href: "/client/factures",    Icon: ReceiptText },
-  { label: "CRM",          href: "/client/crm",         Icon: Users       },
-  { label: "Dépenses",     href: "/client/depenses",    Icon: CreditCard  },
-  { label: "Trésorerie",   href: "/client/tresorerie",  Icon: BarChart3   },
-  { label: "Projets",      href: "/client/projets",     Icon: Briefcase   },
-  { label: "Planning",     href: "/client/planning",    Icon: Calendar    },
-  { label: "Assistant IA", href: "/client/assistant",   Icon: Sparkles    },
-  { label: "Contrats",     href: "/client/contrats",    Icon: FileText    },
-] as const;
+const PINNED_SLUGS = ["factures", "crm", "depenses", "tresorerie", "projets", "planning", "assistant", "contrats"] as const;
 
 function tok(isDark: boolean) {
   return {
-    bg:         isDark ? "#111111"                : "#f8f8f5",
+    bg:         isDark ? "#101114"                : "#F4F5F7",
+    card:       isDark ? "rgba(255,255,255,0.06)" : "#ffffff",
     glass:      isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.025)",
     glassMd:    isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
     border:     isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)",
     borderSoft: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-    text:       isDark ? "#e8e2d6"                : "#1a1a1a",
-    text2:      isDark ? "#a09880"                : "#4a4a4a",
-    text3:      isDark ? "#6b6256"                : "#7a7a7a",
-    text4:      isDark ? "#4a4540"                : "#9a9a9a",
+    text:       isDark ? "#F0F0F0"                : "#101114",
+    text2:      isDark ? "#A0A4AE"                : "#374151",
+    text3:      isDark ? "#7E8290"                : "#4B5563",
+    text4:      isDark ? "#636874"                : "#6B7280",
   };
 }
 
@@ -136,6 +138,42 @@ function TrendBadge({ pct }: { pct: number | null }) {
       {up ? "↑ +" : "↓ "}{Math.round(pct)}%
     </span>
   );
+}
+
+type MonthPoint = { label: string; amount: number };
+
+function RevChart({ months, isDark }: { months: MonthPoint[]; isDark: boolean }) {
+  const data = {
+    labels: months.map(m => m.label),
+    datasets: [{
+      data: months.map(m => m.amount),
+      backgroundColor: months.map((_, i) => i === months.length - 1 ? GOLD : `${GOLD}60`),
+      hoverBackgroundColor: months.map(() => GOLD),
+      borderRadius: 6,
+      borderSkipped: false,
+    }],
+  };
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx: { raw: unknown }) => ` ${fmtEurInt(ctx.raw as number)}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: isDark ? "#7E8290" : "#6B7280", font: { size: 11 as const } },
+        border: { display: false },
+      },
+      y: { display: false },
+    },
+  };
+  return <Bar data={data} options={options as never} />;
 }
 
 type Rapport = {
@@ -320,6 +358,11 @@ export default function AccueilPage() {
 
   const [rapportOpen, setRapportOpen] = useState(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState(true);
+  const [orgName, setOrgName]           = useState("");
+  const [taskCount, setTaskCount]       = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [chartMonths, setChartMonths]   = useState<MonthPoint[]>([]);
+  const [fetchError, setFetchError]     = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -330,6 +373,35 @@ export default function AccueilPage() {
         || "";
       if (raw) setUserName(raw.charAt(0).toUpperCase() + raw.slice(1));
     });
+    supabase.from("user_settings").select("raison_sociale").single()
+      .then(({ data }) => { if (data?.raison_sociale) setOrgName(data.raison_sociale); });
+  }, []);
+
+  useEffect(() => {
+    const sixAgo = new Date();
+    sixAgo.setMonth(sixAgo.getMonth() - 5);
+    sixAgo.setDate(1);
+    supabase.from("documents")
+      .select("total_ttc, date_document")
+      .eq("type", "facture")
+      .eq("statut", "payé")
+      .gte("date_document", sixAgo.toISOString().slice(0, 10))
+      .then(({ data }) => {
+        const byMonth: Record<string, number> = {};
+        (data ?? []).forEach(d => {
+          const k = d.date_document?.slice(0, 7) ?? "";
+          if (k) byMonth[k] = (byMonth[k] ?? 0) + (d.total_ttc ?? 0);
+        });
+        const pts: MonthPoint[] = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date();
+          d.setMonth(d.getMonth() - i);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          const label = new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(new Date(d.getFullYear(), d.getMonth()));
+          pts.push({ label, amount: byMonth[key] ?? 0 });
+        }
+        setChartMonths(pts);
+      });
   }, []);
 
   useEffect(() => {
@@ -340,110 +412,123 @@ export default function AccueilPage() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     const today      = localDateStr(0);
     const todayStart = `${today}T00:00:00`;
     const todayEnd   = `${today}T23:59:59`;
 
-    const [
-      docsRes, prevDocsRes,
-      expRes, prevExpRes,
-      tasksRes,
-      todayEventsRes,
-      recentDocsRes,
-      recentExpRes,
-    ] = await Promise.all([
-      supabase.from("documents")
-        .select("id, total_ttc, statut, date_document, date_echeance")
-        .eq("type", "facture")
-        .gte("date_document", dateFrom)
-        .lte("date_document", dateTo),
-      supabase.from("documents")
-        .select("total_ttc, statut")
-        .eq("type", "facture")
-        .gte("date_document", prevFrom)
-        .lte("date_document", prevTo),
-      supabase.from("expenses")
-        .select("amount")
-        .gte("date", dateFrom)
-        .lte("date", dateTo),
-      supabase.from("expenses")
-        .select("amount")
-        .gte("date", prevFrom)
-        .lte("date", prevTo),
-      supabase.from("productivity_tasks")
-        .select("id, title, status, due_date, priority")
-        .lte("due_date", today)
-        .neq("status", "done")
-        .order("due_date")
-        .limit(8),
-      supabase.from("planning_events")
-        .select("id, title, start_at, end_at")
-        .gte("start_at", todayStart)
-        .lte("start_at", todayEnd)
-        .order("start_at")
-        .limit(10),
-      supabase.from("documents")
-        .select("id, numero, client_nom, statut, total_ttc, type, date_document")
-        .in("type", ["facture", "devis"])
-        .order("date_document", { ascending: false })
-        .limit(6),
-      supabase.from("expenses")
-        .select("id, amount, category, date")
-        .order("date", { ascending: false })
-        .limit(4),
-    ]);
+    try {
+      const [
+        docsRes, prevDocsRes,
+        expRes, prevExpRes,
+        tasksRes,
+        todayEventsRes,
+        recentDocsRes,
+        recentExpRes,
+        taskCountRes,
+      ] = await Promise.all([
+        supabase.from("documents")
+          .select("id, total_ttc, statut, date_document, date_echeance")
+          .eq("type", "facture")
+          .gte("date_document", dateFrom)
+          .lte("date_document", dateTo),
+        supabase.from("documents")
+          .select("total_ttc, statut")
+          .eq("type", "facture")
+          .gte("date_document", prevFrom)
+          .lte("date_document", prevTo),
+        supabase.from("expenses")
+          .select("amount")
+          .gte("date", dateFrom)
+          .lte("date", dateTo),
+        supabase.from("expenses")
+          .select("amount")
+          .gte("date", prevFrom)
+          .lte("date", prevTo),
+        supabase.from("productivity_tasks")
+          .select("id, title, status, due_date, priority")
+          .lte("due_date", today)
+          .neq("status", "done")
+          .order("due_date")
+          .limit(8),
+        supabase.from("planning_events")
+          .select("id, title, start_at, end_at")
+          .gte("start_at", todayStart)
+          .lte("start_at", todayEnd)
+          .order("start_at")
+          .limit(10),
+        supabase.from("documents")
+          .select("id, numero, client_nom, statut, total_ttc, type, date_document")
+          .in("type", ["facture", "devis"])
+          .order("date_document", { ascending: false })
+          .limit(6),
+        supabase.from("expenses")
+          .select("id, amount, category, date")
+          .order("date", { ascending: false })
+          .limit(4),
+        supabase.from("productivity_tasks")
+          .select("id", { count: "exact", head: true })
+          .neq("status", "done"),
+      ]);
 
-    const docs     = docsRes.data     ?? [];
-    const prevDocs = prevDocsRes.data ?? [];
-    const exps     = expRes.data      ?? [];
-    const prevExps = prevExpRes.data  ?? [];
+      const docs     = docsRes.data     ?? [];
+      const prevDocs = prevDocsRes.data ?? [];
+      const exps     = expRes.data      ?? [];
+      const prevExps = prevExpRes.data  ?? [];
 
-    const newCA   = docs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
-    const prevCA  = prevDocs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
-    const newDep  = exps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
-    const prevDep = prevExps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
+      const newCA   = docs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
+      const prevCA  = prevDocs.filter(d => d.statut === "payé").reduce((s: number, d) => s + (d.total_ttc ?? 0), 0);
+      const newDep  = exps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
+      const prevDep = prevExps.reduce((s: number, e) => s + (e.amount ?? 0), 0);
 
-    setCa(newCA); setCaPrev(prevCA);
-    setDepenses(newDep); setDepPrev(prevDep);
-    setResultat(newCA - newDep); setResultatPrev(prevCA - prevDep);
+      setCa(newCA); setCaPrev(prevCA);
+      setDepenses(newDep); setDepPrev(prevDep);
+      setResultat(newCA - newDep); setResultatPrev(prevCA - prevDep);
 
-    const aEnc    = docs.filter(d => d.statut === "envoyé" || d.statut === "en_attente");
-    const retards = docs.filter(d =>
-      d.statut === "en_retard" ||
-      (d.date_echeance && d.date_echeance < today && d.statut !== "payé")
-    );
-    setAEncaisser(aEnc.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
-    setEnRetard(retards.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
+      const aEnc    = docs.filter(d => d.statut === "envoyé" || d.statut === "en_attente");
+      const retards = docs.filter(d =>
+        d.statut === "en_retard" ||
+        (d.date_echeance && d.date_echeance < today && d.statut !== "payé")
+      );
+      setAEncaisser(aEnc.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
+      setEnRetard(retards.reduce((s: number, d) => s + (d.total_ttc ?? 0), 0));
+      setPendingCount(aEnc.length);
+      setTaskCount(taskCountRes.count ?? 0);
 
-    setTodayEvents((todayEventsRes.data ?? []) as TodayEvent[]);
-    setTodayTasks((tasksRes.data ?? []) as TodayTask[]);
+      setTodayEvents((todayEventsRes.data ?? []) as TodayEvent[]);
+      setTodayTasks((tasksRes.data ?? []) as TodayTask[]);
 
-    const recentDocs = recentDocsRes.data ?? [];
-    const recentExps = recentExpRes.data  ?? [];
-    const activity: RecentItem[] = [
-      ...recentDocs.map(d => ({
-        id:       d.id,
-        label:    `${d.type === "facture" ? "Facture" : "Devis"} ${d.numero || ""}`.trim(),
-        sub:      d.client_nom || "",
-        date:     d.date_document || "",
-        href:     "/client/factures",
-        itemType: d.type as RecentItem["itemType"],
-      })),
-      ...recentExps.map(e => ({
-        id:       e.id,
-        label:    e.category || "Dépense",
-        sub:      fmtEurInt(e.amount ?? 0),
-        date:     e.date || "",
-        href:     "/client/depenses",
-        itemType: "expense" as const,
-      })),
-    ]
-      .filter(i => i.date)
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 8);
-    setRecentActivity(activity);
+      const recentDocs = recentDocsRes.data ?? [];
+      const recentExps = recentExpRes.data  ?? [];
+      const activity: RecentItem[] = [
+        ...recentDocs.map(d => ({
+          id:       d.id,
+          label:    `${d.type === "facture" ? "Facture" : "Devis"} ${d.numero || ""}`.trim(),
+          sub:      d.client_nom || "",
+          date:     d.date_document || "",
+          href:     "/client/factures",
+          itemType: d.type as RecentItem["itemType"],
+        })),
+        ...recentExps.map(e => ({
+          id:       e.id,
+          label:    e.category || "Dépense",
+          sub:      fmtEurInt(e.amount ?? 0),
+          date:     e.date || "",
+          href:     "/client/depenses",
+          itemType: "expense" as const,
+        })),
+      ]
+        .filter(i => i.date)
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 8);
+      setRecentActivity(activity);
 
-    setLoading(false);
+      setLoading(false);
+    } catch (err) {
+      console.error("[dashboard] fetch error:", err);
+      setFetchError("Impossible de charger les données. Vérifiez votre connexion.");
+      setLoading(false);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFrom, dateTo, prevFrom, prevTo]);
 
@@ -505,6 +590,23 @@ export default function AccueilPage() {
           )}
         </AnimatePresence>
 
+        {/* ── Error banner ─────────────────────────────────────────────────── */}
+        {fetchError && (
+          <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-5"
+            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+            <AlertTriangle size={16} style={{ color: "#ef4444", flexShrink: 0 }} />
+            <span className="text-sm" style={{ color: "#ef4444" }}>{fetchError}</span>
+            <button
+              onClick={() => fetchAll()}
+              className="ml-auto flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-opacity hover:opacity-70"
+              style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}
+            >
+              <RefreshCw size={12} />
+              Réessayer
+            </button>
+          </div>
+        )}
+
         {/* ── Greeting ─────────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -514,9 +616,17 @@ export default function AccueilPage() {
           <h1 className="text-3xl font-bold tracking-tight" style={{ color: t.text }}>
             Bonjour{userName ? `, ${userName}` : ""}
           </h1>
-          <p className="text-sm mt-1.5" style={{ color: t.text3 }}>
-            Voici l&apos;essentiel de votre activité aujourd&apos;hui.
-          </p>
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+            <p className="text-sm capitalize" style={{ color: t.text3 }}>
+              {new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}
+            </p>
+            {orgName && (
+              <>
+                <span style={{ color: t.borderSoft }}>·</span>
+                <span className="text-sm font-medium" style={{ color: t.text2 }}>{orgName}</span>
+              </>
+            )}
+          </div>
         </motion.div>
 
         {/* ── DJAMA AI ─────────────────────────────────────────────────────── */}
@@ -526,11 +636,10 @@ export default function AccueilPage() {
           className="mb-8"
         >
           <div
-            className="flex items-center gap-3 rounded-2xl px-5 py-4"
+            className="flex items-center gap-3 rounded-xl px-5 py-4"
             style={{
-              background: t.glass,
+              background: t.card,
               border: `1px solid ${t.border}`,
-              boxShadow: isDark ? "0 4px 28px rgba(0,0,0,0.25)" : "0 4px 28px rgba(0,0,0,0.06)",
             }}
           >
             <div
@@ -656,36 +765,42 @@ export default function AccueilPage() {
                 sub:     depenses === 0 ? "Aucune dépense" : "Sur la période",
               },
               {
-                label:      "Résultat",
-                val:        resultat,
-                prev:       resultatPrev,
-                color:      resultatPositif ? "#22c55e" : "#f87171",
-                Icon:       BarChart3,
-                href:       "/client/tresorerie",
-                sub:        resultatPositif ? "Bénéficiaire" : "Déficitaire",
-                isResultat: true,
-              },
-              {
-                label:    "En attente",
+                label:    "Factures en attente",
                 val:      aEncaisser,
                 prev:     0,
                 color:    enRetard > 0 ? "#f97316" : GOLD,
                 Icon:     AlertCircle,
                 href:     "/client/factures",
-                sub:      enRetard > 0 ? `${fmtEurInt(enRetard)} en retard` : "À encaisser",
+                sub:      pendingCount > 0
+                  ? `${pendingCount} facture${pendingCount > 1 ? "s" : ""}${enRetard > 0 ? " · retard" : ""}`
+                  : "Aucune en attente",
                 noTrend:  true,
+              },
+              {
+                label:   "Tâches en cours",
+                val:     taskCount,
+                prev:    0,
+                color:   taskCount > 0 ? "#3b82f6" : "#22c55e",
+                Icon:    CheckCircle2,
+                href:    "/client/productivite",
+                sub:     taskCount > 0 ? "À compléter" : "Tout est fait !",
+                noTrend: true,
+                isCount: true,
               },
             ].map((kpi) => {
               const KpiIcon = kpi.Icon;
-              const displayVal = (kpi as { isResultat?: boolean }).isResultat
-                ? (resultatPositif ? "+" : "−") + fmtEurInt(Math.abs(resultat))
-                : fmtEurInt(kpi.val);
+              const kpiExt = kpi as { isResultat?: boolean; isCount?: boolean };
+              const displayVal = kpiExt.isCount
+                ? String(kpi.val)
+                : kpiExt.isResultat
+                  ? (resultatPositif ? "+" : "−") + fmtEurInt(Math.abs(resultat))
+                  : fmtEurInt(kpi.val);
               return (
                 <Link
                   key={kpi.label}
                   href={kpi.href}
-                  className="group relative flex flex-col rounded-2xl p-4 transition-all hover:scale-[1.02]"
-                  style={{ background: t.glass, border: `1px solid ${t.border}` }}
+                  className="group relative flex flex-col rounded-xl p-4 transition-all hover:scale-[1.02]"
+                  style={{ background: t.card, border: `1px solid ${t.border}` }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div
@@ -716,6 +831,24 @@ export default function AccueilPage() {
               );
             })}
           </div>
+
+          {/* Chart CA 6 mois */}
+          <div className="mt-4 rounded-xl p-4" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <span className="text-sm font-semibold" style={{ color: t.text }}>Évolution CA</span>
+              <span className="text-xs shrink-0" style={{ color: t.text4 }}>6 mois · encaissées</span>
+            </div>
+            <div style={{ height: 160 }}>
+              {chartMonths.length > 0 ? (
+                <RevChart months={chartMonths} isDark={isDark} />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <span className="text-sm" style={{ color: t.text3 }}>Aucune donnée disponible</span>
+                </div>
+              )}
+            </div>
+          </div>
+
         </motion.section>
 
         {/* ── Aujourd'hui ──────────────────────────────────────────────────── */}
@@ -727,7 +860,7 @@ export default function AccueilPage() {
           <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Aujourd&apos;hui</h2>
           <div className="grid lg:grid-cols-2 gap-4">
 
-            <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <div className="rounded-xl p-5" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Calendar size={15} style={{ color: GOLD }} />
@@ -764,7 +897,7 @@ export default function AccueilPage() {
               )}
             </div>
 
-            <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <div className="rounded-xl p-5" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={15} style={{ color: GOLD }} />
@@ -816,21 +949,16 @@ export default function AccueilPage() {
           className="mb-8"
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Actions rapides</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="flex flex-wrap gap-2">
             {QUICK_ACTIONS.map(({ label, href, Icon }) => (
               <Link
                 key={href}
                 href={href}
-                className="group flex flex-col items-center gap-3 rounded-2xl p-5 text-center transition-all hover:scale-[1.03] active:scale-[0.97]"
-                style={{ background: t.glass, border: `1px solid ${t.border}` }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-80 active:scale-[0.97]"
+                style={{ background: t.card, border: `1px solid ${t.border}`, color: t.text2 }}
               >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${GOLD}14` }}
-                >
-                  <Icon size={20} style={{ color: GOLD }} />
-                </div>
-                <span className="text-xs font-medium leading-snug" style={{ color: t.text2 }}>{label}</span>
+                <Icon size={14} style={{ color: GOLD }} />
+                {label}
               </Link>
             ))}
           </div>
@@ -846,7 +974,7 @@ export default function AccueilPage() {
           {loading ? (
             <div className="flex flex-col gap-1">{[...Array(5)].map((_, i) => <Skel key={i} h={52} />)}</div>
           ) : recentActivity.length === 0 ? (
-            <div className="py-10 text-center rounded-2xl" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <div className="py-10 text-center rounded-xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <p className="text-sm" style={{ color: t.text3 }}>Aucune activité récente</p>
               <p className="text-xs mt-1" style={{ color: t.text4 }}>Vos actions apparaîtront ici</p>
             </div>
@@ -892,23 +1020,37 @@ export default function AccueilPage() {
               Toutes les applications <ChevronRight size={10} />
             </Link>
           </div>
-          <div className="grid grid-cols-4 lg:grid-cols-8 gap-3">
-            {PINNED_APPS.map(({ label, href, Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group flex flex-col items-center gap-2 py-4 px-1 rounded-2xl text-center transition-all hover:scale-[1.05] active:scale-[0.96]"
-                style={{ background: t.glass, border: `1px solid ${t.border}` }}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${GOLD}12` }}
-                >
-                  <Icon size={18} style={{ color: GOLD }} />
-                </div>
-                <span className="text-[11px] font-medium leading-snug" style={{ color: t.text3 }}>{label}</span>
-              </Link>
-            ))}
+          <div className="rounded-xl p-4" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+            <div className="grid grid-cols-4 lg:grid-cols-8 gap-y-5 gap-x-2">
+              {PINNED_SLUGS.map(slug => {
+                const app = APPS_DATA.find(a => a.slug === slug);
+                if (!app) return null;
+                const AppIcon = app.icon;
+                return (
+                  <Link
+                    key={slug}
+                    href={app.clientHref ?? `/client/${slug}`}
+                    className="group flex flex-col items-center gap-2 text-center transition-transform hover:scale-[1.06] active:scale-[0.96]"
+                  >
+                    <div style={{
+                      width: 52, height: 52, borderRadius: "27%",
+                      background: app.color,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: `0 2px 8px ${app.color}50`,
+                      position: "relative", overflow: "hidden",
+                    }}>
+                      <div style={{
+                        position: "absolute", inset: 0,
+                        background: "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 55%)",
+                        pointerEvents: "none",
+                      }} />
+                      <AppIcon size={24} color="white" strokeWidth={1.6} />
+                    </div>
+                    <span className="text-[11px] font-medium leading-snug w-full" style={{ color: t.text3 }}>{app.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </motion.section>
 

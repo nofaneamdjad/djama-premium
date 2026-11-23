@@ -9,7 +9,7 @@ import { useMemo, useEffect, useState, Suspense } from "react";
 const ease = [0.16, 1, 0.3, 1] as const;
 
 const COLORS = [
-  "#c9a55a", "#e8cc94", "#34d399", "#60a5fa",
+  "#FFB900", "#FFB900", "#34d399", "#60a5fa",
   "#a78bfa", "#f472b6", "#fbbf24", "#ffffff",
 ];
 
@@ -122,7 +122,7 @@ function ConfirmationContent() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease, delay: 0.4 }}
-        className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.1)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#c9a55a]"
+        className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.1)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#FFB900]"
       >
         <Sparkles size={9} /> Abonnement activé
       </motion.div>

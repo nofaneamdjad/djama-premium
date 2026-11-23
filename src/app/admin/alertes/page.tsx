@@ -2,7 +2,6 @@
 
 import { AlertTriangle, CheckCircle, XCircle, Info, RefreshCw } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
-import { getSupabase } from "@/lib/supabase";
 import { V } from "@/components/hq";
 
 interface Alert {
@@ -20,28 +19,25 @@ export default function AlertesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const sb = getSupabase();
+      const res = await fetch("/api/admin/alertes");
+      if (!res.ok) throw new Error("Erreur serveur");
+      const { messages_non_lus, paiements_echoues, acces_expires } = await res.json() as {
+        messages_non_lus: number; paiements_echoues: number; acces_expires: number;
+      };
+
       const built: Alert[] = [];
-
-      const [msgRes, invRes, payRes] = await Promise.all([
-        sb.from("contact_messages").select("id", { count: "exact", head: true }).eq("status", "nouveau"),
-        sb.from("invoices").select("id", { count: "exact", head: true }).in("payment_status", ["échoué", "en retard"]),
-        sb.from("user_access").select("id", { count: "exact", head: true }).lt("expires_at", new Date().toISOString()).not("expires_at", "is", null),
-      ]);
-
-      if ((msgRes.count ?? 0) > 0) {
-        built.push({ type: "warning", title: "Messages non lus", description: `${msgRes.count} message${(msgRes.count ?? 0) > 1 ? "s" : ""} en attente de réponse`, count: msgRes.count ?? 0, href: "/admin/messages" });
+      if (messages_non_lus > 0) {
+        built.push({ type: "warning", title: "Messages non lus", description: `${messages_non_lus} message${messages_non_lus > 1 ? "s" : ""} en attente de réponse`, count: messages_non_lus, href: "/admin/messages" });
       }
-      if ((invRes.count ?? 0) > 0) {
-        built.push({ type: "error", title: "Paiements échoués", description: `${invRes.count} facture${(invRes.count ?? 0) > 1 ? "s" : ""} avec paiement échoué ou en retard`, count: invRes.count ?? 0, href: "/admin/paiements" });
+      if (paiements_echoues > 0) {
+        built.push({ type: "error", title: "Paiements échoués", description: `${paiements_echoues} facture${paiements_echoues > 1 ? "s" : ""} avec paiement échoué ou en retard`, count: paiements_echoues, href: "/admin/paiements" });
       }
-      if ((payRes.count ?? 0) > 0) {
-        built.push({ type: "warning", title: "Accès expirés", description: `${payRes.count} accès ont dépassé leur date d'expiration`, count: payRes.count ?? 0, href: "/admin/acces" });
+      if (acces_expires > 0) {
+        built.push({ type: "warning", title: "Accès expirés", description: `${acces_expires} accès ont dépassé leur date d'expiration`, count: acces_expires, href: "/admin/acces" });
       }
       if (built.length === 0) {
         built.push({ type: "success", title: "Tout est en ordre", description: "Aucune alerte active. La plateforme fonctionne normalement." });
       }
-
       setAlerts(built);
     } catch (e) {
       console.error(e);

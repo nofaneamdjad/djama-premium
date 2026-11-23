@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 interface Props {
   editor: Editor | null;
@@ -31,7 +31,7 @@ function Btn({ onClick, active, disabled, title, children, isDark, wide }: {
       title={title} disabled={disabled}
       className={`relative flex ${wide?"px-2 min-w-[2.5rem]":"w-7"} h-7 items-center justify-center rounded transition-colors text-[11px] ${
         active
-          ? "text-[#c9a55a] bg-[rgba(201,165,90,0.12)]"
+          ? "text-[#FFB900] bg-[rgba(255,185,0,0.12)]"
           : isDark ? "text-white/60 hover:text-white hover:bg-white/8"
                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
       } disabled:opacity-30 disabled:pointer-events-none`}
@@ -158,7 +158,7 @@ function HeadingMenu({ editor, isDark }: { editor: Editor; isDark?: boolean }) {
 
 function ColorPicker({ editor, isDark, type }: { editor: Editor; isDark?: boolean; type: "text"|"highlight" }) {
   const [open, setOpen] = useState(false);
-  const COLORS = ["#000000","#374151","#6b7280","#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6","#ec4899","#c9a55a","#06b6d4","#ffffff"];
+  const COLORS = ["#000000","#374151","#6b7280","#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6","#ec4899","#FFB900","#06b6d4","#ffffff"];
   return (
     <div className="relative">
       <button onMouseDown={e=>{e.preventDefault();setOpen(o=>!o);}} title={type==="text"?"Couleur du texte":"Surligner"}

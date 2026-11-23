@@ -1,25 +1,26 @@
 /**
- * POST /api/admin/auth   — Connexion administrateur (dual strategy)
+ * POST /api/admin/auth   — Connexion administrateur individuelle
  * DELETE /api/admin/auth — Déconnexion
  *
- * Stratégie :
- *  1. Si email fourni → auth Supabase individuelle + vérification admin_users
- *  2. Sinon → fallback ADMIN_PASS partagé (rétrocompatibilité)
+ * Stratégie unique : auth Supabase individuelle + vérification admin_users
+ * Strategy 2 (ADMIN_PASS partagé PBKDF2) supprimée — V1.7-SECU Bloquant 3.
  */
 import { NextRequest, NextResponse }               from "next/server";
 import { cookies }                                  from "next/headers";
-import { generateAdminToken }                       from "@/lib/admin-token";
 import { checkRateLimitAsync as checkRateLimit,
          getClientIp }                              from "@/lib/rate-limit";
-import { verifyTOTP, isTOTPEnabled }               from "@/lib/totp";
 import { createServerClient }                       from "@supabase/ssr";
 import { createSupabaseAdmin }                      from "@/lib/supabase-server";
 import { logAdminAction, updateLastLogin }          from "@/lib/admin-auth-v2";
+import { randomBytes, createHash }                  from "crypto";
+
+const SESSION_DURATION_MS = 12 * 60 * 60 * 1000; // 12 h — durée max session admin
 
 export async function POST(req: NextRequest) {
-  // ── Rate limiting : 10 tentatives / 15 min par IP ──────────────
+  // ── Rate limiting (configurable via ADMIN_AUTH_RATE_LIMIT, défaut 10) ──
   const ip = getClientIp(req);
-  const { allowed, resetAt } = await checkRateLimit(ip, 10, 15 * 60 * 1000);
+  const rateMax = parseInt(process.env.ADMIN_AUTH_RATE_LIMIT ?? "10", 10);
+  const { allowed, resetAt } = await checkRateLimit(ip, rateMax, 15 * 60 * 1000);
   if (!allowed) {
     await new Promise((r) => setTimeout(r, 1000));
     const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
@@ -96,48 +97,60 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Vérification TOTP si activée
-      if (isTOTPEnabled()) {
-        const secret = process.env.ADMIN_TOTP_SECRET!;
-        if (!totpCode) {
-          return NextResponse.json(
-            { error: "Code 2FA requis", require2fa: true },
-            { status: 401 }
-          );
-        }
-        const valid = await verifyTOTP(secret, totpCode);
-        if (!valid) {
-          await new Promise((r) => setTimeout(r, 600));
-          return NextResponse.json(
-            { error: "Code 2FA invalide ou expiré", require2fa: true },
-            { status: 401 }
-          );
-        }
-      }
+      // ── MFA Supabase Auth (aal2) ──────────────────────────────
+      // Si mfa_required = true pour cet admin, on ne délivre PAS le djama_admin_tok
+      // lors de ce POST. Le client doit compléter le challenge MFA via
+      // POST /api/admin/auth/mfa {action:"challenge"} puis {action:"verify"}.
+      // Les cookies Supabase sb-* (session aal1) sont déjà émis (sessionCookies).
+      if (adminRow.mfa_required) {
+        // Détecter si l'utilisateur a déjà des facteurs MFA enrôlés
+        const { data: factorsData } = await sbAdmin.auth.admin.getUserById(authData.user.id);
+        const verifiedFactors = (factorsData?.user?.factors ?? []).filter(
+          (f: { status: string }) => f.status === "verified"
+        );
+        const hasFactors = verifiedFactors.length > 0;
 
-      // Lier supabase_user_id si pas encore fait
-      if (!adminRow.id) {
-        await sbAdmin
-          .from("admin_users")
-          .update({ supabase_user_id: authData.user.id })
-          .eq("email", normalizedEmail);
+        // Émettre les cookies Supabase aal1 mais PAS le djama_admin_tok
+        const partialRes = NextResponse.json({
+          ok:         false,
+          mfaRequired: true,
+          hasFactors,
+          adminId:    adminRow.id,  // utilisé pour créer admin_sessions après verify
+        }, { status: 200 });
+        for (const { name, value, options } of sessionCookies) {
+          partialRes.cookies.set(name, value, options as Parameters<typeof partialRes.cookies.set>[2]);
+        }
+        return partialRes;
       }
 
       // Mettre à jour last_login (non-bloquant)
       void updateLastLogin(adminRow.id, ip);
 
-      // Créer une entrée dans admin_sessions pour requireAdminUser (checkSessionNotRevoked)
-      const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      try {
-        await sbAdmin.from("admin_sessions").insert({
+      // ── Créer la session admin — BLOQUANT : le login échoue si l'INSERT échoue ──
+      // token_hash = SHA-256(sessionToken) — lié au cookie djama_admin_tok
+      const sessionToken  = randomBytes(32).toString("hex"); // 64 hex chars
+      const tokenHash     = createHash("sha256").update(sessionToken).digest("hex");
+      const sessionExpiry = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
+
+      const { data: sessionRow, error: sessionError } = await sbAdmin
+        .from("admin_sessions")
+        .insert({
           admin_user_id: adminRow.id,
-          token_hash:    crypto.randomUUID(),
+          token_hash:    tokenHash,
           ip_address:    ip,
           user_agent:    req.headers.get("user-agent") ?? "",
-          expires_at:    sessionExpiresAt,
-        });
-      } catch {
-        // Non bloquant — ne jamais bloquer un login pour un échec de tracking
+          expires_at:    sessionExpiry,
+          aal:           "aal1", // login sans MFA → aal1
+        })
+        .select("id")
+        .single();
+
+      if (sessionError || !sessionRow) {
+        console.error("[AdminAuth] Échec INSERT admin_sessions:", sessionError?.message);
+        return NextResponse.json(
+          { error: "Erreur serveur lors de la création de session. Réessayez." },
+          { status: 500 }
+        );
       }
 
       // Journal d'accès
@@ -149,15 +162,18 @@ export async function POST(req: NextRequest) {
         details: { method: "supabase_individual", role: adminRow.role },
       });
 
-      // Émettre le cookie djama_admin_tok pour la compatibilité middleware
-      const ADMIN_PASS = process.env.ADMIN_PASS ?? "";
-      const token = await generateAdminToken(ADMIN_PASS || normalizedEmail);
-      const res = NextResponse.json({ ok: true, role: adminRow.role, name: adminRow.name });
-      res.cookies.set("djama_admin_tok", token, {
+      // Cookie djama_admin_tok = session token (remplace le PBKDF2 en Strategy 1)
+      const res = NextResponse.json({
+        ok:        true,
+        role:      adminRow.role,
+        name:      adminRow.name,
+        sessionId: sessionRow.id,   // exposé au client pour la révocation ciblée
+      });
+      res.cookies.set("djama_admin_tok", sessionToken, {
         httpOnly: true,
         secure:   process.env.NODE_ENV === "production",
         sameSite: "strict",
-        maxAge:   60 * 60 * 24 * 7,
+        maxAge:   SESSION_DURATION_MS / 1000, // 12 h en secondes
         path:     "/",
       });
       // Attacher les cookies de session Supabase (sb-*) pour que requireAdminUser
@@ -168,68 +184,11 @@ export async function POST(req: NextRequest) {
       return res;
     }
 
-    /* ── Stratégie 2 : fallback ADMIN_PASS partagé ──────────────── */
-    // Bloqué en production — seule l'auth individuelle Supabase est autorisée
-    if (process.env.DJAMA_ENV === "production") {
-      return NextResponse.json(
-        { error: "L'authentification ADMIN_PASS est désactivée en production. Utilisez votre email." },
-        { status: 401 }
-      );
-    }
-
-    const ADMIN_PASS = process.env.ADMIN_PASS;
-    if (!ADMIN_PASS) {
-      return NextResponse.json(
-        { error: "Configuration admin manquante." },
-        { status: 503 }
-      );
-    }
-
-    if (password !== ADMIN_PASS) {
-      await new Promise((r) => setTimeout(r, 600));
-      return NextResponse.json(
-        { error: "Mot de passe incorrect." },
-        { status: 401 }
-      );
-    }
-
-    // TOTP si activé
-    if (isTOTPEnabled()) {
-      const secret = process.env.ADMIN_TOTP_SECRET!;
-      if (!totpCode) {
-        return NextResponse.json(
-          { error: "Code 2FA requis", require2fa: true },
-          { status: 401 }
-        );
-      }
-      const valid = await verifyTOTP(secret, totpCode);
-      if (!valid) {
-        await new Promise((r) => setTimeout(r, 600));
-        return NextResponse.json(
-          { error: "Code 2FA invalide ou expiré", require2fa: true },
-          { status: 401 }
-        );
-      }
-    }
-
-    // Journal d'accès legacy
-    await logAdminAction({
-      admin: null, action: "LOGIN_SUCCESS_LEGACY",
-      ip, userAgent: req.headers.get("user-agent") ?? "",
-      details: { method: "admin_pass_shared", note: "Migrer vers auth individuelle" },
-      severity: "info",
-    });
-
-    const token = await generateAdminToken(ADMIN_PASS);
-    const res = NextResponse.json({ ok: true });
-    res.cookies.set("djama_admin_tok", token, {
-      httpOnly: true,
-      secure:   process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge:   60 * 60 * 24 * 7,
-      path:     "/",
-    });
-    return res;
+    // Pas d'email → Strategy 2 supprimée (V1.7-SECU)
+    return NextResponse.json(
+      { error: "Authentification individuelle requise. Fournissez votre email et mot de passe." },
+      { status: 400 }
+    );
 
   } catch {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

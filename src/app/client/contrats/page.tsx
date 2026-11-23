@@ -74,7 +74,7 @@ export default function ContratsPage() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
+      if (!user) { router.replace("/login"); return; }
       setUserId(user.id);
       setUserEmail(user.email ?? undefined);
       const meta = user.user_metadata as Record<string, string> | undefined;

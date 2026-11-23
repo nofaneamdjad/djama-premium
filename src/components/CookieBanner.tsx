@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Cookie, X, Check, Shield } from "lucide-react";
 
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
+const GOLD  = "#FFB900";
+const GOLDR = "255,185,0";
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
@@ -42,7 +42,7 @@ export default function CookieBanner() {
               background: "rgba(13,8,33,0.96)",
               border: "1px solid rgba(255,255,255,0.10)",
               backdropFilter: "blur(20px)",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.50), 0 0 0 1px rgba(201,165,90,0.08)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.50), 0 0 0 1px rgba(255,185,0,0.08)",
             }}
           >
             {/* Subtle gold glow top */}

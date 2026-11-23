@@ -18,7 +18,7 @@ export type Testimonial = {
 };
 
 const AVATAR_PALETTE = [
-  { color: "#c9a55a", rgb: "201,165,90"  },
+  { color: "#FFB900", rgb: "255,185,0"  },
   { color: "#f472b6", rgb: "244,114,182" },
   { color: "#60a5fa", rgb: "96,165,250"  },
   { color: "#a78bfa", rgb: "167,139,250" },
@@ -108,10 +108,10 @@ export default function TestimonialsSection({
         <div className="mb-10 text-center">
           <motion.div
             variants={fadeIn}
-            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,.4)] bg-[rgba(201,165,90,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.24em]"
-            style={{ color: "#b08d57" }}
+            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,.4)] bg-[rgba(255,185,0,.08)] px-4 py-1.5 text-[0.67rem] font-bold uppercase tracking-[.24em]"
+            style={{ color: "#FFB900" }}
           >
-            <Star size={10} fill="#c9a55a" style={{ color: "#c9a55a" }} /> {badge}
+            <Star size={10} fill="#FFB900" style={{ color: "#FFB900" }} /> {badge}
           </motion.div>
           <motion.h2 variants={fadeIn} className="text-[1.9rem] font-extrabold text-gray-900 sm:text-[2.3rem]">
             {title}
@@ -135,7 +135,7 @@ export default function TestimonialsSection({
 
               <div className="flex items-center gap-1">
                 {Array.from({ length: t.rating }).map((_, i) => (
-                  <Star key={i} size={12} fill="#c9a55a" style={{ color: "#c9a55a" }} />
+                  <Star key={i} size={12} fill="#FFB900" style={{ color: "#FFB900" }} />
                 ))}
               </div>
 

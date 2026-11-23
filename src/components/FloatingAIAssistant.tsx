@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Send, RotateCcw } from "lucide-react";
+import { X, Send, RotateCcw } from "lucide-react";
+import DjamaRobot from "@/components/DjamaRobot";
 import { useTheme } from "@/lib/theme-context";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -254,10 +255,10 @@ export default function FloatingAIAssistant() {
 
   /* ── Derived theme tokens ── */
   const panelBg      = isDark ? "#0c0f1a"                      : "#ffffff";
-  const panelBorder  = isDark ? "rgba(201,165,90,0.22)"        : "rgba(201,165,90,0.25)";
+  const panelBorder  = isDark ? "rgba(255,185,0,0.22)"        : "rgba(255,185,0,0.25)";
   const panelShadow  = isDark
-    ? "0 20px 60px rgba(0,0,0,0.75), 0 0 0 1px rgba(201,165,90,0.06)"
-    : "0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(201,165,90,0.06)";
+    ? "0 20px 60px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,185,0,0.06)"
+    : "0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,185,0,0.06)";
   const headerBorder = isDark ? "rgba(255,255,255,0.07)"       : "rgba(0,0,0,0.07)";
   const titleColor   = isDark ? "rgba(255,255,255,0.90)"       : "rgba(0,0,0,0.85)";
   const subtitleColor= isDark ? "rgba(255,255,255,0.35)"       : "rgba(0,0,0,0.40)";
@@ -292,7 +293,7 @@ export default function FloatingAIAssistant() {
             : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
         } ${open ? (isDark ? "bg-white/[0.08] !text-white/80" : "bg-gray-100 !text-gray-600") : ""}`}
       >
-        <Sparkles size={15} style={open ? { color: GOLD } : undefined} />
+        <DjamaRobot size={16} state={loading ? "thinking" : open ? "chat" : "idle"} theme={isDark ? "dark" : "light"} />
         {/* gold dot indicator when conversation active */}
         {messages.length > 0 && !open && (
           <span
@@ -323,17 +324,17 @@ export default function FloatingAIAssistant() {
             {/* Header */}
             <div
               className="flex shrink-0 items-center justify-between px-4 py-3"
-              style={{ borderBottom: `1px solid ${headerBorder}`, background: "rgba(201,165,90,0.06)" }}
+              style={{ borderBottom: `1px solid ${headerBorder}`, background: "rgba(255,185,0,0.06)" }}
             >
               <div className="flex items-center gap-2.5">
                 <div
                   className="flex h-7 w-7 items-center justify-center rounded-lg"
                   style={{
-                    background: "linear-gradient(135deg,rgba(201,165,90,0.28),rgba(201,165,90,0.1))",
-                    border: "1px solid rgba(201,165,90,0.3)",
+                    background: "linear-gradient(135deg,rgba(255,185,0,0.28),rgba(255,185,0,0.1))",
+                    border: "1px solid rgba(255,185,0,0.3)",
                   }}
                 >
-                  <Sparkles size={12} style={{ color: GOLD }} />
+                  <DjamaRobot size={14} state={loading ? "thinking" : "chat"} theme={isDark ? "dark" : "light"} />
                 </div>
                 <div>
                   <p className="text-xs font-bold" style={{ color: titleColor }}>Assistant IA</p>
@@ -394,9 +395,9 @@ export default function FloatingAIAssistant() {
                     {msg.role === "assistant" && (
                       <div
                         className="mt-0.5 shrink-0 flex h-6 w-6 items-center justify-center rounded-lg"
-                        style={{ background: "rgba(201,165,90,0.14)", border: "1px solid rgba(201,165,90,0.22)" }}
+                        style={{ background: "rgba(255,185,0,0.14)", border: "1px solid rgba(255,185,0,0.22)" }}
                       >
-                        <Sparkles size={10} style={{ color: GOLD }} />
+                        <DjamaRobot size={14} state="idle" theme={isDark ? "dark" : "light"} />
                       </div>
                     )}
                     <div
@@ -405,7 +406,7 @@ export default function FloatingAIAssistant() {
                       }`}
                       style={
                         msg.role === "user"
-                          ? { background: `linear-gradient(135deg,${GOLD},#b08d45)`, color: "#0a0a0a" }
+                          ? { background: `linear-gradient(135deg,${GOLD},#FFB900)`, color: "#0a0a0a" }
                           : { background: asstBg, border: `1px solid ${asstBorder}`, color: asstText }
                       }
                     >
@@ -420,9 +421,9 @@ export default function FloatingAIAssistant() {
                 <div className="flex gap-2.5">
                   <div
                     className="mt-0.5 shrink-0 flex h-6 w-6 items-center justify-center rounded-lg"
-                    style={{ background: "rgba(201,165,90,0.14)", border: "1px solid rgba(201,165,90,0.22)" }}
+                    style={{ background: "rgba(255,185,0,0.14)", border: "1px solid rgba(255,185,0,0.22)" }}
                   >
-                    <Sparkles size={10} style={{ color: GOLD }} />
+                    <DjamaRobot size={14} state="thinking" theme={isDark ? "dark" : "light"} />
                   </div>
                   <div
                     className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm px-4 py-3"
@@ -467,7 +468,7 @@ export default function FloatingAIAssistant() {
                   onClick={() => send(input)}
                   disabled={!input.trim() || loading}
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all disabled:opacity-30 hover:brightness-110 active:scale-95"
-                  style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}
+                  style={{ background: `linear-gradient(135deg,${GOLD},#FFB900)` }}
                 >
                   <Send size={12} style={{ color: "#0a0a0a" }} />
                 </button>

@@ -49,6 +49,8 @@ create table if not exists employes (
   user_id        uuid        not null references auth.users(id) on delete cascade,
   nom            text        not null,
   poste          text        not null,
+  email          text,
+  organization_id uuid,
   salaire_brut   numeric(10,2) not null default 0,
   date_embauche  date,
   type_contrat   text        not null default 'CDI'

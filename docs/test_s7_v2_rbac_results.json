@@ -1,0 +1,260 @@
+{
+  "suite": "S7 V2 — Phase 3 RBAC",
+  "timestamp": "2026-11-09T14:07:08.543Z",
+  "server": "http://localhost:3000",
+  "summary": {
+    "total": 35,
+    "passed": 33,
+    "failed": 0,
+    "skipped": 0,
+    "blocked": 0,
+    "deferred": 2
+  },
+  "results": [
+    {
+      "id": "A-01",
+      "name": "Finance : can_manage_users=false (séparation RH/finances)",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.284Z"
+    },
+    {
+      "id": "A-02",
+      "name": "Commercial : can_perform_refunds=false (accès financier direct bloqué)",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.285Z"
+    },
+    {
+      "id": "A-03",
+      "name": "Support : can_view_revenue=false (séparation données financières)",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.285Z"
+    },
+    {
+      "id": "A-04",
+      "name": "Tech : can_view_audit_log=true, can_perform_refunds=false",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.285Z"
+    },
+    {
+      "id": "A-05",
+      "name": "Sécurité/AdminMgmt : réservé à super_admin uniquement",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.285Z"
+    },
+    {
+      "id": "A-06",
+      "name": "MFA obligatoire : super_admin, direction, admin, finance — facultatif : commercial, support, tech",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.285Z"
+    },
+    {
+      "id": "B-Grembours",
+      "name": "401/403 sans auth — GET /api/admin/remboursements",
+      "status": "PASS",
+      "detail": "HTTP 401",
+      "ts": "2026-11-09T14:07:07.327Z"
+    },
+    {
+      "id": "B-Prembours",
+      "name": "401/403 sans auth — POST /api/admin/remboursements",
+      "status": "PASS",
+      "detail": "HTTP 401",
+      "ts": "2026-11-09T14:07:07.333Z"
+    },
+    {
+      "id": "B-Preconcil",
+      "name": "401/403 sans auth — POST /api/admin/remboursements/reconcile",
+      "status": "PASS",
+      "detail": "HTTP 401",
+      "ts": "2026-11-09T14:07:07.338Z"
+    },
+    {
+      "id": "B-Gvirement",
+      "name": "401/403 sans auth — GET /api/admin/virements",
+      "status": "PASS",
+      "detail": "HTTP 401",
+      "ts": "2026-11-09T14:07:07.344Z"
+    },
+    {
+      "id": "B-Pvirement",
+      "name": "401/403 sans auth — PATCH /api/admin/virements",
+      "status": "PASS",
+      "detail": "HTTP 401",
+      "ts": "2026-11-09T14:07:07.350Z"
+    },
+    {
+      "id": "B-G00000000",
+      "name": "401/403 sans auth — GET /api/admin/subscriptions/00000000-0000-0000-0000-000000000000",
+      "status": "PASS",
+      "detail": "HTTP 401",
+      "ts": "2026-11-09T14:07:07.355Z"
+    },
+    {
+      "id": "B-P00000000",
+      "name": "401/403 sans auth — PATCH /api/admin/subscriptions/00000000-0000-0000-0000-000000000000",
+      "status": "PASS",
+      "detail": "HTTP 401",
+      "ts": "2026-11-09T14:07:07.361Z"
+    },
+    {
+      "id": "B-Gtransact",
+      "name": "401/403 sans auth — GET /api/admin/revenue/transactions",
+      "status": "PASS",
+      "detail": "HTTP 401",
+      "ts": "2026-11-09T14:07:07.366Z"
+    },
+    {
+      "id": "C-01",
+      "name": "401 avec token invalide (cookie djama_admin_tok=faux)",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.408Z"
+    },
+    {
+      "id": "D-01",
+      "name": "Remboursements : autorisés=super_admin,direction,finance — interdits=commercial,support,tech",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.408Z"
+    },
+    {
+      "id": "D-02",
+      "name": "can_delete_users : réservé à super_admin uniquement",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.408Z"
+    },
+    {
+      "id": "D-03",
+      "name": "can_manage_admins : réservé à super_admin uniquement",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.408Z"
+    },
+    {
+      "id": "D-04",
+      "name": "Support : can_manage_payments=false (SoD paiements)",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.408Z"
+    },
+    {
+      "id": "D-05",
+      "name": "Tech : audit_log accessible, paiements interdits",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.408Z"
+    },
+    {
+      "id": "E-01",
+      "name": "Login sans email → 400 (Strategy 2 supprimée)",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:07.462Z"
+    },
+    {
+      "id": "E-02",
+      "name": "Login mauvais credentials → 401",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.104Z"
+    },
+    {
+      "id": "E-03",
+      "name": "Admin commercial créé : can_perform_refunds=false en DB",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.409Z"
+    },
+    {
+      "id": "E-04",
+      "name": "Exception individuelle : can_perform_refunds=true pour commercial spécifique",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.430Z"
+    },
+    {
+      "id": "E-05",
+      "name": "Exception individuelle : rôle commercial inchangé, can_manage_admins non escaladé",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.441Z"
+    },
+    {
+      "id": "E-06",
+      "name": "MFA via ROLES_REQUIRING_MFA : super_admin,direction,finance forcés dans le code (mfa_required DB = certains false (MFA code-only))",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.497Z"
+    },
+    {
+      "id": "F-admi",
+      "name": "Table admin_users accessible via service_role",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.505Z"
+    },
+    {
+      "id": "F-admi",
+      "name": "Table admin_sessions accessible via service_role",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.512Z"
+    },
+    {
+      "id": "F-admi",
+      "name": "Table admin_refund_requests accessible via service_role",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.521Z"
+    },
+    {
+      "id": "F-admi",
+      "name": "Table admin_audit_log accessible via service_role",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.528Z"
+    },
+    {
+      "id": "F-rembou",
+      "name": "Org séparation : /api/admin/remboursements → 401 sans auth",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.533Z"
+    },
+    {
+      "id": "F-vireme",
+      "name": "Org séparation : /api/admin/virements → 401 sans auth",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.537Z"
+    },
+    {
+      "id": "F-transa",
+      "name": "Org séparation : /api/admin/revenue/transactions → 401 sans auth",
+      "status": "PASS",
+      "detail": "",
+      "ts": "2026-11-09T14:07:08.542Z"
+    },
+    {
+      "id": "G-01",
+      "name": "Remboursement avec rôle finance via HTTP",
+      "status": "DEFER",
+      "detail": "Nécessite session finance authentifiée + MFA + sandbox Stripe/PayPal configuré",
+      "ts": "2026-11-09T14:07:08.543Z"
+    },
+    {
+      "id": "G-02",
+      "name": "Accès audit_log avec rôle tech",
+      "status": "DEFER",
+      "detail": "Nécessite session tech authentifiée",
+      "ts": "2026-11-09T14:07:08.543Z"
+    }
+  ]
+}

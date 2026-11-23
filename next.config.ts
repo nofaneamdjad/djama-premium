@@ -1,7 +1,58 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+// Permet deux instances Next.js sur des ports différents (dev local vs prod)
+// sans conflit sur le verrou .next/dev/lock.
+// Usage : NEXT_DIST_DIR=.next-local npx next dev --port 3001
+const distDir = process.env.NEXT_DIST_DIR ?? ".next";
+
+// ── Garde DJAMA_ENV : valeur obligatoire, typage strict ──────────────────
+// Fail-closed : absent ou invalide → refuse de démarrer.
+// Local : DJAMA_ENV=development dans .env.local
+// Production : DJAMA_ENV=production dans les variables Vercel
+const _DJAMA_ENV = process.env.DJAMA_ENV;
+if (_DJAMA_ENV !== "development" && _DJAMA_ENV !== "production") {
+  throw new Error(
+    `[DJAMA] DJAMA_ENV="${_DJAMA_ENV ?? "(absent)"}" est invalide. ` +
+    `Définissez DJAMA_ENV=development (local) ou DJAMA_ENV=production (Vercel). ` +
+    `En local : copiez .env.local.dev vers .env.local.`
+  );
+}
+
+// ── Garde Upstash : obligatoire en production (rate limiting distribué) ──────
+// En dev, le fallback in-memory de rate-limit.ts est acceptable (1 instance).
+// En prod Vercel (multi-instance), l'absence d'Upstash = rate limiting inopérant.
+if (_DJAMA_ENV === "production") {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    throw new Error(
+      `[DJAMA] UPSTASH_REDIS_REST_URL et/ou UPSTASH_REDIS_REST_TOKEN absents en production. ` +
+      `Sans Upstash, le rate limiting est inopérant sur les instances Vercel. ` +
+      `Configurez-les dans les variables d'environnement Vercel.`
+    );
+  }
+}
+
+// ── Garde dev/prod : Supabase URL doit être localhost en développement ───────
+// Protège contre la connexion accidentelle à Supabase cloud depuis dev.
+// Pour audits nécessitant le cloud (Docker indisponible) :
+//   définir DJAMA_ALLOW_CLOUD_SUPABASE_IN_DEV=true dans .env.local
+if (
+  _DJAMA_ENV === "development" &&
+  !process.env.DJAMA_ALLOW_CLOUD_SUPABASE_IN_DEV &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  !process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith("http://127.0.0.1:54321")
+) {
+  throw new Error(
+    `[DJAMA] Garde dev/prod : NEXT_PUBLIC_SUPABASE_URL="${process.env.NEXT_PUBLIC_SUPABASE_URL}" n'est pas localhost. ` +
+    `En développement, utilisez Supabase local (http://127.0.0.1:54321). ` +
+    `Pour utiliser intentionnellement le cloud en dev (audit sans Docker), ` +
+    `définissez DJAMA_ALLOW_CLOUD_SUPABASE_IN_DEV=true dans .env.local.`
+  );
+}
+
 const nextConfig: NextConfig = {
+  distDir,
+
   // Ignore les erreurs TS auto-générées par le validator de routes Next.js 16
   // (bug interne .next/dev/types/validator.ts — "Cannot find name 'k'")
   // Les types sont toujours vérifiés via `tsc --noEmit` en CI/pre-commit.

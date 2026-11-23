@@ -6,7 +6,7 @@ const BASE_INPUT = [
   "w-full rounded-xl border border-gray-200 bg-gray-50",
   "px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400",
   "outline-none transition",
-  "focus:border-[rgba(201,165,90,0.5)] focus:bg-white",
+  "focus:border-[rgba(255,185,0,0.5)] focus:bg-white",
   "disabled:opacity-40 disabled:cursor-not-allowed",
 ].join(" ");
 

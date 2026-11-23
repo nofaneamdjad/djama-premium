@@ -6,7 +6,6 @@ import {
   Star, Plus, Trash2, Save, X, Search, Loader2,
   Eye, EyeOff, User, ArrowLeft, Building2,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import Toast, { type ToastData } from "@/components/ui/Toast";
 import { V } from "@/components/hq";
 
@@ -74,12 +73,11 @@ export default function AdminTemoignagesPage() {
 
   const fetchItems = useCallback(async () => {
     setLoadingAll(true);
-    const { data } = await supabase
-      .from("testimonials")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    setItems((data ?? []) as Temoignage[]);
+    const res = await fetch("/api/admin/temoignages");
+    if (res.ok) {
+      const json = await res.json() as { testimonials: Temoignage[] };
+      setItems(json.testimonials ?? []);
+    }
     setLoadingAll(false);
   }, []);
 
@@ -108,13 +106,13 @@ export default function AdminTemoignagesPage() {
     if (!draft || !draft.nom.trim()) { showToast("error", "Le nom est requis"); return; }
     setSaving(true);
 
-    if (selected) {
-      const { error } = await supabase.from("testimonials").update({ ...draft }).eq("id", selected.id);
-      if (error) { showToast("error", error.message); setSaving(false); return; }
-    } else {
-      const { error } = await supabase.from("testimonials").insert({ ...draft });
-      if (error) { showToast("error", error.message); setSaving(false); return; }
-    }
+    const body = selected ? { id: selected.id, ...draft } : { ...draft };
+    const res = await fetch("/api/admin/temoignages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const e = await res.json(); showToast("error", e.error ?? "Erreur serveur"); setSaving(false); return; }
 
     showToast("success", "Témoignage enregistré");
     setDirty(false);
@@ -125,7 +123,7 @@ export default function AdminTemoignagesPage() {
   async function handleDelete() {
     if (!selected) return;
     setDeleting(true);
-    await supabase.from("testimonials").delete().eq("id", selected.id);
+    await fetch(`/api/admin/temoignages?id=${selected.id}`, { method: "DELETE" });
     setDeleting(false); setConfirmDel(false);
     setSelected(null); setDraft(null); setMobileView("list");
     showToast("success", "Témoignage supprimé");

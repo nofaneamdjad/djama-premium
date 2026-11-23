@@ -9,7 +9,7 @@ import { fmtDate, fmtEur, alphaHex } from "../shared";
 
 export function ModernTemplate({ data }: { data: PreviewData }) {
   const co       = data.company ?? {};
-  const C        = data.color ?? "#c9a55a";
+  const C        = data.color ?? "#FFB900";
   const docLabel  = data.type === "invoice" ? "FACTURE" : "DEVIS";
   const dateLabel = data.type === "invoice" ? "Échéance" : "Valable jusqu'au";
   const dateVal   = data.type === "invoice" ? data.due_date : data.valid_until;

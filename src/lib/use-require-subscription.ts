@@ -17,9 +17,7 @@ export interface SubscriptionState {
 }
 
 const DEFAULT_STATE: SubscriptionState =
-  process.env.NODE_ENV === "development"
-    ? { level: "premium", isPremium: true, isFree: false, email: "dev@local", name: "Dev Preview", userId: "dev", freeApps: [] }
-    : { level: "loading", isPremium: false, isFree: false, email: "", name: "", userId: "", freeApps: [] };
+  { level: "loading", isPremium: false, isFree: false, email: "", name: "", userId: "", freeApps: [] };
 
 export function useSubscription(): SubscriptionState {
   const [state, setState] = useState<SubscriptionState>(DEFAULT_STATE);
@@ -33,10 +31,6 @@ export function useSubscription(): SubscriptionState {
       if (cancelled) return;
 
       if (!session?.user) {
-        if (process.env.NODE_ENV === "development") {
-          setState({ level: "premium", isPremium: true, isFree: false, email: "dev@local", name: "Dev Preview", userId: "dev", freeApps: [] });
-          return;
-        }
         router.replace("/login?redirect=/client");
         return;
       }

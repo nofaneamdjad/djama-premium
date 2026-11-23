@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS planning_event_attendees (
 ALTER TABLE planning_event_attendees ENABLE ROW LEVEL SECURITY;
 
 -- Voir ses propres invitations OU les invitations d'un événement dont on est propriétaire
-CREATE POLICY IF NOT EXISTS "pea_select" ON planning_event_attendees FOR SELECT
+DROP POLICY IF EXISTS "pea_select" ON planning_event_attendees;
+CREATE POLICY "pea_select" ON planning_event_attendees FOR SELECT
   USING (
     user_id = auth.uid()
     OR event_id IN (
@@ -33,7 +34,8 @@ CREATE POLICY IF NOT EXISTS "pea_select" ON planning_event_attendees FOR SELECT
   );
 
 -- Seul le propriétaire de l'événement peut inviter
-CREATE POLICY IF NOT EXISTS "pea_insert" ON planning_event_attendees FOR INSERT
+DROP POLICY IF EXISTS "pea_insert" ON planning_event_attendees;
+CREATE POLICY "pea_insert" ON planning_event_attendees FOR INSERT
   WITH CHECK (
     event_id IN (
       SELECT id FROM planning_events WHERE user_id = auth.uid()
@@ -41,12 +43,14 @@ CREATE POLICY IF NOT EXISTS "pea_insert" ON planning_event_attendees FOR INSERT
   );
 
 -- L'invité peut mettre à jour son propre statut
-CREATE POLICY IF NOT EXISTS "pea_update" ON planning_event_attendees FOR UPDATE
+DROP POLICY IF EXISTS "pea_update" ON planning_event_attendees;
+CREATE POLICY "pea_update" ON planning_event_attendees FOR UPDATE
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
 -- Le propriétaire peut retirer un participant
-CREATE POLICY IF NOT EXISTS "pea_delete" ON planning_event_attendees FOR DELETE
+DROP POLICY IF EXISTS "pea_delete" ON planning_event_attendees;
+CREATE POLICY "pea_delete" ON planning_event_attendees FOR DELETE
   USING (
     user_id = auth.uid()
     OR event_id IN (

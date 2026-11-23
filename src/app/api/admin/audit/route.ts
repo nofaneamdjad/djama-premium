@@ -10,8 +10,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const { deny } = await requireAdminUser(req, {
-    logAction:   "READ_AUDIT_LOG",
-    logResource: "audit",
+    requiredPermission: "can_view_audit_log",
+    logAction:          "READ_AUDIT_LOG",
+    logResource:        "audit",
   });
   if (deny) return deny;
 

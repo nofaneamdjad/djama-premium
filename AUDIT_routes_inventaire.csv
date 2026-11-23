@@ -1,0 +1,134 @@
+﻿Type;Section;Route;État;Données;Auth;Notes
+PAGE;Vue générale;/admin;FONCTIONNEL;API /dashboard;layout guard;KPIs, Chart.js, 503 fallback
+PAGE;Vue générale;/admin/activite;PARTIEL;API /logs;layout guard;filtre client-side uniquement
+PAGE;Vue générale;/admin/alertes;PARTIEL ⚠;getSupabase() anon;layout guard;P1: anon direct
+PAGE;Vue générale;/admin/rapports;FONCTIONNEL;API /rapports;layout guard;health score
+PAGE;Clients;/admin/clients;FONCTIONNEL;anon+API-write;layout guard;P1: lecture anon
+PAGE;Clients;/admin/clients/[id];FONCTIONNEL;API multi-routes;layout guard;
+PAGE;Clients;/admin/utilisateurs;FONCTIONNEL;API /users;layout guard;doublon /clients, hors nav
+PAGE;Clients;/admin/utilisateurs/[id];FONCTIONNEL;API /users/[id];layout guard;
+PAGE;Clients;/admin/entreprises;PARTIEL ⚠;getSupabase() anon;layout guard;P1: anon direct
+PAGE;Clients;/admin/membres;PARTIEL ⚠;getSupabase() anon;layout guard;P1: anon direct
+PAGE;Clients;/admin/invitations;PARTIEL ⚠;getSupabase() anon;layout guard;P1: anon direct
+PAGE;Clients;/admin/acces;FONCTIONNEL;API multi-routes;layout guard;hors nav — critique
+PAGE;Abonnements;/admin/plans;STUB HARDCODÉ ⚠;statique;layout guard;P2: pas de CMS
+PAGE;Abonnements;/admin/abonnements;FONCTIONNEL;API /subscriptions;layout guard;
+PAGE;Abonnements;/admin/abonnements/[id];FONCTIONNEL;API /subscriptions;layout guard;
+PAGE;Abonnements;/admin/paiements;FONCTIONNEL;API /paiements;layout guard;données locales
+PAGE;Abonnements;/admin/factures;FONCTIONNEL;API /factures;layout guard;CRUD+PDF
+PAGE;Abonnements;/admin/devis;FONCTIONNEL;API /devis;layout guard;hors nav
+PAGE;Abonnements;/admin/coupons;FONCTIONNEL;API /coupons;layout guard;
+PAGE;Abonnements;/admin/essais;PARTIEL;API /essais;layout guard;
+PAGE;Abonnements;/admin/resiliations;STUB ⚠;ComingSoon;layout guard;P2: non implémenté
+PAGE;Abonnements;/admin/remboursements;PARTIEL;API /remboursements;layout guard;
+PAGE;Abonnements;/admin/virements;FONCTIONNEL;API /virements;layout guard;hors nav
+PAGE;Applications;/admin/applications;STUB HARDCODÉ ⚠;statique;layout guard;P2: 24 modules hardcodés
+PAGE;Applications;/admin/ia;PARTIEL ⚠;en développement;layout guard;P2: bandeau dev
+PAGE;Applications;/admin/monitoring;STUB HARDCODÉ ⚠;statique;layout guard;P2: status Unknown
+PAGE;Applications;/admin/hq/feature-flags;FONCTIONNEL;API /hq/feature-flags;layout guard;
+PAGE;Exploitation;/admin/support;FONCTIONNEL;API /support;layout guard;
+PAGE;Exploitation;/admin/messages;FONCTIONNEL;API /messages;layout guard;~600 lignes
+PAGE;Exploitation;/admin/tickets;REDIRECT;→ /admin/support;layout guard;lien nav inutile
+PAGE;Exploitation;/admin/incidents;FONCTIONNEL;API /incidents;layout guard;
+PAGE;Exploitation;/admin/bugs;FONCTIONNEL;API /bugs;layout guard;
+PAGE;Exploitation;/admin/maintenance;STUB ⚠;ComingSoon;layout guard;P2: non implémenté
+PAGE;Exploitation;/admin/webhooks;STUB ⚠;ComingSoon;layout guard;P2: non implémenté
+PAGE;HQ;/admin/hq;FONCTIONNEL;API /hq/dashboard;layout guard;
+PAGE;HQ;/admin/hq/employes;FONCTIONNEL;API /hq/employees;layout guard;
+PAGE;HQ;/admin/hq/employes/nouveau;FONCTIONNEL;API multi;layout guard;
+PAGE;HQ;/admin/hq/employes/[id];FONCTIONNEL;API /hq/employees/[id];layout guard;
+PAGE;HQ;/admin/hq/departements;FONCTIONNEL;API /hq/departments;layout guard;
+PAGE;HQ;/admin/hq/roles;FONCTIONNEL;API /hq/roles;layout guard;
+PAGE;HQ;/admin/hq/approbations;FONCTIONNEL;API /hq/approbations;layout guard;
+PAGE;HQ;/admin/hq/audit;FONCTIONNEL;API /hq/audit;layout guard;journal interne
+PAGE;HQ;/admin/hq/direction;FONCTIONNEL;4 API calls;layout guard;
+PAGE;HQ;/admin/hq/rh;FONCTIONNEL;API /hq/rh;layout guard;
+PAGE;HQ;/admin/hq/commercial;FONCTIONNEL;API /hq/commercial;layout guard;
+PAGE;HQ;/admin/hq/marketing;FONCTIONNEL;API /hq/marketing;layout guard;
+PAGE;HQ;/admin/hq/finance;FONCTIONNEL;API /hq/finance;layout guard;
+PAGE;HQ;/admin/hq/informatique;FONCTIONNEL;API /hq/informatique;layout guard;
+PAGE;HQ;/admin/hq/support;FONCTIONNEL;API /hq/support;layout guard;
+PAGE;HQ;/admin/hq/clients;FONCTIONNEL;API /hq/clients;layout guard;
+PAGE;HQ;/admin/hq/revenus;FONCTIONNEL;API /hq/revenue;layout guard;
+PAGE;Commercialisation;/admin/beta;FONCTIONNEL;API /beta+/waitlist;layout guard;
+PAGE;Commercialisation;/admin/waitlist;FONCTIONNEL;API /waitlist;layout guard;
+PAGE;Commercialisation;/admin/prospects;STUB ⚠;ComingSoon;layout guard;P2
+PAGE;Commercialisation;/admin/campagnes;STUB ⚠;ComingSoon;layout guard;P2
+PAGE;Sécurité;/admin/securite;FONCTIONNEL;API /audit;layout guard;journal admin_audit_log
+PAGE;Sécurité;/admin/emails;PARTIEL;API /resend-ping;layout guard;test uniquement
+PAGE;Sécurité;/admin/settings;FONCTIONNEL;API /parametres;layout guard;identité SaaS
+PAGE;Sécurité;/admin/parametres;FONCTIONNEL;API + anon;layout guard;P1: social_links anon
+PAGE;Sécurité;/admin/permissions;STUB ⚠;ComingSoon;layout guard;P2: critique non implémenté
+PAGE;Vitrine;/admin/blog;FONCTIONNEL;getSupabase() anon;layout guard;P1: anon
+PAGE;Vitrine;/admin/services;FONCTIONNEL;API /services;layout guard;
+PAGE;Vitrine;/admin/partenaires;FONCTIONNEL;API /partenaires;layout guard;
+PAGE;Vitrine;/admin/realisations;FONCTIONNEL;API /realisations;layout guard;
+PAGE;Vitrine;/admin/temoignages;FONCTIONNEL;API /temoignages;layout guard;
+PAGE;Vitrine;/admin/reservations;VIDE ⚠;useState([]);layout guard;aucune API
+PAGE;Vitrine;/admin/coaching-ia;FONCTIONNEL;API /coaching-ia;layout guard;
+PAGE;Orphelines;/admin/retouche-photo;FONCTIONNEL;getSupabase() anon;layout guard;hors nav vitrine
+PAGE;Orphelines;/admin/montage-video;FONCTIONNEL;getSupabase() anon;layout guard;hors nav vitrine
+PAGE;Orphelines;/admin/visuels;FONCTIONNEL;getSupabase() anon;layout guard;hors nav vitrine
+API;Auth;/api/admin/auth;POST,DELETE;requireAdmin;PUBLIC (login/logout);point d'entrée
+API;Auth;/api/admin/auth/mfa;POST;PUBLIC;PUBLIC;P1: bloqué par middleware
+API;Dashboard;/api/admin/dashboard;GET;requireAdminUser;OK;RPCs optionnels
+API;Clients;/api/admin/clients/[id];GET,PATCH,DELETE;requireAdmin;OK;
+API;Clients;/api/admin/clients-write;POST,PATCH,DELETE;requireAdmin;OK;
+API;Users;/api/admin/users;GET;requireAdmin;OK;
+API;Users;/api/admin/users/[id];GET,PATCH,DELETE;requireAdmin;OK;
+API;Users;/api/admin/users/[id]/suspend;POST;requireAdmin;OK;
+API;Users;/api/admin/users/[id]/reactivate;POST;requireAdmin;OK;
+API;Accès;/api/admin/user-access;GET,PATCH;requireAdmin;OK;
+API;Accès;/api/admin/activate-access;POST;requireAdmin;OK;
+API;Accès;/api/admin/grant-access;POST;requireAdmin;OK;
+API;Abonnements;/api/admin/subscriptions;GET;requireAdmin;OK;
+API;Abonnements;/api/admin/subscriptions/[userId];GET,PATCH,DELETE;requireAdmin;OK;
+API;Abonnements;/api/admin/subscriptions/stats;GET;requireAdmin;OK;
+API;Revenus;/api/admin/paiements;GET;requireAdmin;OK;
+API;Revenus;/api/admin/factures;GET,POST,PATCH,DELETE;requireAdmin;OK;
+API;Revenus;/api/admin/devis;GET,POST,PATCH,DELETE;requireAdmin;OK;
+API;Revenus;/api/admin/remboursements;GET,POST;requireAdmin;OK;
+API;Revenus;/api/admin/coupons;GET,POST;requireAdmin;OK;
+API;Revenus;/api/admin/coupons/[id];PATCH,DELETE;requireAdmin;OK;
+API;Revenus;/api/admin/essais;GET;requireAdmin;OK;
+API;Revenus;/api/admin/virements;GET,POST,PATCH,DELETE;requireAdmin;OK;
+API;Commercial;/api/admin/beta;GET,PATCH;requireAdmin;OK;
+API;Commercial;/api/admin/beta/feedback;GET;requireAdmin;OK;
+API;Commercial;/api/admin/beta-invites;GET,POST;requireAdmin;OK;
+API;Commercial;/api/admin/waitlist;GET,PATCH;requireAdmin;OK;
+API;Exploitation;/api/admin/support;GET,PATCH;requireAdmin;OK;
+API;Exploitation;/api/admin/messages;GET,PATCH;requireAdmin;OK;
+API;Exploitation;/api/admin/incidents;GET,POST,PATCH;requireAdmin;OK;
+API;Exploitation;/api/admin/bugs;GET,POST,PATCH;requireAdmin;OK;
+API;Exploitation;/api/admin/rapports;GET;requireAdmin;OK;
+API;Sécurité;/api/admin/audit;GET;requireAdmin;OK;admin_audit_log
+API;Sécurité;/api/admin/sessions;GET,DELETE;requireAdmin;OK;orpheline — pas de page
+API;Logs;/api/admin/logs;GET;requireAdmin;OK;
+API;Email;/api/admin/resend-ping;GET;requireAdmin;OK;
+API;Email;/api/admin/test-email;POST;requireAdmin;OK;
+API;Params;/api/admin/parametres;GET,POST;requireAdmin;OK;
+API;Upload;/api/admin/upload;POST;requireAdmin;OK;
+API;Vitrine;/api/admin/services;GET,POST,PATCH,DELETE;requireAdmin;OK;
+API;Vitrine;/api/admin/partenaires;GET,POST,PATCH,DELETE;requireAdmin;OK;
+API;Vitrine;/api/admin/realisations;GET,POST,PATCH,DELETE;requireAdmin;OK;
+API;Vitrine;/api/admin/temoignages;GET,POST,PATCH,DELETE;requireAdmin;OK;
+API;Vitrine;/api/admin/coaching-ia;GET,POST,PATCH,DELETE;requireAdmin;OK;
+API;HQ;/api/admin/hq/dashboard;GET;requireHqPermission;OK;
+API;HQ;/api/admin/hq/employees;GET,POST;requireHqPermission;OK;
+API;HQ;/api/admin/hq/employees/[id];GET,PATCH,DELETE;requireHqPermission;OK;
+API;HQ;/api/admin/hq/departments;GET,POST,PATCH,DELETE;requireHqPermission;OK;
+API;HQ;/api/admin/hq/roles;GET,POST,PATCH,DELETE;requireHqPermission;OK;
+API;HQ;/api/admin/hq/feature-flags;GET,POST;requireHqPermission;OK;
+API;HQ;/api/admin/hq/feature-flags/[id];PATCH,DELETE;requireHqPermission;OK;
+API;HQ;/api/admin/hq/approbations;GET,POST;requireHqPermission;OK;
+API;HQ;/api/admin/hq/approbations/[id];PATCH;requireHqPermission;OK;
+API;HQ;/api/admin/hq/audit;GET;requireHqPermission;OK;
+API;HQ;/api/admin/hq/clients;GET;requireHqPermission;OK;
+API;HQ;/api/admin/hq/revenue;GET;requireHqPermission;OK;
+API;HQ;/api/admin/hq/commercial;GET;requireHqPermission;OK;
+API;HQ;/api/admin/hq/marketing;GET;requireHqPermission;OK;
+API;HQ;/api/admin/hq/finance;GET;requireHqPermission;OK;
+API;HQ;/api/admin/hq/rh;GET;requireHqPermission;OK;
+API;HQ;/api/admin/hq/informatique;GET;requireHqPermission;OK;
+API;HQ;/api/admin/hq/informatique/incidents;GET,POST;requireHqPermission;OK;
+API;HQ;/api/admin/hq/support;GET;requireHqPermission;OK;

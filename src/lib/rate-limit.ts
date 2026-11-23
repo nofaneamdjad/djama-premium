@@ -22,6 +22,12 @@ interface RateLimitEntry {
 const store = new Map<string, RateLimitEntry>();
 let lastCleanup = Date.now();
 
+/** Vide tous les compteurs in-memory — UNIQUEMENT pour tests en développement. */
+export function resetRateLimitStore(): void {
+  store.clear();
+  lastCleanup = Date.now();
+}
+
 function maybeCleanup() {
   const now = Date.now();
   if (now - lastCleanup < 60_000) return;
@@ -68,24 +74,17 @@ async function checkRateLimitUpstash(
   const now       = Date.now();
   const resetAt   = now + windowMs;
 
-  // Sliding window using Upstash REST API (INCR + EXPIRE)
-  const incrRes = await fetch(`${url}/incr/${encodeURIComponent(key)}`, {
+  // Atomic INCR+EXPIRE via Lua EVAL — avoids race where INCR succeeds but EXPIRE never runs
+  const luaScript = `local c=redis.call('INCR',KEYS[1]) if c==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]) end return c`;
+  const evalRes = await fetch(`${url}/eval`, {
     method:  "POST",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body:    JSON.stringify([luaScript, 1, key, String(windowSec)]),
     cache:   "no-store",
   });
 
-  const incrData = await incrRes.json() as { result?: number };
-  const count    = incrData.result ?? 1;
-
-  if (count === 1) {
-    // First request in this window — set TTL
-    await fetch(`${url}/expire/${encodeURIComponent(key)}/${windowSec}`, {
-      method:  "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      cache:   "no-store",
-    });
-  }
+  const evalData = await evalRes.json() as { result?: number };
+  const count    = evalData.result ?? 1;
 
   if (count > maxReq) {
     return { allowed: false, remaining: 0, resetAt };
@@ -132,6 +131,29 @@ export async function checkRateLimitAsync(
     }
   }
   return checkRateLimitInMemory(key, maxReq, windowMs);
+}
+
+/**
+ * Version strict — propage l'erreur Upstash au lieu de basculer en in-memory.
+ * À utiliser pour les opérations financières sensibles (fail-closed).
+ * Si Upstash n'est pas configuré, bascule normalement sur in-memory.
+ */
+export async function checkRateLimitAsyncStrict(
+  key: string,
+  maxReq: number,
+  windowMs: number,
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  if (UPSTASH_ENABLED) {
+    // Pas de try/catch — laisse l'erreur remonter pour que l'appelant
+    // puisse appliquer une politique fail-closed
+    return await checkRateLimitUpstash(key, maxReq, windowMs);
+  }
+  return checkRateLimitInMemory(key, maxReq, windowMs);
+}
+
+/** Indique si Upstash Redis est configuré (utile pour les tests). */
+export function isUpstashEnabled(): boolean {
+  return UPSTASH_ENABLED;
 }
 
 /**

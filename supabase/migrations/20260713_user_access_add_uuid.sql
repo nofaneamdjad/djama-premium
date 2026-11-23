@@ -22,16 +22,22 @@ ALTER TABLE user_access
 CREATE INDEX IF NOT EXISTS idx_user_access_uid ON user_access(user_id);
 
 -- ── 2. Trigger : lie user_id à la 1ère connexion/inscription ──────────
-CREATE OR REPLACE FUNCTION link_user_access_on_signup()
-RETURNS TRIGGER AS $$
+-- SET search_path requis : GoTrue s'exécute avec search_path=auth,
+-- la table user_access est dans public → qualification explicite obligatoire.
+CREATE OR REPLACE FUNCTION public.link_user_access_on_signup()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 BEGIN
-  UPDATE user_access
+  UPDATE public.user_access
   SET user_id = NEW.id
   WHERE email = NEW.email
     AND user_id IS NULL;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created

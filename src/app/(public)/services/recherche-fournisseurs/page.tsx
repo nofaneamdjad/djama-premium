@@ -15,8 +15,8 @@ import {
   Phone,
 } from "lucide-react";
 
-const COLOR = "#c9a55a";
-const RGB = "201,165,90";
+const COLOR = "#FFB900";
+const RGB = "255,185,0";
 
 export default function RechercheFournisseursPage() {
   return (

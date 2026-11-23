@@ -79,7 +79,7 @@ const EMPTY_FORM: QuoteForm = {
   client_name: "", client_email: "", client_phone: "", client_company: "",
   client_address: "", subject: "", description: "", budget: "",
   status: "brouillon", issue_date: TODAY(), valid_until: "", tax_rate: 20,
-  notes: "", template: "modern", items: [],
+  notes: "", template: "min-ligne", items: [],
 };
 
 function newItem(): FormItem {
@@ -222,39 +222,33 @@ export default function AdminDevis() {
         updated_at:     new Date().toISOString(),
       };
 
+      const items = form.items
+        .filter(i => i.description.trim())
+        .map((i, idx) => ({
+          description: i.description.trim(),
+          quantity:    Number(i.quantity),
+          unit_price:  Number(i.unit_price),
+          total:       Number(i.total),
+          sort_order:  idx,
+        }));
+
       if (modal === "add") {
         const ref = await nextRef();
-        const { data, error } = await supabase
-          .from("quotes")
-          .insert([{ ...payload, reference: ref }])
-          .select("id")
-          .single();
-        if (error) throw error;
+        const res = await fetch("/api/admin/devis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, reference: ref, items }),
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur serveur"); }
+        const data = await res.json();
         quoteId = data.id;
       } else {
-        const { error } = await supabase
-          .from("quotes")
-          .update(payload)
-          .eq("id", editId!);
-        if (error) throw error;
-        await supabase.from("quote_items").delete().eq("quote_id", editId!);
-      }
-
-      if (form.items.length > 0 && quoteId) {
-        const itemsPayload = form.items
-          .filter(i => i.description.trim())
-          .map((i, idx) => ({
-            quote_id:    quoteId!,
-            description: i.description.trim(),
-            quantity:    Number(i.quantity),
-            unit_price:  Number(i.unit_price),
-            total:       Number(i.total),
-            sort_order:  idx,
-          }));
-        if (itemsPayload.length > 0) {
-          const { error } = await supabase.from("quote_items").insert(itemsPayload);
-          if (error) throw error;
-        }
+        const res = await fetch("/api/admin/devis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editId!, ...payload, items }),
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur serveur"); }
       }
 
       setModal(null);
@@ -269,15 +263,19 @@ export default function AdminDevis() {
   }
 
   async function deleteQuote(id: string) {
-    const { error } = await supabase.from("quotes").delete().eq("id", id);
-    if (error) { console.error("[AdminDevis] delete error:", error); return; }
+    const res = await fetch(`/api/admin/devis?id=${id}`, { method: "DELETE" });
+    if (!res.ok) { const e = await res.json(); console.error("[AdminDevis] delete error:", e.error); return; }
     setConfirmDel(null);
     showToast("Devis supprimé");
     load();
   }
 
   async function setStatus(id: string, status: QuoteStatus) {
-    await supabase.from("quotes").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
+    await fetch("/api/admin/devis", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
     load();
   }
 
@@ -323,43 +321,37 @@ export default function AdminDevis() {
       const n   = String((count ?? 0) + 1).padStart(4, "0");
       const ref = `FAC-${yr}-${n}`;
 
-      const { data: inv, error: invErr } = await supabase
-        .from("invoices")
-        .insert([{
-          reference:      ref,
-          quote_id:       q.id,
-          client_name:    q.client_name,
-          client_email:   q.client_email,
-          client_phone:   q.client_phone,
-          client_company: q.client_company,
-          client_address: q.client_address,
-          subject:        q.subject,
-          description:    q.description,
-          status:         "brouillon",
-          issue_date:     TODAY(),
-          subtotal:       q.subtotal,
-          tax_rate:       q.tax_rate,
-          tax_amount:     q.tax_amount,
-          total:          q.total,
-          notes:          q.notes,
-        }])
-        .select("id")
-        .single();
-      if (invErr) throw invErr;
-
+      const invoiceData = {
+        reference:      ref,
+        quote_id:       q.id,
+        client_name:    q.client_name,
+        client_email:   q.client_email,
+        client_phone:   q.client_phone,
+        client_company: q.client_company,
+        client_address: q.client_address,
+        subject:        q.subject,
+        description:    q.description,
+        status:         "brouillon",
+        issue_date:     TODAY(),
+        subtotal:       q.subtotal,
+        tax_rate:       q.tax_rate,
+        tax_amount:     q.tax_amount,
+        total:          q.total,
+        notes:          q.notes,
+      };
       const items = (q.quote_items ?? []).map((i, idx) => ({
-        invoice_id:  inv.id,
         description: i.description,
         quantity:    i.quantity,
         unit_price:  i.unit_price,
         total:       i.total,
         sort_order:  idx,
       }));
-      if (items.length > 0) {
-        await supabase.from("invoice_items").insert(items);
-      }
-
-      await supabase.from("quotes").update({ status: "converti", updated_at: new Date().toISOString() }).eq("id", q.id);
+      const convRes = await fetch("/api/admin/devis", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quoteId: q.id, invoiceData, items }),
+      });
+      if (!convRes.ok) { const e = await convRes.json(); throw new Error(e.error ?? "Erreur serveur"); }
 
       showToast(`Facture ${ref} créée ✓`);
       load();

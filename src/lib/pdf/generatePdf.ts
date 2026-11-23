@@ -31,8 +31,7 @@ export interface PdfData {
   template?:       TemplateType;
   /**
    * Couleur d'accent personnalisée (hex, ex: "#e74c3c").
-   * Pour le template "modern" (accent-bar), remplace la barre dorée par cette couleur.
-   * Ignoré sur les autres templates.
+   * Remplace la couleur d'accent du thème sélectionné pour tous les templates.
    */
   accentColor?:    string | null;
   reference:       string;
@@ -72,18 +71,49 @@ export interface PdfData {
   logoTransform?:  { x: number; y: number; w: number; h: number } | null;
 }
 
+// ─── Fonts NotoSans ───────────────────────────────────────────────────────────
+
+let _fontCache: { regular: string; bold: string } | null = null;
+
+async function ensureFontsLoaded(doc: import("jspdf").jsPDF): Promise<void> {
+  if (!_fontCache) {
+    try {
+      const [rr, br] = await Promise.all([
+        fetch("/fonts/NotoSans-Regular.ttf"),
+        fetch("/fonts/NotoSans-Bold.ttf"),
+      ]);
+      if (!rr.ok || !br.ok) return;
+      const toB64 = (buf: ArrayBuffer) => {
+        const bytes = new Uint8Array(buf);
+        let s = "";
+        for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+        return btoa(s);
+      };
+      _fontCache = {
+        regular: toB64(await rr.arrayBuffer()),
+        bold:    toB64(await br.arrayBuffer()),
+      };
+    } catch { return; }
+  }
+  if (_fontCache) {
+    doc.addFileToVFS("NotoSans-Regular.ttf", _fontCache.regular);
+    doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
+    doc.addFileToVFS("NotoSans-Bold.ttf", _fontCache.bold);
+    doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
+  }
+}
+
 // ─── Génération ───────────────────────────────────────────────────────────────
 
 export async function generatePdf(data: PdfData, download = true): Promise<void> {
   const { jsPDF } = await import("jspdf");
 
-  const template: TemplateType = data.template ?? "modern";
+  const template: TemplateType = (data.template ?? "min-ligne") as TemplateType;
   let theme = getTheme(template);
 
-  // ── Couleur d'accent personnalisée (template Modern uniquement) ──────────────
-  if (data.accentColor && theme.variant === "accent-bar") {
+  if (data.accentColor) {
     const rgb = hexToRgb(data.accentColor);
-    theme = { ...theme, accentBarColor: rgb, labelColor: rgb };
+    theme = { ...theme, accentColor: rgb, labelColor: rgb };
   }
 
   // ── Paramètres entreprise (avec valeurs par défaut) ───────────────────────
@@ -97,11 +127,23 @@ export async function generatePdf(data: PdfData, download = true): Promise<void>
     postal_code:      data.company?.postal_code      ?? "",
     city:             data.company?.city             ?? "",
     country:          data.company?.country          ?? "",
+    country_code:     data.company?.country_code     ?? "",
     siret:            data.company?.siret            ?? "",
     ape:              data.company?.ape              ?? "",
     vat_number:       data.company?.vat_number       ?? "",
+    tax_id_1:         data.company?.tax_id_1         ?? "",
+    tax_id_1_label:   data.company?.tax_id_1_label   ?? "",
+    tax_id_2:         data.company?.tax_id_2         ?? "",
+    tax_id_2_label:   data.company?.tax_id_2_label   ?? "",
+    tax_id_3:         data.company?.tax_id_3         ?? "",
+    tax_id_3_label:   data.company?.tax_id_3_label   ?? "",
     iban:             data.company?.iban             ?? "",
     bic:              data.company?.bic              ?? "",
+    bank_name:        data.company?.bank_name        ?? "",
+    routing_number:   data.company?.routing_number   ?? "",
+    sort_code:        data.company?.sort_code        ?? "",
+    account_number:   data.company?.account_number   ?? "",
+    mobile_money:     data.company?.mobile_money     ?? "",
     forme_juridique:  data.company?.forme_juridique  ?? "",
     capital_social:   data.company?.capital_social   ?? "",
     garantie:         data.company?.garantie         ?? "",
@@ -120,7 +162,8 @@ export async function generatePdf(data: PdfData, download = true): Promise<void>
   }
 
   // ── Créer le document ─────────────────────────────────────────────────────
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", putOnlyUsedFonts: true });
+  await ensureFontsLoaded(doc);
 
   // ── Rendre avec le thème sélectionné ─────────────────────────────────────
   await renderPdfWithTheme(

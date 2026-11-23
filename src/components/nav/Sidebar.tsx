@@ -2,23 +2,25 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Home, ReceiptText, Calendar, Sparkles,
+  Home, ReceiptText, Calendar, Sparkles, Settings,
   Grid2x2, Pin, ChevronLeft, ChevronRight,
   Lock, LogOut, X,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import { getAppById } from "@/lib/app-registry";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 const FREE_NAV = [
-  { href: "/client",          label: "Accueil",          icon: Home,        exact: true  },
-  { href: "/client/factures", label: "Factures & Devis", icon: ReceiptText, exact: false },
-  { href: "/client/planning", label: "Planning",         icon: Calendar,    exact: false },
-  { href: "/client/ai-docs",  label: "DOC IA",           icon: Sparkles,    exact: false },
+  { href: "/client",             label: "Accueil",          icon: Home,        exact: true  },
+  { href: "/client/factures",    label: "Factures & Devis", icon: ReceiptText, exact: false },
+  { href: "/client/planning",    label: "Planning",         icon: Calendar,    exact: false },
+  { href: "/client/ai-docs",     label: "DOC IA",           icon: Sparkles,    exact: false },
+  { href: "/client/parametres",  label: "Paramètres",       icon: Settings,    exact: false },
 ] as const;
 
 function NavItem({
@@ -114,16 +116,21 @@ export function DesktopSidebar({
         }}
       >
         <Link href="/client" className="flex items-center gap-2.5 min-w-0">
-          <div
-            className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md"
-            style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}
-          >
-            <Sparkles size={12} style={{ color: accent }} />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0 leading-none">
-              <p className="text-base font-bold truncate" style={{ color: accent }}>DJAMA</p>
-              <p className="text-xs uppercase tracking-widest mt-0.5"
+          {collapsed ? (
+            <div
+              className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md"
+              style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}
+            >
+              <Sparkles size={12} style={{ color: accent }} />
+            </div>
+          ) : (
+            <div className="min-w-0 flex flex-col gap-0.5">
+              <Image
+                src={isDark ? "/djama-logo-white-v2.png" : "/djama-logo-v2.png"}
+                alt="DJAMA" width={96} height={32}
+                className="h-[26px] w-auto object-contain"
+              />
+              <p className="text-xs uppercase tracking-widest"
                 style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                 {isPremium ? "PRO · Actif" : "Plan Gratuit"}
               </p>
@@ -230,6 +237,12 @@ export function DesktopSidebar({
                 Épinglez vos apps depuis le lanceur
               </button>
             )}
+
+            {/* Paramètres */}
+            <div className={`mt-auto pt-2 ${collapsed ? "" : "mx-0"}`}
+              style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)", marginTop: "auto" }}>
+              <NavItem href="/client/parametres" label="Paramètres" icon={Settings} collapsed={collapsed} />
+            </div>
           </>
         )}
       </nav>
@@ -328,13 +341,13 @@ export function MobileSidebar({
             <div className="flex h-[52px] shrink-0 items-center justify-between px-4"
               style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
               <Link href="/client" className="flex items-center gap-2.5" onClick={onClose}>
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-                  style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}>
-                  <Sparkles size={13} style={{ color: accent }} />
-                </div>
-                <div className="leading-none">
-                  <p className="text-sm font-bold" style={{ color: accent }}>DJAMA</p>
-                  <p className="mt-0.5 text-[10px] uppercase tracking-widest"
+                <div className="flex flex-col gap-0.5">
+                  <Image
+                    src={isDark ? "/djama-logo-white-v2.png" : "/djama-logo-v2.png"}
+                    alt="DJAMA" width={96} height={32}
+                    className="h-[24px] w-auto object-contain"
+                  />
+                  <p className="text-[10px] uppercase tracking-widest"
                     style={{ color: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}>
                     {isPremium ? "PRO · Actif" : "Plan Gratuit"}
                   </p>

@@ -12,6 +12,7 @@ import { createClient }              from "@supabase/supabase-js";
 import { createServerClient }        from "@supabase/ssr";
 import { cookies }                   from "next/headers";
 import { createLogger }              from "@/lib/logger";
+import { checkRateLimitAsyncStrict, isUpstashEnabled } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -21,20 +22,6 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
-
-// Rate limiter : max 10 emails / user / heure
-const emailLimits = new Map<string, { count: number; resetAt: number }>();
-function checkRateLimit(userId: string): boolean {
-  const now  = Date.now();
-  const slot = emailLimits.get(userId);
-  if (!slot || now > slot.resetAt) {
-    emailLimits.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    return true;
-  }
-  if (slot.count >= 10) return false;
-  slot.count++;
-  return true;
-}
 
 function getResend() {
   const key = process.env.RESEND_API_KEY?.trim();
@@ -165,11 +152,36 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  if (!checkRateLimit(user.id)) {
+  // Production sans Redis : fail-closed strict.
+  // Sans Upstash en multi-instance Vercel, chaque instance a son propre compteur in-memory
+  // → un utilisateur peut contourner la limite en frappant différentes instances.
+  if (process.env.NODE_ENV === 'production' && !isUpstashEnabled()) {
+    log.error("Rate limiting Redis non configuré en production — envoi bloqué (fail-closed strict)");
     return NextResponse.json(
-      { error: "Limite atteinte : 10 emails par heure." },
-      { status: 429 }
+      { error: "Service de limitation de débit non configuré. Contacter l'administrateur." },
+      { status: 503 }
     );
+  }
+
+  // Fail-closed : si Upstash est configuré mais indisponible, on bloque l'envoi
+  // plutôt que d'autoriser des envois illimités (fail-open serait un risque de spam/abus).
+  try {
+    const { allowed } = await checkRateLimitAsyncStrict(user.id, 10, 60 * 60 * 1000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Limite atteinte : 10 emails par heure." },
+        { status: 429 }
+      );
+    }
+  } catch (err) {
+    if (isUpstashEnabled()) {
+      log.error("Rate limit Redis indisponible — envoi bloqué (fail-closed):", err);
+      return NextResponse.json(
+        { error: "Service temporairement indisponible. Veuillez réessayer dans quelques instants." },
+        { status: 503 }
+      );
+    }
+    // Upstash non configuré (dev local) : continuer avec compteur in-memory
   }
 
   const resend = getResend();
@@ -210,8 +222,9 @@ export async function POST(req: NextRequest) {
   const fromName   = (doc.emetteur_nom as string)  || "DJAMA";
   const fromEmail  = (doc.emetteur_email as string) || "";
   const toName     = body.to_name || (doc.client_nom as string) || "Client";
+  const docCurrency = (doc.devise as string) || "EUR";
   const amountFmt  = ((doc.total_ttc as number) ?? 0)
-    .toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+    .toLocaleString("fr-FR", { style: "currency", currency: docCurrency });
   const dueDate    = doc.date_echeance
     ? new Date(doc.date_echeance as string).toLocaleDateString("fr-FR")
     : "";
@@ -254,9 +267,8 @@ export async function POST(req: NextRequest) {
         };
       });
 
-      const mainTaxRate = lineItems[0]?.tax_rate ?? 20;
       const subtotal    = lineItems.reduce((s, it) => s + it.total, 0);
-      const tax         = Math.round(subtotal * mainTaxRate / 100 * 100) / 100;
+      const tax         = Math.round(lineItems.reduce((s, it) => s + it.total * (it.tax_rate / 100), 0) * 100) / 100;
 
       const addrParts = [
         doc.emetteur_adresse,
@@ -289,7 +301,7 @@ export async function POST(req: NextRequest) {
         subtotal,
         discount_rate: (doc.remise_pct as number) > 0 ? (doc.remise_pct as number) : null,
         discount:      null,
-        tax_rate:      mainTaxRate,
+        tax_rate:      lineItems[0]?.tax_rate ?? 20,
         tax_amount:    tax,
         total:         (doc.total_ttc as number) ?? 0,
         deposit:       (doc.acompte as number) > 0 ? (doc.acompte as number) : null,

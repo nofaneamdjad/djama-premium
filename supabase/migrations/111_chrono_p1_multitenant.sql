@@ -46,7 +46,7 @@ SET organization_id = (
       WHEN 'admin'  THEN 2
       ELSE 3
     END,
-    om.created_at ASC
+    om.joined_at ASC
   LIMIT 1
 )
 WHERE te.organization_id IS NULL;
@@ -62,7 +62,7 @@ SET organization_id = (
       WHEN 'admin'  THEN 2
       ELSE 3
     END,
-    om.created_at ASC
+    om.joined_at ASC
   LIMIT 1
 )
 WHERE cp.organization_id IS NULL;
@@ -78,7 +78,7 @@ SET organization_id = (
       WHEN 'admin'  THEN 2
       ELSE 3
     END,
-    om.created_at ASC
+    om.joined_at ASC
   LIMIT 1
 )
 WHERE cg.organization_id IS NULL;

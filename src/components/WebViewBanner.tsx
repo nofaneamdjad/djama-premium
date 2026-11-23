@@ -138,9 +138,9 @@ export function WebViewBanner() {
           <div
             className={[
               "mx-auto max-w-lg rounded-2xl border px-4 py-3.5",
-              "border-[rgba(201,165,90,0.22)]",
+              "border-[rgba(255,185,0,0.22)]",
               "bg-[rgba(10,10,14,0.96)]",
-              "shadow-[0_-4px_40px_rgba(0,0,0,0.55),0_0_0_1px_rgba(201,165,90,0.08)]",
+              "shadow-[0_-4px_40px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,185,0,0.08)]",
             ].join(" ")}
             /* Fallback si backdrop-filter non supporté (déjà géré dans globals.css) */
             style={{ WebkitBackdropFilter: "blur(20px)", backdropFilter: "blur(20px)" }}
@@ -150,7 +150,7 @@ export function WebViewBanner() {
               {/* Icône app */}
               <div
                 aria-hidden
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(201,165,90,0.1)] text-[1.1rem] leading-none"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(255,185,0,0.1)] text-[1.1rem] leading-none"
               >
                 {app!.emoji}
               </div>
@@ -171,8 +171,8 @@ export function WebViewBanner() {
                 onClick={openInNativeBrowser}
                 className={[
                   "flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2",
-                  "bg-[#c9a55a] text-[0.72rem] font-bold text-[#09090b]",
-                  "shadow-[0_2px_12px_rgba(201,165,90,0.4)]",
+                  "bg-[#FFB900] text-[0.72rem] font-bold text-[#09090b]",
+                  "shadow-[0_2px_12px_rgba(255,185,0,0.4)]",
                   "transition-all active:scale-95 hover:bg-[#d4af6a]",
                 ].join(" ")}
                 aria-label="Ouvrir dans le navigateur"

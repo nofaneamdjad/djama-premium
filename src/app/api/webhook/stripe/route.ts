@@ -10,7 +10,7 @@ import {
   sendCancellationEmail,
 } from "@/lib/email";
 import { createLogger } from "@/lib/logger";
-import { syncSubscriptionAccess } from "@/lib/subscription-helpers";
+import { syncSubscriptionAccess, recordPaymentTransaction } from "@/lib/subscription-helpers";
 
 const log = createLogger("webhook/stripe");
 
@@ -33,12 +33,12 @@ const log = createLogger("webhook/stripe");
      RESEND_API_KEY  (optionnel — email non envoyé si absent)
 ─────────────────────────────────────────────────────────────── */
 
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2026-03-25.dahlia",
-  });
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY non configurée");
+  return new Stripe(key, { apiVersion: "2026-03-25.dahlia" });
 }
-const stripe = getStripe();
+// NE PAS instancier au niveau module — clé lue à chaque requête pour supporter la rotation
 
 /* ── Supabase Admin (service role — serveur uniquement) ────── */
 function getSupabaseAdmin() {
@@ -509,6 +509,30 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   /* ── 4. Envoyer l'email de bienvenue avec lien d'accès ───── */
   await sendWelcomeEmail({ email, fullName, accessLink, isNewUser });
 
+  /* ── 5. Enregistrement financier (idempotent) ─────────────── */
+  // payment_intent présent pour le premier paiement d'un abonnement
+  const piId = typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : (session.payment_intent as Stripe.PaymentIntent | null)?.id ?? null;
+
+  if (piId && session.amount_total && session.amount_total > 0) {
+    await recordPaymentTransaction({
+      userId:                 userId!,
+      providerTransactionId:  piId,
+      providerSubscriptionId: stripeSubId,
+      provider:               "stripe",
+      transactionType:        "subscription",
+      amountOriginal:         session.amount_total / 100,
+      currencyOriginal:       (session.currency ?? "eur").toUpperCase(),
+      status:                 "succeeded",
+      planName:               "outils_djama",
+      billingInterval:        "monthly",
+      description:            `Stripe checkout ${session.id} — activation abonnement`,
+      rawMetadata:            { session_id: session.id, subscription_id: stripeSubId },
+    });
+    log.info(`payment_transactions: checkout enregistré — ${session.amount_total / 100} ${session.currency}`);
+  }
+
   log.info(`✅ Abonnement Stripe activé — ${isNewUser ? "nouveau client" : "existant"} → ${email}`);
 }
 
@@ -572,6 +596,327 @@ async function syncSubscriptionStatus(
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Dispatch des événements Stripe — table exhaustive des handlers
+   Chaque type d'événement est traité exactement une fois.
+   Événements gérés :
+     checkout.session.completed      → Activation / lien paiement / coaching IA
+     invoice.paid                    → Renouvellement abonnement
+     invoice.payment_failed          → Alerte paiement échoué
+     customer.subscription.updated  → Synchronisation statut
+     customer.subscription.deleted  → Désactivation accès
+     payment_intent.succeeded       → Paiement direct (hors lien DJAMA)
+     payment_intent.payment_failed  → Paiement direct échoué
+───────────────────────────────────────────────────────────── */
+export async function dispatchStripeEvent(event: Stripe.Event): Promise<void> {
+  switch (event.type) {
+
+    /* ── Paiement Stripe confirmé ──────────────────────────── */
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const meta    = session.metadata ?? {};
+
+      // Règles de priorité des métadonnées (mutuellement exclusives par construction) :
+      //
+      // 1. payment_link_id  → lien DJAMA (peut contenir document_id — priorité absolue
+      //                       car handlePaymentLinkSuccess() gère aussi le document)
+      // 2. product=coaching_ia → paiement unique 190€ (jamais via lien DJAMA)
+      // 3. document_id seul → paiement direct sur facture hors lien DJAMA
+      // 4. aucun metadata   → abonnement SaaS (checkout mode=subscription)
+      //
+      // Si un event contenait payment_link_id ET document_id, la branche 1 s'exécute
+      // seule — handlePaymentLinkSuccess() lit link.document_id depuis la DB et
+      // appelle markDocumentPaid() en interne. Pas de double effet.
+
+      if (meta.payment_link_id) {
+        await handlePaymentLinkSuccess(session);
+      } else if (meta.product === "coaching_ia") {
+        await activateCoachingIA(session);
+      } else if (meta.document_id) {
+        await markDocumentPaid(meta.document_id);
+      } else {
+        await handleCheckoutCompleted(session);
+      }
+      break;
+    }
+
+    /* ── Renouvellement abonnement ─────────────────────────── */
+    case "invoice.paid": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const isSubscriptionInvoice =
+        invoice.billing_reason === "subscription_cycle"  ||
+        invoice.billing_reason === "subscription_create" ||
+        invoice.billing_reason === "subscription_update";
+
+      if (isSubscriptionInvoice) {
+        await confirmSubscriptionActive(invoice.customer as string);
+
+        // Enregistrement financier (idempotent via provider_transaction_id)
+        const invoiceUser = await findUserByStripeCustomerId(invoice.customer as string);
+        if (invoiceUser) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const inv = invoice as any;
+          const piRaw = inv.payment_intent ?? null;
+          const piId = typeof piRaw === "string" ? piRaw : (piRaw as Stripe.PaymentIntent | null)?.id ?? null;
+          const txId = piId ?? invoice.id;  // payment_intent absent sur factures à 0€
+          const subId: string | null = typeof inv.subscription === "string" ? inv.subscription : null;
+
+          if (invoice.amount_paid > 0) {
+            await recordPaymentTransaction({
+              userId:                  invoiceUser.id,
+              providerTransactionId:   txId,
+              providerSubscriptionId:  subId,
+              provider:                "stripe",
+              transactionType:         "subscription",
+              amountOriginal:          invoice.amount_paid / 100,
+              currencyOriginal:        invoice.currency.toUpperCase(),
+              status:                  "succeeded",
+              planName:                "outils_djama",
+              billingInterval:         "monthly",
+              periodStart:             invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : null,
+              periodEnd:               invoice.period_end   ? new Date(invoice.period_end   * 1000).toISOString() : null,
+              description:             `Stripe invoice ${invoice.id} — ${invoice.billing_reason ?? "subscription"}`,
+              rawMetadata:             { invoice_id: invoice.id, billing_reason: invoice.billing_reason },
+            });
+            log.info(`payment_transactions: Stripe invoice enregistré — ${invoice.amount_paid / 100} ${invoice.currency}`);
+          }
+        }
+
+        // Email de renouvellement uniquement pour les cycles récurrents
+        if (invoice.billing_reason === "subscription_cycle") {
+          const renewUser = await findUserByStripeCustomerId(invoice.customer as string);
+          if (renewUser?.email) {
+            await sendRenewalEmail({
+              email:    renewUser.email,
+              fullName: (renewUser.user_metadata?.full_name as string | null) ?? null,
+            });
+            log.info("Email renouvellement envoyé → " + renewUser.email);
+          }
+        }
+      } else {
+        log.info(`invoice.paid ignoré (billing_reason: ${invoice.billing_reason})`);
+      }
+      break;
+    }
+
+    /* ── Paiement de renouvellement échoué ─────────────────── */
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const user = await findUserByStripeCustomerId(invoice.customer as string);
+      if (user?.email) {
+        await sendPaymentFailedEmail({
+          email:    user.email,
+          fullName: user.user_metadata?.full_name ?? null,
+        });
+        log.info("Email paiement échoué envoyé → " + user.email);
+      }
+      break;
+    }
+
+    /* ── Mise à jour abonnement (pause, reprise, upgrade…) ──── */
+    case "customer.subscription.updated": {
+      const sub = event.data.object as Stripe.Subscription;
+      await syncSubscriptionStatus(sub.customer as string, sub.status);
+      log.info(`Subscription updated → statut: ${sub.status}`);
+      break;
+    }
+
+    /* ── Résiliation abonnement ────────────────────────────── */
+    case "customer.subscription.deleted": {
+      const sub = event.data.object as Stripe.Subscription;
+      await deactivateSubscription(sub.customer as string);
+      log.info("Subscription deleted");
+      break;
+    }
+
+    /* ── Paiement direct (hors lien DJAMA) ─────────────────── */
+    case "payment_intent.succeeded": {
+      const pi   = event.data.object as Stripe.PaymentIntent;
+      const meta = pi.metadata ?? {};
+      if (meta.payment_link_id) {
+        // Couvert par checkout.session.completed — ignorer pour éviter double enregistrement
+        log.info("payment_intent.succeeded(payment_link) → géré via checkout.session.completed");
+      } else if (meta.document_id) {
+        await markDocumentPaid(meta.document_id);
+      } else if (meta.reference) {
+        await getSupabaseAdmin()
+          .from("documents")
+          .update({ statut: "payé" })
+          .eq("numero", meta.reference);
+        log.info(`payment_intent.succeeded → document ${meta.reference} → payé`);
+      }
+      break;
+    }
+
+    /* ── Paiement direct échoué ────────────────────────────── */
+    case "payment_intent.payment_failed": {
+      const pi   = event.data.object as Stripe.PaymentIntent;
+      const meta = pi.metadata ?? {};
+      if (meta.payment_link_id) {
+        await getSupabaseAdmin()
+          .from("payment_transactions")
+          .update({ status: "failed", updated_at: new Date().toISOString() })
+          .eq("stripe_payment_intent_id", pi.id);
+      } else if (meta.document_id) {
+        await getSupabaseAdmin()
+          .from("documents")
+          .update({ statut: "en_retard" })
+          .eq("id", meta.document_id);
+        log.info(`payment_intent.payment_failed → document ${meta.document_id} → en_retard`);
+      } else if (meta.reference) {
+        await getSupabaseAdmin()
+          .from("documents")
+          .update({ statut: "en_retard" })
+          .eq("numero", meta.reference);
+        log.info(`payment_intent.payment_failed → document ${meta.reference} → en_retard`);
+      }
+      break;
+    }
+
+    /* ── Remboursement confirmé (charge.refunded) ─────────────── */
+    case "charge.refunded": {
+      const charge = event.data.object as Stripe.Charge;
+      const sb     = getSupabaseAdmin();
+
+      // Traiter chaque remboursement de la charge
+      for (const refund of charge.refunds?.data ?? []) {
+        // Chercher la demande admin correspondante par provider_refund_id
+        const { data: refundReq } = await sb
+          .from("admin_refund_requests")
+          .select("id, status, transaction_id, invoice_id, currency, notification_sent_at")
+          .eq("provider_refund_id", refund.id)
+          .maybeSingle();
+
+        if (!refundReq) {
+          log.info(`charge.refunded: remboursement ${refund.id} sans demande admin — ignoré`);
+          continue;
+        }
+
+        // Idempotence : déjà traité ?
+        if ((refundReq.status as string) === "succeeded") {
+          log.info(`charge.refunded: ${refund.id} déjà succeeded — ignoré`);
+          continue;
+        }
+
+        const webhookStatus = refund.status === "succeeded" ? "succeeded" : "failed";
+        const amountRefunded = refund.amount / 100;
+
+        await sb.from("admin_refund_requests").update({
+          status:         webhookStatus,
+          amount_refunded: amountRefunded,
+          processed_at:   new Date().toISOString(),
+        }).eq("id", refundReq.id as string);
+
+        // Notification client si succès et pas encore envoyée
+        if (webhookStatus === "succeeded" && !refundReq.notification_sent_at) {
+          const txId = refundReq.transaction_id as string | null;
+          if (txId) {
+            const { data: tx } = await sb.from("payment_transactions").select("user_id").eq("id", txId).single();
+            if (tx?.user_id) {
+              const { data: authUser } = await sb.auth.admin.getUserById(tx.user_id as string);
+              const clientEmail = authUser?.user?.email ?? null;
+              if (clientEmail) {
+                const notif = await (await import("@/lib/email")).sendRefundNotificationEmail({
+                  toEmail:          clientEmail,
+                  clientName:       (authUser?.user?.user_metadata?.full_name as string | null) ?? null,
+                  amountRefunded:   amountRefunded,
+                  currency:         (refundReq.currency as string) ?? "EUR",
+                  providerRefundId: refund.id,
+                  invoiceRef:       refundReq.invoice_id as string | null,
+                  sandbox:          false,
+                });
+                if (notif.sent) {
+                  await sb.from("admin_refund_requests")
+                    .update({ notification_sent_at: new Date().toISOString() })
+                    .eq("id", refundReq.id as string);
+                }
+              }
+            }
+          }
+        }
+
+        log.info(`charge.refunded: ${refund.id} → ${webhookStatus}`);
+      }
+      break;
+    }
+
+    /* ── Mise à jour statut remboursement (charge.refund.updated) ── */
+    case "charge.refund.updated": {
+      const refund = event.data.object as Stripe.Refund;
+      const sb     = getSupabaseAdmin();
+
+      // Chercher par provider_refund_id
+      const { data: refundReq } = await sb
+        .from("admin_refund_requests")
+        .select("id, status, transaction_id, invoice_id, currency, notification_sent_at")
+        .eq("provider_refund_id", refund.id)
+        .maybeSingle();
+
+      if (!refundReq) {
+        log.info(`charge.refund.updated: ${refund.id} sans demande admin — ignoré`);
+        break;
+      }
+
+      // Idempotence : déjà dans un état terminal ?
+      const currentStatus = refundReq.status as string;
+      if (["succeeded", "failed", "rejected", "cancelled"].includes(currentStatus)) {
+        log.info(`charge.refund.updated: ${refund.id} déjà ${currentStatus} — ignoré`);
+        break;
+      }
+
+      const webhookStatus = refund.status === "succeeded" ? "succeeded"
+        : refund.status === "failed"    ? "failed"
+        : null; // pending/requires_action → ne pas changer l'état
+
+      if (!webhookStatus) {
+        log.info(`charge.refund.updated: ${refund.id} statut intermédiaire ${refund.status} — ignoré`);
+        break;
+      }
+
+      const amountRefunded = refund.amount / 100;
+      await sb.from("admin_refund_requests").update({
+        status:          webhookStatus,
+        amount_refunded: webhookStatus === "succeeded" ? amountRefunded : 0,
+        processed_at:    new Date().toISOString(),
+      }).eq("id", refundReq.id as string);
+
+      // Notification client si succès et pas encore envoyée
+      if (webhookStatus === "succeeded" && !refundReq.notification_sent_at) {
+        const txId = refundReq.transaction_id as string | null;
+        if (txId) {
+          const { data: tx } = await sb.from("payment_transactions").select("user_id").eq("id", txId).single();
+          if (tx?.user_id) {
+            const { data: authUser } = await sb.auth.admin.getUserById(tx.user_id as string);
+            const clientEmail = authUser?.user?.email ?? null;
+            if (clientEmail) {
+              const notif = await (await import("@/lib/email")).sendRefundNotificationEmail({
+                toEmail:          clientEmail,
+                clientName:       (authUser?.user?.user_metadata?.full_name as string | null) ?? null,
+                amountRefunded:   amountRefunded,
+                currency:         (refundReq.currency as string) ?? "EUR",
+                providerRefundId: refund.id,
+                invoiceRef:       refundReq.invoice_id as string | null,
+                sandbox:          false,
+              });
+              if (notif.sent) {
+                await sb.from("admin_refund_requests")
+                  .update({ notification_sent_at: new Date().toISOString() })
+                  .eq("id", refundReq.id as string);
+              }
+            }
+          }
+        }
+      }
+
+      log.info(`charge.refund.updated: ${refund.id} → ${webhookStatus}`);
+      break;
+    }
+
+    default:
+      log.info(`Event non géré : ${event.type} — ignoré`);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
    Handler principal
 ───────────────────────────────────────────────────────────── */
 export async function POST(req: Request) {
@@ -582,147 +927,121 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
   }
 
+  // FIN-03 : vérification explicite avant constructEvent
+  // process.env.STRIPE_WEBHOOK_SECRET! contourne TypeScript silencieusement si absent
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    log.error("STRIPE_WEBHOOK_SECRET non configuré — arrêt du traitement");
+    return NextResponse.json(
+      { error: "Configuration webhook manquante — contacter l'administrateur" },
+      { status: 500 }
+    );
+  }
+
   let event: Stripe.Event;
+  let stripe: Stripe;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    stripe = getStripe();
+  } catch {
+    log.error("STRIPE_SECRET_KEY non configurée");
+    return NextResponse.json({ error: "Configuration Stripe manquante" }, { status: 500 });
+  }
+  try {
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Invalid signature";
     log.error("Signature invalide", msg);
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  // ── Idempotence : vérification via Supabase (multi-instance safe) ──
-  const supabaseIdempotent = getSupabaseAdmin();
-  const { data: alreadyProcessed } = await supabaseIdempotent
+  // ── Idempotence atomique : INSERT → conflict 23505 = déjà reçu ──
+  // Fail-CLOSED : si la réservation échoue, aucun effet métier ne se produit.
+  // Stripe réessaie l'event sur HTTP 503 — aucune perte d'event possible.
+  const supabaseAdmin = getSupabaseAdmin();
+  const { error: idempotenceErr } = await supabaseAdmin
     .from("stripe_webhook_events")
-    .select("id")
-    .eq("id", event.id)
-    .maybeSingle();
+    .insert({
+      id:               event.id,
+      event_type:       event.type,
+      status:           "processing",
+      processing_since: new Date().toISOString(),
+      attempt_count:    1,
+    });
 
-  if (alreadyProcessed) {
-    log.info("Event déjà traité, ignoré");
-    return NextResponse.json({ received: true, skipped: true });
-  }
+  if (idempotenceErr) {
+    if (idempotenceErr.code === "23505") {
+      // Conflict clé primaire — distinguer l'état réel pour un retour précis
+      const { data: existing } = await supabaseAdmin
+        .from("stripe_webhook_events")
+        .select("id, status, processing_since, attempt_count")
+        .eq("id", event.id)
+        .maybeSingle();
 
-  try {
-    await supabaseIdempotent
-      .from("stripe_webhook_events")
-      .insert({ id: event.id });
-  } catch {
-    // Race condition : un autre worker a inséré en parallèle — OK
-  }
+      const st = existing?.status ?? "unknown";
 
-  log.info(`Event reçu: ${event.type}`);
-
-  /* ── checkout.session.completed ─────────────────────────── */
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    if (session.metadata?.payment_link_id) {
-      /* Lien de paiement DJAMA — géré dans le bloc dédié ci-dessous */
-    } else if (session.metadata?.document_id) {
-      /* Paiement lien de paiement (facture/devis) */
-      await markDocumentPaid(session.metadata.document_id);
-    } else if (session.metadata?.product === "coaching_ia") {
-      await activateCoachingIA(session);
-    } else {
-      await handleCheckoutCompleted(session);
-    }
-  }
-
-  /* ── invoice.paid ────────────────────────────────────────── */
-  if (event.type === "invoice.paid") {
-    const invoice = event.data.object as Stripe.Invoice;
-    const isSubscriptionInvoice =
-      invoice.billing_reason === "subscription_cycle" ||
-      invoice.billing_reason === "subscription_create" ||
-      invoice.billing_reason === "subscription_update";
-
-    if (isSubscriptionInvoice) {
-      await confirmSubscriptionActive(invoice.customer as string);
-      // Email de renouvellement uniquement pour les cycles récurrents (pas le 1er paiement)
-      if (invoice.billing_reason === "subscription_cycle") {
-        const renewUser = await findUserByStripeCustomerId(invoice.customer as string);
-        if (renewUser?.email) {
-          await sendRenewalEmail({
-            email:    renewUser.email,
-            fullName: (renewUser.user_metadata?.full_name as string | null) ?? null,
-          });
-          log.info("Email renouvellement envoyé → " + renewUser.email);
-        }
+      if (st === "processed") {
+        log.info(`Event ${event.id} déjà traité (idempotence), ignoré`);
+        return NextResponse.json({ received: true, skipped: true, reason: "already_processed" });
       }
-    } else {
-      log.info(`invoice.paid ignoré (billing_reason: ${invoice.billing_reason})`);
+
+      if (st === "processing") {
+        // Bail actif ? (processing_since < now - 300s = expiré → Stripe peut réessayer)
+        const since = existing?.processing_since ? new Date(existing.processing_since) : null;
+        const leaseExpired = since ? (Date.now() - since.getTime()) > 300_000 : true;
+        if (leaseExpired) {
+          // Bail expiré — le précédent worker a crashé. Stripe réessaiera → Stripe renvoie l'event.
+          // Ici on renvoie 503 pour forcer le retry Stripe qui sera pris en charge par la route admin/retry.
+          log.warn(`Event ${event.id} bail expiré (processing depuis ${since?.toISOString()}) — retour 503 pour retry Stripe`);
+          return NextResponse.json({ error: "Event en cours de traitement — bail expiré, réessai en cours" }, { status: 503 });
+        }
+        log.info(`Event ${event.id} déjà en cours de traitement (bail actif)`);
+        return NextResponse.json({ received: true, skipped: true, reason: "processing_in_progress" });
+      }
+
+      if (st === "failed") {
+        // Event échoué — ne pas reprocesser via le webhook public, utiliser /admin/webhook/stripe/retry
+        log.warn(`Event ${event.id} déjà échoué — reprise manuelle requise`);
+        return NextResponse.json({ received: true, skipped: true, reason: "failed_manual_retry_required" });
+      }
+
+      log.info(`Event ${event.id} déjà enregistré (statut=${st}), ignoré`);
+      return NextResponse.json({ received: true, skipped: true, reason: st });
     }
+    // DB indisponible → FAIL-CLOSED : aucun effet métier, Stripe réessaiera
+    // Ne jamais continuer sans réservation atomique confirmée
+    log.error("DB indisponible pour réservation webhook", idempotenceErr.code ?? "unknown");
+    return NextResponse.json(
+      { error: "Service temporairement indisponible" },
+      { status: 503 }
+    );
   }
 
-  /* ── customer.subscription.updated ───────────────────────── */
-  if (event.type === "customer.subscription.updated") {
-    const sub = event.data.object as Stripe.Subscription;
-    await syncSubscriptionStatus(sub.customer as string, sub.status);
-    log.info(`Subscription updated → statut: ${sub.status}`);
-  }
+  log.info(`Event reçu: ${event.type} (${event.id})`);
 
-  /* ── customer.subscription.deleted ───────────────────────── */
-  if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as Stripe.Subscription;
-    await deactivateSubscription(sub.customer as string);
-    log.info("Subscription deleted");
-  }
+  // ── Dispatch et mise à jour du statut ───────────────────────────
+  try {
+    await dispatchStripeEvent(event);
 
-  /* ── invoice.payment_failed — paiement de renouvellement échoué ── */
-  if (event.type === "invoice.payment_failed") {
-    const invoice = event.data.object as Stripe.Invoice;
-    const user = await findUserByStripeCustomerId(invoice.customer as string);
-    if (user?.email) {
-      await sendPaymentFailedEmail({
-        email:    user.email,
-        fullName: user.user_metadata?.full_name ?? null,
-      });
-      log.info("Email paiement échoué envoyé → " + user.email);
-    }
-  }
+    await supabaseAdmin
+      .from("stripe_webhook_events")
+      .update({ status: "processed", processed_at: new Date().toISOString() })
+      .eq("id", event.id);
 
-  /* ── checkout.session.completed (lien de paiement personnalisé) ── */
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const meta    = session.metadata ?? {};
-    if (meta.payment_link_id) {
-      await handlePaymentLinkSuccess(session);
-    }
-  }
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    log.error(`Erreur handler ${event.type}`, errorMsg);
 
-  /* ── payment_intent.succeeded — paiement direct (lien de paiement) ── */
-  if (event.type === "payment_intent.succeeded") {
-    const pi   = event.data.object as Stripe.PaymentIntent;
-    const meta = pi.metadata ?? {};
-    if (meta.payment_link_id) {
-      // Géré via checkout.session.completed — skip pour éviter double enregistrement
-    } else if (meta.document_id) {
-      await markDocumentPaid(meta.document_id);
-    } else if (meta.reference) {
-      const supabase = getSupabaseAdmin();
-      await supabase.from("documents").update({ statut: "payé" }).eq("numero", meta.reference);
-      log.info(`payment_intent.succeeded → document ${meta.reference} → payé`);
-    }
-  }
+    // Marquer l'event comme échoué — permet la reprise manuelle via dashboard Stripe
+    await supabaseAdmin
+      .from("stripe_webhook_events")
+      .update({
+        status:    "failed",
+        failed_at: new Date().toISOString(),
+        error:     errorMsg.slice(0, 500),
+      })
+      .eq("id", event.id);
 
-  /* ── payment_intent.payment_failed — lien de paiement échoué ── */
-  if (event.type === "payment_intent.payment_failed") {
-    const pi   = event.data.object as Stripe.PaymentIntent;
-    const meta = pi.metadata ?? {};
-    if (meta.payment_link_id) {
-      await getSupabaseAdmin().from("payment_transactions").update({
-        status: "failed", updated_at: new Date().toISOString(),
-      }).eq("stripe_payment_intent_id", pi.id);
-    } else if (meta.document_id) {
-      const supabase = getSupabaseAdmin();
-      await supabase.from("documents").update({ statut: "en_retard" }).eq("id", meta.document_id);
-      log.info(`payment_intent.payment_failed → document ${meta.document_id} → en_retard`);
-    } else if (meta.reference) {
-      const supabase = getSupabaseAdmin();
-      await supabase.from("documents").update({ statut: "en_retard" }).eq("numero", meta.reference);
-      log.info(`payment_intent.payment_failed → document ${meta.reference} → en_retard`);
-    }
+    return NextResponse.json({ error: "Erreur traitement webhook" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

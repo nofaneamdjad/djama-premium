@@ -1,6 +1,7 @@
 import { NextResponse }              from "next/server";
 import { createPayPalSubscription }  from "@/lib/paypal";
 import { checkRateLimitAsync as checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { createServerClient }        from "@supabase/ssr";
 import { createLogger }              from "@/lib/logger";
 
 const log = createLogger("paypal/create-subscription");
@@ -40,6 +41,50 @@ export async function POST(req: Request) {
     userEmail = body.userEmail ?? undefined;
   } catch {
     /* body absent → pas grave */
+  }
+
+  // Si un userId est fourni dans le body, l'authentification est OBLIGATOIRE.
+  // On ne fait jamais confiance au userId transmis par le navigateur sans vérification
+  // de la session côté serveur — sinon un attaquant peut lier un abonnement PayPal
+  // à n'importe quel compte DJAMA (usurpation de custom_id PayPal).
+  if (userId) {
+    const cookieHeader = req.headers.get("cookie") ?? "";
+    let sessionUser: { id: string } | null = null;
+    try {
+      const supabaseAuth = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll: () => cookieHeader.split(";").map(c => {
+              const [name, ...rest] = c.trim().split("=");
+              return { name: name.trim(), value: rest.join("=") };
+            }),
+            setAll: () => {},
+          },
+        },
+      );
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      sessionUser = user;
+    } catch {
+      // Auth service indisponible — refus par précaution
+    }
+
+    if (!sessionUser) {
+      log.warn(`create-subscription: userId=${userId} fourni sans session valide → 401`);
+      return NextResponse.json(
+        { error: "Authentification requise pour associer l'abonnement à un compte DJAMA." },
+        { status: 401 },
+      );
+    }
+
+    if (sessionUser.id !== userId) {
+      log.warn(`userId mismatch — body:${userId} vs session:${sessionUser.id}`);
+      return NextResponse.json(
+        { error: "Identifiant utilisateur incohérent." },
+        { status: 403 },
+      );
+    }
   }
 
   try {

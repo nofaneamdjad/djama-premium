@@ -3,11 +3,27 @@
  * Returns a Buffer containing the PDF bytes, suitable for email attachments.
  * Does NOT use browser APIs (FileReader, window.Image).
  */
+import fs from "fs";
+import path from "path";
 import type { CompanySettings } from "./companySettings";
 import type { TemplateType, RGB } from "./types";
 import { getTheme } from "./pdfThemes";
 import { renderPdfWithTheme } from "./pdfRenderer";
 import type { PdfData } from "./generatePdf";
+
+let _nodeFontCache: { regular: string; bold: string } | null = null;
+
+function loadNotoSansFontsNode(): { regular: string; bold: string } | null {
+  if (_nodeFontCache) return _nodeFontCache;
+  try {
+    const dir = path.join(process.cwd(), "public", "fonts");
+    _nodeFontCache = {
+      regular: fs.readFileSync(path.join(dir, "NotoSans-Regular.ttf")).toString("base64"),
+      bold:    fs.readFileSync(path.join(dir, "NotoSans-Bold.ttf")).toString("base64"),
+    };
+    return _nodeFontCache;
+  } catch { return null; }
+}
 
 function hexToRgb(hex: string): RGB {
   const h = hex.replace("#", "");
@@ -62,12 +78,12 @@ async function loadLogoImageNode(url: string): Promise<{
 export async function generatePdfBuffer(data: PdfData): Promise<Buffer> {
   const { jsPDF } = await import("jspdf");
 
-  const template: TemplateType = data.template ?? "modern";
+  const template: TemplateType = (data.template ?? "min-ligne") as TemplateType;
   let theme = getTheme(template);
 
-  if (data.accentColor && theme.variant === "accent-bar") {
+  if (data.accentColor) {
     const rgb = hexToRgb(data.accentColor);
-    theme = { ...theme, accentBarColor: rgb, labelColor: rgb };
+    theme = { ...theme, accentColor: rgb, labelColor: rgb };
   }
 
   const co: Required<CompanySettings> = {
@@ -80,11 +96,23 @@ export async function generatePdfBuffer(data: PdfData): Promise<Buffer> {
     postal_code:      data.company?.postal_code      ?? "",
     city:             data.company?.city             ?? "",
     country:          data.company?.country          ?? "",
+    country_code:     data.company?.country_code     ?? "",
     siret:            data.company?.siret            ?? "",
     ape:              data.company?.ape              ?? "",
     vat_number:       data.company?.vat_number       ?? "",
+    tax_id_1:         data.company?.tax_id_1         ?? "",
+    tax_id_1_label:   data.company?.tax_id_1_label   ?? "",
+    tax_id_2:         data.company?.tax_id_2         ?? "",
+    tax_id_2_label:   data.company?.tax_id_2_label   ?? "",
+    tax_id_3:         data.company?.tax_id_3         ?? "",
+    tax_id_3_label:   data.company?.tax_id_3_label   ?? "",
     iban:             data.company?.iban             ?? "",
     bic:              data.company?.bic              ?? "",
+    bank_name:        data.company?.bank_name        ?? "",
+    routing_number:   data.company?.routing_number   ?? "",
+    sort_code:        data.company?.sort_code        ?? "",
+    account_number:   data.company?.account_number   ?? "",
+    mobile_money:     data.company?.mobile_money     ?? "",
     forme_juridique:  data.company?.forme_juridique  ?? "",
     capital_social:   data.company?.capital_social   ?? "",
     garantie:         data.company?.garantie         ?? "",
@@ -101,7 +129,14 @@ export async function generatePdfBuffer(data: PdfData): Promise<Buffer> {
     logoImg = await loadLogoImageNode(co.logoUrl);
   }
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", putOnlyUsedFonts: true });
+  const nf = loadNotoSansFontsNode();
+  if (nf) {
+    doc.addFileToVFS("NotoSans-Regular.ttf", nf.regular);
+    doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
+    doc.addFileToVFS("NotoSans-Bold.ttf", nf.bold);
+    doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
+  }
 
   await renderPdfWithTheme(
     doc,

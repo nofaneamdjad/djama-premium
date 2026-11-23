@@ -5,14 +5,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, Users } from "lucide-react";
 
-const PLUM = "#4a3f5c";
-const CORAL = "#e05c5c";
+const YELLOW = "#FFB900";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const handwriting: React.CSSProperties = {
-  fontFamily: "'Georgia', 'Times New Roman', serif",
-  fontStyle: "italic",
-  fontWeight: 700,
+  fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+  fontStyle: "normal",
+  fontWeight: 800,
 };
 
 type Currency = "eur" | "usd";
@@ -54,7 +53,7 @@ const PLANS: Plan[] = [
   },
   {
     id: "standard",
-    color: CORAL,
+    color: "#FFB900",
     name: "Standard",
     tagline: "Toutes les apps pour votre équipe",
     free: false,
@@ -278,7 +277,7 @@ function PlanDetail({
                 <button
                   onClick={() => setAnnual(v => !v)}
                   className="relative h-7 w-12 rounded-full transition-colors duration-300 focus:outline-none"
-                  style={{ background: PLUM }}
+                  style={{ background: YELLOW }}
                   aria-label="Changer la période"
                 >
                   <span
@@ -352,7 +351,7 @@ function PlanDetail({
                   onClick={() => handleBuy()}
                   disabled={loading}
                   className="block w-full rounded-xl py-3.5 text-center text-[0.85rem] font-extrabold uppercase tracking-[0.1em] text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-                  style={{ background: PLUM }}
+                  style={{ background: YELLOW }}
                 >
                   {loading ? "Redirection…" : "Acheter maintenant"}
                 </button>
@@ -413,7 +412,7 @@ export default function TarificationPage() {
         {/* ── Hero ── */}
         <section
           className="px-6 pb-16 pt-36 text-center sm:pb-20 sm:pt-48"
-          style={{ background: "linear-gradient(180deg, #fce8ea 0%, #ffffff 100%)" }}
+          style={{ background: "linear-gradient(180deg, #fff9e6 0%, #ffffff 100%)" }}
         >
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -424,7 +423,7 @@ export default function TarificationPage() {
               <h1 className="text-[3.2rem] leading-tight text-gray-900 sm:text-[4.2rem]" style={handwriting}>
                 Vous ne rêvez pas&nbsp;!
               </h1>
-              <div className="mx-auto mt-1 h-[4px] w-[70%] rounded-full" style={{ background: CORAL }} />
+              <div className="mx-auto mt-1 h-[4px] w-[70%] rounded-full" style={{ background: YELLOW }} />
             </div>
 
             {/* Toggle période */}
@@ -439,7 +438,7 @@ export default function TarificationPage() {
               <button
                 onClick={() => setAnnual(v => !v)}
                 className="relative h-7 w-12 rounded-full transition-colors duration-300 focus:outline-none"
-                style={{ background: PLUM }}
+                style={{ background: YELLOW }}
                 aria-label="Changer la période"
               >
                 <span
@@ -464,9 +463,9 @@ export default function TarificationPage() {
                   onClick={() => setCurrency(c)}
                   className="rounded-lg px-4 py-1.5 text-[0.78rem] font-extrabold uppercase tracking-wider transition-all focus:outline-none"
                   style={{
-                    background: currency === c ? PLUM : "transparent",
-                    color: currency === c ? "#fff" : "#9ca3af",
-                    border: `1.5px solid ${currency === c ? PLUM : "#e5e7eb"}`,
+                    background: currency === c ? YELLOW : "transparent",
+                    color: currency === c ? "#000" : "#9ca3af",
+                    border: `1.5px solid ${currency === c ? YELLOW : "#e5e7eb"}`,
                   }}
                 >
                   {c === "eur" ? "€ EUR" : "$ USD"}
@@ -522,7 +521,7 @@ export default function TarificationPage() {
                         {strikePrice ? (
                           <p className="mt-1 text-[0.8rem]">
                             <span className="text-gray-400 line-through">{strikePrice.toFixed(2).replace(".", ",")} {sym}</span>
-                            <span className="ml-0.5" style={{ color: CORAL }}>*</span>
+                            <span className="ml-0.5" style={{ color: YELLOW }}>*</span>
                           </p>
                         ) : (
                           <div className="mt-1 h-5" />
@@ -545,15 +544,15 @@ export default function TarificationPage() {
                       <Link
                         href={plan.href}
                         className="block w-full rounded-xl py-3.5 text-center text-[0.82rem] font-extrabold uppercase tracking-[0.1em] text-white transition-opacity hover:opacity-90"
-                        style={{ background: PLUM }}
+                        style={{ background: YELLOW, color: "#000" }}
                       >
                         {plan.cta}
                       </Link>
                     ) : (
                       <button
                         onClick={() => setSelectedPlan(plan)}
-                        className="w-full rounded-xl py-3.5 text-center text-[0.82rem] font-extrabold uppercase tracking-[0.1em] text-white transition-opacity hover:opacity-90"
-                        style={{ background: PLUM }}
+                        className="w-full rounded-xl py-3.5 text-center text-[0.82rem] font-extrabold uppercase tracking-[0.1em] transition-opacity hover:opacity-90"
+                        style={{ background: YELLOW, color: "#000" }}
                       >
                         {plan.cta}
                       </button>

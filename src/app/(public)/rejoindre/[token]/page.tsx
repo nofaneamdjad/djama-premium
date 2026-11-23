@@ -78,7 +78,7 @@ export default function RejoindreTokenPage() {
       {/* Logo */}
       <div className="mb-10">
         <Link href="/">
-          <Image src="/logo-navbar.png" alt="DJAMA" width={160} height={36} className="h-9 w-auto object-contain" />
+          <Image src="/djama-logo-navbar-v2.png" alt="DJAMA" width={160} height={36} className="h-9 w-auto object-contain" />
         </Link>
       </div>
 
@@ -105,7 +105,7 @@ export default function RejoindreTokenPage() {
                 <Building2 size={26} className="text-amber-500" />
               </div>
               <h1 className="mb-1 text-xl font-bold text-white">Invitation à rejoindre</h1>
-              <p className="text-2xl font-bold" style={{ color: "#c9a55a" }}>{info.orgName}</p>
+              <p className="text-2xl font-bold" style={{ color: "#FFB900" }}>{info.orgName}</p>
             </div>
 
             <div className="mb-6 space-y-2 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -146,7 +146,7 @@ export default function RejoindreTokenPage() {
                   onClick={acceptInvitation}
                   disabled={accepting}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-black transition hover:bg-amber-400 disabled:opacity-60"
-                  style={{ background: "#c9a55a" }}
+                  style={{ background: "#FFB900" }}
                 >
                   {accepting ? <><RefreshCw size={16} className="animate-spin" /> Rejoindre…</> : <><Users size={16} /> Accepter l'invitation</>}
                 </button>
@@ -166,7 +166,7 @@ export default function RejoindreTokenPage() {
                 <Link
                   href={`/login?redirect=/rejoindre/${token}`}
                   className="flex w-full items-center justify-center rounded-2xl py-4 text-sm font-bold text-black transition hover:bg-amber-400"
-                  style={{ background: "#c9a55a" }}
+                  style={{ background: "#FFB900" }}
                 >
                   Se connecter
                 </Link>

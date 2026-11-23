@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const BG   = "#1a1033";
 
 function isPWA(): boolean {

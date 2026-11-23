@@ -28,14 +28,18 @@ DROP POLICY IF EXISTS "update user_access" ON user_access;
 -- DELETE : déjà fermé (aucune policy = refusé pour auth role)
 
 -- ── 2. budget_alert_log : lecture seule pour les utilisateurs ─────
-ALTER TABLE budget_alert_log ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "budget_alert_log_user" ON budget_alert_log;
-
--- Recréer en lecture seule
-CREATE POLICY "budget_alert_log_select_own"
-  ON budget_alert_log FOR SELECT
-  USING (user_id = auth.uid());
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'budget_alert_log'
+  ) THEN
+    ALTER TABLE budget_alert_log ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "budget_alert_log_user" ON budget_alert_log;
+    CREATE POLICY "budget_alert_log_select_own"
+      ON budget_alert_log FOR SELECT
+      USING (user_id = auth.uid());
+  END IF;
+END $$;
 
 -- INSERT / UPDATE / DELETE : service_role uniquement (cron job)
 

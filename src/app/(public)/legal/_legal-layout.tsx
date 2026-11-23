@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft, Scale } from "lucide-react";
 
-const GOLDR = "201,165,90";
-const GOLD  = "#c9a55a";
+const GOLDR = "255,185,0";
+const GOLD  = "#FFB900";
 
 export function LegalPage({
   title,

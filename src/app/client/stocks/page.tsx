@@ -75,7 +75,7 @@ export default function StocksPage() {
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
+        if (!user) { router.replace("/login"); return; }
         setUserId(user.id);
 
         const [prodRes, movRes, supRes, whRes, ordRes, cliRes, delRes, fournRes] = await Promise.all([

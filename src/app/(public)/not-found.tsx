@@ -31,7 +31,7 @@ export default function PublicNotFound() {
           transition={{ duration: 0.6, ease, delay: 0.1 }}
           className="mb-5 select-none text-[7rem] font-black leading-none tracking-tighter sm:text-[9rem]"
           style={{
-            background: "linear-gradient(135deg, #6366f1 0%, #a78bfa 50%, #c9a55a 100%)",
+            background: "linear-gradient(135deg, #6366f1 0%, #a78bfa 50%, #FFB900 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
           }}
@@ -93,7 +93,7 @@ export default function PublicNotFound() {
         >
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#c9a55a] px-8 py-3.5 text-sm font-bold text-white shadow-[0_8px_28px_rgba(201,165,90,0.28)] transition hover:bg-[#b08d57]"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#FFB900] px-8 py-3.5 text-sm font-bold text-white shadow-[0_8px_28px_rgba(255,185,0,0.28)] transition hover:bg-[#FFB900]"
           >
             Retour à l&apos;accueil <ArrowRight size={14} />
           </Link>

@@ -22,11 +22,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient }        from "@supabase/ssr";
 import { createSupabaseAdmin }       from "@/lib/supabase-server";
-import { requireAdmin }              from "@/lib/admin-auth";
+import { createHash }                from "crypto";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
-export type AdminRole = "super_admin" | "admin" | "support" | "viewer";
+export type AdminRole =
+  | "super_admin"   // Tous droits + sécurité système
+  | "direction"     // Management opérationnel
+  | "admin"         // Alias rétrocompat → traité comme direction
+  | "finance"       // Responsable financier
+  | "commercial"    // Commercial / abonnements
+  | "support"       // Support client
+  | "tech"          // Équipe informatique
+  | "viewer";       // Lecture seule (autres employés)
 
 export interface AdminUser {
   id:          string;
@@ -46,58 +54,195 @@ export interface RequireAdminResult {
 
 const ROLE_PERMISSIONS: Record<AdminRole, Record<string, boolean>> = {
   super_admin: {
-    can_view_dashboard:    true,
-    can_manage_users:      true,
-    can_delete_users:      true,
-    can_view_revenue:      true,
-    can_manage_payments:   true,
-    can_view_messages:     true,
-    can_manage_settings:   true,
-    can_manage_admins:     true,
-    can_view_audit_log:    true,
-    can_manage_blog:       true,
-    can_view_analytics:    true,
-    manage_subscriptions:  true,
+    can_view_dashboard:       true,
+    can_manage_users:         true,
+    can_delete_users:         true,
+    can_view_revenue:         true,
+    can_manage_payments:      true,
+    can_view_messages:        true,
+    can_manage_settings:      true,  // paramètres système
+    can_manage_admins:        true,  // créer/modifier/supprimer des admins
+    can_view_audit_log:       true,
+    can_manage_blog:          true,
+    can_view_analytics:       true,
+    manage_subscriptions:     true,  // droits abonnements (migration, annulation forcée)
+    can_manage_plans:         true,
+    can_manage_hq:            true,
+    can_manage_security:      true,  // reset MFA, révocation sessions
+    can_perform_refunds:      true,  // remboursements
   },
+
+  // Direction : management opérationnel — même accès qu'admin historique + hq
+  direction: {
+    can_view_dashboard:       true,
+    can_manage_users:         true,
+    can_delete_users:         false,
+    can_view_revenue:         true,
+    can_manage_payments:      true,
+    can_view_messages:        true,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       true,
+    can_manage_blog:          true,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         true,
+    can_manage_hq:            true,
+    can_manage_security:      false,
+    can_perform_refunds:      true,
+  },
+
+  // admin = alias rétrocompat direction
   admin: {
-    can_view_dashboard:    true,
-    can_manage_users:      true,
-    can_delete_users:      false,
-    can_view_revenue:      true,
-    can_manage_payments:   true,
-    can_view_messages:     true,
-    can_manage_settings:   false,
-    can_manage_admins:     false,
-    can_view_audit_log:    true,
-    can_manage_blog:       true,
-    can_view_analytics:    true,
+    can_view_dashboard:       true,
+    can_manage_users:         true,
+    can_delete_users:         false,
+    can_view_revenue:         true,
+    can_manage_payments:      true,
+    can_view_messages:        true,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       true,
+    can_manage_blog:          true,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         true,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      true,
   },
+
+  // Responsable financier : paiements, remboursements, revenus — pas de gestion users/settings
+  finance: {
+    can_view_dashboard:       true,
+    can_manage_users:         false,
+    can_delete_users:         false,
+    can_view_revenue:         true,
+    can_manage_payments:      true,
+    can_view_messages:        false,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       true,   // audit log financier
+    can_manage_blog:          false,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         false,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      true,
+  },
+
+  // Commercial : clients, abonnements, plans — pas d'accès financier direct
+  commercial: {
+    can_view_dashboard:       true,
+    can_manage_users:         true,
+    can_delete_users:         false,
+    can_view_revenue:         true,   // lecture revenus (reporting)
+    can_manage_payments:      false,
+    can_view_messages:        true,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       false,
+    can_manage_blog:          true,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         true,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      false,
+  },
+
+  // Support client : messages, tickets, lecture clients
   support: {
-    can_view_dashboard:    true,
-    can_manage_users:      false,
-    can_delete_users:      false,
-    can_view_revenue:      false,
-    can_manage_payments:   false,
-    can_view_messages:     true,
-    can_manage_settings:   false,
-    can_manage_admins:     false,
-    can_view_audit_log:    false,
-    can_manage_blog:       false,
-    can_view_analytics:    false,
+    can_view_dashboard:       true,
+    can_manage_users:         false,
+    can_delete_users:         false,
+    can_view_revenue:         false,
+    can_manage_payments:      false,
+    can_view_messages:        true,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       false,
+    can_manage_blog:          false,
+    can_view_analytics:       false,
+    manage_subscriptions:     false,
+    can_manage_plans:         false,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      false,
   },
+
+  // Informatique : logs, monitoring, maintenance — pas d'accès métier
+  tech: {
+    can_view_dashboard:       true,
+    can_manage_users:         false,
+    can_delete_users:         false,
+    can_view_revenue:         false,
+    can_manage_payments:      false,
+    can_view_messages:        false,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       true,
+    can_manage_blog:          false,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         false,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      false,
+  },
+
+  // Lecture seule : autres employés
   viewer: {
-    can_view_dashboard:    true,
-    can_manage_users:      false,
-    can_delete_users:      false,
-    can_view_revenue:      false,
-    can_manage_payments:   false,
-    can_view_messages:     false,
-    can_manage_settings:   false,
-    can_manage_admins:     false,
-    can_view_audit_log:    false,
-    can_manage_blog:       false,
-    can_view_analytics:    true,
+    can_view_dashboard:       true,
+    can_manage_users:         false,
+    can_delete_users:         false,
+    can_view_revenue:         false,
+    can_manage_payments:      false,
+    can_view_messages:        false,
+    can_manage_settings:      false,
+    can_manage_admins:        false,
+    can_view_audit_log:       false,
+    can_manage_blog:          false,
+    can_view_analytics:       true,
+    manage_subscriptions:     false,
+    can_manage_plans:         false,
+    can_manage_hq:            false,
+    can_manage_security:      false,
+    can_perform_refunds:      false,
   },
+};
+
+/** Rôles pour lesquels le MFA est obligatoire, indépendamment du flag mfa_required. */
+export const ROLES_REQUIRING_MFA: ReadonlySet<AdminRole> = new Set([
+  "super_admin",
+  "direction",
+  "admin",    // alias rétrocompat
+  "finance",
+]);
+
+/** Libellés lisibles par rôle */
+export const ROLE_LABELS: Record<AdminRole, string> = {
+  super_admin: "Super Admin",
+  direction:   "Direction",
+  admin:       "Admin (rétrocompat)",
+  finance:     "Responsable Financier",
+  commercial:  "Commercial",
+  support:     "Support Client",
+  tech:        "Informatique",
+  viewer:      "Autres employés",
+};
+
+/** Hiérarchie numérique des rôles — utilisée pour les contrôles cross-admin. */
+export const ROLE_HIERARCHY: Record<AdminRole, number> = {
+  super_admin: 7,
+  direction:   6,
+  admin:       5,
+  finance:     4,
+  commercial:  3,
+  support:     2,
+  tech:        1,
+  viewer:      0,
 };
 
 export function hasPermission(admin: AdminUser, permission: string): boolean {
@@ -136,42 +281,74 @@ async function getAdminUserFromSupabase(
   }
 }
 
+/* ── Vérification niveau MFA (aal2) ───────────────────────────────── */
+// Fail-closed : toute erreur de lecture → refus (401).
+async function checkMfaLevel(
+  supabase: ReturnType<typeof createServerClient>,
+  adminUser: AdminUser,
+): Promise<boolean> {
+  const sb = createSupabaseAdmin();
+  const { data, error } = await sb
+    .from("admin_users")
+    .select("mfa_required, role")
+    .eq("id", adminUser.id)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.warn("[AdminAuthV2] checkMfaLevel: erreur lecture admin_users:", error?.message ?? "data null");
+    return false; // fail-closed
+  }
+
+  // MFA obligatoire si flag activé OU si rôle à haut privilège
+  const mfaNeeded = data.mfa_required ||
+    ROLES_REQUIRING_MFA.has(data.role as AdminRole);
+
+  if (!mfaNeeded) return true;
+
+  const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aalError || !aalData) {
+    console.warn("[AdminAuthV2] checkMfaLevel: erreur getAuthenticatorAssuranceLevel:", aalError?.message ?? "data null");
+    return false; // fail-closed
+  }
+
+  return aalData.currentLevel === "aal2";
+}
+
 /* ── Vérification révocation de session ────────────────────────────── */
-// Vérifie qu'il existe au moins une session active non-révoquée pour cet admin.
-// Graceful : si admin_sessions n'existe pas (migration 174 non appliquée),
-// considère la session comme valide et continue.
-async function checkSessionNotRevoked(adminId: string): Promise<boolean> {
+// Vérifie que LE cookie de session actuel est valide (non révoqué, non expiré).
+// Fail-closed : pas de session trouvée → 401. Pas de fail-open.
+// sessionToken = valeur brute du cookie djama_admin_tok (session token Strategy 1).
+async function checkSessionNotRevoked(
+  adminId:      string,
+  sessionToken: string | null | undefined,
+): Promise<boolean> {
+  if (!sessionToken) return false; // pas de cookie → refus
+
   try {
-    const sb = createSupabaseAdmin();
-    const now = new Date().toISOString();
-    // Récupère toutes les sessions (actives + révoquées) pour distinguer les cas :
-    // 0 sessions = pas de tracking actif = accès accordé
-    // N sessions toutes révoquées = révocation explicite = accès refusé
+    const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+    const sb        = createSupabaseAdmin();
+    const now       = new Date().toISOString();
+
     const { data, error } = await sb
       .from("admin_sessions")
       .select("id, revoked_at, expires_at")
       .eq("admin_user_id", adminId)
-      .order("created_at", { ascending: false })
-      .limit(20);
+      .eq("token_hash",    tokenHash)
+      .maybeSingle();
 
     if (error) {
-      // Table absente (migration 174 non appliquée) → pas de contrainte, OK
-      if (error.message.includes("schema cache") || error.message.includes("does not exist")) {
-        return true;
-      }
-      // Autre erreur DB → ne pas bloquer, laisser passer
+      // Table absente (migration 174 non appliquée) → fail-closed désormais
       console.warn("[AdminAuthV2] Erreur vérification admin_sessions:", error.message);
-      return true;
+      return false;
     }
 
-    const sessions = data ?? [];
-    // Aucune session trackée → tracking non actif → accès accordé
-    if (sessions.length === 0) return true;
+    if (!data)                   return false; // session introuvable → 401
+    if (data.revoked_at !== null) return false; // révoquée explicitement → 401
+    if (data.expires_at <= now)  return false; // expirée → 401
 
-    // Au moins une session active (non-révoquée et non-expirée) → accès accordé
-    return sessions.some(s => s.revoked_at === null && s.expires_at > now);
+    return true;
   } catch {
-    return true; // Non bloquant
+    return false; // fail-closed
   }
 }
 
@@ -234,6 +411,91 @@ export async function requireAdminUser(
   const ip        = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const userAgent = req.headers.get("user-agent") ?? "";
 
+  /* ── Tentative 0 : session token djama_admin_tok (principal) ── */
+  // Vérifie admin_sessions par hash — fonctionne sans JWT Supabase.
+  try {
+    const sessionToken0 = req.cookies.get("djama_admin_tok")?.value;
+    if (sessionToken0) {
+      const tokenHash0 = createHash("sha256").update(sessionToken0).digest("hex");
+      const now0       = new Date().toISOString();
+      const sb0        = createSupabaseAdmin();
+
+      const { data: sess, error: sessErr } = await sb0
+        .from("admin_sessions")
+        .select("admin_user_id, revoked_at, expires_at, aal")
+        .eq("token_hash", tokenHash0)
+        .maybeSingle();
+
+      if (!sessErr && sess && sess.revoked_at === null && sess.expires_at > now0) {
+        const { data: adminData } = await sb0
+          .from("admin_users")
+          .select("id, email, name, role, permissions, is_active, mfa_required")
+          .eq("id", sess.admin_user_id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (adminData) {
+          // Mise à jour last_seen_at non-bloquante (IIFE pour déclencher l'exécution lazy)
+          void (async () => {
+            await sb0.from("admin_sessions")
+              .update({ last_seen_at: new Date().toISOString() })
+              .eq("token_hash", tokenHash0)
+              .is("revoked_at", null);
+          })();
+
+          // MFA obligatoire si mfa_required=true OU si rôle dans ROLES_REQUIRING_MFA
+          const mfaNeeded = adminData.mfa_required ||
+            ROLES_REQUIRING_MFA.has(adminData.role as AdminRole);
+          if (mfaNeeded && sess.aal !== "aal2") {
+            await logAdminAction({
+              admin: null, action: "ACCESS_DENIED_SESSION_AAL_INSUFFICIENT",
+              ip, userAgent,
+              details: { admin_id: adminData.id, session_aal: sess.aal ?? "aal1", role: adminData.role },
+              severity: "warning",
+            });
+            return {
+              admin: null,
+              deny: NextResponse.json(
+                { error: "MFA requis pour ce compte.", mfaRequired: true },
+                { status: 401 }
+              ),
+            };
+          }
+
+          const adminUser: AdminUser = {
+            id:          adminData.id,
+            email:       adminData.email,
+            name:        adminData.name,
+            role:        adminData.role as AdminRole,
+            permissions: (adminData.permissions as Record<string, boolean>) ?? {},
+            authMethod:  "supabase_individual",
+          };
+
+          if (options.requiredPermission && !hasPermission(adminUser, options.requiredPermission)) {
+            return {
+              admin: null,
+              deny: NextResponse.json(
+                { error: "Permissions insuffisantes pour cette action." },
+                { status: 403 }
+              ),
+            };
+          }
+
+          if (options.logAction) {
+            await logAdminAction({
+              admin: adminUser, action: options.logAction,
+              resource: options.logResource, ip, userAgent,
+            });
+          }
+
+          return { admin: adminUser, deny: null };
+        }
+      }
+    }
+  } catch {
+    /* fail-closed: fall through to Strategy 1 */
+  }
+
   /* ── Tentative 1 : authentification Supabase individuelle ── */
   try {
     const cookieStore = { getAll: () => req.cookies.getAll(), setAll: () => {} };
@@ -249,8 +511,9 @@ export async function requireAdminUser(
       const adminUser = await getAdminUserFromSupabase(sbUser.id);
 
       if (adminUser) {
-        // Vérification révocation de session (migration 174 optionnelle)
-        const sessionValid = await checkSessionNotRevoked(adminUser.id);
+        // Vérification révocation de session — lit djama_admin_tok (session token)
+        const sessionToken = req.cookies.get("djama_admin_tok")?.value;
+        const sessionValid = await checkSessionNotRevoked(adminUser.id, sessionToken);
         if (!sessionValid) {
           await logAdminAction({
             admin: adminUser, action: "ACCESS_DENIED_SESSION_REVOKED",
@@ -261,6 +524,20 @@ export async function requireAdminUser(
             admin: null,
             deny: NextResponse.json(
               { error: "Votre session a été révoquée. Reconnectez-vous." },
+              { status: 401 }
+            ),
+          };
+        }
+
+        // ── Vérification aal2 si mfa_required (Strategy 1) ──────
+        // Note : Strategy 0 (djama_admin_tok) garantit déjà que aal2 a été
+        // complété lors du login, car le token n'est émis qu'après verify MFA.
+        // Ici (Strategy 1 fallback sans djama_admin_tok), on vérifie explicitement.
+        if (!(await checkMfaLevel(supabaseAuth, adminUser))) {
+          return {
+            admin: null,
+            deny: NextResponse.json(
+              { error: "MFA requis pour ce compte.", mfaRequired: true },
               { status: 401 }
             ),
           };
@@ -316,52 +593,14 @@ export async function requireAdminUser(
     console.warn("[AdminAuthV2] Erreur session Supabase, fallback legacy:", err);
   }
 
-  /* ── Tentative 2 : fallback ADMIN_PASS legacy ────────────── */
-
-  // Désactivation explicite : ADMIN_PASS_DEPRECATED=true bloque complètement le fallback.
-  // À activer une fois que admin_users est peuplé et le compte individuel validé.
-  if (process.env.ADMIN_PASS_DEPRECATED === "true") {
-    return {
-      admin: null,
-      deny: NextResponse.json(
-        { error: "L'authentification ADMIN_PASS partagé est désactivée. Utilisez votre compte individuel." },
-        { status: 401 }
-      ),
-    };
-  }
-
-  const legacyDeny = await requireAdmin(req);
-
-  if (legacyDeny) {
-    // Refusé même en legacy
-    return { admin: null, deny: legacyDeny };
-  }
-
-  // Autorisé via legacy — rôle LIMITÉ (admin, pas super_admin) pour encourager la migration.
-  // Seules les actions de consultation sont disponibles en mode legacy.
-  const legacyAdmin: AdminUser = {
-    id:          "legacy",
-    email:       "admin@djama.local",
-    name:        "Admin (ADMIN_PASS — migration requise)",
-    role:        "admin",  // downgraded from super_admin : pas de gestion admins ni settings
-    permissions: {
-      can_view_dashboard:  true,
-      can_view_revenue:    true,
-      can_view_messages:   true,
-      can_manage_admins:   false,  // ne peut pas créer/supprimer des admins
-      can_manage_settings: false,  // ne peut pas modifier les paramètres
-      can_delete_users:    false,
-    },
-    authMethod: "legacy_admin_pass",
+  /* ── Tentative 2 : fallback ADMIN_PASS legacy ────────────── SUPPRIMÉ ── */
+  // Strategy 2 retirée — V1.7-SECU P-LEGACY32.
+  // Les Strategies 0 (djama_admin_tok SHA-256) et 1 (Supabase JWT) sont les seuls chemins.
+  return {
+    admin: null,
+    deny: NextResponse.json(
+      { error: "Session expirée ou invalide. Reconnectez-vous." },
+      { status: 401 }
+    ),
   };
-
-  if (options.logAction) {
-    await logAdminAction({
-      admin: legacyAdmin, action: options.logAction,
-      resource: options.logResource, ip, userAgent,
-      details: { note: "Authentification via ADMIN_PASS partagé — migrer vers auth individuelle" },
-    });
-  }
-
-  return { admin: legacyAdmin, deny: null };
 }

@@ -683,7 +683,7 @@ export default function ProductivitePage() {
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
+        if (!user) { router.replace("/login"); return; }
         setUserId(user.id);
         // Charger l'organisation primaire de l'utilisateur (si elle existe)
         const { data: memData } = await supabase

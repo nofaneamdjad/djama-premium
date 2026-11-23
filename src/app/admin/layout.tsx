@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
@@ -108,11 +109,14 @@ const NAV_GROUPS: NavGroup[] = [
   {
     id: "securite", label: "Sécurité & Paramètres", icon: Settings,
     items: [
-      { href: "/admin/securite",   label: "Journal d'audit",  icon: ShieldCheck },
-      { href: "/admin/emails",     label: "Emails système",   icon: Send        },
-      { href: "/admin/settings",   label: "Identité SaaS",    icon: Building2   },
-      { href: "/admin/parametres", label: "Paramètres",       icon: Settings    },
-      { href: "/admin/permissions",label: "Permissions",      icon: Lock        },
+      { href: "/admin/administrateurs", label: "Administrateurs",  icon: UserCog     },
+      { href: "/admin/sessions",       label: "Sessions actives", icon: Lock        },
+      { href: "/admin/stripe",         label: "Config Stripe",    icon: CreditCard  },
+      { href: "/admin/securite",       label: "Journal d'audit",  icon: ShieldCheck },
+      { href: "/admin/emails",         label: "Emails système",   icon: Send        },
+      { href: "/admin/settings",       label: "Identité SaaS",    icon: Building2   },
+      { href: "/admin/parametres",     label: "Paramètres",       icon: Settings    },
+      { href: "/admin/permissions",    label: "Permissions",      icon: Lock        },
     ],
   },
   /* ── Site vitrine (hors périmètre SaaS — masqué par défaut) */
@@ -423,19 +427,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           href="/admin"
           className="flex min-w-0 flex-1 items-center gap-2.5"
         >
-          <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: V.goldDim, border: `1px solid ${V.goldBorder}` }}
-          >
-            <span className="text-[0.7rem] font-black" style={{ color: V.gold }}>D</span>
-          </div>
+          <Image
+            src="/djama-logo-white-v2.png"
+            alt="DJAMA"
+            width={108}
+            height={36}
+            className="h-7 w-auto object-contain shrink-0"
+            priority
+          />
           {(!compact || isMobile) && (
-            <div className="min-w-0 leading-none">
-              <p className="truncate text-[0.875rem] font-black tracking-tight" style={{ color: V.text }}>DJAMA</p>
-              <p className="mt-0.5 text-[0.5rem] font-bold uppercase tracking-[0.2em]" style={{ color: V.gold }}>
-                Console Admin
-              </p>
-            </div>
+            <p className="mt-0.5 text-[0.5rem] font-bold uppercase tracking-[0.2em] ml-1" style={{ color: V.gold }}>
+              Console Admin
+            </p>
           )}
         </Link>
 

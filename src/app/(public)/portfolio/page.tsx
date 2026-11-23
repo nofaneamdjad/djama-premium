@@ -117,18 +117,18 @@ export default function PortfolioPage() {
         {/* Orb */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="h-[400px] w-[600px] rounded-full blur-[120px]"
-            style={{ background: "rgba(201,165,90,0.10)" }}/>
+            style={{ background: "rgba(255,185,0,0.10)" }}/>
         </div>
         {/* Gold top line */}
         <div className="absolute inset-x-0 top-0 h-[1.5px]"
-          style={{ background: "linear-gradient(90deg,transparent 0%,rgba(201,165,90,0.7) 40%,rgba(201,165,90,0.3) 70%,transparent 100%)" }}/>
+          style={{ background: "linear-gradient(90deg,transparent 0%,rgba(255,185,0,0.7) 40%,rgba(255,185,0,0.3) 70%,transparent 100%)" }}/>
 
         <div className="relative mx-auto max-w-5xl px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
           >
-            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.3)] bg-[rgba(201,165,90,0.08)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#c9a55a]">
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.08)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#FFB900]">
               Portfolio DJAMA
             </span>
           </motion.div>
@@ -174,7 +174,7 @@ export default function PortfolioPage() {
               onClick={() => setActiveFilter(f)}
               className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-bold transition-all duration-200 ${
                 activeFilter === f
-                  ? "border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.1)] text-[#b08d45]"
+                  ? "border-[rgba(255,185,0,0.4)] bg-[rgba(255,185,0,0.1)] text-[#FFB900]"
                   : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-800"
               }`}
             >
@@ -219,7 +219,7 @@ export default function PortfolioPage() {
                   <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover:bg-black/20"/>
                   {/* Catégorie badge */}
                   <div className="absolute top-3 left-3">
-                    <span className="rounded-full border border-[rgba(201,165,90,0.4)] bg-black/60 px-2.5 py-1 text-[10px] font-bold text-[#c9a55a] backdrop-blur-sm">
+                    <span className="rounded-full border border-[rgba(255,185,0,0.4)] bg-black/60 px-2.5 py-1 text-[10px] font-bold text-[#FFB900] backdrop-blur-sm">
                       {project.category}
                     </span>
                   </div>
@@ -269,7 +269,7 @@ export default function PortfolioPage() {
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link href="/contact"
                 className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-[#0a0a0a] transition hover:opacity-90"
-                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", boxShadow: "0 4px 16px rgba(201,165,90,0.3)" }}>
+                style={{ background: "linear-gradient(135deg,#FFB900,#FFB900)", boxShadow: "0 4px 16px rgba(255,185,0,0.3)" }}>
                 Démarrer un projet <ArrowRight size={14}/>
               </Link>
               <Link href="/realisations"

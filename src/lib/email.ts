@@ -1353,7 +1353,7 @@ function buildInvitationHtml(opts: {
 
         <!-- Logo -->
         <tr><td style="padding-bottom:32px;" align="center">
-          <img src="${getSite()}/logo-navbar.png" alt="DJAMA" height="36" style="display:block;height:36px;">
+          <img src="${getSite()}/djama-logo-navbar-v2.png" alt="DJAMA" height="36" style="display:block;height:36px;">
         </td></tr>
 
         <!-- Card -->
@@ -1415,6 +1415,147 @@ function buildInvitationHtml(opts: {
   </table>
 </body>
 </html>`;
+}
+
+/* ── Notification remboursement client ────────────────────────────── */
+
+export async function sendRefundNotificationEmail(opts: {
+  toEmail:          string;
+  clientName?:      string | null;
+  amountRefunded:   number;
+  currency:         string;
+  providerRefundId: string | null;
+  invoiceRef?:      string | null;
+  sandbox?:         boolean;
+}): Promise<{ sent: boolean; reason?: string }> {
+  if (opts.sandbox) {
+    console.info("[Email Remboursement] Mode sandbox — email non envoyé →", opts.toEmail);
+    return { sent: false, reason: "sandbox" };
+  }
+  try {
+    const resend = getResend();
+    const from   = getFrom();
+    const site   = getSite();
+    const name   = opts.clientName?.trim() || opts.toEmail.split("@")[0];
+    const amount = new Intl.NumberFormat("fr-FR", {
+      style: "currency", currency: opts.currency.toUpperCase(),
+    }).format(opts.amountRefunded);
+    const ref = opts.invoiceRef ? `<br>Référence : <strong>${opts.invoiceRef}</strong>` : "";
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"/></head>
+<body style="background:${BG};color:${TEXT};font-family:sans-serif;margin:0;padding:24px;">
+<div style="max-width:580px;margin:0 auto;">
+  <div style="border:1px solid #2a2a2c;border-radius:8px;overflow:hidden;">
+    <div style="background:${CARD};padding:28px 32px;border-bottom:2px solid ${GOLD};">
+      <p style="margin:0;color:${GOLD};font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">DJAMA</p>
+      <h1 style="margin:12px 0 0;font-size:22px;font-weight:700;color:${TEXT};">Remboursement effectué</h1>
+    </div>
+    <div style="padding:28px 32px;">
+      <p style="color:${MUTED};font-size:14px;margin:0 0 20px;">Bonjour <strong style="color:${TEXT};">${name}</strong>,</p>
+      <p style="color:${TEXT};font-size:16px;margin:0 0 24px;">
+        Un remboursement de <strong style="color:${GOLD};">${amount}</strong> a été traité sur votre compte.
+      </p>
+      <div style="background:${BG};border:1px solid #1e1e20;border-radius:6px;padding:16px 20px;margin:0 0 24px;">
+        <p style="margin:0 0 6px;font-size:12px;color:${MUTED};">Détails du remboursement</p>
+        <p style="margin:0;color:${TEXT};font-size:14px;">Montant : <strong>${amount}</strong>${ref}</p>
+        ${opts.providerRefundId ? `<p style="margin:4px 0 0;font-size:12px;color:${MUTED};">ID transaction : ${opts.providerRefundId}</p>` : ""}
+      </div>
+      <p style="color:${MUTED};font-size:13px;margin:0 0 20px;">
+        Le délai de réception dépend de votre établissement bancaire (généralement 5 à 10 jours ouvrés).
+      </p>
+      <a href="${site}/espace/paiements" style="display:inline-block;background:${GOLD};color:#000;font-weight:700;font-size:14px;padding:12px 24px;border-radius:6px;text-decoration:none;">
+        Voir mes paiements
+      </a>
+    </div>
+    <div style="background:${CARD};padding:16px 32px;border-top:1px solid #1e1e20;">
+      <p style="margin:0;font-size:11px;color:${MUTED};">DJAMA — Votre espace de gestion. <a href="${site}" style="color:${GOLD};">djama.space</a></p>
+    </div>
+  </div>
+</div></body></html>`;
+
+    const res = await resend.emails.send({
+      from,
+      to:      opts.toEmail,
+      subject: `Remboursement DJAMA — ${amount}`,
+      html,
+    });
+
+    if (res.error) {
+      console.error("[Email Remboursement] ❌ Resend:", res.error);
+      return { sent: false, reason: res.error.message };
+    }
+    return { sent: true };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error("[Email Remboursement] ❌ Exception:", reason);
+    return { sent: false, reason };
+  }
+}
+
+/* ── Alerte admin — remboursement uncertain sans ID provider ──────────── */
+
+export async function sendAdminUncertainRefundAlert(opts: {
+  refundId:   string;
+  adminEmail: string;
+  sandbox?:   boolean;
+}): Promise<boolean> {
+  if (opts.sandbox) {
+    console.info("[Email Alerte Admin] Mode sandbox — alerte non envoyée, refund_id=", opts.refundId);
+    return false;
+  }
+  try {
+    const resend = getResend();
+    const from   = getFrom();
+    const site   = getSite();
+    const url    = `${site}/admin/remboursements`;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"/></head>
+<body style="background:${BG};color:${TEXT};font-family:sans-serif;margin:0;padding:24px;">
+<div style="max-width:580px;margin:0 auto;">
+  <div style="border:1px solid #2a2a2c;border-radius:8px;overflow:hidden;">
+    <div style="background:${CARD};padding:28px 32px;border-bottom:2px solid #ef4444;">
+      <p style="margin:0;color:#ef4444;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">DJAMA · ALERTE ADMIN</p>
+      <h1 style="margin:12px 0 0;font-size:22px;font-weight:700;color:${TEXT};">Remboursement nécessite intervention</h1>
+    </div>
+    <div style="padding:28px 32px;">
+      <p style="color:${MUTED};font-size:14px;margin:0 0 16px;">
+        Un remboursement est bloqué au statut <strong style="color:#f59e0b;">uncertain</strong> —
+        le fournisseur de paiement ne peut pas être contacté pour confirmer ou infirmer l'opération.
+      </p>
+      <div style="background:${BG};border:1px solid #1e1e20;border-radius:6px;padding:16px 20px;margin:0 0 24px;">
+        <p style="margin:0 0 6px;font-size:12px;color:${MUTED};">Identifiant de la demande</p>
+        <code style="color:${TEXT};font-size:13px;word-break:break-all;">${opts.refundId}</code>
+      </div>
+      <p style="color:${MUTED};font-size:13px;margin:0 0 20px;">
+        Ce remboursement <strong style="color:${TEXT};">peut avoir été exécuté</strong> chez le fournisseur.
+        Ne le marquez pas manuellement comme échoué sans vérification.
+      </p>
+      <a href="${url}" style="display:inline-block;background:#ef4444;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:6px;text-decoration:none;">
+        Voir les remboursements
+      </a>
+    </div>
+    <div style="background:${CARD};padding:16px 32px;border-top:1px solid #1e1e20;">
+      <p style="margin:0;font-size:11px;color:${MUTED};">DJAMA Admin — alerte automatique. <a href="${site}" style="color:${GOLD};">djama.space</a></p>
+    </div>
+  </div>
+</div></body></html>`;
+
+    const res = await resend.emails.send({
+      from,
+      to:      opts.adminEmail,
+      subject: `[DJAMA Admin] Remboursement uncertain — intervention requise`,
+      html,
+    });
+
+    if (res.error) {
+      console.error("[Email Alerte Admin] ❌ Resend:", res.error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[Email Alerte Admin] ❌ Exception:", err instanceof Error ? err.message : String(err));
+    return false;
+  }
 }
 
 export async function sendInvitationEmail(opts: {

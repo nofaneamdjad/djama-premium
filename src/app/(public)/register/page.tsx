@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { APPS_DATA } from "@/lib/applications-data";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const ease = [0.16, 1, 0.3, 1] as const;
 
 /* ── Bandeau apps sélectionnées (comme Odoo) ── */
@@ -122,7 +122,7 @@ function SplashScreen({ visible }: { visible: boolean }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.06, ease }}
           >
-            <Image src="/logo-navbar.png" alt="DJAMA" width={220} height={50} className="h-[44px] w-auto object-contain" />
+            <Image src="/djama-logo-navbar-v2.png" alt="DJAMA" width={220} height={50} className="h-[44px] w-auto object-contain" />
           </motion.div>
           <div className="absolute bottom-12 left-8 right-8 h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.10)" }}>
             <motion.div
@@ -207,7 +207,7 @@ function CountryPicker({
               onClick={() => { onSelect(c); onClose(); }}
               className="flex w-full items-center gap-3 px-5 py-3 text-left transition"
               style={{
-                background: c.code === selected.code ? "rgba(201,165,90,0.07)" : "transparent",
+                background: c.code === selected.code ? "rgba(255,185,0,0.07)" : "transparent",
                 borderLeft: c.code === selected.code ? `3px solid ${GOLD}` : "3px solid transparent",
               }}
               onMouseEnter={(e) => { if (c.code !== selected.code) (e.currentTarget as HTMLElement).style.background = "#f5f6f8"; }}
@@ -230,7 +230,7 @@ function CountryPicker({
 /* ── Classes communes des champs ── */
 const fieldBase =
   "h-[56px] w-full rounded-lg border border-gray-200 bg-white transition-all outline-none " +
-  "focus:border-[#c9a55a] focus:ring-2 focus:ring-[#c9a55a]/[0.16]";
+  "focus:border-[#FFB900] focus:ring-2 focus:ring-[#FFB900]/[0.16]";
 
 /* Champ texte/email avec label flottant */
 function FloatInput({
@@ -406,11 +406,10 @@ function RegisterForm() {
       {/* ── Contenu ── */}
       <main className="mx-auto w-full max-w-[620px] px-5 pb-20 pt-12 md:pt-16">
 
-        {/* Titre Caveat + soulignement doré */}
+        {/* Titre + soulignement doré */}
         <div className="mb-10 text-center">
           <h1
             className="text-[2.6rem] font-bold leading-tight text-gray-900 md:text-[3rem]"
-            style={{ fontFamily: "'Caveat', cursive" }}
           >
             Commencez avec{" "}
             <span className="relative inline-block">
@@ -424,7 +423,7 @@ function RegisterForm() {
               >
                 <path
                   d="M2 7 Q35 1, 70 6 Q105 10, 138 4"
-                  stroke="#c9a55a"
+                  stroke="#FFB900"
                   strokeWidth="2.8"
                   fill="none"
                   strokeLinecap="round"
@@ -480,7 +479,7 @@ function RegisterForm() {
                 <div
                   className={
                     "flex h-[56px] items-center overflow-hidden rounded-lg border border-gray-200 bg-white " +
-                    "transition-all focus-within:border-[#c9a55a] focus-within:ring-2 focus-within:ring-[#c9a55a]/[0.16]"
+                    "transition-all focus-within:border-[#FFB900] focus-within:ring-2 focus-within:ring-[#FFB900]/[0.16]"
                   }
                 >
                   <button

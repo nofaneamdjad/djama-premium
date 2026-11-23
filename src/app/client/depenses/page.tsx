@@ -2517,7 +2517,7 @@ export default function DepensesPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) setUserId(data.user.id);
-      else if (process.env.NODE_ENV !== "development") router.replace("/login");
+      else router.replace("/login");
     });
     fetch("/api/depenses/exchange-rates")
       .then(r => r.ok ? r.json() : null)

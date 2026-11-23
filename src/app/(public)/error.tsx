@@ -42,7 +42,7 @@ export default function PublicError({
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <button
             onClick={reset}
-            className="flex items-center gap-2 rounded-xl bg-[#c9a55a] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#b08d57]"
+            className="flex items-center gap-2 rounded-xl bg-[#FFB900] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#FFB900]"
           >
             <RefreshCw size={14} />
             Réessayer

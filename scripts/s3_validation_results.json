@@ -1,0 +1,156 @@
+{
+  "date": "2026-11-08T15:29:36.404Z",
+  "supabase_url": "http://127.0.0.1:54321",
+  "passed": 27,
+  "failed": 0,
+  "warned": 2,
+  "total": 29,
+  "score_pct": 93,
+  "results": [
+    {
+      "id": "T01-provider",
+      "label": "Colonne payment_transactions.provider présente",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T01-amount_original",
+      "label": "Colonne payment_transactions.amount_original présente",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T01-currency_original",
+      "label": "Colonne payment_transactions.currency_original présente",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T01-amount_eur",
+      "label": "Colonne payment_transactions.amount_eur présente",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T01-exchange_rate",
+      "label": "Colonne payment_transactions.exchange_rate présente",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T01-transaction_type",
+      "label": "Colonne payment_transactions.transaction_type présente",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T01-status",
+      "label": "Colonne payment_transactions.status présente",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T01-country_code",
+      "label": "Colonne payment_transactions.country_code présente",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T02-currency",
+      "label": "user_subscriptions.currency présent",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T02-billing_interval",
+      "label": "user_subscriptions.billing_interval présent",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T02-discount_percent",
+      "label": "user_subscriptions.discount_percent présent",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T02-mrr_eur",
+      "label": "user_subscriptions.mrr_eur présent",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T02-country_code",
+      "label": "user_subscriptions.country_code présent",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T02-cancelled_at",
+      "label": "user_subscriptions.cancelled_at présent",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T03-admin_revenue_monthly",
+      "label": "Vue admin_revenue_monthly OK (0 lignes)",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T03-admin_revenue_by_country",
+      "label": "Vue admin_revenue_by_country OK (0 lignes)",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T03-admin_revenue_by_plan",
+      "label": "Vue admin_revenue_by_plan OK (0 lignes)",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T04-a",
+      "label": "Table subscription_mrr_snapshots: 19 colonnes",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T04-b",
+      "label": "Colonne arr_eur présente (is_generated=ALWAYS)",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T05-pre",
+      "label": "Aucun utilisateur dans auth.users — tests DML limités",
+      "status": "AVERTISSEMENT"
+    },
+    {
+      "id": "T05-a",
+      "label": "payment_transactions accessible: 0 lignes",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T06-schema",
+      "label": "currency_original type TEXT — multi-devise possible",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T07-sql",
+      "label": "Contrainte UNIQUE sur provider_transaction_id confirmée via pg_constraint",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T08-a",
+      "label": "Vue admin_revenue_monthly vide (normal si aucune transaction réelle)",
+      "status": "AVERTISSEMENT"
+    },
+    {
+      "id": "T09-a",
+      "label": "Route protégée (HTTP 401 sans auth)",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T10-a",
+      "label": "Route /api/admin/paiements protégée (HTTP 401)",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T11-provider",
+      "label": "CHECK payment_transactions_provider_check présent",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T11-status",
+      "label": "CHECK payment_transactions_status_check présent",
+      "status": "REUSSI"
+    },
+    {
+      "id": "T11-type",
+      "label": "CHECK payment_transactions_type_check présent",
+      "status": "REUSSI"
+    }
+  ]
+}

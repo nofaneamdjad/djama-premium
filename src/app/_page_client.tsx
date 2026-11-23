@@ -1,24 +1,24 @@
-"use client";
+﻿"use client";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AssistantDJAMA from "@/components/AssistantDJAMA";
+import DjamaRobot from "@/components/DjamaRobot";
 import { LanguageProvider } from "@/lib/language-context";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, Mail, Users2, Shield, ShieldCheck,
-  CheckCircle2, Sparkles, HeartHandshake,
-  Globe, Brain, Check, X,
+  ArrowRight, Mail, Users2, ShieldCheck,
+  CheckCircle2, Sparkles,
+  Globe, Brain, X,
   Code2, BarChart3, Briefcase,
   Receipt, CalendarRange, StickyNote, Timer, CreditCard, Gem, Star,
   Truck, Package, ListTodo, Zap, Wallet, Building2, Banknote,
   Network, FolderOpen, Share2, ShoppingBag, Bot, BarChart2,
   Store, Contact2, CalendarPlus, QrCode, PenLine, ShoppingCart,
   Landmark, FileCheck2, BookOpen, Target,
-  MessageCircle, Gift, Search, Clock, GraduationCap, UserPlus, Video, Mic, Bell,
 } from "lucide-react";
 import { getSiteData } from "@/lib/site-data";
 import { APPS_DATA } from "@/lib/applications-data";
@@ -32,44 +32,14 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import StripeButton from "@/components/ui/StripeButton";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const GOLD  = "#c9a55a";
-const GOLDR = "201,165,90";
+const GOLD  = "#FFB900";
+const GOLDR = "255,185,0";
 
-function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-  const ref  = useRef<HTMLSpanElement>(null);
-  const done = useRef(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !done.current) {
-        done.current = true;
-        let n = 0;
-        const step = Math.max(1, Math.ceil(to / 40));
-        const id = setInterval(() => {
-          n = Math.min(n + step, to);
-          setCount(n);
-          if (n >= to) clearInterval(id);
-        }, 22);
-      }
-    }, { threshold: 0.5 });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [to]);
-  return <span ref={ref}>{count}{suffix}</span>;
-}
-
-function SmartStat({ value }: { value: string }) {
-  const match = value.match(/^(\d+)(.*)$/);
-  if (!match) return <>{value}</>;
-  return <><CountUp to={parseInt(match[1], 10)} />{match[2]}</>;
-}
 
 const HOME_CURSIVE: React.CSSProperties = {
-  fontFamily: "'Georgia', 'Times New Roman', serif",
-  fontStyle: "italic",
-  fontWeight: 700,
+  fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+  fontStyle: "normal",
+  fontWeight: 800,
 };
 
 const SCHEMA_STEPS = [
@@ -221,67 +191,16 @@ const RIVAL_PRICES: Record<typeof ESPACE_TOOLS_20[number], number> = {
   "Paie & RH":        49,
 };
 
-type ToolEntry = { name: string; rival: string; price: number; icon: React.ElementType; g: string };
-const TOOLS_DATA_48: ToolEntry[] = [
-  // ── Finance & Compta ──
-  { name: "Factures & Devis",      rival: "QuickBooks",       price: 29, icon: Receipt,        g: "linear-gradient(135deg,#f59e0b,#c9a55a)" },
-  { name: "Dépenses",              rival: "Expensify",        price: 8,  icon: CreditCard,     g: "linear-gradient(135deg,#f43f5e,#be123c)" },
-  { name: "Trésorerie",            rival: "Sage",             price: 25, icon: Wallet,         g: "linear-gradient(135deg,#34d399,#059669)" },
-  { name: "Comptabilité",          rival: "FreshBooks",       price: 15, icon: Banknote,       g: "linear-gradient(135deg,#4ade80,#16a34a)" },
-  { name: "Banque",                rival: "Qonto",            price: 9,  icon: Landmark,       g: "linear-gradient(135deg,#60a5fa,#2563eb)" },
-  { name: "Déclarations Fiscales", rival: "Indy",             price: 20, icon: FileCheck2,     g: "linear-gradient(135deg,#818cf8,#4338ca)" },
-  { name: "Paie & RH",            rival: "PayFit",           price: 49, icon: Users2,         g: "linear-gradient(135deg,#818cf8,#4f46e5)" },
-  { name: "Liens de Paiement",    rival: "Stripe",           price: 15, icon: ShoppingCart,   g: "linear-gradient(135deg,#6366f1,#4f46e5)" },
-  // ── Commerce & Ventes ──
-  { name: "CRM",                  rival: "HubSpot",          price: 45, icon: Contact2,       g: "linear-gradient(135deg,#22d3ee,#0891b2)" },
-  { name: "Boutique en ligne",    rival: "Shopify",          price: 32, icon: Store,          g: "linear-gradient(135deg,#86efac,#16a34a)" },
-  { name: "Caisse / POS",        rival: "Square",           price: 15, icon: ShoppingBag,    g: "linear-gradient(135deg,#fb923c,#ea580c)" },
-  { name: "Marketplace",          rival: "Malt",             price: 20, icon: Globe,          g: "linear-gradient(135deg,#f97316,#c2410c)" },
-  { name: "Agences",             rival: "Comet",            price: 15, icon: Briefcase,      g: "linear-gradient(135deg,#a78bfa,#6d28d9)" },
-  { name: "Portail Client",      rival: "Notion",           price: 16, icon: FolderOpen,     g: "linear-gradient(135deg,#c084fc,#7c3aed)" },
-  // ── Marketing & Com ──
-  { name: "Email Marketing",     rival: "Mailchimp",        price: 13, icon: Mail,           g: "linear-gradient(135deg,#fde68a,#f59e0b)" },
-  { name: "Réseaux Sociaux",    rival: "Hootsuite",        price: 50, icon: Share2,         g: "linear-gradient(135deg,#fb923c,#d97706)" },
-  { name: "Blog IA",            rival: "WordPress",        price: 8,  icon: PenLine,        g: "linear-gradient(135deg,#60a5fa,#3b82f6)" },
-  { name: "Site Web IA",        rival: "Wix",              price: 20, icon: Code2,          g: "linear-gradient(135deg,#0ea5e9,#0284c7)" },
-  { name: "Réputation",         rival: "Trustpilot",       price: 99, icon: Star,           g: "linear-gradient(135deg,#facc15,#ca8a04)" },
-  { name: "Avis Clients",       rival: "Google My Biz.",   price: 30, icon: HeartHandshake, g: "linear-gradient(135deg,#f472b6,#be185d)" },
-  { name: "Carte de Visite",    rival: "Canva",            price: 13, icon: Gem,            g: "linear-gradient(135deg,#64748b,#334155)" },
-  { name: "Chatbot IA",         rival: "Intercom",         price: 39, icon: MessageCircle,  g: "linear-gradient(135deg,#34d399,#0d9488)" },
-  { name: "Analytics",          rival: "Hotjar",           price: 39, icon: BarChart2,      g: "linear-gradient(135deg,#f97316,#c2410c)" },
-  // ── IA & Productivité ──
-  { name: "Assistant IA",       rival: "ChatGPT",          price: 20, icon: Bot,            g: "linear-gradient(135deg,#a78bfa,#7c3aed)" },
-  { name: "Coaching IA",        rival: "Udemy",            price: 20, icon: Brain,          g: "linear-gradient(135deg,#a78bfa,#6d28d9)" },
-  { name: "Contrats IA",        rival: "DocuSign",         price: 25, icon: Shield,         g: "linear-gradient(135deg,#facc15,#ca8a04)" },
-  { name: "Sourcing IA",        rival: "LinkedIn",         price: 39, icon: Target,         g: "linear-gradient(135deg,#22d3ee,#0284c7)" },
-  { name: "Signature Élec.",    rival: "HelloSign",        price: 20, icon: Zap,            g: "linear-gradient(135deg,#fbbf24,#d97706)" },
-  { name: "Bloc-notes",         rival: "Notion",           price: 10, icon: StickyNote,     g: "linear-gradient(135deg,#4ade80,#16a34a)" },
-  { name: "Mind Maps",          rival: "Miro",             price: 10, icon: Network,        g: "linear-gradient(135deg,#f472b6,#db2777)" },
-  // ── Opérations ──
-  { name: "Stocks & Inventaire",rival: "Zoho",             price: 20, icon: Package,        g: "linear-gradient(135deg,#fbbf24,#d97706)" },
-  { name: "Fournisseurs",       rival: "SAP Ariba",        price: 20, icon: Truck,          g: "linear-gradient(135deg,#94a3b8,#475569)" },
-  { name: "Rendez-vous",        rival: "Calendly",         price: 12, icon: CalendarRange,  g: "linear-gradient(135deg,#3b82f6,#6366f1)" },
-  { name: "Agenda",             rival: "Google Cal.",      price: 8,  icon: CalendarPlus,   g: "linear-gradient(135deg,#ec4899,#db2777)" },
-  { name: "Projets",            rival: "Asana",            price: 13, icon: ListTodo,       g: "linear-gradient(135deg,#f59e0b,#b45309)" },
-  { name: "Planification Strat.",rival: "Monday.com",      price: 17, icon: BarChart3,      g: "linear-gradient(135deg,#34d399,#047857)" },
-  { name: "Checklists",         rival: "Todoist",          price: 5,  icon: CheckCircle2,   g: "linear-gradient(135deg,#0ea5e9,#0284c7)" },
-  { name: "Scanner",            rival: "Adobe Scan",       price: 8,  icon: QrCode,         g: "linear-gradient(135deg,#64748b,#334155)" },
-  // ── Équipe & Admin ──
-  { name: "Équipe",             rival: "BambooHR",         price: 35, icon: UserPlus,       g: "linear-gradient(135deg,#2dd4bf,#0d9488)" },
-  { name: "Espaces Privés",     rival: "Slack",            price: 8,  icon: Building2,      g: "linear-gradient(135deg,#818cf8,#4338ca)" },
-  { name: "Productivité",       rival: "Notion",           price: 10, icon: Sparkles,       g: "linear-gradient(135deg,#c084fc,#6d28d9)" },
-  { name: "Chrono Pro",         rival: "Toggl",            price: 10, icon: Timer,          g: "linear-gradient(135deg,#fb923c,#ea580c)" },
-];
 
 const PUBLIC_APP_ICONS = [
   /* 0 – Factures & devis */
   <svg key="p0" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-    <defs><linearGradient id="pub0" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f59e0b"/><stop offset="1" stopColor="#c9a55a"/></linearGradient></defs>
+    <defs><linearGradient id="pub0" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stopColor="#f59e0b"/><stop offset="1" stopColor="#FFB900"/></linearGradient></defs>
     <rect width="48" height="48" rx="12" fill="url(#pub0)"/>
     <rect x="12" y="10" width="20" height="26" rx="3" fill="white" fillOpacity="0.95"/>
-    <rect x="15" y="16" width="14" height="2" rx="1" fill="#c9a55a"/>
-    <rect x="15" y="20" width="11" height="2" rx="1" fill="#c9a55a" fillOpacity="0.6"/>
-    <rect x="15" y="24" width="9" height="2" rx="1" fill="#c9a55a" fillOpacity="0.4"/>
+    <rect x="15" y="16" width="14" height="2" rx="1" fill="#FFB900"/>
+    <rect x="15" y="20" width="11" height="2" rx="1" fill="#FFB900" fillOpacity="0.6"/>
+    <rect x="15" y="24" width="9" height="2" rx="1" fill="#FFB900" fillOpacity="0.4"/>
     <circle cx="31" cy="33" r="7" fill="#f59e0b"/>
     <path d="M27.5 33l2.5 2.5 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>,
@@ -550,348 +469,7 @@ const PUBLIC_APP_ICONS = [
 ];
 
 
-/* ── Vraie palette DJAMA espace client ── */
-const D_SIDEBAR  = "#111318";
-const D_CONTENT  = "#07090e";
-const D_BORDER   = "rgba(255,255,255,0.07)";
-const D_TEXT     = "rgba(255,255,255,0.65)";
-const D_MUTED    = "rgba(255,255,255,0.25)";
-const D_CARD     = "rgba(255,255,255,0.04)";
 
-/* Groupes sidebar réels */
-const MOCK_NAV = [
-  { group: null, items: [
-    { id: "dashboard", label: "Tableau de bord", Icon: BarChart2 },
-  ]},
-  { group: "Finance", items: [
-    { id: "factures",  label: "Factures",    Icon: Receipt  },
-    { id: "tresorerie",label: "Trésorerie",  Icon: Wallet   },
-  ]},
-  { group: "Commercial", items: [
-    { id: "crm",       label: "CRM",         Icon: Users2   },
-    { id: "contrats",  label: "Contrats",    Icon: FileCheck2 },
-  ]},
-  { group: "Intelligence", items: [
-    { id: "ia",        label: "Assistant IA", Icon: Zap     },
-    { id: "coaching",  label: "Coaching IA",  Icon: Brain   },
-  ]},
-];
-
-const CYCLE_SCREENS = ["dashboard", "factures", "crm", "ia"] as const;
-
-function DjamaScreenContent({ screen }: { screen: string }) {
-  if (screen === "dashboard") return (
-    <div className="flex flex-col gap-3 p-4">
-      <p className="text-[0.58rem] font-semibold uppercase tracking-widest" style={{ color: D_MUTED }}>Bonjour · Août 2026</p>
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: "CA du mois",  value: "18 400 €", badge: "+12%",    ok: true  },
-          { label: "Factures",    value: "7",         badge: "2 retards",ok: false },
-          { label: "Clients",     value: "34",        badge: "+3 ce mois",ok: true },
-        ].map(k => (
-          <div key={k.label} className="rounded-xl p-3" style={{ background: D_CARD, border: D_BORDER }}>
-            <p className="text-[0.55rem]" style={{ color: D_MUTED }}>{k.label}</p>
-            <p className="mt-1 text-[0.9rem] font-black text-white">{k.value}</p>
-            <span className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[0.5rem] font-bold"
-              style={{ background: k.ok ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
-                       color: k.ok ? "#34d399" : "#f87171" }}>
-              {k.badge}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="rounded-xl p-3" style={{ background: D_CARD, border: D_BORDER }}>
-        <p className="mb-2 text-[0.55rem] font-semibold" style={{ color: D_MUTED }}>CA · 6 derniers mois</p>
-        <div className="flex items-end gap-1.5 h-10">
-          {[40, 55, 48, 70, 62, 88].map((h, i) => (
-            <div key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: i === 5 ? GOLD : "rgba(255,255,255,0.12)" }} />
-          ))}
-        </div>
-      </div>
-      <div className="rounded-xl p-3" style={{ background: D_CARD, border: D_BORDER }}>
-        <p className="mb-2 text-[0.55rem] font-semibold" style={{ color: D_MUTED }}>Actions rapides</p>
-        <div className="flex gap-2">
-          {["Facture", "Devis", "Dépense", "Contact"].map(a => (
-            <div key={a} className="flex-1 rounded-lg py-1.5 text-center text-[0.52rem] font-bold"
-              style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}25` }}>
-              {a}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  if (screen === "factures") return (
-    <div className="flex flex-col gap-0 p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-[0.7rem] font-bold text-white">Factures & Devis</p>
-        <span className="rounded-lg px-2.5 py-1 text-[0.58rem] font-bold"
-          style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}25` }}>+ Nouvelle facture</span>
-      </div>
-      <div className="mb-2 grid grid-cols-4 gap-2 text-[0.52rem] font-semibold uppercase tracking-wider" style={{ color: D_MUTED }}>
-        <span>Numéro</span><span>Client</span><span className="text-right">Montant</span><span className="text-right">Statut</span>
-      </div>
-      {[
-        { ref: "2026-089", client: "Groupe Esseba",   amount: "3 200 €", s: "Payée",      ok: true  },
-        { ref: "2026-088", client: "Entreprise Koné", amount: "1 840 €", s: "En retard",  ok: false },
-        { ref: "2026-087", client: "SCI Bézavana",    amount: "5 100 €", s: "En attente", ok: null  },
-        { ref: "2026-086", client: "Maison Jasmina",  amount: "920 €",   s: "Payée",      ok: true  },
-      ].map((f, i) => (
-        <div key={f.ref} className="grid grid-cols-4 items-center gap-2 py-2 text-[0.62rem]"
-          style={{ borderTop: i === 0 ? D_BORDER : D_BORDER }}>
-          <span className="font-mono text-[0.55rem]" style={{ color: D_MUTED }}>#{f.ref}</span>
-          <span className="font-semibold text-white truncate">{f.client}</span>
-          <span className="text-right font-black text-white">{f.amount}</span>
-          <span className="text-right">
-            <span className="rounded-full px-1.5 py-0.5 text-[0.5rem] font-semibold"
-              style={{ background: f.ok === true ? "rgba(16,185,129,0.15)" : f.ok === false ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.08)",
-                       color: f.ok === true ? "#34d399" : f.ok === false ? "#f87171" : D_MUTED }}>
-              {f.s}
-            </span>
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-
-  if (screen === "crm") return (
-    <div className="flex flex-col gap-3 p-4">
-      <p className="text-[0.7rem] font-bold text-white">CRM — Pipeline</p>
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { col: "Prospects", color: "#6366f1", count: 3, items: ["Startup Tekki", "Agence Soleil", "Mr. Diallo"] },
-          { col: "En cours",  color: GOLD,      count: 2, items: ["Groupe Esseba", "SCI Bézavana"]               },
-          { col: "Gagnés",    color: "#10b981", count: 3, items: ["Ent. Koné", "M. Jasmina", "Tech Réunion"]    },
-        ].map(col => (
-          <div key={col.col}>
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: col.color }} />
-                <p className="text-[0.58rem] font-bold" style={{ color: D_MUTED }}>{col.col}</p>
-              </div>
-              <span className="rounded-full px-1.5 text-[0.5rem] font-bold" style={{ background: `${col.color}20`, color: col.color }}>{col.count}</span>
-            </div>
-            {col.items.map(item => (
-              <div key={item} className="mb-1 rounded-lg px-2 py-2 text-[0.58rem] font-semibold"
-                style={{ background: D_CARD, border: D_BORDER, color: D_TEXT }}>
-                {item}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="flex flex-col gap-2 p-4">
-      <p className="mb-1 text-[0.7rem] font-bold text-white">Assistant IA</p>
-      <div className="flex flex-col gap-2">
-        {[
-          { who: "Vous",  msg: "Génère une relance pour la facture #2026-088",  right: true  },
-          { who: "DJAMA IA", msg: "Relance envoyée à Entreprise Koné — Objet : Rappel facture échue, réponse attendue sous 48h.", right: false },
-          { who: "Vous",  msg: "Résumé du CA de ce mois ?",         right: true  },
-          { who: "DJAMA IA", msg: "CA août 2026 : 18 400 € — en hausse de +12% vs juillet. 34 clients actifs.", right: false },
-        ].map((m, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.12, duration: 0.25 }}
-            className={`flex ${m.right ? "justify-end" : "justify-start"}`}>
-            <div className="max-w-[85%] rounded-xl px-2.5 py-1.5 text-[0.6rem] leading-snug"
-              style={{ background: m.right ? `${GOLD}22` : D_CARD,
-                       border: `1px solid ${m.right ? `${GOLD}30` : D_BORDER}`,
-                       color: m.right ? "#f5e6cc" : D_TEXT }}>
-              <p className="mb-0.5 text-[0.5rem] font-bold" style={{ color: m.right ? GOLD : D_MUTED }}>{m.who}</p>
-              {m.msg}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DjamaVideoSection() {
-  const [step,     setStep]     = useState(0);
-  const [playing,  setPlaying]  = useState(true);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    if (!playing) return;
-    const DURATION = 4500;
-    const TICK = 60;
-    let elapsed = 0;
-    const t = setInterval(() => {
-      elapsed += TICK;
-      setProgress(Math.min((elapsed / DURATION) * 100, 100));
-      if (elapsed >= DURATION) { elapsed = 0; setStep(s => (s + 1) % CYCLE_SCREENS.length); }
-    }, TICK);
-    return () => clearInterval(t);
-  }, [playing, step]);
-
-  const activeId = CYCLE_SCREENS[step];
-
-  return (
-    <section className="py-0" style={{ background: "linear-gradient(160deg, #0d1f37 0%, #0f2744 45%, #0a1929 100%)" }}>
-      {/* Dot grid overlay */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden"
-        style={{ backgroundImage: "radial-gradient(circle, rgba(201,165,90,0.055) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
-
-      {/* Hero text */}
-      <div className="relative px-6 pb-10 pt-20 text-center sm:pt-28">
-        <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport} transition={{ duration: 0.8, ease }}>
-          <p className="mb-4 text-[0.72rem] font-black uppercase tracking-[0.22em]" style={{ color: GOLD }}>
-            Bienvenue dans la nouvelle ère
-          </p>
-          <h2 className="text-[2.8rem] font-black leading-[1.05] text-white sm:text-[4.5rem]"
-            style={{ fontFamily: "'Caveat', cursive" }}>
-            Votre business,{" "}
-            <span style={{ background: `linear-gradient(90deg, ${GOLD}, #e8c97a)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              enfin unifié.
-            </span>
-          </h2>
-          <p className="mt-5 text-[1rem] sm:text-[1.1rem]" style={{ color: "rgba(186,210,255,0.65)" }}>
-            Factures · CRM · IA · Paie · Projets — tout sur une seule plateforme.
-          </p>
-        </motion.div>
-      </div>
-
-      {/* Product mockup */}
-      <div className="relative mx-auto max-w-5xl px-4 pb-20 sm:px-6">
-        <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport} transition={{ duration: 0.7, ease, delay: 0.15 }}>
-
-          <div className="overflow-hidden rounded-2xl shadow-2xl"
-            style={{ background: D_CONTENT, border: "1px solid rgba(255,255,255,0.1)" }}>
-
-            {/* macOS browser chrome */}
-            <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: "#1a1d26", borderBottom: D_BORDER }}>
-              <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-              <div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
-              <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-              <div className="mx-auto flex items-center gap-1.5 rounded-md px-3 py-1"
-                style={{ background: "rgba(255,255,255,0.06)", border: D_BORDER, minWidth: 180 }}>
-                <ShieldCheck size={9} className="text-green-400" />
-                <span className="text-[0.65rem]" style={{ color: D_MUTED }}>app.djama.space</span>
-              </div>
-            </div>
-
-            {/* App layout */}
-            <div className="flex" style={{ minHeight: 360 }}>
-
-              {/* Sidebar — vraie DJAMA */}
-              <div className="flex w-[148px] shrink-0 flex-col" style={{ background: D_SIDEBAR, borderRight: D_BORDER }}>
-                {/* Logo */}
-                <div className="flex h-[44px] items-center gap-2 px-3" style={{ borderBottom: D_BORDER }}>
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
-                    style={{ background: `${GOLD}18`, border: `1px solid ${GOLD}28` }}>
-                    <Sparkles size={11} style={{ color: GOLD }} />
-                  </div>
-                  <div className="leading-none">
-                    <p className="text-[0.8rem] font-bold" style={{ color: GOLD }}>DJAMA</p>
-                    <p className="text-[0.45rem] uppercase tracking-widest" style={{ color: D_MUTED }}>PRO · Actif</p>
-                  </div>
-                </div>
-
-                {/* Nav */}
-                <nav className="flex-1 overflow-hidden px-1.5 py-2">
-                  {MOCK_NAV.map((section, si) => (
-                    <div key={si} className={si > 0 ? "mt-3" : ""}>
-                      {section.group && (
-                        <p className="mb-1 px-2 text-[0.47rem] font-semibold uppercase tracking-wider" style={{ color: D_MUTED }}>
-                          {section.group}
-                        </p>
-                      )}
-                      {section.items.map(({ id, label, Icon }) => {
-                        const active = id === activeId;
-                        return (
-                          <button key={id} onClick={() => { setStep(CYCLE_SCREENS.indexOf(id as typeof CYCLE_SCREENS[number])); setProgress(0); }}
-                            className="relative flex w-full items-center gap-2 rounded-lg px-2 py-[5px] text-left text-[0.68rem] font-medium transition-colors"
-                            style={{ background: active ? `${GOLD}1c` : "transparent",
-                                     color: active ? GOLD : D_TEXT }}>
-                            {active && <span className="absolute left-0 top-1/2 h-3 w-0.5 -translate-y-1/2 rounded-r-full" style={{ background: GOLD }} />}
-                            <Icon size={12} style={{ color: active ? GOLD : undefined }} />
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </nav>
-
-                {/* User footer */}
-                <div className="flex items-center gap-2 px-3 py-2.5" style={{ borderTop: D_BORDER }}>
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[0.58rem] font-bold"
-                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}22`, color: GOLD }}>
-                    A
-                  </div>
-                  <div className="leading-none">
-                    <p className="text-[0.6rem] font-medium" style={{ color: D_TEXT }}>Awa Diallo</p>
-                    <p className="text-[0.45rem]" style={{ color: D_MUTED }}>DJAMA PRO</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main */}
-              <div className="flex flex-1 flex-col overflow-hidden">
-                {/* Topbar */}
-                <div className="flex h-[44px] shrink-0 items-center gap-2 px-3" style={{ background: D_SIDEBAR, borderBottom: D_BORDER }}>
-                  <div className="flex flex-1 items-center gap-1.5 rounded-lg px-2.5 py-1.5"
-                    style={{ background: "rgba(255,255,255,0.05)", border: D_BORDER, maxWidth: 200 }}>
-                    <Search size={10} style={{ color: D_MUTED }} />
-                    <span className="text-[0.6rem]" style={{ color: D_MUTED }}>Rechercher…</span>
-                    <kbd className="ml-auto rounded px-1 py-0.5 text-[0.45rem]"
-                      style={{ background: "rgba(255,255,255,0.06)", border: D_BORDER, color: D_MUTED }}>⌘K</kbd>
-                  </div>
-                  <div className="flex-1" />
-                  <Bell size={13} style={{ color: D_MUTED }} />
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg text-[0.58rem] font-bold"
-                    style={{ background: `${GOLD}14`, border: `1px solid ${GOLD}22`, color: GOLD }}>A</div>
-                </div>
-
-                {/* Page content */}
-                <div className="flex-1 overflow-hidden" style={{ background: D_CONTENT }}>
-                  <AnimatePresence mode="wait">
-                    <motion.div key={step}
-                      initial={{ opacity: 0, x: 12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -12 }}
-                      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}>
-                      <DjamaScreenContent screen={activeId} />
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-              </div>
-            </div>
-
-            {/* Progress controls */}
-            <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: D_SIDEBAR, borderTop: D_BORDER }}>
-              <button onClick={() => setPlaying(p => !p)}
-                className="flex h-6 w-6 items-center justify-center rounded-full transition-colors"
-                style={{ background: "rgba(255,255,255,0.06)", color: D_MUTED }}>
-                {playing
-                  ? <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><rect x="1" y="1" width="3" height="8" rx="0.8"/><rect x="6" y="1" width="3" height="8" rx="0.8"/></svg>
-                  : <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1l7 4-7 4V1z"/></svg>
-                }
-              </button>
-              <div className="relative flex-1 h-0.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
-                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progress}%`, background: GOLD }} />
-              </div>
-              <div className="flex gap-1">
-                {CYCLE_SCREENS.map((_, i) => (
-                  <button key={i} onClick={() => { setStep(i); setProgress(0); }}
-                    className="h-0.5 rounded-full transition-all duration-300"
-                    style={{ width: i === step ? 18 : 5, background: i === step ? GOLD : "rgba(255,255,255,0.2)" }} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
 
 export default function Page() {
   return (
@@ -925,7 +503,7 @@ function CoachingPayButton() {
   }
   return (
     <button onClick={pay} disabled={loading}
-      className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#c9a55a] disabled:opacity-60">
+      className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[0.75rem] font-bold text-gray-600 transition hover:text-[#FFB900] disabled:opacity-60">
       {loading ? <Gem size={11} className="animate-spin" style={{ color: GOLD }} /> : null}
       {loading ? "…" : <><ArrowRight size={11} /> Acheter</>}
     </button>
@@ -935,7 +513,7 @@ function CoachingPayButton() {
 function HomeContent() {
   const data                  = getSiteData();
   const { lang }              = useLanguage();
-  const HOME_GROUPED = ["Finance","Commercial","Ventes","Digital","Opérations","Gestion","Notes","Intelligence"]
+  const HOME_GROUPED = ["Finance","Ventes","Commercial","Opérations","Digital","Intelligence","Notes","Gestion"]
     .map((cat) => ({ cat, apps: APPS_DATA.filter((a) => a.category === cat) }))
     .filter(({ apps }) => apps.length > 0);
   const { settings, get }     = useSiteSettings();
@@ -943,143 +521,179 @@ function HomeContent() {
   const [payMode, setPayMode] = useState<"card" | "paypal" | "virement">("card");
   const [virEmail, setVirEmail] = useState("");
   const [virSent, setVirSent]   = useState(false);
-  const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
-
 
   return (
     <div className="overflow-hidden">
 
       {/* ══════════════════════════════════════════════════════
-           HERO — style Odoo : blanc, Caveat, surligneur or
+           HERO — Chantier C.1 V3 : colonne unique, ERP
       ══════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-white px-5 pb-16 pt-[108px] sm:pb-24 sm:pt-[150px]">
-        {/* Léger halo doré centré */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
-          <div className="h-[380px] w-[700px] rounded-full blur-[120px]"
-            style={{ background: `radial-gradient(circle, rgba(${GOLDR},0.10) 0%, transparent 70%)` }} />
+      <section
+        className="relative overflow-hidden pb-20 pt-[108px] sm:pb-28 sm:pt-[160px]"
+        style={{ background: "#0A0A0A" }}
+      >
+        {/* Robot Compagnon V2 — coin bas-droit, hors flux */}
+        <div
+          className="pointer-events-none absolute bottom-6 right-6 z-20 opacity-40"
+          aria-hidden="true"
+        >
+          <DjamaRobot size={32} state="idle" theme="dark" />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease }}
-          className="relative z-10 mx-auto max-w-3xl px-4 text-center"
-        >
-          {/* H1 — surligneur ÉPAIS style Odoo exact */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+        <div className="relative z-10 mx-auto max-w-3xl px-5 sm:px-8">
+
+          {/* Eyebrow */}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease, delay: 0.05 }}
-            className="text-[3.6rem] leading-[1.12] text-gray-900 sm:text-[5.8rem]"
-            style={{ fontFamily: lang === "ar" ? "inherit" : "'Caveat', cursive", fontWeight: 800 }}
+            transition={{ duration: 0.45, ease }}
+            className="mb-5 text-[0.68rem] font-semibold uppercase tracking-[0.2em]"
+            style={{ color: "#BFC3C9" }}
           >
-            {lang === "ar" ? "كل أعمالك على " : lang === "en" ? "Your entire business on " : "Tout votre business sur "}
-            <span
-              className="inline-block"
-              style={{
-                background: `rgba(${GOLDR}, 0.88)`,
-                borderRadius: "5px",
-                padding: "2px 10px",
-                color: "#1a0800",
-              }}
-            >
-              {lang === "ar" ? "منصة واحدة." : lang === "en" ? "one platform." : "une seule plateforme."}
-            </span>
+            {lang === "ar"
+              ? "برنامج إدارة المؤسسات"
+              : lang === "en"
+              ? "BUSINESS MANAGEMENT SOFTWARE"
+              : "LOGICIEL DE GESTION D'ENTREPRISE"}
+          </motion.p>
+
+          {/* H1 */}
+          <motion.h1
+            initial={{ opacity: 0, y: 22 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, ease, delay: 0.08 }}
+            className="text-[2.5rem] font-black leading-[1.07] tracking-tight text-white sm:text-[3.4rem] lg:text-[4rem]"
+            style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
+          >
+            {lang === "ar"
+              ? "برنامج إدارة المؤسسات"
+              : lang === "en"
+              ? "Business management software"
+              : "Logiciel de gestion d'entreprise"}
           </motion.h1>
 
-          {/* Sous-titre — "Simple, efficace, et abordable !" avec trait brushstroke bleu */}
-          <motion.h2
+          {/* Description */}
+          <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease, delay: 0.15 }}
-            className="mt-4 text-[2rem] leading-[1.15] text-gray-600 sm:text-[2.9rem]"
-            style={{ fontFamily: lang === "ar" ? "inherit" : "'Caveat', cursive", fontWeight: 600 }}
+            transition={{ duration: 0.6, ease, delay: 0.18 }}
+            className="mt-6 max-w-xl text-[1rem] leading-[1.7]"
+            style={{ color: "#BFC3C9" }}
           >
-            {lang === "ar" ? (
-              <>بسيط، فعّال، و<span className="relative inline-block">بأسعار معقولة !<svg aria-hidden viewBox="0 0 220 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C40 1, 90 9, 140 5 C185 2, 210 8, 218 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
-            ) : lang === "en" ? (
-              <>Simple, powerful, and{" "}<span className="relative inline-block">affordable !<svg aria-hidden viewBox="0 0 180 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C30 1, 70 9, 110 5 C148 2, 170 8, 178 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
-            ) : (
-              <>Simple, efficace, et{" "}<span className="relative inline-block">abordable !<svg aria-hidden viewBox="0 0 180 10" style={{ position: "absolute", bottom: "-3px", left: 0, width: "100%", height: "9px" }} preserveAspectRatio="none"><path d="M2 6 C30 1, 70 9, 110 5 C148 2, 170 8, 178 6" stroke="#60a5fa" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg></span></>
-            )}
-          </motion.h2>
+            {lang === "ar"
+              ? "وحّد عملاءك وفواتيرك وشؤونك المالية ومشاريعك وفرقك في منصة ذكية مصممة لتبسيط يومك."
+              : lang === "en"
+              ? "Centralize your clients, invoices, finances, projects and teams in an intelligent platform designed to simplify your daily work."
+              : "Centralisez vos clients, vos factures, vos finances, vos projets et vos équipes dans une plateforme intelligente conçue pour simplifier votre quotidien."}
+          </motion.p>
 
-          {/* CTAs — bouton doré plein + bouton gris léger */}
+          {/* Séparateur discret */}
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, ease, delay: 0.24 }}
+            className="mt-8 h-px w-12"
+            style={{ background: "#333333" }}
+          />
+
+          {/* CTAs — rectangulaires */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease, delay: 0.25 }}
-            className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+            transition={{ duration: 0.5, ease, delay: 0.3 }}
+            className="mt-7 flex flex-col gap-3 sm:flex-row"
           >
-            <motion.div className="relative" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.18 }}>
-              <motion.div
-                animate={{ scale: [1, 1.18, 1], opacity: [0.40, 0, 0.40] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute inset-0 rounded-2xl"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #d4aa6a)`, filter: "blur(14px)" }}
-              />
-              <Link href="/espace-client"
-                className="relative flex items-center justify-center gap-2 overflow-hidden rounded-2xl px-9 py-4 text-[1rem] font-black text-[#100800]"
-                style={{ background: `linear-gradient(135deg,${GOLD} 0%,#e2ba70 45%,#b08d45 100%)`, boxShadow: `0 8px 30px rgba(${GOLDR},0.45)` }}>
-                <motion.div animate={{ x: ["-100%","220%"] }} transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2.8, ease: "easeInOut" }}
-                  className="pointer-events-none absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                <Gem size={15} className="relative z-10 shrink-0" />
-                <span className="relative z-10">
-                  {lang === "ar" ? "ابدأ الآن — مجانًا" : lang === "en" ? "Start now — It's free" : "Commence maintenant — C'est gratuit"}
-                </span>
-                <ArrowRight size={14} className="relative z-10 shrink-0" />
-              </Link>
-            </motion.div>
-            <Link href="/contact"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-9 py-4 text-[1rem] font-semibold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-100 active:scale-[.98]">
-              {lang === "ar" ? "تواصل مع مستشار →" : lang === "en" ? "Talk to an advisor →" : "Rencontrer un conseiller →"}
+            {/* Principal : blanc / texte noir */}
+            <Link
+              href="/espace-client"
+              className="inline-flex items-center justify-center gap-2 px-7 text-[0.88rem] font-semibold text-black transition-opacity hover:opacity-90 active:opacity-80"
+              style={{ background: "#FFFFFF", borderRadius: 5, height: 46 }}
+            >
+              {lang === "ar" ? "اكتشف DJAMA" : lang === "en" ? "Discover DJAMA" : "Découvrir DJAMA"}
+              <ArrowRight size={14} />
+            </Link>
+            {/* Secondaire : transparent / texte blanc / bordure grise */}
+            <Link
+              href="/contact"
+              className="inline-flex items-center justify-center gap-2 px-7 text-[0.88rem] font-semibold text-white transition-opacity hover:opacity-80 active:opacity-70"
+              style={{ background: "transparent", border: "1px solid #444444", borderRadius: 5, height: 46 }}
+            >
+              {lang === "ar" ? "احجز عرضًا توضيحيًا" : lang === "en" ? "Get a demo" : "Obtenir une démo"}
             </Link>
           </motion.div>
 
-          {/* Annotation prix manuscrite — style Odoo */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-5 text-[1.05rem] text-gray-400"
-            style={{ fontFamily: "'Caveat', cursive" }}
-          >
-            {lang === "ar" ? "↗ 11,90€ شهريًا لجميع الأدوات الـ 48" : lang === "en" ? "↗ 11.90€/month for ALL 48 tools" : "↗ 11,90€/mois pour TOUS les 48 outils"}
-          </motion.p>
-        </motion.div>
+        </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-           APPS PAR CATÉGORIE — style iOS / /demarrer
+           APPLICATIONS — catalogue complet 45 apps
       ══════════════════════════════════════════════════════ */}
-      <section id="outils" className="bg-[#f4f5f7] pb-10 pt-14">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+      <section id="outils" className="pb-10 pt-10" style={{ background: "#f4f5f7" }}>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+
+          {/* En-tête de section — aligné à gauche, compact */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport} transition={{ duration: 0.5, ease }}
+            className="mb-7"
+          >
+            <div
+              className="mb-3 inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-[0.63rem] font-bold uppercase tracking-[.22em]"
+              style={{ borderColor: "rgba(255,185,0,0.35)", background: "rgba(255,185,0,0.07)", color: "#b45309" }}
+            >
+              Les applications DJAMA
+            </div>
+            <h2 className="text-[1.5rem] font-extrabold leading-tight text-gray-900 sm:text-[1.75rem]">
+              Tous les outils pour gérer votre entreprise.
+            </h2>
+            <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-gray-500">
+              De la facturation à la gestion des équipes, DJAMA réunit vos applications professionnelles dans un seul espace.
+            </p>
+          </motion.div>
+
+          {/* Grille par catégorie */}
           {HOME_GROUPED.map(({ cat, apps }, gi) => (
             <motion.div key={cat}
-              initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewport} transition={{ duration: 0.4, ease, delay: gi * 0.04 }}
-              className="mb-6">
-              <h3 className="mb-3 px-1 text-[1.35rem] text-gray-700" style={HOME_CURSIVE}>{cat}</h3>
+              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={viewport} transition={{ duration: 0.35, ease, delay: gi * 0.04 }}
+              className="mb-6"
+            >
+              {/* Titre catégorie — bold italic, style App Library */}
+              <h3 className="mb-3 text-[1.35rem] text-gray-900 sm:text-[1.5rem]"
+                style={{ fontWeight: 800, fontStyle: "italic", letterSpacing: "-0.01em" }}>
+                {cat}
+              </h3>
+
+              {/* Carte blanche contenant la grille */}
               <div className="rounded-2xl bg-white p-4 shadow-sm">
-                <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+                <div className="grid grid-cols-3 gap-y-5 gap-x-2 sm:grid-cols-4 lg:grid-cols-6">
                   {apps.map((app) => {
                     const Icon = app.icon;
                     return (
                       <Link
                         key={app.slug}
                         href={`/applications/${app.slug}`}
-                        className="group flex flex-col items-center gap-2 rounded-xl p-2 text-center transition-all hover:bg-gray-50"
+                        className="group flex flex-col items-center gap-2 text-center outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,185,0,0.5)] rounded-xl"
                       >
-                        <div
-                          className="flex h-[68px] w-[68px] items-center justify-center rounded-[18px] transition-transform duration-200 group-hover:scale-105"
-                          style={{
-                            background: `linear-gradient(145deg, ${app.color}ee, ${app.color}bb)`,
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-                          }}
+                        {/* Icône iOS squircle — taille augmentée */}
+                        <div style={{
+                          width: 66, height: 66, borderRadius: "27%",
+                          background: app.color, flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.08)",
+                          position: "relative", overflow: "hidden",
+                          transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                        }}
+                          className="group-hover:scale-105 group-hover:shadow-[0_6px_18px_rgba(0,0,0,0.22)]"
                         >
-                          <Icon size={28} color="#fff" strokeWidth={1.8} />
+                          <div style={{
+                            position: "absolute", inset: 0,
+                            background: "linear-gradient(150deg, rgba(255,255,255,0.22) 0%, transparent 52%)",
+                            borderRadius: "inherit", pointerEvents: "none",
+                          }} />
+                          <Icon size={30} color="white" strokeWidth={1.6} style={{ position: "relative", zIndex: 1 }} />
                         </div>
-                        <p className="text-[0.72rem] font-bold leading-tight text-gray-800">
+                        <p className="w-full text-[0.72rem] font-semibold leading-tight text-gray-700 group-hover:text-gray-900">
                           {app.label}
                         </p>
                       </Link>
@@ -1092,353 +706,9 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-           CALCULATEUR D'ÉCONOMIES — style Odoo
-      ══════════════════════════════════════════════════════ */}
-      <section className="bg-[#f4f5f7] py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-5">
-
-          {/* Titre */}
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.5, ease }}
-            className="mb-10 text-center">
-            <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[3.4rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
-              Calculez vos économies
-            </h2>
-            <p className="mt-3 text-[0.95rem] text-gray-500">
-              Sélectionnez les outils que vous utilisez déjà
-            </p>
-          </motion.div>
-
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
-
-            {/* ── Grille des outils ── */}
-            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewport} transition={{ duration: 0.5, ease }}
-              className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-                {TOOLS_DATA_48.map(({ name, rival, icon: Icon, g }) => {
-                  const sel = selectedTools.has(name);
-                  return (
-                    <motion.button key={name} onClick={() => setSelectedTools(prev => {
-                      const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n;
-                    })}
-                      whileTap={{ scale: 0.90 }}
-                      className="relative flex flex-col items-center gap-2 p-2 transition-all duration-150"
-                    >
-                      <div className="relative">
-                        <motion.div
-                          animate={sel ? { scale: 1.08 } : { scale: 1 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 18 }}
-                          className="flex h-[68px] w-[68px] items-center justify-center"
-                          style={{
-                            background: g,
-                            borderRadius: "22px",
-                            boxShadow: sel
-                              ? `0 0 0 3px ${GOLD}, 0 8px 20px rgba(0,0,0,0.18)`
-                              : "0 4px 12px rgba(0,0,0,0.14)"
-                          }}
-                        >
-                          <Icon size={34} className="text-white" strokeWidth={1.4} />
-                        </motion.div>
-                        <AnimatePresence>
-                          {sel && (
-                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                              transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                              className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white"
-                              style={{ background: GOLD }}>
-                              <Check size={10} strokeWidth={3} className="text-white" />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                      <span className="text-center text-[0.62rem] font-semibold leading-tight text-gray-700">{name}</span>
-                      <span className="text-center text-[0.55rem] text-gray-400">{rival}</span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-3">
-                <button onClick={() => setSelectedTools(new Set(TOOLS_DATA_48.map(t => t.name)))}
-                  className="text-[0.72rem] font-semibold text-gray-400 transition-colors hover:text-gray-700">
-                  Tout sélectionner
-                </button>
-                <span className="text-gray-200">·</span>
-                <button onClick={() => setSelectedTools(new Set())}
-                  className="text-[0.72rem] font-semibold text-gray-400 transition-colors hover:text-gray-700">
-                  Effacer
-                </button>
-                <span className="ml-auto text-[0.7rem] text-gray-400">
-                  {selectedTools.size} / {TOOLS_DATA_48.length} sélectionnés
-                </span>
-              </div>
-            </motion.div>
-
-            {/* ── Panneau de droite ── */}
-            <div className="space-y-3 lg:sticky lg:top-24">
-
-              {/* Concurrents */}
-              <motion.div initial={{ opacity: 0, x: 16 }} whileInView={{ opacity: 1, x: 0 }}
-                viewport={viewport} transition={{ duration: 0.5, ease }}
-                className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                <div className="border-b border-gray-100 px-5 py-3.5">
-                  <p className="text-[0.82rem] font-bold text-gray-900">Applications à remplacer</p>
-                  <p className="text-[0.65rem] text-gray-400">Sans DJAMA, vous payez :</p>
-                </div>
-                <div className="min-h-[72px] px-5 py-3">
-                  {selectedTools.size === 0 ? (
-                    <p className="py-2 text-[0.75rem] italic text-gray-400">← Sélectionnez des outils</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      <AnimatePresence>
-                        {Array.from(selectedTools).map(name => {
-                          const t = TOOLS_DATA_48.find(x => x.name === name);
-                          if (!t) return null;
-                          return (
-                            <motion.div key={name}
-                              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex items-center justify-between overflow-hidden">
-                              <span className="text-[0.75rem] text-gray-600">{t.rival}</span>
-                              <span className="text-[0.75rem] font-bold text-gray-800">
-                                {t.price}€<span className="text-[0.6rem] font-normal text-gray-400">/mois</span>
-                              </span>
-                            </motion.div>
-                          );
-                        })}
-                      </AnimatePresence>
-                    </div>
-                  )}
-                </div>
-                {selectedTools.size > 0 && (
-                  <div className="border-t border-gray-100 bg-red-50 px-5 py-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[0.78rem] font-bold text-gray-800">TOTAL</span>
-                      <span className="text-[1rem] font-black text-red-500">
-                        {Array.from(selectedTools).reduce((s, name) => s + (TOOLS_DATA_48.find(x => x.name === name)?.price ?? 0), 0)}€<span className="text-[0.65rem] font-normal">/mois</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* DJAMA */}
-              <div className="rounded-2xl border px-5 py-4"
-                style={{ background: `rgba(${GOLDR},0.05)`, borderColor: `rgba(${GOLDR},0.3)` }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[0.8rem] font-bold text-gray-900">Toutes les apps DJAMA</p>
-                    <p className="text-[0.62rem] text-gray-500">48 outils inclus</p>
-                  </div>
-                  <span className="text-[1.1rem] font-black" style={{ color: GOLD }}>
-                    11,90€<span className="text-[0.65rem] font-normal text-gray-500">/mois</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Économies */}
-              <AnimatePresence>
-                {selectedTools.size > 0 && (() => {
-                  const saving = Array.from(selectedTools).reduce((s, name) => s + (TOOLS_DATA_48.find(x => x.name === name)?.price ?? 0), 0) - 11.90;
-                  return saving > 0 ? (
-                    <motion.div key="saving"
-                      initial={{ opacity: 0, y: 8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
-                      transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 22 }}
-                      className="rounded-2xl border border-gray-100 bg-white px-5 py-5 text-center shadow-sm">
-                      <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-widest text-gray-400">Vos économies</p>
-                      <p className="text-[2.4rem] font-black leading-none"
-                        style={{ fontFamily: "'Caveat', cursive" }}>
-                        <span style={{ background: `rgba(${GOLDR},0.28)`, borderRadius: "6px", padding: "0 8px", color: "#6b4200" }}>
-                          {saving.toFixed(0)}€/mois
-                        </span>
-                      </p>
-                      <p className="mt-2 text-[0.7rem] text-gray-500">
-                        soit <strong className="text-gray-700">{(saving * 12).toFixed(0)}€ économisés par an</strong>
-                      </p>
-                    </motion.div>
-                  ) : null;
-                })()}
-              </AnimatePresence>
-
-              {/* CTA */}
-              <Link href="/tarification"
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[0.9rem] font-black text-black transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
-                style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
-                <Gem size={13} /> Voir les offres <ArrowRight size={13} />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════
-           SOCIAL PROOF — "1 200 Utilisateurs heureux" style Odoo
-      ══════════════════════════════════════════════════════ */}
-      <section className="overflow-hidden bg-white py-16 sm:py-24">
-
-        {/* Ligne haute */}
-        <div className="flex items-end gap-3 pb-2" style={{ marginLeft: "-2%", width: "112%" }}>
-          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-[18px] opacity-60" style={{ background: "#9b59b6" }} />
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-44.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-63.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-71.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-56.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[84px] w-[84px] flex-shrink-0 rounded-[18px] opacity-55" style={{ background: "#e5e7eb" }} />
-          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-76.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-[18px] opacity-70" style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }} />
-          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-22.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-74.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-45.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[84px] w-[84px] flex-shrink-0 rounded-[18px] opacity-50" style={{ background: "#9b59b6" }} />
-        </div>
-
-        {/* Texte central */}
-        <div className="my-10 px-6 text-center">
-          <div className="relative inline-block">
-            <span className="absolute -top-7 right-2"
-              style={{ fontFamily: "'Caveat', cursive", color: GOLD, fontSize: "1.35rem", fontWeight: 700, display: "inline-block", transform: "rotate(-5deg)" }}>
-              heureux
-            </span>
-            <h2 className="text-[2.6rem] font-black leading-tight text-gray-900 sm:text-[4rem]"
-              style={{ fontFamily: "'Caveat', cursive" }}>
-              Rejoignez{" "}
-              <span style={{ color: GOLD }}>1 200</span>{" "}
-              Utilisateurs
-            </h2>
-          </div>
-          <p className="mx-auto mt-4 max-w-md text-[0.95rem] leading-relaxed text-gray-400">
-            qui développent leur entreprise avec DJAMA
-          </p>
-          <motion.div className="mt-7 inline-block" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-            <Link href="/espace-client"
-              className="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-[0.9rem] font-extrabold text-black transition-all hover:shadow-[0_6px_24px_rgba(201,165,90,0.35)]"
-              style={{ background: `linear-gradient(135deg,${GOLD},#b08d45)` }}>
-              Commencer gratuitement <ArrowRight size={15} />
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* Ligne basse */}
-        <div className="flex items-start gap-3 pt-2" style={{ marginLeft: "1%", width: "112%" }}>
-          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-83.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-50" style={{ background: "#e5e7eb" }} />
-          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-62.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-62.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[84px] w-[84px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-64.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[100px] w-[100px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-19.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[76px] w-[76px] flex-shrink-0 rounded-[18px] opacity-60" style={{ background: "#7c3aed" }} />
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-61.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[88px] w-[88px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-68.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[92px] w-[92px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/women-28.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="h-[80px] w-[80px] flex-shrink-0 rounded-[18px] opacity-60" style={{ background: "#9b59b6" }} />
-          <div className="h-[96px] w-[96px] flex-shrink-0 rounded-full overflow-hidden" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.13)" }}>
-            <img src="/avatars/men-36.jpg" alt="" className="w-full h-full object-cover" />
-          </div>
-        </div>
-
-      </section>
-
-      {/* ══════════════════════════════════════════════════════
-           TÉMOIGNAGE FONDATEUR — style Odoo quote card
-      ══════════════════════════════════════════════════════ */}
-      <section className="bg-[#f8f8f8] py-14 sm:py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport} transition={{ duration: 0.55, ease }}
-          className="mx-auto max-w-4xl px-6">
-          <div className="flex flex-col gap-8 rounded-2xl bg-white p-8 shadow-sm sm:flex-row sm:items-center sm:gap-12 sm:p-10"
-            style={{ border: "1px solid rgba(0,0,0,0.05)" }}>
-
-            {/* Citation gauche */}
-            <div className="flex-1">
-              <span className="mb-5 block text-[3.5rem] leading-none" style={{ color: GOLD, fontFamily: "serif" }}>&ldquo;&ldquo;</span>
-              <p className="text-[1.05rem] font-semibold leading-relaxed text-gray-800">
-                J&apos;ai créé DJAMA parce que chaque entrepreneur, où qu&apos;il soit dans le monde, mérite des outils aussi puissants que les grandes entreprises mondiales — mais accessibles, simples, et pensés pour eux. Notre marché, c&apos;est le monde entier. Chaque outil que nous construisons est une porte ouverte vers l&apos;indépendance économique.
-              </p>
-            </div>
-
-            {/* Photo + identité droite */}
-            <div className="flex shrink-0 flex-col items-center gap-3 sm:items-center">
-              <div className="h-[100px] w-[100px] overflow-hidden rounded-full"
-                style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
-                <img src="/founder-nofane.jpg" alt="Nofane AMDJAD" className="h-full w-full object-cover" />
-              </div>
-              <div className="text-center">
-                <p className="text-[0.95rem] font-black text-gray-900">Nofane AMDJAD</p>
-                <p className="text-[0.78rem] text-gray-400">Fondateur de DJAMA</p>
-              </div>
-              <img src="/logo.png" alt="DJAMA" className="mt-1 h-[28px] w-auto object-contain opacity-80" />
-            </div>
-
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════
-           VIDEO ANIMATION — "IA au cœur de votre business"
-      ══════════════════════════════════════════════════════ */}
-      <DjamaVideoSection />
-
       <PartnerLogosSection />
       <TestimonialsSection dynamic />
 
-      {/* ── Texte manifeste ───────────────────────── */}
-      <section className="bg-white py-24 sm:py-32">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport} transition={{ duration: 0.7, ease }}>
-            <p className="text-[1.15rem] font-black leading-snug text-gray-900 sm:text-[1.4rem]">
-              Imaginez une vaste collection d&apos;applications professionnelles à votre disposition.
-            </p>
-            <p className="mt-4 text-[1rem] leading-relaxed text-gray-500">
-              Vous avez quelque chose à améliorer ? Il existe une app pour ça.
-            </p>
-            <p className="text-[1rem] leading-relaxed text-gray-500">
-              Aucune complexité, aucun frais, une simple installation en un clic.
-            </p>
-            <p className="mt-8 text-[1rem] leading-relaxed text-gray-500">
-              Chaque application simplifie un processus et permet à davantage de personnes d&apos;agir.
-            </p>
-            <p className="text-[1rem] leading-relaxed text-gray-500">
-              Imaginez l&apos;impact lorsque chacun dispose de l&apos;outil adapté à ses besoins, enrichi par l&apos;IA native.
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
       {false && <><section className="overflow-hidden bg-[#f4f5f7] py-20 sm:py-28">
         <style>{`
@@ -1468,7 +738,7 @@ function HomeContent() {
             viewport={viewport} transition={{ duration: 0.65, ease }}
             className="mb-14 text-center">
             <h2 className="text-[2.6rem] leading-[1.1] text-gray-900 sm:text-[4rem]"
-              style={{ fontFamily: "'Caveat', cursive", fontWeight: 800 }}>
+              style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontWeight: 800 }}>
               Tout ce dont vous avez{" "}
               <span className="relative inline-block whitespace-nowrap">
                 besoin.
@@ -1743,95 +1013,6 @@ function HomeContent() {
         </div>
       </section></> }
 
-      {/* ── Chiffres clés ── */}
-      <section className="bg-white pb-4 pt-0">
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={viewport}
-          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
-          className="mx-auto grid max-w-2xl grid-cols-3 divide-x divide-gray-100 px-6"
-        >
-          {[
-            { n: "48", label: "outils inclus" },
-            { n: "1 200+", label: "entrepreneurs actifs" },
-            { n: "1 clic", label: "pour installer" },
-          ].map(({ n, label }) => (
-            <motion.div
-              key={label}
-              variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
-              className="flex flex-col items-center gap-1 px-4 py-6 text-center"
-            >
-              <span
-                className="text-[2rem] leading-none sm:text-[2.4rem]"
-                style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, color: GOLD }}
-              >
-                {n}
-              </span>
-              <span className="text-[0.72rem] font-medium uppercase tracking-widest text-gray-400">
-                {label}
-              </span>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* ── Final CTA — style manifeste ── */}
-      <section className="relative overflow-hidden bg-white px-5 py-24 text-center sm:py-32">
-        <motion.div
-          initial={{ opacity: 0, y: 28 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, ease }}
-          className="relative z-10 mx-auto max-w-2xl"
-        >
-          {/* Burst décoratif doré */}
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center">
-            <svg viewBox="0 0 96 96" width="96" height="96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-              {/* Cœur */}
-              <path d="M48 32c0-6-5-10-10-10s-10 5-10 10c0 10 20 22 20 22s20-12 20-22c0-5-5-10-10-10s-10 4-10 10z"
-                fill="none" stroke={GOLD} strokeWidth="1.8" strokeLinejoin="round" opacity="0.7"/>
-              {/* Rayons */}
-              <line x1="48" y1="4" x2="48" y2="14" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/>
-              <line x1="48" y1="82" x2="48" y2="92" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/>
-              <line x1="4" y1="48" x2="14" y2="48" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/>
-              <line x1="82" y1="48" x2="92" y2="48" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/>
-              <line x1="14" y1="14" x2="21" y2="21" stroke={GOLD} strokeWidth="2" strokeLinecap="round"/>
-              <line x1="75" y1="75" x2="82" y2="82" stroke={GOLD} strokeWidth="2" strokeLinecap="round"/>
-              <line x1="82" y1="14" x2="75" y2="21" stroke={GOLD} strokeWidth="2" strokeLinecap="round"/>
-              <line x1="14" y1="82" x2="21" y2="75" stroke={GOLD} strokeWidth="2" strokeLinecap="round"/>
-              <line x1="48" y1="4" x2="52" y2="10" stroke={GOLD} strokeWidth="1.4" strokeLinecap="round" opacity="0.5"/>
-              <line x1="48" y1="4" x2="44" y2="10" stroke={GOLD} strokeWidth="1.4" strokeLinecap="round" opacity="0.5"/>
-            </svg>
-          </div>
-
-          {/* Titre */}
-          <p className="text-[3rem] leading-none text-gray-900 sm:text-[4rem]"
-            style={{ fontFamily: "'Caveat', cursive", fontWeight: 700 }}>
-            Libérez
-          </p>
-          <p className="mb-10 text-[2.4rem] leading-tight sm:text-[3.2rem]"
-            style={{ fontFamily: "'Caveat', cursive", fontStyle: "italic", fontWeight: 600, color: "#5dc8be" }}>
-            votre potentiel de croissance
-          </p>
-
-          {/* Bouton principal */}
-          <Link
-            href="/client"
-            className="inline-flex items-center justify-center rounded-2xl px-10 py-4 text-[1rem] font-bold text-white transition-all duration-200 hover:scale-[1.03] hover:opacity-90 active:scale-[.97]"
-            style={{ background: "#5c3d60", boxShadow: "0 8px 32px rgba(92,61,96,0.30)" }}
-          >
-            Lancez-vous — C&apos;est gratuit !
-          </Link>
-
-          {/* Flèche + réassurance */}
-          <div className="mt-6 flex flex-col items-center gap-1">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#5dc8be" aria-hidden>
-              <path d="M12 4l-1.4 1.4L17.2 11H4v2h13.2l-6.6 5.6L12 20l9-8-9-8z" transform="rotate(-90 12 12)"/>
-            </svg>
-            <p className="text-[0.82rem] text-gray-400">Aucune carte de crédit requise</p>
-            <p className="text-[0.82rem] text-gray-400">Accès instantané</p>
-          </div>
-        </motion.div>
-      </section>
 
     </div>
   );

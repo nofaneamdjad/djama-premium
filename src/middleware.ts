@@ -1,7 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient }            from "@supabase/ssr";
-import { verifyAdminToken }              from "@/lib/admin-token";
 import { isPathAllowedForFreeUser, getSlugForApiPath, getSlugForClientPath } from "@/lib/free-plan";
+
+/** SHA-256 via Web Crypto API — compatible Edge Runtime */
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 /**
  * Middleware Next.js — Contrôle d'accès DJAMA
@@ -22,7 +27,7 @@ export async function middleware(request: NextRequest) {
   // DJAMA_LAUNCH_MODE=prelaunch → bloque l'accès aux routes privées et
   // aux routes de paiement. Ce paramètre NE sert PAS de mécanisme
   // d'authentification : seul le cookie djama_admin_tok (vérifié par
-  // verifyAdminToken) autorise l'accès admin en prelaunch.
+  // la session admin DB (Strategy B)) autorise l'accès admin en prelaunch.
   const PRELAUNCH = process.env.DJAMA_LAUNCH_MODE === "prelaunch";
 
   if (PRELAUNCH) {
@@ -36,7 +41,7 @@ export async function middleware(request: NextRequest) {
 
     const isAdminZone =
       (pathname.startsWith("/admin") && pathname !== "/admin/login") ||
-      (pathname.startsWith("/api/admin") && pathname !== "/api/admin/auth");
+      (pathname.startsWith("/api/admin") && !(pathname === "/api/admin/auth" || pathname.startsWith("/api/admin/auth/")));
 
     if (!isAdminZone) {
       // Routes clients → accès uniquement si cookie admin valide
@@ -48,11 +53,28 @@ export async function middleware(request: NextRequest) {
           pathname !== "/membre/login");
 
       if (isRestricted) {
-        const ADMIN_PASS_PL = process.env.ADMIN_PASS;
-        const tokPL         = request.cookies.get("djama_admin_tok")?.value;
-        const validPL       = ADMIN_PASS_PL && tokPL
-          ? await verifyAdminToken(tokPL, ADMIN_PASS_PL)
-          : false;
+        // Strategy B : session SHA-256 en DB (même logique que la zone admin ci-dessous)
+        const tokPL = request.cookies.get("djama_admin_tok")?.value;
+        let validPL = false;
+        if (tokPL) {
+          try {
+            const tokenHashPL = await sha256Hex(tokPL);
+            const nowPL = new Date().toISOString();
+            const urlPL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const keyPL = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (urlPL && keyPL) {
+              const apiUrlPL = `${urlPL}/rest/v1/admin_sessions?select=revoked_at,expires_at&token_hash=eq.${encodeURIComponent(tokenHashPL)}&limit=1`;
+              const resPL = await fetch(apiUrlPL, {
+                headers: { "apikey": keyPL, "Authorization": `Bearer ${keyPL}` },
+              });
+              if (resPL.ok) {
+                const rowsPL = await resPL.json() as { revoked_at: string | null; expires_at: string }[];
+                const sessPL = rowsPL[0];
+                validPL = !!(sessPL && sessPL.revoked_at === null && sessPL.expires_at > nowPL);
+              }
+            }
+          } catch { validPL = false; }
+        }
         if (!validPL) return NextResponse.redirect(new URL("/", request.url));
         return NextResponse.next();
       }
@@ -64,12 +86,37 @@ export async function middleware(request: NextRequest) {
 
   // ── Admin protection ──────────────────────────────────────────────────────
   const isAdminPage = pathname.startsWith("/admin") && pathname !== "/admin/login";
-  const isAdminApi  = pathname.startsWith("/api/admin") && pathname !== "/api/admin/auth";
+  const isAdminApi  = pathname.startsWith("/api/admin") && !(pathname === "/api/admin/auth" || pathname.startsWith("/api/admin/auth/"));
 
   if (isAdminPage || isAdminApi) {
-    const ADMIN_PASS = process.env.ADMIN_PASS;
     const tok = request.cookies.get("djama_admin_tok")?.value;
-    const valid = ADMIN_PASS && tok ? await verifyAdminToken(tok, ADMIN_PASS) : false;
+
+    let valid = false;
+
+    if (tok) {
+      // Stratégie B : token V1.7 (64 hex chars — randomBytes(32).toString("hex"))
+      // Validation DB dans tous les environnements (fix V1.7-SECU Strategy B bypass).
+      // Requiert SUPABASE_URL=http://127.0.0.1:54321 dans .env.local pour le dev local.
+      try {
+        const tokenHash = await sha256Hex(tok);
+        const now = new Date().toISOString();
+        const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (url && key) {
+          const apiUrl = `${url}/rest/v1/admin_sessions?select=revoked_at,expires_at&token_hash=eq.${encodeURIComponent(tokenHash)}&limit=1`;
+          const res = await fetch(apiUrl, {
+            headers: { "apikey": key, "Authorization": `Bearer ${key}` },
+          });
+          if (res.ok) {
+            const rows = await res.json() as { revoked_at: string | null; expires_at: string }[];
+            const sess = rows[0];
+            valid = !!(sess && sess.revoked_at === null && sess.expires_at > now);
+          }
+        }
+      } catch {
+        valid = false;
+      }
+    }
 
     if (!valid) {
       if (isAdminApi) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -81,10 +128,20 @@ export async function middleware(request: NextRequest) {
   // ── Feature API routes (free plan enforcement) ───────────────────────────
   const featureApiSlug = getSlugForApiPath(pathname);
   if (featureApiSlug !== null && process.env.NODE_ENV !== "development") {
+    let apiResponse = NextResponse.next({ request });
     const supabaseApi = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} } },
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            apiResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) => apiResponse.cookies.set(name, value, options));
+          },
+        },
+      },
     );
 
     const { data: { user: apiUser } } = await supabaseApi.auth.getUser();
@@ -160,8 +217,6 @@ export async function middleware(request: NextRequest) {
     && pathname !== "/membre/login";
 
   if (isMembreRoute) {
-    if (process.env.NODE_ENV === "development") return NextResponse.next();
-
     let memResponse = NextResponse.next({ request });
     const memSupabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -233,8 +288,7 @@ export async function middleware(request: NextRequest) {
 
   if (!isClientRoute) return NextResponse.next();
 
-  // Dev bypass
-  if (process.env.NODE_ENV === "development") return NextResponse.next();
+  // Dev bypass supprimé — auth requise en dev pour les tests E2E
 
   let response = NextResponse.next({ request });
 

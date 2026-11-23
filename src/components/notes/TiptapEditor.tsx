@@ -63,7 +63,7 @@ const ResizableImage = Image.extend({
       // Poignée resize (coin bas-droite)
       const handle = document.createElement("div");
       handle.title = "Redimensionner";
-      handle.style.cssText = "position:absolute;bottom:3px;right:3px;width:14px;height:14px;background:#c9a55a;cursor:se-resize;border-radius:2px;opacity:0;transition:opacity 0.15s;z-index:10";
+      handle.style.cssText = "position:absolute;bottom:3px;right:3px;width:14px;height:14px;background:#FFB900;cursor:se-resize;border-radius:2px;opacity:0;transition:opacity 0.15s;z-index:10";
       // Triangle SVG dans la poignée
       handle.innerHTML = `<svg width="8" height="8" viewBox="0 0 8 8" style="position:absolute;bottom:2px;right:2px;fill:rgba(0,0,0,0.5)"><polygon points="8,0 8,8 0,8"/></svg>`;
       dom.appendChild(handle);
@@ -104,7 +104,7 @@ const ResizableImage = Image.extend({
           else img.style.width = "";
           return true;
         },
-        selectNode() { img.style.outline = "2px solid #c9a55a"; img.style.borderRadius = "4px"; },
+        selectNode() { img.style.outline = "2px solid #FFB900"; img.style.borderRadius = "4px"; },
         deselectNode() { img.style.outline = ""; },
         stopEvent(event: Event) { return (event.target as HTMLElement) === handle; },
       };
@@ -163,7 +163,7 @@ const LineHeight = Extension.create({
 const EDITOR_CSS = `
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-.ProseMirror { outline: none; min-height: 100%; caret-color: #c9a55a; }
+.ProseMirror { outline: none; min-height: 100%; caret-color: #FFB900; }
 .ProseMirror p  { margin: 0 0 0.35em; line-height: 1.6; }
 .ProseMirror h1 { font-size: 2rem;   font-weight: 700; margin: 1.2em 0 0.5em; line-height: 1.2; }
 .ProseMirror h2 { font-size: 1.5rem; font-weight: 600; margin: 1em 0 0.45em;  line-height: 1.25; }
@@ -173,7 +173,7 @@ const EDITOR_CSS = `
 .ProseMirror ol { list-style: decimal; padding-left: 1.6em; margin: 0.3em 0; }
 .ProseMirror li { margin: 0.1em 0; line-height: 1.6; }
 .ProseMirror blockquote {
-  border-left: 3px solid #c9a55a; padding: 0.3em 0 0.3em 1em;
+  border-left: 3px solid #FFB900; padding: 0.3em 0 0.3em 1em;
   color: #6b7280; font-style: italic; margin: 0.5em 0;
 }
 .ProseMirror code {
@@ -189,17 +189,17 @@ const EDITOR_CSS = `
 .ProseMirror table { border-collapse: collapse; width: 100%; margin: 0.7em 0; table-layout: fixed; }
 .ProseMirror td, .ProseMirror th { border: 1px solid #d1d5db; padding: 0.45em 0.7em; min-width: 2rem; vertical-align: top; position: relative; }
 .ProseMirror th { background: #f9fafb; font-weight: 600; text-align: left; }
-.ProseMirror .selectedCell { background: rgba(201,165,90,0.1); }
-.ProseMirror .column-resize-handle { position:absolute; right:-2px; top:0; bottom:-2px; width:4px; background:#c9a55a; cursor:col-resize; pointer-events:all; }
+.ProseMirror .selectedCell { background: rgba(255,185,0,0.1); }
+.ProseMirror .column-resize-handle { position:absolute; right:-2px; top:0; bottom:-2px; width:4px; background:#FFB900; cursor:col-resize; pointer-events:all; }
 .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0.25em; }
 .ProseMirror ul[data-type="taskList"] li { display:flex; align-items:flex-start; gap:0.5em; margin:0.15em 0; }
 .ProseMirror ul[data-type="taskList"] li label { flex-shrink:0; display:flex; align-items:center; margin-top:0.15em; }
-.ProseMirror ul[data-type="taskList"] li input[type="checkbox"] { width:1em; height:1em; cursor:pointer; accent-color:#c9a55a; }
+.ProseMirror ul[data-type="taskList"] li input[type="checkbox"] { width:1em; height:1em; cursor:pointer; accent-color:#FFB900; }
 .ProseMirror ul[data-type="taskList"] li > div { flex:1; }
 .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration:line-through; opacity:0.55; }
 .ProseMirror hr { border:none; border-top:1.5px solid #e5e7eb; margin:1em 0; }
 .ProseMirror img { max-width:100%; border-radius:4px; margin:0.3em 0; display:block; cursor:pointer; }
-.ProseMirror img.ProseMirror-selectednode { outline:2px solid #c9a55a; }
+.ProseMirror img.ProseMirror-selectednode { outline:2px solid #FFB900; }
 .ProseMirror a { color:#3b82f6; text-decoration:underline; cursor:pointer; }
 .ProseMirror a:hover { color:#1d4ed8; }
 .ProseMirror mark { border-radius:2px; padding:0 0.12em; }

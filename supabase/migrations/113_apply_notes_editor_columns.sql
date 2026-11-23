@@ -81,12 +81,18 @@ CREATE TABLE IF NOT EXISTS note_shares (
                          CHECK (role IN ('editor', 'commenter', 'reader')),
   created_at           timestamptz NOT NULL DEFAULT now()
 );
+-- Normaliser le nom de colonne (migration 112 utilisait shared_with_user)
+ALTER TABLE note_shares ADD COLUMN IF NOT EXISTS shared_with_user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE note_shares ADD COLUMN IF NOT EXISTS shared_with_org_id  uuid;
+
 ALTER TABLE note_shares ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "ns_select" ON note_shares;
 DROP POLICY IF EXISTS "ns_insert" ON note_shares;
 DROP POLICY IF EXISTS "ns_delete" ON note_shares;
 CREATE POLICY "ns_select" ON note_shares FOR SELECT USING (
-  shared_by = auth.uid() OR shared_with_user_id = auth.uid()
+  shared_by = auth.uid()
+  OR shared_with_user_id = auth.uid()
+  OR shared_with_user = auth.uid()
 );
 CREATE POLICY "ns_insert" ON note_shares FOR INSERT WITH CHECK (shared_by = auth.uid());
 CREATE POLICY "ns_delete" ON note_shares FOR DELETE USING (shared_by = auth.uid());

@@ -76,9 +76,9 @@ export default function PWAManager() {
             className="fixed bottom-0 left-0 right-0 z-[200] p-4"
           >
             <div className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_-4px_40px_rgba(0,0,0,0.12)]">
-              <div className="h-[2px] bg-gradient-to-r from-transparent via-[#c9a55a] to-transparent" />
+              <div className="h-[2px] bg-gradient-to-r from-transparent via-[#FFB900] to-transparent" />
               <div className="flex items-center gap-4 px-5 py-4">
-                <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+                <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(135deg,#FFB900,#FFB900)" }}>
                   <Sparkles size={22} color="#fff" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -95,7 +95,7 @@ export default function PWAManager() {
                 <div className="flex shrink-0 items-center gap-2">
                   {!isIOS && (
                     <button onClick={handleInstall}
-                      className="flex items-center gap-1.5 rounded-xl bg-[#c9a55a] px-3.5 py-2 text-[0.72rem] font-bold text-white transition hover:brightness-110 active:scale-95">
+                      className="flex items-center gap-1.5 rounded-xl bg-[#FFB900] px-3.5 py-2 text-[0.72rem] font-bold text-white transition hover:brightness-110 active:scale-95">
                       <Download size={12} /> Installer
                     </button>
                   )}

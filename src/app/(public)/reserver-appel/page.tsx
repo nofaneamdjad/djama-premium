@@ -30,8 +30,8 @@ const SLOTS_BY_WEEKDAY: Record<number, string[]> = {
 /* Nombre de jours à afficher en avance */
 const DAYS_AHEAD = 14;
 
-const ACCENT     = "#c9a55a";
-const ACCENT_RGB = "201,165,90";
+const ACCENT     = "#FFB900";
+const ACCENT_RGB = "255,185,0";
 const ease       = [0.16, 1, 0.3, 1] as const;
 
 const JOURS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -183,7 +183,7 @@ export default function ReserverAppelPage() {
             initial={{ opacity: 0, y: 12, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, ease }}
-            className="mb-7 inline-flex items-center gap-2 rounded-full border border-[rgba(201,165,90,0.28)] bg-[rgba(201,165,90,0.08)] px-5 py-2 text-[0.7rem] font-bold uppercase tracking-[0.14em] text-[#c9a55a]"
+            className="mb-7 inline-flex items-center gap-2 rounded-full border border-[rgba(255,185,0,0.28)] bg-[rgba(255,185,0,0.08)] px-5 py-2 text-[0.7rem] font-bold uppercase tracking-[0.14em] text-[#FFB900]"
           >
             <Calendar size={11} /> Appel gratuit · 30 minutes
           </motion.div>
@@ -256,7 +256,7 @@ export default function ReserverAppelPage() {
               <p className="mt-4 text-sm leading-relaxed text-gray-500">
                 Un email de confirmation vient d'être envoyé à <strong className="text-gray-800">{email}</strong>.
                 {slotLabel && (
-                  <> Nous vous attendons le <strong className="text-[#c9a55a]">{slotLabel}</strong>.</>
+                  <> Nous vous attendons le <strong className="text-[#FFB900]">{slotLabel}</strong>.</>
                 )}
               </p>
 
@@ -272,7 +272,7 @@ export default function ReserverAppelPage() {
                     "Si vous avez un site existant, notez son URL",
                   ].map((tip) => (
                     <li key={tip} className="flex items-start gap-3 text-sm text-gray-600">
-                      <ChevronRight size={14} className="mt-0.5 shrink-0 text-[#c9a55a]" />
+                      <ChevronRight size={14} className="mt-0.5 shrink-0 text-[#FFB900]" />
                       {tip}
                     </li>
                   ))}
@@ -530,7 +530,7 @@ export default function ReserverAppelPage() {
                       <label className="mb-1.5 block text-[0.6rem] font-semibold uppercase tracking-widest text-gray-400">
                         Message (optionnel)
                       </label>
-                      <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 focus-within:border-[rgba(201,165,90,0.45)] transition-colors">
+                      <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 focus-within:border-[rgba(255,185,0,0.45)] transition-colors">
                         <div className="flex items-start gap-3">
                           <MessageSquare size={14} className="mt-0.5 shrink-0 text-gray-300" />
                           <textarea
@@ -555,11 +555,11 @@ export default function ReserverAppelPage() {
                       disabled={submitting || !slotLabel || !fullName || !email || !requestType || !subject}
                       className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-4 text-sm font-bold text-white transition-all disabled:cursor-not-allowed disabled:opacity-40"
                       style={{
-                        background:  "linear-gradient(135deg, #c9a55a, #a07a3a)",
-                        boxShadow:   "0 8px 32px rgba(201,165,90,0.25)",
+                        background:  "linear-gradient(135deg, #FFB900, #a07a3a)",
+                        boxShadow:   "0 8px 32px rgba(255,185,0,0.25)",
                       }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 48px rgba(201,165,90,0.4)"; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px rgba(201,165,90,0.25)"; }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 48px rgba(255,185,0,0.4)"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px rgba(255,185,0,0.25)"; }}
                     >
                       <div className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
                       {submitting ? (
@@ -597,7 +597,7 @@ function Field({
       <label className="mb-1.5 block text-[0.6rem] font-semibold uppercase tracking-widest text-gray-400">
         {label}
       </label>
-      <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 focus-within:border-[rgba(201,165,90,0.45)] transition-colors shadow-[0_1px_3px_rgba(0,0,0,.04)]">
+      <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 focus-within:border-[rgba(255,185,0,0.45)] transition-colors shadow-[0_1px_3px_rgba(0,0,0,.04)]">
         <span className="shrink-0 text-gray-400">{icon}</span>
         {children}
       </div>

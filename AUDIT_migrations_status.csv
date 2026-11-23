@@ -1,0 +1,10 @@
+﻿Migration;Statut;Description / Notes
+174_admin_auth_v2.sql;APPLIQUÉE;admin_users, admin_sessions, admin_audit_log, requireAdminUser
+178_admin_sessions_aal.sql;APPLIQUÉE;admin_sessions.aal column + revoke trigger
+20261103000001_revoke_rpc_anon.sql;APPLIQUÉE;Révocation accès anon sur RPCs
+20261103000002_beta_config_rls.sql;APPLIQUÉE;RLS beta_config table
+20261103000003_admin_tables_rls.sql;APPLIQUÉE;invoices/quotes owner-based, site_settings write anon supprimé
+20261104000001_invoices_client_id_fk.sql;APPLIQUÉE;FK client_id sur invoices
+RPCs dashboard;MANQUANTE ⚠;get_monthly_revenue, get_revenue_by_month, get_inscriptions_by_month
+subscription_plans table;MANQUANTE ⚠;Nécessaire pour /admin/plans CMS
+monitoring health data;MANQUANTE ⚠;Nécessaire pour /admin/monitoring réel

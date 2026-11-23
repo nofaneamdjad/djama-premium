@@ -8,7 +8,6 @@ import {
   ArrowUp, ArrowDown, Image,
 } from "lucide-react";
 import NextImage from "next/image";
-import { getSupabase } from "@/lib/supabase";
 import type { PhotoRetouchRow, PhotoRetouchCategory, PhotoRetouchStatus } from "@/types/db";
 
 const ACCENT = "#c9a55a";
@@ -72,10 +71,10 @@ export default function AdminRetouchePhotoPage() {
   async function load() {
     setLoading(true);
     try {
-      const { data, error } = await getSupabase()
-        .from("photo_retouches").select("*").order("sort_order", { ascending: true });
-      if (error) throw error;
-      setProjects((data ?? []) as PhotoRetouchRow[]);
+      const res = await fetch("/api/admin/retouche-photo");
+      if (!res.ok) throw new Error("Erreur serveur");
+      const { projects: data } = await res.json() as { projects: PhotoRetouchRow[] };
+      setProjects(data);
     } catch { add("Erreur de chargement", false); }
     finally { setLoading(false); }
   }
@@ -96,12 +95,12 @@ export default function AdminRetouchePhotoPage() {
     if (!modal) return;
     setUploadingField(field);
     try {
-      const ext  = file.name.split(".").pop();
-      const path = `${field}/${Date.now()}.${ext}`;
-      const { error } = await getSupabase().storage.from(BUCKET).upload(path, file);
-      if (error) throw error;
-      const { data } = getSupabase().storage.from(BUCKET).getPublicUrl(path);
-      const url = data.publicUrl;
+      const form = new FormData();
+      form.append("file", file);
+      form.append("bucket", BUCKET);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+      if (!res.ok) throw new Error("Erreur upload");
+      const { url } = await res.json() as { url: string };
       setModal(m => m ? { ...m, [field === "before" ? "before_url" : "after_url"]: url } : m);
       add(`Image ${field === "before" ? "avant" : "après"} uploadée`);
     } catch { add("Erreur upload", false); }
@@ -121,10 +120,12 @@ export default function AdminRetouchePhotoPage() {
         status: modal.status, sort_order: modal.sort_order,
       };
       if (modal.id) {
-        await getSupabase().from("photo_retouches").update(payload).eq("id", modal.id);
+        const res = await fetch("/api/admin/retouche-photo", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: modal.id, ...payload }) });
+        if (!res.ok) throw new Error("Erreur serveur");
         add("Projet mis à jour");
       } else {
-        await getSupabase().from("photo_retouches").insert(payload);
+        const res = await fetch("/api/admin/retouche-photo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error("Erreur serveur");
         add("Projet ajouté");
       }
       setModal(null);
@@ -136,7 +137,8 @@ export default function AdminRetouchePhotoPage() {
   async function handleToggle(p: PhotoRetouchRow) {
     const next: PhotoRetouchStatus = p.status === "published" ? "draft" : "published";
     try {
-      await getSupabase().from("photo_retouches").update({ status: next }).eq("id", p.id);
+      const res = await fetch("/api/admin/retouche-photo", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id, status: next }) });
+      if (!res.ok) throw new Error("Erreur serveur");
       setProjects(ps => ps.map(x => x.id === p.id ? { ...x, status: next } : x));
       add(next === "published" ? "Publié" : "Mis en brouillon");
     } catch { add("Erreur", false); }
@@ -144,7 +146,8 @@ export default function AdminRetouchePhotoPage() {
 
   async function handleDelete(id: string) {
     try {
-      await getSupabase().from("photo_retouches").delete().eq("id", id);
+      const res = await fetch("/api/admin/retouche-photo", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      if (!res.ok) throw new Error("Erreur serveur");
       setProjects(ps => ps.filter(x => x.id !== id));
       add("Projet supprimé");
     } catch { add("Erreur suppression", false); }
@@ -162,9 +165,7 @@ export default function AdminRetouchePhotoPage() {
     const reindexed = updated.map((p, i) => ({ ...p, sort_order: i }));
     setProjects(reindexed);
     try {
-      await Promise.all(reindexed.map(p =>
-        getSupabase().from("photo_retouches").update({ sort_order: p.sort_order }).eq("id", p.id)
-      ));
+      await fetch("/api/admin/retouche-photo", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reorder: reindexed.map(p => ({ id: p.id, sort_order: p.sort_order })) }) });
     } catch { add("Erreur réordonnancement", false); load(); }
   }
 

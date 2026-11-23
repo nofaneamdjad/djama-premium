@@ -1,0 +1,11 @@
+﻿Type;Fichier/Commande;Statut;Nb Tests;Notes
+TypeScript;tsc --noEmit;PASSÉ ✓;0 erreur;Couverture typage complète
+E2E Playwright;auth.spec.ts;À EXÉCUTER;8 tests;Login, logout, MFA, session expiration
+E2E Playwright;dashboard.spec.ts;À EXÉCUTER;6 tests;KPIs, charts, alertes
+E2E Playwright;clients.spec.ts;À EXÉCUTER;7 tests;CRUD, recherche, filtres
+E2E Playwright;subscriptions.spec.ts;À EXÉCUTER;5 tests;Abonnements, stats
+E2E Playwright;security.spec.ts;À EXÉCUTER;6 tests;MFA, rate limit, révocation session
+E2E Playwright;hq.spec.ts;À EXÉCUTER;5 tests;HQ dashboard, employés
+Unitaire Jest;routes API admin;ABSENT ⚠;0 tests;requireAdmin, edge cases non couverts
+Build Next.js;next build;NON EXÉCUTÉ;—;Hors périmètre audit local
+ESLint;eslint src/;NON EXÉCUTÉ;—;Hors périmètre audit

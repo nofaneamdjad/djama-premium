@@ -10,7 +10,7 @@ interface Props {
   token: string;
 }
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 const fmtEur = (n: unknown) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
@@ -271,7 +271,7 @@ export default function SignatureForm({ doc, items, token }: Props) {
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <div
             style={{
-              background: `linear-gradient(135deg, ${GOLD}, #b08d45)`,
+              background: `linear-gradient(135deg, ${GOLD}, #FFB900)`,
               borderRadius: 8,
               width: 32,
               height: 32,
@@ -323,8 +323,8 @@ export default function SignatureForm({ doc, items, token }: Props) {
               gap: "0.4rem",
               padding: "0.4rem 0.85rem",
               borderRadius: 999,
-              background: "rgba(201,165,90,0.1)",
-              border: `1px solid rgba(201,165,90,0.3)`,
+              background: "rgba(255,185,0,0.1)",
+              border: `1px solid rgba(255,185,0,0.3)`,
               fontSize: "0.75rem",
               fontWeight: 700,
               color: GOLD,
@@ -489,7 +489,7 @@ export default function SignatureForm({ doc, items, token }: Props) {
           }}
         >
           {/* En-tête coloré */}
-          <div style={{ height: 3, background: `linear-gradient(90deg, ${GOLD}, #b08d45)` }} />
+          <div style={{ height: 3, background: `linear-gradient(90deg, ${GOLD}, #FFB900)` }} />
 
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -616,7 +616,7 @@ export default function SignatureForm({ doc, items, token }: Props) {
               borderRadius: 16,
               border: `1px solid ${GOLD}33`,
               padding: "1.5rem",
-              boxShadow: `0 4px 20px rgba(201,165,90,0.08)`,
+              boxShadow: `0 4px 20px rgba(255,185,0,0.08)`,
             }}
           >
             {/* Titre section */}
@@ -810,7 +810,7 @@ export default function SignatureForm({ doc, items, token }: Props) {
                 background:
                   loading || !signedBy.trim() || !accepted || !hasDrawn
                     ? "#e5e7eb"
-                    : `linear-gradient(135deg, ${GOLD}, #b08d45)`,
+                    : `linear-gradient(135deg, ${GOLD}, #FFB900)`,
                 color:
                   loading || !signedBy.trim() || !accepted || !hasDrawn ? "#9ca3af" : "#0a0a0a",
                 fontSize: "0.9rem",
@@ -823,7 +823,7 @@ export default function SignatureForm({ doc, items, token }: Props) {
                 boxShadow:
                   loading || !signedBy.trim() || !accepted || !hasDrawn
                     ? "none"
-                    : "0 4px 16px rgba(201,165,90,0.3)",
+                    : "0 4px 16px rgba(255,185,0,0.3)",
               }}
             >
               {loading ? (

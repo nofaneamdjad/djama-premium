@@ -34,7 +34,7 @@ SET organization_id = (
   FROM organization_members om
   WHERE om.user_id = n.user_id
   ORDER BY CASE om.role WHEN 'owner' THEN 1 WHEN 'admin' THEN 2 ELSE 3 END,
-           om.created_at ASC
+           om.joined_at ASC
   LIMIT 1
 )
 WHERE n.organization_id IS NULL;
@@ -88,7 +88,7 @@ UPDATE note_folders nf
 SET organization_id = (
   SELECT om.organization_id FROM organization_members om
   WHERE om.user_id = nf.user_id
-  ORDER BY CASE om.role WHEN 'owner' THEN 1 WHEN 'admin' THEN 2 ELSE 3 END, om.created_at ASC
+  ORDER BY CASE om.role WHEN 'owner' THEN 1 WHEN 'admin' THEN 2 ELSE 3 END, om.joined_at ASC
   LIMIT 1
 )
 WHERE nf.organization_id IS NULL;

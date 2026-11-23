@@ -7,7 +7,6 @@ import {
   Phone, Mail, MapPin, Clock, MousePointerClick, Palette,
   Link2, ToggleLeft, ToggleRight, Settings, RefreshCw,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import type { SiteSettingRow, SocialLinkRow, SocialPlatform } from "@/types/db";
 
 // ── Toast ─────────────────────────────────────────────────────
@@ -287,17 +286,11 @@ export default function AdminParametres() {
   async function load() {
     setLoading(true);
     try {
-      const [{ data: settingsData, error: settingsError }, { data: sData, error: socialError }] =
-        await Promise.all([
-          supabase.from("site_settings").select("*").order("section").order("key"),
-          supabase.from("social_links").select("*").order("sort_order"),
-        ]);
-
-      if (settingsError) throw settingsError;
-      if (socialError) throw socialError;
-
-      const settings = settingsData ?? [];
-      const social = sData ?? [];
+      const res = await fetch("/api/admin/parametres");
+      if (!res.ok) throw new Error("Erreur serveur");
+      const { settings, socialLinks: social } = await res.json() as {
+        settings: SiteSettingRow[]; socialLinks: SocialLinkRow[];
+      };
 
       setRows(settings);
       setSocialLinks(social);
@@ -316,13 +309,12 @@ export default function AdminParametres() {
   async function saveAll() {
     setSaving(true);
     try {
-      const updates = Object.entries(valuesMap).map(([key, value]) =>
-        supabase
-          .from("site_settings")
-          .update({ value, updated_at: new Date().toISOString() })
-          .eq("key", key)
-      );
-      await Promise.all(updates);
+      const res = await fetch("/api/admin/parametres", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ updates: valuesMap }),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur serveur"); }
       toast("Paramètres sauvegardés avec succès", true);
     } catch {
       toast("Erreur lors de la sauvegarde", false);
@@ -336,14 +328,13 @@ export default function AdminParametres() {
     id: string,
     patch: Partial<Pick<SocialLinkRow, "url" | "active" | "sort_order">>
   ) {
-    const { data, error } = await supabase
-      .from("social_links")
-      .update(patch)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const res = await fetch("/api/admin/parametres", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...patch }),
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur serveur"); }
+    const { data } = await res.json();
     setSocialLinks(prev => prev.map(l => (l.id === id ? data : l)));
   }
 

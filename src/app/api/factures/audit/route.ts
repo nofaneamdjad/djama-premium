@@ -63,7 +63,15 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: false })
     .limit(50);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (error.message?.includes("schema cache") || error.message?.includes("document_audit_log")) {
+      return NextResponse.json(
+        { error: "Service d'audit indisponible (table absente du schéma cache)", code: "AUDIT_UNAVAILABLE" },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ entries: data ?? [] });
 }
 

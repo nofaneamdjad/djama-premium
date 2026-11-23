@@ -192,7 +192,7 @@ export default function PlanificationPage() {
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { if (process.env.NODE_ENV !== "development") { router.replace("/login"); return; } return; }
+    if (!user) { router.replace("/login"); return; }
     setUserId(user.id);
     const { data } = await supabase.from("strategic_plans").select("*")
       .eq("user_id", user.id).order("created_at", { ascending: false });

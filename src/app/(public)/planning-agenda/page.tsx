@@ -35,7 +35,7 @@ const ease = [0.16, 1, 0.3, 1] as const;
 
 const CATS: { value: Category; label: string; color: string; bg: string; border: string }[] = [
   { value: "travail",   label: "Travail",   color: "#60a5fa", bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)"  },
-  { value: "réunion",   label: "Réunion",   color: "#c9a55a", bg: "rgba(201,165,90,0.12)",  border: "rgba(201,165,90,0.3)"  },
+  { value: "réunion",   label: "Réunion",   color: "#FFB900", bg: "rgba(255,185,0,0.12)",  border: "rgba(255,185,0,0.3)"  },
   { value: "personnel", label: "Personnel", color: "#a78bfa", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.3)"  },
   { value: "autre",     label: "Autre",     color: "#6b7280", bg: "rgba(107,114,128,0.12)", border: "rgba(107,114,128,0.3)" },
 ];
@@ -92,7 +92,7 @@ function FInput({ value, onChange, placeholder, type="text" }:
     <div className="relative">
       <motion.div animate={{ opacity: focused ? 1 : 0 }} transition={{ duration:0.15 }}
         className="pointer-events-none absolute inset-0 rounded-xl"
-        style={{ boxShadow:"0 0 0 2px rgba(201,165,90,0.4)" }}/>
+        style={{ boxShadow:"0 0 0 2px rgba(255,185,0,0.4)" }}/>
       <input type={type} value={value} onChange={e=>onChange(e.target.value)}
         onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder={placeholder}
         className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/20"/>
@@ -131,8 +131,8 @@ function EventModal({ initial, onSave, onClose, saving }:
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-[rgba(201,165,90,0.2)] bg-[rgba(201,165,90,0.09)]">
-              <Calendar size={14} style={{ color:"#c9a55a" }}/>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.09)]">
+              <Calendar size={14} style={{ color:"#FFB900" }}/>
             </div>
             <h3 className="text-sm font-extrabold text-white">
               {initial.title ? "Modifier l'événement" : "Nouvel événement"}
@@ -173,7 +173,7 @@ function EventModal({ initial, onSave, onClose, saving }:
             <label className="mb-1.5 block text-[0.65rem] font-bold uppercase tracking-widest text-white/35">Description</label>
             <textarea value={form.description} onChange={e => upd("description", e.target.value)}
               placeholder="Détails, adresse, notes…" rows={3}
-              className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/20 focus:border-[rgba(201,165,90,0.4)]"/>
+              className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition hover:border-white/20 focus:border-[rgba(255,185,0,0.4)]"/>
           </div>
         </div>
 
@@ -185,7 +185,7 @@ function EventModal({ initial, onSave, onClose, saving }:
           </button>
           <button onClick={() => form.title.trim() && onSave(form)}
             disabled={saving || !form.title.trim() || !form.event_date}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] py-2.5 text-sm font-extrabold text-[#0a0a0a] shadow-[0_2px_12px_rgba(201,165,90,0.3)] transition hover:shadow-[0_4px_20px_rgba(201,165,90,0.4)] disabled:opacity-50">
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#FFB900] to-[#FFB900] py-2.5 text-sm font-extrabold text-[#0a0a0a] shadow-[0_2px_12px_rgba(255,185,0,0.3)] transition hover:shadow-[0_4px_20px_rgba(255,185,0,0.4)] disabled:opacity-50">
             {saving ? <Loader2 size={14} className="animate-spin"/> : <Save size={14}/>}
             Enregistrer
           </button>
@@ -509,11 +509,11 @@ export default function PlanningAgendaPage() {
             {(["today","week","month"] as View[]).map(v => (
               <button key={v} onClick={() => setView(v)}
                 className={`relative px-4 py-3.5 text-xs font-bold uppercase tracking-wider transition ${
-                  view === v ? "text-[#c9a55a]" : "text-white/30 hover:text-white/60"}`}>
+                  view === v ? "text-[#FFB900]" : "text-white/30 hover:text-white/60"}`}>
                 {v==="today" ? "Aujourd'hui" : v==="week" ? "Semaine" : "Mois"}
                 {view === v && (
                   <motion.div layoutId="tab-indicator"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#c9a55a]"/>
+                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#FFB900]"/>
                 )}
               </button>
             ))}
@@ -551,7 +551,7 @@ export default function PlanningAgendaPage() {
             )}
 
             <button onClick={() => openModal(todayStr)}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#c9a55a] to-[#b08d45] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(201,165,90,0.3)] transition hover:shadow-[0_6px_24px_rgba(201,165,90,0.45)]">
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#FFB900] to-[#FFB900] px-4 py-2 text-xs font-extrabold text-[#0a0a0a] shadow-[0_4px_16px_rgba(255,185,0,0.3)] transition hover:shadow-[0_6px_24px_rgba(255,185,0,0.45)]">
               <Plus size={14}/> Ajouter
             </button>
           </div>
@@ -581,7 +581,7 @@ export default function PlanningAgendaPage() {
                       <p className="font-mono text-sm text-white/40">{timeStr}</p>
                     </div>
                     <button onClick={() => openModal(todayStr)}
-                      className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.3)] px-3 py-1.5 text-xs font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.09)]">
+                      className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,185,0,0.3)] px-3 py-1.5 text-xs font-semibold text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.09)]">
                       <Plus size={12}/> Ajouter
                     </button>
                   </div>
@@ -596,7 +596,7 @@ export default function PlanningAgendaPage() {
                       <p className="text-sm font-semibold text-white/30">Journée libre</p>
                       <p className="text-xs text-white/20">Aucun événement planifié aujourd&apos;hui</p>
                       <button onClick={() => openModal(todayStr)}
-                        className="mt-1 flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.25)] px-4 py-2 text-xs font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.09)]">
+                        className="mt-1 flex items-center gap-1.5 rounded-xl border border-[rgba(255,185,0,0.25)] px-4 py-2 text-xs font-semibold text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.09)]">
                         <Plus size={12}/> Planifier un événement
                       </button>
                     </motion.div>
@@ -618,14 +618,14 @@ export default function PlanningAgendaPage() {
                   {/* Note rapide */}
                   <div className="rounded-[1.5rem] border border-white/8 bg-[rgba(15,17,23,0.65)] p-5">
                     <div className="mb-3 flex items-center gap-2">
-                      <StickyNote size={13} style={{ color:"#c9a55a" }}/>
+                      <StickyNote size={13} style={{ color:"#FFB900" }}/>
                       <span className="text-xs font-bold uppercase tracking-widest text-white/40">Note rapide</span>
                     </div>
                     <textarea value={quickNote} onChange={e => setQuickNote(e.target.value)}
                       placeholder="Capture une idée, une info, un mémo…" rows={5}
                       className="w-full resize-none bg-transparent text-sm text-white placeholder:text-white/20 outline-none leading-relaxed"/>
                     <button onClick={handleSaveNote} disabled={savingNote || !quickNote.trim()}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(201,165,90,0.25)] py-2 text-xs font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.09)] disabled:opacity-40">
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(255,185,0,0.25)] py-2 text-xs font-semibold text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.09)] disabled:opacity-40">
                       {savingNote ? <Loader2 size={11} className="animate-spin"/> : <Save size={11}/>}
                       Sauvegarder dans Bloc-notes
                     </button>
@@ -651,7 +651,7 @@ export default function PlanningAgendaPage() {
                       })}
                       <div className="border-t border-white/6 pt-2 flex items-center justify-between">
                         <span className="text-xs text-white/40">Total</span>
-                        <span className="text-xs font-extrabold text-[#c9a55a]">
+                        <span className="text-xs font-extrabold text-[#FFB900]">
                           {events.filter(e => e.event_date.startsWith(`${calYear}-${String(calMonth+1).padStart(2,"0")}`)).length}
                         </span>
                       </div>
@@ -701,7 +701,7 @@ export default function PlanningAgendaPage() {
                     <p className="text-sm font-extrabold text-white">
                       {fmtFR(weekDays[0].iso,{day:"numeric",month:"long"})} — {fmtFR(weekDays[6].iso,{day:"numeric",month:"long",year:"numeric"})}
                     </p>
-                    {weekOffset === 0 && <p className="text-[0.6rem] text-[#c9a55a] font-semibold uppercase tracking-widest">Semaine actuelle</p>}
+                    {weekOffset === 0 && <p className="text-[0.6rem] text-[#FFB900] font-semibold uppercase tracking-widest">Semaine actuelle</p>}
                   </div>
                   <button onClick={() => setWeekOffset(w => w+1)}
                     className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 text-white/40 transition hover:border-white/20 hover:text-white/80">
@@ -717,12 +717,12 @@ export default function PlanningAgendaPage() {
                     return (
                       <div key={iso}
                         className={`flex min-h-[160px] flex-col rounded-[1.25rem] border p-3 transition ${
-                          isToday ? "border-[rgba(201,165,90,0.4)] bg-[rgba(201,165,90,0.05)]"
+                          isToday ? "border-[rgba(255,185,0,0.4)] bg-[rgba(255,185,0,0.05)]"
                                   : "border-white/8 bg-[rgba(15,17,23,0.55)]"}`}>
                         <div className="mb-3 flex items-center justify-between">
                           <div>
-                            <p className={`text-[0.65rem] font-bold uppercase tracking-wider ${isToday?"text-[#c9a55a]":"text-white/30"}`}>{DAYS_FR[dow]}</p>
-                            <p className={`text-xl font-black leading-none ${isToday?"text-[#c9a55a]":"text-white/70"}`}>{dd}</p>
+                            <p className={`text-[0.65rem] font-bold uppercase tracking-wider ${isToday?"text-[#FFB900]":"text-white/30"}`}>{DAYS_FR[dow]}</p>
+                            <p className={`text-xl font-black leading-none ${isToday?"text-[#FFB900]":"text-white/70"}`}>{dd}</p>
                             <p className="text-[0.55rem] text-white/25">{MONTHS_FR[mm-1].slice(0,3)}</p>
                           </div>
                           <button onClick={() => openModal(iso)}
@@ -788,10 +788,10 @@ export default function PlanningAgendaPage() {
                     return (
                       <button key={iso} onClick={() => setSelDate(iso)}
                         className={`relative flex flex-col items-center rounded-xl py-2 px-1 transition ${
-                          isSel    ? "bg-gradient-to-b from-[#c9a55a] to-[#b08d45] shadow-[0_4px_12px_rgba(201,165,90,0.4)]"
-                          : isToday ? "border border-[rgba(201,165,90,0.4)]"
+                          isSel    ? "bg-gradient-to-b from-[#FFB900] to-[#FFB900] shadow-[0_4px_12px_rgba(255,185,0,0.4)]"
+                          : isToday ? "border border-[rgba(255,185,0,0.4)]"
                           : "hover:bg-white/5"}`}>
-                        <span className={`text-sm font-bold ${isSel?"text-[#0a0a0a]":isToday?"text-[#c9a55a]":"text-white/60"}`}>{day}</span>
+                        <span className={`text-sm font-bold ${isSel?"text-[#0a0a0a]":isToday?"text-[#FFB900]":"text-white/60"}`}>{day}</span>
                         <div className="flex gap-0.5 mt-0.5">
                           {dayEvs.slice(0, 3).map(ev => (
                             <span key={ev.id} className="h-1 w-1 rounded-full"
@@ -810,7 +810,7 @@ export default function PlanningAgendaPage() {
                       {fmtFR(selDate, { weekday:"long", day:"numeric", month:"long" })}
                     </p>
                     <button onClick={() => openModal(selDate)}
-                      className="flex items-center gap-1.5 rounded-xl border border-[rgba(201,165,90,0.25)] px-3 py-1.5 text-xs font-semibold text-[#c9a55a] transition hover:bg-[rgba(201,165,90,0.09)]">
+                      className="flex items-center gap-1.5 rounded-xl border border-[rgba(255,185,0,0.25)] px-3 py-1.5 text-xs font-semibold text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.09)]">
                       <Plus size={11}/> Ajouter
                     </button>
                   </div>

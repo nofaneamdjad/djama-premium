@@ -6,7 +6,6 @@ import {
   Loader2, RefreshCw, X, Search,
   LayoutGrid, CalendarDays, ChevronLeft, ChevronRight,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { V } from "@/components/hq";
 
 // ---------------------------------------------------------------------------
@@ -175,18 +174,16 @@ export default function AdminReservations() {
     if (!silent) setLoading(true);
     setLoadError(null);
     try {
-      const { data, error } = await supabase
-        .from("reservations")
-        .select("*")
-        .order("scheduled_at", { ascending: false });
-
-      if (error) {
-        console.error("[Admin Reservations] fetch error:", error);
+      const res = await fetch("/api/admin/reservations");
+      if (!res.ok) {
         setLoadError("Impossible de charger les réservations.");
         return;
       }
-
-      setReservations((data ?? []) as Reservation[]);
+      const json = await res.json() as { reservations: Reservation[] };
+      setReservations(json.reservations ?? []);
+    } catch (err) {
+      console.error("[Admin Reservations] fetch error:", err);
+      setLoadError("Impossible de charger les réservations.");
     } finally {
       setLoading(false);
     }
@@ -200,15 +197,16 @@ export default function AdminReservations() {
 
   async function updateStatus(id: string, status: string) {
     setUpdating(id);
-    const { error } = await supabase
-      .from("reservations")
-      .update({ status })
-      .eq("id", id);
-
-    if (error) {
-      console.error("[Admin Reservations] update error:", error);
-    } else {
+    const res = await fetch("/api/admin/reservations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+    if (res.ok) {
       setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    } else {
+      const e = await res.json().catch(() => ({})) as { error?: string };
+      console.error("[Admin Reservations] update error:", e.error);
     }
     setUpdating(null);
   }

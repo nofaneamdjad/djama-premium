@@ -225,31 +225,43 @@ ALTER TABLE quotes        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users   ENABLE ROW LEVEL SECURITY;
 
 -- Services
+DROP POLICY IF EXISTS "public read services"    ON services;
+DROP POLICY IF EXISTS "anon write services"     ON services;
 CREATE POLICY "public read services"    ON services     FOR SELECT USING (true);
 CREATE POLICY "anon write services"     ON services     FOR ALL    USING (true) WITH CHECK (true);
 
 -- Réalisations
+DROP POLICY IF EXISTS "public read realisations" ON realisations;
+DROP POLICY IF EXISTS "anon write realisations"  ON realisations;
 CREATE POLICY "public read realisations" ON realisations FOR SELECT USING (true);
 CREATE POLICY "anon write realisations"  ON realisations FOR ALL    USING (true) WITH CHECK (true);
 
 -- Contenu
+DROP POLICY IF EXISTS "public read content"     ON site_content;
+DROP POLICY IF EXISTS "anon write content"      ON site_content;
 CREATE POLICY "public read content"     ON site_content FOR SELECT USING (true);
 CREATE POLICY "anon write content"      ON site_content FOR ALL    USING (true) WITH CHECK (true);
 
 -- Clients (admin seulement en V1)
+DROP POLICY IF EXISTS "anon all clients"        ON clients;
 CREATE POLICY "anon all clients"        ON clients      FOR ALL    USING (true) WITH CHECK (true);
 
 -- Paiements
+DROP POLICY IF EXISTS "anon all payments"       ON payments;
 CREATE POLICY "anon all payments"       ON payments     FOR ALL    USING (true) WITH CHECK (true);
 
 -- Droits d'accès
+DROP POLICY IF EXISTS "anon all access"         ON access_rights;
 CREATE POLICY "anon all access"         ON access_rights FOR ALL   USING (true) WITH CHECK (true);
 
 -- Réservations
+DROP POLICY IF EXISTS "anon all reservations"   ON reservations;
 CREATE POLICY "anon all reservations"   ON reservations FOR ALL    USING (true) WITH CHECK (true);
 
 -- Devis
+DROP POLICY IF EXISTS "anon all quotes"         ON quotes;
 CREATE POLICY "anon all quotes"         ON quotes       FOR ALL    USING (true) WITH CHECK (true);
 
 -- Admins
+DROP POLICY IF EXISTS "anon all admin_users"    ON admin_users;
 CREATE POLICY "anon all admin_users"    ON admin_users  FOR ALL    USING (true) WITH CHECK (true);

@@ -7,7 +7,7 @@ import { X, Search, Pin, Lock, Check } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import { APP_REGISTRY, CATEGORY_LABELS, type AppCategory } from "@/lib/app-registry";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 const CATEGORIES: AppCategory[] = [
   "accueil",

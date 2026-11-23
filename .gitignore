@@ -43,3 +43,17 @@ next-env.d.ts
 
 .vercel
 .claude/worktrees/
+
+# local dev & build artifacts
+.next-local/
+build_output.txt
+start-dev-local.ps1
+run_build.ps1
+
+# test artifacts
+playwright-report/
+playwright-screenshots/
+test-results/
+
+# backup files
+*.bak

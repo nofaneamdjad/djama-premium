@@ -80,13 +80,13 @@ function KpiCard({
 }) {
   const inner = (
     <div
-      className={`group flex flex-col gap-3 rounded-2xl border p-5 transition-all duration-150${href ? " cursor-pointer" : ""}`}
+      className={`group flex flex-col gap-2.5 rounded-xl border p-4 transition-all duration-150${href ? " cursor-pointer" : ""}`}
       style={{ background: V.card, borderColor: V.border }}
       onMouseEnter={e => href && ((e.currentTarget as HTMLDivElement).style.borderColor = V.borderHov)}
       onMouseLeave={e => href && ((e.currentTarget as HTMLDivElement).style.borderColor = V.border)}
     >
       <div className="flex items-center justify-between">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: iconBg }}>
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: iconBg }}>
           <Icon size={15} style={{ color: iconColor }} strokeWidth={2} />
         </div>
         {href && (
@@ -105,7 +105,7 @@ function KpiCard({
             {value}
           </p>
         )}
-        <p className="mt-1.5 text-[0.74rem] font-semibold" style={{ color: V.textMuted }}>{label}</p>
+        <p className="mt-1 text-[0.72rem] font-semibold" style={{ color: V.textMuted }}>{label}</p>
         {!loading && (
           <div className="mt-1 flex items-center gap-2">
             {sub && <span className="text-[0.7rem]" style={{ color: V.textFaint }}>{sub}</span>}
@@ -167,9 +167,10 @@ const INITIAL_KPI: DashboardData["kpi"] = {
 export default function AdminDashboard() {
   const isDark = useAdminTheme();
   const [loading, setLoading]       = useState(true);
-  const [refreshAt, setRefreshAt]   = useState(Date.now());
-  const [period, setPeriod]         = useState<3 | 6 | 12>(6);
-  const [error, setError]           = useState<string | null>(null);
+  const [refreshAt, setRefreshAt]       = useState(Date.now());
+  const [period, setPeriod]             = useState<3 | 6 | 12>(6);
+  const [error, setError]               = useState<string | null>(null);
+  const [statsUnavailable, setStatsUnavailable] = useState(false);
 
   const [kpi, setKpi]               = useState<DashboardData["kpi"]>(INITIAL_KPI);
   const [charts, setCharts]         = useState<DashboardData["charts"]>({ months: [], inscriptions: [], revenus: [], revenuQualite: "approximative" });
@@ -181,10 +182,35 @@ export default function AdminDashboard() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setStatsUnavailable(false);
     try {
       const res = await fetch(`/api/admin/dashboard?period=${period}`, { cache: "no-store" });
       if (res.status === 401) { setError("Session expirée — reconnectez-vous."); return; }
-      if (!res.ok)            { setError("Erreur lors du chargement des données."); return; }
+
+      // 503 avec données partielles (RPCs manquantes)
+      if (res.status === 503) {
+        const body = await res.json() as {
+          stats_unavailable?: boolean;
+          partial?: {
+            kpi: DashboardData["kpi"];
+            recentMessages: DashboardData["recentMessages"];
+            recentClients:  DashboardData["recentClients"];
+            alerts:         DashboardData["alerts"];
+          };
+        };
+        if (body.stats_unavailable && body.partial) {
+          setKpi(body.partial.kpi);
+          setRecentMessages(body.partial.recentMessages);
+          setRecentClients(body.partial.recentClients);
+          setAlerts(body.partial.alerts);
+          setStatsUnavailable(true);
+        } else {
+          setError("Statistiques indisponibles.");
+        }
+        return;
+      }
+
+      if (!res.ok) { setError("Erreur lors du chargement des données."); return; }
       const data: DashboardData = await res.json();
       setKpi(data.kpi);
       setCharts(data.charts);
@@ -307,7 +333,7 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
       {/* ── Zone 1 : En-tête ────────────────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -357,13 +383,25 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* ── Bandeau statistiques indisponibles (RPCs absentes) ── */}
+      {statsUnavailable && (
+        <div
+          className="rounded-xl border px-4 py-3 text-[0.82rem]"
+          style={{ background: "rgba(234,179,8,0.08)", borderColor: "rgba(234,179,8,0.25)", color: "#ca8a04" }}
+        >
+          <span className="font-semibold">Statistiques de revenus indisponibles.</span>
+          {" "}Les RPCs analytics ne sont pas encore déployées en production.
+          Les données d'activité (clients, messages, alertes) sont affichées normalement.
+        </div>
+      )}
+
       {/* ── Zone 2 : Alertes prioritaires ───────────────────── */}
       {(loading || alerts.length > 0) && (
         <AdminAlertsPanel alerts={alerts} loading={loading} />
       )}
 
       {/* ── Zone 3 : KPIs principaux ─────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard
           label="Utilisateurs"
           value={kpi.totalUsers}
@@ -432,16 +470,16 @@ export default function AdminDashboard() {
       {/* ── Zone 4 : Graphiques commerciaux ──────────────────── */}
       <SectionLabel>Tendances — {period} derniers mois</SectionLabel>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
-          <div className="mb-5 flex items-center justify-between">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border p-4" style={{ background: V.card, borderColor: V.border }}>
+          <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-[0.87rem] font-bold" style={{ color: V.text }}>Inscriptions</h2>
               <p className="text-[0.71rem]" style={{ color: V.textFaint }}>{period} derniers mois</p>
             </div>
             <UserPlus size={14} style={{ color: V.textFaint }} />
           </div>
-          <div style={{ height: 200 }}>
+          <div style={{ height: 190 }}>
             {loading
               ? <div className="h-full w-full animate-pulse rounded-xl" style={{ background: V.surface }} />
               : <Line data={lineInsc} options={lineOpts} />
@@ -449,8 +487,8 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
-          <div className="mb-5 flex items-center justify-between">
+        <div className="rounded-xl border p-4" style={{ background: V.card, borderColor: V.border }}>
+          <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-[0.87rem] font-bold" style={{ color: V.text }}>Encaissements</h2>
               <p className="text-[0.71rem]" style={{ color: V.textFaint }}>
@@ -462,7 +500,7 @@ export default function AdminDashboard() {
             </div>
             <Wallet size={14} style={{ color: V.textFaint }} />
           </div>
-          <div style={{ height: 200 }}>
+          <div style={{ height: 190 }}>
             {loading ? (
               <div className="h-full w-full animate-pulse rounded-xl" style={{ background: V.surface }} />
             ) : charts.revenus.every(r => r === 0) ? (
@@ -478,9 +516,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Zone 5 : Répartition + Accès rapides ─────────────── */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
-          <div className="mb-5 flex items-center justify-between">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-xl border p-4" style={{ background: V.card, borderColor: V.border }}>
+          <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-[0.87rem] font-bold" style={{ color: V.text }}>Répartition</h2>
               <p className="text-[0.71rem]" style={{ color: V.textFaint }}>Abonnés vs gratuit</p>
@@ -521,7 +559,7 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        <div className="rounded-2xl border p-5 lg:col-span-2" style={{ background: V.card, borderColor: V.border }}>
+        <div className="rounded-xl border p-4 lg:col-span-2" style={{ background: V.card, borderColor: V.border }}>
           <h2 className="mb-4 text-[0.87rem] font-bold" style={{ color: V.text }}>Accès rapides</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
@@ -560,9 +598,9 @@ export default function AdminDashboard() {
       {/* ── Zone 6 : Activité récente ─────────────────────────── */}
       <SectionLabel>Activité récente</SectionLabel>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Messages récents */}
-        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
+        <div className="rounded-xl border p-4" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageSquare size={13} style={{ color: V.textFaint }} />
@@ -621,7 +659,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Dernières inscriptions */}
-        <div className="rounded-2xl border p-5" style={{ background: V.card, borderColor: V.border }}>
+        <div className="rounded-xl border p-4" style={{ background: V.card, borderColor: V.border }}>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock size={13} style={{ color: V.textFaint }} />

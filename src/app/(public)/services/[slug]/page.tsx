@@ -38,8 +38,8 @@ const CAT_CONFIG: Record<string, {
   },
   "Coaching": {
     gradient: "from-[#0a0a0f] via-[#14100a] to-[#1a1408]",
-    glow: "rgba(201,165,90,0.22)",
-    accent: "#c9a55a",
+    glow: "rgba(255,185,0,0.22)",
+    accent: "#FFB900",
     label: "Coaching",
   },
 };
@@ -349,7 +349,7 @@ export default function ServiceSlugPage() {
             >
               <Link
                 href="/services"
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-bold text-[var(--muted)] transition hover:border-[rgba(201,165,90,0.3)] hover:text-[var(--ink)]"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-bold text-[var(--muted)] transition hover:border-[rgba(255,185,0,0.3)] hover:text-[var(--ink)]"
               >
                 <ArrowLeft size={14} />
                 Retour aux services
@@ -393,7 +393,7 @@ export default function ServiceSlugPage() {
                   >
                     <Link
                       href={s.ctaHref ?? `/services/${s.slug}`}
-                      className="group flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 transition hover:-translate-y-1 hover:border-[rgba(201,165,90,0.25)] hover:shadow-[0_8px_24px_rgba(9,9,11,0.08)]"
+                      className="group flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 transition hover:-translate-y-1 hover:border-[rgba(255,185,0,0.25)] hover:shadow-[0_8px_24px_rgba(9,9,11,0.08)]"
                     >
                       <div
                         className="flex h-11 w-11 items-center justify-center rounded-xl border"

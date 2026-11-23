@@ -10,37 +10,37 @@ import { ArrowUp, ArrowDown, Minus } from "lucide-react";
    Source unique de vérité — importer depuis @/components/hq
 ───────────────────────────────────────────────────────────── */
 export const HQ = {
-  /* Fonds */
-  bg:         "#0B0D12",
-  sidebar:    "#0F1117",
-  card:       "#141720",
-  surface:    "#171A22",
-  surfaceHov: "#1C2030",
+  /* Fonds — palette NOIR/ANTHRACITE DJAMA */
+  bg:         "#101114",
+  sidebar:    "#0E1016",
+  card:       "#16181E",
+  surface:    "#1C1F28",
+  surfaceHov: "#22252F",
 
-  /* Bordures */
+  /* Bordures fines */
   border:     "rgba(255,255,255,0.07)",
-  borderHov:  "rgba(255,255,255,0.13)",
+  borderHov:  "rgba(255,255,255,0.14)",
 
-  /* Accent doré */
-  gold:       "#C9A55A",
-  goldR:      "201,165,90",
-  goldDim:    "rgba(201,165,90,0.10)",
-  goldBorder: "rgba(201,165,90,0.18)",
-  goldHov:    "rgba(201,165,90,0.16)",
+  /* Accent JAUNE DJAMA — #FFB900 (jamais or/doré) */
+  gold:       "#FFB900",
+  goldR:      "255,185,0",
+  goldDim:    "rgba(255,185,0,0.10)",
+  goldBorder: "rgba(255,185,0,0.20)",
+  goldHov:    "rgba(255,185,0,0.15)",
 
-  /* Textes */
-  text:       "#F5F5F3",
-  textSub:    "#87909E",
+  /* Textes — blanc pur, gris neutres */
+  text:       "#F0F0F0",
+  textSub:    "#8C909C",
   textMuted:  "rgba(255,255,255,0.38)",
-  textFaint:  "rgba(255,255,255,0.20)",
+  textFaint:  "rgba(255,255,255,0.18)",
 
-  /* Rayons */
-  r: { xs: "6px", sm: "8px", md: "12px", lg: "16px", xl: "20px", "2xl": "24px" },
+  /* Rayons compacts — style professionnel */
+  r: { xs: "4px", sm: "6px", md: "8px", lg: "12px", xl: "16px", "2xl": "20px" },
 
   /* Dimensions layout */
-  sidebarW:        260,
-  sidebarCompactW: 64,
-  headerH:         60,
+  sidebarW:        256,
+  sidebarCompactW: 60,
+  headerH:         56,
 } as const;
 
 /* ─────────────────────────────────────────────────────────────
@@ -59,22 +59,28 @@ export const V = {
   textSub:         "var(--hq-text-sub)",
   textMuted:       "var(--hq-text-muted)",
   textFaint:       "var(--hq-text-faint)",
-  gold:            "#C9A55A",
-  goldR:           "201,165,90",
-  goldDim:         "rgba(201,165,90,0.10)",
-  goldBorder:      "rgba(201,165,90,0.18)",
-  goldHov:         "rgba(201,165,90,0.16)",
+  /* Accent JAUNE DJAMA — invariant (ne change pas avec le thème) */
+  gold:            "#FFB900",
+  goldR:           "255,185,0",
+  goldDim:         "rgba(255,185,0,0.10)",
+  goldBorder:      "rgba(255,185,0,0.20)",
+  goldHov:         "rgba(255,185,0,0.15)",
   r:               HQ.r,
   sidebarW:        HQ.sidebarW,
   sidebarCompactW: HQ.sidebarCompactW,
   headerH:         HQ.headerH,
+  /* Card CSS component — styles partagés */
+  Card: ({ className, children, style }: { className?: string; children: React.ReactNode; style?: React.CSSProperties }) =>
+    <div className={className} style={{ background: "var(--hq-card)", border: "1px solid var(--hq-border)", borderRadius: HQ.r.md, padding: "16px", ...style }}>{children}</div>,
 } as const;
 
 /* ─────────────────────────────────────────────────────────────
    THEME STYLE — injecte les variables CSS dans :root
 ───────────────────────────────────────────────────────────── */
-const DARK_VARS  = `--hq-bg:#0B0D12;--hq-sidebar:#0F1117;--hq-card:#141720;--hq-surface:#171A22;--hq-surface-hov:#1C2030;--hq-border:rgba(255,255,255,0.07);--hq-border-hov:rgba(255,255,255,0.13);--hq-text:#F5F5F3;--hq-text-sub:#87909E;--hq-text-muted:rgba(255,255,255,0.38);--hq-text-faint:rgba(255,255,255,0.20)`;
-const LIGHT_VARS = `--hq-bg:#F7F8FA;--hq-sidebar:#FFFFFF;--hq-card:#FFFFFF;--hq-surface:#EEF0F4;--hq-surface-hov:#E4E7ED;--hq-border:#E6E8EC;--hq-border-hov:#CDD0D9;--hq-text:#171A21;--hq-text-sub:#667085;--hq-text-muted:rgba(23,26,33,0.60);--hq-text-faint:rgba(23,26,33,0.38)`;
+/* Thème sombre — fond #101114, carte #16181E, texte blanc pur */
+const DARK_VARS  = `--hq-bg:#101114;--hq-sidebar:#0E1016;--hq-card:#16181E;--hq-surface:#1C1F28;--hq-surface-hov:#22252F;--hq-border:rgba(255,255,255,0.07);--hq-border-hov:rgba(255,255,255,0.14);--hq-text:#F0F0F0;--hq-text-sub:#8C909C;--hq-text-muted:rgba(255,255,255,0.38);--hq-text-faint:rgba(255,255,255,0.18)`;
+/* Thème clair — fond gris très clair, carte blanc, texte noir profond */
+const LIGHT_VARS = `--hq-bg:#F4F5F7;--hq-sidebar:#FFFFFF;--hq-card:#FFFFFF;--hq-surface:#ECEEF2;--hq-surface-hov:#E2E5EB;--hq-border:#D8DCE4;--hq-border-hov:#B8BECC;--hq-text:#101114;--hq-text-sub:#52586A;--hq-text-muted:rgba(16,17,20,0.55);--hq-text-faint:rgba(16,17,20,0.30)`;
 
 /* Correctifs globaux mode clair : remplace les classes Tailwind dark-only */
 const LIGHT_OVERRIDES = `
@@ -122,7 +128,7 @@ const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> =
   mineur:         { label: "Mineur",         bg: V.surface,               color: V.textSub },
   ouvert:         { label: "Ouvert",         bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
   résolu:         { label: "Résolu",         bg: "rgba(52,211,153,0.12)",  color: "#34d399" },
-  premium:        { label: "Premium",        bg: "rgba(201,165,90,0.12)",  color: "#C9A55A" },
+  premium:        { label: "Premium",        bg: "rgba(255,185,0,0.12)",   color: "#FFB900" },
   gratuit:        { label: "Gratuit",        bg: V.surface,               color: V.textSub },
   payé:           { label: "Payé",           bg: "rgba(52,211,153,0.12)",  color: "#34d399" },
   impayé:         { label: "Impayé",         bg: "rgba(239,68,68,0.12)",   color: "#ef4444" },
@@ -176,50 +182,53 @@ export function HQStatCard({
 }) {
   const inner = (
     <div
-      className="group flex flex-col gap-4 rounded-2xl border p-5 transition-all duration-150"
-      style={{ background: V.card, borderColor: V.border }}
+      className="group flex flex-col gap-3 border transition-all duration-150"
+      style={{
+        background: V.card, borderColor: V.border,
+        borderRadius: HQ.r.md, padding: "14px 16px",
+      }}
       onMouseEnter={e => href && ((e.currentTarget as HTMLDivElement).style.borderColor = V.borderHov)}
       onMouseLeave={e => href && ((e.currentTarget as HTMLDivElement).style.borderColor = V.border)}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between">
         <span
-          className="text-[0.7rem] font-bold uppercase tracking-[0.09em]"
+          className="text-[0.68rem] font-semibold uppercase tracking-[0.07em]"
           style={{ color: V.textMuted }}
         >
           {label}
         </span>
         <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-          style={{ background: `${color}20` }}
+          className="flex h-7 w-7 shrink-0 items-center justify-center"
+          style={{ background: `${color}18`, borderRadius: HQ.r.sm }}
         >
-          <Icon size={14} style={{ color }} />
+          <Icon size={13} style={{ color }} />
         </div>
       </div>
 
       {loading ? (
-        <div className="h-9 w-28 animate-pulse rounded-lg" style={{ background: V.border }} />
+        <div className="h-7 w-24 animate-pulse rounded" style={{ background: V.border }} />
       ) : (
-        <div>
+        <div className="flex items-end justify-between gap-2">
           <p
-            className="text-[1.85rem] font-black leading-none tabular-nums"
+            className="text-[1.6rem] font-black leading-none tabular-nums"
             style={{ color: V.text }}
           >
             {value}
           </p>
-          <div className="mt-2 flex items-center gap-2">
-            {sub && <span className="text-[0.73rem]" style={{ color: V.textMuted }}>{sub}</span>}
+          <div className="flex items-center gap-1.5 pb-0.5">
+            {sub && <span className="text-[0.68rem]" style={{ color: V.textMuted }}>{sub}</span>}
             {trend !== undefined && trend !== null && (
               <span
-                className="flex items-center gap-0.5 text-[0.7rem] font-semibold"
-                style={{ color: trend.up ? "#34d399" : "#ef4444" }}
+                className="flex items-center gap-0.5 text-[0.68rem] font-semibold"
+                style={{ color: trend.up ? "#22c55e" : "#ef4444" }}
               >
-                {trend.up ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
+                {trend.up ? <ArrowUp size={8} /> : <ArrowDown size={8} />}
                 {trend.v}%
               </span>
             )}
             {trend === null && (
-              <span className="flex items-center gap-0.5 text-[0.7rem]" style={{ color: V.textFaint }}>
-                <Minus size={9} />stable
+              <span className="flex items-center gap-0.5 text-[0.68rem]" style={{ color: V.textFaint }}>
+                <Minus size={8} />—
               </span>
             )}
           </div>
@@ -252,7 +261,7 @@ export function HQPageHeader({
   breadcrumbs?: { label: string; href?: string }[];
 }) {
   return (
-    <div className="mb-8">
+    <div className="mb-5">
       {breadcrumbs && breadcrumbs.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           {breadcrumbs.map((bc, i) => (

@@ -22,7 +22,7 @@ import AppLauncher from "@/components/nav/AppLauncher";
 import BottomNavMobile from "@/components/nav/BottomNavMobile";
 import { BetaFeedbackWidget } from "@/components/BetaFeedbackWidget";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const PINNED_KEY = "djama-pinned-apps";
 const COLLAPSED_KEY = "djama-sidebar-collapsed";
 
@@ -441,8 +441,9 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="client-app djama-app-shell flex h-screen overflow-hidden"
-      data-theme={mode}
-      style={{ transition: "background 0.3s ease", colorScheme: mode }}
+      data-theme={isDark ? "dark" : "light"}
+      style={{ transition: "background 0.3s ease", colorScheme: isDark ? "dark" : "light" }}
+      suppressHydrationWarning
     >
       {/* Modals */}
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />

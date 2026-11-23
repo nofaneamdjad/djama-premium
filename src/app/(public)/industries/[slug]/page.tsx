@@ -8,7 +8,7 @@ import { ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { getIndustryBySlug, INDUSTRIES_BY_CATEGORY } from "@/lib/industries-data";
 import { getAppBySlug } from "@/lib/applications-data";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 const ease = [0.22, 1, 0.36, 1] as const;
 const viewport = { once: true, margin: "-60px" };
 
@@ -72,7 +72,7 @@ export default function IndustryDetailPage({ params }: { params: Promise<{ slug:
               <Link
                 href="/login"
                 className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-[0.92rem] font-extrabold text-black transition-all hover:opacity-90"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+                style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)` }}
               >
                 Essayer gratuitement <ArrowRight size={15} />
               </Link>
@@ -193,7 +193,7 @@ export default function IndustryDetailPage({ params }: { params: Promise<{ slug:
           <Link
             href="/login"
             className="mt-7 inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-[0.95rem] font-extrabold text-black transition-all hover:opacity-90"
-            style={{ background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+            style={{ background: `linear-gradient(135deg, ${GOLD}, #FFB900)` }}
           >
             Commencer gratuitement <ArrowRight size={15} />
           </Link>

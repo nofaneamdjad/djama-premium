@@ -84,16 +84,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Référence Stripe manquante" }, { status: 400 });
   }
 
+  // Clé d'idempotence : empêche les doublons si l'appel est retryé
+  const { createHash } = await import("crypto");
+  const idempotencyKey = createHash("sha256")
+    .update(`${tx.id as string}|${refundAmount}|${user.id}`)
+    .digest("hex");
+
   try {
-    const refund = await stripe.refunds.create({
-      ...(chargeId ? { charge: chargeId } : { payment_intent: piId! }),
-      amount: refundAmount,
-      metadata: {
-        transaction_id:  tx.id as string,
-        payment_link_id: id,
-        user_id:         user.id,
+    const refund = await stripe.refunds.create(
+      {
+        ...(chargeId ? { charge: chargeId } : { payment_intent: piId! }),
+        amount: refundAmount,
+        metadata: {
+          transaction_id:  tx.id as string,
+          payment_link_id: id,
+          user_id:         user.id,
+        },
       },
-    });
+      { idempotencyKey },
+    );
 
     const newRefunded   = (tx.refunded_amount as number) + refundAmount / 100;
     const isFullRefund  = newRefunded >= (tx.amount as number);
