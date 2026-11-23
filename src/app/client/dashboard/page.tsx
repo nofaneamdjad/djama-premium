@@ -8,7 +8,7 @@ import {
   ArrowUpRight, X, Sparkles, Send, ChevronDown,
   ReceiptText, Users, CreditCard, CheckCircle2,
   AlertCircle, FileBarChart2, FileText, Briefcase, ChevronRight,
-  RefreshCw, AlertTriangle, Calendar, BarChart3, Lock,
+  RefreshCw, AlertTriangle, Calendar, BarChart3, Lock, Upload,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fmtEurInt } from "@/lib/format";
@@ -16,7 +16,7 @@ import { useSubscription } from "@/lib/use-require-subscription";
 import { useTheme } from "@/lib/theme-context";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 const AI_SUGGESTIONS = [
   "Analyse mon activité",
@@ -26,23 +26,23 @@ const AI_SUGGESTIONS = [
 ] as const;
 
 const QUICK_ACTIONS = [
-  { label: "Créer une facture",   href: "/client/factures",  Icon: ReceiptText },
-  { label: "Ajouter un client",   href: "/client/crm",       Icon: Users       },
-  { label: "Ajouter une dépense", href: "/client/depenses",  Icon: CreditCard  },
-  { label: "Créer un projet",     href: "/client/projets",   Icon: Briefcase   },
-  { label: "Créer avec DJAMA",    href: "/client/assistant", Icon: Sparkles    },
-] as const;
+  { label: "Créer une facture",    href: "/client/factures/documents?new=1&type=facture", Icon: ReceiptText, color: "#FFB900" },
+  { label: "Ajouter un client",    href: "/client/crm",                                  Icon: Users,       color: "#3b82f6" },
+  { label: "Ajouter une dépense",  href: "/client/depenses",                             Icon: CreditCard,  color: "#ef4444" },
+  { label: "Créer un projet",      href: "/client/projets",                              Icon: Briefcase,   color: "#8b5cf6" },
+  { label: "Importer un document", href: "/client/bloc-notes",                           Icon: Upload,      color: "#0ea5e9" },
+];
 
 const PINNED_APPS = [
-  { label: "Factures",     href: "/client/factures",    Icon: ReceiptText },
-  { label: "CRM",          href: "/client/crm",         Icon: Users       },
-  { label: "Dépenses",     href: "/client/depenses",    Icon: CreditCard  },
-  { label: "Trésorerie",   href: "/client/tresorerie",  Icon: BarChart3   },
-  { label: "Projets",      href: "/client/projets",     Icon: Briefcase   },
-  { label: "Planning",     href: "/client/planning",    Icon: Calendar    },
-  { label: "Assistant IA", href: "/client/assistant",   Icon: Sparkles    },
-  { label: "Contrats",     href: "/client/contrats",    Icon: FileText    },
-] as const;
+  { label: "Factures",     href: "/client/factures",    Icon: ReceiptText, color: "#FFB900" },
+  { label: "CRM",          href: "/client/crm",         Icon: Users,       color: "#3b82f6" },
+  { label: "Dépenses",     href: "/client/depenses",    Icon: CreditCard,  color: "#ef4444" },
+  { label: "Trésorerie",   href: "/client/tresorerie",  Icon: BarChart3,   color: "#22c55e" },
+  { label: "Projets",      href: "/client/projets",     Icon: Briefcase,   color: "#8b5cf6" },
+  { label: "Planning",     href: "/client/planning",    Icon: Calendar,    color: "#f97316" },
+  { label: "Assistant IA", href: "/client/assistant",   Icon: Sparkles,    color: "#ec4899" },
+  { label: "Contrats",     href: "/client/contrats",    Icon: FileText,    color: "#0ea5e9" },
+];
 
 // ── Theme tokens ──────────────────────────────────────────────────────────────
 function tok(isDark: boolean) {
@@ -293,6 +293,16 @@ type RecentItem = {
   date: string;
   href: string;
   itemType: "facture" | "devis" | "expense";
+  status?: string;
+};
+
+const DOC_STATUS: Record<string, { label: string; color: string }> = {
+  brouillon:  { label: "Brouillon",  color: "#6b7280" },
+  envoyé:     { label: "Envoyé",     color: "#3b82f6" },
+  en_attente: { label: "En attente", color: "#f97316" },
+  payé:       { label: "Payé",       color: "#22c55e" },
+  en_retard:  { label: "Retard",     color: "#ef4444" },
+  annulé:     { label: "Annulé",     color: "#6b7280" },
 };
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -455,8 +465,9 @@ export default function DashboardPage() {
         label:    `${d.type === "facture" ? "Facture" : "Devis"} ${d.numero || ""}`.trim(),
         sub:      d.client_nom || "",
         date:     d.date_document || "",
-        href:     "/client/factures",
+        href:     d.type === "facture" ? "/client/factures/factures" : "/client/factures/devis",
         itemType: d.type as RecentItem["itemType"],
+        status:   d.statut as string | undefined,
       })),
       ...recentExps.map(e => ({
         id:       e.id,
@@ -861,7 +872,7 @@ export default function DashboardPage() {
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Actions rapides</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {QUICK_ACTIONS.map(({ label, href, Icon }) => (
+            {QUICK_ACTIONS.map(({ label, href, Icon, color }) => (
               <Link
                 key={href}
                 href={href}
@@ -870,9 +881,9 @@ export default function DashboardPage() {
               >
                 <div
                   className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${GOLD}14` }}
+                  style={{ background: `${color}14` }}
                 >
-                  <Icon size={20} style={{ color: GOLD }} />
+                  <Icon size={20} style={{ color }} />
                 </div>
                 <span className="text-xs font-medium leading-snug" style={{ color: t.text2 }}>{label}</span>
               </Link>
@@ -921,7 +932,20 @@ export default function DashboardPage() {
                       <ItemIcon size={15} style={{ color }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate" style={{ color: t.text }}>{item.label}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-medium truncate" style={{ color: t.text }}>{item.label}</div>
+                        {item.status && DOC_STATUS[item.status] && (
+                          <span
+                            className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+                            style={{
+                              background: `${DOC_STATUS[item.status].color}1a`,
+                              color: DOC_STATUS[item.status].color,
+                            }}
+                          >
+                            {DOC_STATUS[item.status].label}
+                          </span>
+                        )}
+                      </div>
                       {item.sub && (
                         <div className="text-xs truncate mt-0.5" style={{ color: t.text3 }}>{item.sub}</div>
                       )}
@@ -953,7 +977,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="grid grid-cols-4 lg:grid-cols-8 gap-3">
-            {PINNED_APPS.map(({ label, href, Icon }) => (
+            {PINNED_APPS.map(({ label, href, Icon, color }) => (
               <Link
                 key={href}
                 href={href}
@@ -962,9 +986,9 @@ export default function DashboardPage() {
               >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${GOLD}12` }}
+                  style={{ background: `${color}12` }}
                 >
-                  <Icon size={18} style={{ color: GOLD }} />
+                  <Icon size={18} style={{ color }} />
                 </div>
                 <span className="text-[11px] font-medium leading-snug" style={{ color: t.text3 }}>
                   {label}
