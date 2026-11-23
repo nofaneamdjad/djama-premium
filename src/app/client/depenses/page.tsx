@@ -68,7 +68,7 @@ interface ExpenseBudget {
 const CATS = [
   { v: "transport",     l: "Transport",     I: Car,        c: "#3b82f6" },
   { v: "repas",         l: "Repas",         I: Coffee,     c: "#f59e0b" },
-  { v: "logiciel",      l: "Logiciel",      I: Monitor,    c: "#c9a55a" },
+  { v: "logiciel",      l: "Logiciel",      I: Monitor,    c: "#FFB900" },
   { v: "carburant",     l: "Carburant",     I: Droplets,   c: "#ef4444" },
   { v: "hotel",         l: "Hôtel",         I: Building2,  c: "#06b6d4" },
   { v: "equipement",    l: "Équipement",    I: Package,    c: "#10b981" },
@@ -92,7 +92,7 @@ const STATUSES = [
   { v: "submitted",  l: "Soumis",    c: "#3b82f6" },
   { v: "approved",   l: "Approuvé",  c: "#10b981" },
   { v: "rejected",   l: "Refusé",    c: "#ef4444" },
-  { v: "reimbursed", l: "Remboursé", c: "#c9a55a" },
+  { v: "reimbursed", l: "Remboursé", c: "#FFB900" },
 ] as const;
 
 const CURRENCIES: Currency[] = ["EUR", "USD", "GBP", "CHF", "CAD", "MAD"];
@@ -310,7 +310,7 @@ function CsvImportModal({ userId, rules, onClose, onImported }: {
         {/* Header */}
         <div className={`flex shrink-0 items-center justify-between px-5 py-3.5 border-b ${borderStyle}`}>
           <div className="flex items-center gap-2.5">
-            <FileUp size={15} className="text-[#c9a55a]" />
+            <FileUp size={15} className="text-[#FFB900]" />
             <span className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Importer un relevé bancaire</span>
           </div>
           <button onClick={onClose} className={`rounded-lg p-1.5 transition-colors ${isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-700"}`}>
@@ -326,7 +326,7 @@ function CsvImportModal({ userId, rules, onClose, onImported }: {
               onDragLeave={() => setDrag(false)}
               onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
               onClick={() => fileRef.current?.click()}
-              className={`cursor-pointer rounded-2xl border-2 border-dashed py-12 text-center transition-all ${drag ? "border-[#c9a55a] bg-[rgba(201,165,90,0.06)]" : isDark ? "border-white/10 hover:border-white/20" : "border-gray-200 hover:border-gray-300"}`}>
+              className={`cursor-pointer rounded-2xl border-2 border-dashed py-12 text-center transition-all ${drag ? "border-[#FFB900] bg-[rgba(255,185,0,0.06)]" : isDark ? "border-white/10 hover:border-white/20" : "border-gray-200 hover:border-gray-300"}`}>
               <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
               <Upload size={30} className={`mx-auto mb-3 ${isDark ? "text-white/20" : "text-gray-300"}`} />
@@ -346,7 +346,7 @@ function CsvImportModal({ userId, rules, onClose, onImported }: {
             {/* Toolbar */}
             <div className={`flex shrink-0 items-center justify-between gap-3 px-4 py-2.5 border-b ${borderStyle}`}>
               <p className={`text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                <span className="font-semibold text-[#c9a55a]">{selCount}</span> / {rows.length} sélectionnée{selCount !== 1 ? "s" : ""} · {fmtCur(selTotal)}
+                <span className="font-semibold text-[#FFB900]">{selCount}</span> / {rows.length} sélectionnée{selCount !== 1 ? "s" : ""} · {fmtCur(selTotal)}
               </p>
               <div className="flex items-center gap-1.5">
                 <button onClick={() => setRows(r => r.map(x => ({ ...x, selected: true  })))}
@@ -365,7 +365,7 @@ function CsvImportModal({ userId, rules, onClose, onImported }: {
                   className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${row.selected ? isDark ? "bg-white/[0.04]" : "bg-gray-50" : "opacity-35"}`}>
                   <input type="checkbox" checked={row.selected}
                     onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, selected: e.target.checked } : x))}
-                    className="accent-[#c9a55a] shrink-0 cursor-pointer" />
+                    className="accent-[#FFB900] shrink-0 cursor-pointer" />
                   <input type="date" value={row.date}
                     onChange={e => setRows(r => r.map((x, i) => i === ri ? { ...x, date: e.target.value } : x))}
                     className={`w-[108px] shrink-0 rounded-lg border px-2 py-1 text-xs outline-none ${isDark ? "[color-scheme:dark] border-white/[0.08] bg-transparent text-white/80" : "border-gray-200 bg-white text-gray-700"}`} />
@@ -396,7 +396,7 @@ function CsvImportModal({ userId, rules, onClose, onImported }: {
                 </button>
                 <button onClick={doImport} disabled={selCount === 0 || saving}
                   className="flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold transition-all hover:brightness-110 disabled:opacity-40"
-                  style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                  style={{ background: "#FFB900", color: "#0a0a0a" }}>
                   {saving
                     ? <div className="h-3 w-3 animate-spin rounded-full border border-t-transparent border-black/60" />
                     : <FileUp size={12} />}
@@ -529,7 +529,7 @@ function RulesView({ rules, setRules }: {
         </div>
         <button onClick={startNew} disabled={editing !== null}
           className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40"
-          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+          style={{ background: "#FFB900", color: "#0a0a0a" }}>
           <Plus size={13} /> Nouvelle règle
         </button>
       </div>
@@ -576,7 +576,7 @@ function RulesView({ rules, setRules }: {
             </button>
             <button onClick={saveRule} disabled={!draft.match_value.trim() || saving}
               className="flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold transition-all hover:brightness-110 disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+              style={{ background: "#FFB900", color: "#0a0a0a" }}>
               {saving ? <div className="h-3 w-3 animate-spin rounded-full border border-t-transparent border-black/60" /> : <CheckCircle2 size={12} />}
               Enregistrer
             </button>
@@ -588,8 +588,8 @@ function RulesView({ rules, setRules }: {
       {sortedRules.length === 0 && editing === null ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
-            style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
-            <Zap size={24} style={{ color: "#c9a55a66" }} />
+            style={{ background: "rgba(255,185,0,0.08)", border: "1px solid rgba(255,185,0,0.15)" }}>
+            <Zap size={24} style={{ color: "#FFB90066" }} />
           </div>
           <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>
             Aucune règle définie
@@ -607,7 +607,7 @@ function RulesView({ rules, setRules }: {
               style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#fff", border: `1px solid ${borderC}` }}>
               {/* Active toggle */}
               <button type="button" onClick={() => toggleActive(rule)}
-                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${rule.active ? "bg-[#c9a55a]" : isDark ? "bg-white/10" : "bg-gray-200"}`}>
+                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${rule.active ? "bg-[#FFB900]" : isDark ? "bg-white/10" : "bg-gray-200"}`}>
                 <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${rule.active ? "translate-x-4" : "translate-x-0.5"}`} />
               </button>
               {/* Rule description */}
@@ -619,7 +619,7 @@ function RulesView({ rules, setRules }: {
                   <span className={isDark ? "text-white/35" : "text-gray-400"}>Si le libellé </span>
                   <span className="font-medium">{OP_LABELS[rule.match_op]}</span>
                   <span className={isDark ? "text-white/35" : "text-gray-400"}> «&nbsp;</span>
-                  <span className="font-semibold text-[#c9a55a]">{rule.match_value}</span>
+                  <span className="font-semibold text-[#FFB900]">{rule.match_value}</span>
                   <span className={isDark ? "text-white/35" : "text-gray-400"}>&nbsp;» → </span>
                   <span className="font-semibold">{getCat(rule.category).l}</span>
                   {rule.priority > 0 && (
@@ -991,7 +991,7 @@ function ExpenseModal({
                 set("recur_freq",      enabling ? "mensuel" : null);
                 set("recur_next_date", enabling ? nextRecurDate("mensuel", form.date ?? new Date().toISOString().slice(0, 10)) : null);
               }}
-              className={`relative h-5 w-9 rounded-full transition-colors ${form.recur_freq ? "bg-[#c9a55a]" : isDark ? "bg-white/10" : "bg-gray-200"}`}>
+              className={`relative h-5 w-9 rounded-full transition-colors ${form.recur_freq ? "bg-[#FFB900]" : isDark ? "bg-white/10" : "bg-gray-200"}`}>
               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${form.recur_freq ? "translate-x-4" : "translate-x-0.5"}`} />
             </button>
           </div>
@@ -1088,7 +1088,7 @@ function ExpenseModal({
           </button>
           <button type="button" onClick={handleSave} disabled={saving || uploading}
             className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
-            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+            style={{ background: "#FFB900", color: "#0a0a0a" }}>
             {saving ? "Enregistrement…" : expense?.id ? "Mettre à jour" : "Ajouter"}
           </button>
         </div>
@@ -1160,7 +1160,7 @@ function ReportModal({
           </button>
           <button onClick={() => onSave(form)} disabled={!form.title?.trim()}
             className="flex-1 rounded-xl py-2.5 text-sm font-bold disabled:opacity-40 transition-all hover:brightness-110"
-            style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+            style={{ background: "#FFB900", color: "#0a0a0a" }}>
             {report ? "Mettre à jour" : "Créer"}
           </button>
         </div>
@@ -1287,11 +1287,11 @@ function BudgetView({
         {/* Toggle mensuel / annuel */}
         <div className={`flex rounded-xl border p-0.5 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
           <button onClick={() => setViewMode("monthly")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === "monthly" ? "bg-[#c9a55a] text-black" : isDark ? "text-white/40 hover:text-white/70" : "text-gray-500 hover:text-gray-700"}`}>
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === "monthly" ? "bg-[#FFB900] text-black" : isDark ? "text-white/40 hover:text-white/70" : "text-gray-500 hover:text-gray-700"}`}>
             Mensuel
           </button>
           <button onClick={() => setViewMode("yearly")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === "yearly" ? "bg-[#c9a55a] text-black" : isDark ? "text-white/40 hover:text-white/70" : "text-gray-500 hover:text-gray-700"}`}>
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === "yearly" ? "bg-[#FFB900] text-black" : isDark ? "text-white/40 hover:text-white/70" : "text-gray-500 hover:text-gray-700"}`}>
             Annuel
           </button>
         </div>
@@ -1394,13 +1394,13 @@ function BudgetView({
                       </div>
                       {/* Push toggle */}
                       <label className={`flex items-center gap-1 cursor-pointer select-none text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                        <input type="checkbox" className="h-3 w-3 accent-[#c9a55a]" checked={nPush}
+                        <input type="checkbox" className="h-3 w-3 accent-[#FFB900]" checked={nPush}
                           onChange={e => saveAlertSettings(budRec.id, { notify_push: e.target.checked })} />
                         Push
                       </label>
                       {/* Email toggle */}
                       <label className={`flex items-center gap-1 cursor-pointer select-none text-xs ${isDark ? "text-white/40" : "text-gray-500"}`}>
-                        <input type="checkbox" className="h-3 w-3 accent-[#c9a55a]" checked={nEmail}
+                        <input type="checkbox" className="h-3 w-3 accent-[#FFB900]" checked={nEmail}
                           onChange={e => saveAlertSettings(budRec.id, { notify_email: e.target.checked })} />
                         Email
                       </label>
@@ -1576,8 +1576,8 @@ function ExportPackModal({
         {/* Header */}
         <div className={`flex items-center justify-between px-5 pt-5 pb-4 border-b ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl flex items-center justify-center" style={{ background: "#c9a55a22" }}>
-              <Download size={15} style={{ color: "#c9a55a" }} />
+            <div className="h-8 w-8 rounded-xl flex items-center justify-center" style={{ background: "#FFB90022" }}>
+              <Download size={15} style={{ color: "#FFB900" }} />
             </div>
             <div>
               <h2 className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Export pack justificatifs</h2>
@@ -1652,7 +1652,7 @@ function ExportPackModal({
           {progress && (
             <div className="space-y-1.5">
               <div className={`h-2 overflow-hidden rounded-full ${isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}>
-                <motion.div className="h-full rounded-full" style={{ background: "#c9a55a" }}
+                <motion.div className="h-full rounded-full" style={{ background: "#FFB900" }}
                   animate={{ width: `${pct}%` }} transition={{ duration: 0.3 }} />
               </div>
               <p className={`text-center text-xs ${isDark ? "text-white/40" : "text-gray-400"}`}>
@@ -1673,7 +1673,7 @@ function ExportPackModal({
             </button>
             <button disabled={matching.length === 0} onClick={download}
               className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg,#c9a55a,#e8c97a)" }}>
+              style={{ background: "linear-gradient(135deg,#FFB900,#FFD44D)" }}>
               {matching.length === 0 ? "Aucune dépense" : `Télécharger le pack`}
             </button>
           </div>
@@ -2014,10 +2014,10 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
     { l: "Ce mois",       v: fmtCur(thisTotal),
       sub: momPct !== 0 ? `${momPct > 0 ? "▲" : "▼"} ${Math.abs(momPct).toFixed(0)}% vs mois préc.` : "—",
       c: momPct > 5 ? "#ef4444" : momPct < -5 ? "#10b981" : "#6b7280" },
-    { l: `Total ${year}`, v: fmtCur(allTotal),     sub: `${yearExp.length} dépense${yearExp.length !== 1 ? "s" : ""}`,      c: "#c9a55a" },
+    { l: `Total ${year}`, v: fmtCur(allTotal),     sub: `${yearExp.length} dépense${yearExp.length !== 1 ? "s" : ""}`,      c: "#FFB900" },
     { l: "Moy. / jour",   v: fmtCur(avgDay),       sub: `sur ${daysPassed} jour${daysPassed !== 1 ? "s" : ""}`,             c: "#3b82f6" },
     { l: "Dépense max",   v: maxExp ? fmtCur(amtEur(maxExp, rates)) : "—",
-      sub: maxExp ? `${getCat(maxExp.category).l} · ${fmtDate(maxExp.date)}` : "Aucune", c: "#c9a55a" },
+      sub: maxExp ? `${getCat(maxExp.category).l} · ${fmtDate(maxExp.date)}` : "Aucune", c: "#FFB900" },
     { l: "Taux approbation", v: `${approvedPct}%`, sub: `${yearExp.filter(e => e.status==="approved"||e.status==="reimbursed").length} / ${yearExp.length}`, c: "#10b981" },
     { l: "Sans justificatif", v: String(noReceipt), sub: `${yearExp.length > 0 ? Math.round((noReceipt/yearExp.length)*100) : 0}% des dépenses ${yearStr}`, c: noReceipt > 0 ? "#f59e0b" : "#10b981" },
   ];
@@ -2132,13 +2132,13 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
         </div>
         {focusMonth && (
           <button onClick={() => setFocusMonth(null)}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold ${isDark ? "border-[#c9a55a]/30 text-[#c9a55a] bg-[#c9a55a]/10" : "border-amber-200 text-amber-700 bg-amber-50"}`}>
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold ${isDark ? "border-[#FFB900]/30 text-[#FFB900] bg-[#FFB900]/10" : "border-amber-200 text-amber-700 bg-amber-50"}`}>
             <X size={10} /> {fmtMonthYear(focusMonth)} — voir toute l'année
           </button>
         )}
         <button disabled={exporting} onClick={exportPDF}
           className="flex items-center gap-2 rounded-xl px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50 transition-all hover:brightness-110"
-          style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)" }}>
+          style={{ background: "#FFB900" }}>
           <Download size={12} /> {exporting ? "Génération…" : `PDF ${year}`}
         </button>
       </div>
@@ -2150,7 +2150,7 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
             {/* Accent bar */}
             <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${c}, transparent)` }} />
             {/* Glow doré */}
-            {c === "#c9a55a" && (
+            {c === "#FFB900" && (
               <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-[0.08] blur-2xl" style={{ background: c }} />
             )}
             <p className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${isDark ? "text-white/28" : "text-gray-400"}`}>{l}</p>
@@ -2205,12 +2205,12 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
                     style={{
                       height:     `${barH}px`,
                       background: isFocus
-                        ? `linear-gradient(to bottom, #c9a55a, #c9a55a88)`
+                        ? `linear-gradient(to bottom, #FFB900, #FFB90088)`
                         : isCur
-                        ? `linear-gradient(to bottom, #c9a55a66, #c9a55a22)`
+                        ? `linear-gradient(to bottom, #FFB90066, #FFB90022)`
                         : isDark ? "rgba(255,255,255,0.07)" : "#e5e7eb",
-                      boxShadow:  isFocus ? "0 0 8px rgba(201,165,90,0.3)" : "none",
-                      outline:    isFocus ? "1.5px solid rgba(201,165,90,0.5)" : "none",
+                      boxShadow:  isFocus ? "0 0 8px rgba(255,185,0,0.3)" : "none",
+                      outline:    isFocus ? "1.5px solid rgba(255,185,0,0.5)" : "none",
                       outlineOffset: "2px",
                     }} />
                 </button>
@@ -2223,7 +2223,7 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
               const isFocus = key === focusMonth;
               return (
                 <div key={key} className="flex flex-1 min-w-0 flex-col items-center justify-end" style={{ minWidth: "14px" }}>
-                  <span className={`text-[10px] leading-none transition-all ${isFocus ? "font-bold text-[#c9a55a]" : isDark ? "text-white/22" : "text-gray-400"}`}>
+                  <span className={`text-[10px] leading-none transition-all ${isFocus ? "font-bold text-[#FFB900]" : isDark ? "text-white/22" : "text-gray-400"}`}>
                     {label}
                   </span>
                   {count > 0 && (
@@ -2323,7 +2323,7 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
                       </div>
                       <div className={`h-1 overflow-hidden rounded-full ${isDark ? "bg-white/[0.05]" : "bg-gray-100"}`}>
                         <motion.div className="h-full rounded-full"
-                          style={{ backgroundColor: "#c9a55a" }}
+                          style={{ backgroundColor: "#FFB900" }}
                           initial={{ width: 0 }} animate={{ width: `${share}%` }}
                           transition={{ duration: 0.6, ease: "easeOut" }} />
                       </div>
@@ -2414,8 +2414,8 @@ function RapprochementView({ expenses, userId }: { expenses: Expense[]; userId: 
       <div className="space-y-4">
         <div className={`flex flex-col items-center gap-4 rounded-2xl border border-dashed py-12 ${isDark ? "border-white/[0.10] bg-white/[0.01]" : "border-gray-300 bg-gray-50"}`}>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
-            style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
-            <Landmark size={24} style={{ color: "#c9a55a66" }} />
+            style={{ background: "rgba(255,185,0,0.08)", border: "1px solid rgba(255,185,0,0.15)" }}>
+            <Landmark size={24} style={{ color: "#FFB90066" }} />
           </div>
           <div className="text-center space-y-1">
             <p className={`text-sm font-semibold ${isDark ? "text-white/70" : "text-gray-700"}`}>Rapprochement bancaire</p>
@@ -2424,7 +2424,7 @@ function RapprochementView({ expenses, userId }: { expenses: Expense[]; userId: 
           <div className="flex gap-2">
             <button onClick={() => fileRef2.current?.click()}
               className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all hover:brightness-110"
-              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+              style={{ background: "#FFB900", color: "#0a0a0a" }}>
               <Upload size={13} /> Importer CSV
             </button>
             <button onClick={() => setShowPaste(true)}
@@ -2444,7 +2444,7 @@ function RapprochementView({ expenses, userId }: { expenses: Expense[]; userId: 
               <button onClick={() => setShowPaste(false)} className={`rounded-xl border px-3 py-1.5 text-xs transition-colors ${isDark ? "border-white/[0.08] text-white/30 hover:text-white/60" : "border-gray-200 text-gray-500 hover:text-gray-700"}`}>Annuler</button>
               <button onClick={handlePaste} disabled={!pasteText.trim()}
                 className="rounded-xl px-4 py-1.5 text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                style={{ background: "#FFB900", color: "#0a0a0a" }}>
                 Analyser
               </button>
             </div>
@@ -2484,7 +2484,7 @@ function RapprochementView({ expenses, userId }: { expenses: Expense[]; userId: 
           )}
           <button onClick={() => void saveReconciliation(txs)} disabled={saving}
             aria-label="Sauvegarder le rapprochement"
-            className="flex items-center gap-1.5 rounded-xl border border-[#c9a55a44] px-3 py-2 text-xs font-semibold text-[#c9a55a] transition-all hover:bg-[#c9a55a11] disabled:opacity-40">
+            className="flex items-center gap-1.5 rounded-xl border border-[#FFB90044] px-3 py-2 text-xs font-semibold text-[#FFB900] transition-all hover:bg-[#FFB90011] disabled:opacity-40">
             {saving ? "…" : "Sauvegarder"}
           </button>
           <button onClick={() => { setTxs([]); setSavedId(null); }}
@@ -2553,7 +2553,7 @@ function RapprochementView({ expenses, userId }: { expenses: Expense[]; userId: 
                       <p className={`text-xs ${isDark ? "text-white/25" : "text-gray-400"}`}>Correspondances possibles :</p>
                       {suggestions.map(e => (
                         <button key={e.id} onClick={ev => { ev.stopPropagation(); toggleMatch(tx.id, e.id); }}
-                          className={`w-full flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left hover:border-[#c9a55a44] transition-all ${isDark ? "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+                          className={`w-full flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left hover:border-[#FFB90044] transition-all ${isDark ? "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
                           <div className="flex-1 min-w-0">
                             <p className={`truncate text-xs font-medium ${isDark ? "text-white/70" : "text-gray-700"}`}>{e.description}</p>
                             <p className={`text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>{fmtDate(e.date)} · {getCat(e.category).l}</p>
@@ -2840,7 +2840,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
 
   if (loading) return (
     <div className="flex h-full items-center justify-center" style={{ background: isDark ? "#111111" : "#f8f8f8" }}>
-      <div className={`h-8 w-8 animate-spin rounded-full border-2 border-t-[#c9a55a] ${isDark ? "border-white/10" : "border-gray-200"}`} />
+      <div className={`h-8 w-8 animate-spin rounded-full border-2 border-t-[#FFB900] ${isDark ? "border-white/10" : "border-gray-200"}`} />
     </div>
   );
 
@@ -2858,22 +2858,22 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
         {/* Gold top line */}
         <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, ease: "easeOut" }}
           className="absolute inset-x-0 top-0 h-[2px] origin-left"
-          style={{ background: "linear-gradient(90deg,#c9a55a,#e8c97a,#c9a55a44,transparent)" }} />
+          style={{ background: "linear-gradient(90deg,#FFB900,#FFD44D,#FFB90044,transparent)" }} />
 
         {/* Floating orbs */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-12 -right-12 h-56 w-56 rounded-full opacity-[0.07]"
-            style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }} />
+            style={{ background: "radial-gradient(circle,#FFB900,transparent 70%)" }} />
           <div className="absolute top-4 left-1/4 h-32 w-32 rounded-full opacity-[0.04]"
-            style={{ background: "radial-gradient(circle,#c9a55a,transparent 70%)" }} />
+            style={{ background: "radial-gradient(circle,#FFB900,transparent 70%)" }} />
           <div className="absolute -bottom-4 left-1/2 h-28 w-28 rounded-full opacity-[0.03]"
             style={{ background: "radial-gradient(circle,#10b981,transparent 70%)" }} />
         </div>
 
         <div className="relative z-10 flex items-start justify-between gap-4">
           <div>
-            <h1 className={`text-xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>Dépenses</h1>
-            <p className={`mt-0.5 text-xs ${isDark ? "text-white/30" : "text-gray-400"}`}>
+            <h1 className={`text-2xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-[#111827]"}`}>Dépenses</h1>
+            <p className={`mt-0.5 text-xs ${isDark ? "text-white/30" : "text-[#64748B]"}`}>
               {expenses.length} dépense{expenses.length !== 1 ? "s" : ""} · {fmtCur(grandTotal)} total
             </p>
           </div>
@@ -2958,33 +2958,33 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
               onClick={() => { setEditExpense(null); setShowModal(true); }}
               aria-label="Nouvelle dépense"
               className="flex h-8 items-center gap-2 rounded-xl px-4 text-sm font-bold transition-all hover:brightness-110"
-              style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+              style={{ background: "#FFB900", color: "#000000" }}>
               <Plus size={14} /> Dépense
             </motion.button>
           </div>
         </div>
 
-        {/* KPI strip — 4 colonnes */}
+        {/* KPI strip — 4 cartes indépendantes */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, type: "spring", stiffness: 260, damping: 24 }}
-          className="relative z-10 mt-5 grid grid-cols-2 sm:grid-cols-4 overflow-hidden rounded-2xl border"
-          style={{ background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.88)", borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+          className="relative z-10 mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {([
-            { l: "Total dépenses",  v: fmtCur(grandTotal),    c: "#c9a55a", I: Receipt,   sub: `${expenses.length} dep.` },
-            { l: "Total filtré",    v: fmtCur(filteredTotal),  c: "rgba(255,255,255,0.85)", I: BarChart2, sub: `${filtered.length} résultats` },
-            { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#10b981", I: Zap,       sub: "Récupérable" },
-            { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b", I: Wallet,    sub: "Carte perso" },
-          ] as const).map(({ l, v, c, I: Icon, sub }, i) => (
+            { l: "Total dépenses",  v: fmtCur(grandTotal),    c: "#FFB900", I: Receipt   },
+            { l: "Total filtré",    v: fmtCur(filteredTotal),  c: "#64748B", I: BarChart2 },
+            { l: "TVA récupérable", v: fmtCur(filteredVAT),   c: "#16A34A", I: Zap       },
+            { l: "À rembourser",    v: fmtCur(filteredReimb), c: "#f59e0b", I: Wallet    },
+          ] as const).map(({ l, v, c, I: Icon }) => (
             <div key={l}
-              className={`flex flex-col gap-1 px-3 py-3 ${i < 3 ? (isDark ? "border-r border-white/[0.07]" : "border-r border-gray-100") : ""}`}>
-              <div className="flex w-full items-start justify-between">
-                <span className="text-base font-black leading-tight tabular-nums" style={{ color: c }}>{v}</span>
-                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: c + "18" }}>
-                  <Icon size={10} style={{ color: c }} />
+              className={`flex flex-col gap-2 rounded-2xl border p-3 sm:p-4 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "bg-white"}`}
+              style={{ borderColor: isDark ? undefined : "rgba(0,0,0,0.07)" }}>
+              <div className="flex items-center justify-between">
+                <span className={`text-[11px] font-semibold uppercase tracking-wide ${isDark ? "text-white/40" : "text-[#64748B]"}`}>{l}</span>
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg" style={{ background: c + "1A" }}>
+                  <Icon size={12} style={{ color: c }} />
                 </div>
               </div>
-              <span className="text-[11px] font-bold uppercase tracking-wide"
-                style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)" }}>{l}</span>
+              <span className="text-base font-black leading-tight tabular-nums"
+                style={{ color: isDark ? (c === "#64748B" ? "rgba(255,255,255,0.75)" : c) : c }}>{v}</span>
             </div>
           ))}
         </motion.div>
@@ -3002,14 +3002,14 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
               <I size={13} />{l}
               {badge > 0 && (
                 <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[11px] font-bold"
-                  style={{ background: id === "budgets" ? "rgba(239,68,68,0.25)" : "rgba(201,165,90,0.2)", color: id === "budgets" ? "#ef4444" : "#c9a55a" }}>
+                  style={{ background: id === "budgets" ? "rgba(239,68,68,0.25)" : "rgba(255,185,0,0.2)", color: id === "budgets" ? "#ef4444" : "#FFB900" }}>
                   {badge}
                 </span>
               )}
               {tab === id && (
                 <motion.div layoutId="dep-tab-indicator"
                   className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
-                  style={{ background: "linear-gradient(90deg,#c9a55a,#e8c97a)" }} />
+                  style={{ background: "#FFB900" }} />
               )}
             </button>
           ))}
@@ -3077,8 +3077,8 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                 {filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-24 gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                      style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
-                      <Receipt size={24} style={{ color: "#c9a55a66" }} />
+                      style={{ background: "rgba(255,185,0,0.08)", border: "1px solid rgba(255,185,0,0.15)" }}>
+                      <Receipt size={24} style={{ color: "#FFB90066" }} />
                     </div>
                     <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>
                       {hasFilters ? "Aucune dépense ne correspond aux filtres" : "Aucune dépense enregistrée"}
@@ -3121,7 +3121,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                                 <p className={`text-sm font-extrabold leading-tight truncate ${isDark ? "text-white/90" : "text-gray-800"}`}>{e.description}</p>
                                 {e.recur_freq && (
                                   <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-                                    style={{ background: "rgba(201,165,90,0.12)", color: "#c9a55a", border: "1px solid rgba(201,165,90,0.22)" }}>
+                                    style={{ background: "rgba(255,185,0,0.12)", color: "#FFB900", border: "1px solid rgba(255,185,0,0.22)" }}>
                                     <Repeat2 size={7} /> {RECUR_FREQS.find(r => r.v === e.recur_freq)?.l}
                                   </span>
                                 )}
@@ -3223,7 +3223,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                 <div className="flex justify-end">
                   <button onClick={() => { setEditReport(null); setShowReportModal(true); }}
                     className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all hover:brightness-110"
-                    style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
+                    style={{ background: "#FFB900", color: "#0a0a0a" }}>
                     <Plus size={14} /> Nouvelle note
                   </button>
                 </div>
@@ -3231,8 +3231,8 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                 {reports.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-24 gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                      style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.15)" }}>
-                      <FileText size={24} style={{ color: "#c9a55a66" }} />
+                      style={{ background: "rgba(255,185,0,0.08)", border: "1px solid rgba(255,185,0,0.15)" }}>
+                      <FileText size={24} style={{ color: "#FFB90066" }} />
                     </div>
                     <p className={`text-sm ${isDark ? "text-white/30" : "text-gray-400"}`}>Aucune note de frais</p>
                     <button onClick={() => { setEditReport(null); setShowReportModal(true); }}
