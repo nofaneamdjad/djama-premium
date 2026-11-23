@@ -43,6 +43,7 @@ next-env.d.ts
 
 .vercel
 .claude/worktrees/
+.claude/settings.local.json
 
 # local dev & build artifacts
 .next-local/
