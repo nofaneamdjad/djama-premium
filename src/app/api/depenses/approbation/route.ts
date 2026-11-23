@@ -48,11 +48,21 @@ export async function PATCH(req: NextRequest) {
 
   if (!existing) return NextResponse.json({ error: "Dépense introuvable" }, { status: 404 });
 
-  // N'importe quel membre de l'org peut approuver/rejeter si la dépense lui est visible
-  // Le propriétaire peut toujours modifier sa propre dépense
+  // Le propriétaire peut toujours modifier sa propre dépense.
+  // Les membres d'une org ne peuvent approuver que s'ils ont un rôle habilitant.
   const isOwner = existing.user_id === user.id;
-  const isMember = existing.organization_id !== null;
-  if (!isOwner && !isMember) {
+  let canApprove = isOwner;
+  if (!isOwner && existing.organization_id) {
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("role")
+      .eq("organization_id", existing.organization_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    canApprove = membership !== null &&
+      ["owner", "admin", "accountant"].includes(membership.role);
+  }
+  if (!canApprove) {
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
   }
 

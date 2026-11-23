@@ -1217,11 +1217,28 @@ function BudgetView({
   }, [expenses, month, rates]);
 
   const isDark = useDark();
-  const getBudget = (cat: string) =>
-    budgets.find(b => b.category === cat && b.period === "monthly" && b.year === year && b.month === mo)?.amount ?? 0;
+  const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
+
+  const spentYearly = useMemo(() => {
+    const result: Record<string, number> = {};
+    expenses.forEach(e => {
+      if (e.date.startsWith(String(year)) && e.status !== "rejected") {
+        result[e.category] = (result[e.category] ?? 0) + amtEur(e, rates);
+      }
+    });
+    return result;
+  }, [expenses, year, rates]);
+
+  const activeSpent = viewMode === "yearly" ? spentYearly : spent;
+
+  const getBudget = (cat: string) => viewMode === "yearly"
+    ? budgets.find(b => b.category === cat && b.period === "yearly" && b.year === year)?.amount ?? 0
+    : budgets.find(b => b.category === cat && b.period === "monthly" && b.year === year && b.month === mo)?.amount ?? 0;
 
   async function saveBudget(cat: string, amount: number) {
-    const existing = budgets.find(b => b.category === cat && b.period === "monthly" && b.year === year && b.month === mo);
+    const existing = viewMode === "yearly"
+      ? budgets.find(b => b.category === cat && b.period === "yearly" && b.year === year)
+      : budgets.find(b => b.category === cat && b.period === "monthly" && b.year === year && b.month === mo);
     if (existing) {
       const res = await fetch("/api/depenses/budget", {
         method: "PATCH",
@@ -1233,10 +1250,13 @@ function BudgetView({
         onBudgetsChange(budgets.map(b => b.id === existing.id ? data as ExpenseBudget : b));
       }
     } else {
+      const payload = viewMode === "yearly"
+        ? { category: cat, amount, period: "yearly", year, month: null, alert_threshold: 80, notify_push: true, notify_email: false }
+        : { category: cat, amount, period: "monthly", year, month: mo, alert_threshold: 80, notify_push: true, notify_email: false };
       const res = await fetch("/api/depenses/budget", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: cat, amount, period: "monthly", year, month: mo, alert_threshold: 80, notify_push: true, notify_email: false }),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         const data = await res.json();
@@ -1258,37 +1278,59 @@ function BudgetView({
   }
 
   const totalBudget = CATS.reduce((a, { v }) => a + getBudget(v), 0);
-  const totalSpent  = Object.values(spent).reduce((a, b) => a + b, 0);
-  const over = totalBudget > 0 && totalSpent > totalBudget;
+  const totalSpentAmt = Object.values(activeSpent).reduce((a, b) => a + b, 0);
+  const over = totalBudget > 0 && totalSpentAmt > totalBudget;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
-          <Calendar size={13} className={`shrink-0 ${isDark ? "text-white/30" : "text-gray-400"}`} />
-          <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-            className={`bg-transparent text-sm outline-none ${isDark ? "[color-scheme:dark] text-white" : "text-gray-900"}`} />
+        {/* Toggle mensuel / annuel */}
+        <div className={`flex rounded-xl border p-0.5 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-gray-50"}`}>
+          <button onClick={() => setViewMode("monthly")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === "monthly" ? "bg-[#c9a55a] text-black" : isDark ? "text-white/40 hover:text-white/70" : "text-gray-500 hover:text-gray-700"}`}>
+            Mensuel
+          </button>
+          <button onClick={() => setViewMode("yearly")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === "yearly" ? "bg-[#c9a55a] text-black" : isDark ? "text-white/40 hover:text-white/70" : "text-gray-500 hover:text-gray-700"}`}>
+            Annuel
+          </button>
         </div>
+        {viewMode === "monthly" && (
+          <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+            <Calendar size={13} className={`shrink-0 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+            <input type="month" value={month} onChange={e => setMonth(e.target.value)}
+              className={`bg-transparent text-sm outline-none ${isDark ? "[color-scheme:dark] text-white" : "text-gray-900"}`} />
+          </div>
+        )}
+        {viewMode === "yearly" && (
+          <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${isDark ? "border-white/[0.08] bg-white/[0.03]" : "border-gray-200 bg-white"}`}>
+            <Calendar size={13} className={`shrink-0 ${isDark ? "text-white/30" : "text-gray-400"}`} />
+            <input type="number" value={year} min={2020} max={2099}
+              onChange={e => { const y = e.target.value; setMonth(`${y}-${String(mo).padStart(2, "0")}`); }}
+              className={`w-20 bg-transparent text-sm outline-none ${isDark ? "[color-scheme:dark] text-white" : "text-gray-900"}`} />
+          </div>
+        )}
         <p className={`text-sm ${isDark ? "text-white/40" : "text-gray-500"}`}>
           Budget total : <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{fmtCur(totalBudget)}</span>
-          {" · "}Dépensé : <span className={`font-semibold ${over ? "text-red-400" : "text-green-400"}`}>{fmtCur(totalSpent)}</span>
+          {" · "}Dépensé : <span className={`font-semibold ${over ? "text-red-400" : "text-green-400"}`}>{fmtCur(totalSpentAmt)}</span>
           {totalBudget > 0 && (
             <span className={`ml-1 ${over ? "text-red-400" : isDark ? "text-white/30" : "text-gray-400"}`}>
-              ({over ? "+" : ""}{fmtCur(totalSpent - totalBudget)})
+              ({over ? "+" : ""}{fmtCur(totalSpentAmt - totalBudget)})
             </span>
           )}
         </p>
       </div>
 
       {(() => {
-        const overCats = CATS.filter(({ v }) => getBudget(v) > 0 && (spent[v] ?? 0) > getBudget(v));
+        const overCats = CATS.filter(({ v }) => getBudget(v) > 0 && (activeSpent[v] ?? 0) > getBudget(v));
         if (overCats.length === 0) return null;
+        const label = viewMode === "yearly" ? String(year) : fmtMonthYear(month);
         return (
           <div className="flex items-start gap-2.5 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5">
             <AlertTriangle size={14} className="shrink-0 text-red-400 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-red-400">
-                {overCats.length} catégorie{overCats.length > 1 ? "s" : ""} en dépassement ({fmtMonthYear(month)})
+                {overCats.length} catégorie{overCats.length > 1 ? "s" : ""} en dépassement ({label})
               </p>
               <p className="mt-0.5 text-xs text-red-400/70">{overCats.map(c => c.l).join(", ")}</p>
             </div>
@@ -1298,9 +1340,11 @@ function BudgetView({
 
       <div className="space-y-2">
         {CATS.map(({ v, l, I, c }) => {
-          const budRec  = budgets.find(b => b.category === v && b.period === "monthly" && b.year === year && b.month === mo);
+          const budRec  = viewMode === "yearly"
+            ? budgets.find(b => b.category === v && b.period === "yearly" && b.year === year)
+            : budgets.find(b => b.category === v && b.period === "monthly" && b.year === year && b.month === mo);
           const budget  = budRec?.amount ?? 0;
-          const s       = spent[v] ?? 0;
+          const s       = activeSpent[v] ?? 0;
           const pct     = budget > 0 ? Math.min((s / budget) * 100, 100) : 0;
           const catOver = budget > 0 && s > budget;
           const alertThr  = budRec?.alert_threshold ?? 80;
@@ -2295,23 +2339,65 @@ function RapportView({ expenses, rates = { EUR: 1 } }: { expenses: Expense[]; ra
   );
 }
 
-function RapprochementView({ expenses }: { expenses: Expense[] }) {
+function RapprochementView({ expenses, userId }: { expenses: Expense[]; userId: string | null }) {
   const fileRef2 = useRef<HTMLInputElement>(null);
-  const [txs,       setTxs]       = useState<BankTx[]>([]);
-  const [showPaste, setShowPaste] = useState(false);
-  const [pasteText, setPasteText] = useState("");
+  const [txs,        setTxs]        = useState<BankTx[]>([]);
+  const [showPaste,  setShowPaste]  = useState(false);
+  const [pasteText,  setPasteText]  = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [savedId,    setSavedId]    = useState<string | null>(null);
+  const [saving,     setSaving]     = useState(false);
+  const [savedMsg,   setSavedMsg]   = useState("");
+
+  useEffect(() => {
+    if (!userId) return;
+    fetch("/api/depenses/reconciliation")
+      .then(r => r.ok ? r.json() : null)
+      .then((rec: { id: string; txs: BankTx[] } | null) => {
+        if (rec?.txs?.length) {
+          setTxs(autoMatch(rec.txs, expenses));
+          setSavedId(rec.id);
+          setSavedMsg("Chargé depuis la sauvegarde");
+        }
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  async function saveReconciliation(newTxs: BankTx[]) {
+    if (!userId) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/depenses/reconciliation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: savedId ?? undefined, txs: newTxs }),
+      });
+      if (res.ok) {
+        const rec = await res.json() as { id: string };
+        setSavedId(rec.id);
+        setSavedMsg("Sauvegardé ✓");
+        setTimeout(() => setSavedMsg(""), 2500);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return;
     const reader = new FileReader();
-    reader.onload = ev => setTxs(autoMatch(parseBankCSV(ev.target?.result as string ?? ""), expenses));
+    reader.onload = ev => {
+      const newTxs = autoMatch(parseBankCSV(ev.target?.result as string ?? ""), expenses);
+      setTxs(newTxs);
+    };
     reader.readAsText(f, "utf-8");
     e.target.value = "";
   }
 
   function handlePaste() {
-    setTxs(autoMatch(parseBankCSV(pasteText), expenses));
+    const newTxs = autoMatch(parseBankCSV(pasteText), expenses);
+    setTxs(newTxs);
     setShowPaste(false); setPasteText("");
   }
 
@@ -2392,10 +2478,21 @@ function RapprochementView({ expenses }: { expenses: Expense[] }) {
             <span className="text-amber-400/60">Non rapprochées : </span><span className="font-bold text-amber-400">{unmatchedCount}</span>
           </div>
         </div>
-        <button onClick={() => setTxs([])}
-          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:text-red-400 hover:border-red-500/20 transition-all ${isDark ? "border-white/[0.08] text-white/30" : "border-gray-200 text-gray-500"}`}>
-          <Trash2 size={12} /> Réinitialiser
-        </button>
+        <div className="flex items-center gap-2">
+          {savedMsg && (
+            <span className="text-xs text-green-400">{savedMsg}</span>
+          )}
+          <button onClick={() => void saveReconciliation(txs)} disabled={saving}
+            aria-label="Sauvegarder le rapprochement"
+            className="flex items-center gap-1.5 rounded-xl border border-[#c9a55a44] px-3 py-2 text-xs font-semibold text-[#c9a55a] transition-all hover:bg-[#c9a55a11] disabled:opacity-40">
+            {saving ? "…" : "Sauvegarder"}
+          </button>
+          <button onClick={() => { setTxs([]); setSavedId(null); }}
+            aria-label="Réinitialiser le rapprochement"
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:text-red-400 hover:border-red-500/20 transition-all ${isDark ? "border-white/[0.08] text-white/30" : "border-gray-200 text-gray-500"}`}>
+            <Trash2 size={12} /> Réinitialiser
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -2493,7 +2590,9 @@ export default function DepensesPage() {
   const [reports,  setReports]  = useState<ExpenseReport[]>([]);
   const [budgets,  setBudgets]  = useState<ExpenseBudget[]>([]);
   const [rules,    setRules]    = useState<ExpenseRule[]>([]);
-  const [rates,    setRates]    = useState<Record<string, number>>({ EUR: 1 });
+  const [rates,    setRates]    = useState<Record<string, number>>({
+    EUR: 1, USD: 1.08, GBP: 0.86, CHF: 0.95, CAD: 1.47, MAD: 10.82,
+  });
 
   const [tab,             setTab]             = useState<"depenses"|"notes"|"budgets"|"rapprochement"|"rapport"|"regles"|"approbation">("depenses");
   const [showModal,       setShowModal]       = useState(false);
@@ -2511,6 +2610,7 @@ export default function DepensesPage() {
   const [confirmDeleteReportId,  setConfirmDeleteReportId]  = useState<string | null>(null);
   const [showCsvImport,          setShowCsvImport]          = useState(false);
   const [showExportPack,         setShowExportPack]         = useState(false);
+  const [showExportMenu,         setShowExportMenu]         = useState(false);
 
   const toast$ = (msg: string, type: "success"|"error" = "success") => setToast({ msg, type });
 
@@ -2778,39 +2878,85 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {/* Mobile : menu export déroulant */}
+            <div className="relative sm:hidden">
+              {showExportMenu && (
+                <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />
+              )}
+              <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.18 }}
+                onClick={() => setShowExportMenu(v => !v)}
+                aria-label="Options d'export"
+                className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}
+                style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
+                <ChevronDown size={14} />
+              </motion.button>
+              {showExportMenu && (
+                <div className={`absolute right-0 top-10 z-50 flex flex-col rounded-2xl border p-1 shadow-2xl min-w-[180px] ${isDark ? "border-white/[0.08] bg-[#1a1a1a]" : "border-gray-200 bg-white"}`}>
+                  <button onClick={() => { void exportPDF(); setShowExportMenu(false); }}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.06]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`}>
+                    <FileCheck size={13} className="text-red-400" /> Exporter PDF
+                  </button>
+                  <button onClick={() => { exportCSV(); setShowExportMenu(false); }}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.06]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`}>
+                    <Download size={13} /> Exporter CSV
+                  </button>
+                  <button onClick={() => { exportXLSX(); setShowExportMenu(false); }}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.06]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`}>
+                    <Table2 size={13} className="text-green-400" /> Exporter Excel
+                  </button>
+                  <button onClick={() => { setShowExportPack(true); setShowExportMenu(false); }}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.06]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`}>
+                    <Download size={13} /> Export justificatifs
+                  </button>
+                  <button onClick={() => { setShowCsvImport(true); setShowExportMenu(false); }}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${isDark ? "text-white/60 hover:text-white hover:bg-white/[0.06]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`}>
+                    <FileUp size={13} /> Importer CSV
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop : boutons d'export individuels */}
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.18 }} onClick={() => void exportPDF()} title="Exporter PDF"
-              className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all hover:text-red-400 ${isDark ? "text-white/30" : "text-gray-400"}`}
+              aria-label="Exporter PDF"
+              className={`hidden sm:flex h-8 w-8 items-center justify-center rounded-xl transition-all hover:text-red-400 ${isDark ? "text-white/30" : "text-gray-400"}`}
               style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
               <FileCheck size={14} />
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }} onClick={exportCSV} title="Exporter CSV"
-              className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}
+              aria-label="Exporter CSV"
+              className={`hidden sm:flex h-8 w-8 items-center justify-center rounded-xl transition-all ${isDark ? "text-white/30 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}
               style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
               <Download size={14} />
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.22 }} onClick={exportXLSX} title="Exporter Excel"
-              className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${isDark ? "text-white/30 hover:text-green-400" : "text-gray-400 hover:text-green-600"}`}
+              aria-label="Exporter Excel"
+              className={`hidden sm:flex h-8 w-8 items-center justify-center rounded-xl transition-all ${isDark ? "text-white/30 hover:text-green-400" : "text-gray-400 hover:text-green-600"}`}
               style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
               <Table2 size={14} />
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.22 }} onClick={() => setShowExportPack(true)} title="Exporter pack justificatifs"
-              className={`flex h-8 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-all ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+              aria-label="Exporter pack justificatifs"
+              className={`hidden sm:flex h-8 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-all ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
               style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
               <Download size={13} /> Export
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.24 }} onClick={() => setShowCsvImport(true)} title="Importer relevé CSV"
-              className={`flex h-8 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-all ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+              aria-label="Importer relevé CSV"
+              className={`hidden sm:flex h-8 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-all ${isDark ? "text-white/50 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
               style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)" }}>
               <FileUp size={13} /> Import CSV
             </motion.button>
             <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.26 }}
               onClick={() => { setEditExpense(null); setShowModal(true); }}
+              aria-label="Nouvelle dépense"
               className="flex h-8 items-center gap-2 rounded-xl px-4 text-sm font-bold transition-all hover:brightness-110"
               style={{ background: "linear-gradient(135deg,#c9a55a,#b08d45)", color: "#0a0a0a" }}>
               <Plus size={14} /> Dépense
@@ -3007,8 +3153,8 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                               </div>
                             </div>
 
-                            {/* Actions — toujours visibles sur mobile, hover sur desktop */}
-                            <div className="shrink-0 flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                            {/* Actions */}
+                            <div className="shrink-0 flex gap-1">
                               {confirmDeleteExpenseId === e.id ? (
                                 <>
                                   <button onClick={() => deleteExpense(e.id)}
@@ -3035,7 +3181,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
                             </div>
 
                             <select value={e.status} onChange={ev => updateStatus(e.id, ev.target.value as ExpStatus)}
-                              className={`shrink-0 cursor-pointer appearance-none rounded-lg border px-2 py-1 text-xs outline-none md:opacity-0 md:group-hover:opacity-100 transition-all ${isDark ? "[color-scheme:dark] border-white/[0.05] bg-[#181818] text-white/30 hover:border-white/15" : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"}`}
+                              className={`shrink-0 cursor-pointer appearance-none rounded-lg border px-2 py-1 text-xs outline-none transition-all ${isDark ? "[color-scheme:dark] border-white/[0.05] bg-[#181818] text-white/30 hover:border-white/15" : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"}`}
                               style={{ minWidth: "90px" }}>
                               {STATUSES.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
                             </select>
@@ -3189,7 +3335,7 @@ ${rows.map(r => `<Row>${r.map(cell).join("")}</Row>`).join("\n")}
 
             {tab === "rapprochement" && (
               <motion.div key="rap2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <RapprochementView expenses={expenses} />
+                <RapprochementView expenses={expenses} userId={userId} />
               </motion.div>
             )}
 
