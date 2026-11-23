@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Présence digitale, outils de gestion, accompagnement expert et IA pour entrepreneurs.",
     start_url: "/",
     display: "standalone",
-    background_color: "#09090b",
-    theme_color: "#c9a55a",
+    background_color: "#ffffff",
+    theme_color: "#FFB900",
     orientation: "portrait-primary",
     icons: [
       {
@@ -22,7 +22,18 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/icons/icon-512.png",
         sizes: "512x512",
         type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/icon-512-maskable.png",
+        sizes: "512x512",
+        type: "image/png",
         purpose: "maskable",
+      },
+      {
+        src: "/icons/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
       },
     ],
     categories: ["business", "productivity"],

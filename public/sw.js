@@ -3,7 +3,7 @@
    - Handle Web Push notifications (even when app is closed)
    - Network-first strategy
 ──────────────────────────────────────────────────────────────── */
-const CACHE = "djama-v2";
+const CACHE = "djama-v3";
 const OFFLINE_URL = "/";
 
 /* ── Install ── */
