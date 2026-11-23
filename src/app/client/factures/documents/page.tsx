@@ -3347,19 +3347,21 @@ export default function FacturesPage() {
 
                   {/* ── Lignes de prestation ── */}
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
                       <ReceiptText size={10} className={`shrink-0 ${tw5}`}/>
                       <span className={`shrink-0 text-xs font-bold uppercase tracking-widest ${tw4}`}>Lignes de prestation</span>
-                      <div className={`flex-1 h-px ${tsep}`}/>
-                      <button onClick={addItem}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition hover:opacity-80"
-                        style={{ color:activeColor, borderColor:`${activeColor}44`, background:`${activeColor}11` }}>
-                        <Plus size={10}/> Ajouter une ligne
-                      </button>
-                      <button onClick={() => { setShowAiBox(v => !v); setTimeout(() => document.getElementById("ai-prompt-input")?.focus(), 50); }}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.07)] px-2.5 py-1 text-xs font-semibold text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.15)]">
-                        <Sparkles size={10}/> IA
-                      </button>
+                      <div className={`hidden sm:block flex-1 h-px ${tsep}`}/>
+                      <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+                        <button onClick={addItem}
+                          className="flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition hover:opacity-80"
+                          style={{ color:activeColor, borderColor:`${activeColor}44`, background:`${activeColor}11` }}>
+                          <Plus size={10}/> Ajouter une ligne
+                        </button>
+                        <button onClick={() => { setShowAiBox(v => !v); setTimeout(() => document.getElementById("ai-prompt-input")?.focus(), 50); }}
+                          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[rgba(255,185,0,0.3)] bg-[rgba(255,185,0,0.07)] px-2.5 py-1 text-xs font-semibold text-[#FFB900] transition hover:bg-[rgba(255,185,0,0.15)]">
+                          <Sparkles size={10}/> IA
+                        </button>
+                      </div>
                     </div>
 
                     {/* ── IA : génération de lignes ── */}

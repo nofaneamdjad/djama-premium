@@ -253,14 +253,14 @@ export default function VueEnsemble() {
     <div className={`min-h-full px-6 py-6 ${pageBg}`}>
 
       {/* ── Header ── */}
-      <div className="mb-7 flex items-start justify-between gap-4">
+      <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight" style={{ color: textPrimary }}>Vue d&apos;ensemble</h1>
           <p className="mt-0.5 text-sm" style={{ color: textSecond }}>
             Tableau de bord de votre activité de facturation
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={load}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition hover:opacity-80"

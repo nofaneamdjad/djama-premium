@@ -217,6 +217,50 @@ function CollapsedStrip({ isDark, onExpand }: { isDark: boolean; onExpand: () =>
   );
 }
 
+function FacturesMobileNav({ isDark }: { isDark: boolean }) {
+  const pathname = usePathname();
+
+  const bg     = isDark ? "rgba(255,255,255,0.015)" : "#ffffff";
+  const border = isDark ? "rgba(255,255,255,0.07)"  : "#e5e7eb";
+
+  const allItems: NavItem[] = [
+    ...NAV_GROUPS.flatMap(g => g.items),
+    { href: "/client/factures/documents", label: "Éditeur", icon: FileText },
+  ];
+
+  function isActive(item: NavItem) {
+    if (item.exact) return pathname === item.href;
+    return pathname.startsWith(item.href);
+  }
+
+  return (
+    <nav
+      className="lg:hidden shrink-0 flex items-center gap-0.5 overflow-x-auto border-b px-2 py-1.5 scrollbar-none"
+      style={{ background: bg, borderColor: border }}
+    >
+      {allItems.map(item => {
+        const Icon = item.icon;
+        const active = isActive(item);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex shrink-0 flex-col items-center gap-0.5 rounded-xl px-2.5 py-1.5 transition-all"
+            style={
+              active
+                ? { color: GOLD, background: isDark ? "rgba(255,185,0,0.12)" : "rgba(255,185,0,0.10)" }
+                : { color: isDark ? "rgba(255,255,255,0.45)" : "#6b7280" }
+            }
+          >
+            <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
+            <span className="text-[9px] font-semibold leading-tight whitespace-nowrap">{item.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export default function FacturesLayout({ children }: { children: React.ReactNode }) {
   const { isDark } = useTheme();
   const [navOpen, setNavOpen] = useState(true);
@@ -246,9 +290,12 @@ export default function FacturesLayout({ children }: { children: React.ReactNode
         }
       </div>
 
-      {/* Contenu principal */}
-      <div className="flex-1 overflow-auto">
-        {children}
+      {/* Zone principale avec nav mobile en haut */}
+      <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
+        <FacturesMobileNav isDark={isDark} />
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -225,8 +225,9 @@ export default function ParametresFacturesPage() {
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [saveErr, setSaveErr] = useState("");
-  const [zoom,    setZoom]    = useState(80);     // 50..150
+  const [zoom,       setZoom]       = useState(80);     // 50..150
   const [fullscreen, setFullscreen] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<"settings" | "preview">("settings");
 
   // ── Tokens couleur page ──────────────────────────────────────────────────────
   const pageBg      = isDark ? "#0f1117" : "#f3f4f6";
@@ -367,7 +368,7 @@ export default function ParametresFacturesPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition"
+          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
           style={
             saved
               ? { background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }
@@ -378,6 +379,27 @@ export default function ParametresFacturesPage() {
            saving  ? <><Loader2 size={13} className="animate-spin" /> Enregistrement…</> :
                      <><Save size={13} /> Enregistrer</>}
         </button>
+      </div>
+
+      {/* ── Toggle mobile Paramètres / Aperçu ─────────────────────── */}
+      <div
+        className="flex shrink-0 items-center gap-1 border-b px-4 py-2 sm:hidden"
+        style={{ background: panelBg, borderColor: divider }}
+      >
+        {(["settings", "preview"] as const).map(panel => (
+          <button
+            key={panel}
+            onClick={() => setMobilePanel(panel)}
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+            style={
+              mobilePanel === panel
+                ? { background: isDark ? "rgba(255,255,255,0.09)" : "#f3f4f6", color: textPrimary, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
+                : { color: textSecond }
+            }
+          >
+            {panel === "settings" ? "Paramètres" : "Aperçu en direct"}
+          </button>
+        ))}
       </div>
 
       {/* ── Erreur ──────────────────────────────────────────────────── */}
@@ -393,7 +415,7 @@ export default function ParametresFacturesPage() {
 
         {/* ── Panneau formulaire (gauche fixe) ── */}
         <div
-          className="shrink-0 overflow-y-auto"
+          className={`shrink-0 overflow-y-auto ${mobilePanel === "preview" ? "hidden sm:block" : ""}`}
           style={{
             width: 300,
             minWidth: 280,
@@ -547,7 +569,7 @@ export default function ParametresFacturesPage() {
         </div>
 
         {/* ── Panneau aperçu (droite flexible) ── */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className={`flex-1 flex-col overflow-hidden ${mobilePanel === "settings" ? "hidden sm:flex" : "flex"}`}>
           {/* Barre de contrôle aperçu */}
           <div
             className="flex shrink-0 items-center justify-between gap-3 px-4 py-2"
