@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DJAMA — Robot IA Le Compagnon V2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --yellow:#FFB900;
+  --black:#0A0A0A;
+  --surface:#1C1C1F;
+  --surface2:#141416;
+  --white:#FFFFFF;
+  --gray:#8A8A8E;
+  --gray2:#3A3A3C;
+  --font:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#111113;color:#E5E5E7;font-family:var(--font);min-height:100vh}
+
+/* ── Page layout ─────────────────────── */
+.page{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+.hdr{text-align:center;margin-bottom:48px}
+.hdr h1{font-size:clamp(22px,3vw,32px);font-weight:800;letter-spacing:-.03em;color:#fff}
+.hdr h1 span{color:var(--yellow)}
+.hdr p{margin-top:8px;color:var(--gray);font-size:14px}
+.badge{display:inline-block;background:rgba(255,185,0,.12);border:1px solid rgba(255,185,0,.3);color:var(--yellow);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:14px}
+
+/* ── State switcher ───────────────────── */
+.switcher{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:40px}
+.sw-btn{background:transparent;border:1px solid var(--gray2);color:var(--gray);font-family:var(--font);font-size:13px;font-weight:500;padding:8px 20px;border-radius:40px;cursor:pointer;transition:.2s}
+.sw-btn:hover{border-color:var(--yellow);color:#fff}
+.sw-btn.active{background:var(--yellow);border-color:var(--yellow);color:#000;font-weight:700}
+
+/* ── Section label ───────────────────── */
+.section-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);margin-bottom:20px;text-align:center}
+
+/* ── Hero panels ──────────────────────── */
+.hero-panels{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:48px}
+@media(max-width:600px){.hero-panels{grid-template-columns:1fr}}
+.panel{border-radius:20px;padding:48px 32px;display:flex;flex-direction:column;align-items:center;gap:20px;position:relative;overflow:hidden}
+.panel-white{background:#F5F5F5;border:1px solid #E0E0E0}
+.panel-black{background:#0A0A0A;border:1px solid #2A2A2D}
+.panel-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:12px}
+.panel-white .panel-label{background:#E8E8E8;color:#555}
+.panel-black .panel-label{background:#1C1C1F;color:var(--gray)}
+.robot-hero-wrap{width:160px;height:192px;display:flex;align-items:center;justify-content:center}
+.robot-hero-wrap svg{width:160px;height:192px}
+.state-name{font-size:12px;font-weight:500;color:var(--gray);letter-spacing:.04em}
+.panel-white .state-name{color:#888}
+
+/* ── Button format section ────────────── */
+.btn-section{margin-bottom:48px}
+.btn-rows{display:flex;flex-direction:column;gap:12px}
+.btn-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-bg-label{font-size:11px;font-weight:500;width:80px;color:var(--gray)}
+.robot-btn-wrap{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;transition:.18s transform}
+.robot-btn-wrap:hover{transform:scale(1.1)}
+.robot-btn-wrap.on-white{background:#F0F0F0;border:1.5px solid #DDD}
+.robot-btn-wrap.on-black{background:#111113;border:1.5px solid #2A2A2D;box-shadow:0 0 0 1.5px rgba(255,185,0,.15)}
+.robot-btn-wrap svg{width:40px;height:48px}
+.btn-state-label{font-size:10px;color:var(--gray);text-align:center;width:56px;margin-top:4px}
+
+/* ── Robot glow filter ────────────────── */
+.glow-yellow{filter:drop-shadow(0 0 6px rgba(255,185,0,.55))}
+.on-black .glow-yellow{filter:drop-shadow(0 0 8px rgba(255,185,0,.7))}
+/* Visibility on dark bg */
+.panel-black .robot-hero-wrap{filter:brightness(1.6) drop-shadow(0 0 12px rgba(255,185,0,.18))}
+
+/* ══════════════════════════════════════
+   ROBOT ANIMATIONS
+   ══════════════════════════════════════ */
+
+/* Shared */
+.r-head,.r-body,.r-arm-l,.r-arm-r{transform-box:fill-box;transform-origin:center}
+.r-eye-l,.r-eye-r,.r-iris-l,.r-iris-r,.r-pupil-l,.r-pupil-r{transform-box:fill-box;transform-origin:center}
+.r-brow-l,.r-brow-r{transform-box:fill-box;transform-origin:50% 100%}
+.r-arm-r-grp{transform-box:fill-box;transform-origin:50% 10%}
+.r-think-dot{transform-box:fill-box;transform-origin:center}
+
+/* ── IDLE ──────────────── */
+body.s-idle .r-robot{animation:idle-float 3.2s ease-in-out infinite}
+body.s-idle .r-eye-l,
+body.s-idle .r-eye-r{animation:idle-blink 5s 1.5s ease-in-out infinite}
+body.s-idle .r-antenna{animation:antenna-pulse 1.4s ease-in-out infinite alternate}
+@keyframes idle-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes idle-blink{0%,88%,100%{transform:scaleY(1)}90%,97%{transform:scaleY(0.08)}}
+@keyframes antenna-pulse{from{opacity:.6}to{opacity:1}}
+
+/* ── GREETING ──────────────── */
+body.s-greeting .r-head{animation:greet-nod .65s ease-in-out 0s 2 alternate}
+body.s-greeting .r-arm-r-grp{animation:greet-wave 1.1s ease-in-out infinite}
+body.s-greeting .r-brow-l,
+body.s-greeting .r-brow-r{animation:brow-raise .4s ease-out forwards}
+body.s-greeting .r-robot{animation:greet-bob 1.1s ease-in-out infinite}
+@keyframes greet-nod{0%{transform:rotate(0)}50%{transform:rotate(-10deg)}100%{transform:rotate(5deg)}}
+@keyframes greet-wave{0%,100%{transform:rotate(0)}25%{transform:rotate(-28deg)}75%{transform:rotate(20deg)}}
+@keyframes brow-raise{to{transform:translateY(-4px)}}
+@keyframes greet-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* ── THINKING ──────────────── */
+body.s-thinking .r-head{animation:think-tilt .4s ease-out forwards}
+body.s-thinking .r-eye-l,
+body.s-thinking .r-eye-r{animation:think-squint .3s ease-out forwards}
+body.s-thinking .r-brow-r{animation:brow-raise-one .4s ease-out forwards}
+body.s-thinking .r-think-dot{opacity:0;animation:dot-pop .3s ease-out forwards}
+body.s-thinking .r-think-dot:nth-child(1){animation-delay:.1s}
+body.s-thinking .r-think-dot:nth-child(2){animation-delay:.25s}
+body.s-thinking .r-think-dot:nth-child(3){animation-delay:.4s}
+body.s-thinking .r-led-1{animation:led-think .6s ease-in-out infinite alternate}
+@keyframes think-tilt{to{transform:rotate(6deg)}}
+@keyframes think-squint{to{transform:scaleY(.55)}}
+@keyframes brow-raise-one{to{transform:translateY(-5px)}}
+@keyframes dot-pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+@keyframes led-think{from{opacity:.3}to{opacity:1}}
+
+/* ── CHAT OPEN ──────────────── */
+body.s-chat .r-robot{animation:chat-pop-in .5s cubic-bezier(.34,1.56,.64,1) forwards}
+body.s-chat .r-chat-bubble{opacity:0;animation:bubble-in .45s .3s ease-out forwards}
+body.s-chat .r-eye-l,
+body.s-chat .r-eye-r{animation:eyes-widen .4s ease-out forwards}
+@keyframes chat-pop-in{from{transform:scale(.82)}to{transform:scale(1)}}
+@keyframes bubble-in{from{opacity:0;transform:translate(6px,4px) scale(.85)}to{opacity:1;transform:translate(0,0) scale(1)}}
+@keyframes eyes-widen{to{transform:scaleY(1.25)}}
+
+/* ── prefers-reduced-motion ──────────────── */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ── Notes section ────────────────────── */
+.notes{background:#1C1C1F;border:1px solid #2A2A2D;border-radius:14px;padding:24px;margin-top:24px}
+.notes h3{font-size:14px;font-weight:700;color:#fff;margin-bottom:14px}
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.note-card{background:#141416;border:1px solid #2A2A2D;border-radius:10px;padding:14px}
+.note-card h4{font-size:12px;font-weight:600;color:var(--yellow);margin-bottom:6px;letter-spacing:.03em}
+.note-card p{font-size:11.5px;line-height:1.5;color:var(--gray)}
+</style>
+</head>
+<body class="s-idle">
+
+<div class="page">
+
+  <div class="hdr">
+    <div class="badge">Chantier D — Design V2</div>
+    <h1>Robot IA <span>Le Compagnon</span> — Maquettes Premium</h1>
+    <p>Concept 02 redessiné · Proportions adultes · Sourcils · Iris technologique · Identité Noir/Blanc/#FFB900</p>
+  </div>
+
+  <!-- State switcher -->
+  <div class="switcher">
+    <button class="sw-btn active" onclick="setState('s-idle',this)">Repos</button>
+    <button class="sw-btn" onclick="setState('s-greeting',this)">Salutation</button>
+    <button class="sw-btn" onclick="setState('s-thinking',this)">Réflexion</button>
+    <button class="sw-btn" onclick="setState('s-chat',this)">Ouverture chat</button>
+  </div>
+
+  <!-- Hero panels -->
+  <div class="section-label">Format Hero — Grande taille</div>
+  <div class="hero-panels">
+    <!-- White background -->
+    <div class="panel panel-white">
+      <span class="panel-label">Fond blanc</span>
+      <div class="robot-hero-wrap" id="hero-white"></div>
+      <div class="state-name" id="label-w">État : Repos</div>
+    </div>
+    <!-- Black background -->
+    <div class="panel panel-black">
+      <span class="panel-label">Fond noir</span>
+      <div class="robot-hero-wrap glow-yellow" id="hero-black"></div>
+      <div class="state-name" id="label-b">État : Repos</div>
+    </div>
+  </div>
+
+  <!-- Button format -->
+  <div class="btn-section">
+    <div class="section-label">Format Bouton — Taille 56px</div>
+    <div class="btn-rows">
+      <div class="btn-row">
+        <span class="btn-bg-label">Fond blanc</span>
+        <div id="btns-white" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+      </div>
+      <div class="btn-row">
+        <span class="btn-bg-label">Fond noir</span>
+        <div id="btns-black" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Design notes -->
+  <div class="notes">
+    <h3>Décisions de design — V2 vs V1</h3>
+    <div class="notes-grid">
+      <div class="note-card">
+        <h4>Sourcils</h4>
+        <p>Arcs en #FFB900 au-dessus des yeux. Principal marqueur d'expressivité adulte — absent en V1.</p>
+      </div>
+      <div class="note-card">
+        <h4>Iris technologique</h4>
+        <p>Double anneau (contour + fill) avec pupille centrale noire. Profondeur et lecture "IA" sans cartoon.</p>
+      </div>
+      <div class="note-card">
+        <h4>Proportions tête/corps</h4>
+        <p>Ratio 1:1 contre 1:0.6 en V1. Corps plus développé, bras avec joint d'épaule visible.</p>
+      </div>
+      <div class="note-card">
+        <h4>Corps sombre</h4>
+        <p>#1C1C1F au lieu de blanc. Les accents #FFB900 ressortent comme des LED, pas comme de la couleur.</p>
+      </div>
+      <div class="note-card">
+        <h4>Bouche LED</h4>
+        <p>Panel noir + 3 segments à opacité dégradée. Référence interface sans être un sourire childish.</p>
+      </div>
+      <div class="note-card">
+        <h4>Panel de poitrine</h4>
+        <p>Anneau d'alimentation + traces de circuit L + barre de statut. Densité technologique premium.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ══ Robot SVG generator ══ */
+function robotSVG(scale, dark=false){
+  /* scale 1 = 160×192 (hero), scale 0.26 = ~40×50 (button) */
+  const w=160, h=192;
+  /* On dark bg: clearly lighter body fills + visible strokes */
+  const BF = dark ? "#46464E" : "#1C1C1F";   /* body fill */
+  const PF = dark ? "#2E2E36" : "#141416";    /* panel fill */
+  const SF = dark ? "0.95" : "0.3";          /* stroke opacity */
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" width="${Math.round(w*scale)}" height="${Math.round(h*scale)}">
+
+<g class="r-robot">
+
+  <!-- Antenna -->
+  <rect x="68" y="0" width="24" height="12" rx="4" fill="${BF}" stroke="#FFB900" stroke-width="0.5" stroke-opacity="0.6"/>
+  <circle cx="80" cy="2" r="4.5" fill="#FFB900" class="r-antenna"/>
+  <circle cx="80" cy="2" r="2" fill="${PF}"/>
+
+  <!-- Head group -->
+  <g class="r-head">
+    <!-- Ear sensors -->
+    <rect x="2" y="28" width="10" height="28" rx="4" fill="${BF}" stroke="#FFB900" stroke-width="0.4" stroke-opacity="0.5"/>
+    <rect x="2" y="34" width="10" height="6" rx="2" fill="#FFB900" fill-opacity="0.35"/>
+    <rect x="148" y="28" width="10" height="28" rx="4" fill="${BF}" stroke="#FFB900" stroke-width="0.4" stroke-opacity="0.5"/>
+    <rect x="148" y="34" width="10" height="6" rx="2" fill="#FFB900" fill-opacity="0.35"/>
+
+    <!-- Head main -->
+    <rect x="12" y="12" width="136" height="82" rx="12" fill="${BF}" stroke="#FFB900" stroke-width="0.5" stroke-opacity="${SF}"/>
+    <!-- Head top edge highlight -->
+    <rect x="12" y="12" width="136" height="3" rx="12" fill="#FFB900" fill-opacity="0.08"/>
+
+    <!-- Eyebrows (KEY adult element) -->
+    <path d="M22,26 Q50,16 68,24" fill="none" stroke="#FFB900" stroke-width="2.4" stroke-linecap="round" class="r-brow-l"/>
+    <path d="M92,24 Q110,16 138,26" fill="none" stroke="#FFB900" stroke-width="2.4" stroke-linecap="round" class="r-brow-r"/>
+
+    <!-- Left eye socket -->
+    <rect x="22" y="28" width="46" height="34" rx="5" fill="#0A0A0A"/>
+    <!-- Left iris outer ring -->
+    <circle cx="45" cy="45" r="12" fill="none" stroke="#FFB900" stroke-width="1.5" stroke-opacity="0.9"/>
+    <!-- Left iris fill -->
+    <circle cx="45" cy="45" r="7.5" fill="#FFB900" fill-opacity="0.92" class="r-eye-l"/>
+    <!-- Left pupil -->
+    <circle cx="45" cy="45" r="3" fill="#0A0A0A" class="r-pupil-l"/>
+    <!-- Left eye scan line -->
+    <line x1="24" y1="45" x2="66" y2="45" stroke="#FFB900" stroke-width="0.4" stroke-opacity="0.3"/>
+
+    <!-- Right eye socket -->
+    <rect x="92" y="28" width="46" height="34" rx="5" fill="#0A0A0A"/>
+    <!-- Right iris outer ring -->
+    <circle cx="115" cy="45" r="12" fill="none" stroke="#FFB900" stroke-width="1.5" stroke-opacity="0.9"/>
+    <!-- Right iris fill -->
+    <circle cx="115" cy="45" r="7.5" fill="#FFB900" fill-opacity="0.92" class="r-eye-r"/>
+    <!-- Right pupil -->
+    <circle cx="115" cy="45" r="3" fill="#0A0A0A" class="r-pupil-r"/>
+    <!-- Right eye scan line -->
+    <line x1="94" y1="45" x2="136" y2="45" stroke="#FFB900" stroke-width="0.4" stroke-opacity="0.3"/>
+
+    <!-- Mouth panel -->
+    <rect x="52" y="74" width="56" height="12" rx="5" fill="#070708"/>
+    <rect x="57" y="77" width="10" height="6" rx="3" fill="#FFB900" fill-opacity="0.9" class="r-led-1"/>
+    <rect x="71" y="77" width="10" height="6" rx="3" fill="#FFB900" fill-opacity="0.5" class="r-led-2"/>
+    <rect x="85" y="77" width="10" height="6" rx="3" fill="#FFB900" fill-opacity="0.25" class="r-led-3"/>
+    <rect x="99" y="77" width="4" height="6" rx="2" fill="#FFB900" fill-opacity="0.12"/>
+
+    <!-- Thinking dots (hidden by default) -->
+    <circle cx="136" cy="16" r="3.5" fill="#FFB900" class="r-think-dot" opacity="0"/>
+    <circle cx="146" cy="10" r="3.5" fill="#FFB900" class="r-think-dot" opacity="0"/>
+    <circle cx="154" cy="4" r="3.5" fill="#FFB900" class="r-think-dot" opacity="0"/>
+  </g>
+
+  <!-- Neck -->
+  <rect x="62" y="94" width="36" height="20" rx="4" fill="${PF}"/>
+  <!-- Collar accent -->
+  <rect x="56" y="112" width="48" height="4" rx="2" fill="#FFB900" fill-opacity="0.4"/>
+
+  <!-- Body group -->
+  <g class="r-body">
+    <!-- Left arm -->
+    <g class="r-arm-l">
+      <rect x="4" y="118" width="13" height="52" rx="6" fill="${BF}" stroke="#FFB900" stroke-width="0.4" stroke-opacity="${SF}"/>
+      <circle cx="10.5" cy="128" r="4" fill="${PF}" stroke="#FFB900" stroke-width="0.5" stroke-opacity="0.5"/>
+    </g>
+    <!-- Right arm group (animated for wave) -->
+    <g class="r-arm-r-grp">
+      <g class="r-arm-r">
+        <rect x="143" y="118" width="13" height="52" rx="6" fill="${BF}" stroke="#FFB900" stroke-width="0.4" stroke-opacity="${SF}"/>
+        <circle cx="149.5" cy="128" r="4" fill="${PF}" stroke="#FFB900" stroke-width="0.5" stroke-opacity="0.5"/>
+      </g>
+    </g>
+
+    <!-- Body main -->
+    <rect x="17" y="118" width="126" height="68" rx="10" fill="${BF}" stroke="#FFB900" stroke-width="0.5" stroke-opacity="${SF}"/>
+
+    <!-- Shoulder detail lines -->
+    <line x1="17" y1="130" x2="42" y2="130" stroke="#FFB900" stroke-width="0.5" stroke-opacity="0.4"/>
+    <line x1="118" y1="130" x2="143" y2="130" stroke="#FFB900" stroke-width="0.5" stroke-opacity="0.4"/>
+
+    <!-- Chest panel -->
+    <rect x="38" y="128" width="84" height="50" rx="7" fill="${PF}" stroke="#FFB900" stroke-width="0.4" stroke-opacity="0.55"/>
+
+    <!-- Power ring -->
+    <circle cx="80" cy="150" r="12" fill="none" stroke="#FFB900" stroke-width="1.4" stroke-opacity="0.6"/>
+    <circle cx="80" cy="150" r="8" fill="#FFB900" fill-opacity="0.92"/>
+    <circle cx="80" cy="150" r="3.5" fill="${PF}"/>
+    <circle cx="80" cy="150" r="1.5" fill="#FFB900"/>
+
+    <!-- Circuit traces -->
+    <path d="M44 162 L44 168 L58 168" fill="none" stroke="#FFB900" stroke-width="0.6" stroke-opacity="0.5" stroke-linecap="round"/>
+    <circle cx="58" cy="168" r="1.5" fill="#FFB900" fill-opacity="0.5"/>
+    <path d="M116 162 L116 168 L102 168" fill="none" stroke="#FFB900" stroke-width="0.6" stroke-opacity="0.5" stroke-linecap="round"/>
+    <circle cx="102" cy="168" r="1.5" fill="#FFB900" fill-opacity="0.5"/>
+
+    <!-- Status bar -->
+    <rect x="46" y="172" width="68" height="3.5" rx="1.75" fill="#0A0A0A"/>
+    <rect x="46" y="172" width="42" height="3.5" rx="1.75" fill="#FFB900" fill-opacity="0.65"/>
+
+    <!-- Base -->
+    <rect x="30" y="184" width="100" height="8" rx="4" fill="${PF}" stroke="#FFB900" stroke-width="0.3" stroke-opacity="0.4"/>
+  </g>
+
+  <!-- Chat bubble (hidden by default, shown in chat state) -->
+  <g class="r-chat-bubble" opacity="0">
+    <rect x="88" y="2" width="68" height="34" rx="8" fill="#FFB900"/>
+    <polygon points="96,36 88,44 108,36" fill="#FFB900"/>
+    <rect x="94" y="10" width="40" height="4" rx="2" fill="#141416" fill-opacity="0.5"/>
+    <rect x="94" y="18" width="28" height="4" rx="2" fill="#141416" fill-opacity="0.3"/>
+    <circle cx="140" cy="12" r="3" fill="#141416" fill-opacity="0.3"/>
+  </g>
+
+</g>
+</svg>`;
+}
+
+/* ══ State logic ══ */
+const stateLabels = {
+  's-idle':'Repos',
+  's-greeting':'Salutation',
+  's-thinking':'Réflexion',
+  's-chat':'Ouverture chat'
+};
+const states = ['s-idle','s-greeting','s-thinking','s-chat'];
+
+function setState(s,btn){
+  document.body.className = s;
+  document.querySelectorAll('.sw-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const label = stateLabels[s]||s;
+  document.getElementById('label-w').textContent='État : '+label;
+  document.getElementById('label-b').textContent='État : '+label;
+  /* re-trigger animations */
+  document.querySelectorAll('.r-robot,.r-head,.r-eye-l,.r-eye-r,.r-arm-r-grp,.r-brow-l,.r-brow-r,.r-think-dot,.r-chat-bubble').forEach(el=>{
+    el.style.animation='none';
+    void el.offsetWidth;
+    el.style.animation='';
+  });
+}
+
+/* ══ Render robots ══ */
+document.getElementById('hero-white').innerHTML = robotSVG(1, false);
+document.getElementById('hero-black').innerHTML = robotSVG(1, true);
+
+const btnsW = document.getElementById('btns-white');
+const btnsB = document.getElementById('btns-black');
+
+states.forEach(s=>{
+  const lbl = stateLabels[s];
+
+  /* White button */
+  const wWrap = document.createElement('div');
+  wWrap.style.display='flex';wWrap.style.flexDirection='column';wWrap.style.alignItems='center';
+  const wBtn = document.createElement('div');
+  wBtn.className='robot-btn-wrap on-white';
+  wBtn.innerHTML=robotSVG(0.26, false);
+  wBtn.title=lbl;
+  wBtn.onclick=()=>{
+    const btn=document.querySelectorAll('.sw-btn')[states.indexOf(s)];
+    setState(s,btn);
+  };
+  const wLbl=document.createElement('div');
+  wLbl.className='btn-state-label';wLbl.textContent=lbl;
+  wWrap.appendChild(wBtn);wWrap.appendChild(wLbl);
+  btnsW.appendChild(wWrap);
+
+  /* Black button */
+  const bWrap=document.createElement('div');
+  bWrap.style.display='flex';bWrap.style.flexDirection='column';bWrap.style.alignItems='center';
+  const bBtn=document.createElement('div');
+  bBtn.className='robot-btn-wrap on-black';
+  bBtn.innerHTML=robotSVG(0.26, true);
+  bBtn.title=lbl;
+  bBtn.onclick=()=>{
+    const btn=document.querySelectorAll('.sw-btn')[states.indexOf(s)];
+    setState(s,btn);
+  };
+  const bLbl=document.createElement('div');
+  bLbl.className='btn-state-label';bLbl.textContent=lbl;
+  bWrap.appendChild(bBtn);bWrap.appendChild(bLbl);
+  btnsB.appendChild(bWrap);
+});
+</script>
+</body>
+</html>

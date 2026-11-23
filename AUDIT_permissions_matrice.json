@@ -1,0 +1,78 @@
+{
+  "version": "1.0",
+  "date": "2026-11-07",
+  "source": "src/lib/admin-auth-v2.ts — ROLE_PERMISSIONS",
+  "roles": {
+    "super_admin": {
+      "dashboard": true,
+      "analytics": true,
+      "users": true,
+      "messages": true,
+      "invoices": true,
+      "settings": true,
+      "delete": true,
+      "manage_admins": true,
+      "support": true,
+      "hq": true
+    },
+    "admin": {
+      "dashboard": true,
+      "analytics": true,
+      "users": true,
+      "messages": true,
+      "invoices": true,
+      "settings": true,
+      "delete": false,
+      "manage_admins": false,
+      "support": true,
+      "hq": true
+    },
+    "support": {
+      "dashboard": true,
+      "analytics": false,
+      "users": false,
+      "messages": true,
+      "invoices": false,
+      "settings": false,
+      "delete": false,
+      "manage_admins": false,
+      "support": true,
+      "hq": false
+    },
+    "viewer": {
+      "dashboard": true,
+      "analytics": true,
+      "users": false,
+      "messages": false,
+      "invoices": false,
+      "settings": false,
+      "delete": false,
+      "manage_admins": false,
+      "support": false,
+      "hq": false
+    }
+  },
+  "hq_permissions": {
+    "note": "HQ permissions are managed separately via hq_employees.permissions JSON column",
+    "source": "src/lib/hq-auth.ts + hq_employees table",
+    "example_permissions": [
+      "view_employees",
+      "manage_employees",
+      "view_financials",
+      "manage_hr",
+      "view_it",
+      "manage_it"
+    ]
+  },
+  "findings": [
+    {
+      "ref": "FONC-H-01",
+      "severity": "P2",
+      "note": "/admin/permissions page is a ComingSoon stub — no UI for managing ROLE_PERMISSIONS"
+    },
+    {
+      "ref": "DESIGN-NOTE",
+      "note": "ROLE_PERMISSIONS are hardcoded in admin-auth-v2.ts — not stored in DB, not manageable from UI"
+    }
+  ]
+}
