@@ -26,28 +26,30 @@ const AI_SUGGESTIONS = [
 ] as const;
 
 const QUICK_ACTIONS = [
-  { label: "Créer une facture",    href: "/client/factures/documents?new=1&type=facture", Icon: ReceiptText },
-  { label: "Ajouter un client",    href: "/client/crm",                                  Icon: Users       },
-  { label: "Ajouter une dépense",  href: "/client/depenses",                             Icon: CreditCard  },
-  { label: "Créer un projet",      href: "/client/projets",                              Icon: Briefcase   },
-  { label: "Importer un document", href: "/client/bloc-notes",                           Icon: Upload      },
+  { label: "Créer une facture",    href: "/client/factures/documents?new=1&type=facture", Icon: ReceiptText, color: "#FFB900" },
+  { label: "Ajouter un client",    href: "/client/crm",                                  Icon: Users,       color: "#3b82f6" },
+  { label: "Ajouter une dépense",  href: "/client/depenses",                             Icon: CreditCard,  color: "#ef4444" },
+  { label: "Créer un projet",      href: "/client/projets",                              Icon: Briefcase,   color: "#8b5cf6" },
+  { label: "Importer un document", href: "/client/bloc-notes",                           Icon: Upload,      color: "#0ea5e9" },
 ];
 
 const PINNED_APPS = [
-  { label: "Factures",     href: "/client/factures",    Icon: ReceiptText },
-  { label: "CRM",          href: "/client/crm",         Icon: Users       },
-  { label: "Dépenses",     href: "/client/depenses",    Icon: CreditCard  },
-  { label: "Trésorerie",   href: "/client/tresorerie",  Icon: BarChart3   },
-  { label: "Projets",      href: "/client/projets",     Icon: Briefcase   },
-  { label: "Planning",     href: "/client/planning",    Icon: Calendar    },
-  { label: "Assistant IA", href: "/client/assistant",   Icon: Sparkles    },
-  { label: "Contrats",     href: "/client/contrats",    Icon: FileText    },
+  { label: "Factures",     href: "/client/factures",    Icon: ReceiptText, color: "#FFB900" },
+  { label: "CRM",          href: "/client/crm",         Icon: Users,       color: "#3b82f6" },
+  { label: "Dépenses",     href: "/client/depenses",    Icon: CreditCard,  color: "#ef4444" },
+  { label: "Trésorerie",   href: "/client/tresorerie",  Icon: BarChart3,   color: "#22c55e" },
+  { label: "Projets",      href: "/client/projets",     Icon: Briefcase,   color: "#8b5cf6" },
+  { label: "Planning",     href: "/client/planning",    Icon: Calendar,    color: "#f97316" },
+  { label: "Assistant IA", href: "/client/assistant",   Icon: Sparkles,    color: "#ec4899" },
+  { label: "Contrats",     href: "/client/contrats",    Icon: FileText,    color: "#0ea5e9" },
 ];
 
 // ── Theme tokens ──────────────────────────────────────────────────────────────
 function tok(isDark: boolean) {
   return {
-    bg:         isDark ? "#111111"                : "#f8f8f5",
+    bg:         isDark ? "#111111"                : "#f0f0ec",
+    card:       isDark ? "#1c1c1e"                : "#ffffff",
+    cardShadow: isDark ? "none"                   : "0 1px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
     glass:      isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.025)",
     glassMd:    isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
     border:     isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)",
@@ -732,12 +734,12 @@ export default function DashboardPage() {
                   key={kpi.label}
                   href={kpi.href}
                   className="group relative flex flex-col rounded-2xl p-4 transition-all hover:scale-[1.02]"
-                  style={{ background: t.glass, border: `1px solid ${t.border}` }}
+                  style={{ background: t.card, boxShadow: t.cardShadow }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div
                       className="w-8 h-8 rounded-xl flex items-center justify-center"
-                      style={{ background: `${kpi.color}15` }}
+                      style={{ background: `${kpi.color}20` }}
                     >
                       <KpiIcon size={15} style={{ color: kpi.color }} />
                     </div>
@@ -775,7 +777,7 @@ export default function DashboardPage() {
           <div className="grid lg:grid-cols-2 gap-4">
 
             {/* Agenda */}
-            <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <div className="rounded-2xl p-5" style={{ background: t.card, boxShadow: t.cardShadow }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Calendar size={15} style={{ color: GOLD }} />
@@ -816,7 +818,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Tâches */}
-            <div className="rounded-2xl p-5" style={{ background: t.glass, border: `1px solid ${t.border}` }}>
+            <div className="rounded-2xl p-5" style={{ background: t.card, boxShadow: t.cardShadow }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={15} style={{ color: GOLD }} />
@@ -872,20 +874,20 @@ export default function DashboardPage() {
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: t.text }}>Actions rapides</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {QUICK_ACTIONS.map(({ label, href, Icon }) => (
+            {QUICK_ACTIONS.map(({ label, href, Icon, color }) => (
               <Link
                 key={href}
                 href={href}
                 className="group flex flex-col items-center gap-3 rounded-2xl p-5 text-center transition-all hover:scale-[1.03] active:scale-[0.97]"
-                style={{ background: t.glass, border: `1px solid ${t.border}` }}
+                style={{ background: t.card, boxShadow: t.cardShadow }}
               >
                 <div
                   className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${GOLD}14` }}
+                  style={{ background: `${color}1e` }}
                 >
-                  <Icon size={20} style={{ color: GOLD }} />
+                  <Icon size={20} style={{ color }} />
                 </div>
-                <span className="text-xs font-medium leading-snug" style={{ color: t.text2 }}>{label}</span>
+                <span className="text-xs font-medium leading-snug" style={{ color: t.text }}>{label}</span>
               </Link>
             ))}
           </div>
@@ -977,20 +979,20 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="grid grid-cols-4 lg:grid-cols-8 gap-3">
-            {PINNED_APPS.map(({ label, href, Icon }) => (
+            {PINNED_APPS.map(({ label, href, Icon, color }) => (
               <Link
                 key={href}
                 href={href}
                 className="group flex flex-col items-center gap-2 py-4 px-1 rounded-2xl text-center transition-all hover:scale-[1.05] active:scale-[0.96]"
-                style={{ background: t.glass, border: `1px solid ${t.border}` }}
+                style={{ background: t.card, boxShadow: t.cardShadow }}
               >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${GOLD}12` }}
+                  style={{ background: `${color}1a` }}
                 >
-                  <Icon size={18} style={{ color: GOLD }} />
+                  <Icon size={18} style={{ color }} />
                 </div>
-                <span className="text-[11px] font-medium leading-snug" style={{ color: t.text3 }}>
+                <span className="text-[11px] font-medium leading-snug" style={{ color: t.text }}>
                   {label}
                 </span>
               </Link>
