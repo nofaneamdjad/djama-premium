@@ -33,6 +33,13 @@ CREATE TABLE IF NOT EXISTS services (
 -- ── 2. Ajout des colonnes manquantes (migrations 003 + suivantes) ──
 ALTER TABLE services ADD COLUMN IF NOT EXISTS slug text DEFAULT '';
 
+-- ── 3. Déduplication avant index unique ────────────────────────────
+-- Supprime les doublons de slug (migrations 001+002 insèrent les mêmes services)
+DELETE FROM services a USING services b
+WHERE a.slug <> ''
+  AND a.slug = b.slug
+  AND a.ctid > b.ctid;
+
 -- ── 3. Index ───────────────────────────────────────────────────────
 CREATE UNIQUE INDEX IF NOT EXISTS services_slug_key    ON services(slug) WHERE slug <> '';
 CREATE INDEX        IF NOT EXISTS services_active_idx  ON services(active);
@@ -188,7 +195,7 @@ INSERT INTO services (slug, title, category, price, description, active, sort_or
    'De la 6e à la Terminale — RDV en ligne. Méthode, exercices, régularité.',
    true, 18)
 
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (slug) WHERE slug <> '' DO UPDATE SET
   title       = EXCLUDED.title,
   category    = EXCLUDED.category,
   price       = EXCLUDED.price,

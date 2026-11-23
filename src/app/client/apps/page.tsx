@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "@/lib/theme-context";
 import { useSubscription } from "@/lib/use-require-subscription";
 import { APP_REGISTRY, CATEGORY_LABELS, type AppCategory } from "@/lib/app-registry";
-import { APP_ICONS, APP_COLORS } from "@/components/app-icons";
+import { APPS_DATA } from "@/lib/applications-data";
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -21,6 +21,10 @@ const DISPLAY_CATEGORIES: AppCategory[] = [
 const DISPLAY_APPS = APP_REGISTRY.filter(a => a.category !== "accueil");
 
 const FAVS_KEY = "djama_app_favs_v1";
+
+const APP_COLOR: Record<string, string> = Object.fromEntries(
+  APPS_DATA.map(a => [a.slug, a.color])
+);
 
 function loadFavs(): Set<string> {
   try {
@@ -291,8 +295,8 @@ function AppCard({ app, index, isPremium, isFav, onToggleFav, card, cardH, bdr, 
   const [hovered, setHovered] = useState(false);
   const locked = app.permission === "premium" && !isPremium;
   const href = locked ? "/client/abonnements" : app.route;
-  const Icon = APP_ICONS[app.id] ?? APP_ICONS["default"];
-  const color = APP_COLORS[app.id] ?? accent;
+  const color = APP_COLOR[app.id] ?? accent;
+  const Icon = app.icon;
 
   return (
     <motion.div
@@ -313,19 +317,22 @@ function AppCard({ app, index, isPremium, isFav, onToggleFav, card, cardH, bdr, 
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        {/* Squircle icon */}
-        <div
-          className="flex shrink-0 items-center justify-center"
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "27%",
-            background: color,
-            boxShadow: hovered ? `0 4px 16px ${color}50` : `0 2px 8px ${color}30`,
-            transition: "box-shadow 0.2s",
-          }}
-        >
-          <Icon size={26} />
+        {/* Icône squircle — même style que l'accueil */}
+        <div style={{
+          width: 52, height: 52, borderRadius: "27%",
+          background: color,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: hovered ? `0 4px 16px ${color}50` : `0 2px 8px ${color}30`,
+          position: "relative", overflow: "hidden",
+          transition: "box-shadow 0.2s",
+          flexShrink: 0,
+        }}>
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 55%)",
+            pointerEvents: "none",
+          }} />
+          <Icon size={24} color="white" strokeWidth={1.6} />
         </div>
 
         {/* Name */}

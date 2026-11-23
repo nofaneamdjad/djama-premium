@@ -31,17 +31,21 @@ CREATE TABLE IF NOT EXISTS planning_reminders (
 
 ALTER TABLE planning_reminders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "pr_select_own" ON planning_reminders FOR SELECT
+DROP POLICY IF EXISTS "pr_select_own" ON planning_reminders;
+CREATE POLICY "pr_select_own" ON planning_reminders FOR SELECT
   USING (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "pr_insert_own" ON planning_reminders FOR INSERT
+DROP POLICY IF EXISTS "pr_insert_own" ON planning_reminders;
+CREATE POLICY "pr_insert_own" ON planning_reminders FOR INSERT
   WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "pr_update_own" ON planning_reminders FOR UPDATE
+DROP POLICY IF EXISTS "pr_update_own" ON planning_reminders;
+CREATE POLICY "pr_update_own" ON planning_reminders FOR UPDATE
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "pr_delete_own" ON planning_reminders FOR DELETE
+DROP POLICY IF EXISTS "pr_delete_own" ON planning_reminders;
+CREATE POLICY "pr_delete_own" ON planning_reminders FOR DELETE
   USING (user_id = auth.uid());
 
 CREATE INDEX IF NOT EXISTS idx_pr_pending

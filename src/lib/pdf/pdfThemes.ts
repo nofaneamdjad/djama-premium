@@ -16,10 +16,10 @@ const r = (hex: string): R => {
 // FAMILLE 1 — MINIMALISTE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/** min-blanc — Rien que le texte, séparateur fin unique */
+/** min-blanc — En-tête classique français : bloc adresse gauche, date+réf encadrée droite */
 const minBlanc: PdfTheme = {
-  id: "min-blanc", variant: "minimal",
-  headerBg: r("#ffffff"), headerH: 36,
+  id: "min-blanc", variant: "letterhead",
+  headerBg: r("#ffffff"), headerH: 52,
   headerNameColor: r("#0a0a12"), headerSubColor: r("#888898"),
   headerRefColor:  r("#0a0a12"), headerDateColor: r("#888898"),
   accentColor: r("#0a0a12"), accentW: 0.5,
@@ -161,10 +161,10 @@ const corpLateral: PdfTheme = {
 // FAMILLE 3 — PREMIUM
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/** prem-or — Header quasi-noir + accents or fins */
+/** prem-or — Luxe centré : société au centre, double règle dorée, référence à droite */
 const premOr: PdfTheme = {
-  id: "prem-or", variant: "accent-bar",
-  headerBg: r("#ffffff"), headerH: 48,
+  id: "prem-or", variant: "luxury",
+  headerBg: r("#fefdf8"), headerH: 54,
   headerNameColor: r("#0a080c"), headerSubColor: r("#9090a0"),
   headerRefColor:  r("#0a080c"), headerDateColor: r("#9090a0"),
   accentColor: r("#b8972a"), accentW: 6,
@@ -178,20 +178,20 @@ const premOr: PdfTheme = {
   headerFontSize: 18, refFontSize: 18, bodyFontSize: 9,
 };
 
-/** prem-nuit — Full dark : fond sombre, texte clair */
+/** prem-nuit — Header sombre (65mm, client intégré) + corps blanc imprimable, accents or */
 const premNuit: PdfTheme = {
-  id: "prem-nuit", variant: "dark-full",
-  headerBg: r("#0d0d14"), headerH: 50,
+  id: "prem-nuit", variant: "dark-header",
+  headerBg: r("#0d0d14"), headerH: 65,
   headerNameColor: r("#f0ede8"), headerSubColor: r("#7070a0"),
   headerRefColor:  r("#d4b86a"), headerDateColor: r("#7070a0"),
-  accentColor: r("#d4b86a"), accentW: 5,
-  bodyBg: r("#14141e"), bodyText: r("#e8e4dc"), mutedText: r("#7070a0"),
-  labelColor: r("#d4b86a"), sectionNameColor: r("#e8e4dc"),
-  subjectBg: r("#1e1e2c"), subjectText: r("#e8e4dc"),
+  accentColor: r("#d4b86a"), accentW: 2,
+  bodyBg: r("#ffffff"), bodyText: r("#14141e"), mutedText: r("#6060a0"),
+  labelColor: r("#d4b86a"), sectionNameColor: r("#14141e"),
+  subjectBg: r("#f8f6f0"), subjectText: r("#14141e"),
   tableHeaderBg: r("#1e1e2c"), tableHeaderText: r("#d4b86a"),
-  tableRowAlt: r("#181824"), tableBorder: r("#2a2a3c"), tableText: r("#e8e4dc"),
-  totalLineBg: r("#1e1e2c"), totalBoxBg: r("#d4b86a"), totalBoxText: r("#0d0d14"),
-  footerBg: r("#0d0d14"), footerText: r("#5050a0"),
+  tableRowAlt: r("#f8f8fc"), tableBorder: r("#d8d8e8"), tableText: r("#14141e"),
+  totalLineBg: r("#f8f6f0"), totalBoxBg: r("#d4b86a"), totalBoxText: r("#0d0d14"),
+  footerBg: r("#f8f8fc"), footerText: r("#6060a0"),
   headerFontSize: 16, refFontSize: 16, bodyFontSize: 9,
 };
 
@@ -305,21 +305,21 @@ const creatVif: PdfTheme = {
 // FAMILLE 5 — TECHNOLOGIE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/** tech-sombre — Fond gris sombre, accents bleu électrique */
+/** tech-sombre — Header navy (48mm, société seule) + corps blanc, accents bleu électrique */
 const techSombre: PdfTheme = {
-  id: "tech-sombre", variant: "dark-full",
-  headerBg: r("#0a0e18"), headerH: 48,
-  headerNameColor: r("#e0e8f8"), headerSubColor: r("#4a6090"),
-  headerRefColor:  r("#38bdf8"), headerDateColor: r("#4a6090"),
-  accentColor: r("#38bdf8"), accentW: 5,
-  bodyBg: r("#0e1420"), bodyText: r("#c8d8f0"), mutedText: r("#4a6090"),
-  labelColor: r("#38bdf8"), sectionNameColor: r("#e0e8f8"),
-  subjectBg: r("#141c2e"), subjectText: r("#c8d8f0"),
-  tableHeaderBg: r("#141c2e"), tableHeaderText: r("#38bdf8"),
-  tableRowAlt: r("#0e1420"), tableBorder: r("#1e2c48"), tableText: r("#c8d8f0"),
-  totalLineBg: r("#141c2e"), totalBoxBg: r("#38bdf8"), totalBoxText: r("#0a0e18"),
-  footerBg: r("#0a0e18"), footerText: r("#2a4060"),
-  headerFontSize: 16, refFontSize: 18, bodyFontSize: 9,
+  id: "tech-sombre", variant: "dark-header",
+  headerBg: r("#0a1428"), headerH: 48,
+  headerNameColor: r("#e0f0ff"), headerSubColor: r("#4a7090"),
+  headerRefColor:  r("#38bdf8"), headerDateColor: r("#4a7090"),
+  accentColor: r("#38bdf8"), accentW: 2,
+  bodyBg: r("#ffffff"), bodyText: r("#0c1830"), mutedText: r("#4a6888"),
+  labelColor: r("#38bdf8"), sectionNameColor: r("#0c1830"),
+  subjectBg: r("#f0f6ff"), subjectText: r("#0c1830"),
+  tableHeaderBg: r("#0a1428"), tableHeaderText: r("#38bdf8"),
+  tableRowAlt: r("#f5f8fc"), tableBorder: r("#c8d8ec"), tableText: r("#0c1830"),
+  totalLineBg: r("#f0f6ff"), totalBoxBg: r("#38bdf8"), totalBoxText: r("#ffffff"),
+  footerBg: r("#f0f6ff"), footerText: r("#4a6888"),
+  headerFontSize: 15, refFontSize: 15, bodyFontSize: 9,
 };
 
 /** tech-code — Style terminal, lignes horizontales fines */
@@ -488,8 +488,8 @@ export function getTheme(template: string): PdfTheme {
 
 export const TEMPLATE_CATALOG: TemplateInfo[] = [
   // ── Minimaliste ──────────────────────────────────────────────────────
-  { id:"min-blanc",    family:"minimaliste", label:"Blanc",         description:"Typographie seule, séparateurs ultra-fins. Intemporel.",        previewColor:"#0a0a12", previewBg:"#ffffff", badge:{label:"Épuré",    textColor:"#60606a", bgColor:"rgba(96,96,106,0.1)"} },
-  { id:"min-ligne",    family:"minimaliste", label:"Ligne",         description:"Barre d'accent or, header épuré, QR SEPA intégré.",             previewColor:"#c9a55a", previewBg:"#ffffff", badge:{label:"Populaire",textColor:"#c9a55a", bgColor:"rgba(201,165,90,0.12)"} },
+  { id:"min-blanc",    family:"minimaliste", label:"Blanc",         description:"En-tête classique : bloc adresse gauche, réf encadrée droite.", previewColor:"#0a0a12", previewBg:"#ffffff", badge:{label:"Classique", textColor:"#60606a", bgColor:"rgba(96,96,106,0.1)"} },
+  { id:"min-ligne",    family:"minimaliste", label:"Ligne",         description:"Barre d'accent or, header épuré, coordonnées bancaires.",             previewColor:"#c9a55a", previewBg:"#ffffff", badge:{label:"Populaire",textColor:"#c9a55a", bgColor:"rgba(201,165,90,0.12)"} },
   { id:"min-grille",   family:"minimaliste", label:"Grille",        description:"Mise en page éditoriale, accents bleu-violet discrets.",        previewColor:"#4a4aff", previewBg:"#ffffff", badge:{label:"Éditorial",textColor:"#4a4aff", bgColor:"rgba(74,74,255,0.1)"} },
   { id:"min-mono",     family:"minimaliste", label:"Mono",          description:"Monochrome gris, sans aucun élément de couleur.",               previewColor:"#606068", previewBg:"#ffffff", badge:{label:"Neutre",   textColor:"#606068", bgColor:"rgba(96,96,104,0.1)"} },
   // ── Corporate ────────────────────────────────────────────────────────
@@ -498,8 +498,8 @@ export const TEMPLATE_CATALOG: TemplateInfo[] = [
   { id:"corp-tampon",  family:"corporate",  label:"Tampon",        description:"Nom centré, style officiel. Administrations, professions.",     previewColor:"#1a2e4f", previewBg:"#f0f4f8", badge:{label:"Officiel", textColor:"#1a4080", bgColor:"rgba(26,64,128,0.1)"} },
   { id:"corp-lateral", family:"corporate",  label:"Latérale",      description:"Colonne gauche société + contenu principal à droite.",          previewColor:"#ffffff", previewBg:"#0f2240", badge:{label:"Structuré",textColor:"#e8b84b", bgColor:"rgba(232,184,75,0.12)"} },
   // ── Premium ──────────────────────────────────────────────────────────
-  { id:"prem-or",      family:"premium",    label:"Or",            description:"Header presque noir, accents or fins. Luxe discret.",           previewColor:"#b8972a", previewBg:"#fefdf8", badge:{label:"Luxe",     textColor:"#b8972a", bgColor:"rgba(184,151,42,0.14)"} },
-  { id:"prem-nuit",    family:"premium",    label:"Nuit",          description:"Full dark : fond noir, texte clair, accents or.",               previewColor:"#d4b86a", previewBg:"#14141e", badge:{label:"Dark",     textColor:"#d4b86a", bgColor:"rgba(212,184,106,0.14)"} },
+  { id:"prem-or",      family:"premium",    label:"Or",            description:"Société centrée, double règle dorée. Luxe sobre et structuré.", previewColor:"#b8972a", previewBg:"#fefdf8", badge:{label:"Luxe",     textColor:"#b8972a", bgColor:"rgba(184,151,42,0.14)"} },
+  { id:"prem-nuit",    family:"premium",    label:"Nuit",          description:"Header noir 65mm (client intégré), corps blanc imprimable.",     previewColor:"#d4b86a", previewBg:"#0d0d14", badge:{label:"Dark",     textColor:"#d4b86a", bgColor:"rgba(212,184,106,0.14)"} },
   { id:"prem-creme",   family:"premium",    label:"Crème",         description:"Papier crème, tons chauds brun. Maison d'édition.",             previewColor:"#f8f0e0", previewBg:"#5c3d1e", badge:{label:"Raffiné",  textColor:"#d4a060", bgColor:"rgba(212,160,96,0.12)"} },
   { id:"prem-deco",    family:"premium",    label:"Déco",          description:"Art déco : ornements géométriques, majuscules signature.",      previewColor:"#c09040", previewBg:"#f8f4ec", badge:{label:"Art Déco", textColor:"#c09040", bgColor:"rgba(192,144,64,0.12)"} },
   // ── Créatif ──────────────────────────────────────────────────────────
@@ -508,7 +508,7 @@ export const TEMPLATE_CATALOG: TemplateInfo[] = [
   { id:"creat-cadre",  family:"creatif",    label:"Cadre",         description:"Cadre ambre intérieur, style éditorial.",                       previewColor:"#f59e0b", previewBg:"#ffffff", badge:{label:"Éditorial",textColor:"#f59e0b", bgColor:"rgba(245,158,11,0.1)"} },
   { id:"creat-vif",    family:"creatif",    label:"Vif",           description:"Header ciel bleu vif, style SaaS / startup.",                   previewColor:"#ffffff", previewBg:"#0ea5e9", badge:{label:"SaaS",     textColor:"#0ea5e9", bgColor:"rgba(14,165,233,0.12)"} },
   // ── Technologie ──────────────────────────────────────────────────────
-  { id:"tech-sombre",  family:"technologie",label:"Sombre",        description:"Dark mode bleu électrique. ESN, consulting IT.",                previewColor:"#38bdf8", previewBg:"#0e1420", badge:{label:"Tech",     textColor:"#38bdf8", bgColor:"rgba(56,189,248,0.12)"} },
+  { id:"tech-sombre",  family:"technologie",label:"Sombre",        description:"Header navy imprimable, bleu électrique. ESN, consulting IT.",  previewColor:"#38bdf8", previewBg:"#0a1428", badge:{label:"Tech",     textColor:"#38bdf8", bgColor:"rgba(56,189,248,0.12)"} },
   { id:"tech-code",    family:"technologie",label:"Code",          description:"Style terminal, accents vert. Développeurs, freelances IT.",    previewColor:"#00d084", previewBg:"#1c2024", badge:{label:"Dev",      textColor:"#00d084", bgColor:"rgba(0,208,132,0.1)"} },
   { id:"tech-schema",  family:"technologie",label:"Schéma",        description:"Blueprint : grille technique, bleu engineering.",              previewColor:"#1a4080", previewBg:"#f8f9fb", badge:{label:"Blueprint", textColor:"#1a4080", bgColor:"rgba(26,64,128,0.1)"} },
   { id:"tech-circuit", family:"technologie",label:"Circuit",       description:"Accents verts, barre gauche, style circuit imprimé.",           previewColor:"#22c55e", previewBg:"#f8fdf8", badge:{label:"Circuit",  textColor:"#16a34a", bgColor:"rgba(22,163,74,0.1)"} },
@@ -528,5 +528,4 @@ export const TEMPLATE_FAMILIES: { id: import("./types").TemplateFamily; label: s
   { id:"services",    label:"Services & Commerce",count:4 },
 ];
 
-/** @deprecated Utilise TEMPLATE_CATALOG */
-export const TEMPLATE_INFO = TEMPLATE_CATALOG;
+export { TEMPLATE_CATALOG as TEMPLATE_INFO };

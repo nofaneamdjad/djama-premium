@@ -29,7 +29,8 @@ CREATE INDEX IF NOT EXISTS idx_od_parent ON org_departments (parent_id) WHERE pa
 ALTER TABLE org_departments ENABLE ROW LEVEL SECURITY;
 
 -- Owner : accès complet
-CREATE POLICY IF NOT EXISTS "od_owner" ON org_departments
+DROP POLICY IF EXISTS "od_owner" ON org_departments;
+CREATE POLICY "od_owner" ON org_departments
   FOR ALL
   USING (
     organization_id IN (
@@ -43,7 +44,8 @@ CREATE POLICY IF NOT EXISTS "od_owner" ON org_departments
   );
 
 -- Membres actifs : lecture seule
-CREATE POLICY IF NOT EXISTS "od_member_select" ON org_departments
+DROP POLICY IF EXISTS "od_member_select" ON org_departments;
+CREATE POLICY "od_member_select" ON org_departments
   FOR SELECT
   USING (
     is_org_member(organization_id)

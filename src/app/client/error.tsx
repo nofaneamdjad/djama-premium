@@ -40,7 +40,7 @@ export default function ClientError({
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <button
             onClick={reset}
-            className="flex items-center gap-2 rounded-xl bg-[#c9a55a] px-6 py-2.5 text-sm font-bold text-[#09090b] transition hover:bg-[#d9b56a]"
+            className="flex items-center gap-2 rounded-xl bg-[#FFB900] px-6 py-2.5 text-sm font-bold text-[#09090b] transition hover:bg-[#FFD04A]"
           >
             <RefreshCw size={13} />
             Réessayer

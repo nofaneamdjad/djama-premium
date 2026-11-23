@@ -346,10 +346,10 @@ a:focus:not(:focus-visible)      { outline: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ── BETA WIDGET — position adaptée mobile ───
-   Desktop (lg+) : 24px depuis le bas (pas de nav basse)
+   Desktop (lg+) : 68px depuis le bas (au-dessus des boutons d'action de tableau)
    Mobile (<lg)  : 88px = 64px nav + 24px marge
 ──────────────────────────────────────────────── */
-.beta-widget-btn { bottom: 24px; }
+.beta-widget-btn { bottom: 68px; }
 @media (max-width: 1023px) { .beta-widget-btn { bottom: 88px; } }
 .animate-glow-pulse    { animation: glow-pulse    2.5s ease-in-out infinite; }
 .animate-border-glow   { animation: border-glow   4s ease-in-out infinite; }

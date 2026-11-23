@@ -138,7 +138,7 @@ CREATE POLICY checklists_select ON checklists FOR SELECT
     owner_id = auth.uid()
     OR checklist_user_role(id, auth.uid()) IS NOT NULL
     OR (visibility = 'team' AND organization_id IN (
-      SELECT organization_id FROM org_members WHERE user_id = auth.uid()
+      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
     ))
   );
 
@@ -147,7 +147,7 @@ CREATE POLICY checklists_insert ON checklists FOR INSERT
   WITH CHECK (
     owner_id = auth.uid()
     AND organization_id IN (
-      SELECT organization_id FROM org_members WHERE user_id = auth.uid()
+      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
     )
   );
 
@@ -169,7 +169,7 @@ CREATE POLICY cl_sections_select ON checklist_sections FOR SELECT
     OR EXISTS (SELECT 1 FROM checklists c WHERE c.id = checklist_id AND (
       c.owner_id = auth.uid()
       OR (c.visibility = 'team' AND c.organization_id IN (
-        SELECT organization_id FROM org_members WHERE user_id = auth.uid()
+        SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
       ))
     ))
   );
@@ -187,7 +187,7 @@ CREATE POLICY cl_items_select ON checklist_items FOR SELECT
     OR EXISTS (SELECT 1 FROM checklists c WHERE c.id = checklist_id AND (
       c.owner_id = auth.uid()
       OR (c.visibility = 'team' AND c.organization_id IN (
-        SELECT organization_id FROM org_members WHERE user_id = auth.uid()
+        SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
       ))
     ))
   );

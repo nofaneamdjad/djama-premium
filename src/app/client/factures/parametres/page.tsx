@@ -1,52 +1,29 @@
 ﻿"use client";
+
 /**
- * Paramètres Factures & Devis — Interface à 4 onglets + aperçu live.
- * Enregistre dans user_settings (clés brand.*, isolé par user_id).
+ * Paramètres de facturation — Style + règles par défaut + aperçu A4 live.
+ * Les informations d'entreprise (identité, fiscal, banque) sont dans Mon entreprise.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "@/lib/theme-context";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Save, Check, Building2, Mail, Phone, Globe,
-  ImagePlus, FileText, Landmark, Palette, Settings2,
-  Hash, Calendar, Percent, Loader2, ChevronDown, ChevronRight,
-  Shield, CreditCard, X, AlertCircle, ZoomIn, ZoomOut, Move,
+  Save, Check, Palette, Settings2, Hash, Calendar, Percent,
+  Loader2, ChevronDown, ChevronRight, AlertCircle,
+  ZoomIn, ZoomOut, Maximize2, X, ArrowLeft, Building2, ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
-import { LogoDragResize, DEFAULT_LOGO_TRANSFORM } from "@/components/invoice/LogoDragResize";
-import type { LogoTransform } from "@/components/invoice/LogoDragResize";
 import { DEMO_DATA } from "@/components/invoice/shared";
 import type { PreviewData } from "@/components/invoice/shared";
 import type { TemplateType } from "@/lib/pdf/types";
-import { TEMPLATE_INFO } from "@/lib/pdf/pdfThemes";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const GOLD = "#c9a55a";
 
-/** Mapping clé locale → clé site_settings */
+// ─── Clés de paramètres ───────────────────────────────────────────────────────
+
 const KEY_MAP = {
-  name:             "brand.company_name",
-  email:            "brand.email",
-  phone:            "brand.phone",
-  website:          "brand.website",
-  address:          "brand.address",
-  postal_code:      "brand.postal_code",
-  city:             "brand.city",
-  country:          "brand.country",
-  logoUrl:          "brand.logo_url",
-  siret:            "brand.siret",
-  vat_number:       "brand.vat_number",
-  forme_juridique:  "brand.forme_juridique",
-  capital_social:   "brand.capital_social",
-  ape:              "brand.ape",
-  iban:             "brand.iban",
-  bic:              "brand.bic",
-  garantie:         "brand.garantie",
-  mentions_legales: "brand.mentions_legales",
   color:            "brand.color",
   template:         "brand.template",
   prefix_facture:   "brand.prefix_facture",
@@ -56,29 +33,14 @@ const KEY_MAP = {
   devise:           "brand.devise",
   conditions_vente: "brand.conditions_vente",
   notes_defaut:     "brand.notes_defaut",
+  // read-only pour la preview
+  company_name:     "brand.company_name",
+  logo_url:         "brand.logo_url",
 } as const;
 
 type SettingKey = keyof typeof KEY_MAP;
 
-interface AllSettings {
-  name:             string;
-  email:            string;
-  phone:            string;
-  website:          string;
-  address:          string;
-  postal_code:      string;
-  city:             string;
-  country:          string;
-  logoUrl:          string;
-  siret:            string;
-  vat_number:       string;
-  forme_juridique:  string;
-  capital_social:   string;
-  ape:              string;
-  iban:             string;
-  bic:              string;
-  garantie:         string;
-  mentions_legales: string;
+interface Settings {
   color:            string;
   template:         string;
   prefix_facture:   string;
@@ -88,29 +50,13 @@ interface AllSettings {
   devise:           string;
   conditions_vente: string;
   notes_defaut:     string;
+  company_name:     string;
+  logo_url:         string;
 }
 
-const DEFAULTS: AllSettings = {
-  name:             "",
-  email:            "",
-  phone:            "",
-  website:          "",
-  address:          "",
-  postal_code:      "",
-  city:             "",
-  country:          "",
-  logoUrl:          "",
-  siret:            "",
-  vat_number:       "",
-  forme_juridique:  "",
-  capital_social:   "",
-  ape:              "",
-  iban:             "",
-  bic:              "",
-  garantie:         "",
-  mentions_legales: "",
+const DEFAULTS: Settings = {
   color:            GOLD,
-  template:         "modern",
+  template:         "min-ligne",
   prefix_facture:   "FAC-",
   prefix_devis:     "DEV-",
   delai_paiement:   "30",
@@ -118,63 +64,53 @@ const DEFAULTS: AllSettings = {
   devise:           "EUR",
   conditions_vente: "",
   notes_defaut:     "",
+  company_name:     "",
+  logo_url:         "",
 };
 
-const TABS = [
-  { id: "entetes",   icon: Building2, label: "En-têtes",  short: "En-têtes"  },
-  { id: "pieds",     icon: FileText,  label: "Pieds",     short: "Pieds"     },
-  { id: "style",     icon: Palette,   label: "Style",     short: "Style"     },
-  { id: "documents", icon: Settings2, label: "Documents", short: "Docs"      },
-] as const;
-type TabId = typeof TABS[number]["id"];
+// ─── Options ──────────────────────────────────────────────────────────────────
 
-const COLOR_PRESETS = [
-  "#6b7280", // gris
-  "#ef4444", // rouge
-  "#c9a55a", // or DJAMA
-  "#22c55e", // vert
-  "#06b6d4", // cyan
-  "#6366f1", // indigo
-  "#f97316", // orange
-];
-
-const FORMES_JURIDIQUES = [
-  { val: "",                 label: "— Choisir —"       },
-  { val: "EI",               label: "EI"                 },
-  { val: "EIRL",             label: "EIRL"               },
-  { val: "EURL",             label: "EURL"               },
-  { val: "SARL",             label: "SARL"               },
-  { val: "SAS",              label: "SAS"                },
-  { val: "SASU",             label: "SASU"               },
-  { val: "SA",               label: "SA"                 },
-  { val: "SNC",              label: "SNC"                },
-  { val: "Auto-entrepreneur",label: "Auto-entrepreneur"  },
-  { val: "Profession libérale",label:"Profession libérale"},
-  { val: "Autre",            label: "Autre"              },
-];
+const COLOR_PRESETS = ["#6b7280","#ef4444","#c9a55a","#22c55e","#06b6d4","#6366f1","#f97316"];
 
 const DEVISES = [
-  { val: "EUR", label: "€  Euro"           },
-  { val: "USD", label: "$  Dollar US"       },
-  { val: "GBP", label: "£  Livre Sterling"  },
-  { val: "MAD", label: "MAD  Dirham"        },
-  { val: "CHF", label: "CHF  Franc Suisse"  },
-  { val: "CAD", label: "CAD  Dollar CA"     },
+  { val: "EUR", label: "€  Euro"          },
+  { val: "USD", label: "$  Dollar US"      },
+  { val: "GBP", label: "£  Livre Sterling" },
+  { val: "MAD", label: "MAD  Dirham"       },
+  { val: "CHF", label: "CHF  Franc Suisse" },
+  { val: "CAD", label: "CAD  Dollar CA"    },
 ];
 
-// ─── Micro-composants ─────────────────────────────────────────────────────────
+type TabId = "style" | "facturation";
 
-function Field({ label, value, onChange, placeholder, icon: Icon, type = "text", hint }: {
+const TABS: { id: TabId; icon: React.ElementType; label: string }[] = [
+  { id: "style",       icon: Palette,   label: "Style"       },
+  { id: "facturation", icon: Settings2, label: "Facturation" },
+];
+
+// ─── Champs thème-aware ───────────────────────────────────────────────────────
+
+function Field({
+  label, value, onChange, placeholder, type = "text", hint, isDark, icon: Icon,
+}: {
   label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; icon?: React.ElementType; type?: string; hint?: string;
+  placeholder?: string; type?: string; hint?: string;
+  isDark: boolean; icon?: React.ElementType;
 }) {
+  const labelCol  = isDark ? "#9ca3af" : "#374151";
+  const inputBg   = isDark ? "rgba(255,255,255,0.04)" : "#ffffff";
+  const inputBd   = isDark ? "rgba(255,255,255,0.09)" : "#e5e7eb";
+  const inputText = isDark ? "#ffffff" : "#111827";
+  const phCol     = isDark ? "rgba(255,255,255,0.22)" : "#9ca3af";
+  const hintCol   = isDark ? "rgba(255,255,255,0.22)" : "#9ca3af";
+
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-medium text-white/40">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>{label}</label>
       <div className="relative">
         {Icon && (
           <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-            <Icon size={13} className="text-white/25" />
+            <Icon size={13} style={{ color: isDark ? "rgba(255,255,255,0.3)" : "#9ca3af" }} />
           </div>
         )}
         <input
@@ -182,85 +118,132 @@ function Field({ label, value, onChange, placeholder, icon: Icon, type = "text",
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full rounded-xl border border-white/[0.09] bg-white/[0.04] py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/[0.15] focus:border-[#c9a55a]/45 focus:ring-2 focus:ring-[#c9a55a]/10 ${Icon ? "pl-9 pr-4" : "px-4"}`}
+          className={`w-full rounded-xl py-2.5 text-sm outline-none transition ${Icon ? "pl-9 pr-4" : "px-4"}`}
+          style={{
+            background: inputBg,
+            border: `1px solid ${inputBd}`,
+            color: inputText,
+          }}
+          onFocus={e => { e.currentTarget.style.borderColor = `${GOLD}80`; }}
+          onBlur={e => { e.currentTarget.style.borderColor = inputBd; }}
         />
+        {/* Placeholder color via pseudo-element workaround */}
+        <style>{`
+          input::placeholder { color: ${phCol}; }
+          textarea::placeholder { color: ${phCol}; }
+        `}</style>
       </div>
-      {hint && <p className="mt-1 text-xs text-white/20">{hint}</p>}
+      {hint && <p className="mt-1 text-xs" style={{ color: hintCol }}>{hint}</p>}
     </div>
   );
 }
 
-function SelectField({ label, value, onChange, options }: {
+function SelectField({
+  label, value, onChange, options, isDark,
+}: {
   label: string; value: string; onChange: (v: string) => void;
-  options: { val: string; label: string }[];
+  options: { val: string; label: string }[]; isDark: boolean;
 }) {
+  const labelCol  = isDark ? "#9ca3af" : "#374151";
+  const inputBg   = isDark ? "rgba(255,255,255,0.04)" : "#ffffff";
+  const inputBd   = isDark ? "rgba(255,255,255,0.09)" : "#e5e7eb";
+  const inputText = isDark ? "#ffffff" : "#111827";
+
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-medium text-white/40">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>{label}</label>
       <div className="relative">
         <select
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="w-full appearance-none rounded-xl border border-white/[0.09] bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition hover:border-white/[0.15] focus:border-[#c9a55a]/45"
+          className="w-full appearance-none rounded-xl px-4 py-2.5 text-sm outline-none transition"
+          style={{ background: inputBg, border: `1px solid ${inputBd}`, color: inputText }}
         >
           {options.map(o => (
-            <option key={o.val} value={o.val} style={{ background: "#181c28" }}>{o.label}</option>
+            <option key={o.val} value={o.val}
+              style={{ background: isDark ? "#1a1f2e" : "#ffffff", color: inputText }}>
+              {o.label}
+            </option>
           ))}
         </select>
-        <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+        <ChevronDown size={12} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+          style={{ color: isDark ? "rgba(255,255,255,0.3)" : "#9ca3af" }} />
       </div>
     </div>
   );
 }
 
-function TextareaField({ label, value, onChange, placeholder, rows = 3, hint }: {
+function TextareaField({
+  label, value, onChange, placeholder, rows = 3, hint, isDark,
+}: {
   label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; rows?: number; hint?: string;
+  placeholder?: string; rows?: number; hint?: string; isDark: boolean;
 }) {
+  const labelCol  = isDark ? "#9ca3af" : "#374151";
+  const inputBg   = isDark ? "rgba(255,255,255,0.04)" : "#ffffff";
+  const inputBd   = isDark ? "rgba(255,255,255,0.09)" : "#e5e7eb";
+  const inputText = isDark ? "#ffffff" : "#111827";
+  const hintCol   = isDark ? "rgba(255,255,255,0.22)" : "#9ca3af";
+
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between">
-        <label className="text-xs font-medium text-white/40">{label}</label>
-        {hint && <span className="text-xs text-white/25">{hint}</span>}
+        <label className="text-xs font-medium" style={{ color: labelCol }}>{label}</label>
+        {hint && <span className="text-xs" style={{ color: hintCol }}>{hint}</span>}
       </div>
       <textarea
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         rows={rows}
-        className="w-full resize-none rounded-xl border border-white/[0.09] bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-white/20 outline-none transition hover:border-white/[0.15] focus:border-[#c9a55a]/45 focus:ring-2 focus:ring-[#c9a55a]/10"
+        className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none transition"
+        style={{ background: inputBg, border: `1px solid ${inputBd}`, color: inputText }}
+        onFocus={e => { e.currentTarget.style.borderColor = `${GOLD}80`; }}
+        onBlur={e => { e.currentTarget.style.borderColor = inputBd; }}
       />
     </div>
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
   return (
-    <p className="pb-2 pt-1 text-xs font-bold uppercase tracking-widest text-white/25">
+    <p className="pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-widest"
+      style={{ color: isDark ? "rgba(255,255,255,0.28)" : "#9ca3af" }}>
       {children}
     </p>
   );
 }
 
-// ─── Page principale ─────────────────────────────────────────────────────────
+// ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function ParametresFacturesPage() {
   const { isDark } = useTheme();
-  const [tab,           setTab]           = useState<TabId>("entetes");
-  const [s,             setS]             = useState<AllSettings>(DEFAULTS);
-  const [loading,       setLoading]       = useState(true);
-  const [saving,        setSaving]        = useState(false);
-  const [saved,         setSaved]         = useState(false);
-  const [saveErr,       setSaveErr]       = useState("");
-  const [logoTransform, setLogoTransform] = useState<LogoTransform>(DEFAULT_LOGO_TRANSFORM);
-  const [headerZoom,    setHeaderZoom]    = useState(1.0);   // 0.7 → 2.0
-  const logoRef = useRef<HTMLInputElement>(null);
 
-  /** Met à jour un champ */
+  const [tab,     setTab]     = useState<TabId>("style");
+  const [s,       setS]       = useState<Settings>(DEFAULTS);
+  const [loading, setLoading] = useState(true);
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+  const [saveErr, setSaveErr] = useState("");
+  const [zoom,    setZoom]    = useState(80);     // 50..150
+  const [fullscreen, setFullscreen] = useState(false);
+
+  // ── Tokens couleur page ──────────────────────────────────────────────────────
+  const pageBg      = isDark ? "#0f1117" : "#f3f4f6";
+  const panelBg     = isDark ? "#0f1117" : "#ffffff";
+  const topbarBg    = isDark ? "rgba(15,17,23,0.98)" : "rgba(255,255,255,0.98)";
+  const topbarBd    = isDark ? "rgba(255,255,255,0.07)" : "#e5e7eb";
+  const textPrimary = isDark ? "#ffffff" : "#111827";
+  const textSecond  = isDark ? "rgba(255,255,255,0.45)" : "#6b7280";
+  const divider     = isDark ? "rgba(255,255,255,0.07)" : "#e5e7eb";
+  const previewBg   = isDark ? "#1a1e2b" : "#dde3ef";
+  const cardBg      = isDark ? "rgba(255,255,255,0.03)" : "#f9fafb";
+  const cardBd      = isDark ? "rgba(255,255,255,0.07)" : "#e5e7eb";
+
   const upd = (key: SettingKey) => (val: string) =>
     setS(prev => ({ ...prev, [key]: val }));
 
-  /** Charge depuis user_settings (isolé par user_id via RLS) */
+  // ── Chargement ───────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase
       .from("user_settings")
@@ -277,30 +260,24 @@ export default function ParametresFacturesPage() {
             }
             return next;
           });
-          if (map["brand.logo_transform"]) {
-            try { setLogoTransform(JSON.parse(map["brand.logo_transform"])); }
-            catch { /* ignore */ }
-          }
         }
         setLoading(false);
       });
   }, []);
 
-  /** Sauvegarde vers user_settings (chaque client a ses propres clés) */
-  async function handleSave() {
+  // ── Sauvegarde ───────────────────────────────────────────────────────────────
+  const handleSave = useCallback(async () => {
     setSaving(true); setSaved(false); setSaveErr("");
-
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaveErr("Non authentifié."); setSaving(false); return; }
 
-    const rows = [
-      ...Object.entries(KEY_MAP).map(([local, dbKey]) => ({
-        user_id: user.id,
-        key:     dbKey,
-        value:   s[local as SettingKey] ?? "",
-      })),
-      { user_id: user.id, key: "brand.logo_transform", value: JSON.stringify(logoTransform) },
-    ];
+    // On ne sauvegarde que les champs éditables (pas company_name / logo_url qui sont read-only ici)
+    const writableKeys = ["color","template","prefix_facture","prefix_devis","delai_paiement","tva_default","devise","conditions_vente","notes_defaut"] as const;
+    const rows = writableKeys.map(local => ({
+      user_id: user.id,
+      key:     KEY_MAP[local],
+      value:   s[local] ?? "",
+    }));
 
     const { error } = await supabase
       .from("user_settings")
@@ -308,21 +285,11 @@ export default function ParametresFacturesPage() {
 
     setSaving(false);
     if (error) { setSaveErr("Erreur lors de la sauvegarde."); return; }
-
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
-  }
+  }, [s]);
 
-  /** Upload logo (base64) */
-  function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => upd("logoUrl")(ev.target?.result as string);
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  }
-
-  /** Données de prévisualisation dérivées des réglages */
+  // ── Données de prévisualisation ──────────────────────────────────────────────
   const previewData: PreviewData = {
     type:           "invoice",
     reference:      `${s.prefix_facture || "FAC-"}2025-0001`,
@@ -339,464 +306,396 @@ export default function ParametresFacturesPage() {
     tax_amount:     840,
     total:          5040,
     company: {
-      name:     s.name    || "Mon Entreprise",
-      email:    s.email   || "",
-      website:  s.website || "",
-      logoUrl:  s.logoUrl || null,
+      name:     s.company_name || "Mon Entreprise",
+      email:    "",
+      website:  "",
+      logoUrl:  s.logo_url ? s.logo_url : null,
       logoSize: "md",
     },
   };
 
-  // ── Chargement ────────────────────────────────────────────────────────────
+  // ── Chargement ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className={`flex min-h-screen items-center justify-center ${isDark ? "bg-[#0f1117]" : "bg-gray-50"}`}>
-        <Loader2 size={22} className="animate-spin text-[#c9a55a]" />
+      <div className="flex min-h-full items-center justify-center" style={{ background: pageBg }}>
+        <Loader2 size={22} className="animate-spin" style={{ color: GOLD }} />
       </div>
     );
   }
 
+  // ── Rendu ─────────────────────────────────────────────────────────────────────
   return (
-    <div className={`flex h-screen flex-col overflow-hidden ${isDark ? "bg-[#0f1117] params-dark" : "bg-gray-50 params-light"}`}>
-      <style>{`
-        /* ── Light mode overrides ── */
-        .params-light [class*="bg-[#0f1117]"]  { background-color: #f8fafc !important; }
-        .params-light [class*="bg-[#090c12]"]  { background-color: #f1f5fb !important; }
-        .params-light [class*="bg-[#181c28]"]  { background-color: #f1f5f9 !important; }
-        .params-light [class*="border-white/[0.07]"] { border-color: rgba(0,0,0,0.08) !important; }
-        .params-light [class*="border-white/[0.09]"] { border-color: rgba(0,0,0,0.10) !important; }
-        .params-light [class*="border-white/[0.1]"]  { border-color: rgba(0,0,0,0.10) !important; }
-        .params-light [class*="border-white/[0.05]"] { border-color: rgba(0,0,0,0.06) !important; }
-        .params-light [class*="bg-white/[0.09]"] { background-color: rgba(0,0,0,0.06) !important; }
-        .params-light [class*="bg-white/[0.07]"] { background-color: rgba(0,0,0,0.05) !important; }
-        .params-light [class*="bg-white/[0.05]"] { background-color: rgba(0,0,0,0.04) !important; }
-        .params-light [class*="bg-white/[0.04]"] { background-color: #ffffff !important; }
-        .params-light [class*="bg-white/[0.03]"] { background-color: rgba(0,0,0,0.025) !important; }
-        .params-light [class*="bg-white/[0.02]"] { background-color: rgba(0,0,0,0.018) !important; }
-        .params-light [class*="hover:bg-white/"]:hover { background-color: rgba(0,0,0,0.04) !important; }
-        .params-light .text-white { color: #111827 !important; }
-        .params-light .text-white\\/45, .params-light .text-white\\/40 { color: #6b7280 !important; }
-        .params-light .text-white\\/35, .params-light .text-white\\/30 { color: #9ca3af !important; }
-        .params-light .text-white\\/25, .params-light .text-white\\/20 { color: #d1d5db !important; }
-        .params-light .text-white\\/18, .params-light .text-white\\/12 { color: #e5e7eb !important; }
-        .params-light [class*="text-white/"] { color: #6b7280 !important; }
-        .params-light [class*="placeholder:text-white"]::placeholder { color: #d1d5db !important; }
-        .params-light [class*="hover:text-white/"]:hover { color: #374151 !important; }
-        .params-light select option { background: #ffffff !important; color: #111827 !important; }
-        .params-light input, .params-light select, .params-light textarea {
-          color: #111827 !important;
-          background-color: #ffffff !important;
-          border-color: #e5e7eb !important;
-        }
-        .params-light input:focus, .params-light select:focus, .params-light textarea:focus {
-          border-color: rgba(201,165,90,0.5) !important;
-        }
-      `}</style>
+    <div className="flex h-full flex-col overflow-hidden" style={{ background: pageBg }}>
 
-      {/* ── Barre supérieure ─────────────────────────────────────── */}
-      <div className="flex shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#0f1117]/98 px-5 py-3 backdrop-blur">
-
+      {/* ── Barre supérieure ──────────────────────────────────────────── */}
+      <div
+        className="flex shrink-0 items-center justify-between gap-3 px-5 py-3"
+        style={{ background: topbarBg, borderBottom: `1px solid ${topbarBd}` }}
+      >
         {/* Retour */}
-        <Link href="/client/factures"
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-white/45 transition hover:bg-white/[0.05] hover:text-white/80">
-          <ArrowLeft size={14} /> Retour
+        <Link
+          href="/client/factures"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition"
+          style={{ color: textSecond }}
+        >
+          <ArrowLeft size={14} /> <span className="hidden sm:inline">Retour</span>
         </Link>
 
         {/* Onglets */}
-        <div className="flex items-center gap-0.5 overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.03] p-1 scrollbar-none">
+        <div
+          className="flex items-center gap-0.5 rounded-xl p-1"
+          style={{ background: isDark ? "rgba(255,255,255,0.04)" : "#f3f4f6", border: `1px solid ${divider}` }}
+        >
           {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition sm:px-3 ${
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+              style={
                 tab === t.id
-                  ? "bg-white/[0.09] text-white shadow-sm"
-                  : "text-white/35 hover:text-white/60"
-              }`}>
+                  ? { background: isDark ? "rgba(255,255,255,0.09)" : "#ffffff", color: textPrimary, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
+                  : { color: textSecond }
+              }
+            >
               <t.icon size={11} />
-              <span className="hidden xs:inline sm:inline">{t.label}</span>
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
 
         {/* Bouton enregistrer */}
-        <motion.button
+        <button
           onClick={handleSave}
           disabled={saving}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
+          className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition"
+          style={
             saved
-              ? "border border-green-500/25 bg-green-500/10 text-green-400"
-              : "text-[#0a0a0a]"
-          }`}
-          style={saved ? {} : { background: `linear-gradient(135deg, ${GOLD}, #b08d45)` }}
+              ? { background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }
+              : { background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a" }
+          }
         >
-          {saved   ? <><Check size={13} /> Enregistré</> :
+          {saved   ? <><Check size={13} /> Enregistré</>      :
            saving  ? <><Loader2 size={13} className="animate-spin" /> Enregistrement…</> :
                      <><Save size={13} /> Enregistrer</>}
-        </motion.button>
+        </button>
       </div>
 
-      {/* ── Message d'erreur ─────────────────────────────────────── */}
-      <AnimatePresence>
-        {saveErr && (
-          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }}
-            className="overflow-hidden border-b border-red-500/20 bg-red-500/10">
-            <div className="flex items-center gap-2 px-6 py-2 text-sm text-red-400">
-              <AlertCircle size={13} /> {saveErr}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ── Erreur ──────────────────────────────────────────────────── */}
+      {saveErr && (
+        <div className="flex shrink-0 items-center gap-2 px-6 py-2 text-sm"
+          style={{ background: "rgba(239,68,68,0.1)", borderBottom: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
+          <AlertCircle size={13} /> {saveErr}
+        </div>
+      )}
 
-      {/* ── Contenu principal ────────────────────────────────────── */}
+      {/* ── Corps principal ──────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ── Panneau formulaire (gauche) ── */}
-        <div className="w-full shrink-0 overflow-y-auto border-r border-white/[0.07] px-5 py-6 sm:w-[440px] sm:px-8 sm:py-7">
-          <AnimatePresence mode="wait">
-            <motion.div key={tab}
-              initial={{ opacity: 0, x: -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 6 }}
-              transition={{ duration: 0.18 }}>
-
-              {/* ── EN-TÊTES ──────────────────────────────────────── */}
-              {tab === "entetes" && (
-                <div className="space-y-4">
-                  <div className="mb-2">
-                    <h2 className="text-base font-bold text-white">En-tête du document</h2>
-                    <p className="mt-0.5 text-xs text-white/30">Informations affichées en haut de chaque facture et devis.</p>
-                  </div>
-
-                  <Field label="Nom de l'entreprise" value={s.name} onChange={upd("name")}
-                    placeholder="Ma Société SAS" icon={Building2} />
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Email de contact" value={s.email} onChange={upd("email")}
-                      placeholder="contact@masociete.fr" icon={Mail} type="email" />
-                    <Field label="Téléphone" value={s.phone} onChange={upd("phone")}
-                      placeholder="+33 1 23 45 67" icon={Phone} type="tel" />
-                  </div>
-
-                  <Field label="Site internet" value={s.website} onChange={upd("website")}
-                    placeholder="www.masociete.fr" icon={Globe} />
-
-                  <Field label="Adresse (rue)" value={s.address} onChange={upd("address")}
-                    placeholder="12 rue des Lilas" icon={Building2} />
-                  <div className="grid grid-cols-[100px_1fr] gap-3">
-                    <Field label="Code postal" value={s.postal_code} onChange={upd("postal_code")}
-                      placeholder="75001" />
-                    <Field label="Ville" value={s.city} onChange={upd("city")}
-                      placeholder="Paris" />
-                  </div>
-                  <Field label="Pays" value={s.country} onChange={upd("country")}
-                    placeholder="France" />
-
-                  {/* Logo */}
-                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                    <p className="mb-3 text-xs font-medium text-white/40">Logo ou image de marque</p>
-                    <div className="flex items-center gap-4">
-                      {s.logoUrl ? (
-                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/[0.1] bg-white">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={s.logoUrl} alt="logo" className="h-full w-full object-contain p-1.5" />
-                          <button onClick={() => upd("logoUrl")("")}
-                            className="absolute right-0.5 top-0.5 rounded-full bg-black/70 p-0.5 text-white/70 transition hover:text-white">
-                            <X size={9} />
-                          </button>
-                        </div>
-                      ) : (
-                        <button onClick={() => logoRef.current?.click()}
-                          className="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-white/[0.15] bg-white/[0.02] transition hover:border-white/30 hover:bg-white/[0.04]">
-                          <ImagePlus size={16} className="text-white/25" />
-                        </button>
-                      )}
-                      <div>
-                        <button onClick={() => logoRef.current?.click()}
-                          className="text-sm font-semibold text-[#c9a55a] transition hover:opacity-75">
-                          {s.logoUrl ? "Remplacer le logo" : "Ajouter un logo"}
-                        </button>
-                        <p className="mt-0.5 text-xs text-white/25">PNG, JPG, SVG • max 2 Mo</p>
-                        <p className="text-xs text-white/20">Visible dans l'en-tête des documents</p>
-                      </div>
-                    </div>
-                    <input ref={logoRef} type="file" accept="image/*" onChange={handleLogoFile} className="hidden" />
-                  </div>
-
-                  {/* ── Aperçu de l'en-tête zoomable ─────────────────── */}
-                  <div className="overflow-hidden rounded-xl border border-white/[0.07]">
-                    {/* Barre titre + contrôles zoom */}
-                    <div className="flex items-center justify-between border-b border-white/[0.05] bg-white/[0.02] px-3 py-2">
-                      <p className="text-xs font-bold uppercase tracking-wider text-white/30">
-                        Aperçu de l&apos;en-tête
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => setHeaderZoom(z => Math.max(0.5, parseFloat((z - 0.25).toFixed(2))))}
-                          disabled={headerZoom <= 0.5}
-                          className="flex h-5 w-5 items-center justify-center rounded text-white/40 transition hover:bg-white/[0.07] hover:text-white/70 disabled:opacity-30">
-                          <ZoomOut size={11} />
-                        </button>
-                        <span className="w-9 text-center text-xs text-white/25">
-                          {Math.round(headerZoom * 100)}%
-                        </span>
-                        <button onClick={() => setHeaderZoom(z => Math.min(2.5, parseFloat((z + 0.25).toFixed(2))))}
-                          disabled={headerZoom >= 2.5}
-                          className="flex h-5 w-5 items-center justify-center rounded text-white/40 transition hover:bg-white/[0.07] hover:text-white/70 disabled:opacity-30">
-                          <ZoomIn size={11} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Zone de prévisualisation — affiche la partie haute de la facture */}
-                    <div style={{ height: 175, overflow: "hidden", background: "#d4d8e0", position: "relative" }}>
-                      {/* Conteneur à largeur variable = zoom réel (pas CSS transform) */}
-                      <div style={{
-                        position: "absolute",
-                        top: 0, left: 0,
-                        width: `${Math.round(380 * headerZoom)}px`,
-                        minWidth: "100%",
-                      }}>
-                        <InvoiceTemplate
-                          type={(s.template as TemplateType) || "modern"}
-                          data={previewData}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Hint drag → aperçu droite */}
-                    {s.logoUrl && (
-                      <div className="flex items-center gap-2 border-t border-white/[0.05] px-3 py-1.5">
-                        <Move size={10} className="text-[#c9a55a]/60" />
-                        <p className="text-xs text-white/25">
-                          Glissez et redimensionnez le logo dans l&apos;aperçu complet →
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* ── PIEDS DE PAGE ─────────────────────────────────── */}
-              {tab === "pieds" && (
-                <div className="space-y-5">
-                  <div className="mb-2">
-                    <h2 className="text-base font-bold text-white">Pied de page</h2>
-                    <p className="mt-0.5 text-xs text-white/30">Mentions légales et coordonnées bancaires répétées sur chaque document.</p>
-                  </div>
-
-                  {/* Immatriculation */}
-                  <div className="space-y-3">
-                    <SectionTitle>Immatriculation</SectionTitle>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Field label="SIRET" value={s.siret} onChange={upd("siret")}
-                        placeholder="XXX XXX XXX XXXXX" icon={Hash} />
-                      <Field label="Code APE / NAF" value={s.ape} onChange={upd("ape")}
-                        placeholder="XXXXA" />
-                    </div>
-                    <Field label="N° TVA intracommunautaire" value={s.vat_number} onChange={upd("vat_number")}
-                      placeholder="FR XX XXX XXX XXX" icon={FileText} />
-                  </div>
-
-                  {/* Société */}
-                  <div className="space-y-3">
-                    <SectionTitle>Société</SectionTitle>
-                    <div className="grid grid-cols-2 gap-3">
-                      <SelectField label="Forme juridique" value={s.forme_juridique}
-                        onChange={upd("forme_juridique")} options={FORMES_JURIDIQUES} />
-                      <Field label="Capital social" value={s.capital_social}
-                        onChange={upd("capital_social")} placeholder="10 000 €" />
-                    </div>
-                  </div>
-
-                  {/* Coordonnées bancaires */}
-                  <div className="space-y-3">
-                    <SectionTitle>Coordonnées bancaires</SectionTitle>
-                    <Field label="IBAN" value={s.iban} onChange={upd("iban")}
-                      placeholder="FR76 0000 0000 0000 0000 0000 000" icon={Landmark} />
-                    <Field label="BIC / SWIFT" value={s.bic} onChange={upd("bic")}
-                      placeholder="XXXXXXXX" icon={CreditCard} />
-                  </div>
-
-                  {/* Garantie */}
-                  <Field label="Garantie et assureur" value={s.garantie} onChange={upd("garantie")}
-                    placeholder="Nom de l'assureur — Numéro de contrat" icon={Shield} />
-
-                  {/* Mentions légales */}
-                  <TextareaField label="Mentions légales personnalisées" value={s.mentions_legales}
-                    onChange={upd("mentions_legales")}
-                    placeholder="Texte libre affiché en bas de chaque document…" rows={3}
-                    hint="Pied de page libre" />
-                </div>
-              )}
-
-              {/* ── STYLE ─────────────────────────────────────────── */}
-              {tab === "style" && (
-                <div className="space-y-6">
-                  <div className="mb-2">
-                    <h2 className="text-base font-bold text-white">Style des documents</h2>
-                    <p className="mt-0.5 text-xs text-white/30">Couleur et modèle appliqués par défaut à vos nouveaux documents.</p>
-                  </div>
-
-                  {/* Couleur */}
-                  <div>
-                    <SectionTitle>Couleur principale</SectionTitle>
-                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                      {COLOR_PRESETS.map(hex => (
-                        <button key={hex} onClick={() => upd("color")(hex)}
-                          className="relative h-8 w-8 rounded-full border-2 transition-transform hover:scale-110"
-                          style={{ background: hex, borderColor: s.color === hex ? "#fff" : "transparent" }}>
-                          {s.color === hex && (
-                            <Check size={12}
-                              className="absolute inset-0 m-auto drop-shadow"
-                              style={{ color: parseInt(hex.slice(1), 16) > 0x888888 ? "#333" : "#fff" }} />
-                          )}
-                        </button>
-                      ))}
-                      {/* Couleur personnalisée */}
-                      <div className="relative" title="Couleur personnalisée">
-                        <div
-                          className="h-8 w-8 cursor-pointer overflow-hidden rounded-full border-2 transition-transform hover:scale-110"
-                          style={{
-                            background: COLOR_PRESETS.includes(s.color)
-                              ? "conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"
-                              : s.color,
-                            borderColor: !COLOR_PRESETS.includes(s.color) ? "#fff" : "rgba(255,255,255,0.2)",
-                          }}
-                          onClick={() => document.getElementById("colorPicker")?.click()}
-                        />
-                        <input id="colorPicker" type="color" value={s.color}
-                          onChange={e => upd("color")(e.target.value)}
-                          className="absolute inset-0 h-0 w-0 opacity-0 pointer-events-none" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Modèle */}
-                  <div>
-                    <SectionTitle>Modèle de document</SectionTitle>
-                    <div className="space-y-2 pt-1">
-                      {TEMPLATE_INFO.map(tpl => (
-                        <button key={tpl.id} onClick={() => upd("template")(tpl.id)}
-                          className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${
-                            s.template === tpl.id
-                              ? "border-[#c9a55a]/40 bg-[#c9a55a]/[0.07]"
-                              : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]"
-                          }`}>
-                          {/* Swatch couleur */}
-                          <div className="h-7 w-7 shrink-0 rounded-md border border-white/[0.12]"
-                            style={{ backgroundColor: tpl.previewColor }} />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-white">{tpl.label}</p>
-                            <p className="truncate text-xs text-white/30">{tpl.description}</p>
-                          </div>
-                          {/* Badge */}
-                          <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold"
-                            style={{ color: tpl.badge.textColor, background: tpl.badge.bgColor }}>
-                            {tpl.badge.label}
-                          </span>
-                          {s.template === tpl.id && (
-                            <Check size={13} className="shrink-0 text-[#c9a55a]" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ── DEVIS & FACTURES ──────────────────────────────── */}
-              {tab === "documents" && (
-                <div className="space-y-5">
-                  <div className="mb-2">
-                    <h2 className="text-base font-bold text-white">Devis & Factures</h2>
-                    <p className="mt-0.5 text-xs text-white/30">Paramètres par défaut à la création d'un nouveau document.</p>
-                  </div>
-
-                  {/* Numérotation */}
-                  <div className="space-y-3">
-                    <SectionTitle>Numérotation automatique</SectionTitle>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Field label="Préfixe facture" value={s.prefix_facture} onChange={upd("prefix_facture")}
-                        placeholder="FAC-" icon={Hash}
-                        hint={"Ex : FAC-2025-0001"} />
-                      <Field label="Préfixe devis" value={s.prefix_devis} onChange={upd("prefix_devis")}
-                        placeholder="DEV-" icon={Hash}
-                        hint={"Ex : DEV-2025-0001"} />
-                    </div>
-                  </div>
-
-                  {/* Défauts */}
-                  <div className="space-y-3">
-                    <SectionTitle>Valeurs par défaut</SectionTitle>
-                    <div className="grid grid-cols-3 gap-3">
-                      <Field label="Délai paiement (j)" value={s.delai_paiement} onChange={upd("delai_paiement")}
-                        placeholder="30" icon={Calendar} type="number" />
-                      <Field label="TVA défaut (%)" value={s.tva_default} onChange={upd("tva_default")}
-                        placeholder="20" icon={Percent} type="number" />
-                      <SelectField label="Devise" value={s.devise}
-                        onChange={upd("devise")} options={DEVISES} />
-                    </div>
-                  </div>
-
-                  {/* CGV */}
-                  <TextareaField label="Conditions générales de vente"
-                    value={s.conditions_vente} onChange={upd("conditions_vente")}
-                    placeholder={"Paiement à 30 jours net. En cas de retard, pénalités de 3× le taux d'intérêt légal…"}
-                    rows={4} hint="Pré-rempli sur chaque document" />
-
-                  {/* Notes par défaut */}
-                  <TextareaField label="Notes par défaut"
-                    value={s.notes_defaut} onChange={upd("notes_defaut")}
-                    placeholder="Merci de votre confiance. Paiement par virement bancaire uniquement."
-                    rows={2} />
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* ── Flèche ─────────────────────────────────────────────── */}
-        <div className="hidden sm:flex shrink-0 flex-col items-center justify-center px-3">
-          <ChevronRight size={22} className="text-white/12" />
-        </div>
-
-        {/* ── Panneau aperçu (droite) ─────────────────────────────── */}
-        <div className="hidden sm:flex sm:flex-1 flex-col overflow-hidden bg-[#090c12]">
-          <p className="shrink-0 border-b border-white/[0.05] px-6 py-3 text-xs font-bold uppercase tracking-widest text-white/20">
-            Aperçu en direct
-          </p>
-          <div className="flex flex-1 items-start justify-center overflow-y-auto p-6">
-            {/* wrapper overflow:visible pour que les poignées LogoDragResize ne soient pas clippées */}
-            <div className="relative w-full max-w-[400px]">
-              <div className="overflow-hidden rounded-xl shadow-[0_24px_70px_rgba(0,0,0,0.6)]">
-                <InvoiceTemplate
-                  type={(s.template as TemplateType) || "modern"}
-                  data={s.logoUrl
-                    ? { ...previewData, company: { ...previewData.company, logoUrl: null } }
-                    : previewData}
-                />
+        {/* ── Panneau formulaire (gauche fixe) ── */}
+        <div
+          className="shrink-0 overflow-y-auto"
+          style={{
+            width: 300,
+            minWidth: 280,
+            borderRight: `1px solid ${divider}`,
+            background: panelBg,
+            padding: "20px 20px 32px",
+          }}
+        >
+          {/* Carte renvoi vers Mon entreprise */}
+          <Link
+            href="/client/factures/entreprise"
+            className="mb-4 flex items-center justify-between rounded-xl p-3 transition"
+            style={{ background: cardBg, border: `1px solid ${cardBd}` }}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg"
+                style={{ background: "rgba(201,165,90,0.12)", border: "1px solid rgba(201,165,90,0.25)" }}>
+                <Building2 size={13} style={{ color: GOLD }} />
               </div>
-              {/* Overlay logo drag & resize */}
-              {s.logoUrl && (
-                <LogoDragResize
-                  src={s.logoUrl}
-                  transform={logoTransform}
-                  onChange={setLogoTransform}
-                  onReset={() => setLogoTransform(DEFAULT_LOGO_TRANSFORM)}
-                />
-              )}
+              <div>
+                <p className="text-xs font-semibold" style={{ color: textPrimary }}>Mon entreprise</p>
+                <p className="text-[10px]" style={{ color: textSecond }}>Identité · Fiscal · Banque</p>
+              </div>
             </div>
-          </div>
-          {/* Hint sous le panneau */}
-          {s.logoUrl && (
-            <p className="shrink-0 pb-4 text-center text-[11px] text-white/18">
-              <Move size={9} className="mr-1 inline" />
-              Glissez · Poignées pour redimensionner · Verrou ratio
-            </p>
+            <ExternalLink size={11} style={{ color: textSecond }} />
+          </Link>
+
+          {/* ── STYLE ───────────────────────────────────────────────── */}
+          {tab === "style" && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-sm font-bold" style={{ color: textPrimary }}>Style des documents</h2>
+                <p className="mt-0.5 text-xs" style={{ color: textSecond }}>Couleur d'accent et modèle appliqués par défaut.</p>
+              </div>
+
+              {/* Couleur */}
+              <div>
+                <SectionTitle isDark={isDark}>Couleur principale</SectionTitle>
+                <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                  {COLOR_PRESETS.map(hex => (
+                    <button key={hex}
+                      onClick={() => upd("color")(hex)}
+                      className="relative h-8 w-8 rounded-full border-2 transition-transform hover:scale-110"
+                      style={{ background: hex, borderColor: s.color === hex ? "#ffffff" : "transparent" }}>
+                      {s.color === hex && (
+                        <Check size={12} className="absolute inset-0 m-auto"
+                          style={{ color: parseInt(hex.slice(1), 16) > 0x888888 ? "#333" : "#fff" }} />
+                      )}
+                    </button>
+                  ))}
+                  {/* Couleur personnalisée */}
+                  <div className="relative">
+                    <div
+                      className="h-8 w-8 cursor-pointer overflow-hidden rounded-full border-2 transition-transform hover:scale-110"
+                      style={{
+                        background: COLOR_PRESETS.includes(s.color)
+                          ? "conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"
+                          : s.color,
+                        borderColor: !COLOR_PRESETS.includes(s.color) ? "#ffffff" : "rgba(255,255,255,0.2)",
+                      }}
+                      onClick={() => document.getElementById("colorPickerParam")?.click()}
+                    />
+                    <input id="colorPickerParam" type="color" value={s.color}
+                      onChange={e => upd("color")(e.target.value)}
+                      className="absolute inset-0 h-0 w-0 opacity-0 pointer-events-none" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xs font-mono" style={{ color: textSecond }}>{s.color}</p>
+              </div>
+
+              {/* Modèle — lien vers galerie */}
+              <div>
+                <SectionTitle isDark={isDark}>Modèle de document</SectionTitle>
+                <Link
+                  href="/client/factures/modeles"
+                  className="mt-1 flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition"
+                  style={{ background: "rgba(201,165,90,0.08)", border: "1px solid rgba(201,165,90,0.22)", color: GOLD }}
+                >
+                  <span>Changer de modèle (galerie 24)</span>
+                  <ChevronRight size={14} />
+                </Link>
+                {s.template && (
+                  <p className="mt-1.5 text-xs" style={{ color: textSecond }}>
+                    Modèle actuel : <span className="font-mono">{s.template}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── FACTURATION ─────────────────────────────────────────── */}
+          {tab === "facturation" && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-sm font-bold" style={{ color: textPrimary }}>Paramètres de facturation</h2>
+                <p className="mt-0.5 text-xs" style={{ color: textSecond }}>Règles appliquées par défaut à tous les nouveaux documents.</p>
+              </div>
+
+              {/* Numérotation */}
+              <div className="space-y-3">
+                <SectionTitle isDark={isDark}>Numérotation</SectionTitle>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Préfixe facture" value={s.prefix_facture}
+                    onChange={upd("prefix_facture")} placeholder="FAC-"
+                    icon={Hash} hint="Ex : FAC-2025-0001" isDark={isDark} />
+                  <Field label="Préfixe devis" value={s.prefix_devis}
+                    onChange={upd("prefix_devis")} placeholder="DEV-"
+                    icon={Hash} hint="Ex : DEV-2025-0001" isDark={isDark} />
+                </div>
+              </div>
+
+              {/* Valeurs par défaut */}
+              <div className="space-y-3">
+                <SectionTitle isDark={isDark}>Valeurs par défaut</SectionTitle>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Délai paiement (j)" value={s.delai_paiement}
+                    onChange={upd("delai_paiement")} placeholder="30"
+                    icon={Calendar} type="number" isDark={isDark} />
+                  <Field label="TVA défaut (%)" value={s.tva_default}
+                    onChange={upd("tva_default")} placeholder="20"
+                    icon={Percent} type="number" isDark={isDark} />
+                </div>
+                <SelectField label="Devise" value={s.devise}
+                  onChange={upd("devise")} options={DEVISES} isDark={isDark} />
+              </div>
+
+              {/* CGV */}
+              <div className="space-y-3">
+                <SectionTitle isDark={isDark}>Textes par défaut</SectionTitle>
+                <TextareaField
+                  label="Conditions générales de vente"
+                  value={s.conditions_vente} onChange={upd("conditions_vente")}
+                  placeholder="Paiement à 30 jours net. Pénalités en cas de retard…"
+                  rows={4} hint="Pré-rempli sur chaque document" isDark={isDark} />
+                <TextareaField
+                  label="Notes par défaut"
+                  value={s.notes_defaut} onChange={upd("notes_defaut")}
+                  placeholder="Merci de votre confiance…"
+                  rows={2} isDark={isDark} />
+              </div>
+            </div>
           )}
         </div>
 
+        {/* ── Flèche de séparation ── */}
+        <div
+          className="hidden shrink-0 items-center justify-center lg:flex"
+          style={{ width: 28, background: panelBg, borderRight: `1px solid ${divider}` }}
+        >
+          <ChevronRight size={16} style={{ color: isDark ? "rgba(255,255,255,0.12)" : "#d1d5db" }} />
+        </div>
+
+        {/* ── Panneau aperçu (droite flexible) ── */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Barre de contrôle aperçu */}
+          <div
+            className="flex shrink-0 items-center justify-between gap-3 px-4 py-2"
+            style={{ background: panelBg, borderBottom: `1px solid ${divider}` }}
+          >
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: textSecond }}>
+              Aperçu en direct
+            </span>
+
+            <div className="flex items-center gap-1">
+              {/* Boutons zoom rapide */}
+              {[50, 75, 100, 125].map(z => (
+                <button
+                  key={z}
+                  onClick={() => setZoom(z)}
+                  className="rounded px-2 py-1 text-xs font-mono font-semibold transition"
+                  style={
+                    zoom === z
+                      ? { background: "rgba(201,165,90,0.15)", color: GOLD }
+                      : { color: textSecond }
+                  }
+                >
+                  {z}%
+                </button>
+              ))}
+
+              {/* - / + */}
+              <button
+                onClick={() => setZoom(z => Math.max(50, z - 10))}
+                disabled={zoom <= 50}
+                className="flex h-6 w-6 items-center justify-center rounded transition disabled:opacity-30"
+                style={{ color: textSecond }}
+              >
+                <ZoomOut size={12} />
+              </button>
+              <span className="w-10 text-center text-xs font-mono" style={{ color: textSecond }}>
+                {zoom}%
+              </span>
+              <button
+                onClick={() => setZoom(z => Math.min(150, z + 10))}
+                disabled={zoom >= 150}
+                className="flex h-6 w-6 items-center justify-center rounded transition disabled:opacity-30"
+                style={{ color: textSecond }}
+              >
+                <ZoomIn size={12} />
+              </button>
+
+              {/* Plein écran */}
+              <button
+                onClick={() => setFullscreen(true)}
+                className="ml-1 flex h-6 w-6 items-center justify-center rounded transition"
+                style={{ color: textSecond }}
+                title="Plein écran"
+              >
+                <Maximize2 size={12} />
+              </button>
+            </div>
+          </div>
+
+          {/* Zone aperçu scrollable */}
+          <div
+            className="flex-1 overflow-auto"
+            style={{ background: previewBg }}
+          >
+            <div
+              style={{
+                minHeight: "100%",
+                display: "flex",
+                justifyContent: "center",
+                padding: 24,
+              }}
+            >
+              {/* Le conteneur de zoom : width = zoom% de la zone disponible */}
+              <div
+                style={{
+                  width: `${zoom}%`,
+                  minWidth: 280,
+                  maxWidth: zoom <= 100 ? undefined : "none",
+                  flexShrink: 0,
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  boxShadow: "0 8px 40px rgba(0,0,0,0.35)",
+                }}
+              >
+                <InvoiceTemplate
+                  type={(s.template as TemplateType) || "min-ligne"}
+                  data={previewData}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* ── Modal plein écran ──────────────────────────────────────────── */}
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col"
+          style={{ background: isDark ? "#0a0d14" : "#dde3ef" }}
+        >
+          {/* Barre de contrôle fullscreen */}
+          <div
+            className="flex shrink-0 items-center justify-between gap-4 px-6 py-3"
+            style={{ background: isDark ? "rgba(15,17,23,0.98)" : "rgba(255,255,255,0.98)", borderBottom: `1px solid ${divider}` }}
+          >
+            <span className="text-sm font-bold" style={{ color: textPrimary }}>Aperçu plein écran</span>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setZoom(z => Math.max(50, z - 10))} disabled={zoom <= 50}
+                className="flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-30"
+                style={{ color: textSecond, background: cardBg, border: `1px solid ${cardBd}` }}>
+                <ZoomOut size={13} />
+              </button>
+              <span className="w-12 text-center text-sm font-mono font-bold" style={{ color: textPrimary }}>
+                {zoom}%
+              </span>
+              <button onClick={() => setZoom(z => Math.min(150, z + 10))} disabled={zoom >= 150}
+                className="flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-30"
+                style={{ color: textSecond, background: cardBg, border: `1px solid ${cardBd}` }}>
+                <ZoomIn size={13} />
+              </button>
+              <button onClick={() => setFullscreen(false)}
+                className="ml-2 flex h-7 w-7 items-center justify-center rounded-lg transition"
+                style={{ color: "#ef4444", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+          {/* Contenu fullscreen */}
+          <div className="flex-1 overflow-auto" style={{ background: isDark ? "#1a1e2b" : "#dde3ef" }}>
+            <div style={{ minHeight: "100%", display: "flex", justifyContent: "center", padding: 32 }}>
+              <div style={{
+                width: `${zoom}%`,
+                minWidth: 400,
+                maxWidth: 1000,
+                flexShrink: 0,
+                borderRadius: 10,
+                overflow: "hidden",
+                boxShadow: "0 16px 60px rgba(0,0,0,0.5)",
+              }}>
+                <InvoiceTemplate
+                  type={(s.template as TemplateType) || "min-ligne"}
+                  data={previewData}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

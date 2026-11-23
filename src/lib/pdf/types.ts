@@ -74,7 +74,8 @@ export function normalizeLegacyTemplate(t: string): TemplateType {
     premium:  "corp-bipart",
     colorful: "serv-chaud",
   };
-  return (map[t] as TemplateType) ?? "min-ligne";
+  // Si déjà un ID moderne valide, le passer tel quel
+  return map[t] ?? (t as TemplateType) ?? "min-ligne";
 }
 
 // ─── Variante de rendu (layout structure) ────────────────────────────────────
@@ -94,18 +95,23 @@ export type LayoutVariant =
   | "angled"        // Coin coloré asymétrique
   | "framed"        // Cadre intérieur coloré
   | "vibrant"       // Header épais couleur vive + blanc
-  | "tech-dark";    // Tech sombre avec accents
+  | "tech-dark"     // Tech sombre avec accents
+  | "letterhead"    // En-tête français : bloc adresse gauche, date+réf droite
+  | "luxury"        // Luxe centré : double règle dorée, société au centre
+  | "dark-header";  // Header sombre + corps blanc imprimable
 
 // ─── Line item ────────────────────────────────────────────────────────────────
 
 export interface PdfLineItem {
-  description: string;
-  unit?:       string | null;
-  quantity:    number;
-  unit_price:  number;
-  total:       number;
+  description:   string;
+  unit?:         string | null;
+  quantity:      number;
+  unit_price:    number;
+  total:         number;
+  /** Remise par ligne en % (0–100). Affiché dans le tableau si > 0. */
+  discount_pct?: number | null;
   /** Taux TVA spécifique (optionnel — sinon utilise data.tax_rate) */
-  tax_rate?:   number | null;
+  tax_rate?:     number | null;
 }
 
 // ─── Data passée aux templates ────────────────────────────────────────────────

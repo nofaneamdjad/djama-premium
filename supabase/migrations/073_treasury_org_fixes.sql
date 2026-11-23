@@ -62,8 +62,12 @@ DO $$ BEGIN
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'treasury_transactions' AND column_name = 'document_payment_id'
   ) THEN
-    ALTER TABLE treasury_transactions
-      ADD COLUMN document_payment_id uuid REFERENCES document_payments(id) ON DELETE SET NULL;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='document_payments') THEN
+      ALTER TABLE treasury_transactions
+        ADD COLUMN document_payment_id uuid REFERENCES document_payments(id) ON DELETE SET NULL;
+    ELSE
+      ALTER TABLE treasury_transactions ADD COLUMN document_payment_id uuid;
+    END IF;
   END IF;
 END $$;
 

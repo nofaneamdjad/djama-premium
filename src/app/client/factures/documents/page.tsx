@@ -112,10 +112,11 @@ interface Document {
   signed_at?:       string;
   signed_by?:       string;
   signature_data?:  string | null;
-  recur_freq?:       string | null;
-  recur_next_date?:  string | null;
-  organization_id?:  string | null;
-  contact_id?:       string | null;
+  recur_freq?:          string | null;
+  recur_next_date?:     string | null;
+  organization_id?:     string | null;
+  contact_id?:          string | null;
+  factures_client_id?:  string | null;
 }
 
 type DraftDoc = Omit<Document,
@@ -978,6 +979,7 @@ export default function FacturesPage() {
   const [csvImporting,  setCsvImporting]  = useState(false);
   const csvInputRef    = useRef<HTMLInputElement>(null);
   const logoInputRef   = useRef<HTMLInputElement>(null);
+  const pendingFromClientRef = useRef<{ type: DocType; clientId: string } | null>(null);
 
   // ── Assistant IA de création ─────────────────────────────────────────────────
   const [aiCreateOpen,    setAiCreateOpen]    = useState(false);
@@ -1040,7 +1042,8 @@ export default function FacturesPage() {
       .filter(d => d.statut === "envoyé" || d.statut === "partiellement_payé")
       .reduce((s,d) => s + ((d.total_ttc||0) - (d.montant_paye||0)), 0);
     const overdueAmt = factures.filter(d => d.statut === "en_retard").reduce((s,d) => s + (d.total_ttc||0), 0);
-    return { ca, pendingAmt, overdueAmt };
+    const totalFacture = factures.reduce((s,d) => s + (d.total_ttc||0), 0);
+    return { ca, pendingAmt, overdueAmt, totalFacture };
   }, [documents]);
 
   const overdueWithEmail = useMemo(
@@ -1203,6 +1206,45 @@ export default function FacturesPage() {
     supabase.from("user_settings").select("value").eq("key", "brand.regime_fiscal").maybeSingle()
       .then(({ data }) => { if (data?.value) setRegimeFiscal(data.value as RegimeFiscal); });
   }, []);
+
+  // Ouverture auto depuis fiche client (?new=1&type=...&clientId=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("new") === "1") {
+      const type = sp.get("type") === "devis" ? "devis" : "facture";
+      const clientId = sp.get("clientId") ?? "";
+      if (clientId) pendingFromClientRef.current = { type: type as DocType, clientId };
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  useEffect(() => {
+    const pending = pendingFromClientRef.current;
+    if (!companyDefaults || !pending) return;
+    pendingFromClientRef.current = null;
+    fetch(`/api/factures/clients/${pending.clientId}`)
+      .then(r => r.json() as Promise<{ client?: { id: string; prenom?: string; nom_client?: string; raison_sociale?: string; email?: string; telephone?: string; indicatif_pays?: string; adresse?: string; ville?: string; code_postal?: string; pays?: string } }>)
+      .then(data => {
+        const c = data.client;
+        if (!c) { void newDoc(pending.type); return; }
+        const name = [c.prenom, c.nom_client].filter(Boolean).join(" ") || c.raison_sociale || "";
+        void newDoc(pending.type, {
+          client_nom:         name,
+          client_societe:     c.raison_sociale || "",
+          client_email:       c.email || "",
+          client_telephone:   c.indicatif_pays && c.telephone ? `${c.indicatif_pays} ${c.telephone}` : c.telephone || "",
+          client_adresse:     c.adresse || "",
+          client_ville:       c.ville || "",
+          client_code_postal: c.code_postal || "",
+          client_pays:        c.pays || "",
+          contact_id:         c.id,
+          factures_client_id: c.id,
+        });
+      })
+      .catch(() => void newDoc(pending.type));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyDefaults]);
 
   // Charger les paiements quand une facture est sélectionnée
   useEffect(() => {
@@ -1803,7 +1845,8 @@ export default function FacturesPage() {
           mentions_legales: draft.mentions_legales,
           couleur:          draft.couleur,
           template:         draft.template ?? "modern",
-          organization_id:  activeOrgId,
+          organization_id:    activeOrgId,
+          factures_client_id: draft.factures_client_id ?? null,
           items:            items.map((it, i) => ({
             position:        i,
             description:     it.description,
@@ -2160,27 +2203,41 @@ export default function FacturesPage() {
 
   async function openCrmModal() {
     setCrmModal(true); setCrmQuery(""); setCrmLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setCrmLoading(false); return; }
-    const { data } = await supabase.from("contacts")
-      .select("id,name,company,email,phone,address")
-      .eq("user_id", user.id)
-      .order("name")
-      .limit(50);
-    setCrmClients((data as CrmClient[]) ?? []);
+    try {
+      const res = await fetch("/api/factures/clients?limit=50&statut=actif");
+      const json = await res.json() as { clients?: Array<{ id: string; prenom: string; nom_client: string; raison_sociale: string; email: string; telephone: string; indicatif_pays: string; adresse: string; ville: string; code_postal: string; pays: string }> };
+      const mapped: CrmClient[] = (json.clients ?? []).map(c => ({
+        id:      c.id,
+        name:    [c.prenom, c.nom_client].filter(Boolean).join(" ") || c.raison_sociale,
+        company: c.raison_sociale || undefined,
+        email:   c.email || undefined,
+        phone:   c.indicatif_pays && c.telephone ? `${c.indicatif_pays} ${c.telephone}` : c.telephone || undefined,
+        address: [c.adresse, c.ville, c.code_postal, c.pays].filter(Boolean).join(", ") || undefined,
+      }));
+      setCrmClients(mapped);
+    } catch { setCrmClients([]); }
     setCrmLoading(false);
   }
 
   async function searchCrm(q: string) {
     setCrmQuery(q); setCrmLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setCrmLoading(false); return; }
-    const { data } = await supabase.from("contacts")
-      .select("id,name,company,email,phone,address")
-      .eq("user_id", user.id)
-      .or(`name.ilike.%${q}%,company.ilike.%${q}%,email.ilike.%${q}%`)
-      .limit(20);
-    setCrmClients((data as CrmClient[]) ?? []);
+    try {
+      const url = q.trim()
+        ? `/api/factures/clients/search?q=${encodeURIComponent(q)}&limit=20`
+        : `/api/factures/clients?limit=50&statut=actif`;
+      const res = await fetch(url);
+      const json = await res.json() as { clients?: Array<{ id: string; prenom: string; nom_client: string; raison_sociale: string; email: string; telephone: string; indicatif_pays: string; adresse: string; ville: string; code_postal: string; pays: string }> };
+      const raw = json.clients ?? [];
+      const mapped: CrmClient[] = raw.map(c => ({
+        id:      c.id,
+        name:    [c.prenom, c.nom_client].filter(Boolean).join(" ") || c.raison_sociale,
+        company: c.raison_sociale || undefined,
+        email:   c.email || undefined,
+        phone:   c.indicatif_pays && c.telephone ? `${c.indicatif_pays} ${c.telephone}` : c.telephone || undefined,
+        address: [c.adresse, c.ville, c.code_postal, c.pays].filter(Boolean).join(", ") || undefined,
+      }));
+      setCrmClients(mapped);
+    } catch { setCrmClients([]); }
     setCrmLoading(false);
   }
 
@@ -2205,12 +2262,13 @@ export default function FacturesPage() {
   function applyCrmClient(c: CrmClient) {
     setDraft(d => d ? {
       ...d,
-      client_nom:       c.name        || "",
-      client_societe:   c.company     || "",
-      client_email:     c.email       || "",
-      client_telephone: c.phone       || "",
-      client_adresse:   c.address     || "",
-      contact_id:       c.id,
+      client_nom:          c.name        || "",
+      client_societe:      c.company     || "",
+      client_email:        c.email       || "",
+      client_telephone:    c.phone       || "",
+      client_adresse:      c.address     || "",
+      contact_id:          c.id,
+      factures_client_id:  c.id,
     } : d);
     setDirty(true);
     setCrmModal(false);
@@ -2574,124 +2632,203 @@ export default function FacturesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── 3-column body ── */}
+      {/* ── Liste documents ── */}
       <div className="flex w-full flex-1 overflow-hidden">
 
-        {/* ── LEFT: Document list ── */}
-        <aside className={`flex flex-col shrink-0 border-r ${tbd1} transition-[width] duration-200 overflow-hidden ${mobileView !== "list" ? "hidden sm:flex" : "flex"} ${draft ? "w-full sm:w-0 sm:overflow-hidden sm:border-0" : sidebarOpen ? "w-full sm:w-72" : "sm:w-0 hidden sm:hidden"}`}
-          style={{ background: isDark ? "rgba(17,17,17,0.98)" : "#ffffff" }}>
+        {/* ── Full-width list ── */}
+        <div className="flex flex-col w-full overflow-hidden"
+          style={{ background: isDark ? "#111111" : "#f8f8f8" }}>
 
 
-          {/* KPI strip */}
+          {/* ── KPI Cards ── */}
           {documents.length > 0 && (
-            <div className={`grid grid-cols-3 border-b ${tbd2}`} style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#fafafa" }}>
+            <div className={`shrink-0 grid grid-cols-2 gap-3 border-b ${tbd2} p-4 sm:grid-cols-4`}
+              style={{ background: isDark ? "rgba(255,255,255,0.015)" : "#ffffff" }}>
               {[
-                { label: "Encaissé",  val: fmtEur(stats.ca),          color: "#4ade80", bg: "rgba(74,222,128,0.08)",  Icon: TrendingUp,   click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
-                { label: "En attente",val: fmtEur(stats.pendingAmt),  color: "#FFB900", bg: "rgba(255,185,0,0.08)", Icon: Clock,        click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
-                { label: "En retard", val: fmtEur(stats.overdueAmt),  color: "#f87171", bg: "rgba(248,113,113,0.08)", Icon: AlertTriangle, click: () => { setFilterType("facture"); setFilterStatut("en_retard"); } },
-              ].map((k, i) => (
+                { label: "Total facturé", val: fmtEur(stats.totalFacture), color: isDark ? "rgba(255,255,255,0.80)" : "#1f2937", bg: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", Icon: ReceiptText,   click: () => { setFilterType("facture"); setFilterStatut("tous"); } },
+                { label: "Encaissé",      val: fmtEur(stats.ca),           color: "#4ade80",  bg: "rgba(74,222,128,0.09)",   Icon: TrendingUp,   click: () => { setFilterType("facture"); setFilterStatut("payé"); } },
+                { label: "En attente",    val: fmtEur(stats.pendingAmt),   color: "#FFB900",  bg: "rgba(255,185,0,0.09)",   Icon: Clock,        click: () => { setFilterType("facture"); setFilterStatut("envoyé"); } },
+                { label: "En retard",     val: fmtEur(stats.overdueAmt),   color: "#f87171",  bg: "rgba(248,113,113,0.09)", Icon: AlertTriangle, click: () => { setFilterType("facture"); setFilterStatut("en_retard"); } },
+              ].map(k => (
                 <motion.button key={k.label} onClick={k.click}
-                  whileTap={{ scale: 0.96 }}
+                  whileTap={{ scale: 0.97 }}
                   transition={{ type: "spring", stiffness: 320, damping: 24 }}
-                  className={`relative flex flex-col items-start gap-1 px-3 py-3 transition ${isDark ? "hover:bg-white/[0.03]" : "hover:bg-gray-50"} ${i < 2 ? (isDark ? "border-r border-white/[0.07]" : "border-r border-gray-100") : ""}`}>
-                  <div className="flex w-full items-start justify-between">
-                    <span className="text-[1rem] font-black leading-tight tabular-nums" style={{ color: k.color }}>{k.val}</span>
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: k.bg }}>
-                      <k.Icon size={10} style={{ color: k.color }} />
-                    </div>
+                  className={`flex items-center gap-3 rounded-xl border ${tbd1} p-3.5 text-left transition ${isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50"}`}
+                  style={{ background: isDark ? "rgba(255,255,255,0.03)" : "#ffffff" }}>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: k.bg }}>
+                    <k.Icon size={16} style={{ color: k.color }} />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)" }}>{k.label}</span>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.42)" }}>{k.label}</p>
+                    <p className="mt-0.5 text-sm font-black tabular-nums leading-tight" style={{ color: k.color }}>{k.val}</p>
+                  </div>
                 </motion.button>
               ))}
             </div>
           )}
 
-          {/* CA mensuel chart */}
-          {documents.length > 0 && caByMonth.some(m => m.ca > 0) && (() => {
-            const maxCA  = Math.max(...caByMonth.map(m => m.ca), 1);
-            const W = 300; const H = 68; const BAR_W = 32; const GAP = (W - 6 * BAR_W) / 7;
-            const currentKey = new Date().toISOString().slice(0, 7);
-            return (
-              <div className={`border-b ${tbd2} px-3 pb-2 pt-2.5`}>
-                <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-[0.09em] ${tw5}`}>CA encaissé — 6 mois</p>
-                <svg viewBox={`0 0 ${W} ${H + 14}`} width="100%" style={{ display:"block" }}>
-                  {caByMonth.map((m, i) => {
-                    const barH  = m.ca > 0 ? Math.max(4, Math.round((m.ca / maxCA) * H)) : 2;
-                    const x     = GAP + i * (BAR_W + GAP);
-                    const y     = H - barH;
-                    const isCur = m.key === currentKey;
-                    const color = isCur ? "#4ade80" : (isDark ? "rgba(74,222,128,0.45)" : "rgba(34,197,94,0.45)");
-                    const textCol = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)";
-                    return (
-                      <g key={m.key}>
-                        <title>{m.label} {m.key.slice(0,4)} — {fmtEur(m.ca)}</title>
-                        <rect x={x} y={y} width={BAR_W} height={barH} rx={4} fill={color}/>
-                        {isCur && m.ca > 0 && (
-                          <text x={x + BAR_W / 2} y={y - 3} textAnchor="middle" fontSize={8} fill="#4ade80" fontWeight="700">
-                            {fmtEur(m.ca)}
-                          </text>
-                        )}
-                        <text x={x + BAR_W / 2} y={H + 11} textAnchor="middle" fontSize={8.5} fill={textCol} fontWeight={isCur ? "700" : "500"}>
-                          {m.label}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
-              </div>
-            );
-          })()}
 
-          {/* Search + filter */}
-          <div className={`space-y-2.5 border-b ${tbd2} p-4`}>
-            <div className="relative">
-              <Search size={13} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${tw5}`}/>
+          {/* ── Toolbar ── */}
+          <div className={`shrink-0 flex flex-wrap items-center gap-2 border-b ${tbd2} px-4 py-3`}
+            style={{ background: isDark ? "rgba(255,255,255,0.015)" : "#ffffff" }}>
+            {/* Search */}
+            <div className="relative min-w-[160px] flex-1 sm:max-w-xs">
+              <Search size={13} className={`absolute left-3 top-1/2 -translate-y-1/2 ${tw5}`}/>
               <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Numéro, client, objet…"
-                className={`w-full rounded-xl ${tiB} ${tiBH} focus:border-[rgba(255,185,0,0.4)] py-2.5 pl-9 pr-3 text-sm ${tw1} placeholder:${tw6} outline-none transition`}/>
-              {query && <button onClick={() => setQuery("")} className={`absolute right-3 top-1/2 -translate-y-1/2 ${tw4} hover:${tw2}`}><X size={12}/></button>}
+                className={`w-full rounded-xl ${tiB} ${tiBH} focus:border-[rgba(255,185,0,0.4)] py-2 pl-9 pr-3 text-sm ${tw1} placeholder:${tw6} outline-none transition`}/>
+              {query && <button onClick={() => setQuery("")} className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${tw4}`}><X size={12}/></button>}
             </div>
-            {/* Type filter */}
-            <div className="flex gap-1.5">
+            {/* Type tabs */}
+            <div className={`flex items-center gap-0.5 rounded-xl border ${tbd1} p-0.5`}
+              style={{ background: isDark ? "rgba(255,255,255,0.04)" : "#f3f4f6" }}>
               {(["tous","facture","devis","avoir"] as const).map(t => (
                 <button key={t} onClick={() => setFilterType(t)}
-                  className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider transition ${filterType === t ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/30 hover:text-white/60" : "text-gray-400 hover:text-gray-600")}`}>
+                  className="rounded-lg px-2.5 py-1 text-xs font-bold uppercase tracking-wider transition"
+                  style={filterType === t
+                    ? { background: isDark ? "#1a1a1a" : "#ffffff", color: "#FFB900", boxShadow: "0 1px 3px rgba(0,0,0,0.12)", border: "1px solid rgba(255,185,0,0.25)" }
+                    : { color: isDark ? "rgba(255,255,255,0.35)" : "#6b7280" }}>
                   {t === "tous" ? "Tous" : t === "facture" ? "Factures" : t === "devis" ? "Devis" : "Avoirs"}
                 </button>
               ))}
-              <div className="ml-auto flex items-center gap-1">
-                <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
-                  className={`appearance-none rounded-lg border ${tbd1} ${tbg1} px-2 py-0.5 text-xs font-bold uppercase ${tw4} outline-none cursor-pointer`}>
-                  <option value="date">Date</option>
-                  <option value="montant">Montant</option>
-                  <option value="echeance">Échéance</option>
-                </select>
-              </div>
             </div>
-            {/* Statut filter */}
-            <div className="flex flex-wrap gap-1">
-              <button onClick={() => setFilterStatut("tous")}
-                className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider transition ${filterStatut === "tous" ? (isDark ? "bg-white/10 text-white" : "bg-gray-200 text-gray-800") : (isDark ? "text-white/20 hover:text-white/50" : "text-gray-400 hover:text-gray-600")}`}>
-                Tous
-              </button>
-              {(Object.keys(STATUTS) as DocStatut[]).map(s => {
-                const cfg = STATUTS[s];
-                const count = documents.filter(d => d.statut === s && (filterType === "tous" || d.type === filterType)).length;
-                if (!count && filterStatut !== s) return null;
-                return (
-                  <button key={s} onClick={() => setFilterStatut(prev => prev === s ? "tous" : s)}
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider transition`}
-                    style={filterStatut === s
-                      ? { background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }
-                      : { color: isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.35)" }}>
-                    {cfg.label} {count > 0 && <span className="opacity-60">{count}</span>}
-                  </button>
-                );
-              })}
-            </div>
+            {/* Statut select */}
+            <select value={filterStatut} onChange={e => setFilterStatut(e.target.value as typeof filterStatut)}
+              className={`appearance-none rounded-xl border ${tbd1} ${tbg1} px-3 py-2 text-xs font-bold uppercase ${tw4} outline-none cursor-pointer`}>
+              <option value="tous">Tous statuts</option>
+              {(Object.keys(STATUTS) as DocStatut[]).map(s => (
+                <option key={s} value={s}>{STATUTS[s].label}</option>
+              ))}
+            </select>
+            {/* Sort */}
+            <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
+              className={`appearance-none rounded-xl border ${tbd1} ${tbg1} px-3 py-2 text-xs font-bold uppercase ${tw4} outline-none cursor-pointer`}>
+              <option value="date">Date ↓</option>
+              <option value="montant">Montant ↓</option>
+              <option value="echeance">Échéance ↑</option>
+            </select>
           </div>
 
-          {/* Doc list */}
-          <div className="flex-1 overflow-y-auto">
+          {/* ── Desktop table (md+) ── */}
+          <div className="hidden flex-1 overflow-auto md:flex md:flex-col">
+            {loadingAll ? (
+              <div className="flex items-center justify-center py-20"><Loader2 size={24} className={`animate-spin ${tw6}`}/></div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.07)]">
+                  <ReceiptText size={24} style={{ color:"#FFB900" }}/>
+                </div>
+                <div>
+                  <p className={`text-base font-bold ${tw1}`}>{query ? "Aucun résultat" : "Aucun document"}</p>
+                  <p className={`mt-1 text-sm ${tw4}`}>{query ? "Modifiez vos filtres" : "Créez votre première facture"}</p>
+                </div>
+                {!query && (
+                  <div className="flex gap-2">
+                    <button onClick={() => newDoc("devis")}
+                      className="flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-400/[0.07] px-4 py-2 text-sm font-semibold text-blue-400 transition hover:bg-blue-400/15">
+                      <Plus size={14}/> Nouveau devis
+                    </button>
+                    <button onClick={() => newDoc("facture")}
+                      className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold transition hover:opacity-90"
+                      style={{ background:"#FFB900", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(255,185,0,0.3)" }}>
+                      <Plus size={14}/> Nouvelle facture
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <table className="w-full table-fixed border-collapse text-sm">
+                <colgroup>
+                  <col style={{ width: "19%" }} />
+                  <col />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "13%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                </colgroup>
+                <thead className={`sticky top-0 z-10 border-b ${tbd2}`} style={{ background: isDark ? "#111111" : "#ffffff" }}>
+                  <tr>
+                    <th className={`px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest ${tw5}`}>Numéro</th>
+                    <th className={`px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest ${tw5}`}>Client</th>
+                    <th className={`px-3 py-3 text-right text-[11px] font-bold uppercase tracking-widest ${tw5}`}>Montant</th>
+                    <th className={`px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest ${tw5}`}>Statut</th>
+                    <th className={`px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest ${tw5}`}>Date</th>
+                    <th className={`px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest ${tw5}`}>Échéance</th>
+                    <th className={`px-3 py-3 text-right text-[11px] font-bold uppercase tracking-widest ${tw5}`}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <AnimatePresence initial={false}>
+                    {paginatedDocs.map(doc => {
+                      const isActive = selected?.id === doc.id;
+                      const daysLeft = doc.date_echeance && (doc.statut === "envoyé" || doc.statut === "en_retard")
+                        ? Math.floor((new Date(doc.date_echeance).getTime() - Date.now()) / 86_400_000) : null;
+                      return (
+                        <motion.tr key={doc.id}
+                          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                          transition={{ duration: 0.18 }}
+                          className={`group border-b ${tbd2} cursor-pointer transition-colors ${isActive ? (isDark ? "bg-[rgba(255,185,0,0.07)]" : "bg-amber-50/60") : (isDark ? "hover:bg-white/[0.03]" : "hover:bg-gray-50/60")}`}
+                          onClick={() => openDoc(doc)}>
+                          <td className="px-4 py-3">
+                            <span className={`whitespace-nowrap font-extrabold ${isActive ? "text-[#FFB900]" : tw1}`}>{doc.numero || "—"}</span>
+                            <div className="mt-0.5">
+                              <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
+                                style={doc.type === "facture"
+                                  ? { background: "rgba(255,185,0,0.12)", color: "#FFB900", border: "1px solid rgba(255,185,0,0.25)" }
+                                  : doc.type === "avoir"
+                                  ? { background: "rgba(244,114,182,0.12)", color: "#f472b6", border: "1px solid rgba(244,114,182,0.25)" }
+                                  : { background: "rgba(96,165,250,0.12)", color: "#60a5fa", border: "1px solid rgba(96,165,250,0.25)" }}>
+                                {doc.type === "facture" ? "Facture" : doc.type === "avoir" ? "Avoir" : "Devis"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            {doc.client_nom
+                              ? <p className={`truncate font-semibold ${tw2}`}>{doc.client_nom}</p>
+                              : <span className={tw6}>—</span>
+                            }
+                            {doc.sujet && <p className={`mt-0.5 truncate text-xs ${tw5}`}>{doc.sujet}</p>}
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <span className="whitespace-nowrap font-black tabular-nums" style={{ color: doc.type === "avoir" ? "#f472b6" : "#FFB900" }}>
+                              {doc.type === "avoir" ? "−" : ""}{fmtEur(doc.total_ttc)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3"><StatutBadge statut={doc.statut}/></td>
+                          <td className={`whitespace-nowrap px-3 py-3 text-sm ${tw4}`}>{fmtDate(doc.date_document)}</td>
+                          <td className="px-3 py-3">
+                            {doc.date_echeance ? (
+                              <div>
+                                <span className={`whitespace-nowrap text-sm ${tw4}`}>{fmtDate(doc.date_echeance)}</span>
+                                {daysLeft !== null && (
+                                  <div className="mt-0.5">
+                                    <span className="inline-block whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+                                      style={{ background: daysLeft < 0 ? "rgba(248,113,113,0.14)" : "rgba(251,191,36,0.14)", color: daysLeft < 0 ? "#f87171" : "#fbbf24" }}>
+                                      {daysLeft < 0 ? `−${Math.abs(daysLeft)}j` : `+${daysLeft}j`}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : <span className={tw6}>—</span>}
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <button
+                              onClick={e => { e.stopPropagation(); openDoc(doc); }}
+                              className={`inline-flex items-center gap-1 rounded-lg border ${tbd1} px-2 py-1 text-xs font-semibold ${tw3} transition ${isDark ? "hover:bg-white/[0.07]" : "hover:bg-gray-100"}`}>
+                              <FileText size={11}/> Ouvrir
+                            </button>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* ── Mobile cards (< md) ── */}
+          <div className="flex-1 overflow-y-auto md:hidden">
             {loadingAll ? (
               <div className="flex items-center justify-center py-14"><Loader2 size={20} className={`animate-spin ${tw6}`}/></div>
             ) : filtered.length === 0 ? (
@@ -2716,13 +2853,11 @@ export default function FacturesPage() {
                       transition={{ duration:0.22, ease }}
                       onClick={() => openDoc(doc)}
                       className={`group relative w-full text-left transition-all border-b ${tbd2} ${isActive ? (isDark ? "bg-white/[0.07]" : "bg-amber-50/60") : (isDark ? "hover:bg-white/[0.04]" : "hover:bg-gray-50/80")}`}>
-                      {/* Barre latérale couleur active */}
                       <motion.div className="absolute left-0 top-0 h-full w-[3px] rounded-r"
                         animate={{ opacity: isActive ? 1 : 0, scaleY: isActive ? 1 : 0.4 }}
                         transition={{ duration: 0.18 }}
                         style={{ background: `linear-gradient(180deg, ${docColor}, ${docColor}88)` }}/>
                       <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
-                        {/* Icône type document */}
                         <div className="relative mt-0.5 flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[10px]"
                           style={{
                             background: doc.type === "facture"
@@ -2737,21 +2872,16 @@ export default function FacturesPage() {
                             {doc.type === "facture" ? "F" : doc.type === "avoir" ? "A" : "D"}
                           </span>
                         </div>
-                        {/* Contenu */}
                         <div className="min-w-0 flex-1">
-                          {/* Ligne 1 : référence + montant */}
                           <div className="flex items-baseline justify-between gap-2">
                             <p className={`text-sm font-extrabold leading-tight truncate ${tw1}`}>{doc.numero || "(sans numéro)"}</p>
                             <span className="shrink-0 text-sm font-black" style={{ color: docColor }}>{fmtEur(doc.total_ttc)}</span>
                           </div>
-                          {/* Ligne 2 : sujet */}
                           {doc.sujet && <p className={`mt-0.5 text-xs truncate ${tw3}`}>{doc.sujet}</p>}
-                          {/* Ligne 3 : statut + date */}
                           <div className="mt-1.5 flex items-center gap-1.5">
                             <StatutBadge statut={doc.statut}/>
                             <span className={`ml-auto text-[11px] ${tw6}`}>{fmtDate(doc.date_document)}</span>
                           </div>
-                          {/* Ligne 4 : client + délai */}
                           <div className="mt-0.5 flex items-center justify-between gap-1">
                             {doc.client_nom && (
                               <p className={`text-xs font-medium truncate ${tw4}`}>{doc.client_nom}</p>
@@ -2767,7 +2897,6 @@ export default function FacturesPage() {
                               );
                             })()}
                           </div>
-                          {/* Ligne 5 : lien Avoir ↔ Facture source */}
                         {doc.type === "avoir" && doc.source_id && docById.has(doc.source_id) && (
                           <div className="mt-1 flex items-center gap-1">
                             <span className="text-[10px] font-bold" style={{ color: "#f472b6", opacity: 0.6 }}>↗</span>
@@ -2786,7 +2915,7 @@ export default function FacturesPage() {
                             ))}
                           </div>
                         )}
-                      </div>
+                        </div>
                       </div>
                     </motion.button>
                   );
@@ -2795,9 +2924,10 @@ export default function FacturesPage() {
             )}
           </div>
 
-          {/* Pagination */}
+          {/* ── Pagination ── */}
           {listTotalPages > 1 && (
-            <div className={`shrink-0 flex items-center justify-between gap-2 border-t ${tbd2} px-4 py-2`}>
+            <div className={`shrink-0 flex items-center justify-between gap-2 border-t ${tbd2} px-4 py-2.5`}
+              style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#ffffff" }}>
               <p className={`text-[11px] ${tw5}`}>
                 {(listPage-1)*PAGE_SIZE+1}–{Math.min(listPage*PAGE_SIZE, listTotal)} / {listTotal}
               </p>
@@ -2825,46 +2955,17 @@ export default function FacturesPage() {
             </div>
           )}
 
-          {/* Bouton création rapide bas de sidebar */}
-          <div className={`shrink-0 border-t ${tbd2} p-3 grid grid-cols-2 gap-2`}>
-            <button onClick={() => newDoc("devis")}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-400/20 py-2 text-xs font-bold text-blue-400/70 transition hover:bg-blue-400/10 hover:text-blue-400">
-              <Plus size={11}/> Devis
-            </button>
-            <button onClick={() => newDoc("facture")}
-              className="flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-extrabold transition hover:opacity-90"
-              style={{ background:"#FFB900", color:"#0a0a0a" }}>
-              <Plus size={11}/> Facture
-            </button>
-          </div>
-        </aside>
+        </div>
+      </div>
 
-        {/* ── CENTER: Éditeur tabulé ── */}
-        <main className={`flex flex-1 min-w-0 flex-col overflow-hidden ${mobileView === "editor" ? "flex" : "hidden sm:flex"}`}>
-          {!draft ? (
-            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-              className={`flex h-full flex-col items-center justify-center gap-4 p-8 text-center`}
-              style={{ background: isDark ? "rgba(255,255,255,0.01)" : "#fafafa" }}>
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(255,185,0,0.2)] bg-[rgba(255,185,0,0.07)]">
-                <ReceiptText size={28} style={{ color:"#FFB900" }}/>
-              </div>
-              <div>
-                <p className={`text-base font-bold ${tw1}`}>Sélectionnez ou créez un document</p>
-                <p className={`mt-1 text-sm ${tw4}`}>Factures et devis professionnels</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => newDoc("devis")}
-                  className="flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-400/[0.07] px-4 py-2 text-sm font-semibold text-blue-400 transition hover:bg-blue-400/15">
-                  <Plus size={14}/> Nouveau devis
-                </button>
-                <button onClick={() => newDoc("facture")}
-                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold transition hover:opacity-90"
-                  style={{ background:"#FFB900", color:"#0a0a0a", boxShadow:"0 4px 16px rgba(255,185,0,0.3)" }}>
-                  <Plus size={14}/> Nouvelle facture
-                </button>
-              </div>
-            </motion.div>
-          ) : (
+      {/* ── Éditeur plein écran (overlay couvrant les deux sidebars) ── */}
+      {draft && (
+        <div className="fixed inset-0 z-[45] flex overflow-hidden"
+          style={{ background: isDark ? "#0d0d0d" : "#f0f0f0" }}>
+
+          {/* ── Formulaire éditeur ── */}
+          <main className="flex flex-1 min-w-0 flex-col overflow-hidden">
+          {draft !== null && (
             <motion.div key={selected?.id ?? "new"} initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
               transition={{ duration:0.25, ease }}
               className="flex h-full flex-col overflow-hidden"
@@ -3908,7 +4009,8 @@ export default function FacturesPage() {
           </div>
         </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* ── Preview modal ── */}
       <AnimatePresence>

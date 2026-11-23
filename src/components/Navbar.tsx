@@ -112,8 +112,8 @@ export default function Navbar() {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
             >
               <motion.div
-                whileHover={{ scale: 1.05, filter: "drop-shadow(0 0 12px rgba(255,185,0,0.5))", transition: { duration: 0.25 } }}
-                whileTap={{ scale: 0.95, transition: { duration: 0.12 } }}
+                whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+                whileTap={{ scale: 0.96, transition: { duration: 0.1 } }}
               >
                 <Image
                   src="/djama-logo-v2.png"
@@ -218,10 +218,10 @@ export default function Navbar() {
                       <Link
                         href="/espace-client"
                         onClick={() => setAppsOpen(false)}
-                        className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-[0.85rem] font-extrabold text-black"
-                        style={{ background: GOLD }}
+                        className="inline-flex items-center gap-2 whitespace-nowrap text-[0.84rem] font-semibold text-white transition-opacity hover:opacity-85"
+                        style={{ background: "#111111", borderRadius: 5, height: 36, paddingInline: 16 }}
                       >
-                        {dict.nav.freeQuote} <ArrowRight size={13} />
+                        {lang === "ar" ? "جرّب مجانًا" : lang === "en" ? "Try for free" : "Essayer gratuitement"} <ArrowRight size={13} />
                       </Link>
                     </div>
                   </div>
@@ -256,10 +256,10 @@ export default function Navbar() {
 
             <Link
               href="/espace-client"
-              className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[0.88rem] font-extrabold text-black transition-all hover:opacity-90 hover:shadow-[0_4px_20px_rgba(255,185,0,0.35)]"
-              style={{ background: GOLD }}
+              className="inline-flex items-center whitespace-nowrap text-[0.84rem] font-semibold text-white transition-opacity hover:opacity-85 active:opacity-70"
+              style={{ background: "#111111", borderRadius: 5, height: 38, paddingInline: 16 }}
             >
-              {dict.nav.freeQuote}
+              {lang === "ar" ? "جرّب مجانًا" : lang === "en" ? "Try for free" : "Essayer gratuitement"}
             </Link>
           </motion.div>
 
@@ -326,12 +326,12 @@ export default function Navbar() {
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center justify-between rounded-xl px-4 py-3.5 text-lg font-semibold transition-all duration-150"
                       style={active
-                        ? { background: `rgba(${GOLDR},0.08)`, color: "#1a0800" }
+                        ? { background: "#f3f4f6", color: "#111111" }
                         : { color: "#374151" }
                       }
                     >
                       <span>{label}</span>
-                      {active && <span className="h-1.5 w-1.5 rounded-full" style={{ background: GOLD }} />}
+                      {active && <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />}
                     </Link>
                   </motion.div>
                 );
@@ -351,10 +351,10 @@ export default function Navbar() {
               <Link
                 href="/espace-client"
                 onClick={() => setMenuOpen(false)}
-                className="flex-1 rounded-xl py-2.5 text-center text-sm font-extrabold text-black"
-                style={{ background: GOLD }}
+                className="flex-1 py-2.5 text-center text-sm font-semibold text-white transition-opacity hover:opacity-85"
+                style={{ background: "#111111", borderRadius: 5 }}
               >
-                {dict.nav.freeQuote}
+                {lang === "ar" ? "جرّب مجانًا" : lang === "en" ? "Try for free" : "Essayer gratuitement"}
               </Link>
             </div>
           </motion.div>

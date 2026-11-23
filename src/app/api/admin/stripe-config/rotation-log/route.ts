@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   // super_admin uniquement pour déclarer une rotation
   const { admin, deny } = await requireAdminUser(req, {
-    requiredRole:   "super_admin",
+    requiredPermission: "can_manage_settings",
     logAction:      "STRIPE_ROTATION_LOG_ATTEMPT",
     logResource:    "stripe_config",
   });
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Re-auth obligatoire
-  const reauthOk = await verifyReauthToken(admin!.id, reauthToken, "stripe_rotation");
+  const reauthOk = await verifyReauthToken(reauthToken, admin!.id);
   if (!reauthOk) {
     return NextResponse.json({ error: "Token de ré-authentification invalide ou expiré." }, { status: 403 });
   }

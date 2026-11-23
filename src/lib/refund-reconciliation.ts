@@ -52,6 +52,13 @@ function getAdminEmail(): string | null {
     || null;
 }
 
+/* ── Fenêtres d'idempotence provider ─────────────────────── */
+// Stripe  : 24h — au-delà, la même clé peut créer un DEUXIÈME remboursement.
+// PayPal  : 30 jours — fenêtre bien plus large mais non infinie.
+// Marge de sécurité : -1h pour Stripe, -1h pour PayPal (buffer réseau/horloge).
+const IDEM_WINDOW_STRIPE_MS = 23 * 60 * 60 * 1000;         // 23h
+const IDEM_WINDOW_PAYPAL_MS = 29 * 24 * 60 * 60 * 1000;    // 29 jours
+
 /* ── Types ───────────────────────────────────────────────── */
 
 export type ReconStatus = "succeeded" | "failed" | "pending" | "unknown";
@@ -199,6 +206,8 @@ async function reconcileOne(row: {
   idempotency_key?:     string | null;
   alert_admin_at?:      string | null;
   notification_sent_at?: string | null;
+  created_at?:          string | null;
+  updated_at?:          string | null;
 }): Promise<ReconResult> {
   const result: ReconResult = {
     refund_id:   row.id,
@@ -219,6 +228,22 @@ async function reconcileOne(row: {
     if (!row.idempotency_key) {
       result.needs_human = true;
       result.error = "provider_refund_id et idempotency_key absents — intervention humaine requise";
+      await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
+      return result;
+    }
+
+    // Vérification de la fenêtre d'idempotence avant tout réessai.
+    // Au-delà de la fenêtre, la même clé peut provoquer un DEUXIÈME remboursement.
+    const refundAge = Date.now() - new Date(row.updated_at ?? row.created_at ?? Date.now()).getTime();
+    const idemWindow = row.provider === "stripe" ? IDEM_WINDOW_STRIPE_MS : IDEM_WINDOW_PAYPAL_MS;
+    if (refundAge > idemWindow) {
+      const ageH = Math.floor(refundAge / 3_600_000);
+      const winH = Math.floor(idemWindow / 3_600_000);
+      result.needs_human = true;
+      result.error =
+        `Fenêtre d'idempotence expirée (${row.provider} : ${ageH}h > ${winH}h) — ` +
+        `réessai automatique désactivé pour prévenir un double remboursement`;
+      log.warn(`[reconcile] ${row.id} : fenêtre idem expirée (${ageH}h), intervention humaine requise`);
       await maybeSendAdminAlert(sb, row.id, row.alert_admin_at);
       return result;
     }
@@ -451,7 +476,8 @@ export async function reconcileAllUncertain(): Promise<{
     .from("admin_refund_requests")
     .select(
       "id, provider, provider_refund_id, amount_requested, amount_refunded, " +
-      "currency, transaction_id, notification_sent_at, idempotency_key, alert_admin_at"
+      "currency, transaction_id, notification_sent_at, idempotency_key, " +
+      "alert_admin_at, created_at, updated_at"
     )
     .eq("status", "uncertain")
     .order("created_at", { ascending: true });

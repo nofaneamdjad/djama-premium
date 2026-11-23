@@ -21,22 +21,25 @@ CREATE POLICY "relance_config_update" ON relance_config
 
 -- ──────────────────────────────────────────────────────────────
 
-CREATE TABLE IF NOT EXISTS relance_log (
-  id          uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
-  document_id uuid        NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-  user_id     uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  delay_days  int         NOT NULL,
-  sent_at     timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE relance_log ENABLE ROW LEVEL SECURITY;
-
--- Lecture seule côté client
-CREATE POLICY "relance_log_select" ON relance_log
-  FOR SELECT USING (auth.uid() = user_id);
--- Écriture uniquement via service_role (cron)
-
-CREATE INDEX IF NOT EXISTS relance_log_doc_delay_idx
-  ON relance_log (document_id, delay_days);
-CREATE INDEX IF NOT EXISTS relance_log_user_sent_idx
-  ON relance_log (user_id, sent_at DESC);
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'documents'
+  ) THEN
+    CREATE TABLE IF NOT EXISTS relance_log (
+      id          uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
+      document_id uuid        NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      user_id     uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+      delay_days  int         NOT NULL,
+      sent_at     timestamptz NOT NULL DEFAULT now()
+    );
+    ALTER TABLE relance_log ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "relance_log_select" ON relance_log;
+    CREATE POLICY "relance_log_select" ON relance_log
+      FOR SELECT USING (auth.uid() = user_id);
+    CREATE INDEX IF NOT EXISTS relance_log_doc_delay_idx
+      ON relance_log (document_id, delay_days);
+    CREATE INDEX IF NOT EXISTS relance_log_user_sent_idx
+      ON relance_log (user_id, sent_at DESC);
+  END IF;
+END $$;

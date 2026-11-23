@@ -11,10 +11,10 @@ ALTER TABLE productivity_tasks
   ADD COLUMN IF NOT EXISTS linked_document_id uuid
     REFERENCES documents(id) ON DELETE SET NULL;
 
--- Lien vers un contact CRM
+-- Lien vers un contact CRM (contacts = table CRM principale)
 ALTER TABLE productivity_tasks
   ADD COLUMN IF NOT EXISTS linked_contact_id uuid
-    REFERENCES crm_contacts(id) ON DELETE SET NULL;
+    REFERENCES contacts(id) ON DELETE SET NULL;
 
 -- Lien vers un projet DJAMA
 ALTER TABLE productivity_tasks
@@ -43,14 +43,16 @@ CREATE INDEX IF NOT EXISTS idx_prod_project  ON productivity_tasks (linked_proje
 CREATE INDEX IF NOT EXISTS idx_prod_contract ON productivity_tasks (linked_contract_id)  WHERE linked_contract_id IS NOT NULL;
 
 -- ── 2. Agenda — event depuis une tâche ───────────────────────────────────
--- Ajouter source_task_id sur agenda_events pour traçabilité
-ALTER TABLE agenda_events
-  ADD COLUMN IF NOT EXISTS source_task_id uuid
-    REFERENCES productivity_tasks(id) ON DELETE SET NULL;
-
-CREATE INDEX IF NOT EXISTS idx_agenda_task
-  ON agenda_events (source_task_id)
-  WHERE source_task_id IS NOT NULL;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='agenda_events') THEN
+    ALTER TABLE agenda_events
+      ADD COLUMN IF NOT EXISTS source_task_id uuid
+        REFERENCES productivity_tasks(id) ON DELETE SET NULL;
+    CREATE INDEX IF NOT EXISTS idx_agenda_task
+      ON agenda_events (source_task_id)
+      WHERE source_task_id IS NOT NULL;
+  END IF;
+END $$;
 
 -- ── 3. Projets — lien vers documents (facture depuis projet) ─────────────
 -- Déjà possible côté client via INSERT dans documents
@@ -67,7 +69,7 @@ CREATE INDEX IF NOT EXISTS idx_docs_project
 CREATE OR REPLACE VIEW productivity_tasks_with_links AS
 SELECT
   pt.*,
-  d.number      AS linked_doc_number,
+  d.numero      AS linked_doc_number,
   d.type        AS linked_doc_type,
   d.total_ttc   AS linked_doc_amount,
   cc.name       AS linked_contact_name,
@@ -78,7 +80,7 @@ SELECT
   sp.name       AS linked_product_name
 FROM productivity_tasks pt
 LEFT JOIN documents     d  ON d.id  = pt.linked_document_id
-LEFT JOIN crm_contacts  cc ON cc.id = pt.linked_contact_id
+LEFT JOIN contacts      cc ON cc.id = pt.linked_contact_id
 LEFT JOIN projects      pr ON pr.id = pt.linked_project_id
 LEFT JOIN contracts     ct ON ct.id = pt.linked_contract_id
 LEFT JOIN stock_suppliers ss ON ss.id = pt.linked_supplier_id

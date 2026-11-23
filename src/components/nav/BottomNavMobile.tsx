@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Home, Grid2x2, Plus, Search, User } from "lucide-react";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 interface Props {
   pathname: string;

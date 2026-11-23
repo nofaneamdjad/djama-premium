@@ -328,11 +328,11 @@ export default function VueEnsemble() {
       </div>
 
       {/* ── Contenu en colonnes ── */}
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-5 xl:grid-cols-[1fr_260px]">
 
         {/* ── Documents récents (2/3) ── */}
         <div
-          className="lg:col-span-2 rounded-2xl overflow-hidden"
+          className="min-w-0 rounded-2xl overflow-hidden"
           style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
         >
           <div
@@ -368,21 +368,21 @@ export default function VueEnsemble() {
           ) : (
             <>
               {/* ── Tableau desktop (≥ sm) ── */}
-              <div className="hidden sm:block">
+              <div className="hidden md:block">
                 <table className="w-full table-fixed">
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${divider}` }}>
-                      <th className="w-[6.5rem] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
+                      <th className="w-24 px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
                         style={{ color: textTertiary }}>Numéro</th>
                       <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
                         style={{ color: textTertiary }}>Client</th>
-                      <th className="w-[5.5rem] px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
+                      <th className="w-20 px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
                         style={{ color: textTertiary }}>Date</th>
-                      <th className="w-[6.5rem] px-2 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider"
+                      <th className="w-20 px-2 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider"
                         style={{ color: textTertiary }}>Montant</th>
-                      <th className="w-[6.5rem] px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
+                      <th className="w-28 px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider"
                         style={{ color: textTertiary }}>Statut</th>
-                      <th className="w-7 px-1 py-2.5" />
+                      <th className="w-5 px-1 py-2.5" />
                     </tr>
                   </thead>
                   <tbody>
@@ -397,7 +397,7 @@ export default function VueEnsemble() {
                           onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                           onClick={() => router.push(`/client/factures/documents?id=${doc.id}`)}
                         >
-                          <td className="px-3 py-3 whitespace-nowrap">
+                          <td className="px-2 py-3 whitespace-nowrap">
                             <span className="font-mono text-xs font-semibold" style={{ color: GOLD }}>
                               {doc.numero}
                             </span>
@@ -436,7 +436,7 @@ export default function VueEnsemble() {
               </div>
 
               {/* ── Cards mobile (< sm) ── */}
-              <div className="sm:hidden divide-y" style={{ borderColor: rowDivider }}>
+              <div className="md:hidden divide-y" style={{ borderColor: rowDivider }}>
                 {recent.map((doc) => {
                   const isDup = dupNums.includes(doc.numero);
                   return (

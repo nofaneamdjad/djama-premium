@@ -1,20 +1,22 @@
 -- ════════════════════════════════════════════════════════════════
 -- FOURNISSEURS P0 — Sécurité financière
--- 1. vat_rate paramétrable (0 / 5.5 / 10 / 20 %) sur commandes et factures
--- 2. Recalcul serveur des montants via trigger (subtotal + vat_rate → vat_amount + total_amount)
---    Le frontend ne peut pas soumettre de montants incorrects.
--- 3. Lien idempotent facture fournisseur → Dépense (supplier_invoice_id FK UNIQUE)
 -- ════════════════════════════════════════════════════════════════
 
--- ── 1. vat_rate sur fournisseur_orders ───────────────────────────────────
-ALTER TABLE fournisseur_orders
-  ADD COLUMN IF NOT EXISTS vat_rate numeric(5,2) NOT NULL DEFAULT 20;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='fournisseur_orders') THEN
+    ALTER TABLE fournisseur_orders
+      ADD COLUMN IF NOT EXISTS vat_rate numeric(5,2) NOT NULL DEFAULT 20;
+  END IF;
+END $$;
 
--- ── 2. vat_rate sur fournisseur_invoices ──────────────────────────────────
-ALTER TABLE fournisseur_invoices
-  ADD COLUMN IF NOT EXISTS vat_rate numeric(5,2) NOT NULL DEFAULT 20;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='fournisseur_invoices') THEN
+    ALTER TABLE fournisseur_invoices
+      ADD COLUMN IF NOT EXISTS vat_rate numeric(5,2) NOT NULL DEFAULT 20;
+  END IF;
+END $$;
 
--- ── 3. Trigger : recalcul server-side HT → TVA → TTC (commandes) ─────────
+-- Fonctions trigger (safe à créer même si les tables n'existent pas encore)
 CREATE OR REPLACE FUNCTION recalculate_fourn_order_amounts()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
@@ -24,12 +26,6 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trg_fourn_order_amounts ON fournisseur_orders;
-CREATE TRIGGER trg_fourn_order_amounts
-  BEFORE INSERT OR UPDATE OF subtotal, vat_rate ON fournisseur_orders
-  FOR EACH ROW EXECUTE FUNCTION recalculate_fourn_order_amounts();
-
--- ── 4. Trigger : recalcul server-side HT → TVA → TTC (factures) ──────────
 CREATE OR REPLACE FUNCTION recalculate_fourn_invoice_amounts()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
@@ -39,41 +35,48 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trg_fourn_invoice_amounts ON fournisseur_invoices;
-CREATE TRIGGER trg_fourn_invoice_amounts
-  BEFORE INSERT OR UPDATE OF subtotal, vat_rate ON fournisseur_invoices
-  FOR EACH ROW EXECUTE FUNCTION recalculate_fourn_invoice_amounts();
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='fournisseur_orders') THEN
+    EXECUTE $t$
+      DROP TRIGGER IF EXISTS trg_fourn_order_amounts ON fournisseur_orders;
+      CREATE TRIGGER trg_fourn_order_amounts
+        BEFORE INSERT OR UPDATE OF subtotal, vat_rate ON fournisseur_orders
+        FOR EACH ROW EXECUTE FUNCTION recalculate_fourn_order_amounts();
+    $t$;
+  END IF;
+END $$;
 
--- ── 5. Colonne supplier_invoice_id sur expenses (lien idempotent) ─────────
-ALTER TABLE expenses
-  ADD COLUMN IF NOT EXISTS supplier_invoice_id uuid
-    REFERENCES fournisseur_invoices(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='fournisseur_invoices') THEN
+    EXECUTE $t$
+      DROP TRIGGER IF EXISTS trg_fourn_invoice_amounts ON fournisseur_invoices;
+      CREATE TRIGGER trg_fourn_invoice_amounts
+        BEFORE INSERT OR UPDATE OF subtotal, vat_rate ON fournisseur_invoices
+        FOR EACH ROW EXECUTE FUNCTION recalculate_fourn_invoice_amounts();
+    $t$;
+  END IF;
+END $$;
 
--- Index unique partiel : une facture fournisseur crée au plus une dépense.
-CREATE UNIQUE INDEX IF NOT EXISTS idx_expenses_supplier_invoice
-  ON expenses(supplier_invoice_id)
-  WHERE supplier_invoice_id IS NOT NULL;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='fournisseur_invoices')
+  AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='expenses') THEN
+    ALTER TABLE expenses
+      ADD COLUMN IF NOT EXISTS supplier_invoice_id uuid
+        REFERENCES fournisseur_invoices(id) ON DELETE SET NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_expenses_supplier_invoice
+      ON expenses(supplier_invoice_id)
+      WHERE supplier_invoice_id IS NOT NULL;
+  END IF;
+END $$;
 
--- ── 6. Trigger : création automatique d'une dépense au paiement ───────────
--- SECURITY DEFINER pour bypasser RLS tout en conservant le user_id correct.
 CREATE OR REPLACE FUNCTION sync_supplier_invoice_expense()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   IF NEW.status = 'paid' THEN
     INSERT INTO expenses (
-      user_id,
-      date,
-      amount,
-      currency,
-      category,
-      description,
-      payment_method,
-      status,
-      vat_amount,
-      vat_recoverable,
-      invoice_number,
-      notes,
-      supplier_invoice_id
+      user_id, date, amount, currency, category, description,
+      payment_method, status, vat_amount, vat_recoverable,
+      invoice_number, notes, supplier_invoice_id
     ) VALUES (
       NEW.user_id,
       COALESCE(NEW.payment_date, CURRENT_DATE),
@@ -103,7 +106,13 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trg_sync_supplier_invoice_expense ON fournisseur_invoices;
-CREATE TRIGGER trg_sync_supplier_invoice_expense
-  AFTER INSERT OR UPDATE OF status ON fournisseur_invoices
-  FOR EACH ROW EXECUTE FUNCTION sync_supplier_invoice_expense();
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='fournisseur_invoices') THEN
+    EXECUTE $t$
+      DROP TRIGGER IF EXISTS trg_sync_supplier_invoice_expense ON fournisseur_invoices;
+      CREATE TRIGGER trg_sync_supplier_invoice_expense
+        AFTER INSERT OR UPDATE OF status ON fournisseur_invoices
+        FOR EACH ROW EXECUTE FUNCTION sync_supplier_invoice_expense();
+    $t$;
+  END IF;
+END $$;

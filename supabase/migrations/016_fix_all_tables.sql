@@ -76,7 +76,7 @@ INSERT INTO services (slug, title, category, price, description, active, sort_or
   ('marches-publics-prives',          'Marchés publics & privés',                   'Accompagnement',       'Sur devis',         'Répondez aux appels d''offres avec un dossier solide. De la veille jusqu''à la remise du mémoire.',                                    true, 16),
   ('coaching-ia',                     'Coaching IA',                                'Coaching',             '190€ / 3 mois',     'Stratégie + automatisation + support IA. Plan d''action, outils IA, suivi 3 mois, objectifs clairs.',                                  true, 17),
   ('soutien-scolaire',                'Soutien scolaire',                           'Coaching',             '14€ / heure',       'De la 6e à la Terminale — RDV en ligne. Méthode, exercices, régularité.',                                                              true, 18)
-ON CONFLICT (slug) DO UPDATE SET
+ON CONFLICT (slug) WHERE slug <> '' DO UPDATE SET
   title       = EXCLUDED.title,
   category    = EXCLUDED.category,
   price       = EXCLUDED.price,
@@ -351,6 +351,12 @@ CREATE TABLE IF NOT EXISTS user_access (
   created_at    timestamptz DEFAULT now(),
   updated_at    timestamptz DEFAULT now()
 );
+
+ALTER TABLE user_access ADD COLUMN IF NOT EXISTS has_access boolean DEFAULT false;
+ALTER TABLE user_access ADD COLUMN IF NOT EXISTS plan       text    DEFAULT '';
+ALTER TABLE user_access ADD COLUMN IF NOT EXISTS user_id    uuid    UNIQUE;
+ALTER TABLE user_access ADD COLUMN IF NOT EXISTS full_name  text    DEFAULT '';
+ALTER TABLE user_access ADD COLUMN IF NOT EXISTS access_code text   DEFAULT '';
 
 CREATE INDEX IF NOT EXISTS user_access_email_idx       ON user_access(email);
 CREATE INDEX IF NOT EXISTS user_access_has_access_idx  ON user_access(has_access);

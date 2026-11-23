@@ -29,7 +29,7 @@ SET organization_id = (
   SELECT om.organization_id
   FROM organization_members om
   WHERE om.user_id = ss.user_id
-  ORDER BY om.created_at ASC
+  ORDER BY om.joined_at ASC
   LIMIT 1
 )
 WHERE ss.organization_id IS NULL;
@@ -39,7 +39,7 @@ SET organization_id = (
   SELECT om.organization_id
   FROM organization_members om
   WHERE om.user_id = sn.user_id
-  ORDER BY om.created_at ASC
+  ORDER BY om.joined_at ASC
   LIMIT 1
 )
 WHERE sn.organization_id IS NULL;

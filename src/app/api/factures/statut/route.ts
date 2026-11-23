@@ -61,7 +61,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   envoyé:             ["brouillon", "payé", "en_retard", "partiellement_payé"],
   partiellement_payé: ["brouillon", "envoyé", "payé", "en_retard"],
   en_retard:          ["brouillon", "envoyé", "payé", "partiellement_payé"],
-  payé:               ["brouillon", "envoyé"],
+  payé:               [],
 };
 
 const VALID_STATUTS = new Set(Object.keys(VALID_TRANSITIONS));

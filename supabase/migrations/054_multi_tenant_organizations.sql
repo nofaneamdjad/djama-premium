@@ -27,16 +27,6 @@ CREATE TABLE IF NOT EXISTS organizations (
 
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 
--- Lecture : membres uniquement (via organization_members)
-CREATE POLICY "organizations_select_member"
-  ON organizations FOR SELECT
-  USING (
-    id IN (
-      SELECT organization_id FROM organization_members
-      WHERE user_id = auth.uid()
-    )
-  );
-
 -- Création : tout utilisateur peut créer une organization (il devient owner)
 CREATE POLICY "organizations_insert_owner"
   ON organizations FOR INSERT
@@ -66,6 +56,17 @@ CREATE TABLE IF NOT EXISTS organization_members (
 );
 
 ALTER TABLE organization_members ENABLE ROW LEVEL SECURITY;
+
+-- Policy SELECT organizations ajoutée ici (après création de organization_members)
+DROP POLICY IF EXISTS "organizations_select_member" ON organizations;
+CREATE POLICY "organizations_select_member"
+  ON organizations FOR SELECT
+  USING (
+    id IN (
+      SELECT organization_id FROM organization_members
+      WHERE user_id = auth.uid()
+    )
+  );
 
 -- Lecture : membres de la même organization
 CREATE POLICY "org_members_select_same_org"
@@ -169,14 +170,25 @@ CREATE INDEX IF NOT EXISTS org_perms_org_app_idx
 -- ── 5. Ajouter organization_id en option sur les tables principales ─
 -- (nullable pour l'instant — la migration des données existantes
 --  se fera manuellement lors de l'onboarding multi-tenant)
-ALTER TABLE documents      ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
-ALTER TABLE expenses       ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
-ALTER TABLE contacts       ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
-ALTER TABLE employees      ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
-ALTER TABLE projects       ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
-
-CREATE INDEX IF NOT EXISTS documents_org_idx  ON documents  (organization_id) WHERE organization_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS expenses_org_idx   ON expenses   (organization_id) WHERE organization_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS contacts_org_idx   ON contacts   (organization_id) WHERE organization_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS employees_org_idx  ON employees  (organization_id) WHERE organization_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS projects_org_idx   ON projects   (organization_id) WHERE organization_id IS NOT NULL;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='documents') THEN
+    ALTER TABLE documents ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
+    CREATE INDEX IF NOT EXISTS documents_org_idx ON documents (organization_id) WHERE organization_id IS NOT NULL;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='expenses') THEN
+    ALTER TABLE expenses ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
+    CREATE INDEX IF NOT EXISTS expenses_org_idx ON expenses (organization_id) WHERE organization_id IS NOT NULL;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='contacts') THEN
+    ALTER TABLE contacts ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
+    CREATE INDEX IF NOT EXISTS contacts_org_idx ON contacts (organization_id) WHERE organization_id IS NOT NULL;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='employees') THEN
+    ALTER TABLE employees ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
+    CREATE INDEX IF NOT EXISTS employees_org_idx ON employees (organization_id) WHERE organization_id IS NOT NULL;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='projects') THEN
+    ALTER TABLE projects ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
+    CREATE INDEX IF NOT EXISTS projects_org_idx ON projects (organization_id) WHERE organization_id IS NOT NULL;
+  END IF;
+END $$;

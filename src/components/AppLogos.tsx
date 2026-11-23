@@ -754,6 +754,87 @@ export const LogoSiteWeb = ({ size }: LogoProps) => (
 );
 
 /* ══════════════════════════════════════════════════════════════
+   COMPLÉMENTS (apps non listées sur le site public)
+══════════════════════════════════════════════════════════════ */
+
+export const LogoEspaces = ({ size }: LogoProps) => (
+  <Svg size={size}>
+    {/* Corps du cadenas */}
+    <rect x="11" y="22" width="26" height="20" rx="4" fill="#0f766e" />
+    {/* Arche */}
+    <path d="M17 22 L17 16 C17 11 31 11 31 16 L31 22" stroke="#14b8a6" strokeWidth="3" strokeLinecap="round" fill="none" />
+    {/* Intérieur */}
+    <rect x="13" y="24" width="22" height="15" rx="3" fill="#ccfbf1" />
+    {/* Trou de serrure */}
+    <circle cx="24" cy="30" r="3.5" fill="#0f766e" />
+    <rect x="22.5" y="30" width="3" height="5" rx="1.5" fill="#0f766e" />
+  </Svg>
+);
+
+export const LogoAiDocs = ({ size }: LogoProps) => (
+  <Svg size={size}>
+    {/* Document */}
+    <rect x="6" y="4" width="24" height="30" rx="3" fill="#7c3aed" />
+    {/* Coin plié */}
+    <path d="M24 4 L30 10 L24 10 Z" fill="#5b21b6" />
+    {/* Lignes de texte */}
+    <line x1="10" y1="14" x2="22" y2="14" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" />
+    <line x1="10" y1="19" x2="20" y2="19" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" />
+    <line x1="10" y1="24" x2="24" y2="24" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" />
+    {/* Grande étoile IA */}
+    <path d="M36 24 L38 18 L40 24 L46 26 L40 28 L38 34 L36 28 L30 26 Z" fill="#f3e8ff" />
+    {/* Petite étoile IA */}
+    <path d="M32 16 L33 13 L34 16 L37 17 L34 18 L33 21 L32 18 L29 17 Z" fill="#ddd6fe" />
+  </Svg>
+);
+
+export const LogoAgences = ({ size }: LogoProps) => (
+  <Svg size={size}>
+    {/* Corps mallette */}
+    <rect x="6" y="20" width="36" height="22" rx="4" fill="#7c3aed" />
+    {/* Poignée */}
+    <path d="M17 20 L17 15 C17 11 31 11 31 15 L31 20" stroke="#a78bfa" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    {/* Intérieur */}
+    <rect x="8" y="22" width="32" height="17" rx="2" fill="#f5f3ff" />
+    {/* 3 silhouettes */}
+    <circle cx="16" cy="28" r="3" fill="#7c3aed" />
+    <path d="M11 37 C11 33 21 33 21 37" fill="#7c3aed" />
+    <circle cx="24" cy="27" r="3" fill="#6d28d9" />
+    <path d="M19 37 C19 33 29 33 29 37" fill="#6d28d9" />
+    <circle cx="32" cy="28" r="3" fill="#7c3aed" />
+    <path d="M27 37 C27 33 37 33 37 37" fill="#7c3aed" />
+  </Svg>
+);
+
+export const LogoMesSites = ({ size }: LogoProps) => (
+  <Svg size={size}>
+    {/* Site 1 — haut gauche */}
+    <rect x="3" y="4" width="19" height="13" rx="2" fill="#059669" />
+    <rect x="5" y="6" width="6" height="1.5" rx="0.5" fill="#a7f3d0" />
+    <rect x="5" y="10" width="15" height="2" rx="1" fill="#6ee7b7" />
+    <rect x="5" y="13.5" width="10" height="1.5" rx="0.5" fill="#a7f3d0" />
+    {/* Site 2 — haut droit */}
+    <rect x="26" y="4" width="19" height="13" rx="2" fill="#047857" />
+    <rect x="28" y="6" width="6" height="1.5" rx="0.5" fill="#a7f3d0" />
+    <rect x="28" y="10" width="15" height="2" rx="1" fill="#6ee7b7" />
+    <rect x="28" y="13.5" width="8" height="1.5" rx="0.5" fill="#a7f3d0" />
+    {/* Séparateur */}
+    <line x1="24" y1="4" x2="24" y2="17" stroke="#d1fae5" strokeWidth="2" />
+    {/* Site 3 — bas pleine largeur */}
+    <rect x="3" y="21" width="42" height="23" rx="2" fill="#10b981" />
+    {/* Barre de navigation */}
+    <rect x="3" y="21" width="42" height="5" rx="2" fill="#059669" />
+    <circle cx="7" cy="23.5" r="1.5" fill="#6ee7b7" />
+    <circle cx="11" cy="23.5" r="1.5" fill="#6ee7b7" />
+    <circle cx="15" cy="23.5" r="1.5" fill="#6ee7b7" />
+    {/* Contenu */}
+    <rect x="6" y="29" width="20" height="3" rx="1" fill="#a7f3d0" />
+    <rect x="6" y="34" width="14" height="2" rx="1" fill="#6ee7b7" />
+    <rect x="30" y="29" width="12" height="12" rx="2" fill="#047857" />
+  </Svg>
+);
+
+/* ══════════════════════════════════════════════════════════════
    MAP  slug → composant
 ══════════════════════════════════════════════════════════════ */
 
@@ -798,6 +879,10 @@ const LOGOS: Record<string, React.FC<LogoProps>> = {
   "temoignages":      LogoTemoignages,
   "planification":    LogoPlanification,
   "site-web":         LogoSiteWeb,
+  "espaces":          LogoEspaces,
+  "ai-docs":          LogoAiDocs,
+  "agences":          LogoAgences,
+  "mes-sites":        LogoMesSites,
 };
 
 interface AppLogoProps {

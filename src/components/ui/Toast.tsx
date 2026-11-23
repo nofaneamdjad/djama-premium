@@ -19,8 +19,9 @@ const ease = [0.16, 1, 0.3, 1] as const;
 export type ToastType = "success" | "error" | "info";
 
 export interface ToastData {
-  type: ToastType;
-  msg:  string;
+  type:      ToastType;
+  msg:       string;
+  duration?: number;
 }
 
 interface ToastProps {
@@ -56,11 +57,12 @@ const CONFIG: Record<ToastType, {
   },
 };
 
-export default function Toast({ toast, onClose, duration = 4000 }: ToastProps) {
+export default function Toast({ toast, onClose, duration }: ToastProps) {
+  const ms = duration ?? toast.duration ?? 4000;
   useEffect(() => {
-    const t = setTimeout(onClose, duration);
+    const t = setTimeout(onClose, ms);
     return () => clearTimeout(t);
-  }, [onClose, duration]);
+  }, [onClose, ms]);
 
   const { border, bg, text, Icon, iconClass } = CONFIG[toast.type];
 

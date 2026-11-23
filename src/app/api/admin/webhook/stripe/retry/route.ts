@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   if (!reauthToken) {
     return NextResponse.json({ error: "Ré-authentification requise (reauth_token manquant)." }, { status: 403 });
   }
-  const reauthOk = await verifyReauthToken(admin!.id, reauthToken, "payment_retry");
+  const reauthOk = await verifyReauthToken(reauthToken, admin!.id);
   if (!reauthOk) {
     return NextResponse.json({ error: "Token de ré-authentification invalide ou expiré." }, { status: 403 });
   }

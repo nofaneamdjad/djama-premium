@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { useTheme, ACCENT_OPTIONS } from "@/lib/theme-context";
 import FloatingAIAssistant from "@/components/FloatingAIAssistant";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 type UpcomingEvent = {
   id: string; title: string;
@@ -62,7 +62,7 @@ function ThemeToggle() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-10 z-50 w-48 overflow-hidden rounded-xl p-3"
+            className="absolute right-0 top-10 z-[200] w-48 overflow-hidden rounded-xl p-3"
             style={{
               background: isDark ? "rgba(10,14,26,0.97)" : "#ffffff",
               border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
@@ -202,7 +202,7 @@ function NotifBell({ ready }: { ready: boolean }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-10 z-50 w-72 overflow-hidden rounded-xl"
+            className="absolute right-0 top-10 z-[200] w-72 overflow-hidden rounded-xl"
             style={{
               background: isDark ? "rgba(10,14,26,0.97)" : "#ffffff",
               border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,

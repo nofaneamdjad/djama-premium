@@ -44,6 +44,9 @@ export function TemplatePreview({ type, data }: { type: TemplateType | string; d
     case "tech-dark":   return <TechDarkPreview    {...p} />;
     case "deco":        return <DecoPreview        {...p} />;
     case "band":        return <BandPreview        {...p} />;
+    case "letterhead":  return <LetterheadPreview  {...p} />;
+    case "luxury":      return <LuxuryPreview      {...p} />;
+    case "dark-header": return <DarkHeaderPreview  {...p} />;
     default:            return <AccentBarPreview   {...p} />;
   }
 }
@@ -724,6 +727,141 @@ function BandPreview({ data, C, BG }: VP) {
           </div>
         </div>
         <TableRows data={data} headerBg={BG} headerText={textOnBg} rowAlt="#fff8ec" border="#f0c090" text="#2a1000" C={BG} />
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 16. LETTERHEAD — En-tête français : bloc adresse gauche, date+réf droite
+//     Template : min-blanc
+// ═══════════════════════════════════════════════════════════════════════════════
+function LetterheadPreview({ data, C, BG }: VP) {
+  const co = data.company ?? {};
+  const city = co.city ?? "Paris";
+  return (
+    <div style={{ width: "100%", minHeight: "100%", backgroundColor: BG, padding: "10px 16px", fontFamily: "Inter, system-ui, sans-serif", overflow: "hidden" }}>
+      {/* Ligne fine haute */}
+      <div style={{ height: 0.5, backgroundColor: C, marginBottom: 8 }} />
+      {/* Two-column header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+        {/* Left: logo + address */}
+        <div style={{ flex: 1, paddingRight: 12 }}>
+          {co.logoUrl
+            ? <img src={co.logoUrl} alt="" style={{ height: 22, maxWidth: 70, objectFit: "contain", marginBottom: 4, display: "block" }} />
+            : <div style={{ color: "#0a0a12", fontWeight: 800, fontSize: 11, marginBottom: 3 }}>{co.name ?? "Mon Entreprise"}</div>
+          }
+          <div style={{ color: "#808090", fontSize: 6, lineHeight: 1.6 }}>
+            {co.address && <div>{co.address}</div>}
+            {(co.postal_code || co.city) && <div>{[co.postal_code, co.city].filter(Boolean).join(" ")}</div>}
+            {co.phone && <div>{co.phone}</div>}
+            {co.email && <div>{co.email}</div>}
+          </div>
+        </div>
+        {/* Right: formal date + ref box */}
+        <div style={{ width: 95, flexShrink: 0 }}>
+          <div style={{ color: "#808090", fontSize: 6, marginBottom: 6, textAlign: "right" }}>
+            {city}, le {fmtDate(data.issue_date)}
+          </div>
+          <div style={{ border: `0.6px solid ${C}`, padding: "5px 7px", textAlign: "center" }}>
+            <div style={{ color: "#808090", fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 2 }}>
+              {data.type === "invoice" ? "FACTURE" : "DEVIS"}
+            </div>
+            <div style={{ color: "#0a0a12", fontWeight: 900, fontSize: 10, marginBottom: 2 }}>{data.reference}</div>
+            {data.due_date && <div style={{ color: C, fontSize: 5.5 }}>Éch. {fmtDate(data.due_date)}</div>}
+          </div>
+        </div>
+      </div>
+      {/* Ligne fine basse */}
+      <div style={{ height: 0.5, backgroundColor: C, marginBottom: 8 }} />
+      <Addresses data={data} C={C} />
+      <TableRows data={data} headerBg="#f0f0f3" headerText="#0a0a12" rowAlt="transparent" border="#e0e0e6" text="#0a0a12" C={C} />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 17. LUXURY — Société centrée, double règle dorée, référence à droite
+//     Template : prem-or
+// ═══════════════════════════════════════════════════════════════════════════════
+function LuxuryPreview({ data, C, BG }: VP) {
+  const co = data.company ?? {};
+  return (
+    <div style={{ width: "100%", minHeight: "100%", backgroundColor: "#ffffff", fontFamily: "Inter, system-ui, sans-serif", overflow: "hidden" }}>
+      {/* Header ivoire */}
+      <div style={{ backgroundColor: BG, padding: "8px 16px 6px", position: "relative" }}>
+        {/* Double règle haute */}
+        <div style={{ height: 1.5, backgroundColor: C, marginBottom: 1.5 }} />
+        <div style={{ height: 0.4, backgroundColor: `${C}60`, marginBottom: 8 }} />
+        {/* Société centrée */}
+        <div style={{ textAlign: "center", marginBottom: 6 }}>
+          {co.logoUrl
+            ? <img src={co.logoUrl} alt="" style={{ height: 24, maxWidth: 80, objectFit: "contain", display: "block", margin: "0 auto 2px" }} />
+            : <div style={{ color: "#0a0a12", fontWeight: 900, fontSize: 13, letterSpacing: "0.05em" }}>{co.name ?? "Mon Entreprise"}</div>
+          }
+          {(co.website || co.email) && (
+            <div style={{ color: `${C}99`, fontSize: 5.5, marginTop: 2 }}>{co.website || co.email}</div>
+          )}
+        </div>
+        {/* Double règle basse */}
+        <div style={{ height: 0.4, backgroundColor: `${C}60`, marginBottom: 1.5 }} />
+        <div style={{ height: 1.5, backgroundColor: C }} />
+        {/* Référence flottante à droite */}
+        <div style={{ position: "absolute", right: 14, top: 10, textAlign: "right" }}>
+          <div style={{ color: `${C}80`, fontSize: 5, fontWeight: 700 }}>{data.type === "invoice" ? "FACTURE" : "DEVIS"}</div>
+          <div style={{ color: "#0a0a12", fontWeight: 900, fontSize: 11, marginTop: 1 }}>{data.reference}</div>
+          <div style={{ color: "#808080", fontSize: 5.5, marginTop: 1 }}>Émis le {fmtDate(data.issue_date)}</div>
+        </div>
+      </div>
+      <div style={{ padding: "10px 16px" }}>
+        <Addresses data={data} C={C} />
+        <TableRows data={data} headerBg="#1a1812" headerText={C} rowAlt="#f8f6f0" border="#e0d8c0" text="#0a080c" C={C} />
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 18. DARK-HEADER — Header sombre + corps blanc imprimable
+//     Templates : prem-nuit (H=65 client intégré), tech-sombre (H=48 client en corps)
+// ═══════════════════════════════════════════════════════════════════════════════
+function DarkHeaderPreview({ data, C, BG }: VP) {
+  const co  = data.company ?? {};
+  const tall = BG === "#0d0d14";   // prem-nuit : header tall avec client
+  const headerH = tall ? 86 : 60;  // px pour le preview (proportionnel)
+  return (
+    <div style={{ width: "100%", minHeight: "100%", backgroundColor: "#ffffff", fontFamily: "Inter, system-ui, sans-serif", overflow: "hidden" }}>
+      {/* Header sombre */}
+      <div style={{ backgroundColor: BG, padding: "10px 16px 0", height: headerH, position: "relative" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            {co.logoUrl
+              ? <img src={co.logoUrl} alt="" style={{ height: 20, maxWidth: 65, objectFit: "contain", marginBottom: 3 }} />
+              : <div style={{ color: "#f0f0ff", fontWeight: 800, fontSize: 10 }}>{co.name ?? "Mon Entreprise"}</div>
+            }
+            <div style={{ color: `${C}70`, fontSize: 5.5, marginTop: 1 }}>{co.email ?? ""}</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ color: `${C}60`, fontSize: 5, letterSpacing: "0.1em" }}>{data.type === "invoice" ? "FACTURE" : "DEVIS"}</div>
+            <div style={{ color: C, fontWeight: 900, fontSize: 11, marginTop: 1 }}>{data.reference}</div>
+            <div style={{ color: `${C}70`, fontSize: 5.5, marginTop: 1 }}>Émis le {fmtDate(data.issue_date)}</div>
+          </div>
+        </div>
+        {/* Bloc client dans le header (prem-nuit) */}
+        {tall && (
+          <div style={{ marginTop: 8, paddingTop: 7, borderTop: `0.5px solid ${C}50` }}>
+            <div style={{ color: C, fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 2 }}>FACTURÉ À</div>
+            <div style={{ color: "#f0f0ff", fontWeight: 700, fontSize: 8 }}>{data.client_name}</div>
+            {data.client_company && <div style={{ color: `${C}70`, fontSize: 6 }}>{data.client_company}</div>}
+          </div>
+        )}
+      </div>
+      {/* Ligne accent */}
+      <div style={{ height: 2, backgroundColor: C }} />
+      {/* Corps blanc */}
+      <div style={{ padding: "8px 16px" }}>
+        {!tall && <Addresses data={data} C={C} />}
+        <TableRows data={data} headerBg={BG} headerText={C} rowAlt="#f5f8fc" border="#c8d8ec" text={tall ? "#14141e" : "#0c1830"} C={C} />
       </div>
     </div>
   );

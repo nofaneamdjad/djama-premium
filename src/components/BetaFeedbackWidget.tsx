@@ -77,28 +77,27 @@ export function BetaFeedbackWidget() {
         onClick={() => setOpen(o => !o)}
         aria-label="Donner mon avis"
         className="beta-widget-btn"
+        title="Donner mon avis"
         style={{
-          position: "fixed", right: 16, zIndex: 40,
+          position: "fixed", left: 24, zIndex: 40,
           background: "#111827", border: "1px solid rgba(255,255,255,0.12)",
-          borderRadius: 50, padding: "10px 16px",
-          display: "flex", alignItems: "center", gap: 8,
-          color: "#fff", fontSize: "0.82rem", fontWeight: 600,
+          borderRadius: 50, width: 40, height: 40, padding: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
           cursor: "pointer", boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
           transition: "transform 0.15s, box-shadow 0.15s",
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "scale(1.04)"; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "scale(1.08)"; }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
       >
-        <MessageSquare size={15} color={GOLD} />
-        Avis bêta
+        <MessageSquare size={16} color={GOLD} />
       </button>
 
       {/* Panel */}
       {open && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 50,
-          display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
-          padding: "0 24px 84px 24px",
+          display: "flex", alignItems: "flex-end", justifyContent: "flex-start",
+          padding: "0 24px 128px 24px",
           pointerEvents: "none",
         }}>
           <div

@@ -142,8 +142,14 @@ CREATE POLICY "ps_member_select" ON private_spaces
 DO $$
 DECLARE
   tm RECORD;
-  sp_org UUID;
 BEGIN
+  -- space_id sur team_members est ajouté en migration 166 — skip si absent
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'team_members' AND column_name = 'space_id'
+  ) THEN
+    RETURN;
+  END IF;
   FOR tm IN
     SELECT t.auth_user_id, t.space_id, p.organization_id
     FROM team_members t

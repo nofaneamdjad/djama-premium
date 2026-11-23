@@ -7,7 +7,7 @@ import { useCoachingIAAccess } from "@/lib/use-require-coaching-ia";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
 import { motion } from "framer-motion";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 export default function CoachingIALayout({ children }: { children: React.ReactNode }) {
   return <ThemeProvider><CoachingIALayoutInner>{children}</CoachingIALayoutInner></ThemeProvider>;
