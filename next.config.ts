@@ -10,7 +10,10 @@ const distDir = process.env.NEXT_DIST_DIR ?? ".next";
 // Fail-closed : absent ou invalide → refuse de démarrer.
 // Local : DJAMA_ENV=development dans .env.local
 // Production : DJAMA_ENV=production dans les variables Vercel
-const _DJAMA_ENV = process.env.DJAMA_ENV;
+// Fallback : VERCEL_ENV est injecté automatiquement par Vercel dans tous les builds
+const _VERCEL_ENV = process.env.VERCEL_ENV; // "production" | "preview" | "development" | undefined
+const _DJAMA_ENV = process.env.DJAMA_ENV
+  ?? (_VERCEL_ENV === "production" || _VERCEL_ENV === "preview" ? "production" : undefined);
 if (_DJAMA_ENV !== "development" && _DJAMA_ENV !== "production") {
   throw new Error(
     `[DJAMA] DJAMA_ENV="${_DJAMA_ENV ?? "(absent)"}" est invalide. ` +
