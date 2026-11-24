@@ -763,7 +763,7 @@ export default function StatsPage() {
           {(["3m","6m","12m","all"] as Period[]).map(p=>(
             <button key={p} onClick={()=>setPeriod(p)}
               className={`rounded-lg px-3 py-1 text-xs font-bold uppercase tracking-wide transition ${period===p?"text-[#0a0a0a]":`${t3} hover:opacity-70`}`}
-              style={period===p?{background:`linear-gradient(135deg,${GOLD},#b08d45)`}:{}}>
+              style={period===p?{background:GOLD}:{}}>
               {p==="all"?"Tout":p==="3m"?"3M":p==="6m"?"6M":"12M"}
             </button>
           ))}
@@ -1086,7 +1086,7 @@ export default function StatsPage() {
                           style={{
                             width:`${concentration}%`,
                             background:concentration>=80?`linear-gradient(90deg,#f87171,#dc2626)`:
-                              concentration>=60?`linear-gradient(90deg,${GOLD},#b08d45)`:
+                              concentration>=60?GOLD:
                               `linear-gradient(90deg,#4ade80,#22c55e)`,
                           }}/>
                       </div>

@@ -19,7 +19,7 @@ import { DEMO_DATA } from "@/components/invoice/shared";
 import type { PreviewData } from "@/components/invoice/shared";
 import type { TemplateType } from "@/lib/pdf/types";
 
-const GOLD = "#c9a55a";
+const GOLD = "#FFB900";
 
 // ─── Clés de paramètres ───────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ const DEFAULTS: Settings = {
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
-const COLOR_PRESETS = ["#6b7280","#ef4444","#c9a55a","#22c55e","#06b6d4","#6366f1","#f97316"];
+const COLOR_PRESETS = ["#6b7280","#ef4444","#FFB900","#22c55e","#06b6d4","#6366f1","#f97316"];
 
 const DEVISES = [
   { val: "EUR", label: "€  Euro"          },
@@ -372,7 +372,7 @@ export default function ParametresFacturesPage() {
           style={
             saved
               ? { background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }
-              : { background: `linear-gradient(135deg, ${GOLD}, #b08d45)`, color: "#0a0a0a" }
+              : { background: GOLD, color: "#000000" }
           }
         >
           {saved   ? <><Check size={13} /> Enregistré</>      :

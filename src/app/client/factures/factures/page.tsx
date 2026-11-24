@@ -212,10 +212,10 @@ export default function FacturesList() {
   }
 
   const kpiCards = [
-    { label: "Total facturé", val: fmt(kpi.total),    color: isDark ? "#e5e7eb" : "#374151", bg: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", Icon: ReceiptText   },
-    { label: "Encaissé",      val: fmt(kpi.encaisse), color: "#4ade80",                      bg: "rgba(74,222,128,0.09)",                                 Icon: TrendingUp    },
-    { label: "En attente",    val: fmt(kpi.attente),  color: YELLOW,                         bg: "rgba(255,185,0,0.09)",                                  Icon: Clock         },
-    { label: "En retard",     val: fmt(kpi.retard),   color: "#f87171",                      bg: "rgba(248,113,113,0.09)",                                Icon: AlertTriangle },
+    { label: "Total facturé", val: fmt(kpi.total),    color: isDark ? "rgba(255,255,255,0.85)" : "#111827", iconColor: "#64748B", iconBg: "rgba(100,116,139,0.12)", Icon: ReceiptText   },
+    { label: "Encaissé",      val: fmt(kpi.encaisse), color: "#4ade80",                                      iconColor: "#4ade80", iconBg: "rgba(74,222,128,0.12)",  Icon: TrendingUp    },
+    { label: "En attente",    val: fmt(kpi.attente),  color: YELLOW,                                         iconColor: YELLOW,    iconBg: "rgba(255,185,0,0.12)",   Icon: Clock         },
+    { label: "En retard",     val: fmt(kpi.retard),   color: "#f87171",                                      iconColor: "#f87171", iconBg: "rgba(248,113,113,0.12)", Icon: AlertTriangle },
   ];
 
   const colHeaders = [
@@ -237,7 +237,7 @@ export default function FacturesList() {
         {/* ── Header ── */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className={`text-xl font-bold tracking-tight ${ttext}`}>Factures</h1>
+            <h1 className={`text-2xl font-extrabold tracking-tight ${ttext}`}>Factures</h1>
             <p className={`mt-0.5 text-sm ${tsub}`}>
               {data.length} facture{data.length !== 1 ? "s" : ""} au total
             </p>
@@ -256,12 +256,20 @@ export default function FacturesList() {
           {kpiCards.map(k => {
             const KpiIcon = k.Icon;
             return (
-              <div key={k.label} className={`rounded-xl border p-3.5 ${tbd}`} style={{ background: k.bg }}>
-                <div className={`flex items-center gap-1.5 text-[11px] font-medium ${tsub}`}>
-                  <KpiIcon size={12} style={{ color: k.color }} />
-                  {k.label}
+              <div
+                key={k.label}
+                className={`flex flex-col gap-2 rounded-2xl border p-3 sm:p-4 ${isDark ? "border-white/[0.07] bg-white/[0.03]" : "bg-white"}`}
+                style={{ borderColor: isDark ? undefined : "rgba(0,0,0,0.07)" }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-[11px] font-semibold uppercase tracking-wide ${isDark ? "text-white/40" : "text-[#64748B]"}`}>
+                    {k.label}
+                  </span>
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg" style={{ background: k.iconBg }}>
+                    <KpiIcon size={12} style={{ color: k.iconColor }} />
+                  </div>
                 </div>
-                <div className="mt-1.5 text-lg font-bold" style={{ color: k.color }}>{k.val}</div>
+                <span className="text-xl font-black leading-none tabular-nums" style={{ color: k.color }}>{k.val}</span>
               </div>
             );
           })}
@@ -335,15 +343,15 @@ export default function FacturesList() {
         <div className={`overflow-hidden rounded-2xl border ${tbd} ${tbgCard}`}>
           <div className="overflow-x-auto">
             {/* table-layout fixed + colgroup guarantee no cell wraps on N°/dates/montant */}
-            <table className="w-full" style={{ tableLayout: "fixed", minWidth: 724 }}>
+            <table className="w-full" style={{ tableLayout: "fixed", minWidth: 640 }}>
               <colgroup>
-                <col style={{ width: 148 }} />
+                <col style={{ width: 130 }} />
                 <col />
-                <col style={{ width: 104 }} />
-                <col style={{ width: 104 }} />
-                <col style={{ width: 140 }} />
-                <col style={{ width: 100 }} />
-                <col style={{ width: 48  }} />
+                <col style={{ width: 90  }} />
+                <col style={{ width: 90  }} />
+                <col style={{ width: 120 }} />
+                <col style={{ width: 90  }} />
+                <col style={{ width: 44  }} />
               </colgroup>
               <thead>
                 <tr className={`border-b ${tbd} ${tbgHead}`}>

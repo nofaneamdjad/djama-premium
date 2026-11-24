@@ -171,7 +171,7 @@ const DOC_TYPE_LABELS: Record<DocType, string> = {
 const AVOIR_BADGE = { color:"#f472b6", bg:"rgba(244,114,182,0.1)", border:"rgba(244,114,182,0.3)" };
 
 const COLOR_PRESETS = [
-  { hex:"#c9a55a", label:"Or DJAMA"   },
+  { hex:"#FFB900", label:"Or DJAMA"   },
   { hex:"#60a5fa", label:"Bleu"     },
   { hex:"#4ade80", label:"Vert"     },
   { hex:"#8b5cf6", label:"Violet"   },

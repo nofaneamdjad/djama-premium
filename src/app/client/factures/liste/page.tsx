@@ -33,7 +33,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  facture: "#c9a55a",
+  facture: "#FFB900",
   devis:   "#7c6fcd",
 };
 
@@ -104,7 +104,7 @@ export default function ListeDocuments() {
 
         {loading && (
           <div className="flex items-center justify-center py-24">
-            <Loader2 size={28} className="animate-spin text-[#c9a55a]" />
+            <Loader2 size={28} className="animate-spin text-[#FFB900]" />
           </div>
         )}
 
@@ -127,7 +127,7 @@ export default function ListeDocuments() {
             className="flex flex-col items-center justify-center rounded-3xl border border-white/8 bg-white/4 py-24 text-center backdrop-blur-sm"
           >
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-white/8 bg-white/4">
-              <ReceiptText size={28} className="text-[#c9a55a]" />
+              <ReceiptText size={28} className="text-[#FFB900]" />
             </div>
             <h2 className="text-lg font-extrabold text-white">Aucun document encore</h2>
             <p className="mt-2 text-sm text-white/50">Créez votre première facture ou votre premier devis</p>
@@ -165,9 +165,9 @@ export default function ListeDocuments() {
                   <span
                     className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
                     style={{
-                      background: `${TYPE_COLOR[doc.type] ?? "#c9a55a"}15`,
-                      color:      TYPE_COLOR[doc.type] ?? "#c9a55a",
-                      border:     `1px solid ${TYPE_COLOR[doc.type] ?? "#c9a55a"}30`,
+                      background: `${TYPE_COLOR[doc.type] ?? "#FFB900"}15`,
+                      color:      TYPE_COLOR[doc.type] ?? "#FFB900",
+                      border:     `1px solid ${TYPE_COLOR[doc.type] ?? "#FFB900"}30`,
                     }}
                   >
                     <FileText size={10} />
@@ -196,14 +196,14 @@ export default function ListeDocuments() {
                 </p>
 
                 {/* Montant */}
-                <p className="text-sm font-extrabold" style={{ color: doc.couleur || "#c9a55a" }}>
+                <p className="text-sm font-extrabold" style={{ color: doc.couleur || "#FFB900" }}>
                   {fmt(doc.total_ttc)}
                 </p>
 
                 {/* CTA */}
                 <Link
                   href="/client/factures"
-                  className="inline-flex items-center gap-1 rounded-xl border border-white/8 bg-white/8 px-3 py-1.5 text-xs font-semibold text-white/60 transition-all hover:border-[rgba(201,165,90,0.3)] hover:text-[#c9a55a]"
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/8 bg-white/8 px-3 py-1.5 text-xs font-semibold text-white/60 transition-all hover:border-[rgba(255,185,0,0.3)] hover:text-[#FFB900]"
                 >
                   <ExternalLink size={11} /> Ouvrir
                 </Link>
@@ -215,7 +215,7 @@ export default function ListeDocuments() {
               <span className="text-xs text-white/40">
                 {documents.length} document{documents.length > 1 ? "s" : ""}
               </span>
-              <Link href="/client/factures" className="flex items-center gap-1.5 text-xs font-bold text-[#c9a55a] transition-all hover:gap-2.5 duration-300">
+              <Link href="/client/factures" className="flex items-center gap-1.5 text-xs font-bold text-[#FFB900] transition-all hover:gap-2.5 duration-300">
                 Nouveau document <ArrowRight size={12} />
               </Link>
             </div>
