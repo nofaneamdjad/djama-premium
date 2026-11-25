@@ -68,7 +68,7 @@ function newLine(pos: number): LineItem {
 
 function r2(n: number) { return Math.round(n * 100) / 100; }
 
-function calcTotals(items: LineItem[], remise_pct: number, acompte: number) {
+function calcTotals(items: LineItem[], remise_pct: number, remise_fixe: number, remise_type: "pct" | "fixe", acompte: number) {
   let subtotal_ht = 0;
   let tva = 0;
   for (const it of items) {
@@ -81,10 +81,13 @@ function calcTotals(items: LineItem[], remise_pct: number, acompte: number) {
   }
   subtotal_ht = r2(subtotal_ht);
   tva         = r2(tva);
-  const remise  = r2(subtotal_ht * remise_pct / 100);
+  const remise  = remise_type === "fixe"
+    ? Math.min(r2(remise_fixe), subtotal_ht)
+    : r2(subtotal_ht * remise_pct / 100);
   const ht_net  = r2(subtotal_ht - remise);
-  const tva_net = r2(tva * (1 - remise_pct / 100));
-  return { subtotal_ht, remise, ht_net, tva: remise_pct > 0 ? tva_net : tva, ttc: Math.max(0, r2(ht_net + (remise_pct > 0 ? tva_net : tva))) };
+  const tva_net = subtotal_ht > 0 ? r2(tva * ht_net / subtotal_ht) : 0;
+  const finalTva = remise > 0 ? tva_net : tva;
+  return { subtotal_ht, remise, ht_net, tva: finalTva, ttc: Math.max(0, r2(ht_net + finalTva)) };
 }
 
 export default function NouvelleFacture() {
@@ -102,7 +105,12 @@ export default function NouvelleFacture() {
   const [sujet,         setSujet]         = useState("");
   const [items,         setItems]         = useState<LineItem[]>([newLine(1)]);
   const [remise_pct,    setRemisePct]     = useState(0);
+  const [remiseType,    setRemiseType]    = useState<"pct" | "fixe">("pct");
+  const [remiseFixe,    setRemiseFixe]    = useState(0);
   const [acompte,       setAcompte]       = useState(0);
+  const [acompteType,   setAcompteType]   = useState("Acompte");
+  const [modeReglement, setModeReglement] = useState("");
+  const [delaiPaiement, setDelaiPaiement] = useState("30 jours");
   const [devise,        setDevise]        = useState("EUR");
   const [docLang,       setDocLang]       = useState("fr");
   const [taxSystemId,   setTaxSystemId]   = useState("tva");
@@ -112,6 +120,10 @@ export default function NouvelleFacture() {
   const [rib_bic,       setRibBic]        = useState("");
   const [rib_banque,    setRibBanque]     = useState("");
   const [rib_titulaire, setRibTitulaire]  = useState("");
+  const [bankMode,      setBankMode]      = useState<"iban" | "account" | "swift">("iban");
+  const [bankAccount,   setBankAccount]   = useState("");
+  const [bankRouting,   setBankRouting]   = useState("");
+  const [bankCorrespondant, setBankCorrespondant] = useState("");
 
   // références
   const [refClient,    setRefClient]    = useState("");
@@ -236,7 +248,7 @@ export default function NouvelleFacture() {
     if (!initDone.current) return;
     setIsDirty(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, couleur, numero, dateDoc, dateEch, sujet, items, remise_pct, acompte, devise, taxSystemId, notes, conditions, rib_iban, rib_bic, rib_banque, rib_titulaire, clientNom, clientSoc, clientEmail, clientTel, clientAdr, clientVille, clientCP, clientPays, clientTva, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
+  }, [template, couleur, numero, dateDoc, dateEch, sujet, items, remise_pct, remiseType, remiseFixe, acompte, acompteType, modeReglement, delaiPaiement, devise, taxSystemId, notes, conditions, rib_iban, rib_bic, rib_banque, rib_titulaire, bankMode, bankAccount, bankRouting, bankCorrespondant, clientNom, clientSoc, clientEmail, clientTel, clientAdr, clientVille, clientCP, clientPays, clientTva, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
 
   // ── beforeunload ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -302,7 +314,7 @@ export default function NouvelleFacture() {
   }
 
   // ── totals ───────────────────────────────────────────────────────────────────
-  const totals = useMemo(() => calcTotals(items, remise_pct, acompte), [items, remise_pct, acompte]);
+  const totals = useMemo(() => calcTotals(items, remise_pct, remiseFixe, remiseType, acompte), [items, remise_pct, remiseFixe, remiseType, acompte]);
 
   // ── preview data ─────────────────────────────────────────────────────────────
   const previewData: PreviewData = useMemo(() => ({
@@ -1020,46 +1032,99 @@ export default function NouvelleFacture() {
 
             {/* ── Conditions de paiement ── */}
             <Section id="conditions" title="Conditions de paiement" icon={Percent}>
+              {/* Mode de règlement */}
+              <div className="mb-4">
+                <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Mode de règlement</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Virement", "Chèque", "Espèces", "Carte", "Prélèvement", "Mobile Money"].map(m => (
+                    <button key={m} type="button" onClick={() => setModeReglement(modeReglement === m ? "" : m)}
+                      className="rounded-full px-3 py-1 text-xs font-medium transition"
+                      style={{
+                        background: modeReglement === m ? GOLD : cardBg,
+                        color:      modeReglement === m ? "#000" : textSecond,
+                        border:     modeReglement === m ? `1px solid ${GOLD}` : `1px solid ${cardBorder}`,
+                      }}>
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
+                {/* Remise globale avec toggle %/fixe */}
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Remise globale (%)</label>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label className="text-xs font-medium" style={{ color: labelCol }}>Remise globale</label>
+                    <div className="flex overflow-hidden rounded border" style={{ borderColor: cardBorder }}>
+                      {(["pct", "fixe"] as const).map(t => (
+                        <button key={t} type="button" onClick={() => setRemiseType(t)}
+                          className="px-2 py-0.5 text-xs font-medium transition"
+                          style={{
+                            background: remiseType === t ? GOLD : "transparent",
+                            color:      remiseType === t ? "#000" : textTert,
+                          }}>
+                          {t === "pct" ? "%" : devise}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <input
-                    type="number" min="0" max="100"
-                    className={inputCls}
-                    style={inputStyle}
-                    value={remise_pct}
-                    onChange={e => setRemisePct(parseFloat(e.target.value) || 0)}
+                    type="number" min="0" max={remiseType === "pct" ? 100 : undefined}
+                    className={inputCls} style={inputStyle}
+                    value={remiseType === "pct" ? remise_pct : remiseFixe}
+                    onChange={e => remiseType === "pct"
+                      ? setRemisePct(parseFloat(e.target.value) || 0)
+                      : setRemiseFixe(parseFloat(e.target.value) || 0)}
                   />
                 </div>
+
+                {/* Délai de paiement */}
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Acompte versé ({devise})</label>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Délai de paiement</label>
+                  <select className={inputCls} style={inputStyle} value={delaiPaiement} onChange={e => setDelaiPaiement(e.target.value)}>
+                    {["À réception", "15 jours", "30 jours", "45 jours", "60 jours"].map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Acompte avec type pills */}
+                <div>
+                  <div className="mb-1.5 flex flex-wrap gap-1">
+                    {["Acompte", "Avance", "Retenue de garantie"].map(t => (
+                      <button key={t} type="button" onClick={() => setAcompteType(t)}
+                        className="rounded-full px-2 py-0.5 text-xs font-medium transition"
+                        style={{
+                          background: acompteType === t ? GOLD : cardBg,
+                          color:      acompteType === t ? "#000" : textTert,
+                          border:     acompteType === t ? `1px solid ${GOLD}` : `1px solid ${cardBorder}`,
+                        }}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                   <input
                     type="number" min="0"
-                    className={inputCls}
-                    style={inputStyle}
+                    className={inputCls} style={inputStyle}
                     value={acompte}
                     onChange={e => setAcompte(parseFloat(e.target.value) || 0)}
+                    placeholder={`${acompteType} versé (${devise})`}
                   />
                 </div>
+
                 <div className="col-span-2">
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Conditions de paiement</label>
                   <textarea
-                    rows={2}
-                    className={inputCls}
-                    style={{ ...inputStyle, resize: "vertical" }}
-                    value={conditions}
-                    onChange={e => setConditions(e.target.value)}
+                    rows={2} className={inputCls} style={{ ...inputStyle, resize: "vertical" }}
+                    value={conditions} onChange={e => setConditions(e.target.value)}
                     placeholder="Paiement à 30 jours..."
                   />
                 </div>
                 <div className="col-span-2">
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Notes / Mentions</label>
                   <textarea
-                    rows={2}
-                    className={inputCls}
-                    style={{ ...inputStyle, resize: "vertical" }}
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
+                    rows={2} className={inputCls} style={{ ...inputStyle, resize: "vertical" }}
+                    value={notes} onChange={e => setNotes(e.target.value)}
                     placeholder="Informations complémentaires..."
                   />
                 </div>
@@ -1068,24 +1133,83 @@ export default function NouvelleFacture() {
 
             {/* ── Coordonnées bancaires ── */}
             <Section id="rib" title="Coordonnées bancaires" icon={Landmark}>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Titulaire</label>
-                  <input className={inputCls} style={inputStyle} value={rib_titulaire} onChange={e => setRibTitulaire(e.target.value)} />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Banque</label>
-                  <input className={inputCls} style={inputStyle} value={rib_banque} onChange={e => setRibBanque(e.target.value)} />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>IBAN</label>
-                  <input className={inputCls} style={inputStyle} value={rib_iban} onChange={e => setRibIban(e.target.value)} placeholder="FR76 ..." />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>BIC / SWIFT</label>
-                  <input className={inputCls} style={inputStyle} value={rib_bic} onChange={e => setRibBic(e.target.value)} />
-                </div>
+              {/* bankMode toggle */}
+              <div className="mb-4 flex flex-wrap gap-1.5">
+                {([
+                  { id: "iban",    label: "IBAN / BIC" },
+                  { id: "account", label: "Account / Routing" },
+                  { id: "swift",   label: "SWIFT international" },
+                ] as const).map(m => (
+                  <button key={m.id} type="button" onClick={() => setBankMode(m.id)}
+                    className="rounded-full px-3 py-1 text-xs font-medium transition"
+                    style={{
+                      background: bankMode === m.id ? GOLD : cardBg,
+                      color:      bankMode === m.id ? "#000" : textSecond,
+                      border:     bankMode === m.id ? `1px solid ${GOLD}` : `1px solid ${cardBorder}`,
+                    }}>
+                    {m.label}
+                  </button>
+                ))}
               </div>
+
+              {bankMode === "iban" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Titulaire</label>
+                    <input className={inputCls} style={inputStyle} value={rib_titulaire} onChange={e => setRibTitulaire(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Banque</label>
+                    <input className={inputCls} style={inputStyle} value={rib_banque} onChange={e => setRibBanque(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>IBAN</label>
+                    <input className={inputCls} style={inputStyle} value={rib_iban} onChange={e => setRibIban(e.target.value)} placeholder="FR76 ..." />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>BIC / SWIFT</label>
+                    <input className={inputCls} style={inputStyle} value={rib_bic} onChange={e => setRibBic(e.target.value)} />
+                  </div>
+                </div>
+              )}
+
+              {bankMode === "account" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Account Number</label>
+                    <input className={inputCls} style={inputStyle} value={bankAccount} onChange={e => setBankAccount(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Routing / ABA</label>
+                    <input className={inputCls} style={inputStyle} value={bankRouting} onChange={e => setBankRouting(e.target.value)} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Bank Name</label>
+                    <input className={inputCls} style={inputStyle} value={rib_banque} onChange={e => setRibBanque(e.target.value)} />
+                  </div>
+                </div>
+              )}
+
+              {bankMode === "swift" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>SWIFT / BIC</label>
+                    <input className={inputCls} style={inputStyle} value={rib_bic} onChange={e => setRibBic(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Account Number</label>
+                    <input className={inputCls} style={inputStyle} value={bankAccount} onChange={e => setBankAccount(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Bank Name</label>
+                    <input className={inputCls} style={inputStyle} value={rib_banque} onChange={e => setRibBanque(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Correspondent Bank</label>
+                    <input className={inputCls} style={inputStyle} value={bankCorrespondant} onChange={e => setBankCorrespondant(e.target.value)} />
+                  </div>
+                </div>
+              )}
             </Section>
 
             {/* ── Mon entreprise ── */}

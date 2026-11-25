@@ -68,7 +68,7 @@ function newLine(pos: number): LineItem {
 
 function r2(n: number) { return Math.round(n * 100) / 100; }
 
-function calcTotals(items: LineItem[], remise_pct: number, acompte: number) {
+function calcTotals(items: LineItem[], remise_pct: number, remise_fixe: number, remise_type: "pct" | "fixe", acompte: number) {
   let subtotal_ht = 0, tva = 0;
   for (const it of items) {
     const gross = r2(it.quantity * it.unit_price);
@@ -79,10 +79,13 @@ function calcTotals(items: LineItem[], remise_pct: number, acompte: number) {
   }
   subtotal_ht = r2(subtotal_ht);
   tva         = r2(tva);
-  const remise  = r2(subtotal_ht * remise_pct / 100);
+  const remise  = remise_type === "fixe"
+    ? Math.min(r2(remise_fixe), subtotal_ht)
+    : r2(subtotal_ht * remise_pct / 100);
   const ht_net  = r2(subtotal_ht - remise);
-  const tva_net = r2(tva * (1 - remise_pct / 100));
-  return { subtotal_ht, remise, ht_net, tva: remise_pct > 0 ? tva_net : tva, ttc: r2(ht_net + (remise_pct > 0 ? tva_net : tva)) };
+  const tva_net = subtotal_ht > 0 ? r2(tva * ht_net / subtotal_ht) : 0;
+  const finalTva = remise > 0 ? tva_net : tva;
+  return { subtotal_ht, remise, ht_net, tva: finalTva, ttc: r2(ht_net + finalTva) };
 }
 
 export default function NouveauDevis() {
@@ -99,13 +102,17 @@ export default function NouveauDevis() {
   });
   const [sujet,       setSujet]       = useState("");
   const [items,       setItems]       = useState<LineItem[]>([newLine(1)]);
-  const [remise_pct,  setRemisePct]   = useState(0);
-  const [acompte,     setAcompte]     = useState(0);
-  const [devise,      setDevise]      = useState("EUR");
-  const [docLang,     setDocLang]     = useState("fr");
-  const [taxSystemId, setTaxSystemId] = useState("tva");
-  const [notes,       setNotes]       = useState("");
-  const [conditions,  setConditions]  = useState("");
+  const [remise_pct,    setRemisePct]    = useState(0);
+  const [remiseType,    setRemiseType]   = useState<"pct" | "fixe">("pct");
+  const [remiseFixe,    setRemiseFixe]   = useState(0);
+  const [acompte,       setAcompte]      = useState(0);
+  const [acompteType,   setAcompteType]  = useState("Acompte");
+  const [modeReglement, setModeReglement] = useState("");
+  const [devise,        setDevise]       = useState("EUR");
+  const [docLang,       setDocLang]      = useState("fr");
+  const [taxSystemId,   setTaxSystemId]  = useState("tva");
+  const [notes,         setNotes]        = useState("");
+  const [conditions,    setConditions]   = useState("");
 
   // client
   const [clientNom,       setClientNom]       = useState("");
@@ -213,7 +220,7 @@ export default function NouveauDevis() {
     if (!initDone.current) return;
     setIsDirty(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, couleur, numero, dateDoc, dateVal, sujet, items, remise_pct, acompte, devise, taxSystemId, notes, conditions, clientNom, clientSoc, clientEmail, clientTel, clientTelPrefix, clientAdr, clientVille, clientCP, clientPays, clientTva, clientType, refClient, refCommande, refProjet, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
+  }, [template, couleur, numero, dateDoc, dateVal, sujet, items, remise_pct, remiseType, remiseFixe, acompte, acompteType, modeReglement, devise, taxSystemId, notes, conditions, clientNom, clientSoc, clientEmail, clientTel, clientTelPrefix, clientAdr, clientVille, clientCP, clientPays, clientTva, clientType, refClient, refCommande, refProjet, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
 
   // ── beforeunload ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -270,7 +277,7 @@ export default function NouveauDevis() {
   }
 
   // ── totals ───────────────────────────────────────────────────────────────────
-  const totals = useMemo(() => calcTotals(items, remise_pct, acompte), [items, remise_pct, acompte]);
+  const totals = useMemo(() => calcTotals(items, remise_pct, remiseFixe, remiseType, acompte), [items, remise_pct, remiseFixe, remiseType, acompte]);
 
   // ── preview data ─────────────────────────────────────────────────────────────
   const previewData: PreviewData = useMemo(() => ({
@@ -878,15 +885,76 @@ export default function NouveauDevis() {
 
             {/* ── CONDITIONS DE PAIEMENT ── */}
             <Section id="conditions" title="Conditions de paiement" icon={Percent}>
+              {/* Mode de règlement */}
+              <div className="mb-4">
+                <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Mode de règlement</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Virement", "Chèque", "Espèces", "Carte", "Prélèvement", "Mobile Money"].map(m => (
+                    <button key={m} type="button" onClick={() => setModeReglement(modeReglement === m ? "" : m)}
+                      className="rounded-full px-3 py-1 text-xs font-medium transition"
+                      style={{
+                        background: modeReglement === m ? GOLD : cardBg,
+                        color:      modeReglement === m ? "#000" : textSecond,
+                        border:     modeReglement === m ? `1px solid ${GOLD}` : `1px solid ${cardBorder}`,
+                      }}>
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
+                {/* Remise globale avec toggle %/fixe */}
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Remise globale (%)</label>
-                  <input type="number" min="0" max="100" className={inputCls} style={inputStyle} value={remise_pct} onChange={e => setRemisePct(parseFloat(e.target.value) || 0)} />
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label className="text-xs font-medium" style={{ color: labelCol }}>Remise globale</label>
+                    <div className="flex overflow-hidden rounded border" style={{ borderColor: cardBorder }}>
+                      {(["pct", "fixe"] as const).map(t => (
+                        <button key={t} type="button" onClick={() => setRemiseType(t)}
+                          className="px-2 py-0.5 text-xs font-medium transition"
+                          style={{
+                            background: remiseType === t ? GOLD : "transparent",
+                            color:      remiseType === t ? "#000" : textTert,
+                          }}>
+                          {t === "pct" ? "%" : devise}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <input
+                    type="number" min="0" max={remiseType === "pct" ? 100 : undefined}
+                    className={inputCls} style={inputStyle}
+                    value={remiseType === "pct" ? remise_pct : remiseFixe}
+                    onChange={e => remiseType === "pct"
+                      ? setRemisePct(parseFloat(e.target.value) || 0)
+                      : setRemiseFixe(parseFloat(e.target.value) || 0)}
+                  />
                 </div>
+
+                {/* Acompte avec type pills */}
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Acompte ({devise})</label>
-                  <input type="number" min="0" className={inputCls} style={inputStyle} value={acompte} onChange={e => setAcompte(parseFloat(e.target.value) || 0)} />
+                  <div className="mb-1.5 flex flex-wrap gap-1">
+                    {["Acompte", "Avance", "Retenue de garantie"].map(t => (
+                      <button key={t} type="button" onClick={() => setAcompteType(t)}
+                        className="rounded-full px-2 py-0.5 text-xs font-medium transition"
+                        style={{
+                          background: acompteType === t ? GOLD : cardBg,
+                          color:      acompteType === t ? "#000" : textTert,
+                          border:     acompteType === t ? `1px solid ${GOLD}` : `1px solid ${cardBorder}`,
+                        }}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="number" min="0"
+                    className={inputCls} style={inputStyle}
+                    value={acompte}
+                    onChange={e => setAcompte(parseFloat(e.target.value) || 0)}
+                    placeholder={`${acompteType} versé (${devise})`}
+                  />
                 </div>
+
                 <div className="col-span-2">
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Conditions</label>
                   <textarea rows={2} className={inputCls} style={{ ...inputStyle, resize: "vertical" }} value={conditions} onChange={e => setConditions(e.target.value)} placeholder="Paiement à 30 jours..." />
