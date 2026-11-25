@@ -137,7 +137,11 @@ export default function DevisList() {
       if (!user) return;
       const { data: src } = await supabase.from("documents").select("*").eq("id", id).maybeSingle();
       if (!src) return;
-      const res = await fetch("/api/factures/numero?type=devis&devise=EUR");
+      const res = await fetch("/api/factures/numero", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "devis" }),
+      });
       const { numero } = res.ok ? await res.json() : { numero: src.numero + "-COPIE" };
       await supabase.from("documents").insert({ ...src, id: undefined, numero, statut: "brouillon", created_at: undefined, updated_at: undefined, source_id: id });
       await load();
@@ -248,7 +252,14 @@ export default function DevisList() {
                         <tr key={d.id} className="transition-colors" style={{ borderBottom: `1px solid ${divider}` }}
                           onMouseEnter={e => (e.currentTarget.style.background = rowHover)}
                           onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                          <td className="px-5 py-3.5 font-semibold" style={{ color: textPrimary }}>{d.numero || "—"}</td>
+                          <td className="px-5 py-3.5 font-semibold" style={{ color: textPrimary }}>
+                            <div className="flex items-center gap-1.5">
+                              {d.numero || "—"}
+                              {d.numero && !d.numero.startsWith("DEV-") && (
+                                <span title="Numéro incohérent avec le type devis" className="rounded px-1 py-0.5 text-[9px] font-bold" style={{ background: "rgba(248,113,113,0.15)", color: "#f87171" }}>⚠ NUM</span>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-5 py-3.5 max-w-[180px]">
                             <div className="truncate font-medium" style={{ color: textPrimary }}>{d.client_societe || d.client_nom || "—"}</div>
                             {d.client_societe && d.client_nom && <div className="truncate text-xs" style={{ color: textTert }}>{d.client_nom}</div>}

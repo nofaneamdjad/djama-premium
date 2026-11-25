@@ -182,7 +182,11 @@ export default function NouvelleFacture() {
           if (co.bic)  setRibBic(co.bic);
         }
 
-        const res = await fetch(`/api/factures/numero?type=facture&devise=EUR`);
+        const res = await fetch("/api/factures/numero", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "facture" }),
+        });
         if (res.ok) { const j = await res.json(); setNumero(j.numero ?? ""); }
       } catch (e) { console.error("[NouvelleFacture init]", e); }
     })();

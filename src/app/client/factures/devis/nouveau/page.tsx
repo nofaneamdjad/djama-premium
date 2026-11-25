@@ -151,7 +151,11 @@ export default function NouveauDevis() {
           setEmVille(co.city || ""); setEmCP(co.postal_code || ""); setEmPays(co.country || "France");
           setEmSiret(co.siret || ""); setEmTva(co.vat_number || ""); setEmLogo(co.logoUrl || "");
         }
-        const res = await fetch(`/api/factures/numero?type=devis&devise=EUR`);
+        const res = await fetch("/api/factures/numero", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "devis" }),
+        });
         if (res.ok) { const j = await res.json(); setNumero(j.numero ?? ""); }
       } catch (e) { console.error("[NouveauDevis init]", e); }
     })();
