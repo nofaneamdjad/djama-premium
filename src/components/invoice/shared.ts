@@ -30,6 +30,12 @@ export interface PreviewData {
   notes?:          string | null;
   /** Couleur d'accent choisie par l'utilisateur — appliquée à TOUS les templates */
   color?:          string;
+  /** Devise ISO 4217 (ex: "EUR", "USD", "MAD"). Défaut: "EUR" */
+  currency?:       string;
+  /** Langue du document (ex: "fr", "en", "ar"). Défaut: "fr" */
+  lang?:           string;
+  /** Locale Intl pour le formatage des montants (ex: "fr-FR", "en-US"). Déduit de currency+lang si absent. */
+  locale?:         string;
   company?: {
     name?:          string;
     email?:         string;
@@ -121,6 +127,29 @@ export function fmtDate(d?: string | null): string {
   return `${day}/${m}/${y}`;
 }
 
+/**
+ * Formate un montant avec la devise et la locale spécifiées.
+ * Remplace fmtEur() pour la facturation internationale.
+ */
+export function fmtCurrency(
+  n: number,
+  currency?: string | null,
+  locale?: string | null,
+): string {
+  const c = currency || "EUR";
+  const l = locale   || "fr-FR";
+  try {
+    return new Intl.NumberFormat(l, { style: "currency", currency: c }).format(n);
+  } catch {
+    try {
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: c }).format(n);
+    } catch {
+      return `${c} ${n.toFixed(2)}`;
+    }
+  }
+}
+
+/** @deprecated Utiliser fmtCurrency(n, "EUR", "fr-FR") pour la cohérence internationale */
 export function fmtEur(n: number): string {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
 }

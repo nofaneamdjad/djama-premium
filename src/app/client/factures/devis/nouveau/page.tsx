@@ -18,6 +18,7 @@ import { TemplateGalleryModal } from "@/components/invoice/TemplateGalleryModal"
 import { fetchCompanySettings, fetchOrgSettings } from "@/lib/pdf/companySettings";
 import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
+import { SUPPORTED_LANGUAGES } from "@/lib/invoice/docLang";
 import type { CompanySettings } from "@/lib/pdf/companySettings";
 
 const GOLD = "#FFB900";
@@ -87,6 +88,7 @@ export default function NouveauDevis() {
   const [remise_pct,  setRemisePct]   = useState(0);
   const [acompte,     setAcompte]     = useState(0);
   const [devise,      setDevise]      = useState("EUR");
+  const [docLang,     setDocLang]     = useState("fr");
   const [notes,       setNotes]       = useState("");
   const [conditions,  setConditions]  = useState("");
 
@@ -270,6 +272,8 @@ export default function NouveauDevis() {
     total:         totals.ttc,
     notes:         notes || null,
     color:         couleur,
+    currency:      devise,
+    lang:          docLang,
     company: {
       name:        emNom,
       email:       emEmail,
@@ -290,7 +294,7 @@ export default function NouveauDevis() {
       logoSize:    "md",
       logoHideName: false,
     },
-  }), [numero, dateDoc, dateVal, clientNom, clientEmail, clientSoc, clientAdr, clientCP, clientVille, clientPays, sujet, items, totals, remise_pct, notes, couleur, emNom, emEmail, emAdr, emCP, emVille, emPays, emSiret, emTva, emLogo, coDefaults]);
+  }), [numero, dateDoc, dateVal, clientNom, clientEmail, clientSoc, clientAdr, clientCP, clientVille, clientPays, sujet, items, totals, remise_pct, notes, couleur, devise, docLang, emNom, emEmail, emAdr, emCP, emVille, emPays, emSiret, emTva, emLogo, coDefaults]);
 
   // ── navigation ───────────────────────────────────────────────────────────────
   function handleBack() {
@@ -539,7 +543,15 @@ export default function NouveauDevis() {
                 <div>
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Devise</label>
                   <select className={inputCls} style={inputStyle} value={devise} onChange={e => setDevise(e.target.value)}>
-                    {["EUR","USD","GBP","MAD","CHF","CAD","DZD","TND"].map(d => <option key={d} value={d}>{d}</option>)}
+                    {["EUR","USD","GBP","MAD","CHF","CAD","DZD","TND","AED","XOF","XAF","MGA","MUR","KMF","ZAR","KES","BRL","JPY","CNY","INR","AUD"].map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Langue du document</label>
+                  <select className={inputCls} style={inputStyle} value={docLang} onChange={e => setDocLang(e.target.value)}>
+                    {SUPPORTED_LANGUAGES.map(l => (
+                      <option key={l.code} value={l.code}>{l.nativeLabel} ({l.label})</option>
+                    ))}
                   </select>
                 </div>
                 <div className="col-span-2">
