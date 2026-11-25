@@ -46,10 +46,11 @@ export async function POST(req: NextRequest) {
     .limit(1)
     .maybeSingle();
 
+  // Fallback : recherche par PRÉFIXE (pas par type) pour éviter les collisions
+  // si un document d'un autre type utilise déjà ce préfixe (anomalie legacy).
   let query = supabaseAdmin
     .from("documents")
     .select("numero")
-    .eq("type", type)
     .like("numero", `${prefix}-${year}-%`);
 
   // Séquence par organisation si l'utilisateur appartient à une org
