@@ -20,6 +20,7 @@ import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
 import { SUPPORTED_LANGUAGES } from "@/lib/invoice/docLang";
 import { TAX_SYSTEMS, getTaxSystem } from "@/lib/invoice/taxSystems";
+import { getCurrency } from "@/lib/invoice/currencies";
 import type { CompanySettings } from "@/lib/pdf/companySettings";
 
 const GOLD = "#FFB900";
@@ -315,6 +316,7 @@ export default function NouveauDevis() {
     color:         couleur,
     currency:      devise,
     lang:          docLang,
+    locale:        getCurrency(devise).locale,
     company: {
       name:        emNom,
       email:       emEmail,
@@ -449,7 +451,8 @@ export default function NouveauDevis() {
     );
   }
 
-  const fmtC = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: devise || "EUR", maximumFractionDigits: 2 }).format(n);
+  const deviseLocale = getCurrency(devise).locale;
+  const fmtC = (n: number) => new Intl.NumberFormat(deviseLocale, { style: "currency", currency: devise || "EUR", maximumFractionDigits: getCurrency(devise).decimals }).format(n);
   const taxSystem = getTaxSystem(taxSystemId);
 
   const computedScale = previewScale * zoomLevel;
