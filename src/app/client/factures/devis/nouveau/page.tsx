@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Loader2, Save, FileDown, ChevronDown, ChevronUp,
   Plus, Trash2, Search, User, Building2, Check,
-  Palette, FileText, Percent, Eye, Pencil,
+  FileText, Percent, Eye, Pencil, LayoutGrid,
   ZoomIn, ZoomOut,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -117,7 +117,7 @@ export default function NouveauDevis() {
   const [downloading,  setDownloading]  = useState(false);
   const [error,        setError]        = useState("");
   const [saved,        setSaved]        = useState(false);
-  const [openSection,  setOpenSection]  = useState<string>("client");
+  const [openSection,  setOpenSection]  = useState<string>("infos");
   const [clientSearch, setClientSearch] = useState("");
   const [clients,      setClients]      = useState<FacturesClient[]>([]);
   const [showClients,  setShowClients]  = useState(false);
@@ -146,10 +146,10 @@ export default function NouveauDevis() {
   const inputBd     = isDark ? "rgba(255,255,255,0.10)" : "#d1d5db";
   const labelCol    = isDark ? "rgba(255,255,255,0.40)" : "#6b7280";
   const divider     = isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6";
+  const sectionBg   = isDark ? "rgba(255,255,255,0.025)" : "#f8f9fa";
 
-  const inputCls  = `w-full rounded-lg px-3 py-2 text-sm outline-none transition focus:ring-2`;
+  const inputCls  = "w-full rounded-lg px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-yellow-400/30";
   const inputStyle = { background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary };
-  const focusStyle = { "--tw-ring-color": "rgba(255,185,0,0.3)" } as React.CSSProperties;
 
   // ── init ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -376,18 +376,23 @@ export default function NouveauDevis() {
   function Section({ id, title, icon: Icon, children }: { id: string; title: string; icon: React.ElementType; children: React.ReactNode }) {
     const open = openSection === id;
     return (
-      <div className="rounded-2xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+      <div className="rounded-xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
         <button type="button" onClick={() => setOpenSection(open ? "" : id)}
-          className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:opacity-80">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: open ? "rgba(255,185,0,0.12)" : (isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6") }}>
-              <Icon size={15} style={{ color: open ? GOLD : textTert }} />
-            </div>
-            <span className="text-sm font-semibold" style={{ color: textPrimary }}>{title}</span>
+          className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition hover:bg-black/[0.015]">
+          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg transition-colors"
+            style={{ background: open ? "rgba(255,185,0,0.1)" : (isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6") }}>
+            <Icon size={13} style={{ color: open ? GOLD : textTert }} />
           </div>
-          {open ? <ChevronUp size={16} style={{ color: textTert }} /> : <ChevronDown size={16} style={{ color: textTert }} />}
+          <span className="flex-1 text-sm font-semibold" style={{ color: textPrimary }}>{title}</span>
+          {open
+            ? <ChevronUp size={14} style={{ color: textTert }} />
+            : <ChevronDown size={14} style={{ color: textTert }} />}
         </button>
-        {open && <div className="border-t px-5 pb-5 pt-4" style={{ borderColor: divider }}>{children}</div>}
+        {open && (
+          <div className="border-t px-5 pb-5 pt-4" style={{ borderColor: divider }}>
+            {children}
+          </div>
+        )}
       </div>
     );
   }
@@ -395,40 +400,32 @@ export default function NouveauDevis() {
   const fmtC = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: devise || "EUR", maximumFractionDigits: 2 }).format(n);
 
   const computedScale = previewScale * zoomLevel;
+  const thumbScale    = 48 / 794;
+  const info = TEMPLATE_CATALOG.find(t => t.id === template);
 
   // ── render ───────────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: editorBg }}>
 
       {/* ── TOP BAR ── */}
-      <header
-        className="flex flex-shrink-0 items-center justify-between gap-3 border-b px-4 sm:px-5"
-        style={{ height: 56, background: headerBg, borderColor: cardBorder }}
-      >
+      <header className="flex flex-shrink-0 items-center justify-between gap-3 border-b px-4 sm:px-5"
+        style={{ height: 56, background: headerBg, borderColor: cardBorder }}>
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <button
-            type="button"
-            onClick={handleBack}
+          <button type="button" onClick={handleBack}
             className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition hover:opacity-70"
-            style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
-          >
+            style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
             <ArrowLeft size={15} style={{ color: textSecond }} />
           </button>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold" style={{ color: textPrimary }}>Nouveau devis</span>
-              {numero && (
-                <span
-                  className="hidden sm:inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
-                  style={{ background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)", color: GOLD }}
-                >
-                  {numero}
-                </span>
-              )}
-            </div>
+          <div className="min-w-0 flex items-center gap-2">
+            <span className="text-sm font-bold" style={{ color: textPrimary }}>Nouveau devis</span>
+            {numero && (
+              <span className="hidden sm:inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
+                style={{ background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)", color: GOLD }}>
+                {numero}
+              </span>
+            )}
           </div>
         </div>
-
         <div className="flex flex-shrink-0 items-center gap-2">
           {isDirty && !saved && (
             <div className="hidden sm:flex items-center gap-1.5 text-xs" style={{ color: textTert }}>
@@ -436,29 +433,21 @@ export default function NouveauDevis() {
               Non enregistré
             </div>
           )}
-          {error && (
-            <div className="hidden sm:block max-w-[180px] truncate text-xs" style={{ color: "#f87171" }}>{error}</div>
-          )}
+          {error && <div className="hidden sm:block max-w-[180px] truncate text-xs" style={{ color: "#f87171" }}>{error}</div>}
           {saved && (
             <div className="flex items-center gap-1 text-xs" style={{ color: "#4ade80" }}>
               <Check size={12} /> Enregistré
             </div>
           )}
-          <button
-            onClick={handlePDF}
-            disabled={downloading}
+          <button onClick={handlePDF} disabled={downloading}
             className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition hover:opacity-80 disabled:opacity-50"
-            style={{ background: cardBg, color: textSecond, border: `1px solid ${cardBorder}` }}
-          >
+            style={{ background: cardBg, color: textSecond, border: `1px solid ${cardBorder}` }}>
             {downloading ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />}
             <span className="hidden sm:inline">PDF</span>
           </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || saved}
+          <button onClick={handleSave} disabled={saving || saved}
             className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition hover:opacity-90 disabled:opacity-60"
-            style={{ background: GOLD, color: "#000000" }}
-          >
+            style={{ background: GOLD, color: "#000000" }}>
             {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
             Enregistrer
           </button>
@@ -469,66 +458,61 @@ export default function NouveauDevis() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── LEFT: form panel ── */}
-        <div
-          className={`${activeTab === "edit" ? "flex" : "hidden"} lg:flex w-full lg:w-[520px] lg:flex-shrink-0 flex-col overflow-y-auto`}
-          style={{ borderRight: `1px solid ${cardBorder}`, background: editorBg }}
-        >
-          <div className="flex flex-col gap-4 p-4 sm:p-5 pb-24 lg:pb-8">
+        <div className={`${activeTab === "edit" ? "flex" : "hidden"} lg:flex w-full lg:w-[520px] lg:flex-shrink-0 flex-col overflow-y-auto`}
+          style={{ borderRight: `1px solid ${cardBorder}`, background: editorBg }}>
+          <div className="flex flex-col gap-3 p-4 sm:p-5 pb-24 lg:pb-8">
 
-            {/* Modèle */}
-            {(() => {
-              const info = TEMPLATE_CATALOG.find(t => t.id === template);
-              return (
-                <div className="rounded-2xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
-                  <div className="flex items-center justify-between gap-3 px-5 py-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                        style={{ background: "rgba(255,185,0,0.12)" }}>
-                        <Palette size={15} style={{ color: GOLD }} />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-sm font-semibold" style={{ color: textPrimary }}>Modèle</span>
-                        <span className="ml-2 text-xs truncate" style={{ color: textTert }}>{info?.label ?? template}</span>
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <div className="h-5 w-5 rounded-md border border-black/10" style={{ background: couleur }} />
-                      <button
-                        type="button"
-                        onClick={() => setGalleryOpen(true)}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:opacity-80"
-                        style={{ background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)", color: GOLD, border: "1px solid rgba(255,185,0,0.25)" }}
-                      >
-                        Changer de modèle
-                      </button>
-                    </div>
-                  </div>
-                  {info && (
-                    <div className="flex items-center gap-4 border-t px-5 py-3" style={{ borderColor: divider }}>
-                      <div className="shrink-0 overflow-hidden rounded-lg" style={{ width: 44, border: `2px solid ${GOLD}`, background: info.previewBg }}>
-                        <div style={{ aspectRatio: "595/842", padding: "4px 6px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                          <div style={{ background: info.previewColor, opacity: 0.85, height: 2,   borderRadius: 1, width: "50%", marginBottom: 3 }} />
-                          <div style={{ background: info.previewColor, opacity: 0.3,  height: 1,   borderRadius: 1, width: "75%", marginBottom: 2 }} />
-                          <div style={{ background: couleur,           opacity: 0.9,  height: 1.5, borderRadius: 1, width: "35%" }} />
-                        </div>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color: textPrimary }}>{info.label}</div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                          <span className="rounded-md px-1.5 py-0.5 text-[9px] font-semibold"
-                            style={{ background: info.badge.bgColor, color: info.badge.textColor }}>
-                            {info.badge.label}
-                          </span>
-                          <span className="text-xs truncate" style={{ color: textTert }}>{info.description}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+            {/* ── MODÈLE (compact) ── */}
+            <div className="rounded-xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+              <div className="flex items-center gap-3 p-3">
+                {/* Real A4 thumbnail */}
+                <div className="flex-shrink-0 overflow-hidden rounded-md"
+                  style={{ width: 48, height: Math.round(thumbScale * 1122), border: `1px solid ${cardBorder}`, pointerEvents: "none", background: "#fff" }}>
+                  <ScaledA4 scale={thumbScale}>
+                    <InvoiceTemplate data={previewData} template={template} />
+                  </ScaledA4>
                 </div>
-              );
-            })()}
 
-            {/* Galerie */}
+                {/* Template name */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold truncate" style={{ color: textPrimary }}>
+                    {info?.label ?? template}
+                  </div>
+                  <div className="text-xs mt-0.5" style={{ color: textTert }}>Modèle de document</div>
+                </div>
+
+                {/* Color picker */}
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <span className="text-xs hidden sm:block" style={{ color: textTert }}>Couleur</span>
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={couleur}
+                      onChange={e => setCouleur(e.target.value)}
+                      className="cursor-pointer"
+                      style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${cardBorder}`, padding: 2, background: "none" }}
+                    />
+                  </div>
+                </div>
+
+                {/* Change model button */}
+                <button type="button" onClick={() => setGalleryOpen(true)}
+                  className="hidden sm:flex flex-shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
+                  style={{ background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)", color: GOLD, border: "1px solid rgba(255,185,0,0.2)", whiteSpace: "nowrap" }}>
+                  Changer
+                </button>
+              </div>
+              {/* Mobile "Changer" row */}
+              <div className="sm:hidden border-t px-3 py-2.5" style={{ borderColor: divider }}>
+                <button type="button" onClick={() => setGalleryOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition hover:opacity-80"
+                  style={{ background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)", color: GOLD, border: "1px solid rgba(255,185,0,0.2)" }}>
+                  Changer de modèle
+                </button>
+              </div>
+            </div>
+
+            {/* Gallery modal */}
             <TemplateGalleryModal
               open={galleryOpen}
               currentTemplate={template}
@@ -537,130 +521,158 @@ export default function NouveauDevis() {
               onClose={() => setGalleryOpen(false)}
             />
 
-            {/* Infos générales */}
-            <div className="rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${divider}` }}>
-                <span className="text-sm font-semibold" style={{ color: textPrimary }}>Informations générales</span>
-              </div>
-              <div className="grid gap-4 px-5 py-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* ── INFOS GÉNÉRALES ── */}
+            <Section id="infos" title="Informations générales" icon={LayoutGrid}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Numéro</label>
-                  <input className={inputCls} style={{ ...inputStyle, ...focusStyle }} value={numero} onChange={e => setNumero(e.target.value)} />
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Numéro</label>
+                  <input className={inputCls} style={inputStyle} value={numero} onChange={e => setNumero(e.target.value)} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Date d&apos;émission</label>
-                  <input type="date" className={inputCls} style={{ ...inputStyle, ...focusStyle }} value={dateDoc} onChange={e => setDateDoc(e.target.value)} />
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Date d&apos;émission</label>
+                  <input type="date" className={inputCls} style={inputStyle} value={dateDoc} onChange={e => setDateDoc(e.target.value)} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Valable jusqu&apos;au</label>
-                  <input type="date" className={inputCls} style={{ ...inputStyle, ...focusStyle }} value={dateVal} onChange={e => setDateVal(e.target.value)} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Sujet / Objet</label>
-                  <input className={inputCls} style={{ ...inputStyle, ...focusStyle }} placeholder="Objet du devis..." value={sujet} onChange={e => setSujet(e.target.value)} />
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Valable jusqu&apos;au</label>
+                  <input type="date" className={inputCls} style={inputStyle} value={dateVal} onChange={e => setDateVal(e.target.value)} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Devise</label>
-                  <select className={inputCls} style={{ ...inputStyle }} value={devise} onChange={e => setDevise(e.target.value)}>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Devise</label>
+                  <select className={inputCls} style={inputStyle} value={devise} onChange={e => setDevise(e.target.value)}>
                     {["EUR","USD","GBP","MAD","CHF","CAD","DZD","TND"].map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
-              </div>
-            </div>
-
-            {/* Client */}
-            <Section id="client" title="Client" icon={User}>
-              <div className="relative mb-4">
-                <div className="relative">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: textTert }} />
-                  <input className={inputCls} style={{ ...inputStyle, paddingLeft: "2rem" }} placeholder="Rechercher un client existant..."
-                    value={clientSearch} onChange={e => { setClientSearch(e.target.value); setShowClients(true); }} onFocus={() => setShowClients(true)} />
+                <div className="col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Sujet / Objet</label>
+                  <input className={inputCls} style={inputStyle} placeholder="Objet du devis..." value={sujet} onChange={e => setSujet(e.target.value)} />
                 </div>
+              </div>
+            </Section>
+
+            {/* ── CLIENT ── */}
+            <Section id="client" title="Client" icon={User}>
+              {/* Search */}
+              <div className="relative mb-3">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: textTert }} />
+                <input className={inputCls} style={{ ...inputStyle, paddingLeft: "2rem" }}
+                  placeholder="Rechercher un client existant..."
+                  value={clientSearch}
+                  onChange={e => { setClientSearch(e.target.value); setShowClients(true); }}
+                  onFocus={() => setShowClients(true)} />
                 {showClients && clients.length > 0 && (
                   <div className="absolute top-full z-50 mt-1 w-full overflow-hidden rounded-xl shadow-xl"
                     style={{ background: isDark ? "#1a1b23" : "#ffffff", border: `1px solid ${cardBorder}` }}>
                     {clients.map(c => (
                       <button key={c.id} type="button" onClick={() => pickClient(c)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:opacity-80"
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-black/5"
                         style={{ borderBottom: `1px solid ${divider}` }}>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "rgba(255,185,0,0.12)" }}>
-                          <User size={13} style={{ color: GOLD }} />
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full flex-shrink-0"
+                          style={{ background: "rgba(255,185,0,0.1)" }}>
+                          <User size={12} style={{ color: GOLD }} />
                         </div>
-                        <div>
-                          <div className="text-sm font-medium" style={{ color: textPrimary }}>{c.nom}</div>
-                          {c.societe && <div className="text-xs" style={{ color: textTert }}>{c.societe}</div>}
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium truncate" style={{ color: textPrimary }}>{c.nom}</div>
+                          {c.societe && <div className="text-xs truncate" style={{ color: textTert }}>{c.societe}</div>}
                         </div>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Nom</label><input className={inputCls} style={inputStyle} value={clientNom} onChange={e => setClientNom(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Société</label><input className={inputCls} style={inputStyle} value={clientSoc} onChange={e => setClientSoc(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Email</label><input type="email" className={inputCls} style={inputStyle} value={clientEmail} onChange={e => setClientEmail(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Téléphone</label><input className={inputCls} style={inputStyle} value={clientTel} onChange={e => setClientTel(e.target.value)} /></div>
-                <div className="sm:col-span-2"><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Adresse</label><input className={inputCls} style={inputStyle} value={clientAdr} onChange={e => setClientAdr(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Code postal</label><input className={inputCls} style={inputStyle} value={clientCP} onChange={e => setClientCP(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Ville</label><input className={inputCls} style={inputStyle} value={clientVille} onChange={e => setClientVille(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Pays</label><input className={inputCls} style={inputStyle} value={clientPays} onChange={e => setClientPays(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>N° TVA</label><input className={inputCls} style={inputStyle} value={clientTva} onChange={e => setClientTva(e.target.value)} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Nom</label>
+                  <input className={inputCls} style={inputStyle} value={clientNom} onChange={e => setClientNom(e.target.value)} placeholder="Jean Dupont" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Société</label>
+                  <input className={inputCls} style={inputStyle} value={clientSoc} onChange={e => setClientSoc(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Email</label>
+                  <input type="email" className={inputCls} style={inputStyle} value={clientEmail} onChange={e => setClientEmail(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Téléphone</label>
+                  <input className={inputCls} style={inputStyle} value={clientTel} onChange={e => setClientTel(e.target.value)} />
+                </div>
+                <div className="col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Adresse</label>
+                  <input className={inputCls} style={inputStyle} value={clientAdr} onChange={e => setClientAdr(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Code postal</label>
+                  <input className={inputCls} style={inputStyle} value={clientCP} onChange={e => setClientCP(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Ville</label>
+                  <input className={inputCls} style={inputStyle} value={clientVille} onChange={e => setClientVille(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Pays</label>
+                  <input className={inputCls} style={inputStyle} value={clientPays} onChange={e => setClientPays(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>N° TVA</label>
+                  <input className={inputCls} style={inputStyle} value={clientTva} onChange={e => setClientTva(e.target.value)} />
+                </div>
               </div>
             </Section>
 
-            {/* Articles */}
+            {/* ── ARTICLES ── */}
             <Section id="articles" title="Articles & Prestations" icon={FileText}>
-              <div className="mb-3 overflow-x-auto">
-                <table className="w-full text-xs">
+              <div className="mb-3 -mx-1 overflow-x-auto">
+                <table className="w-full min-w-[420px] text-xs">
                   <thead>
-                    <tr style={{ color: textTert }}>
-                      <th className="pb-2 text-left font-medium">Description</th>
-                      <th className="pb-2 text-right font-medium w-16">Qté</th>
-                      <th className="pb-2 text-right font-medium w-24">P.U. HT</th>
-                      <th className="pb-2 text-right font-medium w-16">TVA %</th>
-                      <th className="pb-2 text-right font-medium w-20">Total HT</th>
-                      <th className="w-8"></th>
+                    <tr>
+                      <th className="pb-2 pl-1 text-left font-medium" style={{ color: textTert }}>Description</th>
+                      <th className="pb-2 text-right font-medium w-14" style={{ color: textTert }}>Qté</th>
+                      <th className="pb-2 text-right font-medium w-20" style={{ color: textTert }}>P.U. HT</th>
+                      <th className="pb-2 text-right font-medium w-14" style={{ color: textTert }}>TVA</th>
+                      <th className="pb-2 text-right font-medium w-20" style={{ color: textTert }}>Total HT</th>
+                      <th className="pb-2 w-6" />
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y" style={{ borderColor: divider }}>
                     {items.map((item, i) => {
                       const lineHT = r2(item.quantity * item.unit_price * (1 - (item.remise_pct || 0) / 100));
                       return (
                         <tr key={item.id} className="group">
-                          <td className="py-1 pr-2">
-                            <input className="w-full rounded-lg px-2 py-1.5 text-xs outline-none"
+                          <td className="py-1.5 pr-2 pl-1">
+                            <input className="w-full rounded-md px-2 py-1.5 text-xs outline-none"
                               style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
                               placeholder="Description..." value={item.description}
                               onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, description: e.target.value } : it))} />
                           </td>
-                          <td className="py-1 pr-2">
+                          <td className="py-1.5 pr-1">
                             <input type="number" min="0" step="0.01"
-                              className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
+                              className="w-full rounded-md px-1.5 py-1.5 text-right text-xs outline-none"
                               style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
                               value={item.quantity}
                               onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, quantity: parseFloat(e.target.value) || 0 } : it))} />
                           </td>
-                          <td className="py-1 pr-2">
+                          <td className="py-1.5 pr-1">
                             <input type="number" min="0" step="0.01"
-                              className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
+                              className="w-full rounded-md px-1.5 py-1.5 text-right text-xs outline-none"
                               style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
                               value={item.unit_price}
                               onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))} />
                           </td>
-                          <td className="py-1 pr-2">
-                            <select className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
+                          <td className="py-1.5 pr-1">
+                            <select className="w-full rounded-md px-1 py-1.5 text-xs outline-none"
                               style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
                               value={item.vat_rate}
                               onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, vat_rate: parseFloat(e.target.value) } : it))}>
-                              {[0,5.5,10,20].map(r => <option key={r} value={r}>{r} %</option>)}
+                              {[0,5.5,10,20].map(r => <option key={r} value={r}>{r}%</option>)}
                             </select>
                           </td>
-                          <td className="py-1 pr-2 text-right font-medium" style={{ color: textPrimary }}>{fmtC(lineHT)}</td>
-                          <td className="py-1 text-center">
+                          <td className="py-1.5 pr-1 text-right font-medium tabular-nums" style={{ color: textPrimary }}>{fmtC(lineHT)}</td>
+                          <td className="py-1.5 text-center">
                             {items.length > 1 && (
                               <button type="button" onClick={() => setItems(prev => prev.filter((_, j) => j !== i))}
-                                className="opacity-0 group-hover:opacity-100 transition rounded p-1" style={{ color: "#f87171" }}>
-                                <Trash2 size={12} />
+                                className="opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5"
+                                style={{ color: "#f87171" }}>
+                                <Trash2 size={11} />
                               </button>
                             )}
                           </td>
@@ -670,47 +682,103 @@ export default function NouveauDevis() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Add line */}
               <button type="button" onClick={() => setItems(prev => [...prev, newLine(prev.length + 1)])}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-70"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-80"
                 style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6", color: textSecond, border: `1px solid ${cardBorder}` }}>
                 <Plus size={12} /> Ajouter une ligne
               </button>
-              <div className="mt-5 flex justify-end">
-                <div className="w-72 space-y-2 text-sm">
-                  <div className="flex justify-between"><span style={{ color: textTert }}>Sous-total HT</span><span style={{ color: textPrimary }}>{fmtC(totals.subtotal_ht)}</span></div>
-                  {remise_pct > 0 && <div className="flex justify-between"><span style={{ color: textTert }}>Remise ({remise_pct} %)</span><span style={{ color: "#f87171" }}>−{fmtC(totals.remise)}</span></div>}
-                  <div className="flex justify-between"><span style={{ color: textTert }}>TVA</span><span style={{ color: textPrimary }}>{fmtC(totals.tva)}</span></div>
-                  <div className="flex justify-between border-t pt-2 font-bold text-base" style={{ borderColor: divider }}>
-                    <span style={{ color: textPrimary }}>Total TTC</span>
-                    <span style={{ color: GOLD }}>{fmtC(totals.ttc)}</span>
+
+              {/* Totals */}
+              <div className="mt-4 rounded-xl p-4" style={{ background: sectionBg, border: `1px solid ${cardBorder}` }}>
+                <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: textTert }}>Récapitulatif</div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span style={{ color: textSecond }}>Sous-total HT</span>
+                    <span className="tabular-nums" style={{ color: textPrimary }}>{fmtC(totals.subtotal_ht)}</span>
+                  </div>
+                  {remise_pct > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span style={{ color: textSecond }}>Remise ({remise_pct} %)</span>
+                      <span className="tabular-nums" style={{ color: "#ef4444" }}>−{fmtC(totals.remise)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span style={{ color: textSecond }}>TVA</span>
+                    <span className="tabular-nums" style={{ color: textPrimary }}>{fmtC(totals.tva)}</span>
+                  </div>
+                  {acompte > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span style={{ color: textSecond }}>Acompte versé</span>
+                      <span className="tabular-nums" style={{ color: "#10b981" }}>−{fmtC(acompte)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between pt-3 mt-1 border-t" style={{ borderColor: cardBorder }}>
+                    <span className="text-sm font-bold" style={{ color: textPrimary }}>Total TTC</span>
+                    <span className="text-base font-bold tabular-nums" style={{ color: GOLD }}>{fmtC(totals.ttc)}</span>
                   </div>
                 </div>
               </div>
             </Section>
 
-            {/* Conditions */}
-            <Section id="conditions" title="Conditions & Notes" icon={Percent}>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Remise globale (%)</label><input type="number" min="0" max="100" className={inputCls} style={inputStyle} value={remise_pct} onChange={e => setRemisePct(parseFloat(e.target.value) || 0)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Acompte ({devise})</label><input type="number" min="0" className={inputCls} style={inputStyle} value={acompte} onChange={e => setAcompte(parseFloat(e.target.value) || 0)} /></div>
-                <div className="sm:col-span-2"><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Conditions</label><textarea rows={2} className={inputCls} style={{ ...inputStyle, resize: "vertical" }} value={conditions} onChange={e => setConditions(e.target.value)} /></div>
-                <div className="sm:col-span-2"><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Notes</label><textarea rows={2} className={inputCls} style={{ ...inputStyle, resize: "vertical" }} value={notes} onChange={e => setNotes(e.target.value)} /></div>
+            {/* ── CONDITIONS DE PAIEMENT ── */}
+            <Section id="conditions" title="Conditions de paiement" icon={Percent}>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Remise globale (%)</label>
+                  <input type="number" min="0" max="100" className={inputCls} style={inputStyle} value={remise_pct} onChange={e => setRemisePct(parseFloat(e.target.value) || 0)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Acompte ({devise})</label>
+                  <input type="number" min="0" className={inputCls} style={inputStyle} value={acompte} onChange={e => setAcompte(parseFloat(e.target.value) || 0)} />
+                </div>
+                <div className="col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Conditions</label>
+                  <textarea rows={2} className={inputCls} style={{ ...inputStyle, resize: "vertical" }} value={conditions} onChange={e => setConditions(e.target.value)} placeholder="Paiement à 30 jours..." />
+                </div>
+                <div className="col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Notes / Mentions</label>
+                  <textarea rows={2} className={inputCls} style={{ ...inputStyle, resize: "vertical" }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Informations complémentaires..." />
+                </div>
               </div>
             </Section>
 
-            {/* Mon entreprise */}
+            {/* ── MON ENTREPRISE ── */}
             <Section id="emetteur" title="Mon entreprise" icon={Building2}>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Nom / Raison sociale</label><input className={inputCls} style={inputStyle} value={emNom} onChange={e => setEmNom(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Email</label><input type="email" className={inputCls} style={inputStyle} value={emEmail} onChange={e => setEmEmail(e.target.value)} /></div>
-                <div className="sm:col-span-2"><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Adresse</label><input className={inputCls} style={inputStyle} value={emAdr} onChange={e => setEmAdr(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Code postal</label><input className={inputCls} style={inputStyle} value={emCP} onChange={e => setEmCP(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Ville</label><input className={inputCls} style={inputStyle} value={emVille} onChange={e => setEmVille(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>SIRET</label><input className={inputCls} style={inputStyle} value={emSiret} onChange={e => setEmSiret(e.target.value)} /></div>
-                <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>N° TVA</label><input className={inputCls} style={inputStyle} value={emTva} onChange={e => setEmTva(e.target.value)} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Nom / Raison sociale</label>
+                  <input className={inputCls} style={inputStyle} value={emNom} onChange={e => setEmNom(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Email</label>
+                  <input type="email" className={inputCls} style={inputStyle} value={emEmail} onChange={e => setEmEmail(e.target.value)} />
+                </div>
+                <div className="col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Adresse</label>
+                  <input className={inputCls} style={inputStyle} value={emAdr} onChange={e => setEmAdr(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Code postal</label>
+                  <input className={inputCls} style={inputStyle} value={emCP} onChange={e => setEmCP(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Ville</label>
+                  <input className={inputCls} style={inputStyle} value={emVille} onChange={e => setEmVille(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>SIRET</label>
+                  <input className={inputCls} style={inputStyle} value={emSiret} onChange={e => setEmSiret(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>N° TVA</label>
+                  <input className={inputCls} style={inputStyle} value={emTva} onChange={e => setEmTva(e.target.value)} />
+                </div>
               </div>
               <p className="mt-3 text-xs" style={{ color: textTert }}>
-                Modifiez vos coordonnées dans <Link href="/client/factures/entreprise" className="underline hover:opacity-80" style={{ color: GOLD }}>Mon entreprise</Link>.
+                Modifiez vos coordonnées dans{" "}
+                <Link href="/client/factures/entreprise" className="underline" style={{ color: GOLD }}>Mon entreprise</Link>.
               </p>
             </Section>
 
@@ -718,48 +786,37 @@ export default function NouveauDevis() {
         </div>
 
         {/* ── RIGHT: preview panel ── */}
-        <div
-          ref={previewPanelRef}
+        <div ref={previewPanelRef}
           className={`${activeTab === "preview" ? "flex" : "hidden"} lg:flex flex-1 flex-col overflow-hidden`}
-          style={{ background: previewBg }}
-        >
+          style={{ background: previewBg }}>
           {/* Preview header */}
-          <div
-            className="flex flex-shrink-0 items-center justify-between border-b px-5 py-3"
-            style={{ borderColor: cardBorder, background: isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.025)" }}
-          >
+          <div className="flex flex-shrink-0 items-center justify-between border-b px-5 py-3"
+            style={{ borderColor: cardBorder, background: isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.025)" }}>
             <div className="flex items-center gap-2">
               <span className="inline-block h-2 w-2 rounded-full" style={{ background: GOLD }} />
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: textTert }}>
-                Aperçu en direct
-              </span>
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: textTert }}>Aperçu en direct</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="hidden sm:block text-xs" style={{ color: textTert }}>A4 · 210×297 mm</span>
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
+                <button type="button"
                   onClick={() => setZoomLevel(z => Math.max(0.4, parseFloat((z - 0.1).toFixed(1))))}
                   className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70"
-                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
-                >
+                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}>
                   <ZoomOut size={11} />
                 </button>
                 <span className="w-10 text-center text-xs font-medium" style={{ color: textSecond }}>
                   {Math.round(zoomLevel * 100)}%
                 </span>
-                <button
-                  type="button"
+                <button type="button"
                   onClick={() => setZoomLevel(z => Math.min(1.5, parseFloat((z + 0.1).toFixed(1))))}
                   className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70"
-                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
-                >
+                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}>
                   <ZoomIn size={11} />
                 </button>
               </div>
             </div>
           </div>
-
           {/* A4 preview */}
           <div className="flex-1 overflow-y-auto flex justify-center p-6 lg:p-10">
             <div style={{ width: Math.max(200, computedScale * 794), flexShrink: 0 }}>
@@ -774,34 +831,18 @@ export default function NouveauDevis() {
       </div>
 
       {/* ── MOBILE TAB BAR ── */}
-      <div
-        className="lg:hidden flex flex-shrink-0 border-t"
-        style={{ borderColor: cardBorder, background: headerBg }}
-      >
-        <button
-          type="button"
-          onClick={() => setActiveTab("edit")}
+      <div className="lg:hidden flex flex-shrink-0 border-t"
+        style={{ borderColor: cardBorder, background: headerBg }}>
+        <button type="button" onClick={() => setActiveTab("edit")}
           className="flex flex-1 items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors"
-          style={{
-            color: activeTab === "edit" ? GOLD : textTert,
-            borderTop: `2px solid ${activeTab === "edit" ? GOLD : "transparent"}`,
-          }}
-        >
-          <Pencil size={14} />
-          Modifier
+          style={{ color: activeTab === "edit" ? GOLD : textTert, borderTop: `2px solid ${activeTab === "edit" ? GOLD : "transparent"}` }}>
+          <Pencil size={14} /> Modifier
         </button>
         <div style={{ width: 1, background: cardBorder }} />
-        <button
-          type="button"
-          onClick={() => setActiveTab("preview")}
+        <button type="button" onClick={() => setActiveTab("preview")}
           className="flex flex-1 items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors"
-          style={{
-            color: activeTab === "preview" ? GOLD : textTert,
-            borderTop: `2px solid ${activeTab === "preview" ? GOLD : "transparent"}`,
-          }}
-        >
-          <Eye size={14} />
-          Aperçu
+          style={{ color: activeTab === "preview" ? GOLD : textTert, borderTop: `2px solid ${activeTab === "preview" ? GOLD : "transparent"}` }}>
+          <Eye size={14} /> Aperçu
         </button>
       </div>
 
