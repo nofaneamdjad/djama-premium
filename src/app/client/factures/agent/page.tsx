@@ -14,7 +14,7 @@ import { GalleryView, ALL_ASSISTANTS, type AssistantData, type PersonalizationPr
 
 /* ─── types ─────────────────────────────────────────────────── */
 
-type View = "home" | "chat" | "audio" | "video" | "gallery";
+type View = "home" | "chat" | "audio" | "video" | "gallery" | "summary";
 
 interface Message {
   id:   string;
@@ -105,6 +105,38 @@ const CSS_ANIM = `
     to   { opacity:1; }
   }
   .dj-fadein { animation: dj-fadein .3s ease-out forwards; }
+
+  @keyframes dj-breathe {
+    0%,100% { transform: scale(1) translateY(0); }
+    50%      { transform: scale(1.009) translateY(-3px); }
+  }
+  .dj-breathe { animation: dj-breathe 3.5s ease-in-out infinite; }
+
+  @keyframes dj-speak-pulse {
+    0%,100% { transform: scale(1) translateY(0); }
+    30%      { transform: scale(1.015) translateY(-2px); }
+    70%      { transform: scale(0.996) translateY(1px); }
+  }
+  .dj-speak { animation: dj-speak-pulse 0.65s ease-in-out infinite; }
+
+  @keyframes dj-conn-blink {
+    0%,80%,100% { opacity: .2; transform: scale(.8); }
+    40%          { opacity: 1;  transform: scale(1); }
+  }
+  .dj-conn-dot { animation: dj-conn-blink 1.4s ease-in-out infinite; }
+  .dj-conn-dot:nth-child(2) { animation-delay: .22s; }
+  .dj-conn-dot:nth-child(3) { animation-delay: .44s; }
+
+  @keyframes dj-ctrl-fadein  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes dj-ctrl-fadeout { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(10px); } }
+  .dj-ctrl-in  { animation: dj-ctrl-fadein  .28s ease-out forwards; }
+  .dj-ctrl-out { animation: dj-ctrl-fadeout .28s ease-in  forwards; }
+
+  @keyframes dj-summary-in {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .dj-summary-in { animation: dj-summary-in .35s ease-out forwards; }
 `;
 
 /* ─── Waveform ───────────────────────────────────────────────── */
@@ -249,6 +281,7 @@ function AgentTopBar({ view, assistant, isDark, onBack, onGallery, onHistory, on
   onBack: () => void; onGallery: () => void; onHistory: () => void; onSettings: () => void;
 }) {
   const isCall = view === "audio" || view === "video";
+  const isSummary = view === "summary";
   const bg  = isCall ? NOIR : (isDark ? "rgba(10,10,18,.98)" : "#ffffff");
   const bd  = isCall ? "rgba(255,255,255,.08)" : (isDark ? "rgba(255,255,255,.07)" : "#e5e7eb");
   const fg  = isCall ? "#fff" : (isDark ? "#fff" : NOIR);
@@ -392,36 +425,40 @@ function HomeView({ assistant, isDark, onMode, onGallery, onQuickAction }: {
           gap: 10, marginBottom: 28,
         }}>
           {([
-            { view: "chat"  as View, label: "Chat écrit",  sub: "Écrivez librement",     Icon: MessageSquare },
-            { view: "audio" as View, label: "Appel audio", sub: "Conversation vocale",    Icon: Phone         },
-            { view: "video" as View, label: "Appel vidéo", sub: `Avec ${assistant.name}`, Icon: Video         },
-          ] as const).map(({ view, label, sub, Icon }) => (
-            <button key={view} onClick={() => onMode(view)} style={{
+            { v: "chat"  as View, label: "Chat",       sub: "Écrivez librement",  Icon: MessageSquare, clr: "#818cf8", hbg: "rgba(129,140,248,.08)", hbd: "rgba(129,140,248,.35)" },
+            { v: "audio" as View, label: "Audio",      sub: "Appel vocal",         Icon: Phone,         clr: GOLD,     hbg: "rgba(255,185,0,.07)",   hbd: "rgba(255,185,0,.4)"   },
+            { v: "video" as View, label: "Vidéo",      sub: `Avec ${assistant.name.split(" ")[0]}`, Icon: Video, clr: "#34d399", hbg: "rgba(52,211,153,.07)", hbd: "rgba(52,211,153,.35)" },
+          ]).map(({ v, label, sub, Icon, clr, hbg, hbd }) => (
+            <button key={v} onClick={() => onMode(v)} style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
-              padding: "20px 12px",
+              padding: "22px 10px 18px",
               background: card, border: `1px solid ${bd}`,
-              borderRadius: 14, cursor: "pointer",
+              borderRadius: 16, cursor: "pointer",
+              transition: "border-color .15s, background .15s, transform .15s",
             }}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLElement;
-                el.style.borderColor = GOLD;
-                el.style.background = isDark ? "rgba(255,185,0,.06)" : "#fffdf0";
+                el.style.borderColor = hbd;
+                el.style.background  = hbg;
+                el.style.transform   = "translateY(-2px)";
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLElement;
                 el.style.borderColor = bd;
-                el.style.background = card;
+                el.style.background  = card;
+                el.style.transform   = "translateY(0)";
               }}
             >
               <div style={{
-                width: 46, height: 46, borderRadius: 12,
-                background: "rgba(255,185,0,.10)", border: "1px solid rgba(255,185,0,.25)",
+                width: 52, height: 52, borderRadius: 14,
+                background: `${clr}18`,
+                border: `1px solid ${clr}35`,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <Icon size={20} style={{ color: GOLD }} />
+                <Icon size={22} style={{ color: clr }} />
               </div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: fg, marginBottom: 3 }}>{label}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: fg, marginBottom: 3 }}>{label}</div>
                 <div style={{ fontSize: 11, color: fg2 }}>{sub}</div>
               </div>
             </button>
@@ -689,251 +726,355 @@ function ChatView({ assistant, isDark, initialPrompt, onBack, onSwitchMode }: {
   );
 }
 
-/* ─── Audio view ─────────────────────────────────────────────── */
+/* ─── Circular call button helper ───────────────────────────── */
 
-function AudioView({ assistant, isDark, onBack }: {
-  assistant: AssistantData; isDark: boolean; onBack: () => void;
+function CtrlBtn({ Icon, label, size, color, bg, bd, shadow, onClick }: {
+  Icon: React.ElementType; label: string; size: number;
+  color: string; bg: string; bd: string; shadow?: string;
+  onClick: () => void;
 }) {
-  const [muted,   setMuted]   = useState(false);
-  const [speaker, setSpeaker] = useState(true);
-  const [seconds, setSeconds] = useState(0);
-  const [status,  setStatus]  = useState<"connecting" | "listening" | "speaking">("connecting");
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+      <button onClick={onClick} style={{
+        width: size, height: size, borderRadius: "50%",
+        background: bg, border: `1.5px solid ${bd}`,
+        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: shadow ?? "none", flexShrink: 0,
+      }}>
+        <Icon size={Math.round(size * 0.37)} style={{ color }} />
+      </button>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,.38)", whiteSpace: "nowrap" }}>{label}</span>
+    </div>
+  );
+}
+
+/* ─── Audio view — iPhone-inspired ──────────────────────────── */
+
+function AudioView({ assistant, isDark: _isDark, onBack: _onBack, onSwitchVideo, onEnd }: {
+  assistant: AssistantData; isDark: boolean; onBack: () => void;
+  onSwitchVideo?: () => void;
+  onEnd?: (seconds: number) => void;
+}) {
+  const [muted,     setMuted]     = useState(false);
+  const [speaker,   setSpeaker]   = useState(true);
+  const [seconds,   setSeconds]   = useState(0);
+  const [connected, setConnected] = useState(false);
+  const [status,    setStatus]    = useState<"connecting" | "listening" | "speaking">("connecting");
 
   useEffect(() => {
-    const t1 = setTimeout(() => setStatus("listening"), 1200);
-    return () => clearTimeout(t1);
+    const t = setTimeout(() => setConnected(true), 1400);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
+    if (!connected) return;
+    setStatus("listening");
+    const cycle = setInterval(() => {
+      setStatus(s => (s === "listening" ? "speaking" : "listening"));
+    }, 3400);
+    return () => clearInterval(cycle);
+  }, [connected]);
+
+  useEffect(() => {
+    if (!connected) return;
     const t = setInterval(() => setSeconds(s => s + 1), 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [connected]);
 
   function fmt(s: number) {
     const m = Math.floor(s / 60);
     return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   }
 
-  const fg2 = "rgba(255,255,255,.5)";
-  const fg3 = "rgba(255,255,255,.3)";
+  const isSpeaking = status === "speaking";
 
   return (
     <div style={{
       flex: 1, display: "flex", flexDirection: "column",
-      background: NOIR, color: "#fff",
+      background: NOIR, color: "#fff", position: "relative", overflow: "hidden",
     }}>
-      {/* Main call area */}
+      <div className="dj-ambient" style={{
+        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
+        background: "radial-gradient(ellipse 56% 48% at 50% 42%, rgba(255,185,0,.10), transparent)",
+      }} />
+
+      {/* Portrait + info */}
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center", gap: 28,
-        padding: "32px 24px",
+        alignItems: "center", justifyContent: "center",
+        padding: "28px 24px 0", position: "relative", zIndex: 1,
       }}>
-        {/* Avatar ring */}
-        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {status !== "connecting" && (
-            <div className="dj-ping" style={{
-              position: "absolute", width: 100, height: 100,
-              borderRadius: "50%", border: `2px solid ${GOLD}`,
-            }} />
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+          {connected && (<>
+            <div className="dj-ping" style={{ position: "absolute", width: 152, height: 152, borderRadius: 28, border: `1.5px solid ${GOLD}` }} />
+            <div className="dj-ping" style={{ position: "absolute", width: 176, height: 176, borderRadius: 32, border: "1px solid rgba(255,185,0,.28)", animationDelay: ".65s" }} />
+          </>)}
+          <div className={isSpeaking ? "dj-speak" : "dj-breathe"} style={{ borderRadius: 20, overflow: "hidden" }}>
+            <Portrait type={assistant.portrait} size={120} />
+          </div>
+        </div>
+
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-.025em", marginBottom: 6 }}>{assistant.name}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, justifyContent: "center", marginBottom: 12 }}>
+            <div style={{ width: 17, height: 17, borderRadius: 4, background: "rgba(255,185,0,.15)", border: "1px solid rgba(255,185,0,.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Sparkles size={9} style={{ color: GOLD }} />
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: GOLD, letterSpacing: ".05em" }}>DJAMA IA</span>
+          </div>
+          {!connected ? (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "5px 16px", borderRadius: 20, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.10)" }}>
+              <div style={{ display: "flex", gap: 5 }}>
+                {[0,1,2].map(i => <div key={i} className="dj-conn-dot" style={{ width: 5, height: 5, borderRadius: "50%", background: "rgba(255,255,255,.5)" }} />)}
+              </div>
+              <span style={{ fontSize: 12.5, color: "rgba(255,255,255,.45)" }}>Connexion en cours</span>
+            </div>
+          ) : (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 16px", borderRadius: 20, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.10)" }}>
+              <Clock size={11} style={{ color: "rgba(255,255,255,.45)" }} />
+              <span style={{ fontSize: 12.5, color: "rgba(255,255,255,.45)", fontVariantNumeric: "tabular-nums" }}>{fmt(seconds)}</span>
+              <span style={{ color: "rgba(255,255,255,.18)" }}>·</span>
+              <span style={{ fontSize: 12.5, color: status === "listening" ? GOLD : "rgba(255,255,255,.5)", transition: "color .4s" }}>
+                {status === "listening" ? "À l'écoute" : "Réponse en cours"}
+              </span>
+            </div>
           )}
-          <div style={{
-            width: 88, height: 88, borderRadius: "50%",
-            background: "rgba(255,185,0,.12)", border: `2px solid ${GOLD}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 32, fontWeight: 800, color: GOLD,
-          }}>
-            {assistant.name[0]}
-          </div>
         </div>
 
-        {/* Name + status */}
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{assistant.name}</div>
-          <div style={{
-            fontSize: 13, color: fg2,
-            display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
-          }}>
-            <Clock size={12} />
-            {fmt(seconds)}
-            <span style={{ opacity: .4 }}>·</span>
-            <span style={{ color: status === "connecting" ? fg3 : GOLD }}>
-              {status === "connecting" ? "Connexion…" : status === "listening" ? "À l'écoute" : "En train de parler"}
-            </span>
-          </div>
+        <Waveform active={isSpeaking} color={GOLD} bars={20} size={44} />
+        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.28)", marginTop: 10 }}>
+          {!connected ? "Établissement de la connexion…" : (isSpeaking ? "Réponse en préparation…" : "Je vous écoute, parlez librement…")}
         </div>
+      </div>
 
-        {/* Waveform */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          <Waveform active={status === "speaking"} color={GOLD} bars={16} size={48} />
-          <div style={{ fontSize: 12, color: fg3 }}>
-            {status === "listening" ? "Je vous écoute, parlez librement…"
-              : status === "speaking" ? "Je prépare votre réponse…"
-              : "Connexion en cours…"}
-          </div>
+      {/* Controls */}
+      <div style={{ flexShrink: 0, padding: "24px 20px 44px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12, position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
+          <CtrlBtn Icon={muted ? MicOff : Mic} label={muted ? "Muet" : "Micro"} size={58} color={muted ? "#ef4444" : "rgba(255,255,255,.85)"} bg={muted ? "rgba(239,68,68,.22)" : "rgba(255,255,255,.10)"} bd={muted ? "rgba(239,68,68,.5)" : "rgba(255,255,255,.14)"} onClick={() => setMuted(m => !m)} />
+          <CtrlBtn Icon={speaker ? Volume2 : VolumeX} label="Haut-parl." size={58} color={speaker ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.35)"} bg="rgba(255,255,255,.10)" bd="rgba(255,255,255,.14)" onClick={() => setSpeaker(s => !s)} />
+          <CtrlBtn Icon={PhoneOff} label="Terminer" size={72} color="#fff" bg="#ef4444" bd="transparent" shadow="0 6px 28px rgba(239,68,68,.55)" onClick={() => onEnd ? onEnd(seconds) : _onBack()} />
+          <CtrlBtn Icon={MessageSquare} label="Transcript" size={58} color="rgba(255,255,255,.85)" bg="rgba(255,255,255,.10)" bd="rgba(255,255,255,.14)" onClick={() => {}} />
+          <CtrlBtn Icon={Video} label="Vidéo" size={58} color="rgba(255,255,255,.85)" bg="rgba(255,255,255,.10)" bd="rgba(255,255,255,.14)" onClick={() => onSwitchVideo?.() ?? _onBack()} />
         </div>
-
-        {/* Controls */}
-        <div style={{ display: "flex", gap: 20, alignItems: "center", marginTop: 8 }}>
-          <button onClick={() => setMuted(m => !m)} style={{
-            width: 52, height: 52, borderRadius: "50%",
-            background: muted ? "rgba(239,68,68,.2)" : "rgba(255,255,255,.08)",
-            border: `1px solid ${muted ? "rgba(239,68,68,.4)" : "rgba(255,255,255,.12)"}`,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {muted ? <MicOff size={20} style={{ color: "#ef4444" }} /> : <Mic size={20} style={{ color: "rgba(255,255,255,.75)" }} />}
-          </button>
-
-          <button onClick={onBack} style={{
-            width: 64, height: 64, borderRadius: "50%",
-            background: "#ef4444", border: "none",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 20px rgba(239,68,68,.4)",
-          }}>
-            <PhoneOff size={22} style={{ color: "#fff" }} />
-          </button>
-
-          <button onClick={() => setSpeaker(s => !s)} style={{
-            width: 52, height: 52, borderRadius: "50%",
-            background: "rgba(255,255,255,.08)",
-            border: "1px solid rgba(255,255,255,.12)",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {speaker ? <Volume2 size={20} style={{ color: "rgba(255,255,255,.75)" }} /> : <VolumeX size={20} style={{ color: "rgba(255,255,255,.4)" }} />}
-          </button>
-        </div>
-
-        {/* Honest notice */}
-        <div style={{
-          marginTop: 8, padding: "8px 16px", borderRadius: 8,
-          background: "rgba(255,185,0,.06)", border: "1px solid rgba(255,185,0,.15)",
-          fontSize: 11.5, color: "rgba(255,255,255,.45)", textAlign: "center", maxWidth: 320,
-        }}>
-          Interface vocale — moteur voix connecté lors du sous-chantier E
+        <div style={{ padding: "6px 16px", borderRadius: 20, marginTop: 4, background: "rgba(255,185,0,.05)", border: "1px solid rgba(255,185,0,.12)", fontSize: 10.5, color: "rgba(255,255,255,.28)", textAlign: "center" }}>
+          Moteur vocal — connexion lors du sous-chantier E
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── Video view ─────────────────────────────────────────────── */
+/* ─── Video view — FaceTime-inspired ────────────────────────── */
 
-function VideoView({ assistant, isDark, onBack }: {
+function VideoView({ assistant, isDark: _isDark, onBack: _onBack, onSwitchAudio, onEnd }: {
   assistant: AssistantData; isDark: boolean; onBack: () => void;
+  onSwitchAudio?: () => void;
+  onEnd?: (seconds: number) => void;
 }) {
-  const [muted,  setMuted]  = useState(false);
-  const [cam,    setCam]    = useState(false);
-  const [seconds, setSeconds] = useState(0);
+  const [muted,     setMuted]     = useState(false);
+  const [cam,       setCam]       = useState(false);
+  const [seconds,   setSeconds]   = useState(0);
+  const [connected, setConnected] = useState(false);
+  const [status,    setStatus]    = useState<"connecting" | "listening" | "speaking">("connecting");
+  const [ctrlVis,   setCtrlVis]   = useState(true);
+  const ctrlTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  function resetCtrlTimer() {
+    setCtrlVis(true);
+    if (ctrlTimer.current) clearTimeout(ctrlTimer.current);
+    ctrlTimer.current = setTimeout(() => setCtrlVis(false), 3200);
+  }
 
   useEffect(() => {
+    resetCtrlTimer();
+    return () => { if (ctrlTimer.current) clearTimeout(ctrlTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setConnected(true), 1400);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (!connected) return;
+    setStatus("listening");
+    const cycle = setInterval(() => {
+      setStatus(s => (s === "listening" ? "speaking" : "listening"));
+    }, 3600);
+    return () => clearInterval(cycle);
+  }, [connected]);
+
+  useEffect(() => {
+    if (!connected) return;
     const t = setInterval(() => setSeconds(s => s + 1), 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [connected]);
 
   function fmt(s: number) {
     const m = Math.floor(s / 60);
     return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   }
 
-  return (
-    <div style={{
-      flex: 1, display: "flex", flexDirection: "column",
-      background: "#050508", color: "#fff", position: "relative",
-    }}>
-      {/* Ambient background */}
-      <div className="dj-ambient" style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: `radial-gradient(ellipse 60% 50% at 50% 40%, rgba(255,185,0,.07), transparent)`,
-      }} />
+  const isSpeaking = status === "speaking";
 
-      {/* Avatar area */}
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        gap: 20, position: "relative", zIndex: 1,
-      }}>
-        {/* Placeholder honest card */}
-        <div style={{
-          width: 220, height: 290, borderRadius: 20,
-          background: "rgba(255,255,255,.03)",
-          border: "1px solid rgba(255,255,255,.08)",
-          display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center",
-          gap: 14, padding: 24,
-        }}>
-          <div style={{ position: "relative" }}>
-            <div className="dj-ping" style={{
-              position: "absolute", inset: -6,
-              borderRadius: "50%", border: `1.5px solid ${GOLD}`,
-            }} />
-            <div style={{
-              width: 72, height: 72, borderRadius: "50%",
-              background: "rgba(255,185,0,.10)", border: `2px solid ${GOLD}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 26, fontWeight: 800, color: GOLD,
-            }}>
-              {assistant.name[0]}
-            </div>
+  return (
+    <div
+      onClick={resetCtrlTimer}
+      style={{ flex: 1, display: "flex", flexDirection: "column", background: "#060610", color: "#fff", position: "relative", overflow: "hidden", cursor: "default" }}
+    >
+      {/* Ambient */}
+      <div className="dj-ambient" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, background: "radial-gradient(ellipse 65% 55% at 50% 45%, rgba(255,185,0,.08), transparent)" }} />
+
+      {/* PiP corner — camera placeholder */}
+      <div style={{ position: "absolute", top: 12, right: 12, zIndex: 3, width: 90, height: 118, borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.10)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <CameraOff size={18} style={{ color: "rgba(255,255,255,.25)" }} />
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,.25)", textAlign: "center", lineHeight: 1.3 }}>Votre{"\n"}caméra</span>
+      </div>
+
+      {/* Top status overlay */}
+      <div style={{ position: "absolute", top: 12, left: 12, zIndex: 3, display: "flex", alignItems: "center", gap: 7 }}>
+        {connected && (
+          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 12px", borderRadius: 20, background: "rgba(0,0,0,.45)", backdropFilter: "blur(10px)" }}>
+            <Clock size={10} style={{ color: "rgba(255,255,255,.5)" }} />
+            <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.5)", fontVariantNumeric: "tabular-nums" }}>{fmt(seconds)}</span>
           </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{assistant.name}</div>
-            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.4)", lineHeight: 1.5 }}>
-              Humain numérique 3D
-            </div>
+        )}
+      </div>
+
+      {/* Main avatar */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, position: "relative", zIndex: 1, padding: "16px 20px 0", minHeight: 0 }}>
+        {/* Portrait */}
+        <div style={{ position: "relative" }}>
+          {connected && (<>
+            <div className="dj-ping" style={{ position: "absolute", inset: -10, borderRadius: 28, border: `1.5px solid ${GOLD}`, zIndex: 0 }} />
+            <div className="dj-ping" style={{ position: "absolute", inset: -20, borderRadius: 34, border: "1px solid rgba(255,185,0,.22)", zIndex: 0, animationDelay: ".7s" }} />
+          </>)}
+          <div className={isSpeaking ? "dj-speak" : "dj-breathe"} style={{ borderRadius: 22, overflow: "hidden", position: "relative", zIndex: 1 }}>
+            <Portrait type={assistant.portrait} size={190} />
           </div>
-          <div style={{
-            padding: "7px 12px", borderRadius: 7,
-            background: "rgba(255,185,0,.07)", border: "1px solid rgba(255,185,0,.15)",
-            fontSize: 10.5, color: "rgba(255,255,255,.45)", textAlign: "center",
-          }}>
-            Sous-chantier F
+        </div>
+
+        {/* Name + status badge */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.02em", marginBottom: 6 }}>{assistant.name}</div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "4px 14px", borderRadius: 20, background: "rgba(0,0,0,.45)", backdropFilter: "blur(8px)" }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: connected ? (isSpeaking ? GOLD : "#34d399") : "rgba(255,255,255,.3)", transition: "background .4s", flexShrink: 0 }} />
+            <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.65)" }}>
+              {!connected ? "Connexion…" : (isSpeaking ? "En train de répondre" : "À l'écoute")}
+            </span>
           </div>
         </div>
 
         {/* Waveform */}
-        <Waveform active={false} color={GOLD} bars={10} size={28} />
+        <Waveform active={isSpeaking} color={GOLD} bars={12} size={28} />
 
-        {/* Controls */}
-        <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 4 }}>
-          <button onClick={() => setCam(c => !c)} style={{
-            width: 48, height: 48, borderRadius: "50%",
-            background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.12)",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+        {/* Honest notice */}
+        <div style={{ padding: "5px 14px", borderRadius: 20, background: "rgba(255,185,0,.05)", border: "1px solid rgba(255,185,0,.10)", fontSize: 10, color: "rgba(255,255,255,.25)", textAlign: "center" }}>
+          Avatar 3D — sous-chantier F · Moteur vocal — sous-chantier E
+        </div>
+      </div>
+
+      {/* Floating controls — auto-hide */}
+      <div style={{ flexShrink: 0, padding: "0 20px 28px", position: "relative", zIndex: 2, opacity: ctrlVis ? 1 : 0, transform: ctrlVis ? "translateY(0)" : "translateY(10px)", transition: "opacity .28s ease, transform .28s ease", pointerEvents: ctrlVis ? "auto" : "none" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 12, alignItems: "flex-end", padding: "16px 20px 0", background: "linear-gradient(to top, rgba(6,6,16,.9) 0%, transparent 100%)", borderRadius: "0 0 0 0" }}>
+          <CtrlBtn Icon={cam ? Camera : CameraOff} label={cam ? "Caméra" : "Caméra off"} size={54} color={cam ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.35)"} bg={cam ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.07)"} bd="rgba(255,255,255,.12)" onClick={() => setCam(c => !c)} />
+          <CtrlBtn Icon={muted ? MicOff : Mic} label={muted ? "Muet" : "Micro"} size={54} color={muted ? "#ef4444" : "rgba(255,255,255,.85)"} bg={muted ? "rgba(239,68,68,.22)" : "rgba(255,255,255,.10)"} bd={muted ? "rgba(239,68,68,.5)" : "rgba(255,255,255,.12)"} onClick={() => setMuted(m => !m)} />
+          <CtrlBtn Icon={PhoneOff} label="Terminer" size={68} color="#fff" bg="#ef4444" bd="transparent" shadow="0 6px 28px rgba(239,68,68,.55)" onClick={() => onEnd ? onEnd(seconds) : _onBack()} />
+          <CtrlBtn Icon={Volume2} label="Audio" size={54} color="rgba(255,255,255,.85)" bg="rgba(255,255,255,.10)" bd="rgba(255,255,255,.12)" onClick={() => {}} />
+          <CtrlBtn Icon={Phone} label="Passer en audio" size={54} color="rgba(255,255,255,.85)" bg="rgba(255,255,255,.10)" bd="rgba(255,255,255,.12)" onClick={() => onSwitchAudio?.() ?? _onBack()} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Call summary view ──────────────────────────────────────── */
+
+function CallSummaryView({ assistant, isDark, seconds, mode, onResume, onHome }: {
+  assistant: AssistantData; isDark: boolean;
+  seconds: number; mode: "audio" | "video";
+  onResume: () => void; onHome: () => void;
+}) {
+  const bg   = isDark ? NOIR       : "#fafafa";
+  const fg   = isDark ? "#fff"      : NOIR;
+  const fg2  = isDark ? "rgba(255,255,255,.5)"  : "#6b7280";
+  const fg3  = isDark ? "rgba(255,255,255,.25)" : "#9ca3af";
+  const card = isDark ? "rgba(255,255,255,.04)" : "#fff";
+  const bd   = isDark ? "rgba(255,255,255,.08)" : "#e5e7eb";
+
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  const durationLabel = mins > 0
+    ? `${mins} min ${String(secs).padStart(2, "0")} s`
+    : `${secs} secondes`;
+
+  return (
+    <div className="dj-summary-in" style={{ flex: 1, overflowY: "auto", background: bg, display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 20px 48px" }}>
+      <div style={{ width: "100%", maxWidth: 480 }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 32, gap: 14 }}>
+          <div style={{ position: "relative" }}>
+            <div style={{ width: 80, height: 80, borderRadius: 18, overflow: "hidden", border: `2px solid rgba(255,185,0,.3)`, boxShadow: "0 4px 20px rgba(255,185,0,.12)" }}>
+              <Portrait type={assistant.portrait} size={80} />
+            </div>
+            <div style={{ position: "absolute", bottom: -6, right: -6, width: 26, height: 26, borderRadius: "50%", background: "#22c55e", border: "2px solid " + bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <CheckCircle size={13} style={{ color: "#fff" }} />
+            </div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: fg, marginBottom: 4 }}>Appel terminé</div>
+            <div style={{ fontSize: 13, color: fg2 }}>{assistant.name} · DJAMA IA</div>
+          </div>
+        </div>
+
+        {/* Duration card */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", borderRadius: 14, background: card, border: `1px solid ${bd}`, marginBottom: 14 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 11, background: "rgba(255,185,0,.10)", border: "1px solid rgba(255,185,0,.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Clock size={18} style={{ color: GOLD }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: fg3, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 2 }}>Durée de l&apos;appel</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: fg, fontVariantNumeric: "tabular-nums" }}>{durationLabel}</div>
+          </div>
+        </div>
+
+        {/* Summary section */}
+        <div style={{ padding: "16px 20px", borderRadius: 14, background: card, border: `1px solid ${bd}`, marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: fg3, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 10 }}>Résumé de l&apos;échange</div>
+          <div style={{ padding: "12px 14px", borderRadius: 10, background: isDark ? "rgba(255,185,0,.04)" : "rgba(255,185,0,.04)", border: "1px solid rgba(255,185,0,.12)" }}>
+            <div style={{ fontSize: 12, color: isDark ? "rgba(255,255,255,.4)" : "#9ca3af", lineHeight: 1.6 }}>
+              Le résumé automatique de l&apos;échange sera disponible après l&apos;intégration du moteur vocal (sous-chantier E). La transcription et l&apos;analyse IA seront générées ici.
+            </div>
+          </div>
+        </div>
+
+        {/* Documents section */}
+        <div style={{ padding: "16px 20px", borderRadius: 14, background: card, border: `1px solid ${bd}`, marginBottom: 28 }}>
+          <div style={{ fontSize: 11, color: fg3, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 10 }}>Documents préparés</div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 0" }}>
+            <FileText size={28} style={{ color: isDark ? "rgba(255,255,255,.12)" : "#d1d5db" }} />
+            <div style={{ fontSize: 12, color: fg3, textAlign: "center" }}>Aucun document généré lors de cet appel</div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button onClick={onResume} style={{
+            width: "100%", padding: "14px 20px", borderRadius: 13,
+            background: GOLD, border: "none", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}>
-            {cam ? <Camera size={18} style={{ color: "rgba(255,255,255,.75)" }} /> : <CameraOff size={18} style={{ color: "rgba(255,255,255,.4)" }} />}
+            {mode === "audio" ? <Phone size={16} style={{ color: NOIR }} /> : <Video size={16} style={{ color: NOIR }} />}
+            <span style={{ fontSize: 14, fontWeight: 700, color: NOIR }}>Reprendre l&apos;appel</span>
           </button>
-
-          <button onClick={() => setMuted(m => !m)} style={{
-            width: 48, height: 48, borderRadius: "50%",
-            background: muted ? "rgba(239,68,68,.2)" : "rgba(255,255,255,.08)",
-            border: `1px solid ${muted ? "rgba(239,68,68,.4)" : "rgba(255,255,255,.12)"}`,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          <button onClick={onHome} style={{
+            width: "100%", padding: "13px 20px", borderRadius: 13,
+            background: "none", border: `1px solid ${bd}`, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            {muted ? <MicOff size={18} style={{ color: "#ef4444" }} /> : <Mic size={18} style={{ color: "rgba(255,255,255,.75)" }} />}
-          </button>
-
-          <button onClick={onBack} style={{
-            width: 58, height: 58, borderRadius: "50%",
-            background: "#ef4444", border: "none",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 20px rgba(239,68,68,.4)",
-          }}>
-            <PhoneOff size={20} style={{ color: "#fff" }} />
-          </button>
-
-          <button style={{
-            width: 48, height: 48, borderRadius: "50%",
-            background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.12)",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Volume2 size={18} style={{ color: "rgba(255,255,255,.75)" }} />
-          </button>
-
-          <button onClick={() => {}} style={{
-            width: 48, height: 48, borderRadius: "50%",
-            background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.12)",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <MessageSquare size={18} style={{ color: "rgba(255,255,255,.75)" }} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: fg2 }}>Retour à l&apos;accueil</span>
           </button>
         </div>
       </div>
@@ -949,6 +1090,8 @@ export default function AgentPage() {
   const [view, setView]               = useState<View>("home");
   const [assistantId, setAssistantId] = useState("emma");
   const [quickPrompt, setQuickPrompt] = useState<string | undefined>();
+  const [callSeconds, setCallSeconds] = useState(0);
+  const [callMode,    setCallMode]    = useState<"audio" | "video">("audio");
   const [prefs, setPrefs]             = useState<PersonalizationPrefs>({
     assistantId: "emma",
     nickname:    "",
@@ -985,8 +1128,20 @@ export default function AgentPage() {
     if (p.assistantId !== assistantId) setAssistantId(p.assistantId);
   }
 
+  function handleAudioEnd(secs: number) {
+    setCallSeconds(secs);
+    setCallMode("audio");
+    setView("summary");
+  }
+
+  function handleVideoEnd(secs: number) {
+    setCallSeconds(secs);
+    setCallMode("video");
+    setView("summary");
+  }
+
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{CSS_ANIM}</style>
 
       <AgentTopBar
@@ -1020,11 +1175,23 @@ export default function AgentPage() {
       )}
 
       {view === "audio" && (
-        <AudioView assistant={assistant} isDark={isDark} onBack={goHome} />
+        <AudioView
+          assistant={assistant}
+          isDark={isDark}
+          onBack={goHome}
+          onSwitchVideo={() => setView("video")}
+          onEnd={handleAudioEnd}
+        />
       )}
 
       {view === "video" && (
-        <VideoView assistant={assistant} isDark={isDark} onBack={goHome} />
+        <VideoView
+          assistant={assistant}
+          isDark={isDark}
+          onBack={goHome}
+          onSwitchAudio={() => setView("audio")}
+          onEnd={handleVideoEnd}
+        />
       )}
 
       {view === "gallery" && (
@@ -1035,6 +1202,17 @@ export default function AgentPage() {
           onSelect={handleSelectAssistant}
           onSavePrefs={handleSavePrefs}
           onBack={goHome}
+        />
+      )}
+
+      {view === "summary" && (
+        <CallSummaryView
+          assistant={assistant}
+          isDark={isDark}
+          seconds={callSeconds}
+          mode={callMode}
+          onResume={() => setView(callMode)}
+          onHome={goHome}
         />
       )}
     </div>
