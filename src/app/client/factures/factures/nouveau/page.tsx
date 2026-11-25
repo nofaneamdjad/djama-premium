@@ -19,6 +19,7 @@ import { fetchCompanySettings, fetchOrgSettings } from "@/lib/pdf/companySetting
 import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
 import { SUPPORTED_LANGUAGES } from "@/lib/invoice/docLang";
+import { TAX_SYSTEMS, getTaxSystem } from "@/lib/invoice/taxSystems";
 import type { CompanySettings } from "@/lib/pdf/companySettings";
 
 const GOLD = "#FFB900";
@@ -48,6 +49,19 @@ interface FacturesClient {
   tva?:            string;
 }
 
+const UNITS = ["Pièce", "h", "j", "sem.", "mois", "kg", "m²", "L", "Forfait", "unité"];
+
+const TAX_RATE_PRESETS: Record<string, number[]> = {
+  tva:         [0, 2.1, 5.5, 8.5, 10, 20],
+  vat:         [0, 5, 20],
+  gst:         [0, 5, 10, 15, 18],
+  hst:         [0, 5, 12, 13, 15],
+  sales_tax:   [],
+  withholding: [],
+  none:        [0],
+  custom:      [],
+};
+
 function newLine(pos: number): LineItem {
   return { id: crypto.randomUUID(), position: pos, description: "", sub_description: "", unit: "unité", quantity: 1, unit_price: 0, vat_rate: 20, remise_pct: 0 };
 }
@@ -69,7 +83,7 @@ function calcTotals(items: LineItem[], remise_pct: number, acompte: number) {
   tva         = r2(tva);
   const remise  = r2(subtotal_ht * remise_pct / 100);
   const ht_net  = r2(subtotal_ht - remise);
-  const tva_net = r2(ht_net * (items[0]?.vat_rate ?? 20) / 100);
+  const tva_net = r2(tva * (1 - remise_pct / 100));
   return { subtotal_ht, remise, ht_net, tva: remise_pct > 0 ? tva_net : tva, ttc: Math.max(0, r2(ht_net + (remise_pct > 0 ? tva_net : tva))) };
 }
 
@@ -91,6 +105,7 @@ export default function NouvelleFacture() {
   const [acompte,       setAcompte]       = useState(0);
   const [devise,        setDevise]        = useState("EUR");
   const [docLang,       setDocLang]       = useState("fr");
+  const [taxSystemId,   setTaxSystemId]   = useState("tva");
   const [notes,         setNotes]         = useState("");
   const [conditions,    setConditions]    = useState("");
   const [rib_iban,      setRibIban]       = useState("");
@@ -221,7 +236,7 @@ export default function NouvelleFacture() {
     if (!initDone.current) return;
     setIsDirty(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, couleur, numero, dateDoc, dateEch, sujet, items, remise_pct, acompte, devise, notes, conditions, rib_iban, rib_bic, rib_banque, rib_titulaire, clientNom, clientSoc, clientEmail, clientTel, clientAdr, clientVille, clientCP, clientPays, clientTva, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
+  }, [template, couleur, numero, dateDoc, dateEch, sujet, items, remise_pct, acompte, devise, taxSystemId, notes, conditions, rib_iban, rib_bic, rib_banque, rib_titulaire, clientNom, clientSoc, clientEmail, clientTel, clientAdr, clientVille, clientCP, clientPays, clientTva, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
 
   // ── beforeunload ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -474,6 +489,8 @@ export default function NouvelleFacture() {
 
   const fmtCurrency = (n: number) =>
     new Intl.NumberFormat("fr-FR", { style: "currency", currency: devise || "EUR", maximumFractionDigits: 2 }).format(n);
+
+  const taxSystem = getTaxSystem(taxSystemId);
 
   const computedScale = previewScale * zoomLevel;
   const info = TEMPLATE_CATALOG.find(t => t.id === template);
@@ -837,74 +854,119 @@ export default function NouvelleFacture() {
 
             {/* ── Articles & Prestations ── */}
             <Section id="articles" title="Articles & Prestations" icon={FileText}>
+              {/* Système fiscal */}
+              <div className="mb-3 flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-medium shrink-0" style={{ color: labelCol }}>Système fiscal :</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {TAX_SYSTEMS.map(ts => (
+                    <button key={ts.id} type="button" title={ts.description}
+                      onClick={() => {
+                        setTaxSystemId(ts.id);
+                        setItems(prev => prev.map(it => ({ ...it, vat_rate: ts.defaultRate })));
+                      }}
+                      className="rounded-full px-2.5 py-0.5 text-xs font-medium transition"
+                      style={{
+                        background: taxSystemId === ts.id ? GOLD : (isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6"),
+                        color:      taxSystemId === ts.id ? "#000" : textSecond,
+                        border:     taxSystemId === ts.id ? `1px solid ${GOLD}` : `1px solid ${cardBorder}`,
+                      }}>
+                      {ts.short}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Table */}
               <div className="mb-3 overflow-x-auto">
-                <table className="w-full text-xs">
+                <table className="w-full text-xs" style={{ minWidth: 520 }}>
                   <thead>
                     <tr>
-                      <th className="pb-2.5 text-left font-medium text-xs" style={{ color: textTert }}>Description</th>
-                      <th className="pb-2.5 text-right font-medium text-xs w-14" style={{ color: textTert }}>Qté</th>
-                      <th className="pb-2.5 text-right font-medium text-xs w-24" style={{ color: textTert }}>P.U. HT</th>
-                      <th className="pb-2.5 text-right font-medium text-xs w-16" style={{ color: textTert }}>TVA</th>
-                      <th className="pb-2.5 text-right font-medium text-xs w-20" style={{ color: textTert }}>Total HT</th>
-                      <th className="w-7"></th>
+                      <th className="pb-2.5 text-left font-medium" style={{ color: textTert }}>Description</th>
+                      <th className="pb-2.5 text-left font-medium w-20" style={{ color: textTert }}>Unité</th>
+                      <th className="pb-2.5 text-right font-medium w-14" style={{ color: textTert }}>Qté</th>
+                      <th className="pb-2.5 text-right font-medium w-24" style={{ color: textTert }}>P.U. HT</th>
+                      {taxSystemId !== "none" && (
+                        <th className="pb-2.5 text-right font-medium w-20" style={{ color: textTert }}>{taxSystem.short}</th>
+                      )}
+                      <th className="pb-2.5 text-right font-medium w-20" style={{ color: textTert }}>Total HT</th>
+                      <th className="w-16"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {items.map((item, i) => {
-                      const lineHT = r2(item.quantity * item.unit_price * (1 - (item.remise_pct || 0) / 100));
+                      const lineHT    = r2(item.quantity * item.unit_price * (1 - (item.remise_pct || 0) / 100));
+                      const presets   = TAX_RATE_PRESETS[taxSystemId] ?? [];
                       return (
                         <tr key={item.id} className="group">
                           <td className="py-1 pr-2">
-                            <input
-                              className="w-full rounded-lg px-2 py-1.5 text-xs outline-none"
+                            <input className="w-full rounded-lg px-2 py-1.5 text-xs outline-none"
                               style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
-                              placeholder="Description..."
-                              value={item.description}
-                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, description: e.target.value } : it))}
-                            />
+                              placeholder="Description..." value={item.description}
+                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, description: e.target.value } : it))} />
                           </td>
                           <td className="py-1 pr-2">
-                            <input
-                              type="number" min="0" step="0.01"
+                            <select className="w-full rounded-lg px-1.5 py-1.5 text-xs outline-none"
+                              style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
+                              value={item.unit}
+                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, unit: e.target.value } : it))}>
+                              {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                            </select>
+                          </td>
+                          <td className="py-1 pr-2">
+                            <input type="number" min="0" step="0.01"
                               className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
                               style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
                               value={item.quantity}
-                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, quantity: parseFloat(e.target.value) || 0 } : it))}
-                            />
+                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, quantity: parseFloat(e.target.value) || 0 } : it))} />
                           </td>
                           <td className="py-1 pr-2">
-                            <input
-                              type="number" min="0" step="0.01"
+                            <input type="number" min="0" step="0.01"
                               className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
                               style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
                               value={item.unit_price}
-                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))}
-                            />
+                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))} />
                           </td>
-                          <td className="py-1 pr-2">
-                            <select
-                              className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
-                              style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
-                              value={item.vat_rate}
-                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, vat_rate: parseFloat(e.target.value) } : it))}
-                            >
-                              {[0, 5.5, 10, 20].map(r => <option key={r} value={r}>{r} %</option>)}
-                            </select>
-                          </td>
+                          {taxSystemId !== "none" && (
+                            <td className="py-1 pr-2">
+                              {presets.length > 0 ? (
+                                <select className="w-full rounded-lg px-1 py-1.5 text-xs outline-none"
+                                  style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
+                                  value={item.vat_rate}
+                                  onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, vat_rate: parseFloat(e.target.value) } : it))}>
+                                  {presets.map(r => <option key={r} value={r}>{r} %</option>)}
+                                </select>
+                              ) : (
+                                <input type="number" min="0" max="100" step="0.1"
+                                  className="w-full rounded-lg px-1.5 py-1.5 text-right text-xs outline-none"
+                                  style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
+                                  value={item.vat_rate}
+                                  onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, vat_rate: parseFloat(e.target.value) || 0 } : it))} />
+                              )}
+                            </td>
+                          )}
                           <td className="py-1 pr-2 text-right font-medium tabular-nums" style={{ color: textPrimary }}>
                             {fmtCurrency(lineHT)}
                           </td>
-                          <td className="py-1 text-center">
-                            {items.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => setItems(prev => prev.filter((_, j) => j !== i))}
-                                className="opacity-0 group-hover:opacity-100 transition rounded p-1"
-                                style={{ color: "#f87171" }}
-                              >
-                                <Trash2 size={12} />
+                          <td className="py-1">
+                            <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                              <button type="button" disabled={i === 0}
+                                onClick={() => setItems(prev => { const a = [...prev]; [a[i-1], a[i]] = [a[i], a[i-1]]; return a; })}
+                                className="rounded p-0.5 disabled:opacity-20" style={{ color: textTert }}>
+                                <ChevronUp size={11} />
                               </button>
-                            )}
+                              <button type="button" disabled={i === items.length - 1}
+                                onClick={() => setItems(prev => { const a = [...prev]; [a[i], a[i+1]] = [a[i+1], a[i]]; return a; })}
+                                className="rounded p-0.5 disabled:opacity-20" style={{ color: textTert }}>
+                                <ChevronDown size={11} />
+                              </button>
+                              {items.length > 1 && (
+                                <button type="button"
+                                  onClick={() => setItems(prev => prev.filter((_, j) => j !== i))}
+                                  className="rounded p-0.5" style={{ color: "#f87171" }}>
+                                  <Trash2 size={11} />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -913,24 +975,17 @@ export default function NouvelleFacture() {
                 </table>
               </div>
 
-              <button
-                type="button"
+              <button type="button"
                 onClick={() => setItems(prev => [...prev, newLine(prev.length + 1)])}
                 className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-70"
-                style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6", color: textSecond, border: `1px solid ${cardBorder}` }}
-              >
+                style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6", color: textSecond, border: `1px solid ${cardBorder}` }}>
                 <Plus size={12} /> Ajouter une ligne
               </button>
 
               {/* Totals */}
               <div className="mt-4">
-                <div className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: textTert }}>
-                  Récapitulatif
-                </div>
-                <div
-                  className="rounded-xl p-4 space-y-2"
-                  style={{ background: sectionBg, border: `1px solid ${cardBorder}` }}
-                >
+                <div className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: textTert }}>Récapitulatif</div>
+                <div className="rounded-xl p-4 space-y-2" style={{ background: sectionBg, border: `1px solid ${cardBorder}` }}>
                   <div className="flex justify-between text-sm">
                     <span style={{ color: textSecond }}>Sous-total HT</span>
                     <span className="tabular-nums" style={{ color: textPrimary }}>{fmtCurrency(totals.subtotal_ht)}</span>
@@ -941,21 +996,22 @@ export default function NouvelleFacture() {
                       <span className="tabular-nums" style={{ color: "#f87171" }}>−{fmtCurrency(totals.remise)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-sm">
-                    <span style={{ color: textSecond }}>TVA</span>
-                    <span className="tabular-nums" style={{ color: textPrimary }}>{fmtCurrency(totals.tva)}</span>
-                  </div>
+                  {taxSystemId !== "none" && (
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: textSecond }}>{taxSystem.short}</span>
+                      <span className="tabular-nums" style={{ color: textPrimary }}>{fmtCurrency(totals.tva)}</span>
+                    </div>
+                  )}
                   {acompte > 0 && (
                     <div className="flex justify-between text-sm">
                       <span style={{ color: textSecond }}>Acompte versé</span>
                       <span className="tabular-nums" style={{ color: "#4ade80" }}>−{fmtCurrency(acompte)}</span>
                     </div>
                   )}
-                  <div
-                    className="flex justify-between pt-3 mt-1"
-                    style={{ borderTop: `1px solid ${cardBorder}` }}
-                  >
-                    <span style={{ fontSize: 15, fontWeight: 700, color: textPrimary }}>Total TTC</span>
+                  <div className="flex justify-between pt-3 mt-1" style={{ borderTop: `1px solid ${cardBorder}` }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: textPrimary }}>
+                      {taxSystemId === "none" ? "Total HT" : "Total TTC"}
+                    </span>
                     <span className="tabular-nums" style={{ fontSize: 15, fontWeight: 700, color: GOLD }}>{fmtCurrency(totals.ttc)}</span>
                   </div>
                 </div>
