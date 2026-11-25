@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import { GalleryView, ALL_ASSISTANTS, type AssistantData, type PersonalizationPrefs, Portrait } from "./gallery";
+import Avatar3D from "./avatar/Avatar3D";
 
 /* ─── types ─────────────────────────────────────────────────── */
 
@@ -921,68 +922,114 @@ function VideoView({ assistant, isDark: _isDark, onBack: _onBack, onSwitchAudio,
   return (
     <div
       onClick={resetCtrlTimer}
-      style={{ flex: 1, display: "flex", flexDirection: "column", background: "#060610", color: "#fff", position: "relative", overflow: "hidden", cursor: "default" }}
+      style={{ flex: 1, background: "#060610", color: "#fff", position: "relative", overflow: "hidden", cursor: "default" }}
     >
-      {/* Ambient */}
-      <div className="dj-ambient" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, background: "radial-gradient(ellipse 65% 55% at 50% 45%, rgba(255,185,0,.08), transparent)" }} />
-
-      {/* PiP corner — camera placeholder */}
-      <div style={{ position: "absolute", top: 12, right: 12, zIndex: 3, width: 90, height: 118, borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.10)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-        <CameraOff size={18} style={{ color: "rgba(255,255,255,.25)" }} />
-        <span style={{ fontSize: 9, color: "rgba(255,255,255,.25)", textAlign: "center", lineHeight: 1.3 }}>Votre{"\n"}caméra</span>
+      {/* ── 3D Avatar — full-screen background ── */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
+        <Avatar3D isSpeaking={isSpeaking} isConnected={connected} />
       </div>
 
-      {/* Top status overlay */}
-      <div style={{ position: "absolute", top: 12, left: 12, zIndex: 3, display: "flex", alignItems: "center", gap: 7 }}>
+      {/* ── PiP corner — user camera placeholder ── */}
+      <div style={{
+        position: "absolute", top: 12, right: 12, zIndex: 4,
+        width: 90, height: 118, borderRadius: 14,
+        background: "rgba(0,0,0,.55)", border: "1px solid rgba(255,255,255,.12)",
+        backdropFilter: "blur(8px)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+      }}>
+        <CameraOff size={18} style={{ color: "rgba(255,255,255,.28)" }} />
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,.28)", textAlign: "center", lineHeight: 1.3 }}>
+          Votre{"\n"}caméra
+        </span>
+      </div>
+
+      {/* ── Timer — top left ── */}
+      <div style={{ position: "absolute", top: 12, left: 12, zIndex: 4 }}>
         {connected && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 12px", borderRadius: 20, background: "rgba(0,0,0,.45)", backdropFilter: "blur(10px)" }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 7,
+            padding: "5px 12px", borderRadius: 20,
+            background: "rgba(0,0,0,.50)", backdropFilter: "blur(10px)",
+          }}>
             <Clock size={10} style={{ color: "rgba(255,255,255,.5)" }} />
-            <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.5)", fontVariantNumeric: "tabular-nums" }}>{fmt(seconds)}</span>
+            <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.5)", fontVariantNumeric: "tabular-nums" }}>
+              {fmt(seconds)}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Main avatar */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, position: "relative", zIndex: 1, padding: "16px 20px 0", minHeight: 0 }}>
-        {/* Portrait */}
-        <div style={{ position: "relative" }}>
-          {connected && (<>
-            <div className="dj-ping" style={{ position: "absolute", inset: -10, borderRadius: 28, border: `1.5px solid ${GOLD}`, zIndex: 0 }} />
-            <div className="dj-ping" style={{ position: "absolute", inset: -20, borderRadius: 34, border: "1px solid rgba(255,185,0,.22)", zIndex: 0, animationDelay: ".7s" }} />
-          </>)}
-          <div className={isSpeaking ? "dj-speak" : "dj-breathe"} style={{ borderRadius: 22, overflow: "hidden", position: "relative", zIndex: 1 }}>
-            <Portrait type={assistant.portrait} size={190} />
-          </div>
+      {/* ── Name + status — bottom of avatar area ── */}
+      <div style={{
+        position: "absolute", bottom: 110, left: 0, right: 0, zIndex: 4,
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+        pointerEvents: "none",
+      }}>
+        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-.02em", textShadow: "0 1px 8px rgba(0,0,0,.7)" }}>
+          {assistant.name}
         </div>
-
-        {/* Name + status badge */}
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.02em", marginBottom: 6 }}>{assistant.name}</div>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "4px 14px", borderRadius: 20, background: "rgba(0,0,0,.45)", backdropFilter: "blur(8px)" }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: connected ? (isSpeaking ? GOLD : "#34d399") : "rgba(255,255,255,.3)", transition: "background .4s", flexShrink: 0 }} />
-            <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.65)" }}>
-              {!connected ? "Connexion…" : (isSpeaking ? "En train de répondre" : "À l'écoute")}
-            </span>
-          </div>
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 7,
+          padding: "4px 14px", borderRadius: 20,
+          background: "rgba(0,0,0,.50)", backdropFilter: "blur(8px)",
+        }}>
+          <div style={{
+            width: 7, height: 7, borderRadius: "50%",
+            background: connected ? (isSpeaking ? GOLD : "#34d399") : "rgba(255,255,255,.3)",
+            transition: "background .4s", flexShrink: 0,
+          }} />
+          <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.65)" }}>
+            {!connected ? "Connexion…" : (isSpeaking ? "En train de répondre" : "À l'écoute")}
+          </span>
         </div>
-
-        {/* Waveform */}
-        <Waveform active={isSpeaking} color={GOLD} bars={12} size={28} />
-
-        {/* Honest notice */}
-        <div style={{ padding: "5px 14px", borderRadius: 20, background: "rgba(255,185,0,.05)", border: "1px solid rgba(255,185,0,.10)", fontSize: 10, color: "rgba(255,255,255,.25)", textAlign: "center" }}>
-          Avatar 3D — sous-chantier F · Moteur vocal — sous-chantier E
-        </div>
+        <Waveform active={isSpeaking} color={GOLD} bars={12} size={22} />
       </div>
 
-      {/* Floating controls — auto-hide */}
-      <div style={{ flexShrink: 0, padding: "0 20px 28px", position: "relative", zIndex: 2, opacity: ctrlVis ? 1 : 0, transform: ctrlVis ? "translateY(0)" : "translateY(10px)", transition: "opacity .28s ease, transform .28s ease", pointerEvents: ctrlVis ? "auto" : "none" }}>
-        <div style={{ display: "flex", justifyContent: "center", gap: 12, alignItems: "flex-end", padding: "16px 20px 0", background: "linear-gradient(to top, rgba(6,6,16,.9) 0%, transparent 100%)", borderRadius: "0 0 0 0" }}>
-          <CtrlBtn Icon={cam ? Camera : CameraOff} label={cam ? "Caméra" : "Caméra off"} size={54} color={cam ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.35)"} bg={cam ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.07)"} bd="rgba(255,255,255,.12)" onClick={() => setCam(c => !c)} />
-          <CtrlBtn Icon={muted ? MicOff : Mic} label={muted ? "Muet" : "Micro"} size={54} color={muted ? "#ef4444" : "rgba(255,255,255,.85)"} bg={muted ? "rgba(239,68,68,.22)" : "rgba(255,255,255,.10)"} bd={muted ? "rgba(239,68,68,.5)" : "rgba(255,255,255,.12)"} onClick={() => setMuted(m => !m)} />
-          <CtrlBtn Icon={PhoneOff} label="Terminer" size={68} color="#fff" bg="#ef4444" bd="transparent" shadow="0 6px 28px rgba(239,68,68,.55)" onClick={() => onEnd ? onEnd(seconds) : _onBack()} />
-          <CtrlBtn Icon={Volume2} label="Audio" size={54} color="rgba(255,255,255,.85)" bg="rgba(255,255,255,.10)" bd="rgba(255,255,255,.12)" onClick={() => {}} />
-          <CtrlBtn Icon={Phone} label="Passer en audio" size={54} color="rgba(255,255,255,.85)" bg="rgba(255,255,255,.10)" bd="rgba(255,255,255,.12)" onClick={() => onSwitchAudio?.() ?? _onBack()} />
+      {/* ── Floating controls — auto-hide ── */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5,
+        opacity: ctrlVis ? 1 : 0,
+        transform: ctrlVis ? "translateY(0)" : "translateY(10px)",
+        transition: "opacity .28s ease, transform .28s ease",
+        pointerEvents: ctrlVis ? "auto" : "none",
+      }}>
+        <div style={{
+          display: "flex", justifyContent: "center", gap: 12, alignItems: "flex-end",
+          padding: "20px 20px 32px",
+          background: "linear-gradient(to top, rgba(6,6,16,.95) 0%, transparent 100%)",
+        }}>
+          <CtrlBtn
+            Icon={cam ? Camera : CameraOff} label={cam ? "Caméra" : "Caméra off"}
+            size={54}
+            color={cam ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.35)"}
+            bg={cam ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.07)"}
+            bd="rgba(255,255,255,.12)"
+            onClick={() => setCam(c => !c)}
+          />
+          <CtrlBtn
+            Icon={muted ? MicOff : Mic} label={muted ? "Muet" : "Micro"}
+            size={54}
+            color={muted ? "#ef4444" : "rgba(255,255,255,.85)"}
+            bg={muted ? "rgba(239,68,68,.22)" : "rgba(255,255,255,.10)"}
+            bd={muted ? "rgba(239,68,68,.5)" : "rgba(255,255,255,.12)"}
+            onClick={() => setMuted(m => !m)}
+          />
+          <CtrlBtn
+            Icon={PhoneOff} label="Terminer"
+            size={68} color="#fff" bg="#ef4444" bd="transparent"
+            shadow="0 6px 28px rgba(239,68,68,.55)"
+            onClick={() => onEnd ? onEnd(seconds) : _onBack()}
+          />
+          <CtrlBtn
+            Icon={Volume2} label="Audio"
+            size={54} color="rgba(255,255,255,.85)" bg="rgba(255,255,255,.10)" bd="rgba(255,255,255,.12)"
+            onClick={() => {}}
+          />
+          <CtrlBtn
+            Icon={Phone} label="Passer en audio"
+            size={54} color="rgba(255,255,255,.85)" bg="rgba(255,255,255,.10)" bd="rgba(255,255,255,.12)"
+            onClick={() => onSwitchAudio?.() ?? _onBack()}
+          />
         </div>
       </div>
     </div>
