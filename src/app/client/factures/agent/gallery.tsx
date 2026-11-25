@@ -31,7 +31,7 @@ const PORTRAITS: Record<string, PC> = {
   M4: { bg1:"#dce8f0",bg2:"#b0c4d8", s1:"#e8b87a",s2:"#c08848",s3:"#906020", h:"#181010",hs:"short", e:"#1a2030",l:"#905840", c1:"#1a3050",c2:"#f0f4fc" },
 };
 
-function Portrait({ type, size = 160, responsive = false }: { type: string; size?: number; responsive?: boolean }) {
+export function Portrait({ type, size = 160, responsive = false }: { type: string; size?: number; responsive?: boolean }) {
   const c = PORTRAITS[type];
   if (!c) return <div style={responsive ? { width: "100%", aspectRatio: "5/6", background: "#e0e4e8" } : { width: size, height: Math.round(size * 1.2), background: "#e0e4e8", borderRadius: 8 }} />;
 

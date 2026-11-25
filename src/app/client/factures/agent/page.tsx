@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   MessageSquare, Phone, Video, ChevronLeft, ChevronRight,
   Send, Mic, MicOff, PhoneOff, Users,
   FileText, Search, Edit3, Repeat, Camera, CameraOff,
   Volume2, VolumeX, Paperclip, Plus, Receipt, Clock,
-  Eye, Download, Archive, CheckCircle,
+  Eye, Download, Archive, CheckCircle, Sparkles, Settings2,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
-import { GalleryView, ALL_ASSISTANTS, type AssistantData, type PersonalizationPrefs } from "./gallery";
+import { GalleryView, ALL_ASSISTANTS, type AssistantData, type PersonalizationPrefs, Portrait } from "./gallery";
 
 /* ─── types ─────────────────────────────────────────────────── */
 
@@ -241,6 +242,88 @@ function MsgBubble({ msg, isDark, assistantName }: {
   );
 }
 
+/* ─── Agent topbar ───────────────────────────────────────────── */
+
+function AgentTopBar({ view, assistant, isDark, onBack, onGallery, onHistory, onSettings }: {
+  view: View; assistant: AssistantData; isDark: boolean;
+  onBack: () => void; onGallery: () => void; onHistory: () => void; onSettings: () => void;
+}) {
+  const isCall = view === "audio" || view === "video";
+  const bg  = isCall ? NOIR : (isDark ? "rgba(10,10,18,.98)" : "#ffffff");
+  const bd  = isCall ? "rgba(255,255,255,.08)" : (isDark ? "rgba(255,255,255,.07)" : "#e5e7eb");
+  const fg  = isCall ? "#fff" : (isDark ? "#fff" : NOIR);
+  const fg2 = isCall ? "rgba(255,255,255,.45)" : (isDark ? "rgba(255,255,255,.4)" : "#9ca3af");
+
+  return (
+    <div style={{
+      flexShrink: 0, height: 52,
+      display: "flex", alignItems: "center",
+      padding: "0 14px", gap: 8,
+      background: bg, borderBottom: `1px solid ${bd}`,
+    }}>
+      {/* Back */}
+      <button onClick={onBack} style={{
+        display: "flex", alignItems: "center", gap: 4,
+        background: "none", border: "none", cursor: "pointer",
+        color: fg2, fontSize: 13, fontWeight: 500, padding: "5px 6px",
+        flexShrink: 0, borderRadius: 7,
+      }}>
+        <ChevronLeft size={15} />
+        {view === "home" ? "Retour" : "Accueil"}
+      </button>
+
+      {/* Center: logo */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+        <div style={{
+          width: 24, height: 24, borderRadius: 6,
+          background: "rgba(255,185,0,.12)", border: "1px solid rgba(255,185,0,.25)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Sparkles size={12} style={{ color: GOLD }} />
+        </div>
+        <span style={{ fontSize: 14, fontWeight: 700, color: fg, letterSpacing: "-.01em" }}>DJAMA IA</span>
+      </div>
+
+      {/* Right: controls */}
+      <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+        <button onClick={onHistory} style={{
+          width: 32, height: 32, borderRadius: 8,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "none", border: "none", cursor: "pointer", color: fg2,
+        }} title="Historique">
+          <Clock size={15} />
+        </button>
+
+        <button onClick={onGallery} style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "5px 10px 5px 7px",
+          background: isCall ? "rgba(255,255,255,.07)" : (isDark ? "rgba(255,255,255,.06)" : "#f9fafb"),
+          border: `1px solid ${bd}`, borderRadius: 20, cursor: "pointer",
+        }}>
+          <div style={{
+            width: 22, height: 22, borderRadius: "50%",
+            background: "rgba(255,185,0,.12)", border: "1px solid rgba(255,185,0,.3)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 9.5, fontWeight: 700, color: GOLD, flexShrink: 0,
+          }}>
+            {assistant.name[0]}
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 600, color: fg }}>{assistant.name}</span>
+          <ChevronRight size={11} style={{ color: fg2 }} />
+        </button>
+
+        <button onClick={onSettings} style={{
+          width: 32, height: 32, borderRadius: 8,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "none", border: "none", cursor: "pointer", color: fg2,
+        }} title="Paramètres">
+          <Settings2 size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Home view ─────────────────────────────────────────────── */
 
 function HomeView({ assistant, isDark, onMode, onGallery, onQuickAction }: {
@@ -265,122 +348,111 @@ function HomeView({ assistant, isDark, onMode, onGallery, onQuickAction }: {
 
   return (
     <div style={{
-      flex: 1, position: "relative",
-      display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center",
-      background: bg, padding: "72px 24px 32px",
-      overflowY: "auto",
+      flex: 1, overflowY: "auto", background: bg,
+      display: "flex", flexDirection: "column", alignItems: "center",
+      padding: "32px 20px 40px",
     }}>
-      {/* Top bar */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0,
-        display: "flex", justifyContent: "flex-end",
-        padding: "14px 20px",
-      }}>
-        <button onClick={onGallery} style={{
-          display: "flex", alignItems: "center", gap: 7,
-          background: card, border: `1px solid ${bd}`,
-          borderRadius: 8, padding: "6px 12px",
-          cursor: "pointer", color: fg2, fontSize: 12, fontWeight: 500,
-        }}>
-          <Users size={12} />
-          {assistant.name}
-          <ChevronRight size={11} />
-        </button>
-      </div>
+      <div style={{ width: "100%", maxWidth: 600 }}>
 
-      {/* Avatar + greeting */}
-      <div style={{ textAlign: "center", marginBottom: 32, maxWidth: 400 }}>
-        <div style={{ position: "relative", display: "inline-block", marginBottom: 18 }}>
-          <div className="dj-ping" style={{
-            position: "absolute", inset: -5,
-            borderRadius: "50%", border: `1.5px solid ${GOLD}`,
-          }} />
-          <div style={{
-            width: 68, height: 68, borderRadius: "50%",
-            background: `linear-gradient(140deg, rgba(255,185,0,.18), rgba(255,185,0,.06))`,
-            border: `2px solid ${GOLD}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 24, fontWeight: 800, color: GOLD,
-          }}>
-            {assistant.name[0]}
-          </div>
-        </div>
-        <div style={{ fontSize: 12, color: fg2, marginBottom: 10, fontWeight: 500 }}>
-          {assistant.name} · {assistant.country}
-        </div>
-        <h1 style={{
-          fontSize: 26, fontWeight: 700, color: fg,
-          lineHeight: 1.3, letterSpacing: "-.025em", margin: 0,
-        }}>
-          Comment puis-je vous<br />aider aujourd'hui ?
-        </h1>
-      </div>
-
-      {/* 3 mode buttons */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginBottom: 28 }}>
-        {([
-          { view: "chat"  as View, label: "Chat écrit",  sub: "Écrivez librement",        Icon: MessageSquare },
-          { view: "audio" as View, label: "Appel audio", sub: "Conversation vocale",       Icon: Phone         },
-          { view: "video" as View, label: "Appel vidéo", sub: `Avec ${assistant.name}`,    Icon: Video         },
-        ] as const).map(({ view, label, sub, Icon }) => (
-          <button key={view} onClick={() => onMode(view)} style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
-            padding: "18px 20px", width: 144,
-            background: card, border: `1px solid ${bd}`,
-            borderRadius: 14, cursor: "pointer",
-          }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = GOLD;
-              el.style.background = isDark ? "rgba(255,185,0,.06)" : "#fffdf0";
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = bd;
-              el.style.background = card;
-            }}
-          >
+        {/* Portrait + Identity */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 28 }}>
+          <div style={{ position: "relative", marginBottom: 16 }}>
+            <div className="dj-ping" style={{
+              position: "absolute", inset: -6, borderRadius: 20,
+              border: `1.5px solid ${GOLD}`,
+            }} />
             <div style={{
-              width: 42, height: 42, borderRadius: 10,
-              background: isDark ? "rgba(255,185,0,.10)" : "rgba(255,185,0,.10)",
-              border: `1px solid rgba(255,185,0,.25)`,
-              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 160, borderRadius: 16, overflow: "hidden",
+              border: `2px solid rgba(255,185,0,.35)`,
+              boxShadow: "0 8px 32px rgba(255,185,0,.12)",
             }}>
-              <Icon size={18} style={{ color: GOLD }} />
+              <Portrait type={assistant.portrait} size={160} />
             </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: fg, marginBottom: 2 }}>{label}</div>
-              <div style={{ fontSize: 11, color: fg2 }}>{sub}</div>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Quick actions */}
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <div style={{
-          fontSize: 10.5, fontWeight: 600, letterSpacing: ".08em",
-          textTransform: "uppercase", color: fg2, marginBottom: 10, textAlign: "center",
-        }}>
-          Actions rapides
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 18, fontWeight: 700, color: fg }}>{assistant.name}</span>
+            <span style={{
+              fontSize: 11, fontWeight: 600, color: GOLD,
+              background: "rgba(255,185,0,.12)", border: "1px solid rgba(255,185,0,.25)",
+              borderRadius: 20, padding: "2px 10px",
+            }}>{assistant.country}</span>
+          </div>
+          <h1 style={{
+            fontSize: 24, fontWeight: 700, color: fg,
+            lineHeight: 1.3, letterSpacing: "-.025em",
+            textAlign: "center", margin: 0,
+          }}>
+            Comment puis-je vous aider ?
+          </h1>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {QUICK.map(({ label, prompt, Icon }) => (
-            <button key={label} onClick={() => onQuickAction(prompt)} style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 14px", borderRadius: 10,
+
+        {/* 3 mode cards */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 10, marginBottom: 28,
+        }}>
+          {([
+            { view: "chat"  as View, label: "Chat écrit",  sub: "Écrivez librement",     Icon: MessageSquare },
+            { view: "audio" as View, label: "Appel audio", sub: "Conversation vocale",    Icon: Phone         },
+            { view: "video" as View, label: "Appel vidéo", sub: `Avec ${assistant.name}`, Icon: Video         },
+          ] as const).map(({ view, label, sub, Icon }) => (
+            <button key={view} onClick={() => onMode(view)} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+              padding: "20px 12px",
               background: card, border: `1px solid ${bd}`,
-              cursor: "pointer", color: fg, fontSize: 13,
+              borderRadius: 14, cursor: "pointer",
             }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = GOLD; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = bd;   }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.borderColor = GOLD;
+                el.style.background = isDark ? "rgba(255,185,0,.06)" : "#fffdf0";
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.borderColor = bd;
+                el.style.background = card;
+              }}
             >
-              <Icon size={13} style={{ color: GOLD, flexShrink: 0 }} />
-              {label}
-              <ChevronRight size={11} style={{ color: fg2, marginLeft: "auto" }} />
+              <div style={{
+                width: 46, height: 46, borderRadius: 12,
+                background: "rgba(255,185,0,.10)", border: "1px solid rgba(255,185,0,.25)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Icon size={20} style={{ color: GOLD }} />
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: fg, marginBottom: 3 }}>{label}</div>
+                <div style={{ fontSize: 11, color: fg2 }}>{sub}</div>
+              </div>
             </button>
           ))}
+        </div>
+
+        {/* Quick actions */}
+        <div>
+          <div style={{
+            fontSize: 10.5, fontWeight: 600, letterSpacing: ".08em",
+            textTransform: "uppercase", color: fg2, marginBottom: 10, textAlign: "center",
+          }}>
+            Actions rapides
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {QUICK.map(({ label, prompt, Icon }) => (
+              <button key={label} onClick={() => onQuickAction(prompt)} style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "12px 16px", borderRadius: 12,
+                background: card, border: `1px solid ${bd}`,
+                cursor: "pointer", color: fg, fontSize: 13.5, textAlign: "left",
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = GOLD; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = bd; }}
+              >
+                <Icon size={15} style={{ color: GOLD, flexShrink: 0 }} />
+                {label}
+                <ChevronRight size={12} style={{ color: fg2, marginLeft: "auto" }} />
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -650,22 +722,6 @@ function AudioView({ assistant, isDark, onBack }: {
       flex: 1, display: "flex", flexDirection: "column",
       background: NOIR, color: "#fff",
     }}>
-      {/* Header */}
-      <div style={{
-        flexShrink: 0, padding: "14px 20px",
-        display: "flex", alignItems: "center",
-        borderBottom: "1px solid rgba(255,255,255,.07)",
-      }}>
-        <button onClick={onBack} style={{
-          display: "flex", alignItems: "center", gap: 6,
-          background: "none", border: "none", cursor: "pointer",
-          color: "rgba(255,255,255,.5)", fontSize: 13,
-        }}>
-          <ChevronLeft size={16} />
-          Retour
-        </button>
-      </div>
-
       {/* Main call area */}
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
@@ -789,29 +845,6 @@ function VideoView({ assistant, isDark, onBack }: {
         background: `radial-gradient(ellipse 60% 50% at 50% 40%, rgba(255,185,0,.07), transparent)`,
       }} />
 
-      {/* Header */}
-      <div style={{
-        flexShrink: 0, padding: "14px 20px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        position: "relative", zIndex: 1,
-      }}>
-        <button onClick={onBack} style={{
-          display: "flex", alignItems: "center", gap: 6,
-          background: "none", border: "none", cursor: "pointer",
-          color: "rgba(255,255,255,.5)", fontSize: 13,
-        }}>
-          <ChevronLeft size={16} />
-          Retour
-        </button>
-        <div style={{
-          fontSize: 12, color: "rgba(255,255,255,.4)",
-          display: "flex", alignItems: "center", gap: 7,
-        }}>
-          <Clock size={11} />
-          {fmt(seconds)}
-        </div>
-      </div>
-
       {/* Avatar area */}
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
@@ -912,6 +945,7 @@ function VideoView({ assistant, isDark, onBack }: {
 
 export default function AgentPage() {
   const { isDark } = useTheme();
+  const router = useRouter();
   const [view, setView]               = useState<View>("home");
   const [assistantId, setAssistantId] = useState("emma");
   const [quickPrompt, setQuickPrompt] = useState<string | undefined>();
@@ -929,6 +963,11 @@ export default function AgentPage() {
   function goHome()        { setView("home"); }
   function goGallery()     { setView("gallery"); }
   function goMode(v: View) { setView(v); }
+
+  function handleBack() {
+    if (view === "home") router.push("/client/factures");
+    else setView("home");
+  }
 
   function handleQuickAction(prompt: string) {
     setQuickPrompt(prompt);
@@ -949,6 +988,16 @@ export default function AgentPage() {
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{CSS_ANIM}</style>
+
+      <AgentTopBar
+        view={view}
+        assistant={assistant}
+        isDark={isDark}
+        onBack={handleBack}
+        onGallery={goGallery}
+        onHistory={() => setView("chat")}
+        onSettings={() => {}}
+      />
 
       {view === "home" && (
         <HomeView

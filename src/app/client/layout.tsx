@@ -438,6 +438,20 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
 
   if (level === "unauthenticated") return null;
 
+  /* ── DJAMA IA fullscreen mode ── */
+  if (pathname.startsWith("/client/factures/agent")) {
+    return (
+      <div
+        className="client-app djama-app-shell"
+        data-theme={isDark ? "dark" : "light"}
+        style={{ height: "100vh", overflow: "hidden" }}
+        suppressHydrationWarning
+      >
+        {isGated ? <FreeAppGate /> : children}
+      </div>
+    );
+  }
+
   return (
     <div
       className="client-app djama-app-shell flex h-screen overflow-hidden"

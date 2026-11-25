@@ -265,6 +265,7 @@ function FacturesMobileNav({ isDark }: { isDark: boolean }) {
 
 export default function FacturesLayout({ children }: { children: React.ReactNode }) {
   const { isDark } = useTheme();
+  const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(true);
 
   useEffect(() => {
@@ -281,6 +282,8 @@ export default function FacturesLayout({ children }: { children: React.ReactNode
       return next;
     });
   }
+
+  if (pathname.startsWith("/client/factures/agent")) return <>{children}</>;
 
   return (
     <div className="flex h-full overflow-hidden">
