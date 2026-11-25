@@ -556,7 +556,7 @@ export default function NouvelleFacture() {
                   }}
                 >
                   <ScaledA4 scale={48 / 794}>
-                    <InvoiceTemplate data={previewData} template={template} />
+                    <InvoiceTemplate data={previewData} type={template} />
                   </ScaledA4>
                 </div>
 
@@ -1038,7 +1038,7 @@ export default function NouvelleFacture() {
             <div style={{ width: Math.max(200, computedScale * 794), flexShrink: 0 }}>
               <div className="overflow-hidden rounded-xl shadow-2xl" style={{ border: `1px solid ${cardBorder}` }}>
                 <ScaledA4 scale={computedScale}>
-                  <InvoiceTemplate data={previewData} template={template} />
+                  <InvoiceTemplate data={previewData} type={template} />
                 </ScaledA4>
               </div>
             </div>

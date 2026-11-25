@@ -25,7 +25,8 @@ function getColors(type: string): { C: string; BG: string } {
 export function TemplatePreview({ type, data }: { type: TemplateType | string; data: PreviewData }) {
   const theme   = PDF_THEMES[type as TemplateType];
   const variant = theme?.variant ?? "accent-bar";
-  const { C, BG } = getColors(type);
+  const { C: catalogC, BG } = getColors(type);
+  const C = data.color || catalogC;
   const p: VP = { data, C, BG };
 
   switch (variant) {

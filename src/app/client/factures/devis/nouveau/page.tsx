@@ -469,7 +469,7 @@ export default function NouveauDevis() {
                 <div className="flex-shrink-0 overflow-hidden rounded-md"
                   style={{ width: 48, height: Math.round(thumbScale * 1122), border: `1px solid ${cardBorder}`, pointerEvents: "none", background: "#fff" }}>
                   <ScaledA4 scale={thumbScale}>
-                    <InvoiceTemplate data={previewData} template={template} />
+                    <InvoiceTemplate data={previewData} type={template} />
                   </ScaledA4>
                 </div>
 
@@ -822,7 +822,7 @@ export default function NouveauDevis() {
             <div style={{ width: Math.max(200, computedScale * 794), flexShrink: 0 }}>
               <div className="overflow-hidden rounded-xl shadow-2xl" style={{ border: `1px solid ${cardBorder}` }}>
                 <ScaledA4 scale={computedScale}>
-                  <InvoiceTemplate data={previewData} template={template} />
+                  <InvoiceTemplate data={previewData} type={template} />
                 </ScaledA4>
               </div>
             </div>
