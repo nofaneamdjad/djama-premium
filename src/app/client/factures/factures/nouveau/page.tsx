@@ -334,10 +334,18 @@ export default function NouvelleFacture() {
       total:       r2(it.quantity * it.unit_price * (1 - (it.remise_pct || 0) / 100)),
     })),
     subtotal:      totals.subtotal_ht,
-    discount_rate: remise_pct > 0 ? remise_pct : null,
-    discount:      totals.remise > 0 ? totals.remise : null,
-    tax_rate:      items[0]?.vat_rate ?? 20,
-    tax_amount:    totals.tva,
+    discount_rate:  remiseType === "pct" && remise_pct > 0 ? remise_pct : null,
+    discount:       totals.remise > 0 ? totals.remise : null,
+    discount_label: remiseType === "fixe" ? "Remise" : remise_pct > 0 ? `Remise ${remise_pct}%` : null,
+    tax_rate:       items[0]?.vat_rate ?? 0,
+    tax_amount:     totals.tva,
+    tax_label:      (() => {
+      const sys = getTaxSystem(taxSystemId);
+      if (taxSystemId === "none") return sys.short;
+      const rates = [...new Set(items.map(it => it.vat_rate ?? 0).filter(r => r > 0))];
+      if (rates.length === 0) return sys.short;
+      return rates.length === 1 ? `${sys.short} ${rates[0]}%` : `${sys.short}`;
+    })(),
     total:         totals.ttc,
     notes:         notes || null,
     color:         couleur,
@@ -363,7 +371,7 @@ export default function NouvelleFacture() {
       logoSize:    "md",
       logoHideName: false,
     },
-  }), [numero, dateDoc, dateEch, clientNom, clientEmail, clientSoc, clientAdr, clientCP, clientVille, clientPays, sujet, items, totals, remise_pct, notes, couleur, devise, docLang, emNom, emEmail, emAdr, emCP, emVille, emPays, emSiret, emTva, emLogo, rib_iban, rib_bic, coDefaults]);
+  }), [numero, dateDoc, dateEch, clientNom, clientEmail, clientSoc, clientAdr, clientCP, clientVille, clientPays, sujet, items, totals, remise_pct, remiseType, remiseFixe, notes, couleur, devise, docLang, taxSystemId, emNom, emEmail, emAdr, emCP, emVille, emPays, emSiret, emTva, emLogo, rib_iban, rib_bic, coDefaults]);
 
   // ── navigation ───────────────────────────────────────────────────────────────
   function handleBack() {
@@ -396,8 +404,15 @@ export default function NouvelleFacture() {
         client_telephone: clientTel ? `${clientTelPrefix} ${clientTel}` : null,
         client_adresse: clientAdr, client_ville: clientVille,
         client_code_postal: clientCP, client_pays: clientPays, client_tva: clientTva,
-        remise_pct, acompte, notes, conditions,
+        remise_pct, remise_type: remiseType, remise_fixe: remiseFixe,
+        acompte, acompte_type: acompteType,
+        mode_reglement: modeReglement || null,
+        delai_paiement: delaiPaiement,
+        notes, conditions,
         rib_titulaire, rib_iban, rib_bic, rib_banque,
+        bank_mode: bankMode, bank_account: bankAccount || null,
+        bank_routing: bankRouting || null, bank_correspondant: bankCorrespondant || null,
+        doc_lang: docLang, tax_system: taxSystemId,
         template, couleur,
         total_ht: totals.ht_net, total_tva: totals.tva, total_ttc: totals.ttc,
         organization_id: orgId,
@@ -617,6 +632,29 @@ export default function NouvelleFacture() {
                   <div className="text-xs mt-0.5" style={{ color: textTert }}>Modèle de document</div>
                 </div>
 
+                {/* Language selector */}
+                <div className="flex-shrink-0 flex flex-col items-center gap-1">
+                  <select
+                    value={docLang}
+                    onChange={e => setDocLang(e.target.value)}
+                    style={{
+                      width: 54,
+                      height: 32,
+                      borderRadius: 8,
+                      border: `1px solid ${cardBorder}`,
+                      fontSize: 11,
+                      padding: "0 4px",
+                      background: cardBg,
+                      color: textSecond,
+                      cursor: "pointer",
+                    }}>
+                    {SUPPORTED_LANGUAGES.map(l => (
+                      <option key={l.code} value={l.code}>{l.code.toUpperCase()}</option>
+                    ))}
+                  </select>
+                  <span className="text-[10px]" style={{ color: textTert }}>Langue</span>
+                </div>
+
                 {/* Color picker */}
                 <div className="flex-shrink-0 flex flex-col items-center gap-1">
                   <input
@@ -704,19 +742,6 @@ export default function NouvelleFacture() {
                   >
                     {["EUR","USD","GBP","MAD","CHF","CAD","DZD","TND","AED","XOF","XAF","MGA","MUR","KMF","ZAR","KES","BRL","JPY","CNY","INR","AUD"].map(d => (
                       <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Langue du document</label>
-                  <select
-                    className={inputCls}
-                    style={inputStyle}
-                    value={docLang}
-                    onChange={e => setDocLang(e.target.value)}
-                  >
-                    {SUPPORTED_LANGUAGES.map(l => (
-                      <option key={l.code} value={l.code}>{l.nativeLabel} ({l.label})</option>
                     ))}
                   </select>
                 </div>

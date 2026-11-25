@@ -52,18 +52,29 @@ interface SaveBody {
   client_tva?:        string;
   date_document?:     string;
   date_echeance?:     string | null;
-  remise_pct?:        number;
-  acompte?:           number;
-  devise?:            string;
-  rib_titulaire?:     string;
-  rib_iban?:          string;
-  rib_bic?:           string;
-  rib_banque?:        string;
-  notes?:             string;
-  conditions?:        string;
-  mentions_legales?:  string;
-  couleur?:           string;
-  template?:          string;
+  remise_pct?:         number;
+  remise_type?:        "pct" | "fixe";
+  remise_fixe?:        number;
+  acompte?:            number;
+  acompte_type?:       string;
+  mode_reglement?:     string | null;
+  delai_paiement?:     string;
+  devise?:             string;
+  doc_lang?:           string;
+  tax_system?:         string;
+  rib_titulaire?:      string;
+  rib_iban?:           string;
+  rib_bic?:            string;
+  rib_banque?:         string;
+  bank_mode?:          string;
+  bank_account?:       string | null;
+  bank_routing?:       string | null;
+  bank_correspondant?: string | null;
+  notes?:              string;
+  conditions?:         string;
+  mentions_legales?:   string;
+  couleur?:            string;
+  template?:           string;
   organization_id?:    string | null;
   source_id?:          string | null;
   factures_client_id?: string | null;
@@ -92,7 +103,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
   }
 
-  const { document_id, items = [], remise_pct = 0, acompte = 0 } = body;
+  const { document_id, items = [], remise_pct = 0, remise_fixe = 0, acompte = 0 } = body;
 
   // ── P3 : Protection factures émises ──────────────────────────────────────────
   if (document_id) {
@@ -215,18 +226,29 @@ export async function POST(req: NextRequest) {
     client_tva:         body.client_tva         ?? "",
     date_document:    body.date_document    ?? new Date().toISOString().slice(0, 10),
     date_echeance:    body.date_echeance    ?? null,
-    remise_pct:       remise_pct,
-    acompte:          acompte,
-    devise:           body.devise           ?? "EUR",
-    rib_titulaire:    body.rib_titulaire    ?? "",
-    rib_iban:         body.rib_iban         ?? "",
-    rib_bic:          body.rib_bic          ?? "",
-    rib_banque:       body.rib_banque       ?? "",
-    notes:            body.notes            ?? "",
-    conditions:       body.conditions       ?? "",
-    mentions_legales: body.mentions_legales ?? "",
-    couleur:          body.couleur          ?? "#c9a55a",
-    template:         body.template         ?? "modern",
+    remise_pct:          remise_pct,
+    remise_type:         body.remise_type         ?? "pct",
+    remise_fixe:         remise_fixe,
+    acompte:             acompte,
+    acompte_type:        body.acompte_type         ?? "Acompte",
+    mode_reglement:      body.mode_reglement       ?? null,
+    delai_paiement:      body.delai_paiement       ?? "30 jours",
+    devise:              body.devise               ?? "EUR",
+    doc_lang:            body.doc_lang             ?? "fr",
+    tax_system:          body.tax_system           ?? "tva",
+    rib_titulaire:       body.rib_titulaire        ?? "",
+    rib_iban:            body.rib_iban             ?? "",
+    rib_bic:             body.rib_bic              ?? "",
+    rib_banque:          body.rib_banque           ?? "",
+    bank_mode:           body.bank_mode            ?? "iban",
+    bank_account:        body.bank_account         ?? null,
+    bank_routing:        body.bank_routing         ?? null,
+    bank_correspondant:  body.bank_correspondant   ?? null,
+    notes:               body.notes                ?? "",
+    conditions:          body.conditions           ?? "",
+    mentions_legales:    body.mentions_legales     ?? "",
+    couleur:             body.couleur              ?? "#c9a55a",
+    template:            body.template             ?? "modern",
     // Totaux RECALCULÉS côté serveur — les montants client sont ignorés
     total_ht:         totals.ht,
     total_tva:        totals.tva,

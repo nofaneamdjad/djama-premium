@@ -24,8 +24,12 @@ export interface PreviewData {
   subtotal:        number;
   discount_rate?:  number | null;
   discount?:       number | null;
+  /** Libellé affiché pour la ligne de remise (ex: "Remise 10%", "Remise"). Prioritaire sur L.discount. */
+  discount_label?: string | null;
   tax_rate:        number;
   tax_amount:      number;
+  /** Libellé affiché pour la ligne de taxe (ex: "VAT 20%", "GST 10%", "RAS 15%"). Prioritaire sur L.tax(rate). */
+  tax_label?:      string | null;
   total:           number;
   notes?:          string | null;
   /** Couleur d'accent choisie par l'utilisateur — appliquée à TOUS les templates */

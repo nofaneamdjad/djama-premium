@@ -34,6 +34,7 @@ export interface DocLabels {
 
   // Récapitulatif
   subtotal:         string;
+  discount:         string;
   tax:              (rate: number) => string;
   totalIncl:        string;
 
@@ -74,6 +75,7 @@ const LABELS: Record<DocLangCode, DocLabels> = {
     totalHT:        "TOTAL HT",
     amount:         "MONTANT",
     subtotal:       "Sous-total HT",
+    discount:       "Remise",
     tax:            r => `TVA ${r}%`,
     totalIncl:      "TOTAL TTC",
     subject:        "OBJET",
@@ -105,6 +107,7 @@ const LABELS: Record<DocLangCode, DocLabels> = {
     totalHT:        "TOTAL",
     amount:         "AMOUNT",
     subtotal:       "Subtotal",
+    discount:       "Discount",
     tax:            r => `Tax ${r}%`,
     totalIncl:      "TOTAL DUE",
     subject:        "SUBJECT",
@@ -136,6 +139,7 @@ const LABELS: Record<DocLangCode, DocLabels> = {
     totalHT:        "المجموع",
     amount:         "المبلغ",
     subtotal:       "المجموع الفرعي",
+    discount:       "خصم",
     tax:            r => `ضريبة ${r}%`,
     totalIncl:      "الإجمالي",
     subject:        "الموضوع",
@@ -167,6 +171,7 @@ const LABELS: Record<DocLangCode, DocLabels> = {
     totalHT:        "TOTAL",
     amount:         "IMPORTE",
     subtotal:       "Subtotal",
+    discount:       "Descuento",
     tax:            r => `IVA ${r}%`,
     totalIncl:      "TOTAL IVA inc.",
     subject:        "ASUNTO",
@@ -198,6 +203,7 @@ const LABELS: Record<DocLangCode, DocLabels> = {
     totalHT:        "TOTAL",
     amount:         "VALOR",
     subtotal:       "Subtotal",
+    discount:       "Desconto",
     tax:            r => `IVA ${r}%`,
     totalIncl:      "TOTAL c/ IVA",
     subject:        "ASSUNTO",
@@ -229,6 +235,7 @@ const LABELS: Record<DocLangCode, DocLabels> = {
     totalHT:        "GESAMT",
     amount:         "BETRAG",
     subtotal:       "Nettosumme",
+    discount:       "Rabatt",
     tax:            r => `MwSt. ${r}%`,
     totalIncl:      "GESAMTBETRAG",
     subject:        "BETREFF",
@@ -260,6 +267,7 @@ const LABELS: Record<DocLangCode, DocLabels> = {
     totalHT:        "TOTALE",
     amount:         "IMPORTO",
     subtotal:       "Subtotale",
+    discount:       "Sconto",
     tax:            r => `IVA ${r}%`,
     totalIncl:      "TOTALE IVA inc.",
     subject:        "OGGETTO",

@@ -93,8 +93,14 @@ function TableRows({ data, headerBg, headerText, rowAlt, border, text, C, L, fmt
             <div style={{ color: text, fontSize: 6, opacity: 0.7 }}>{L.subtotal}</div>
             <div style={{ color: text, fontSize: 6 }}>{fmt(data.subtotal)}</div>
           </div>
+          {(data.discount ?? 0) > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "2px 8px" }}>
+              <div style={{ color: text, fontSize: 6, opacity: 0.7 }}>{data.discount_label ?? L.discount}</div>
+              <div style={{ color: text, fontSize: 6 }}>-{fmt(data.discount!)}</div>
+            </div>
+          )}
           <div style={{ display: "flex", justifyContent: "space-between", padding: "2px 8px" }}>
-            <div style={{ color: text, fontSize: 6, opacity: 0.7 }}>{L.tax(data.tax_rate)}</div>
+            <div style={{ color: text, fontSize: 6, opacity: 0.7 }}>{data.tax_label ?? L.tax(data.tax_rate)}</div>
             <div style={{ color: text, fontSize: 6 }}>{fmt(data.tax_amount)}</div>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", backgroundColor: C, borderRadius: 3, marginTop: 4 }}>
