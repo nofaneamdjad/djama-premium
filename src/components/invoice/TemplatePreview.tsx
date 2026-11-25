@@ -117,7 +117,7 @@ function Addresses({ data, C, textColor = "#5a5a6a", darkBg = false }: {
       </div>
       <div style={{ width: 1, backgroundColor: darkBg ? "#2a4060" : "#e0e0e8" }} />
       <div style={{ flex: 1 }}>
-        <div style={{ color: C, fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 3, textTransform: "uppercase" }}>Facturé à</div>
+        <div style={{ color: C, fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 3, textTransform: "uppercase" }}>{data.type === "invoice" ? "Facturé à" : "Devis pour"}</div>
         <div style={{ color: name, fontSize: 8, fontWeight: 700 }}>{data.client_name}</div>
         {data.client_company && <div style={{ color: sub, fontSize: 6 }}>{data.client_company}</div>}
         {data.client_email   && <div style={{ color: sub, fontSize: 6 }}>{data.client_email}</div>}
@@ -188,7 +188,7 @@ function MinimalPreview({ data, C }: VP) {
           {co.address && <div style={{ color: "#808090", fontSize: 6 }}>{co.address}</div>}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ color: "#c0c0c8", fontSize: 5.5, fontWeight: 700, marginBottom: 3, letterSpacing: "0.1em" }}>FACTURÉ À</div>
+          <div style={{ color: "#c0c0c8", fontSize: 5.5, fontWeight: 700, marginBottom: 3, letterSpacing: "0.1em" }}>{data.type === "invoice" ? "FACTURÉ À" : "DEVIS POUR"}</div>
           <div style={{ color: "#0a0a12", fontSize: 8, fontWeight: 700 }}>{data.client_name}</div>
           {data.client_company && <div style={{ color: "#808090", fontSize: 6 }}>{data.client_company}</div>}
         </div>
@@ -256,7 +256,7 @@ function GridLinePreview({ data, C, BG }: VP) {
           {co.address && <div style={{ color: "#7070a0", fontSize: 6 }}>{co.address}</div>}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ color: C, fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 3 }}>FACTURÉ À</div>
+          <div style={{ color: C, fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 3 }}>{data.type === "invoice" ? "FACTURÉ À" : "DEVIS POUR"}</div>
           <div style={{ color: "#1a1a2e", fontSize: 8, fontWeight: 700 }}>{data.client_name}</div>
           {data.client_company && <div style={{ color: "#7070a0", fontSize: 6 }}>{data.client_company}</div>}
         </div>
@@ -403,7 +403,7 @@ function ColumnLeftPreview({ data, C, BG }: VP) {
           </div>
         </div>
         <div style={{ marginBottom: 8 }}>
-          <div style={{ color: "#7090c0", fontSize: 5, fontWeight: 700, marginBottom: 3, letterSpacing: "0.1em" }}>FACTURÉ À</div>
+          <div style={{ color: "#7090c0", fontSize: 5, fontWeight: 700, marginBottom: 3, letterSpacing: "0.1em" }}>{data.type === "invoice" ? "FACTURÉ À" : "DEVIS POUR"}</div>
           <div style={{ color: "#0f1a2e", fontSize: 8, fontWeight: 700 }}>{data.client_name}</div>
           {data.client_company && <div style={{ color: "#7090c0", fontSize: 6 }}>{data.client_company}</div>}
         </div>
@@ -721,7 +721,7 @@ function BandPreview({ data, C, BG }: VP) {
             <div style={{ color: "#2a1000", fontSize: 8, fontWeight: 700 }}>{co.name ?? "Mon Entreprise"}</div>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ color: BG, fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 3 }}>FACTURÉ À</div>
+            <div style={{ color: BG, fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 3 }}>{data.type === "invoice" ? "FACTURÉ À" : "DEVIS POUR"}</div>
             <div style={{ color: "#2a1000", fontSize: 8, fontWeight: 700 }}>{data.client_name}</div>
             {data.client_company && <div style={{ color: "#806040", fontSize: 6 }}>{data.client_company}</div>}
           </div>
@@ -850,7 +850,7 @@ function DarkHeaderPreview({ data, C, BG }: VP) {
         {/* Bloc client dans le header (prem-nuit) */}
         {tall && (
           <div style={{ marginTop: 8, paddingTop: 7, borderTop: `0.5px solid ${C}50` }}>
-            <div style={{ color: C, fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 2 }}>FACTURÉ À</div>
+            <div style={{ color: C, fontSize: 5, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 2 }}>{data.type === "invoice" ? "FACTURÉ À" : "DEVIS POUR"}</div>
             <div style={{ color: "#f0f0ff", fontWeight: 700, fontSize: 8 }}>{data.client_name}</div>
             {data.client_company && <div style={{ color: `${C}70`, fontSize: 6 }}>{data.client_company}</div>}
           </div>
