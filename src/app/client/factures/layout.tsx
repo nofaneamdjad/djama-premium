@@ -12,7 +12,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, FileText, FileSignature, Users,
   Building2, Settings2, ChevronRight, ChevronLeft, ReceiptText,
-  Bell, BarChart2, Grid3X3, Images,
+  Bell, BarChart2, Grid3X3, Images, Plus,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 
@@ -35,11 +35,13 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Navigation",
     items: [
-      { href: "/client/factures",            label: "Vue d'ensemble", icon: LayoutDashboard, exact: true },
-      { href: "/client/factures/factures",   label: "Factures",       icon: ReceiptText },
-      { href: "/client/factures/devis",      label: "Devis",          icon: FileSignature },
-      { href: "/client/factures/clients",    label: "Clients",        icon: Users },
-      { href: "/client/factures/relances",   label: "Relances",       icon: Bell },
+      { href: "/client/factures",                      label: "Vue d'ensemble",    icon: LayoutDashboard, exact: true },
+      { href: "/client/factures/factures/nouveau",     label: "Créer une facture", icon: Plus },
+      { href: "/client/factures/devis/nouveau",        label: "Créer un devis",    icon: Plus },
+      { href: "/client/factures/factures",             label: "Factures",          icon: ReceiptText },
+      { href: "/client/factures/devis",                label: "Devis",             icon: FileSignature },
+      { href: "/client/factures/clients",              label: "Clients",           icon: Users },
+      { href: "/client/factures/relances",             label: "Relances",          icon: Bell },
     ],
   },
   {
