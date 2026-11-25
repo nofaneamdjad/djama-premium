@@ -6,7 +6,8 @@ import Link from "next/link";
 import {
   ArrowLeft, Loader2, Save, FileDown, ChevronDown, ChevronUp,
   Plus, Trash2, Search, User, Building2, Check,
-  ReceiptText, Palette, Landmark, FileText, Percent,
+  Palette, Landmark, FileText, Percent, Eye, Pencil,
+  ZoomIn, ZoomOut,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
@@ -56,19 +57,19 @@ function calcTotals(items: LineItem[], remise_pct: number, acompte: number) {
   let subtotal_ht = 0;
   let tva = 0;
   for (const it of items) {
-    const gross  = r2(it.quantity * it.unit_price);
-    const lineRm = r2(gross * (it.remise_pct || 0) / 100);
-    const lineHT = r2(gross - lineRm);
+    const gross   = r2(it.quantity * it.unit_price);
+    const lineRm  = r2(gross * (it.remise_pct || 0) / 100);
+    const lineHT  = r2(gross - lineRm);
     const lineTVA = r2(lineHT * (it.vat_rate || 0) / 100);
     subtotal_ht += lineHT;
     tva         += lineTVA;
   }
   subtotal_ht = r2(subtotal_ht);
   tva         = r2(tva);
-  const remise = r2(subtotal_ht * remise_pct / 100);
-  const ht_net = r2(subtotal_ht - remise);
+  const remise  = r2(subtotal_ht * remise_pct / 100);
+  const ht_net  = r2(subtotal_ht - remise);
   const tva_net = r2(ht_net * (items[0]?.vat_rate ?? 20) / 100);
-  const ttc = r2(ht_net + (remise_pct > 0 ? tva_net : tva) - acompte);
+  const ttc     = r2(ht_net + (remise_pct > 0 ? tva_net : tva) - acompte);
   return { subtotal_ht, remise, ht_net, tva: remise_pct > 0 ? tva_net : tva, ttc: Math.max(0, r2(ht_net + (remise_pct > 0 ? tva_net : tva))) };
 }
 
@@ -77,37 +78,37 @@ export default function NouvelleFacture() {
   const router     = useRouter();
 
   // ── form state ───────────────────────────────────────────────────────────────
-  const [template,    setTemplate]    = useState<TemplateType>("min-ligne");
-  const [couleur,     setCouleur]     = useState(GOLD);
-  const [numero,      setNumero]      = useState("");
-  const [dateDoc,     setDateDoc]     = useState(() => new Date().toISOString().slice(0, 10));
-  const [dateEch,     setDateEch]     = useState(() => {
+  const [template,      setTemplate]      = useState<TemplateType>("min-ligne");
+  const [couleur,       setCouleur]       = useState(GOLD);
+  const [numero,        setNumero]        = useState("");
+  const [dateDoc,       setDateDoc]       = useState(() => new Date().toISOString().slice(0, 10));
+  const [dateEch,       setDateEch]       = useState(() => {
     const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().slice(0, 10);
   });
-  const [sujet,       setSujet]       = useState("");
-  const [items,       setItems]       = useState<LineItem[]>([newLine(1)]);
-  const [remise_pct,  setRemisePct]   = useState(0);
-  const [acompte,     setAcompte]     = useState(0);
-  const [devise,      setDevise]      = useState("EUR");
-  const [notes,       setNotes]       = useState("");
-  const [conditions,  setConditions]  = useState("");
-  const [rib_iban,    setRibIban]     = useState("");
-  const [rib_bic,     setRibBic]      = useState("");
-  const [rib_banque,  setRibBanque]   = useState("");
-  const [rib_titulaire, setRibTitulaire] = useState("");
+  const [sujet,         setSujet]         = useState("");
+  const [items,         setItems]         = useState<LineItem[]>([newLine(1)]);
+  const [remise_pct,    setRemisePct]     = useState(0);
+  const [acompte,       setAcompte]       = useState(0);
+  const [devise,        setDevise]        = useState("EUR");
+  const [notes,         setNotes]         = useState("");
+  const [conditions,    setConditions]    = useState("");
+  const [rib_iban,      setRibIban]       = useState("");
+  const [rib_bic,       setRibBic]        = useState("");
+  const [rib_banque,    setRibBanque]     = useState("");
+  const [rib_titulaire, setRibTitulaire]  = useState("");
 
-  // client state
-  const [clientNom,    setClientNom]    = useState("");
-  const [clientSoc,    setClientSoc]    = useState("");
-  const [clientEmail,  setClientEmail]  = useState("");
-  const [clientTel,    setClientTel]    = useState("");
-  const [clientAdr,    setClientAdr]    = useState("");
-  const [clientVille,  setClientVille]  = useState("");
-  const [clientCP,     setClientCP]     = useState("");
-  const [clientPays,   setClientPays]   = useState("France");
-  const [clientTva,    setClientTva]    = useState("");
+  // client
+  const [clientNom,   setClientNom]   = useState("");
+  const [clientSoc,   setClientSoc]   = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [clientTel,   setClientTel]   = useState("");
+  const [clientAdr,   setClientAdr]   = useState("");
+  const [clientVille, setClientVille] = useState("");
+  const [clientCP,    setClientCP]    = useState("");
+  const [clientPays,  setClientPays]  = useState("France");
+  const [clientTva,   setClientTva]   = useState("");
 
-  // emetteur (company) state
+  // émetteur
   const [emNom,   setEmNom]   = useState("");
   const [emEmail, setEmEmail] = useState("");
   const [emAdr,   setEmAdr]   = useState("");
@@ -118,7 +119,7 @@ export default function NouvelleFacture() {
   const [emTva,   setEmTva]   = useState("");
   const [emLogo,  setEmLogo]  = useState("");
 
-  // UI state
+  // UI
   const [saving,       setSaving]       = useState(false);
   const [downloading,  setDownloading]  = useState(false);
   const [error,        setError]        = useState("");
@@ -130,10 +131,20 @@ export default function NouvelleFacture() {
   const [coDefaults,   setCoDefaults]   = useState<CompanySettings | null>(null);
   const [orgId,        setOrgId]        = useState<string | null>(null);
   const [galleryOpen,  setGalleryOpen]  = useState(false);
-  const clientRef = useRef<HTMLDivElement>(null);
 
-  // ── theme tokens ─────────────────────────────────────────────────────────────
-  const pageBg      = isDark ? "#0f1117"                : "#f8f9fa";
+  // plein écran
+  const [isDirty,      setIsDirty]      = useState(false);
+  const [activeTab,    setActiveTab]    = useState<"edit" | "preview">("edit");
+  const [previewScale, setPreviewScale] = useState(0.55);
+  const [zoomLevel,    setZoomLevel]    = useState(1.0);
+  const initDone        = useRef(false);
+  const previewPanelRef = useRef<HTMLDivElement>(null);
+  const clientRef       = useRef<HTMLDivElement>(null);
+
+  // ── theme ────────────────────────────────────────────────────────────────────
+  const editorBg    = isDark ? "#0a0a12"                : "#f8f9fa";
+  const headerBg    = isDark ? "#0d0d14"                : "#ffffff";
+  const previewBg   = isDark ? "#07070d"                : "#edf0f3";
   const textPrimary = isDark ? "#ffffff"                : "#0a0a0a";
   const textSecond  = isDark ? "rgba(255,255,255,0.55)" : "#4b5563";
   const textTert    = isDark ? "rgba(255,255,255,0.35)" : "#9ca3af";
@@ -144,7 +155,7 @@ export default function NouvelleFacture() {
   const labelCol    = isDark ? "rgba(255,255,255,0.40)" : "#6b7280";
   const divider     = isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6";
 
-  const inputCls = `w-full rounded-lg px-3 py-2 text-sm outline-none transition focus:ring-2`;
+  const inputCls  = `w-full rounded-lg px-3 py-2 text-sm outline-none transition focus:ring-2`;
   const inputStyle = { background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary };
   const focusStyle = { "--tw-ring-color": "rgba(255,185,0,0.3)" } as React.CSSProperties;
 
@@ -189,8 +200,41 @@ export default function NouvelleFacture() {
           body: JSON.stringify({ type: "facture" }),
         });
         if (res.ok) { const j = await res.json(); setNumero(j.numero ?? ""); }
-      } catch (e) { console.error("[NouvelleFacture init]", e); }
+      } catch (e) {
+        console.error("[NouvelleFacture init]", e);
+      } finally {
+        initDone.current = true;
+      }
     })();
+  }, []);
+
+  // ── dirty tracking ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!initDone.current) return;
+    setIsDirty(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template, couleur, numero, dateDoc, dateEch, sujet, items, remise_pct, acompte, devise, notes, conditions, rib_iban, rib_bic, rib_banque, rib_titulaire, clientNom, clientSoc, clientEmail, clientTel, clientAdr, clientVille, clientCP, clientPays, clientTva, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
+
+  // ── beforeunload ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) { e.preventDefault(); e.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // ── preview panel resize ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const el = previewPanelRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      const targetW = Math.min(w - 96, 560);
+      setPreviewScale(Math.max(0.28, targetW / 794));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   // ── clients search ───────────────────────────────────────────────────────────
@@ -204,10 +248,8 @@ export default function NouvelleFacture() {
         .select("id,nom,societe,email,telephone,adresse,ville,code_postal,pays,tva")
         .or(`nom.ilike.%${q}%,societe.ilike.%${q}%,email.ilike.%${q}%`)
         .limit(8);
-
       if (orgId) query = query.eq("organization_id", orgId);
       else       query = query.eq("user_id", user.id);
-
       const { data } = await query;
       setClients((data ?? []) as FacturesClient[]);
     } catch {}
@@ -282,6 +324,12 @@ export default function NouvelleFacture() {
     },
   }), [numero, dateDoc, dateEch, clientNom, clientEmail, clientSoc, clientAdr, clientCP, clientVille, clientPays, sujet, items, totals, remise_pct, notes, couleur, emNom, emEmail, emAdr, emCP, emVille, emPays, emSiret, emTva, emLogo, rib_iban, rib_bic, coDefaults]);
 
+  // ── navigation ───────────────────────────────────────────────────────────────
+  function handleBack() {
+    if (isDirty && !window.confirm("Vous avez des modifications non enregistrées. Quitter quand même ?")) return;
+    router.push("/client/factures/factures");
+  }
+
   // ── save ─────────────────────────────────────────────────────────────────────
   async function handleSave(statut: "brouillon" | "envoyé" = "brouillon") {
     setSaving(true); setError("");
@@ -318,12 +366,14 @@ export default function NouvelleFacture() {
       if (!res.ok) throw new Error((await res.json()).error || "Erreur sauvegarde");
       const j = await res.json();
       setSaved(true);
+      setIsDirty(false);
       setTimeout(() => router.push(`/client/factures/documents?id=${j.id}`), 800);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inconnue");
     } finally { setSaving(false); }
   }
 
+  // ── PDF ──────────────────────────────────────────────────────────────────────
   async function handlePDF() {
     setDownloading(true); setError("");
     try {
@@ -392,59 +442,95 @@ export default function NouvelleFacture() {
 
   const fmtCurrency = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: devise || "EUR", maximumFractionDigits: 2 }).format(n);
 
+  const computedScale = previewScale * zoomLevel;
+
+  // ── render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-full" style={{ background: pageBg }}>
-      {/* ── Top bar ── */}
-      <div className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b px-4 py-3 sm:px-6"
-        style={{ background: isDark ? "#0f1117" : "#ffffff", borderColor: cardBorder }}>
-        <div className="flex items-center gap-3">
-          <Link href="/client/factures/factures"
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition hover:opacity-70"
-            style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+    <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: editorBg }}>
+
+      {/* ── TOP BAR ── */}
+      <header
+        className="flex flex-shrink-0 items-center justify-between gap-3 border-b px-4 sm:px-5"
+        style={{ height: 56, background: headerBg, borderColor: cardBorder }}
+      >
+        {/* Left: back + title */}
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition hover:opacity-70"
+            style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
+          >
             <ArrowLeft size={15} style={{ color: textSecond }} />
-          </Link>
-          <div>
-            <div className="text-sm font-bold" style={{ color: textPrimary }}>Nouvelle facture</div>
-            {numero && <div className="text-xs" style={{ color: textTert }}>{numero}</div>}
+          </button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold" style={{ color: textPrimary }}>Nouvelle facture</span>
+              {numero && (
+                <span
+                  className="hidden sm:inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
+                  style={{ background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)", color: GOLD }}
+                >
+                  {numero}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {error && <div className="text-xs" style={{ color: "#f87171" }}>{error}</div>}
-          {saved && <div className="flex items-center gap-1 text-xs" style={{ color: "#4ade80" }}><Check size={12} /> Enregistré</div>}
+
+        {/* Right: status + actions */}
+        <div className="flex flex-shrink-0 items-center gap-2">
+          {isDirty && !saved && (
+            <div className="hidden sm:flex items-center gap-1.5 text-xs" style={{ color: textTert }}>
+              <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#fb923c" }} />
+              Non enregistré
+            </div>
+          )}
+          {error && (
+            <div className="hidden sm:block max-w-[180px] truncate text-xs" style={{ color: "#f87171" }}>{error}</div>
+          )}
+          {saved && (
+            <div className="flex items-center gap-1 text-xs" style={{ color: "#4ade80" }}>
+              <Check size={12} /> Enregistré
+            </div>
+          )}
           <button
             onClick={handlePDF}
             disabled={downloading}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-80 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition hover:opacity-80 disabled:opacity-50"
             style={{ background: cardBg, color: textSecond, border: `1px solid ${cardBorder}` }}
           >
             {downloading ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />}
-            PDF
+            <span className="hidden sm:inline">PDF</span>
           </button>
           <button
             onClick={() => handleSave("brouillon")}
             disabled={saving || saved}
-            className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-black transition hover:opacity-90 disabled:opacity-60"
-            style={{ background: GOLD }}
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition hover:opacity-90 disabled:opacity-60"
+            style={{ background: GOLD, color: "#000000" }}
           >
             {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
             Enregistrer
           </button>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <div className="flex gap-6 xl:gap-8">
+      {/* ── BODY ── */}
+      <div className="flex flex-1 overflow-hidden">
 
-          {/* ── Left: form ── */}
-          <div className="flex flex-1 min-w-0 flex-col gap-4">
+        {/* ── LEFT: form panel ── */}
+        <div
+          className={`${activeTab === "edit" ? "flex" : "hidden"} lg:flex w-full lg:w-[520px] lg:flex-shrink-0 flex-col overflow-y-auto`}
+          style={{ borderRight: `1px solid ${cardBorder}`, background: editorBg }}
+        >
+          <div className="flex flex-col gap-4 p-4 sm:p-5 pb-24 lg:pb-8">
 
-            {/* Modèle — sélecteur premium */}
+            {/* Modèle — sélecteur */}
             {(() => {
               const info = TEMPLATE_CATALOG.find(t => t.id === template);
               return (
                 <div className="rounded-2xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
                   <div className="flex items-center justify-between gap-3 px-5 py-4">
-                    {/* Icône + titre + modèle actif */}
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
                         style={{ background: "rgba(255,185,0,0.12)" }}>
@@ -455,47 +541,32 @@ export default function NouvelleFacture() {
                         <span className="ml-2 text-xs truncate" style={{ color: textTert }}>{info?.label ?? template}</span>
                       </div>
                     </div>
-                    {/* Couleur + bouton */}
                     <div className="flex shrink-0 items-center gap-2">
                       <div className="h-5 w-5 rounded-md border border-black/10" style={{ background: couleur }} />
                       <button
                         type="button"
                         onClick={() => setGalleryOpen(true)}
                         className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:opacity-80"
-                        style={{
-                          background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)",
-                          color:      GOLD,
-                          border:     "1px solid rgba(255,185,0,0.25)",
-                        }}
+                        style={{ background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)", color: GOLD, border: "1px solid rgba(255,185,0,0.25)" }}
                       >
                         Changer de modèle
                       </button>
                     </div>
                   </div>
-                  {/* Aperçu miniature du modèle actif */}
                   {info && (
                     <div className="flex items-center gap-4 border-t px-5 py-3" style={{ borderColor: divider }}>
-                      {/* Carte colorée miniature */}
-                      <div
-                        className="shrink-0 overflow-hidden rounded-lg"
-                        style={{
-                          width: 44, border: `2px solid ${GOLD}`, background: info.previewBg,
-                        }}
-                      >
+                      <div className="shrink-0 overflow-hidden rounded-lg" style={{ width: 44, border: `2px solid ${GOLD}`, background: info.previewBg }}>
                         <div style={{ aspectRatio: "595/842", padding: "4px 6px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                          <div style={{ background: info.previewColor, opacity: 0.85, height: 2, borderRadius: 1, width: "50%", marginBottom: 3 }} />
-                          <div style={{ background: info.previewColor, opacity: 0.3,  height: 1, borderRadius: 1, width: "75%", marginBottom: 2 }} />
+                          <div style={{ background: info.previewColor, opacity: 0.85, height: 2,   borderRadius: 1, width: "50%", marginBottom: 3 }} />
+                          <div style={{ background: info.previewColor, opacity: 0.3,  height: 1,   borderRadius: 1, width: "75%", marginBottom: 2 }} />
                           <div style={{ background: couleur,           opacity: 0.9,  height: 1.5, borderRadius: 1, width: "35%" }} />
                         </div>
                       </div>
-                      {/* Infos texte */}
                       <div className="min-w-0">
                         <div className="text-sm font-semibold truncate" style={{ color: textPrimary }}>{info.label}</div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                          <span
-                            className="rounded-md px-1.5 py-0.5 text-[9px] font-semibold"
-                            style={{ background: info.badge.bgColor, color: info.badge.textColor }}
-                          >
+                          <span className="rounded-md px-1.5 py-0.5 text-[9px] font-semibold"
+                            style={{ background: info.badge.bgColor, color: info.badge.textColor }}>
                             {info.badge.label}
                           </span>
                           <span className="text-xs truncate" style={{ color: textTert }}>{info.description}</span>
@@ -507,7 +578,7 @@ export default function NouvelleFacture() {
               );
             })()}
 
-            {/* Galerie premium */}
+            {/* Galerie */}
             <TemplateGalleryModal
               open={galleryOpen}
               currentTemplate={template}
@@ -516,7 +587,7 @@ export default function NouvelleFacture() {
               onClose={() => setGalleryOpen(false)}
             />
 
-            {/* En-tête document */}
+            {/* Infos générales */}
             <div className="rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
               <div className="px-5 py-4" style={{ borderBottom: `1px solid ${divider}` }}>
                 <span className="text-sm font-semibold" style={{ color: textPrimary }}>Informations générales</span>
@@ -583,39 +654,39 @@ export default function NouvelleFacture() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Nom</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={clientNom} onChange={e => setClientNom(e.target.value)} placeholder="Jean Dupont" />
+                  <input className={inputCls} style={inputStyle} value={clientNom} onChange={e => setClientNom(e.target.value)} placeholder="Jean Dupont" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Société</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={clientSoc} onChange={e => setClientSoc(e.target.value)} placeholder="Société SAS" />
+                  <input className={inputCls} style={inputStyle} value={clientSoc} onChange={e => setClientSoc(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Email</label>
-                  <input type="email" className={inputCls} style={{ ...inputStyle }} value={clientEmail} onChange={e => setClientEmail(e.target.value)} />
+                  <input type="email" className={inputCls} style={inputStyle} value={clientEmail} onChange={e => setClientEmail(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Téléphone</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={clientTel} onChange={e => setClientTel(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={clientTel} onChange={e => setClientTel(e.target.value)} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Adresse</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={clientAdr} onChange={e => setClientAdr(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={clientAdr} onChange={e => setClientAdr(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Code postal</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={clientCP} onChange={e => setClientCP(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={clientCP} onChange={e => setClientCP(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Ville</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={clientVille} onChange={e => setClientVille(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={clientVille} onChange={e => setClientVille(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Pays</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={clientPays} onChange={e => setClientPays(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={clientPays} onChange={e => setClientPays(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>N° TVA intracommunautaire</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={clientTva} onChange={e => setClientTva(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={clientTva} onChange={e => setClientTva(e.target.value)} />
                 </div>
               </div>
             </Section>
@@ -649,8 +720,7 @@ export default function NouvelleFacture() {
                             />
                           </td>
                           <td className="py-1 pr-2">
-                            <input
-                              type="number" min="0" step="0.01"
+                            <input type="number" min="0" step="0.01"
                               className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
                               style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
                               value={item.quantity}
@@ -658,8 +728,7 @@ export default function NouvelleFacture() {
                             />
                           </td>
                           <td className="py-1 pr-2">
-                            <input
-                              type="number" min="0" step="0.01"
+                            <input type="number" min="0" step="0.01"
                               className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
                               style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
                               value={item.unit_price}
@@ -699,8 +768,6 @@ export default function NouvelleFacture() {
                 style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6", color: textSecond, border: `1px solid ${cardBorder}` }}>
                 <Plus size={12} /> Ajouter une ligne
               </button>
-
-              {/* Totals */}
               <div className="mt-5 flex justify-end">
                 <div className="w-72 space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -731,20 +798,20 @@ export default function NouvelleFacture() {
               </div>
             </Section>
 
-            {/* Conditions & Paiement */}
+            {/* Conditions & Remises */}
             <Section id="conditions" title="Conditions & Remises" icon={Percent}>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Remise globale (%)</label>
-                  <input type="number" min="0" max="100" className={inputCls} style={{ ...inputStyle }} value={remise_pct} onChange={e => setRemisePct(parseFloat(e.target.value) || 0)} />
+                  <input type="number" min="0" max="100" className={inputCls} style={inputStyle} value={remise_pct} onChange={e => setRemisePct(parseFloat(e.target.value) || 0)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Acompte déjà versé ({devise})</label>
-                  <input type="number" min="0" className={inputCls} style={{ ...inputStyle }} value={acompte} onChange={e => setAcompte(parseFloat(e.target.value) || 0)} />
+                  <input type="number" min="0" className={inputCls} style={inputStyle} value={acompte} onChange={e => setAcompte(parseFloat(e.target.value) || 0)} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Conditions de paiement</label>
-                  <textarea rows={2} className={inputCls} style={{ ...inputStyle, resize: "vertical" }} value={conditions} onChange={e => setConditions(e.target.value)} placeholder="Paiement à 30 jours, pénalités de retard..." />
+                  <textarea rows={2} className={inputCls} style={{ ...inputStyle, resize: "vertical" }} value={conditions} onChange={e => setConditions(e.target.value)} placeholder="Paiement à 30 jours..." />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Notes / Mentions</label>
@@ -758,53 +825,53 @@ export default function NouvelleFacture() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Titulaire</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={rib_titulaire} onChange={e => setRibTitulaire(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={rib_titulaire} onChange={e => setRibTitulaire(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Banque</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={rib_banque} onChange={e => setRibBanque(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={rib_banque} onChange={e => setRibBanque(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>IBAN</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={rib_iban} onChange={e => setRibIban(e.target.value)} placeholder="FR76 ..." />
+                  <input className={inputCls} style={inputStyle} value={rib_iban} onChange={e => setRibIban(e.target.value)} placeholder="FR76 ..." />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>BIC</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={rib_bic} onChange={e => setRibBic(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={rib_bic} onChange={e => setRibBic(e.target.value)} />
                 </div>
               </div>
             </Section>
 
-            {/* Émetteur */}
+            {/* Mon entreprise */}
             <Section id="emetteur" title="Mon entreprise" icon={Building2}>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Nom / Raison sociale</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={emNom} onChange={e => setEmNom(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={emNom} onChange={e => setEmNom(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Email</label>
-                  <input type="email" className={inputCls} style={{ ...inputStyle }} value={emEmail} onChange={e => setEmEmail(e.target.value)} />
+                  <input type="email" className={inputCls} style={inputStyle} value={emEmail} onChange={e => setEmEmail(e.target.value)} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Adresse</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={emAdr} onChange={e => setEmAdr(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={emAdr} onChange={e => setEmAdr(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Code postal</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={emCP} onChange={e => setEmCP(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={emCP} onChange={e => setEmCP(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Ville</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={emVille} onChange={e => setEmVille(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={emVille} onChange={e => setEmVille(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>SIRET</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={emSiret} onChange={e => setEmSiret(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={emSiret} onChange={e => setEmSiret(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>N° TVA</label>
-                  <input className={inputCls} style={{ ...inputStyle }} value={emTva} onChange={e => setEmTva(e.target.value)} />
+                  <input className={inputCls} style={inputStyle} value={emTva} onChange={e => setEmTva(e.target.value)} />
                 </div>
               </div>
               <p className="mt-3 text-xs" style={{ color: textTert }}>
@@ -814,16 +881,57 @@ export default function NouvelleFacture() {
             </Section>
 
           </div>
+        </div>
 
-          {/* ── Right: live preview ── */}
-          <div className="hidden xl:block" style={{ width: 320, flexShrink: 0 }}>
-            <div className="sticky top-20">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: textTert }}>Aperçu</span>
-                <span className="text-xs" style={{ color: textTert }}>A4</span>
+        {/* ── RIGHT: preview panel ── */}
+        <div
+          ref={previewPanelRef}
+          className={`${activeTab === "preview" ? "flex" : "hidden"} lg:flex flex-1 flex-col overflow-hidden`}
+          style={{ background: previewBg }}
+        >
+          {/* Preview header */}
+          <div
+            className="flex flex-shrink-0 items-center justify-between border-b px-5 py-3"
+            style={{ borderColor: cardBorder, background: isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.025)" }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full" style={{ background: GOLD }} />
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: textTert }}>
+                Aperçu en direct
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:block text-xs" style={{ color: textTert }}>A4 · 210×297 mm</span>
+              {/* Zoom controls */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel(z => Math.max(0.4, parseFloat((z - 0.1).toFixed(1))))}
+                  className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70"
+                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
+                >
+                  <ZoomOut size={11} />
+                </button>
+                <span className="w-10 text-center text-xs font-medium" style={{ color: textSecond }}>
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel(z => Math.min(1.5, parseFloat((z + 0.1).toFixed(1))))}
+                  className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70"
+                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
+                >
+                  <ZoomIn size={11} />
+                </button>
               </div>
-              <div className="overflow-hidden rounded-xl shadow-xl" style={{ border: `1px solid ${cardBorder}` }}>
-                <ScaledA4 scale={320 / 794}>
+            </div>
+          </div>
+
+          {/* A4 preview */}
+          <div className="flex-1 overflow-y-auto flex justify-center p-6 lg:p-10">
+            <div style={{ width: Math.max(200, computedScale * 794), flexShrink: 0 }}>
+              <div className="overflow-hidden rounded-xl shadow-2xl" style={{ border: `1px solid ${cardBorder}` }}>
+                <ScaledA4 scale={computedScale}>
                   <InvoiceTemplate data={previewData} template={template} />
                 </ScaledA4>
               </div>
@@ -831,6 +939,39 @@ export default function NouvelleFacture() {
           </div>
         </div>
       </div>
+
+      {/* ── MOBILE TAB BAR ── */}
+      <div
+        className="lg:hidden flex flex-shrink-0 border-t"
+        style={{ borderColor: cardBorder, background: headerBg }}
+      >
+        <button
+          type="button"
+          onClick={() => setActiveTab("edit")}
+          className="flex flex-1 items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors"
+          style={{
+            color: activeTab === "edit" ? GOLD : textTert,
+            borderTop: `2px solid ${activeTab === "edit" ? GOLD : "transparent"}`,
+          }}
+        >
+          <Pencil size={14} />
+          Modifier
+        </button>
+        <div style={{ width: 1, background: cardBorder }} />
+        <button
+          type="button"
+          onClick={() => setActiveTab("preview")}
+          className="flex flex-1 items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors"
+          style={{
+            color: activeTab === "preview" ? GOLD : textTert,
+            borderTop: `2px solid ${activeTab === "preview" ? GOLD : "transparent"}`,
+          }}
+        >
+          <Eye size={14} />
+          Aperçu
+        </button>
+      </div>
+
     </div>
   );
 }

@@ -6,7 +6,8 @@ import Link from "next/link";
 import {
   ArrowLeft, Loader2, Save, FileDown, ChevronDown, ChevronUp,
   Plus, Trash2, Search, User, Building2, Check,
-  FileSignature, Palette, Landmark, FileText, Percent,
+  Palette, FileText, Percent, Eye, Pencil,
+  ZoomIn, ZoomOut,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
@@ -63,8 +64,8 @@ function calcTotals(items: LineItem[], remise_pct: number, acompte: number) {
   }
   subtotal_ht = r2(subtotal_ht);
   tva         = r2(tva);
-  const remise = r2(subtotal_ht * remise_pct / 100);
-  const ht_net = r2(subtotal_ht - remise);
+  const remise  = r2(subtotal_ht * remise_pct / 100);
+  const ht_net  = r2(subtotal_ht - remise);
   const tva_net = r2(ht_net * (items[0]?.vat_rate ?? 20) / 100);
   return { subtotal_ht, remise, ht_net, tva: remise_pct > 0 ? tva_net : tva, ttc: r2(ht_net + (remise_pct > 0 ? tva_net : tva)) };
 }
@@ -73,6 +74,7 @@ export default function NouveauDevis() {
   const { isDark } = useTheme();
   const router     = useRouter();
 
+  // ── form state ───────────────────────────────────────────────────────────────
   const [template,    setTemplate]    = useState<TemplateType>("min-ligne");
   const [couleur,     setCouleur]     = useState(GOLD);
   const [numero,      setNumero]      = useState("");
@@ -88,6 +90,7 @@ export default function NouveauDevis() {
   const [notes,       setNotes]       = useState("");
   const [conditions,  setConditions]  = useState("");
 
+  // client
   const [clientNom,   setClientNom]   = useState("");
   const [clientSoc,   setClientSoc]   = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -98,6 +101,7 @@ export default function NouveauDevis() {
   const [clientPays,  setClientPays]  = useState("France");
   const [clientTva,   setClientTva]   = useState("");
 
+  // émetteur
   const [emNom,   setEmNom]   = useState("");
   const [emEmail, setEmEmail] = useState("");
   const [emAdr,   setEmAdr]   = useState("");
@@ -108,19 +112,31 @@ export default function NouveauDevis() {
   const [emTva,   setEmTva]   = useState("");
   const [emLogo,  setEmLogo]  = useState("");
 
-  const [saving,        setSaving]        = useState(false);
-  const [downloading,   setDownloading]   = useState(false);
-  const [error,         setError]         = useState("");
-  const [saved,         setSaved]         = useState(false);
-  const [openSection,   setOpenSection]   = useState<string>("client");
-  const [clientSearch,  setClientSearch]  = useState("");
-  const [clients,       setClients]       = useState<FacturesClient[]>([]);
-  const [showClients,   setShowClients]   = useState(false);
-  const [galleryOpen,   setGalleryOpen]   = useState(false);
-  const [coDefaults,    setCoDefaults]    = useState<CompanySettings | null>(null);
-  const [orgId,         setOrgId]         = useState<string | null>(null);
+  // UI
+  const [saving,       setSaving]       = useState(false);
+  const [downloading,  setDownloading]  = useState(false);
+  const [error,        setError]        = useState("");
+  const [saved,        setSaved]        = useState(false);
+  const [openSection,  setOpenSection]  = useState<string>("client");
+  const [clientSearch, setClientSearch] = useState("");
+  const [clients,      setClients]      = useState<FacturesClient[]>([]);
+  const [showClients,  setShowClients]  = useState(false);
+  const [coDefaults,   setCoDefaults]   = useState<CompanySettings | null>(null);
+  const [orgId,        setOrgId]        = useState<string | null>(null);
+  const [galleryOpen,  setGalleryOpen]  = useState(false);
 
-  const pageBg      = isDark ? "#0f1117"                : "#f8f9fa";
+  // plein écran
+  const [isDirty,      setIsDirty]      = useState(false);
+  const [activeTab,    setActiveTab]    = useState<"edit" | "preview">("edit");
+  const [previewScale, setPreviewScale] = useState(0.55);
+  const [zoomLevel,    setZoomLevel]    = useState(1.0);
+  const initDone        = useRef(false);
+  const previewPanelRef = useRef<HTMLDivElement>(null);
+
+  // ── theme ────────────────────────────────────────────────────────────────────
+  const editorBg    = isDark ? "#0a0a12"                : "#f8f9fa";
+  const headerBg    = isDark ? "#0d0d14"                : "#ffffff";
+  const previewBg   = isDark ? "#07070d"                : "#edf0f3";
   const textPrimary = isDark ? "#ffffff"                : "#0a0a0a";
   const textSecond  = isDark ? "rgba(255,255,255,0.55)" : "#4b5563";
   const textTert    = isDark ? "rgba(255,255,255,0.35)" : "#9ca3af";
@@ -131,9 +147,11 @@ export default function NouveauDevis() {
   const labelCol    = isDark ? "rgba(255,255,255,0.40)" : "#6b7280";
   const divider     = isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6";
 
-  const inputCls = `w-full rounded-lg px-3 py-2 text-sm outline-none transition`;
+  const inputCls  = `w-full rounded-lg px-3 py-2 text-sm outline-none transition focus:ring-2`;
   const inputStyle = { background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary };
+  const focusStyle = { "--tw-ring-color": "rgba(255,185,0,0.3)" } as React.CSSProperties;
 
+  // ── init ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
@@ -158,10 +176,44 @@ export default function NouveauDevis() {
           body: JSON.stringify({ type: "devis" }),
         });
         if (res.ok) { const j = await res.json(); setNumero(j.numero ?? ""); }
-      } catch (e) { console.error("[NouveauDevis init]", e); }
+      } catch (e) {
+        console.error("[NouveauDevis init]", e);
+      } finally {
+        initDone.current = true;
+      }
     })();
   }, []);
 
+  // ── dirty tracking ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!initDone.current) return;
+    setIsDirty(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template, couleur, numero, dateDoc, dateVal, sujet, items, remise_pct, acompte, devise, notes, conditions, clientNom, clientSoc, clientEmail, clientTel, clientAdr, clientVille, clientCP, clientPays, clientTva, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
+
+  // ── beforeunload ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) { e.preventDefault(); e.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // ── preview panel resize ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const el = previewPanelRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      const targetW = Math.min(w - 96, 560);
+      setPreviewScale(Math.max(0.28, targetW / 794));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // ── clients search ───────────────────────────────────────────────────────────
   const searchClients = useCallback(async (q: string) => {
     if (q.length < 2) { setClients([]); return; }
     try {
@@ -189,8 +241,10 @@ export default function NouveauDevis() {
     setShowClients(false); setClientSearch("");
   }
 
+  // ── totals ───────────────────────────────────────────────────────────────────
   const totals = useMemo(() => calcTotals(items, remise_pct, acompte), [items, remise_pct, acompte]);
 
+  // ── preview data ─────────────────────────────────────────────────────────────
   const previewData: PreviewData = useMemo(() => ({
     type:           "quote",
     reference:      numero || "DEV-2026-001",
@@ -202,25 +256,49 @@ export default function NouveauDevis() {
     client_company: clientSoc || null,
     client_address: [clientAdr, [clientCP, clientVille].filter(Boolean).join(" "), clientPays].filter(Boolean).join("\n") || null,
     subject:        sujet || "Devis",
-    items: items.map(it => ({ description: it.description || "Prestation", quantity: it.quantity, unit_price: it.unit_price, total: r2(it.quantity * it.unit_price * (1 - (it.remise_pct || 0) / 100)) })),
-    subtotal: totals.subtotal_ht,
+    items: items.map(it => ({
+      description: it.description || "Prestation",
+      quantity:    it.quantity,
+      unit_price:  it.unit_price,
+      total:       r2(it.quantity * it.unit_price * (1 - (it.remise_pct || 0) / 100)),
+    })),
+    subtotal:      totals.subtotal_ht,
     discount_rate: remise_pct > 0 ? remise_pct : null,
-    discount: totals.remise > 0 ? totals.remise : null,
-    tax_rate: items[0]?.vat_rate ?? 20,
-    tax_amount: totals.tva,
-    total: totals.ttc,
-    notes: notes || null,
-    color: couleur,
+    discount:      totals.remise > 0 ? totals.remise : null,
+    tax_rate:      items[0]?.vat_rate ?? 20,
+    tax_amount:    totals.tva,
+    total:         totals.ttc,
+    notes:         notes || null,
+    color:         couleur,
     company: {
-      name: emNom, email: emEmail, phone: coDefaults?.phone || "", website: coDefaults?.website || "",
-      address: [emAdr, [emCP, emVille].filter(Boolean).join(" "), emPays].filter(Boolean).join("\n"),
-      city: emVille, postal_code: emCP, country: emPays, siret: emSiret, vat_number: emTva,
-      logoUrl: emLogo || null, iban: "", bic: "", ape: coDefaults?.ape || "",
-      forme_juridique: coDefaults?.forme_juridique || "", capital_social: coDefaults?.capital_social || "",
-      logoSize: "md", logoHideName: false,
+      name:        emNom,
+      email:       emEmail,
+      address:     [emAdr, [emCP, emVille].filter(Boolean).join(" "), emPays].filter(Boolean).join("\n"),
+      city:        emVille,
+      postal_code: emCP,
+      country:     emPays,
+      siret:       emSiret,
+      vat_number:  emTva,
+      logoUrl:     emLogo || null,
+      iban:        "",
+      bic:         "",
+      phone:       coDefaults?.phone || "",
+      website:     coDefaults?.website || "",
+      ape:         coDefaults?.ape || "",
+      forme_juridique: coDefaults?.forme_juridique || "",
+      capital_social:  coDefaults?.capital_social  || "",
+      logoSize:    "md",
+      logoHideName: false,
     },
   }), [numero, dateDoc, dateVal, clientNom, clientEmail, clientSoc, clientAdr, clientCP, clientVille, clientPays, sujet, items, totals, remise_pct, notes, couleur, emNom, emEmail, emAdr, emCP, emVille, emPays, emSiret, emTva, emLogo, coDefaults]);
 
+  // ── navigation ───────────────────────────────────────────────────────────────
+  function handleBack() {
+    if (isDirty && !window.confirm("Vous avez des modifications non enregistrées. Quitter quand même ?")) return;
+    router.push("/client/factures/devis");
+  }
+
+  // ── save ─────────────────────────────────────────────────────────────────────
   async function handleSave() {
     setSaving(true); setError("");
     try {
@@ -242,15 +320,22 @@ export default function NouveauDevis() {
         organization_id: orgId,
         items: items.map((it, i) => ({ ...it, position: i + 1 })),
       };
-      const res = await fetch("/api/factures/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch("/api/factures/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       if (!res.ok) throw new Error((await res.json()).error || "Erreur sauvegarde");
       const j = await res.json();
       setSaved(true);
+      setIsDirty(false);
       setTimeout(() => router.push(`/client/factures/documents?id=${j.id}`), 800);
-    } catch (e) { setError(e instanceof Error ? e.message : "Erreur inconnue"); }
-    finally { setSaving(false); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inconnue");
+    } finally { setSaving(false); }
   }
 
+  // ── PDF ──────────────────────────────────────────────────────────────────────
   async function handlePDF() {
     setDownloading(true); setError("");
     try {
@@ -263,18 +348,31 @@ export default function NouveauDevis() {
         client_email: clientEmail, client_phone: clientTel || null,
         client_address: [clientAdr, [clientCP, clientVille].filter(Boolean).join(" "), clientPays].filter(Boolean).join("\n") || null,
         client_vat: clientTva || null, subject: sujet || "Devis",
-        items: items.map(it => { const g = r2(it.quantity * it.unit_price); const rm = r2(g * (it.remise_pct || 0) / 100); return { description: it.description || "Prestation", unit: it.unit, quantity: it.quantity, unit_price: it.unit_price, total: r2(g - rm), tax_rate: it.vat_rate, discount_pct: it.remise_pct > 0 ? it.remise_pct : null }; }),
+        items: items.map(it => {
+          const g  = r2(it.quantity * it.unit_price);
+          const rm = r2(g * (it.remise_pct || 0) / 100);
+          return { description: it.description || "Prestation", unit: it.unit, quantity: it.quantity, unit_price: it.unit_price, total: r2(g - rm), tax_rate: it.vat_rate, discount_pct: it.remise_pct > 0 ? it.remise_pct : null };
+        }),
         subtotal: totals.subtotal_ht,
         discount_rate: remise_pct > 0 ? remise_pct : null,
         discount: totals.remise > 0 ? totals.remise : null,
         tax_rate: mainTaxRate, tax_amount: totals.tva, total: totals.ttc,
         notes: notes || null, currency: devise,
-        company: { name: emNom, email: emEmail, phone: coDefaults?.phone || "", website: coDefaults?.website || "", address: [emAdr, [emCP, emVille].filter(Boolean).join(" "), emPays].filter(Boolean).join("\n"), city: emVille, postal_code: emCP, country: emPays, siret: emSiret, ape: coDefaults?.ape || "", vat_number: emTva, iban: "", bic: "", forme_juridique: coDefaults?.forme_juridique || "", capital_social: coDefaults?.capital_social || "", logoUrl: emLogo || null, logoSize: "md", logoHideName: false },
+        company: {
+          name: emNom, email: emEmail, phone: coDefaults?.phone || "", website: coDefaults?.website || "",
+          address: [emAdr, [emCP, emVille].filter(Boolean).join(" "), emPays].filter(Boolean).join("\n"),
+          city: emVille, postal_code: emCP, country: emPays, siret: emSiret, ape: coDefaults?.ape || "",
+          vat_number: emTva, iban: "", bic: "",
+          forme_juridique: coDefaults?.forme_juridique || "", capital_social: coDefaults?.capital_social || "",
+          logoUrl: emLogo || null, logoSize: "md", logoHideName: false,
+        },
       });
-    } catch (e) { setError(e instanceof Error ? e.message : "Erreur génération PDF"); }
-    finally { setDownloading(false); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur génération PDF");
+    } finally { setDownloading(false); }
   }
 
+  // ── section toggle ────────────────────────────────────────────────────────────
   function Section({ id, title, icon: Icon, children }: { id: string; title: string; icon: React.ElementType; children: React.ReactNode }) {
     const open = openSection === id;
     return (
@@ -296,46 +394,88 @@ export default function NouveauDevis() {
 
   const fmtC = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: devise || "EUR", maximumFractionDigits: 2 }).format(n);
 
+  const computedScale = previewScale * zoomLevel;
+
+  // ── render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-full" style={{ background: pageBg }}>
-      {/* Top bar */}
-      <div className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b px-4 py-3 sm:px-6"
-        style={{ background: isDark ? "#0f1117" : "#ffffff", borderColor: cardBorder }}>
-        <div className="flex items-center gap-3">
-          <Link href="/client/factures/devis"
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition hover:opacity-70"
-            style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+    <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: editorBg }}>
+
+      {/* ── TOP BAR ── */}
+      <header
+        className="flex flex-shrink-0 items-center justify-between gap-3 border-b px-4 sm:px-5"
+        style={{ height: 56, background: headerBg, borderColor: cardBorder }}
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition hover:opacity-70"
+            style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
+          >
             <ArrowLeft size={15} style={{ color: textSecond }} />
-          </Link>
-          <div>
-            <div className="text-sm font-bold" style={{ color: textPrimary }}>Nouveau devis</div>
-            {numero && <div className="text-xs" style={{ color: textTert }}>{numero}</div>}
+          </button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold" style={{ color: textPrimary }}>Nouveau devis</span>
+              {numero && (
+                <span
+                  className="hidden sm:inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
+                  style={{ background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)", color: GOLD }}
+                >
+                  {numero}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {error && <div className="text-xs" style={{ color: "#f87171" }}>{error}</div>}
-          {saved && <div className="flex items-center gap-1 text-xs" style={{ color: "#4ade80" }}><Check size={12} /> Enregistré</div>}
-          <button onClick={handlePDF} disabled={downloading}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-80 disabled:opacity-50"
-            style={{ background: cardBg, color: textSecond, border: `1px solid ${cardBorder}` }}>
+
+        <div className="flex flex-shrink-0 items-center gap-2">
+          {isDirty && !saved && (
+            <div className="hidden sm:flex items-center gap-1.5 text-xs" style={{ color: textTert }}>
+              <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#fb923c" }} />
+              Non enregistré
+            </div>
+          )}
+          {error && (
+            <div className="hidden sm:block max-w-[180px] truncate text-xs" style={{ color: "#f87171" }}>{error}</div>
+          )}
+          {saved && (
+            <div className="flex items-center gap-1 text-xs" style={{ color: "#4ade80" }}>
+              <Check size={12} /> Enregistré
+            </div>
+          )}
+          <button
+            onClick={handlePDF}
+            disabled={downloading}
+            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition hover:opacity-80 disabled:opacity-50"
+            style={{ background: cardBg, color: textSecond, border: `1px solid ${cardBorder}` }}
+          >
             {downloading ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />}
-            PDF
+            <span className="hidden sm:inline">PDF</span>
           </button>
-          <button onClick={handleSave} disabled={saving || saved}
-            className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-black transition hover:opacity-90 disabled:opacity-60"
-            style={{ background: GOLD }}>
+          <button
+            onClick={handleSave}
+            disabled={saving || saved}
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition hover:opacity-90 disabled:opacity-60"
+            style={{ background: GOLD, color: "#000000" }}
+          >
             {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
             Enregistrer
           </button>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <div className="flex gap-6 xl:gap-8">
-          {/* Form */}
-          <div className="flex flex-1 min-w-0 flex-col gap-4">
+      {/* ── BODY ── */}
+      <div className="flex flex-1 overflow-hidden">
 
-            {/* Modèle — sélecteur premium */}
+        {/* ── LEFT: form panel ── */}
+        <div
+          className={`${activeTab === "edit" ? "flex" : "hidden"} lg:flex w-full lg:w-[520px] lg:flex-shrink-0 flex-col overflow-y-auto`}
+          style={{ borderRight: `1px solid ${cardBorder}`, background: editorBg }}
+        >
+          <div className="flex flex-col gap-4 p-4 sm:p-5 pb-24 lg:pb-8">
+
+            {/* Modèle */}
             {(() => {
               const info = TEMPLATE_CATALOG.find(t => t.id === template);
               return (
@@ -357,11 +497,7 @@ export default function NouveauDevis() {
                         type="button"
                         onClick={() => setGalleryOpen(true)}
                         className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:opacity-80"
-                        style={{
-                          background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)",
-                          color:      GOLD,
-                          border:     "1px solid rgba(255,185,0,0.25)",
-                        }}
+                        style={{ background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)", color: GOLD, border: "1px solid rgba(255,185,0,0.25)" }}
                       >
                         Changer de modèle
                       </button>
@@ -369,10 +505,7 @@ export default function NouveauDevis() {
                   </div>
                   {info && (
                     <div className="flex items-center gap-4 border-t px-5 py-3" style={{ borderColor: divider }}>
-                      <div
-                        className="shrink-0 overflow-hidden rounded-lg"
-                        style={{ width: 44, border: `2px solid ${GOLD}`, background: info.previewBg }}
-                      >
+                      <div className="shrink-0 overflow-hidden rounded-lg" style={{ width: 44, border: `2px solid ${GOLD}`, background: info.previewBg }}>
                         <div style={{ aspectRatio: "595/842", padding: "4px 6px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
                           <div style={{ background: info.previewColor, opacity: 0.85, height: 2,   borderRadius: 1, width: "50%", marginBottom: 3 }} />
                           <div style={{ background: info.previewColor, opacity: 0.3,  height: 1,   borderRadius: 1, width: "75%", marginBottom: 2 }} />
@@ -395,7 +528,7 @@ export default function NouveauDevis() {
               );
             })()}
 
-            {/* Galerie premium */}
+            {/* Galerie */}
             <TemplateGalleryModal
               open={galleryOpen}
               currentTemplate={template}
@@ -404,7 +537,7 @@ export default function NouveauDevis() {
               onClose={() => setGalleryOpen(false)}
             />
 
-            {/* Header */}
+            {/* Infos générales */}
             <div className="rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
               <div className="px-5 py-4" style={{ borderBottom: `1px solid ${divider}` }}>
                 <span className="text-sm font-semibold" style={{ color: textPrimary }}>Informations générales</span>
@@ -412,23 +545,23 @@ export default function NouveauDevis() {
               <div className="grid gap-4 px-5 py-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Numéro</label>
-                  <input className={inputCls} style={inputStyle} value={numero} onChange={e => setNumero(e.target.value)} />
+                  <input className={inputCls} style={{ ...inputStyle, ...focusStyle }} value={numero} onChange={e => setNumero(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Date d&apos;émission</label>
-                  <input type="date" className={inputCls} style={inputStyle} value={dateDoc} onChange={e => setDateDoc(e.target.value)} />
+                  <input type="date" className={inputCls} style={{ ...inputStyle, ...focusStyle }} value={dateDoc} onChange={e => setDateDoc(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Valable jusqu&apos;au</label>
-                  <input type="date" className={inputCls} style={inputStyle} value={dateVal} onChange={e => setDateVal(e.target.value)} />
+                  <input type="date" className={inputCls} style={{ ...inputStyle, ...focusStyle }} value={dateVal} onChange={e => setDateVal(e.target.value)} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Sujet / Objet</label>
-                  <input className={inputCls} style={inputStyle} placeholder="Objet du devis..." value={sujet} onChange={e => setSujet(e.target.value)} />
+                  <input className={inputCls} style={{ ...inputStyle, ...focusStyle }} placeholder="Objet du devis..." value={sujet} onChange={e => setSujet(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Devise</label>
-                  <select className={inputCls} style={inputStyle} value={devise} onChange={e => setDevise(e.target.value)}>
+                  <select className={inputCls} style={{ ...inputStyle }} value={devise} onChange={e => setDevise(e.target.value)}>
                     {["EUR","USD","GBP","MAD","CHF","CAD","DZD","TND"].map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
@@ -495,21 +628,30 @@ export default function NouveauDevis() {
                       return (
                         <tr key={item.id} className="group">
                           <td className="py-1 pr-2">
-                            <input className="w-full rounded-lg px-2 py-1.5 text-xs outline-none" style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
+                            <input className="w-full rounded-lg px-2 py-1.5 text-xs outline-none"
+                              style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
                               placeholder="Description..." value={item.description}
                               onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, description: e.target.value } : it))} />
                           </td>
                           <td className="py-1 pr-2">
-                            <input type="number" min="0" step="0.01" className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none" style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
-                              value={item.quantity} onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, quantity: parseFloat(e.target.value) || 0 } : it))} />
+                            <input type="number" min="0" step="0.01"
+                              className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
+                              style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
+                              value={item.quantity}
+                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, quantity: parseFloat(e.target.value) || 0 } : it))} />
                           </td>
                           <td className="py-1 pr-2">
-                            <input type="number" min="0" step="0.01" className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none" style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
-                              value={item.unit_price} onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))} />
+                            <input type="number" min="0" step="0.01"
+                              className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
+                              style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
+                              value={item.unit_price}
+                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))} />
                           </td>
                           <td className="py-1 pr-2">
-                            <select className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none" style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
-                              value={item.vat_rate} onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, vat_rate: parseFloat(e.target.value) } : it))}>
+                            <select className="w-full rounded-lg px-2 py-1.5 text-right text-xs outline-none"
+                              style={{ background: inputBg, border: `1px solid ${inputBd}`, color: textPrimary }}
+                              value={item.vat_rate}
+                              onChange={e => setItems(prev => prev.map((it, j) => j === i ? { ...it, vat_rate: parseFloat(e.target.value) } : it))}>
                               {[0,5.5,10,20].map(r => <option key={r} value={r}>{r} %</option>)}
                             </select>
                           </td>
@@ -556,7 +698,7 @@ export default function NouveauDevis() {
               </div>
             </Section>
 
-            {/* Emetteur */}
+            {/* Mon entreprise */}
             <Section id="emetteur" title="Mon entreprise" icon={Building2}>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div><label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Nom / Raison sociale</label><input className={inputCls} style={inputStyle} value={emNom} onChange={e => setEmNom(e.target.value)} /></div>
@@ -573,16 +715,56 @@ export default function NouveauDevis() {
             </Section>
 
           </div>
+        </div>
 
-          {/* Live preview */}
-          <div className="hidden xl:block" style={{ width: 320, flexShrink: 0 }}>
-            <div className="sticky top-20">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: textTert }}>Aperçu</span>
-                <span className="text-xs" style={{ color: textTert }}>A4</span>
+        {/* ── RIGHT: preview panel ── */}
+        <div
+          ref={previewPanelRef}
+          className={`${activeTab === "preview" ? "flex" : "hidden"} lg:flex flex-1 flex-col overflow-hidden`}
+          style={{ background: previewBg }}
+        >
+          {/* Preview header */}
+          <div
+            className="flex flex-shrink-0 items-center justify-between border-b px-5 py-3"
+            style={{ borderColor: cardBorder, background: isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.025)" }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full" style={{ background: GOLD }} />
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: textTert }}>
+                Aperçu en direct
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:block text-xs" style={{ color: textTert }}>A4 · 210×297 mm</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel(z => Math.max(0.4, parseFloat((z - 0.1).toFixed(1))))}
+                  className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70"
+                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
+                >
+                  <ZoomOut size={11} />
+                </button>
+                <span className="w-10 text-center text-xs font-medium" style={{ color: textSecond }}>
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel(z => Math.min(1.5, parseFloat((z + 0.1).toFixed(1))))}
+                  className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70"
+                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
+                >
+                  <ZoomIn size={11} />
+                </button>
               </div>
-              <div className="overflow-hidden rounded-xl shadow-xl" style={{ border: `1px solid ${cardBorder}` }}>
-                <ScaledA4 scale={320 / 794}>
+            </div>
+          </div>
+
+          {/* A4 preview */}
+          <div className="flex-1 overflow-y-auto flex justify-center p-6 lg:p-10">
+            <div style={{ width: Math.max(200, computedScale * 794), flexShrink: 0 }}>
+              <div className="overflow-hidden rounded-xl shadow-2xl" style={{ border: `1px solid ${cardBorder}` }}>
+                <ScaledA4 scale={computedScale}>
                   <InvoiceTemplate data={previewData} template={template} />
                 </ScaledA4>
               </div>
@@ -590,6 +772,39 @@ export default function NouveauDevis() {
           </div>
         </div>
       </div>
+
+      {/* ── MOBILE TAB BAR ── */}
+      <div
+        className="lg:hidden flex flex-shrink-0 border-t"
+        style={{ borderColor: cardBorder, background: headerBg }}
+      >
+        <button
+          type="button"
+          onClick={() => setActiveTab("edit")}
+          className="flex flex-1 items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors"
+          style={{
+            color: activeTab === "edit" ? GOLD : textTert,
+            borderTop: `2px solid ${activeTab === "edit" ? GOLD : "transparent"}`,
+          }}
+        >
+          <Pencil size={14} />
+          Modifier
+        </button>
+        <div style={{ width: 1, background: cardBorder }} />
+        <button
+          type="button"
+          onClick={() => setActiveTab("preview")}
+          className="flex flex-1 items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors"
+          style={{
+            color: activeTab === "preview" ? GOLD : textTert,
+            borderTop: `2px solid ${activeTab === "preview" ? GOLD : "transparent"}`,
+          }}
+        >
+          <Eye size={14} />
+          Aperçu
+        </button>
+      </div>
+
     </div>
   );
 }
