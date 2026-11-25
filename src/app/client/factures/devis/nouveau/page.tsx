@@ -344,7 +344,7 @@ export default function NouveauDevis() {
                   </div>
                   <div>
                     <span className="text-sm font-semibold" style={{ color: textPrimary }}>Modèle</span>
-                    <span className="ml-2 text-xs" style={{ color: textTert }}>{TEMPLATE_CATALOG.find(t => t.id === template)?.name ?? template}</span>
+                    <span className="ml-2 text-xs" style={{ color: textTert }}>{TEMPLATE_CATALOG.find(t => t.id === template)?.label ?? template}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -358,19 +358,38 @@ export default function NouveauDevis() {
                     <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Couleur d&apos;accent</label>
                     <input type="color" value={couleur} onChange={e => setCouleur(e.target.value)} className="h-8 w-16 cursor-pointer rounded border-0 p-0.5" style={{ background: "transparent" }} />
                   </div>
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-                    {TEMPLATE_CATALOG.map(t => (
-                      <button key={t.id} type="button" onClick={() => setTemplate(t.id as TemplateType)}
-                        className="flex flex-col items-center gap-1.5 rounded-xl p-2 text-center transition hover:opacity-80"
-                        style={{ background: template === t.id ? "rgba(255,185,0,0.12)" : (isDark ? "rgba(255,255,255,0.03)" : "#f9fafb"), border: `1px solid ${template === t.id ? "rgba(255,185,0,0.35)" : cardBorder}` }}>
-                        <div className="h-16 w-full overflow-hidden rounded-md bg-white shadow-sm">
-                          <ScaledA4 scale={0.08}>
-                            <InvoiceTemplate data={previewData} template={t.id as TemplateType} />
-                          </ScaledA4>
-                        </div>
-                        <span className="text-[9px] font-medium leading-tight" style={{ color: template === t.id ? GOLD : textTert }}>{t.name}</span>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                    {TEMPLATE_CATALOG.map(t => {
+                      const isSel = template === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setTemplate(t.id as TemplateType)}
+                          className="relative flex flex-col overflow-hidden rounded-xl transition hover:scale-[1.03]"
+                          style={{
+                            border: `2px solid ${isSel ? GOLD : cardBorder}`,
+                            boxShadow: isSel ? `0 0 0 1px ${GOLD}44` : undefined,
+                          }}
+                        >
+                          <div className="relative flex flex-col justify-end px-2.5 pb-2 pt-3" style={{ background: t.previewBg, minHeight: 68 }}>
+                            <div style={{ background: t.previewColor, opacity: 0.9, height: 2.5, borderRadius: 2, width: "45%", marginBottom: 5 }} />
+                            <div style={{ background: t.previewColor, opacity: 0.3, height: 1, borderRadius: 1, width: "70%", marginBottom: 2.5 }} />
+                            <div style={{ background: t.previewColor, opacity: 0.3, height: 1, borderRadius: 1, width: "55%", marginBottom: 2.5 }} />
+                            <div style={{ background: couleur, height: 1.5, borderRadius: 1, width: "32%", marginTop: 5 }} />
+                            {isSel && (
+                              <div className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full" style={{ background: GOLD }}>
+                                <Check size={9} color="#000" strokeWidth={3} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="px-2 py-1.5" style={{ background: isDark ? "#15151f" : "#ffffff" }}>
+                            <div className="truncate text-[10px] font-semibold" style={{ color: isSel ? GOLD : textPrimary }}>{t.label}</div>
+                            <span className="mt-0.5 inline-block rounded px-1 py-0.5 text-[8px] font-medium" style={{ background: t.badge.bgColor, color: t.badge.textColor }}>{t.badge.label}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
