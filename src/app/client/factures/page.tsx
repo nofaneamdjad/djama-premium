@@ -547,7 +547,7 @@ export default function VueEnsemble() {
 
           {/* DJAMA IA — Blanc/Noir/Jaune */}
           <Link
-            href="/client/factures/documents?ai=1"
+            href="/client/factures/agent"
             className="flex flex-col justify-between overflow-hidden rounded-2xl p-5 transition-all duration-200 hover:opacity-90 hover:shadow-lg active:scale-[0.98]"
             style={{ background: cardBg, border: `1px solid ${cardBorder}`, minHeight: 128 }}
           >
