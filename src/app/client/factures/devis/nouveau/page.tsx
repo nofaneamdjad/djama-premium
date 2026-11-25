@@ -93,15 +93,22 @@ export default function NouveauDevis() {
   const [conditions,  setConditions]  = useState("");
 
   // client
-  const [clientNom,   setClientNom]   = useState("");
-  const [clientSoc,   setClientSoc]   = useState("");
-  const [clientEmail, setClientEmail] = useState("");
-  const [clientTel,   setClientTel]   = useState("");
-  const [clientAdr,   setClientAdr]   = useState("");
-  const [clientVille, setClientVille] = useState("");
-  const [clientCP,    setClientCP]    = useState("");
-  const [clientPays,  setClientPays]  = useState("France");
-  const [clientTva,   setClientTva]   = useState("");
+  const [clientNom,       setClientNom]       = useState("");
+  const [clientSoc,       setClientSoc]       = useState("");
+  const [clientEmail,     setClientEmail]     = useState("");
+  const [clientTel,       setClientTel]       = useState("");
+  const [clientTelPrefix, setClientTelPrefix] = useState("+33");
+  const [clientAdr,       setClientAdr]       = useState("");
+  const [clientVille,     setClientVille]     = useState("");
+  const [clientCP,        setClientCP]        = useState("");
+  const [clientPays,      setClientPays]      = useState("France");
+  const [clientTva,       setClientTva]       = useState("");
+  const [clientType,      setClientType]      = useState<"particulier"|"entreprise"|"association"|"administration">("entreprise");
+
+  // références
+  const [refClient,   setRefClient]   = useState("");
+  const [refCommande, setRefCommande] = useState("");
+  const [refProjet,   setRefProjet]   = useState("");
 
   // émetteur
   const [emNom,   setEmNom]   = useState("");
@@ -191,7 +198,7 @@ export default function NouveauDevis() {
     if (!initDone.current) return;
     setIsDirty(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, couleur, numero, dateDoc, dateVal, sujet, items, remise_pct, acompte, devise, notes, conditions, clientNom, clientSoc, clientEmail, clientTel, clientAdr, clientVille, clientCP, clientPays, clientTva, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
+  }, [template, couleur, numero, dateDoc, dateVal, sujet, items, remise_pct, acompte, devise, notes, conditions, clientNom, clientSoc, clientEmail, clientTel, clientTelPrefix, clientAdr, clientVille, clientCP, clientPays, clientTva, clientType, refClient, refCommande, refProjet, emNom, emEmail, emAdr, emVille, emCP, emPays, emSiret, emTva, emLogo]);
 
   // ── beforeunload ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -238,7 +245,11 @@ export default function NouveauDevis() {
 
   function pickClient(c: FacturesClient) {
     setClientNom(c.nom || ""); setClientSoc(c.societe || ""); setClientEmail(c.email || "");
-    setClientTel(c.telephone || ""); setClientAdr(c.adresse || ""); setClientVille(c.ville || "");
+    const rawTel = c.telephone || "";
+    const prefixMatch = rawTel.match(/^(\+\d{1,4})\s*(.*)/);
+    if (prefixMatch) { setClientTelPrefix(prefixMatch[1]); setClientTel(prefixMatch[2]); }
+    else { setClientTel(rawTel); }
+    setClientAdr(c.adresse || ""); setClientVille(c.ville || "");
     setClientCP(c.code_postal || ""); setClientPays(c.pays || "France"); setClientTva(c.tva || "");
     setShowClients(false); setClientSearch("");
   }
@@ -316,8 +327,11 @@ export default function NouveauDevis() {
         emetteur_ville: emVille, emetteur_code_postal: emCP, emetteur_pays: emPays,
         emetteur_siret: emSiret, emetteur_tva: emTva, emetteur_logo: emLogo,
         client_nom: clientNom, client_societe: clientSoc, client_email: clientEmail,
-        client_telephone: clientTel, client_adresse: clientAdr, client_ville: clientVille,
+        client_telephone: clientTel ? `${clientTelPrefix} ${clientTel}` : null,
+        client_adresse: clientAdr, client_ville: clientVille,
         client_code_postal: clientCP, client_pays: clientPays, client_tva: clientTva,
+        client_type: clientType,
+        ref_client: refClient || null, ref_commande: refCommande || null, ref_projet: refProjet || null,
         remise_pct, acompte, notes, conditions,
         template, couleur,
         total_ht: totals.ht_net, total_tva: totals.tva, total_ttc: totals.ttc,
@@ -558,6 +572,18 @@ export default function NouveauDevis() {
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Sujet / Objet</label>
                   <input className={inputCls} style={inputStyle} placeholder="Objet du devis..." value={sujet} onChange={e => setSujet(e.target.value)} />
                 </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Réf. client</label>
+                  <input className={inputCls} style={inputStyle} placeholder="RC-2026-001" value={refClient} onChange={e => setRefClient(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>N° commande / BC</label>
+                  <input className={inputCls} style={inputStyle} placeholder="PO-12345" value={refCommande} onChange={e => setRefCommande(e.target.value)} />
+                </div>
+                <div className="col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>N° projet / contrat</label>
+                  <input className={inputCls} style={inputStyle} placeholder="PROJ-2026-X" value={refProjet} onChange={e => setRefProjet(e.target.value)} />
+                </div>
               </div>
             </Section>
 
@@ -591,22 +617,58 @@ export default function NouveauDevis() {
                   </div>
                 )}
               </div>
+              {/* Type de tiers */}
+              <div className="mb-4 flex flex-wrap gap-1.5">
+                {(["entreprise","particulier","association","administration"] as const).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setClientType(t)}
+                    className="rounded-full px-3 py-1 text-xs font-medium transition"
+                    style={{
+                      background: clientType === t ? GOLD : (isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6"),
+                      color:      clientType === t ? "#000" : textSecond,
+                      border:     clientType === t ? `1px solid ${GOLD}` : `1px solid ${cardBorder}`,
+                    }}
+                  >
+                    {t === "entreprise" ? "Entreprise" : t === "particulier" ? "Particulier" : t === "association" ? "Association" : "Administration"}
+                  </button>
+                ))}
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Nom</label>
-                  <input className={inputCls} style={inputStyle} value={clientNom} onChange={e => setClientNom(e.target.value)} placeholder="Jean Dupont" />
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>
+                    {clientType === "particulier" ? "Nom & Prénom" : "Nom du contact"}
+                  </label>
+                  <input className={inputCls} style={inputStyle} value={clientNom} onChange={e => setClientNom(e.target.value)} placeholder={clientType === "particulier" ? "Jean Dupont" : "Prénom NOM"} />
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Société</label>
-                  <input className={inputCls} style={inputStyle} value={clientSoc} onChange={e => setClientSoc(e.target.value)} />
-                </div>
+                {clientType !== "particulier" && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>
+                      {clientType === "association" ? "Nom de l'association" : clientType === "administration" ? "Organisme / Service" : "Société"}
+                    </label>
+                    <input className={inputCls} style={inputStyle} value={clientSoc} onChange={e => setClientSoc(e.target.value)} />
+                  </div>
+                )}
                 <div>
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Email</label>
                   <input type="email" className={inputCls} style={inputStyle} value={clientEmail} onChange={e => setClientEmail(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Téléphone</label>
-                  <input className={inputCls} style={inputStyle} value={clientTel} onChange={e => setClientTel(e.target.value)} />
+                  <div className="flex gap-1.5">
+                    <select
+                      className="rounded-lg px-2 py-2 text-xs outline-none flex-shrink-0"
+                      style={{ ...inputStyle, width: 76 }}
+                      value={clientTelPrefix}
+                      onChange={e => setClientTelPrefix(e.target.value)}
+                    >
+                      {["+33","+1","+44","+32","+41","+49","+39","+34","+351","+212","+213","+216","+269","+261","+230","+971","+966","+974","+965","+55","+81","+86","+91","+27","+254","+255","+234","+225","+237","+221","+32"].map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                    <input className={`${inputCls} flex-1`} style={inputStyle} placeholder="6 00 00 00 00" value={clientTel} onChange={e => setClientTel(e.target.value)} />
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Adresse</label>
@@ -624,10 +686,14 @@ export default function NouveauDevis() {
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Pays</label>
                   <input className={inputCls} style={inputStyle} value={clientPays} onChange={e => setClientPays(e.target.value)} />
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>N° TVA</label>
-                  <input className={inputCls} style={inputStyle} value={clientTva} onChange={e => setClientTva(e.target.value)} />
-                </div>
+                {clientType !== "particulier" && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>
+                      {clientType === "administration" ? "N° SIRET / INSEE" : "N° TVA intracommunautaire"}
+                    </label>
+                    <input className={inputCls} style={inputStyle} value={clientTva} onChange={e => setClientTva(e.target.value)} />
+                  </div>
+                )}
               </div>
             </Section>
 

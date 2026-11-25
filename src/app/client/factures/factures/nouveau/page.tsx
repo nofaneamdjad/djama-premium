@@ -98,16 +98,23 @@ export default function NouvelleFacture() {
   const [rib_banque,    setRibBanque]     = useState("");
   const [rib_titulaire, setRibTitulaire]  = useState("");
 
+  // références
+  const [refClient,    setRefClient]    = useState("");
+  const [refCommande,  setRefCommande]  = useState("");
+  const [refProjet,    setRefProjet]    = useState("");
+
   // client
-  const [clientNom,   setClientNom]   = useState("");
-  const [clientSoc,   setClientSoc]   = useState("");
-  const [clientEmail, setClientEmail] = useState("");
-  const [clientTel,   setClientTel]   = useState("");
-  const [clientAdr,   setClientAdr]   = useState("");
-  const [clientVille, setClientVille] = useState("");
-  const [clientCP,    setClientCP]    = useState("");
-  const [clientPays,  setClientPays]  = useState("France");
-  const [clientTva,   setClientTva]   = useState("");
+  const [clientType,      setClientType]      = useState<"particulier"|"entreprise"|"association"|"administration">("entreprise");
+  const [clientNom,       setClientNom]       = useState("");
+  const [clientSoc,       setClientSoc]       = useState("");
+  const [clientEmail,     setClientEmail]     = useState("");
+  const [clientTelPrefix, setClientTelPrefix] = useState("+33");
+  const [clientTel,       setClientTel]       = useState("");
+  const [clientAdr,       setClientAdr]       = useState("");
+  const [clientVille,     setClientVille]     = useState("");
+  const [clientCP,        setClientCP]        = useState("");
+  const [clientPays,      setClientPays]      = useState("France");
+  const [clientTva,       setClientTva]       = useState("");
 
   // émetteur
   const [emNom,   setEmNom]   = useState("");
@@ -265,7 +272,11 @@ export default function NouvelleFacture() {
     setClientNom(c.nom || "");
     setClientSoc(c.societe || "");
     setClientEmail(c.email || "");
-    setClientTel(c.telephone || "");
+    // split stored phone into prefix + number
+    const rawTel = c.telephone || "";
+    const prefixMatch = rawTel.match(/^(\+\d{1,4})\s*(.*)/);
+    if (prefixMatch) { setClientTelPrefix(prefixMatch[1]); setClientTel(prefixMatch[2]); }
+    else { setClientTel(rawTel); }
     setClientAdr(c.adresse || "");
     setClientVille(c.ville || "");
     setClientCP(c.code_postal || "");
@@ -346,12 +357,17 @@ export default function NouvelleFacture() {
         numero, sujet, devise,
         date_document: dateDoc,
         date_echeance: dateEch,
+        ref_client: refClient || null,
+        ref_commande: refCommande || null,
+        ref_projet: refProjet || null,
         emetteur_nom: emNom, emetteur_email: emEmail,
         emetteur_adresse: emAdr, emetteur_ville: emVille,
         emetteur_code_postal: emCP, emetteur_pays: emPays,
         emetteur_siret: emSiret, emetteur_tva: emTva, emetteur_logo: emLogo,
+        client_type: clientType,
         client_nom: clientNom, client_societe: clientSoc, client_email: clientEmail,
-        client_telephone: clientTel, client_adresse: clientAdr, client_ville: clientVille,
+        client_telephone: clientTel ? `${clientTelPrefix} ${clientTel}` : null,
+        client_adresse: clientAdr, client_ville: clientVille,
         client_code_postal: clientCP, client_pays: clientPays, client_tva: clientTva,
         remise_pct, acompte, notes, conditions,
         rib_titulaire, rib_iban, rib_bic, rib_banque,
@@ -685,6 +701,18 @@ export default function NouvelleFacture() {
                     onChange={e => setSujet(e.target.value)}
                   />
                 </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Réf. client</label>
+                  <input className={inputCls} style={inputStyle} placeholder="RC-2026-001" value={refClient} onChange={e => setRefClient(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>N° commande / BC</label>
+                  <input className={inputCls} style={inputStyle} placeholder="PO-12345" value={refCommande} onChange={e => setRefCommande(e.target.value)} />
+                </div>
+                <div className="col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>N° projet / contrat</label>
+                  <input className={inputCls} style={inputStyle} placeholder="PROJ-2026-X" value={refProjet} onChange={e => setRefProjet(e.target.value)} />
+                </div>
               </div>
             </Section>
 
@@ -727,22 +755,58 @@ export default function NouvelleFacture() {
                   </div>
                 )}
               </div>
+              {/* Type de tiers */}
+              <div className="mb-4 flex flex-wrap gap-1.5">
+                {(["entreprise","particulier","association","administration"] as const).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setClientType(t)}
+                    className="rounded-full px-3 py-1 text-xs font-medium transition"
+                    style={{
+                      background: clientType === t ? GOLD : (isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6"),
+                      color:      clientType === t ? "#000" : textSecond,
+                      border:     clientType === t ? `1px solid ${GOLD}` : `1px solid ${cardBorder}`,
+                    }}
+                  >
+                    {t === "entreprise" ? "Entreprise" : t === "particulier" ? "Particulier" : t === "association" ? "Association" : "Administration"}
+                  </button>
+                ))}
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Nom</label>
-                  <input className={inputCls} style={inputStyle} value={clientNom} onChange={e => setClientNom(e.target.value)} placeholder="Jean Dupont" />
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>
+                    {clientType === "particulier" ? "Nom & Prénom" : "Nom du contact"}
+                  </label>
+                  <input className={inputCls} style={inputStyle} value={clientNom} onChange={e => setClientNom(e.target.value)} placeholder={clientType === "particulier" ? "Jean Dupont" : "Prénom NOM"} />
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Société</label>
-                  <input className={inputCls} style={inputStyle} value={clientSoc} onChange={e => setClientSoc(e.target.value)} />
-                </div>
+                {clientType !== "particulier" && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>
+                      {clientType === "association" ? "Nom de l'association" : clientType === "administration" ? "Organisme / Service" : "Société"}
+                    </label>
+                    <input className={inputCls} style={inputStyle} value={clientSoc} onChange={e => setClientSoc(e.target.value)} />
+                  </div>
+                )}
                 <div>
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Email</label>
                   <input type="email" className={inputCls} style={inputStyle} value={clientEmail} onChange={e => setClientEmail(e.target.value)} />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Téléphone</label>
-                  <input className={inputCls} style={inputStyle} value={clientTel} onChange={e => setClientTel(e.target.value)} />
+                  <div className="flex gap-1.5">
+                    <select
+                      className="rounded-lg px-2 py-2 text-xs outline-none flex-shrink-0"
+                      style={{ ...inputStyle, width: 76 }}
+                      value={clientTelPrefix}
+                      onChange={e => setClientTelPrefix(e.target.value)}
+                    >
+                      {["+33","+1","+44","+32","+41","+49","+39","+34","+351","+212","+213","+216","+269","+261","+230","+971","+966","+974","+965","+55","+81","+86","+91","+27","+254","+255","+234","+225","+237","+221","+32"].map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                    <input className={`${inputCls} flex-1`} style={inputStyle} placeholder="6 00 00 00 00" value={clientTel} onChange={e => setClientTel(e.target.value)} />
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Adresse</label>
@@ -760,10 +824,14 @@ export default function NouvelleFacture() {
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>Pays</label>
                   <input className={inputCls} style={inputStyle} value={clientPays} onChange={e => setClientPays(e.target.value)} />
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>N° TVA intracommunautaire</label>
-                  <input className={inputCls} style={inputStyle} value={clientTva} onChange={e => setClientTva(e.target.value)} />
-                </div>
+                {clientType !== "particulier" && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium" style={{ color: labelCol }}>
+                      {clientType === "administration" ? "N° SIRET / INSEE" : "N° TVA intracommunautaire"}
+                    </label>
+                    <input className={inputCls} style={inputStyle} value={clientTva} onChange={e => setClientTva(e.target.value)} />
+                  </div>
+                )}
               </div>
             </Section>
 
