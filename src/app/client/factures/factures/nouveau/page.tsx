@@ -13,6 +13,7 @@ import { useTheme } from "@/lib/theme-context";
 import { TEMPLATE_CATALOG } from "@/lib/pdf/pdfThemes";
 import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
 import { ScaledA4 } from "@/components/invoice/TemplateSelector";
+import { TemplateGalleryModal } from "@/components/invoice/TemplateGalleryModal";
 import { fetchCompanySettings, fetchOrgSettings } from "@/lib/pdf/companySettings";
 import type { TemplateType } from "@/lib/pdf/types";
 import type { PreviewData } from "@/components/invoice/shared";
@@ -76,7 +77,7 @@ export default function NouvelleFacture() {
   const router     = useRouter();
 
   // ── form state ───────────────────────────────────────────────────────────────
-  const [template,    setTemplate]    = useState<TemplateType>("modern");
+  const [template,    setTemplate]    = useState<TemplateType>("min-ligne");
   const [couleur,     setCouleur]     = useState(GOLD);
   const [numero,      setNumero]      = useState("");
   const [dateDoc,     setDateDoc]     = useState(() => new Date().toISOString().slice(0, 10));
@@ -128,7 +129,7 @@ export default function NouvelleFacture() {
   const [showClients,  setShowClients]  = useState(false);
   const [coDefaults,   setCoDefaults]   = useState<CompanySettings | null>(null);
   const [orgId,        setOrgId]        = useState<string | null>(null);
-  const [showTemplates,setShowTemplates]= useState(false);
+  const [galleryOpen,  setGalleryOpen]  = useState(false);
   const clientRef = useRef<HTMLDivElement>(null);
 
   // ── theme tokens ─────────────────────────────────────────────────────────────
@@ -437,72 +438,83 @@ export default function NouvelleFacture() {
           {/* ── Left: form ── */}
           <div className="flex flex-1 min-w-0 flex-col gap-4">
 
-            {/* Modèle */}
-            <div className="rounded-2xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
-              <button
-                type="button"
-                onClick={() => setShowTemplates(v => !v)}
-                className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:opacity-80"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: showTemplates ? "rgba(255,185,0,0.12)" : (isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6") }}>
-                    <Palette size={15} style={{ color: showTemplates ? GOLD : textTert }} />
-                  </div>
-                  <div>
-                    <span className="text-sm font-semibold" style={{ color: textPrimary }}>Modèle</span>
-                    <span className="ml-2 text-xs" style={{ color: textTert }}>{TEMPLATE_CATALOG.find(t => t.id === template)?.label ?? template}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-sm border" style={{ background: couleur, borderColor: "transparent" }} />
-                  {showTemplates ? <ChevronUp size={16} style={{ color: textTert }} /> : <ChevronDown size={16} style={{ color: textTert }} />}
-                </div>
-              </button>
-              {showTemplates && (
-                <div className="border-t px-5 pb-5 pt-4" style={{ borderColor: divider }}>
-                  <div className="mb-4 flex items-center gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium" style={{ color: labelCol }}>Couleur d&apos;accent</label>
-                      <input type="color" value={couleur} onChange={e => setCouleur(e.target.value)}
-                        className="h-8 w-16 cursor-pointer rounded border-0 p-0.5" style={{ background: "transparent" }} />
+            {/* Modèle — sélecteur premium */}
+            {(() => {
+              const info = TEMPLATE_CATALOG.find(t => t.id === template);
+              return (
+                <div className="rounded-2xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+                  <div className="flex items-center justify-between gap-3 px-5 py-4">
+                    {/* Icône + titre + modèle actif */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                        style={{ background: "rgba(255,185,0,0.12)" }}>
+                        <Palette size={15} style={{ color: GOLD }} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-sm font-semibold" style={{ color: textPrimary }}>Modèle</span>
+                        <span className="ml-2 text-xs truncate" style={{ color: textTert }}>{info?.label ?? template}</span>
+                      </div>
+                    </div>
+                    {/* Couleur + bouton */}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <div className="h-5 w-5 rounded-md border border-black/10" style={{ background: couleur }} />
+                      <button
+                        type="button"
+                        onClick={() => setGalleryOpen(true)}
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:opacity-80"
+                        style={{
+                          background: isDark ? "rgba(255,185,0,0.1)" : "rgba(255,185,0,0.08)",
+                          color:      GOLD,
+                          border:     "1px solid rgba(255,185,0,0.25)",
+                        }}
+                      >
+                        Changer de modèle
+                      </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-                    {TEMPLATE_CATALOG.map(t => {
-                      const isSel = template === t.id;
-                      return (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setTemplate(t.id as TemplateType)}
-                          className="relative flex flex-col overflow-hidden rounded-xl transition hover:scale-[1.03]"
-                          style={{
-                            border: `2px solid ${isSel ? GOLD : cardBorder}`,
-                            boxShadow: isSel ? `0 0 0 1px ${GOLD}44` : undefined,
-                          }}
-                        >
-                          <div className="relative flex flex-col justify-end px-2.5 pb-2 pt-3" style={{ background: t.previewBg, minHeight: 68 }}>
-                            <div style={{ background: t.previewColor, opacity: 0.9, height: 2.5, borderRadius: 2, width: "45%", marginBottom: 5 }} />
-                            <div style={{ background: t.previewColor, opacity: 0.3, height: 1, borderRadius: 1, width: "70%", marginBottom: 2.5 }} />
-                            <div style={{ background: t.previewColor, opacity: 0.3, height: 1, borderRadius: 1, width: "55%", marginBottom: 2.5 }} />
-                            <div style={{ background: couleur, height: 1.5, borderRadius: 1, width: "32%", marginTop: 5 }} />
-                            {isSel && (
-                              <div className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full" style={{ background: GOLD }}>
-                                <Check size={9} color="#000" strokeWidth={3} />
-                              </div>
-                            )}
-                          </div>
-                          <div className="px-2 py-1.5" style={{ background: isDark ? "#15151f" : "#ffffff" }}>
-                            <div className="truncate text-[10px] font-semibold" style={{ color: isSel ? GOLD : textPrimary }}>{t.label}</div>
-                            <span className="mt-0.5 inline-block rounded px-1 py-0.5 text-[8px] font-medium" style={{ background: t.badge.bgColor, color: t.badge.textColor }}>{t.badge.label}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {/* Aperçu miniature du modèle actif */}
+                  {info && (
+                    <div className="flex items-center gap-4 border-t px-5 py-3" style={{ borderColor: divider }}>
+                      {/* Carte colorée miniature */}
+                      <div
+                        className="shrink-0 overflow-hidden rounded-lg"
+                        style={{
+                          width: 44, border: `2px solid ${GOLD}`, background: info.previewBg,
+                        }}
+                      >
+                        <div style={{ aspectRatio: "595/842", padding: "4px 6px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                          <div style={{ background: info.previewColor, opacity: 0.85, height: 2, borderRadius: 1, width: "50%", marginBottom: 3 }} />
+                          <div style={{ background: info.previewColor, opacity: 0.3,  height: 1, borderRadius: 1, width: "75%", marginBottom: 2 }} />
+                          <div style={{ background: couleur,           opacity: 0.9,  height: 1.5, borderRadius: 1, width: "35%" }} />
+                        </div>
+                      </div>
+                      {/* Infos texte */}
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: textPrimary }}>{info.label}</div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                          <span
+                            className="rounded-md px-1.5 py-0.5 text-[9px] font-semibold"
+                            style={{ background: info.badge.bgColor, color: info.badge.textColor }}
+                          >
+                            {info.badge.label}
+                          </span>
+                          <span className="text-xs truncate" style={{ color: textTert }}>{info.description}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
+
+            {/* Galerie premium */}
+            <TemplateGalleryModal
+              open={galleryOpen}
+              currentTemplate={template}
+              currentCouleur={couleur}
+              onApply={(t, c) => { setTemplate(t); setCouleur(c); }}
+              onClose={() => setGalleryOpen(false)}
+            />
 
             {/* En-tête document */}
             <div className="rounded-2xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
