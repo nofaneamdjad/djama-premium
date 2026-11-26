@@ -7,7 +7,7 @@ import {
   BookOpen, MessageSquare, Target, FolderOpen, Lock,
   StickyNote, CalendarPlus, ShoppingCart, Landmark, ScrollText,
   Store, Briefcase, Bot, TrendingUp, Contact2, PenLine, Globe,
-  QrCode, ShoppingBag, Mail, LayoutTemplate,
+  QrCode, ShoppingBag, Mail, LayoutTemplate, Video,
 } from "lucide-react";
 
 export type AppCategory =
@@ -502,6 +502,16 @@ export const APP_REGISTRY: readonly AppEntry[] = [
     description: "Gérer et publier vos sites créés",
     permission: "premium",
     keywords: ["site", "mes sites", "publication", "web", "domaine", "hébergement"],
+  },
+  {
+    id:          "humain-ia",
+    name:        "Humain Numérique",
+    icon:        Video,
+    route:       "/client/humain-ia",
+    category:    "intelligence",
+    description: "Génération de vidéos d'avatars IA réalistes (MuseTalk)",
+    permission:  "premium",
+    keywords:    ["avatar", "vidéo", "ia", "humain", "numérique", "musetalk", "deepfake"],
   },
 ] as const;
 
