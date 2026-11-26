@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Video, Mic, Languages, Sparkles, ChevronRight,
-  RotateCcw, Download, Play, Loader2, CheckCircle2, AlertCircle,
-  Clock, Film, User,
+  RotateCcw, Download, Loader2, CheckCircle2, AlertCircle,
+  Clock, Film, Upload, ImageIcon,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 import { ALL_ASSISTANTS, Portrait } from "@/app/client/factures/agent/gallery";
@@ -21,26 +21,28 @@ const LANGUAGE_OPTIONS = [
   { code: "ar", label: "العربية" },
 ];
 
-const PORTRAIT_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMxYTFhMmUiLz48L3N2Zz4=";
-
 type Step = "select" | "configure" | "generating" | "done";
 
 export default function HumainIAPage() {
   const { isDark } = useTheme();
 
-  const [step,       setStep]       = useState<Step>("select");
-  const [assistant,  setAssistant]  = useState<typeof ALL_ASSISTANTS[0] | null>(null);
-  const [script,     setScript]     = useState("");
-  const [language,   setLanguage]   = useState("fr");
-  const [voices,     setVoices]     = useState<Voice[]>([]);
-  const [voiceId,    setVoiceId]    = useState("");
-  const [useLp,      setUseLp]      = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [jobId,      setJobId]      = useState<string | null>(null);
-  const [status,     setStatus]     = useState<StatusResponse | null>(null);
-  const [videoUrl,   setVideoUrl]   = useState<string | null>(null);
-  const [error,      setError]      = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [step,          setStep]          = useState<Step>("select");
+  const [assistant,     setAssistant]     = useState<typeof ALL_ASSISTANTS[0] | null>(null);
+  const [portraitUrl,   setPortraitUrl]   = useState<string | null>(null);
+  const [portraitThumb, setPortraitThumb] = useState<string | null>(null);
+  const [uploading,     setUploading]     = useState(false);
+  const [script,        setScript]        = useState("");
+  const [language,      setLanguage]      = useState("fr");
+  const [voices,        setVoices]        = useState<Voice[]>([]);
+  const [voiceId,       setVoiceId]       = useState("");
+  const [useLp,         setUseLp]         = useState(false);
+  const [submitting,    setSubmitting]    = useState(false);
+  const [jobId,         setJobId]         = useState<string | null>(null);
+  const [status,        setStatus]        = useState<StatusResponse | null>(null);
+  const [videoUrl,      setVideoUrl]      = useState<string | null>(null);
+  const [error,         setError]         = useState<string | null>(null);
+  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Charger les voix
   useEffect(() => {
@@ -79,22 +81,37 @@ export default function HumainIAPage() {
 
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
+  async function handlePortraitUpload(file: File) {
+    setUploading(true);
+    setError(null);
+    const thumb = URL.createObjectURL(file);
+    setPortraitThumb(thumb);
+    const form = new FormData();
+    form.append("portrait", file);
+    try {
+      const r = await fetch("/api/humain-ia/upload-portrait", { method: "POST", body: form });
+      const d = await r.json();
+      if (!r.ok) { setError(d.error ?? "Upload échoué"); setPortraitThumb(null); return; }
+      setPortraitUrl(d.url);
+    } catch {
+      setError("Erreur réseau lors de l'upload");
+      setPortraitThumb(null);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleGenerate() {
-    if (!assistant || !script.trim()) return;
+    if (!assistant || !script.trim() || !portraitUrl) return;
     setSubmitting(true);
     setError(null);
-
-    // Le portrait sera l'URL d'une image SVG convertie — pour le POC,
-    // on utilise une image placeholder Supabase ou une URL publique
-    // TODO : remplacer par l'URL réelle du portrait depuis Supabase Storage
-    const portraitUrl = `https://api.djama.app/avatars/${assistant.id}.png`;
 
     try {
       const r = await fetch("/api/humain-ia/generate", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
-          portrait_url:     portraitUrl,
+          portrait_url:     portraitUrl!,
           script:           script.trim(),
           voice_id:         voiceId,
           language,
@@ -120,6 +137,8 @@ export default function HumainIAPage() {
     if (pollRef.current) clearInterval(pollRef.current);
     setStep("select");
     setAssistant(null);
+    setPortraitUrl(null);
+    setPortraitThumb(null);
     setScript("");
     setJobId(null);
     setStatus(null);
@@ -247,6 +266,73 @@ export default function HumainIAPage() {
 
             {/* Formulaire */}
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+              {/* Upload portrait */}
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
+                  <ImageIcon size={13} style={{ marginRight: 4, verticalAlign: -2 }} />
+                  Photo portrait <span style={{ color: "#ef4444", marginLeft: 2 }}>*</span>
+                  <span style={{ opacity: 0.45, fontWeight: 400, fontSize: 11, marginLeft: 6 }}>
+                    JPG / PNG · visage centré · 5 MB max
+                  </span>
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  hidden
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handlePortraitUpload(f); }}
+                />
+                {portraitThumb ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <img
+                      src={portraitThumb}
+                      alt="portrait"
+                      style={{ width: 64, height: 64, borderRadius: 10, objectFit: "cover",
+                        border: `2px solid ${portraitUrl ? GOLD : "#ef4444"}` }}
+                    />
+                    <div>
+                      {uploading && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, opacity: 0.7 }}>
+                          <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+                          Upload en cours…
+                        </div>
+                      )}
+                      {portraitUrl && !uploading && (
+                        <div style={{ fontSize: 12, color: "#22c55e", marginBottom: 4 }}>
+                          ✓ Portrait prêt
+                        </div>
+                      )}
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{
+                          fontSize: 11, padding: "3px 8px", borderRadius: 6, cursor: "pointer",
+                          background: "transparent",
+                          border: `1px solid ${isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)"}`,
+                          color: fg,
+                        }}
+                      >Changer</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      width: "100%", padding: "16px 20px", borderRadius: 10, cursor: "pointer",
+                      background: isDark ? "#0d0f1a" : "#f8f8fc",
+                      border: `2px dashed ${isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`,
+                      color: fg, fontSize: 13,
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = GOLD; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"; }}
+                  >
+                    <Upload size={18} color={GOLD} />
+                    <span>Téléverser une photo portrait…</span>
+                  </button>
+                )}
+              </div>
+
               {/* Langue */}
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
@@ -350,18 +436,18 @@ export default function HumainIAPage() {
 
               <button
                 onClick={handleGenerate}
-                disabled={!script.trim() || submitting}
+                disabled={!script.trim() || !portraitUrl || submitting || uploading}
                 style={{
                   padding: "12px 24px", borderRadius: 10, fontSize: 14, fontWeight: 700,
-                  background: script.trim() && !submitting ? GOLD : isDark ? "#2a2a3a" : "#ddd",
-                  color: script.trim() && !submitting ? NOIR : fg,
-                  border: "none", cursor: script.trim() && !submitting ? "pointer" : "not-allowed",
+                  background: script.trim() && portraitUrl && !submitting && !uploading ? GOLD : isDark ? "#2a2a3a" : "#ddd",
+                  color: script.trim() && portraitUrl && !submitting && !uploading ? NOIR : fg,
+                  border: "none", cursor: script.trim() && portraitUrl && !submitting && !uploading ? "pointer" : "not-allowed",
                   display: "flex", alignItems: "center", gap: 8,
-                  opacity: submitting ? 0.7 : 1,
+                  opacity: submitting || uploading ? 0.7 : 1,
                 }}
               >
                 {submitting ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <Sparkles size={16} />}
-                {submitting ? "Soumission..." : "Générer la vidéo"}
+                {submitting ? "Soumission..." : !portraitUrl ? "Téléversez un portrait d'abord" : "Générer la vidéo"}
               </button>
             </div>
           </div>
