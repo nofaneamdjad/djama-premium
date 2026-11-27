@@ -2,9 +2,11 @@
 # Base : RunPod PyTorch 2.0.1 · CUDA 11.8 · Python 3.10
 # Compatible RTX 4090 (24 GB VRAM)
 #
-# Build : docker build -t djama/humain-ia:latest .
-# Push  : docker push djama/humain-ia:latest
-# (puis déployer sur RunPod Serverless)
+# Build : docker build -t riyann/djama-humain-ia:v1 .
+# Push  : docker push riyann/djama-humain-ia:v1
+#
+# Les modèles (~8 GB) sont sur un RunPod Network Volume.
+# Lancer setup_volume.py une seule fois sur un pod avec le volume monté.
 
 FROM runpod/pytorch:2.0.1-py3.10-cuda11.8.0-devel-ubuntu22.04
 
@@ -26,8 +28,6 @@ RUN wget -q "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/pip
     && rm -rf /tmp/piper.tar.gz /tmp/piper
 
 # ── Dépendances Python ───────────────────────────────────────────
-# PyTorch déjà dans l'image de base
-# On installe uniquement ce qui n'est pas déjà présent
 RUN pip install --no-cache-dir \
     runpod==1.6.2 \
     pyyaml==6.0.1 \
@@ -67,55 +67,18 @@ RUN git clone --depth 1 https://github.com/KwaiVGI/LivePortrait.git /app/LivePor
        done \
     && pip install --no-cache-dir -r requirements.txt
 
-# ── Fix structure modèles MuseTalk (nested vs flat) ─────────────
-# MuseTalk attend les poids dans ./models/ avec structure plate
-# snapshot_download crée une structure imbriquée → corriger via symlinks dans download_models.py
-
-# ── Télécharger les modèles au build ────────────────────────────
-COPY download_models.py /app/download_models.py
-RUN python /app/download_models.py
-
-# ── Fix symlinks modèles MuseTalk ───────────────────────────────
-RUN mkdir -p /app/MuseTalk/models \
-    && ln -sfn /app/models/musetalk /app/MuseTalk/models/musetalk \
-    && ln -sfn /app/models/sd-vae-ft-mse /app/MuseTalk/models/sd-vae-ft-mse \
-    && ln -sfn /app/models/dwpose /app/MuseTalk/models/dwpose \
-    && ln -sfn /app/models/whisper-tiny /app/MuseTalk/models/whisper \
-    && ln -sfn /app/models/face_parse /app/MuseTalk/models/face_parse
-
-# Fix : copier config.json MuseTalk (structure Musetalk HF vs repo)
-RUN python - << 'EOF'
-import os, json, shutil
-from pathlib import Path
-
-# MuseTalk attend : models/musetalk/musetalk.json + unet/ + ...
-# HF snapshot crée parfois une structure différente → vérifier et corriger
-src = Path("/app/models/musetalk")
-dst_link = Path("/app/MuseTalk/models/musetalk")
-
-# S'assurer que musetalk.json existe
-if not (src / "musetalk.json").exists():
-    # Chercher dans sous-dossiers
-    jsons = list(src.rglob("musetalk.json"))
-    if jsons:
-        shutil.copy(jsons[0], src / "musetalk.json")
-        print(f"Copié musetalk.json depuis {jsons[0]}")
-
-print("Structure modèles OK")
-EOF
-
-# Modèles LivePortrait
-RUN ln -sfn /app/models/liveportrait /app/LivePortrait/pretrained_weights
-
 # ── Code handler ─────────────────────────────────────────────────
-COPY handler.py  /app/handler.py
-COPY pipeline.py /app/pipeline.py
-COPY tts.py      /app/tts.py
+COPY handler.py      /app/handler.py
+COPY pipeline.py     /app/pipeline.py
+COPY tts.py          /app/tts.py
+COPY setup_volume.py /app/setup_volume.py
 
 # ── Variables d'environnement ────────────────────────────────────
 ENV PYTHONPATH="/app/MuseTalk:/app/LivePortrait:/app"
-ENV HF_HOME="/app/models/hf_cache"
-ENV TORCH_HOME="/app/models/torch_cache"
+ENV HF_HOME="/runpod-volume/hf_cache"
+ENV TORCH_HOME="/runpod-volume/torch_cache"
+# Les modèles sont sur le Network Volume
+ENV MODELS_DIR="/runpod-volume/models"
 
 # ── Point d'entrée RunPod ────────────────────────────────────────
 CMD ["python", "-u", "/app/handler.py"]

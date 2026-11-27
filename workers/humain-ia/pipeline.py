@@ -24,7 +24,8 @@ from typing import Optional
 # ── Chemins ─────────────────────────────────────────────────────
 MUSETALK_DIR     = Path("/app/MuseTalk")
 LIVEPORTRAIT_DIR = Path("/app/LivePortrait")
-MODELS_DIR       = Path("/app/models")
+# Les modèles sont sur le RunPod Network Volume (ou /app/models en local)
+MODELS_DIR       = Path(os.environ.get("MODELS_DIR", "/runpod-volume/models"))
 WORK_DIR         = Path("/tmp/djama_dh")
 
 # ── Monkey-patch huggingface_hub (v0.17.3 missing cached_download attr) ──
