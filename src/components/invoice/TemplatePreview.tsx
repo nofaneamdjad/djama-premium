@@ -24,14 +24,14 @@ function getColors(type: string): { C: string; BG: string } {
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
-export function TemplatePreview({ type, data }: { type: TemplateType | string; data: PreviewData }) {
+export function TemplatePreview({ type, data, maxItems }: { type: TemplateType | string; data: PreviewData; maxItems?: number }) {
   const theme   = PDF_THEMES[type as TemplateType];
   const variant = theme?.variant ?? "accent-bar";
   const { C: catalogC, BG } = getColors(type);
   const C = data.color || catalogC;
   const L = getDocLabels(data.lang);
   const fmt = (n: number) => fmtCurrency(n, data.currency, data.locale);
-  const p: VP = { data, C, BG, L, fmt };
+  const p: VP = { data, C, BG, L, fmt, maxItems };
 
   switch (variant) {
     case "accent-bar":  return <AccentBarPreview  {...p} />;
@@ -58,15 +58,16 @@ export function TemplatePreview({ type, data }: { type: TemplateType | string; d
 
 // ─── Type commun ──────────────────────────────────────────────────────────────
 
-interface VP { data: PreviewData; C: string; BG: string; L: DocLabels; fmt: (n: number) => string; }
+interface VP { data: PreviewData; C: string; BG: string; L: DocLabels; fmt: (n: number) => string; maxItems?: number; }
 
 // ─── Helpers réutilisables ────────────────────────────────────────────────────
 
-function TableRows({ data, headerBg, headerText, rowAlt, border, text, C, L, fmt }: {
+function TableRows({ data, headerBg, headerText, rowAlt, border, text, C, L, fmt, maxItems = 3 }: {
   data: PreviewData; headerBg: string; headerText: string;
   rowAlt?: string | null; border: string; text: string; C: string;
-  L: DocLabels; fmt: (n: number) => string;
+  L: DocLabels; fmt: (n: number) => string; maxItems?: number;
 }) {
+  const items = maxItems === Infinity ? data.items : data.items.slice(0, maxItems);
   return (
     <div style={{ marginTop: 10 }}>
       <div style={{ display: "flex", backgroundColor: headerBg, padding: "5px 8px" }}>
@@ -75,7 +76,7 @@ function TableRows({ data, headerBg, headerText, rowAlt, border, text, C, L, fmt
         <div style={{ width: 48, color: headerText, fontSize: 5.5, fontWeight: 700, textAlign: "right" }}>{L.unitPrice}</div>
         <div style={{ width: 48, color: headerText, fontSize: 5.5, fontWeight: 700, textAlign: "right" }}>{L.total}</div>
       </div>
-      {data.items.slice(0, 3).map((it, i) => (
+      {items.map((it, i) => (
         <div key={i} style={{
           display: "flex", padding: "4px 8px",
           backgroundColor: i % 2 === 1 && rowAlt ? rowAlt : "transparent",
@@ -142,7 +143,7 @@ function Addresses({ data, C, L, textColor = "#5a5a6a", darkBg = false }: {
 // 1. ACCENT-BAR — Barre latérale gauche + header épuré
 //    Templates : min-ligne (or), prem-or, tech-circuit (vert)
 // ═══════════════════════════════════════════════════════════════════════════════
-function AccentBarPreview({ data, C, L, fmt }: VP) {
+function AccentBarPreview({ data, C, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   return (
     <div dir={L.dir} style={{ width: "100%", minHeight: "100%", backgroundColor: "#ffffff", display: "flex", fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -169,7 +170,7 @@ function AccentBarPreview({ data, C, L, fmt }: VP) {
             <span style={{ color: "#0a0a12", fontSize: 7 }}>{data.subject}</span>
           </div>
         )}
-        <TableRows data={data} headerBg={alphaHex(C, 0.14)} headerText="#0a0a12" rowAlt={alphaHex(C, 0.05)} border="#e8e4d8" text="#0a0a12" C={C} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={alphaHex(C, 0.14)} headerText="#0a0a12" rowAlt={alphaHex(C, 0.05)} border="#e8e4d8" text="#0a0a12" C={C} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -179,7 +180,7 @@ function AccentBarPreview({ data, C, L, fmt }: VP) {
 // 2. MINIMAL — Typographie seule, zéro décoration
 //    Templates : min-blanc, min-mono
 // ═══════════════════════════════════════════════════════════════════════════════
-function MinimalPreview({ data, C, L, fmt }: VP) {
+function MinimalPreview({ data, C, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   return (
     <div dir={L.dir} style={{ width: "100%", minHeight: "100%", backgroundColor: "#ffffff", padding: "18px 20px", fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -212,7 +213,7 @@ function MinimalPreview({ data, C, L, fmt }: VP) {
           <div style={{ width: 50, fontSize: 5.5, fontWeight: 700, textAlign: "right", color: "#0a0a12" }}>{L.unitPriceHT}</div>
           <div style={{ width: 50, fontSize: 5.5, fontWeight: 700, textAlign: "right", color: "#0a0a12" }}>{L.totalHT}</div>
         </div>
-        {data.items.slice(0, 3).map((it, i) => (
+        {(maxItems === Infinity ? data.items : data.items.slice(0, maxItems ?? 3)).map((it, i) => (
           <div key={i} style={{ display: "flex", padding: "3px 0", borderBottom: "0.3px solid #e8e8f0" }}>
             <div style={{ flex: 1, fontSize: 6.5, color: "#303038", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.description}</div>
             <div style={{ width: 50, fontSize: 6.5, textAlign: "right", color: "#606068" }}>{fmt(it.unit_price)}</div>
@@ -244,7 +245,7 @@ function MinimalPreview({ data, C, L, fmt }: VP) {
 // 3. GRID-LINE — Mise en page éditoriale avec grille en filigrane
 //    Templates : min-grille (bleu-violet), tech-schema (bleu-marine)
 // ═══════════════════════════════════════════════════════════════════════════════
-function GridLinePreview({ data, C, BG, L, fmt }: VP) {
+function GridLinePreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   return (
     <div dir={L.dir} style={{ width: "100%", minHeight: "100%", backgroundColor: BG === "#f8f9fb" ? BG : "#fafafa", padding: "14px 18px", fontFamily: "Inter, system-ui, sans-serif",
@@ -278,7 +279,7 @@ function GridLinePreview({ data, C, BG, L, fmt }: VP) {
           <div style={{ flex: 1, color: "#1a1a2e", fontSize: 5.5, fontWeight: 700 }}>{L.description}</div>
           <div style={{ width: 50, color: "#1a1a2e", fontSize: 5.5, fontWeight: 700, textAlign: "right" }}>{L.totalHT}</div>
         </div>
-        {data.items.slice(0, 3).map((it, i) => (
+        {(maxItems === Infinity ? data.items : data.items.slice(0, maxItems ?? 3)).map((it, i) => (
           <div key={i} style={{ display: "flex", padding: "4px 8px", backgroundColor: i % 2 === 0 ? "white" : alphaHex(C, 0.04), borderBottom: `0.5px solid ${C}20` }}>
             <div style={{ flex: 1, color: "#1a1a2e", fontSize: 6.5 }}>{it.description}</div>
             <div style={{ width: 50, color: "#1a1a2e", fontSize: 6.5, textAlign: "right", fontWeight: 600 }}>{fmt(it.total)}</div>
@@ -299,7 +300,7 @@ function GridLinePreview({ data, C, BG, L, fmt }: VP) {
 // 4. STANDARD — Grand header couleur plein + corps blanc
 //    Templates : corp-marine (marine), comm-classique (anthracite)
 // ═══════════════════════════════════════════════════════════════════════════════
-function StandardPreview({ data, C, BG, L, fmt }: VP) {
+function StandardPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   const textOnBg = getContrastText(BG);
   return (
@@ -322,7 +323,7 @@ function StandardPreview({ data, C, BG, L, fmt }: VP) {
       </div>
       <div style={{ padding: "12px 16px" }}>
         <Addresses data={data} C={BG} L={L} />
-        <TableRows data={data} headerBg={BG} headerText={textOnBg} rowAlt="#f8f8fa" border="#e0e0e8" text="#0a0a12" C={BG} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={BG} headerText={textOnBg} rowAlt="#f8f8fa" border="#e0e0e8" text="#0a0a12" C={BG} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -332,7 +333,7 @@ function StandardPreview({ data, C, BG, L, fmt }: VP) {
 // 5. SPLIT — Header divisé gauche/droite
 //    Templates : corp-bipart (bleu-ardoise), serv-nature (vert forêt)
 // ═══════════════════════════════════════════════════════════════════════════════
-function SplitPreview({ data, C, BG, L, fmt }: VP) {
+function SplitPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   const textOnBg = getContrastText(BG);
   return (
@@ -352,7 +353,7 @@ function SplitPreview({ data, C, BG, L, fmt }: VP) {
       </div>
       <div style={{ padding: "10px 16px" }}>
         <Addresses data={data} C={BG} L={L} />
-        <TableRows data={data} headerBg={BG} headerText={textOnBg} rowAlt="#f8fafc" border="#e2e8f0" text="#0f172a" C={BG} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={BG} headerText={textOnBg} rowAlt="#f8fafc" border="#e2e8f0" text="#0f172a" C={BG} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -362,7 +363,7 @@ function SplitPreview({ data, C, BG, L, fmt }: VP) {
 // 6. CENTERED — Société centrée, style officiel / tampon
 //    Template : corp-tampon
 // ═══════════════════════════════════════════════════════════════════════════════
-function CenteredPreview({ data, C, BG, L, fmt }: VP) {
+function CenteredPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   const textOnBg = getContrastText(BG);
   return (
@@ -381,7 +382,7 @@ function CenteredPreview({ data, C, BG, L, fmt }: VP) {
       <div style={{ height: 2, backgroundColor: `${C}60` }} />
       <div style={{ padding: "12px 16px" }}>
         <Addresses data={data} C={C} L={L} />
-        <TableRows data={data} headerBg={C} headerText={getContrastText(C)} rowAlt="#f4f8fc" border="#c8d8e8" text="#1a2030" C={C} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={C} headerText={getContrastText(C)} rowAlt="#f4f8fc" border="#c8d8e8" text="#1a2030" C={C} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -391,7 +392,7 @@ function CenteredPreview({ data, C, BG, L, fmt }: VP) {
 // 7. COLUMN-LEFT — Colonne gauche société + contenu principal à droite
 //    Template : corp-lateral
 // ═══════════════════════════════════════════════════════════════════════════════
-function ColumnLeftPreview({ data, C, BG, L, fmt }: VP) {
+function ColumnLeftPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   const STXT = getContrastText(BG);
   return (
@@ -424,7 +425,7 @@ function ColumnLeftPreview({ data, C, BG, L, fmt }: VP) {
             <div style={{ flex: 1, color: STXT, fontSize: 5.5, fontWeight: 700 }}>{L.description}</div>
             <div style={{ width: 45, color: STXT, fontSize: 5.5, fontWeight: 700, textAlign: "right" }}>{L.total}</div>
           </div>
-          {data.items.slice(0, 3).map((it, i) => (
+          {(maxItems === Infinity ? data.items : data.items.slice(0, maxItems ?? 3)).map((it, i) => (
             <div key={i} style={{ display: "flex", padding: "3px 6px", borderBottom: "0.3px solid #d0d8e8" }}>
               <div style={{ flex: 1, color: "#0f1a2e", fontSize: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.description}</div>
               <div style={{ width: 45, color: "#0f1a2e", fontSize: 6, textAlign: "right" }}>{fmt(it.total)}</div>
@@ -445,7 +446,7 @@ function ColumnLeftPreview({ data, C, BG, L, fmt }: VP) {
 // 8. DARK-FULL — Fond sombre intégral
 //    Templates : prem-nuit (or sur noir), tech-sombre (bleu électrique)
 // ═══════════════════════════════════════════════════════════════════════════════
-function DarkFullPreview({ data, C, BG, L, fmt }: VP) {
+function DarkFullPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   return (
     <div dir={L.dir} style={{ width: "100%", minHeight: "100%", backgroundColor: BG, padding: "14px 16px", fontFamily: "Inter, system-ui, sans-serif", overflow: "hidden" }}>
@@ -467,7 +468,7 @@ function DarkFullPreview({ data, C, BG, L, fmt }: VP) {
           <div style={{ flex: 1, color: C, fontSize: 5.5, fontWeight: 700 }}>{L.description}</div>
           <div style={{ width: 50, color: C, fontSize: 5.5, fontWeight: 700, textAlign: "right" }}>{L.total}</div>
         </div>
-        {data.items.slice(0, 3).map((it, i) => (
+        {(maxItems === Infinity ? data.items : data.items.slice(0, maxItems ?? 3)).map((it, i) => (
           <div key={i} style={{ display: "flex", padding: "4px 8px", borderBottom: `0.5px solid ${alphaHex(C, 0.15)}` }}>
             <div style={{ flex: 1, color: "#c8d8f0", fontSize: 6.5 }}>{it.description}</div>
             <div style={{ width: 50, color: C, fontSize: 6.5, textAlign: "right" }}>{fmt(it.total)}</div>
@@ -487,7 +488,7 @@ function DarkFullPreview({ data, C, BG, L, fmt }: VP) {
 // 9. FULL-BLOCK — Grand bloc couleur centré en header
 //    Templates : creat-bloc (violet), comm-boutique (orange vif)
 // ═══════════════════════════════════════════════════════════════════════════════
-function FullBlockPreview({ data, C, BG, L, fmt }: VP) {
+function FullBlockPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   const textOnBg = getContrastText(BG);
   return (
@@ -506,7 +507,7 @@ function FullBlockPreview({ data, C, BG, L, fmt }: VP) {
       </div>
       <div style={{ padding: "12px 16px" }}>
         <Addresses data={data} C={BG} L={L} />
-        <TableRows data={data} headerBg={alphaHex(BG, 0.14)} headerText={BG} rowAlt={alphaHex(BG, 0.05)} border={alphaHex(BG, 0.2)} text="#1a0800" C={BG} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={alphaHex(BG, 0.14)} headerText={BG} rowAlt={alphaHex(BG, 0.05)} border={alphaHex(BG, 0.2)} text="#1a0800" C={BG} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -516,7 +517,7 @@ function FullBlockPreview({ data, C, BG, L, fmt }: VP) {
 // 10. ANGLED — Coin asymétrique clip-path
 //     Template : creat-angle (rouge)
 // ═══════════════════════════════════════════════════════════════════════════════
-function AngledPreview({ data, C, L, fmt }: VP) {
+function AngledPreview({ data, C, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   const textOnC = getContrastText(C);
   return (
@@ -535,7 +536,7 @@ function AngledPreview({ data, C, L, fmt }: VP) {
       </div>
       <div style={{ paddingTop: 78, padding: "78px 16px 14px" }}>
         <Addresses data={data} C={C} L={L} />
-        <TableRows data={data} headerBg={alphaHex(C, 0.1)} headerText="#0a0a12" rowAlt={alphaHex(C, 0.04)} border="#e8e0e0" text="#0a0a12" C={C} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={alphaHex(C, 0.1)} headerText="#0a0a12" rowAlt={alphaHex(C, 0.04)} border="#e8e0e0" text="#0a0a12" C={C} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -545,7 +546,7 @@ function AngledPreview({ data, C, L, fmt }: VP) {
 // 11. FRAMED — Cadre intérieur ornemental
 //     Template : creat-cadre (ambre)
 // ═══════════════════════════════════════════════════════════════════════════════
-function FramedPreview({ data, C, BG, L, fmt }: VP) {
+function FramedPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   return (
     <div dir={L.dir} style={{ width: "100%", minHeight: "100%", backgroundColor: BG, padding: 10, fontFamily: "Inter, system-ui, sans-serif", overflow: "hidden" }}>
@@ -570,7 +571,7 @@ function FramedPreview({ data, C, BG, L, fmt }: VP) {
           <div style={{ height: 1.5, backgroundColor: C }} />
         </div>
         <Addresses data={data} C={C} L={L} />
-        <TableRows data={data} headerBg={alphaHex(C, 0.1)} headerText="#0a0a12" rowAlt={alphaHex(C, 0.05)} border={alphaHex(C, 0.2)} text="#0a0a12" C={C} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={alphaHex(C, 0.1)} headerText="#0a0a12" rowAlt={alphaHex(C, 0.05)} border={alphaHex(C, 0.2)} text="#0a0a12" C={C} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -580,7 +581,7 @@ function FramedPreview({ data, C, BG, L, fmt }: VP) {
 // 12. VIBRANT — Header épais couleur vive SaaS
 //     Template : creat-vif (ciel bleu)
 // ═══════════════════════════════════════════════════════════════════════════════
-function VibrantPreview({ data, C, BG, L, fmt }: VP) {
+function VibrantPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   const textOnBg = getContrastText(BG);
   return (
@@ -599,7 +600,7 @@ function VibrantPreview({ data, C, BG, L, fmt }: VP) {
       </div>
       <div style={{ padding: "10px 16px" }}>
         <Addresses data={data} C={BG} L={L} />
-        <TableRows data={data} headerBg={alphaHex(BG, 0.14)} headerText={BG} rowAlt={alphaHex(BG, 0.06)} border={alphaHex(BG, 0.15)} text="#0a0a12" C={BG} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={alphaHex(BG, 0.14)} headerText={BG} rowAlt={alphaHex(BG, 0.06)} border={alphaHex(BG, 0.15)} text="#0a0a12" C={BG} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -609,7 +610,7 @@ function VibrantPreview({ data, C, BG, L, fmt }: VP) {
 // 13. TECH-DARK — Style terminal, grille en filigrane
 //     Template : tech-code (vert terminal)
 // ═══════════════════════════════════════════════════════════════════════════════
-function TechDarkPreview({ data, C, BG, L, fmt }: VP) {
+function TechDarkPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   return (
     <div dir={L.dir} style={{ width: "100%", minHeight: "100%", backgroundColor: BG, fontFamily: "'Courier New', Courier, monospace", fontSize: 7, overflow: "hidden" }}>
@@ -643,7 +644,7 @@ function TechDarkPreview({ data, C, BG, L, fmt }: VP) {
           <div style={{ flex: 1, color: C, fontSize: 5.5, fontWeight: 700, letterSpacing: "0.08em" }}>{L.description}</div>
           <div style={{ width: 50, color: C, fontSize: 5.5, fontWeight: 700, textAlign: "right" }}>{L.amount}</div>
         </div>
-        {data.items.slice(0, 3).map((it, i) => (
+        {(maxItems === Infinity ? data.items : data.items.slice(0, maxItems ?? 3)).map((it, i) => (
           <div key={i} style={{ display: "flex", padding: "3px 0", borderBottom: `0.3px solid ${C}30` }}>
             <div style={{ flex: 1, color: "#d0d8d0", fontSize: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.description}</div>
             <div style={{ width: 50, color: C, fontSize: 6, textAlign: "right" }}>{fmt(it.total)}</div>
@@ -663,7 +664,7 @@ function TechDarkPreview({ data, C, BG, L, fmt }: VP) {
 // 14. DECO — Art Déco, ornements, typographie en capitales
 //     Template : prem-deco
 // ═══════════════════════════════════════════════════════════════════════════════
-function DecoPreview({ data, C, BG, L, fmt }: VP) {
+function DecoPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   return (
     <div dir={L.dir} style={{ width: "100%", minHeight: "100%", backgroundColor: BG, padding: "12px 18px", fontFamily: "Georgia, serif", overflow: "hidden" }}>
@@ -699,7 +700,7 @@ function DecoPreview({ data, C, BG, L, fmt }: VP) {
           <div style={{ color: "#2a1800", fontSize: 8, fontWeight: 700 }}>{data.client_name}</div>
         </div>
       </div>
-      <TableRows data={data} headerBg={alphaHex(C, 0.12)} headerText="#2a1800" rowAlt={alphaHex(C, 0.05)} border={alphaHex(C, 0.2)} text="#2a1800" C={C} L={L} fmt={fmt} />
+      <TableRows data={data} headerBg={alphaHex(C, 0.12)} headerText="#2a1800" rowAlt={alphaHex(C, 0.05)} border={alphaHex(C, 0.2)} text="#2a1800" C={C} L={L} fmt={fmt} maxItems={maxItems} />
     </div>
   );
 }
@@ -708,7 +709,7 @@ function DecoPreview({ data, C, BG, L, fmt }: VP) {
 // 15. BAND — Bande principale + bande accent secondaire
 //     Templates : prem-creme (brun chaud), serv-chaud (terracotta)
 // ═══════════════════════════════════════════════════════════════════════════════
-function BandPreview({ data, C, BG, L, fmt }: VP) {
+function BandPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   const textOnBg = getContrastText(BG);
   const bodyBg = BG === "#9a3900" ? "#fffdf8" : "#fffdf4";
@@ -738,7 +739,7 @@ function BandPreview({ data, C, BG, L, fmt }: VP) {
             {data.client_company && <div style={{ color: "#806040", fontSize: 6 }}>{data.client_company}</div>}
           </div>
         </div>
-        <TableRows data={data} headerBg={BG} headerText={textOnBg} rowAlt="#fff8ec" border="#f0c090" text="#2a1000" C={BG} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={BG} headerText={textOnBg} rowAlt="#fff8ec" border="#f0c090" text="#2a1000" C={BG} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -748,7 +749,7 @@ function BandPreview({ data, C, BG, L, fmt }: VP) {
 // 16. LETTERHEAD — En-tête : bloc adresse gauche, date+réf droite
 //     Template : min-blanc
 // ═══════════════════════════════════════════════════════════════════════════════
-function LetterheadPreview({ data, C, BG, L, fmt }: VP) {
+function LetterheadPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   const city = co.city ?? "";
   return (
@@ -784,7 +785,7 @@ function LetterheadPreview({ data, C, BG, L, fmt }: VP) {
       </div>
       <div style={{ height: 0.5, backgroundColor: C, marginBottom: 8 }} />
       <Addresses data={data} C={C} L={L} />
-      <TableRows data={data} headerBg="#f0f0f3" headerText="#0a0a12" rowAlt="transparent" border="#e0e0e6" text="#0a0a12" C={C} L={L} fmt={fmt} />
+      <TableRows data={data} headerBg="#f0f0f3" headerText="#0a0a12" rowAlt="transparent" border="#e0e0e6" text="#0a0a12" C={C} L={L} fmt={fmt} maxItems={maxItems} />
     </div>
   );
 }
@@ -793,7 +794,7 @@ function LetterheadPreview({ data, C, BG, L, fmt }: VP) {
 // 17. LUXURY — Société centrée, double règle dorée, référence à droite
 //     Template : prem-or
 // ═══════════════════════════════════════════════════════════════════════════════
-function LuxuryPreview({ data, C, BG, L, fmt }: VP) {
+function LuxuryPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co = data.company ?? {};
   return (
     <div dir={L.dir} style={{ width: "100%", minHeight: "100%", backgroundColor: "#ffffff", fontFamily: "Inter, system-ui, sans-serif", overflow: "hidden" }}>
@@ -819,7 +820,7 @@ function LuxuryPreview({ data, C, BG, L, fmt }: VP) {
       </div>
       <div style={{ padding: "10px 16px" }}>
         <Addresses data={data} C={C} L={L} />
-        <TableRows data={data} headerBg="#1a1812" headerText={C} rowAlt="#f8f6f0" border="#e0d8c0" text="#0a080c" C={C} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg="#1a1812" headerText={C} rowAlt="#f8f6f0" border="#e0d8c0" text="#0a080c" C={C} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );
@@ -829,7 +830,7 @@ function LuxuryPreview({ data, C, BG, L, fmt }: VP) {
 // 18. DARK-HEADER — Header sombre + corps blanc imprimable
 //     Templates : prem-nuit (H=65 client intégré), tech-sombre (H=48 client en corps)
 // ═══════════════════════════════════════════════════════════════════════════════
-function DarkHeaderPreview({ data, C, BG, L, fmt }: VP) {
+function DarkHeaderPreview({ data, C, BG, L, fmt, maxItems }: VP) {
   const co  = data.company ?? {};
   const tall = BG === "#0d0d14";
   const headerH = tall ? 86 : 60;
@@ -861,7 +862,7 @@ function DarkHeaderPreview({ data, C, BG, L, fmt }: VP) {
       <div style={{ height: 2, backgroundColor: C }} />
       <div style={{ padding: "8px 16px" }}>
         {!tall && <Addresses data={data} C={C} L={L} />}
-        <TableRows data={data} headerBg={BG} headerText={C} rowAlt="#f5f8fc" border="#c8d8ec" text={tall ? "#14141e" : "#0c1830"} C={C} L={L} fmt={fmt} />
+        <TableRows data={data} headerBg={BG} headerText={C} rowAlt="#f5f8fc" border="#c8d8ec" text={tall ? "#14141e" : "#0c1830"} C={C} L={L} fmt={fmt} maxItems={maxItems} />
       </div>
     </div>
   );

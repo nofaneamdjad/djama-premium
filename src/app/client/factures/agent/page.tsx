@@ -878,7 +878,7 @@ function VideoView({ assistant, isDark: _isDark, onBack: _onBack, onSwitchAudio,
   const [connected, setConnected] = useState(false);
   const [status,    setStatus]    = useState<"connecting" | "listening" | "speaking">("connecting");
   const [ctrlVis,   setCtrlVis]   = useState(true);
-  const ctrlTimer = useRef<ReturnType<typeof setTimeout>>();
+  const ctrlTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function resetCtrlTimer() {
     setCtrlVis(true);

@@ -16,8 +16,9 @@ import { TemplatePreview }   from "./TemplatePreview";
 export interface InvoiceTemplateProps {
   type: TemplateType | string;
   data: PreviewData;
+  maxItems?: number;
 }
 
-export function InvoiceTemplate({ type, data }: InvoiceTemplateProps) {
-  return <TemplatePreview type={type} data={data} />;
+export function InvoiceTemplate({ type, data, maxItems }: InvoiceTemplateProps) {
+  return <TemplatePreview type={type} data={data} maxItems={maxItems} />;
 }

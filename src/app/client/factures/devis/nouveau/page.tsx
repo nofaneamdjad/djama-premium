@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Loader2, Save, FileDown, ChevronDown, ChevronUp,
+  ChevronLeft, ChevronRight,
   Plus, Trash2, Search, User, Building2, Check,
   FileText, Percent, Eye, Pencil, LayoutGrid,
   ZoomIn, ZoomOut,
+  Maximize2, Minimize2, GripVertical,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme-context";
@@ -162,8 +164,22 @@ export default function NouveauDevis() {
   const [activeTab,    setActiveTab]    = useState<"edit" | "preview">("edit");
   const [previewScale, setPreviewScale] = useState(0.55);
   const [zoomLevel,    setZoomLevel]    = useState(1.0);
+  const computedScale = previewScale * zoomLevel;
   const initDone        = useRef(false);
   const previewPanelRef = useRef<HTMLDivElement>(null);
+
+  // ── C1.1 — architecture visuelle ─────────────────────────────────────────────
+  const [panelWidth,        setPanelWidth]       = useState(480);
+  const [isDesktopWidth,    setIsDesktopWidth]   = useState(true);
+  const [previewFullscreen, setPreviewFullscreen] = useState(false);
+  const [currentPage,       setCurrentPage]       = useState(1);
+  const [totalPages,        setTotalPages]        = useState(1);
+  const [isDragging,        setIsDragging]        = useState(false);
+  const dragStartX          = useRef(0);
+  const dragStartWidth      = useRef(0);
+  const previewScrollRef    = useRef<HTMLDivElement>(null);
+  const invoiceContentRef   = useRef<HTMLDivElement>(null);
+  const measureRef          = useRef<HTMLDivElement>(null);
 
   // ── theme ────────────────────────────────────────────────────────────────────
   const editorBg    = isDark ? "#0a0a12"                : "#f8f9fa";
@@ -195,7 +211,7 @@ export default function NouveauDevis() {
           .is("suspended_at", null).limit(1).maybeSingle();
         const oid = orgMember?.organization_id ?? null;
         setOrgId(oid);
-        const co = oid ? await fetchOrgSettings(oid) : await fetchCompanySettings(user.id);
+        const co = oid ? await fetchOrgSettings(oid) : await fetchCompanySettings();
         if (co) {
           setCoDefaults(co);
           setEmNom(co.name || ""); setEmEmail(co.email || ""); setEmAdr(co.address || "");
@@ -244,6 +260,73 @@ export default function NouveauDevis() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // ── C1.1 : isDesktop ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    const check = () => setIsDesktopWidth(window.innerWidth >= 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // ── C1.1 : panelWidth persistence ────────────────────────────────────────────
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("djama-editor-panel-width");
+      if (saved) setPanelWidth(Math.min(700, Math.max(320, parseInt(saved))));
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem("djama-editor-panel-width", String(panelWidth)); } catch {}
+  }, [panelWidth]);
+
+  // ── C1.1 : resize drag ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMove = (e: MouseEvent) => {
+      const delta = e.clientX - dragStartX.current;
+      setPanelWidth(Math.min(700, Math.max(320, dragStartWidth.current + delta)));
+    };
+    const onUp = () => setIsDragging(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+  }, [isDragging]);
+
+  // ── C1.1 : ESC quitte le plein écran ─────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && previewFullscreen) setPreviewFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [previewFullscreen]);
+
+  // ── C1.1 : nombre de pages (mesure depuis div caché à 595px naturel) ──────────
+  useEffect(() => {
+    const el = measureRef.current;
+    if (!el) return;
+    const measure = () => {
+      const h = el.scrollHeight;
+      setTotalPages(Math.max(1, Math.ceil(h / 842)));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // ── C1.1 : scroll → page courante ────────────────────────────────────────────
+  useEffect(() => {
+    const el = previewScrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const A4_H_scaled = computedScale * 842 + 20;
+      setCurrentPage(Math.min(totalPages, Math.max(1, Math.floor(el.scrollTop / A4_H_scaled) + 1)));
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [computedScale, totalPages]);
 
   // ── clients search ───────────────────────────────────────────────────────────
   const searchClients = useCallback(async (q: string) => {
@@ -343,6 +426,14 @@ export default function NouveauDevis() {
   function handleBack() {
     if (isDirty && !window.confirm("Vous avez des modifications non enregistrées. Quitter quand même ?")) return;
     router.push("/client/factures/devis");
+  }
+
+  // ── C1.1 : navigation multipage ──────────────────────────────────────────────
+  function goToPage(page: number) {
+    const p = Math.min(totalPages, Math.max(1, page));
+    setCurrentPage(p);
+    const A4_H_scaled = computedScale * 842 + 20;
+    previewScrollRef.current?.scrollTo({ top: (p - 1) * A4_H_scaled, behavior: "smooth" });
   }
 
   // ── save ─────────────────────────────────────────────────────────────────────
@@ -455,7 +546,6 @@ export default function NouveauDevis() {
   const fmtC = (n: number) => new Intl.NumberFormat(deviseLocale, { style: "currency", currency: devise || "EUR", maximumFractionDigits: getCurrency(devise).decimals }).format(n);
   const taxSystem = getTaxSystem(taxSystemId);
 
-  const computedScale = previewScale * zoomLevel;
   const thumbScale    = 48 / 794;
   const info = TEMPLATE_CATALOG.find(t => t.id === template);
 
@@ -514,8 +604,15 @@ export default function NouveauDevis() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── LEFT: form panel ── */}
-        <div className={`${activeTab === "edit" ? "flex" : "hidden"} lg:flex w-full lg:w-[520px] lg:flex-shrink-0 flex-col overflow-y-auto`}
-          style={{ borderRight: `1px solid ${cardBorder}`, background: editorBg }}>
+        <div
+          className={`${activeTab === "edit" ? "flex" : "hidden"} lg:flex flex-col overflow-y-auto`}
+          style={{
+            width: isDesktopWidth ? panelWidth : "100%",
+            flexShrink: 0,
+            background: editorBg,
+            ...(previewFullscreen ? { display: "none" } : {}),
+          }}
+        >
           <div className="flex flex-col gap-3 p-4 sm:p-5 pb-24 lg:pb-8">
 
             {/* ── MODÈLE (compact) ── */}
@@ -524,7 +621,7 @@ export default function NouveauDevis() {
                 {/* Real A4 thumbnail */}
                 <div className="flex-shrink-0 overflow-hidden rounded-md"
                   style={{ width: 48, height: Math.round(thumbScale * 1122), border: `1px solid ${cardBorder}`, pointerEvents: "none", background: "#fff" }}>
-                  <ScaledA4 scale={thumbScale}>
+                  <ScaledA4>
                     <InvoiceTemplate data={previewData} type={template} />
                   </ScaledA4>
                 </div>
@@ -1037,46 +1134,170 @@ export default function NouveauDevis() {
           </div>
         </div>
 
+        {/* ── RESIZE HANDLE (desktop only) ── */}
+        <div
+          className="hidden lg:flex items-center justify-center cursor-col-resize flex-shrink-0 select-none"
+          style={{
+            width: 8,
+            background: isDragging ? "rgba(255,185,0,0.08)" : "transparent",
+            borderLeft: `1px solid ${cardBorder}`,
+            zIndex: 10,
+            transition: "background 0.15s",
+            ...(previewFullscreen ? { display: "none" } : {}),
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+            dragStartX.current = e.clientX;
+            dragStartWidth.current = panelWidth;
+          }}
+        >
+          <GripVertical size={12} style={{ color: isDragging ? GOLD : (isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.18)") }} />
+        </div>
+
         {/* ── RIGHT: preview panel ── */}
-        <div ref={previewPanelRef}
+        <div
+          ref={previewPanelRef}
           className={`${activeTab === "preview" ? "flex" : "hidden"} lg:flex flex-1 flex-col overflow-hidden`}
-          style={{ background: previewBg }}>
+          style={{ background: previewBg }}
+        >
           {/* Preview header */}
-          <div className="flex flex-shrink-0 items-center justify-between border-b px-5 py-3"
-            style={{ borderColor: cardBorder, background: isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.025)" }}>
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-2 w-2 rounded-full" style={{ background: GOLD }} />
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: textTert }}>Aperçu en direct</span>
-            </div>
+          <div
+            className="flex flex-shrink-0 items-center justify-between border-b px-4 py-2.5"
+            style={{ borderColor: cardBorder, background: isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.025)" }}
+          >
+            {/* Gauche : titre + pagination */}
             <div className="flex items-center gap-3">
-              <span className="hidden sm:block text-xs" style={{ color: textTert }}>A4 · 210×297 mm</span>
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-2 w-2 rounded-full flex-shrink-0" style={{ background: GOLD }} />
+                <span className="hidden sm:block text-xs font-semibold uppercase tracking-widest" style={{ color: textTert }}>
+                  Aperçu
+                </span>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70 disabled:opacity-30"
+                    style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
+                  >
+                    <ChevronLeft size={11} />
+                  </button>
+                  <span className="text-xs font-medium tabular-nums" style={{ color: textSecond, minWidth: 36, textAlign: "center" }}>
+                    {currentPage}/{totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70 disabled:opacity-30"
+                    style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
+                  >
+                    <ChevronRight size={11} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Droite : format + zoom + ajuster + plein écran */}
+            <div className="flex items-center gap-2">
+              <span className="hidden md:block text-xs" style={{ color: textTert }}>A4</span>
               <div className="flex items-center gap-1">
-                <button type="button"
+                <button
+                  type="button"
                   onClick={() => setZoomLevel(z => Math.max(0.4, parseFloat((z - 0.1).toFixed(1))))}
                   className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70"
-                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}>
+                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
+                  title="Dézoomer"
+                >
                   <ZoomOut size={11} />
                 </button>
-                <span className="w-10 text-center text-xs font-medium" style={{ color: textSecond }}>
+                <span className="w-10 text-center text-xs font-medium tabular-nums" style={{ color: textSecond }}>
                   {Math.round(zoomLevel * 100)}%
                 </span>
-                <button type="button"
+                <button
+                  type="button"
                   onClick={() => setZoomLevel(z => Math.min(1.5, parseFloat((z + 0.1).toFixed(1))))}
                   className="flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70"
-                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}>
+                  style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
+                  title="Zoomer"
+                >
                   <ZoomIn size={11} />
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={() => setZoomLevel(1.0)}
+                className="hidden sm:flex h-6 items-center justify-center rounded-md px-2 text-xs transition hover:opacity-70"
+                style={{ background: cardBg, border: `1px solid ${cardBorder}`, color: textTert }}
+                title="Ajustement automatique"
+              >
+                Ajuster
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewFullscreen(f => !f)}
+                className="hidden lg:flex h-6 w-6 items-center justify-center rounded-md transition hover:opacity-70"
+                style={{ background: previewFullscreen ? GOLD : cardBg, border: `1px solid ${previewFullscreen ? GOLD : cardBorder}`, color: previewFullscreen ? "#000" : textTert }}
+                title={previewFullscreen ? "Réduire (Echap)" : "Plein écran aperçu"}
+              >
+                {previewFullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+              </button>
             </div>
           </div>
-          {/* A4 preview */}
-          <div className="flex-1 overflow-y-auto flex justify-center p-6 lg:p-10">
-            <div style={{ width: Math.max(200, computedScale * 794), flexShrink: 0 }}>
-              <div className="overflow-hidden rounded-xl shadow-2xl" style={{ border: `1px solid ${cardBorder}` }}>
-                <ScaledA4 scale={computedScale}>
-                  <InvoiceTemplate data={previewData} type={template} />
-                </ScaledA4>
-              </div>
+
+          {/* ── A4 PREVIEW — MULTIPAGE ───────────────────────────────────── */}
+          <div ref={previewScrollRef} className="flex-1 overflow-y-auto" style={{ padding: "24px 20px", background: previewBg }}>
+            {/* Hidden measurement div */}
+            <div
+              ref={measureRef}
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                left: -9999,
+                top: 0,
+                width: 595,
+                visibility: "hidden",
+                pointerEvents: "none",
+              }}
+            >
+              <InvoiceTemplate data={previewData} type={template} maxItems={Infinity} />
+            </div>
+
+            {/* Stacked A4 sheets */}
+            <div ref={invoiceContentRef} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+              {Array.from({ length: totalPages }).map((_, pageIdx) => {
+                const pageW = Math.max(180, computedScale * 595);
+                const pageH = pageW * (842 / 595);
+                return (
+                  <div
+                    key={pageIdx}
+                    data-page={pageIdx + 1}
+                    style={{
+                      width: pageW,
+                      height: pageH,
+                      overflow: "hidden",
+                      background: "#ffffff",
+                      boxShadow: isDark ? "0 2px 24px rgba(0,0,0,0.6)" : "0 2px 20px rgba(0,0,0,0.13)",
+                      flexShrink: 0,
+                      position: "relative",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 595,
+                        transform: `scale(${computedScale}) translateY(${-pageIdx * 842}px)`,
+                        transformOrigin: "top left",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <InvoiceTemplate data={previewData} type={template} maxItems={Infinity} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
