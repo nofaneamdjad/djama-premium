@@ -77,7 +77,7 @@ function TableRows({ data, headerBg, headerText, rowAlt, border, text, C, L, fmt
         <div style={{ width: 48, color: headerText, fontSize: 5.5, fontWeight: 700, textAlign: "right" }}>{L.total}</div>
       </div>
       {items.map((it, i) => (
-        <div key={i} style={{
+        <div key={i} data-invoice-row="true" style={{
           display: "flex", padding: "4px 8px",
           backgroundColor: i % 2 === 1 && rowAlt ? rowAlt : "transparent",
           borderBottom: `0.4px solid ${border}`,

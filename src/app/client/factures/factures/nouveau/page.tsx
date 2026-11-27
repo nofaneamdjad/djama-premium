@@ -186,6 +186,10 @@ export default function NouvelleFacture() {
   const [previewFullscreen, setPreviewFullscreen] = useState(false);
   const [currentPage,       setCurrentPage]       = useState(1);
   const [totalPages,        setTotalPages]        = useState(1);
+  const [pageOffsets,       setPageOffsets]       = useState<number[]>([0]);
+  const [naturalH,          setNaturalH]          = useState(842);
+  const pageOffsetsRef      = useRef<number[]>([0]);
+  const naturalHRef         = useRef(842);
   const [isDragging,        setIsDragging]        = useState(false);
   const dragStartX          = useRef(0);
   const dragStartWidth      = useRef(0);
@@ -330,13 +334,28 @@ export default function NouvelleFacture() {
     return () => window.removeEventListener("keydown", onKey);
   }, [previewFullscreen]);
 
-  // ── C1.1 : nombre de pages (mesure depuis div caché à 595px naturel) ──────────
+  // ── C1.1 : pagination intelligente — coupures aux frontières d'articles ──────
   useEffect(() => {
     const el = measureRef.current;
     if (!el) return;
     const measure = () => {
       const h = el.scrollHeight;
-      setTotalPages(Math.max(1, Math.ceil(h / 842)));
+      const rows = Array.from(el.querySelectorAll<HTMLElement>("[data-invoice-row]"));
+      const PAGE_H = 842;
+      const offsets: number[] = [0];
+      let pageEnd = PAGE_H;
+      for (const row of rows) {
+        const rowBottom = row.offsetTop + row.offsetHeight;
+        if (rowBottom > pageEnd) {
+          offsets.push(row.offsetTop);
+          pageEnd = row.offsetTop + PAGE_H;
+        }
+      }
+      pageOffsetsRef.current = offsets;
+      naturalHRef.current = h;
+      setPageOffsets(offsets);
+      setNaturalH(h);
+      setTotalPages(offsets.length);
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -348,13 +367,24 @@ export default function NouvelleFacture() {
   useEffect(() => {
     const el = previewScrollRef.current;
     if (!el) return;
+    const PREVIEW_PAD_TOP = 32;
     const onScroll = () => {
-      const A4_H_scaled = computedScale * 842 + 20;
-      setCurrentPage(Math.min(totalPages, Math.max(1, Math.floor(el.scrollTop / A4_H_scaled) + 1)));
+      const viewportMid = el.scrollTop + el.clientHeight / 2;
+      const offs = pageOffsetsRef.current;
+      const totH = naturalHRef.current;
+      let cumY = PREVIEW_PAD_TOP;
+      let found = 0;
+      for (let i = 0; i < offs.length; i++) {
+        const ph = ((offs[i + 1] ?? totH) - offs[i]) * computedScale;
+        if (viewportMid < cumY + ph + 12) { found = i; break; }
+        cumY += ph + 24;
+        found = i + 1;
+      }
+      setCurrentPage(Math.min(offs.length, found + 1));
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, [computedScale, totalPages]);
+  }, [computedScale]);
 
   // ── clients search ───────────────────────────────────────────────────────────
   const searchClients = useCallback(async (q: string) => {
@@ -468,9 +498,13 @@ export default function NouvelleFacture() {
   function goToPage(page: number) {
     const p = Math.min(totalPages, Math.max(1, page));
     setCurrentPage(p);
-    // 595×842 natural A4, gap=20px between pages
-    const A4_H_scaled = computedScale * 842 + 20;
-    previewScrollRef.current?.scrollTo({ top: (p - 1) * A4_H_scaled, behavior: "smooth" });
+    const PREVIEW_PAD_TOP = 32;
+    let cumY = PREVIEW_PAD_TOP;
+    for (let i = 0; i < p - 1; i++) {
+      const ph = ((pageOffsets[i + 1] ?? naturalH) - pageOffsets[i]) * computedScale;
+      cumY += ph + 24;
+    }
+    previewScrollRef.current?.scrollTo({ top: cumY, behavior: "smooth" });
   }
 
   // ── save ─────────────────────────────────────────────────────────────────────
@@ -1498,7 +1532,7 @@ export default function NouvelleFacture() {
           </div>
 
           {/* ── A4 PREVIEW — MULTIPAGE ───────────────────────────────────── */}
-          <div ref={previewScrollRef} className="flex-1 overflow-y-auto" style={{ padding: "24px 20px", background: previewBg }}>
+          <div ref={previewScrollRef} className="flex-1 overflow-y-auto" style={{ padding: "32px 24px", background: previewBg }}>
             {/* Div caché à 595px naturel pour mesurer la hauteur réelle du contenu */}
             <div
               ref={measureRef}
@@ -1515,11 +1549,13 @@ export default function NouvelleFacture() {
               <InvoiceTemplate data={previewData} type={template} maxItems={Infinity} />
             </div>
 
-            {/* Feuilles A4 empilées */}
-            <div ref={invoiceContentRef} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
-              {Array.from({ length: totalPages }).map((_, pageIdx) => {
+            {/* Feuilles A4 empilées — pagination intelligente aux frontières d'articles */}
+            <div ref={invoiceContentRef} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+              {pageOffsets.map((offsetY, pageIdx) => {
+                const nextOffsetY = pageOffsets[pageIdx + 1] ?? naturalH;
+                const naturalPageH = Math.max(1, nextOffsetY - offsetY);
                 const pageW = Math.max(180, computedScale * 595);
-                const pageH = pageW * (842 / 595);
+                const pageH = naturalPageH * computedScale;
                 return (
                   <div
                     key={pageIdx}
@@ -1529,9 +1565,10 @@ export default function NouvelleFacture() {
                       height: pageH,
                       overflow: "hidden",
                       background: "#ffffff",
+                      borderRadius: 0,
                       boxShadow: isDark
-                        ? "0 2px 24px rgba(0,0,0,0.6)"
-                        : "0 2px 20px rgba(0,0,0,0.13)",
+                        ? "0 4px 32px rgba(0,0,0,0.65), 0 1px 8px rgba(0,0,0,0.3)"
+                        : "0 4px 24px rgba(0,0,0,0.10), 0 1px 6px rgba(0,0,0,0.05), inset 0 0 0 1px rgba(0,0,0,0.04)",
                       flexShrink: 0,
                       position: "relative",
                     }}
@@ -1539,7 +1576,7 @@ export default function NouvelleFacture() {
                     <div
                       style={{
                         width: 595,
-                        transform: `scale(${computedScale}) translateY(${-pageIdx * 842}px)`,
+                        transform: `scale(${computedScale}) translateY(${-offsetY}px)`,
                         transformOrigin: "top left",
                         pointerEvents: "none",
                       }}
