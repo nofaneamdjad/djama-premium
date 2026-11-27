@@ -19,8 +19,6 @@ docker build `
   --platform linux/amd64 `
   --tag $Tag `
   --progress plain `
-  --dns 8.8.8.8 `
-  --dns 8.8.4.4 `
   $ScriptDir
 
 if ($LASTEXITCODE -ne 0) {

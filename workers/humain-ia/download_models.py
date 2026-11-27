@@ -26,15 +26,15 @@ MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def dl_hf(repo_id: str, local_dir: str, **_kwargs):
-    # ignore_patterns n'existe pas en huggingface_hub 0.17.3 — paramètre ignoré
+    # ignore_patterns non supporté en huggingface_hub 0.17.3
+    # force_download=True évite les fichiers partiellement téléchargés mis en cache
     path = MODELS_DIR / local_dir
-    if path.exists() and any(path.iterdir()):
-        print(f"  ✓ {local_dir} (déjà téléchargé)")
-        return
     print(f"  ↓ {repo_id} → {local_dir}")
     snapshot_download(
         repo_id=repo_id,
         local_dir=str(path),
+        force_download=False,  # passe à True si consistency error
+        resume_download=True,
     )
     print(f"  ✓ {local_dir}")
 
