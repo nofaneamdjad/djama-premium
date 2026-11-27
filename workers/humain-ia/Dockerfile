@@ -53,23 +53,19 @@ RUN pip install --no-cache-dir openmim==0.3.9 \
     && mim install "mmpose>=1.1.0,<1.2.0"
 
 # ── Cloner MuseTalk V1.5 ─────────────────────────────────────────
-# Supprimer les lignes --hash du requirements.txt (hash mismatch réseau)
+# sed -i : supprime les lignes --hash en place (hash mismatch réseau)
 RUN git clone --depth 1 https://github.com/TMElyralab/MuseTalk.git /app/MuseTalk \
     && cd /app/MuseTalk \
-    && grep -v "^\s*--hash" requirements.txt \
-       | grep -v "^\s*\\\\" \
-       | sed 's/ \\$//' \
-       > /tmp/musetalk_req.txt \
-    && pip install --no-cache-dir -r /tmp/musetalk_req.txt
+    && sed -i '/^\s*--hash/d; /^\s*\\\\/d; s/ \\$//' requirements.txt \
+    && pip install --no-cache-dir -r requirements.txt
 
 # ── Cloner LivePortrait ──────────────────────────────────────────
 RUN git clone --depth 1 https://github.com/KwaiVGI/LivePortrait.git /app/LivePortrait \
     && cd /app/LivePortrait \
-    && grep -v "^\s*--hash" requirements.txt \
-       | grep -v "^\s*\\\\" \
-       | sed 's/ \\$//' \
-       > /tmp/liveportrait_req.txt \
-    && pip install --no-cache-dir -r /tmp/liveportrait_req.txt
+    && for f in requirements*.txt; do \
+         sed -i '/^\s*--hash/d; /^\s*\\\\/d; s/ \\$//' "$f"; \
+       done \
+    && pip install --no-cache-dir -r requirements.txt
 
 # ── Fix structure modèles MuseTalk (nested vs flat) ─────────────
 # MuseTalk attend les poids dans ./models/ avec structure plate
