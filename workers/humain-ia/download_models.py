@@ -26,17 +26,27 @@ MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def dl_hf(repo_id: str, local_dir: str, **_kwargs):
-    # ignore_patterns non supporté en huggingface_hub 0.17.3
-    # force_download=True évite les fichiers partiellement téléchargés mis en cache
+    import time, shutil
     path = MODELS_DIR / local_dir
-    print(f"  ↓ {repo_id} → {local_dir}")
-    snapshot_download(
-        repo_id=repo_id,
-        local_dir=str(path),
-        force_download=False,  # passe à True si consistency error
-        resume_download=True,
-    )
-    print(f"  ✓ {local_dir}")
+    for attempt in range(1, 4):
+        try:
+            print(f"  ↓ {repo_id} → {local_dir} (tentative {attempt}/3)")
+            snapshot_download(
+                repo_id=repo_id,
+                local_dir=str(path),
+                force_download=(attempt > 1),  # force si retry
+            )
+            print(f"  ✓ {local_dir}")
+            return
+        except Exception as e:
+            print(f"  ⚠ Erreur : {e}")
+            if attempt < 3:
+                print(f"  ↺ Nettoyage et retry dans 10s...")
+                shutil.rmtree(path, ignore_errors=True)
+                path.mkdir(parents=True, exist_ok=True)
+                time.sleep(10)
+            else:
+                raise
 
 
 def dl_url(url: str, dest: str):
