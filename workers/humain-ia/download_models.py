@@ -25,7 +25,8 @@ MODELS_DIR = Path("/app/models")
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def dl_hf(repo_id: str, local_dir: str, ignore: list[str] | None = None):
+def dl_hf(repo_id: str, local_dir: str, **_kwargs):
+    # ignore_patterns n'existe pas en huggingface_hub 0.17.3 — paramètre ignoré
     path = MODELS_DIR / local_dir
     if path.exists() and any(path.iterdir()):
         print(f"  ✓ {local_dir} (déjà téléchargé)")
@@ -34,7 +35,6 @@ def dl_hf(repo_id: str, local_dir: str, ignore: list[str] | None = None):
     snapshot_download(
         repo_id=repo_id,
         local_dir=str(path),
-        ignore_patterns=ignore or ["*.git*"],
     )
     print(f"  ✓ {local_dir}")
 
