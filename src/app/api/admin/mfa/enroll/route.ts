@@ -63,6 +63,18 @@ export async function POST(req: NextRequest) {
     },
   );
 
+  // BUG-03 : vérifier que la session Supabase correspond à cet administrateur DJAMA
+  const { data: { user: supabaseUser }, error: supabaseAuthError } = await userClient.auth.getUser();
+  if (supabaseAuthError || !supabaseUser) {
+    return NextResponse.json({ error: "Session Supabase invalide ou expirée. Reconnectez-vous." }, { status: 401 });
+  }
+  if (supabaseUser.email !== admin.email) {
+    return NextResponse.json(
+      { error: "Session Supabase et session admin DJAMA ne correspondent pas." },
+      { status: 403 },
+    );
+  }
+
   // Vérifier si TOTP déjà enrôlé et vérifié
   const { data: factorData, error: factorsError } = await userClient.auth.mfa.listFactors();
   if (factorsError) {

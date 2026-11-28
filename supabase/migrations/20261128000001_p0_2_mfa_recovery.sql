@@ -109,8 +109,9 @@ BEGIN
   END LOOP;
 
   -- ── Verrou consultatif transactionnel : sérialise les régénérations concurrentes ──
-  -- hashtext() dérive un int8 déterministe depuis l''UUID → verrou par admin
-  PERFORM pg_advisory_xact_lock(('x' || left(md5(p_admin_id::text), 15))::bit(60)::bigint);
+  -- md5() retourne 32 chars hex sans tirets. On prend 16 chars = 64 bits = bigint exact.
+  -- BUG-01 corrigé : bit(60) → bit(64), 15 chars → 16 chars (60 bits insuffisant pour bigint).
+  PERFORM pg_advisory_xact_lock(('x' || left(md5(p_admin_id::text), 16))::bit(64)::bigint);
 
   -- ── Révocation atomique des anciens codes ──────────────────────────────
   DELETE FROM admin_mfa_recovery_codes WHERE admin_user_id = p_admin_id;

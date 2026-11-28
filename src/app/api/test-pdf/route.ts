@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
     const buffer = await generatePdfBuffer(data);
     const ref = (data.reference as string) || "document";
-    return new NextResponse(buffer, {
+    // BUG-02 : Buffer<ArrayBufferLike> non assignable à BodyInit — conversion en Uint8Array
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${ref}.pdf"`,
