@@ -8,8 +8,16 @@
  *   UPSTASH_REDIS_REST_URL   → console.upstash.com → REST URL
  *   UPSTASH_REDIS_REST_TOKEN → console.upstash.com → REST Token
  *
- * Installation (une fois en production) :
- *   npm install @upstash/redis @upstash/ratelimit
+ * Pas de dépendance npm Upstash — fetch() natif uniquement.
+ *
+ * FORMAT DES CLÉS Redis (namespacing recommandé) :
+ *   Quota individuel : `rl:{userId}:{routeName}`   ex: "rl:uuid-123:blog-generate"
+ *   Quota org        : `rl:org:{orgId}:{routeName}` ex: "rl:org:org-456:blog-generate"
+ *   Quota financier  : `fin:{operation}:{userId}`   ex: "fin:refund:uuid-123"
+ *   Toutes les clés sont préfixées par l'environnement : "prod:", "preview:", "dev:"
+ *
+ * SÉPARATION PROD/DEV : utiliser deux bases Upstash distinctes (prod et dev/preview).
+ * Le préfixe REDIS_ENV_PREFIX offre une couche supplémentaire si les bases sont partagées.
  */
 
 /* ── Fallback in-memory (dev / absence Upstash) ──────────── */
@@ -60,6 +68,26 @@ function checkRateLimitInMemory(
   return { allowed: true, remaining: maxReq - entry.count, resetAt: entry.resetAt };
 }
 
+/* ── Préfixe d'environnement pour les clés Redis ─────────── */
+// Garantit l'isolation entre prod / preview / dev même si la même base est utilisée.
+// VERCEL_ENV = "production" | "preview" | "development" (injecté par Vercel automatiquement)
+const REDIS_ENV_PREFIX = (() => {
+  const e = process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "dev";
+  if (e === "production")   return "prod";
+  if (e === "preview")      return "preview";
+  return "dev";
+})();
+
+/** Construit une clé Redis namespaced : "{env}:rl:{userId}:{routeName}" */
+export function buildRateLimitKey(userId: string, routeName: string): string {
+  return `${REDIS_ENV_PREFIX}:rl:${userId}:${routeName}`;
+}
+
+/** Construit une clé Redis d'organisation : "{env}:rl:org:{orgId}:{routeName}" */
+export function buildOrgRateLimitKey(orgId: string, routeName: string): string {
+  return `${REDIS_ENV_PREFIX}:rl:org:${orgId}:${routeName}`;
+}
+
 /* ── Upstash Redis (production) ───────────────────────────── */
 
 async function checkRateLimitUpstash(
@@ -74,7 +102,11 @@ async function checkRateLimitUpstash(
   const now       = Date.now();
   const resetAt   = now + windowMs;
 
-  // Atomic INCR+EXPIRE via Lua EVAL — avoids race where INCR succeeds but EXPIRE never runs
+  // INCR+EXPIRE atomique via Lua EVAL (Upstash REST API, format array).
+  // Syntaxe body Upstash REST : [script, numkeys, key1, arg1, ...]
+  //   KEYS[1] = clé Redis (préfixée par buildRateLimitKey)
+  //   ARGV[1] = durée de la fenêtre en secondes (string — Redis coerce en integer)
+  // Évite la race condition INCR puis EXPIRE non atomiques.
   const luaScript = `local c=redis.call('INCR',KEYS[1]) if c==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]) end return c`;
   const evalRes = await fetch(`${url}/eval`, {
     method:  "POST",
@@ -83,8 +115,14 @@ async function checkRateLimitUpstash(
     cache:   "no-store",
   });
 
-  const evalData = await evalRes.json() as { result?: number };
-  const count    = evalData.result ?? 1;
+  if (!evalRes.ok) {
+    // Upstash indisponible (503, 429 Upstash-level, etc.) — l'appelant gère
+    throw new Error(`Upstash HTTP ${evalRes.status}`);
+  }
+
+  const evalData = await evalRes.json() as { result?: number; error?: string };
+  if (evalData.error) throw new Error(`Upstash EVAL: ${evalData.error}`);
+  const count = evalData.result ?? 1;
 
   if (count > maxReq) {
     return { allowed: false, remaining: 0, resetAt };
@@ -101,7 +139,8 @@ const UPSTASH_ENABLED =
 
 /**
  * Rate limiting in-memory uniquement (par instance serveur).
- * En production multi-instance Vercel, utiliser checkRateLimitAsync.
+ * ⚠️ En production multi-instance Vercel, les compteurs ne sont pas partagés.
+ * Utiliser checkRateLimitAsync avec buildRateLimitKey.
  *
  * @deprecated Préférer checkRateLimitAsync dans les Route Handlers async.
  */
@@ -115,7 +154,10 @@ export function checkRateLimit(
 
 /**
  * Version async — utilise Upstash Redis si configuré, in-memory sinon.
- * Utiliser dans les Route Handlers qui peuvent être async.
+ *
+ * Usage recommandé dans les route handlers :
+ *   const key = buildRateLimitKey(user.id, "blog-generate"); // clé par route
+ *   const { allowed } = await checkRateLimitAsync(key, 10, 60 * 60 * 1000);
  */
 export async function checkRateLimitAsync(
   key: string,
@@ -144,16 +186,85 @@ export async function checkRateLimitAsyncStrict(
   windowMs: number,
 ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
   if (UPSTASH_ENABLED) {
-    // Pas de try/catch — laisse l'erreur remonter pour que l'appelant
-    // puisse appliquer une politique fail-closed
     return await checkRateLimitUpstash(key, maxReq, windowMs);
   }
   return checkRateLimitInMemory(key, maxReq, windowMs);
 }
 
+/**
+ * Vérifie à la fois un quota individuel ET un quota organisationnel.
+ * Utile pour les endpoints IA coûteux où une seule organisation ne doit pas
+ * monopoliser les ressources même si ses membres ont des quotas individuels libres.
+ *
+ * @param userId   - ID Supabase de l'utilisateur (quota individuel)
+ * @param orgId    - ID organisation (quota partagé entre membres)
+ * @param routeName - Identifiant de la route (ex: "blog-generate")
+ * @param maxPerUser - Quota individuel (ex: 10/h)
+ * @param maxPerOrg  - Quota org (ex: 100/h). Si null, quota org non vérifié.
+ * @param windowMs   - Fenêtre temporelle en ms (partagée pour les deux quotas)
+ *
+ * Usage :
+ *   const { allowed, reason } = await checkRateLimitAsyncWithOrg(
+ *     user.id, orgId, "blog-generate", 10, 100, 60 * 60 * 1000
+ *   );
+ *   if (!allowed) {
+ *     const msg = reason === "org" ? "Quota organisation atteint." : "Quota personnel atteint.";
+ *     return NextResponse.json({ error: msg }, { status: 429 });
+ *   }
+ */
+export async function checkRateLimitAsyncWithOrg(
+  userId:    string,
+  orgId:     string | null,
+  routeName: string,
+  maxPerUser: number,
+  maxPerOrg:  number | null,
+  windowMs:  number,
+): Promise<{ allowed: boolean; remaining: number; resetAt: number; reason?: "user" | "org" }> {
+  // Vérification quota individuel
+  const userKey    = buildRateLimitKey(userId, routeName);
+  const userResult = await checkRateLimitAsync(userKey, maxPerUser, windowMs);
+  if (!userResult.allowed) {
+    return { ...userResult, reason: "user" };
+  }
+
+  // Vérification quota organisationnel (optionnel)
+  if (orgId && maxPerOrg !== null) {
+    const orgKey    = buildOrgRateLimitKey(orgId, routeName);
+    const orgResult = await checkRateLimitAsync(orgKey, maxPerOrg, windowMs);
+    if (!orgResult.allowed) {
+      return { ...orgResult, reason: "org" };
+    }
+  }
+
+  return userResult;
+}
+
 /** Indique si Upstash Redis est configuré (utile pour les tests). */
 export function isUpstashEnabled(): boolean {
   return UPSTASH_ENABLED;
+}
+
+/**
+ * Réinitialise un compteur de rate limit spécifique.
+ * Utile pour effacer un compteur brute force après une authentification réussie.
+ * Silencieux en cas d'erreur — le reset n'est pas critique.
+ */
+export async function resetRateLimitKey(key: string): Promise<void> {
+  if (UPSTASH_ENABLED) {
+    const url   = process.env.UPSTASH_REDIS_REST_URL!;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
+    try {
+      await fetch(`${url}/del/${encodeURIComponent(key)}`, {
+        method:  "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        cache:   "no-store",
+      });
+    } catch {
+      // Reset silencieux — le compteur expire de toute façon via TTL
+    }
+  } else {
+    store.delete(key);
+  }
 }
 
 /**
